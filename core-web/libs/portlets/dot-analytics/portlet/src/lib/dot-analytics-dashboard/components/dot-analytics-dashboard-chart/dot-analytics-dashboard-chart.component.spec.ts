@@ -6,25 +6,41 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { PageViewTimeLineEntity, RequestState } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { DotAnalyticsDashboardChartComponent } from './dot-analytics-dashboard-chart.component';
 
-import { ChartData, ChartType } from '../../types';
+import { ChartType } from '../../types';
 
 describe('DotAnalyticsDashboardChartComponent', () => {
     let spectator: Spectator<DotAnalyticsDashboardChartComponent>;
 
-    const mockChartData: ChartData = {
-        labels: ['January', 'February', 'March'],
-        datasets: [
-            {
-                label: 'Test Dataset',
-                data: [10, 20, 30],
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)'
-            }
-        ]
-    };
+    const mockTimeLineData: PageViewTimeLineEntity[] = [
+        {
+            'request.totalRequest': '10',
+            'request.createdAt': '2024-01-01T00:00:00Z',
+            'request.createdAt.day': '2024-01-01'
+        },
+        {
+            'request.totalRequest': '20',
+            'request.createdAt': '2024-01-02T00:00:00Z',
+            'request.createdAt.day': '2024-01-02'
+        },
+        {
+            'request.totalRequest': '30',
+            'request.createdAt': '2024-01-03T00:00:00Z',
+            'request.createdAt.day': '2024-01-03'
+        }
+    ];
+
+    const createMockChartState = (
+        data: PageViewTimeLineEntity[] | null = mockTimeLineData,
+        status: ComponentStatus = ComponentStatus.LOADED
+    ): RequestState<PageViewTimeLineEntity[]> => ({
+        data,
+        status,
+        error: null
+    });
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardChartComponent,
@@ -51,12 +67,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
         spectator = createComponent({
             props: {
                 type: 'line' as ChartType,
-                data: mockChartData,
+                chartState: createMockChartState(),
                 title: '',
                 width: '100%',
-                height: '300px',
-                options: {},
-                status: ComponentStatus.LOADED
+                options: {}
             } as unknown
         });
     });
@@ -76,8 +90,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             expect(spectator.component.$type()).toBe('line');
         });
 
-        it('should initialize with required data input', () => {
-            expect(spectator.component.$data()).toEqual(mockChartData);
+        it('should initialize with required chartState input', () => {
+            expect(spectator.component.$chartState()).toEqual(createMockChartState());
         });
     });
 
@@ -85,9 +99,12 @@ describe('DotAnalyticsDashboardChartComponent', () => {
         it('should have default values for optional inputs', () => {
             expect(spectator.component.$title()).toBe('');
             expect(spectator.component.$width()).toBe('100%');
-            expect(spectator.component.$height()).toBe('300px');
             expect(spectator.component.$options()).toEqual({});
-            expect(spectator.component.$status()).toBe(ComponentStatus.LOADED);
+        });
+
+        it('should calculate height automatically based on chart type', () => {
+            expect(spectator.component['$height']()).toBeDefined();
+            expect(typeof spectator.component['$height']()).toBe('string');
         });
     });
 
@@ -102,12 +119,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(),
                     title: 'Test Chart Title',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.LOADED
+                    options: {}
                 } as unknown
             });
 
@@ -122,12 +137,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.LOADING
+                    options: {}
                 } as unknown
             });
 
@@ -140,12 +153,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.INIT),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.INIT
+                    options: {}
                 } as unknown
             });
 
@@ -158,12 +169,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.LOADING
+                    options: {}
                 } as unknown
             });
 
@@ -175,12 +184,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'pie' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.LOADING
+                    options: {}
                 } as unknown
             });
 
@@ -192,12 +199,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'doughnut' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.LOADING
+                    options: {}
                 } as unknown
             });
 
@@ -209,12 +214,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'bar' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.LOADING
+                    options: {}
                 } as unknown
             });
 
@@ -226,12 +229,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.LOADING
+                    options: {}
                 } as unknown
             });
 
@@ -244,12 +245,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.ERROR),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.ERROR
+                    options: {}
                 } as unknown
             });
 
@@ -263,12 +262,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.ERROR),
                     title: '',
                     width: '100%',
-                    height: '300px',
-                    options: {},
-                    status: ComponentStatus.ERROR
+                    options: {}
                 } as unknown
             });
 
@@ -283,8 +280,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
-                    status: ComponentStatus.INIT
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.INIT)
                 } as unknown
             });
             expect(spectator.component['$isLoading']()).toBe(true);
@@ -293,8 +289,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
-                    status: ComponentStatus.LOADING
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING)
                 } as unknown
             });
             expect(spectator.component['$isLoading']()).toBe(true);
@@ -303,8 +298,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
                 } as unknown
             });
             expect(spectator.component['$isLoading']()).toBe(false);
@@ -315,8 +309,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
-                    status: ComponentStatus.ERROR
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.ERROR)
                 } as unknown
             });
             expect(spectator.component['$isError']()).toBe(true);
@@ -325,44 +318,27 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
                 } as unknown
             });
             expect(spectator.component['$isError']()).toBe(false);
         });
 
         it('should correctly identify empty state', () => {
-            // Test with empty datasets
-            const emptyData: ChartData = {
-                labels: [],
-                datasets: []
-            };
+            // Test with empty data array
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: emptyData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState([], ComponentStatus.LOADED)
                 } as unknown
             });
             expect(spectator.component['$isEmpty']()).toBe(true);
 
-            // Test with datasets but no data
-            const noDataChartData: ChartData = {
-                labels: ['January', 'February'],
-                datasets: [
-                    {
-                        label: 'Test',
-                        data: [],
-                        borderColor: 'red'
-                    }
-                ]
-            };
+            // Test with null data
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: noDataChartData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState(null, ComponentStatus.LOADED)
                 } as unknown
             });
             expect(spectator.component['$isEmpty']()).toBe(true);
@@ -371,8 +347,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
                 } as unknown
             });
             expect(spectator.component['$isEmpty']()).toBe(false);
@@ -407,37 +382,52 @@ describe('DotAnalyticsDashboardChartComponent', () => {
     });
 
     describe('Custom Dimensions', () => {
-        it('should accept custom width and height', () => {
-            // Create new component with custom dimensions
+        it('should accept custom width', () => {
+            // Create new component with custom width
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
+                    chartState: createMockChartState(),
                     title: '',
                     width: '600px',
-                    height: '400px',
-                    options: {},
-                    status: ComponentStatus.LOADED
+                    options: {}
                 } as unknown
             });
 
             expect(spectator.component.$width()).toBe('600px');
-            expect(spectator.component.$height()).toBe('400px');
+        });
+
+        it('should calculate height automatically based on chart type', () => {
+            // Test line chart height
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    chartState: createMockChartState()
+                } as unknown
+            });
+
+            expect(spectator.component['$height']()).toBeDefined();
+            expect(typeof spectator.component['$height']()).toBe('string');
+
+            // Test pie chart height
+            spectator = createComponent({
+                props: {
+                    type: 'pie' as ChartType,
+                    chartState: createMockChartState()
+                } as unknown
+            });
+
+            expect(spectator.component['$height']()).toBeDefined();
+            expect(typeof spectator.component['$height']()).toBe('string');
         });
     });
 
     describe('Empty State', () => {
         it('should show empty state when data is empty', () => {
-            const emptyData: ChartData = {
-                labels: [],
-                datasets: []
-            };
-
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: emptyData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState([], ComponentStatus.LOADED)
                 } as unknown
             });
 
@@ -447,16 +437,10 @@ describe('DotAnalyticsDashboardChartComponent', () => {
         });
 
         it('should show empty state icon and messages', () => {
-            const emptyData: ChartData = {
-                labels: [],
-                datasets: []
-            };
-
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: emptyData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState([], ComponentStatus.LOADED)
                 } as unknown
             });
 
@@ -468,8 +452,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    data: mockChartData,
-                    status: ComponentStatus.LOADED
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
                 } as unknown
             });
 
