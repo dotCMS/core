@@ -80,8 +80,7 @@ export class DotContentDriveShellComponent implements OnInit {
                 .subscribe((response) => {
                     this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
                 });
-        },
-        { allowSignalWrites: true }
+        }
     );
 
     ngOnInit(): void {

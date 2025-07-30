@@ -34,10 +34,27 @@ const SYSTEM_LANGUAGES = [
     { id: 2, isoCode: 'it-it', defaultLanguage: true }
 ] as DotLanguage[];
 
+
+const withTest = () =>
+    signalStoreFeature(
+        withState({
+            ...initialRootState,
+            formValues: {}
+        }),
+        withMethods((store) => ({
+            updateContent: (content) => {
+                console.log('updateContent', content);
+                patchState(store, { contentlet: content });
+            }
+        }))
+    );
+
+const Store = signalStore({ providedIn: 'root' }, withTest(), withLocales())
+
 describe('LocalesFeature', () => {
     let spectator: SpectatorService<any>;
 
-    let store: any;
+    let store: InstanceType<typeof Store>;
     let dotLanguagesService: SpyObject<DotLanguagesService>;
     let dotContentletService: SpyObject<DotContentletService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
@@ -45,21 +62,8 @@ describe('LocalesFeature', () => {
     let router: SpyObject<Router>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
 
-    const withTest = () =>
-        signalStoreFeature(
-            withState({
-                ...initialRootState,
-                formValues: {}
-            }),
-            withMethods((store) => ({
-                updateContent: (content) => {
-                    patchState(store, { contentlet: content });
-                }
-            }))
-        );
-
     const createStore = createServiceFactory({
-        service: signalStore(withTest(), withLocales()),
+        service: Store,
         mocks: [
             DotLanguagesService,
             DotContentletService,
@@ -94,6 +98,7 @@ describe('LocalesFeature', () => {
         expect(store.localesStatus().status).toEqual(ComponentStatus.INIT);
 
         store.updateContent({ identifier: '123' } as DotCMSContentlet);
+
         tick();
 
         expect(dotContentletService.getLanguages).toHaveBeenCalledWith('123');

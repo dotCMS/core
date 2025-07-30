@@ -146,8 +146,7 @@ export class DotEditContentLayoutComponent {
                     // Route mode: Initialize from route parameters
                     this.$store.initializeAsPortlet();
                 }
-            },
-            { allowSignalWrites: true }
+            }
         );
 
         // Handle workflow action success in dialog mode
@@ -160,8 +159,7 @@ export class DotEditContentLayoutComponent {
                     this.contentSaved.emit(workflowActionSuccess);
                     this.$store.clearWorkflowActionSuccess();
                 }
-            },
-            { allowSignalWrites: true }
+            }
         );
     }
 

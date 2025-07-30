@@ -76,8 +76,7 @@ export class DotAnalyticsDashboardFiltersComponent {
                 if (selectedTimeRange !== CUSTOM_TIME_RANGE) {
                     this.$customDateRange.set(null);
                 }
-            },
-            { allowSignalWrites: true }
+            }
         );
 
         // Synchronize filter changes to URL (avoiding infinite loop)
