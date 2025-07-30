@@ -4,7 +4,6 @@ import { BannerCarousel } from '../../shared/contentlet.model';
 @Component({
     selector: 'app-banner-carousel',
     templateUrl: './banner-carousel.component.html',
-    standalone: true,
     imports: []
 })
 export class BannerCarouselComponent implements OnInit, OnDestroy {

@@ -7,7 +7,6 @@ import { NgOptimizedImage } from '@angular/common';
 import { enableBlockEditorInline, getUVEState } from '@dotcms/uve';
 @Component({
     selector: 'app-blog-post',
-    standalone: true,
     imports: [DotCMSBlockEditorRendererComponent, NgOptimizedImage],
     templateUrl: './blog-post.component.html',
     styleUrl: './blog-post.component.css'

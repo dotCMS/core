@@ -4,7 +4,6 @@ import { ReorderButtonComponent } from '../reorder-button/reorder-button.compone
 
 @Component({
     selector: 'app-header',
-    standalone: true,
     imports: [ReorderButtonComponent, RouterLink],
     template: `
         <header class="flex items-center justify-between p-4 bg-red-400">

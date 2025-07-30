@@ -10,7 +10,6 @@ interface ImageContentlet extends DotCMSBasicContentlet {
 
 @Component({
     selector: 'app-image',
-    standalone: true,
     imports: [NgOptimizedImage],
     template: `<div class="overflow-hidden relative mb-4 bg-white rounded shadow-lg group">
         <div class="relative w-full h-96 bg-gray-200">

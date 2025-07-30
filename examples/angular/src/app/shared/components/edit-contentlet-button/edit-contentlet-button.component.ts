@@ -13,7 +13,6 @@ import { UVE_MODE } from '@dotcms/types';
  */
 @Component({
     selector: 'app-edit-contentlet-button',
-    standalone: true,
     imports: [DotCMSShowWhenDirective],
     template: `<ng-template [dotCMSShowWhen]="uveMode.EDIT">
         <button

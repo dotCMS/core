@@ -7,7 +7,6 @@ import { EditContentletButtonComponent } from '../../../../shared/components/edi
 @Component({
     selector: 'app-destination-listing',
     templateUrl: './destination-listing.component.html',
-    standalone: true,
     imports: [RouterLink, NgOptimizedImage, EditContentletButtonComponent]
 })
 export class DestinationListingComponent {
