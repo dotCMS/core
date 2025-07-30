@@ -1,7 +1,10 @@
 import {
+    CubeJSFilter,
     CubeJSQuery,
     CubeJSTimeDimension,
     DimensionField,
+    FilterField,
+    FilterOperator,
     Granularity,
     MeasureField,
     OrderField,
@@ -47,13 +50,59 @@ export class CubeQueryBuilder {
      * Add pageview filter (common for all 6 requests)
      */
     pageviews(): CubeQueryBuilder {
-        this.query.filters = [
-            {
-                member: 'request.eventType',
-                operator: 'equals',
-                values: ['pageview']
-            }
-        ];
+        const pageviewFilter: CubeJSFilter = {
+            member: 'request.eventType',
+            operator: 'equals',
+            values: ['pageview']
+        };
+
+        this.query.filters = this.query.filters ? [...this.query.filters, pageviewFilter] : [pageviewFilter];
+
+        return this;
+    }
+
+    /**
+     * Add site ID filter
+     */
+    siteId(siteId: string | string[]): CubeQueryBuilder {
+        const values = Array.isArray(siteId) ? siteId : [siteId];
+        const siteIdFilter: CubeJSFilter = {
+            member: 'request.siteId',
+            operator: 'equals',
+            values
+        };
+
+        this.query.filters = this.query.filters ? [...this.query.filters, siteIdFilter] : [siteIdFilter];
+
+        return this;
+    }
+
+    /**
+     * Add a custom filter
+     */
+    filter(member: FilterField, operator: FilterOperator, values: string[]): CubeQueryBuilder {
+        const prefixedMember = member.startsWith('request.') ? member : `request.${member}`;
+        const customFilter: CubeJSFilter = {
+            member: prefixedMember,
+            operator,
+            values
+        };
+
+        this.query.filters = this.query.filters ? [...this.query.filters, customFilter] : [customFilter];
+
+        return this;
+    }
+
+    /**
+     * Add multiple filters at once
+     */
+    filters(filters: CubeJSFilter[]): CubeQueryBuilder {
+        const prefixedFilters = filters.map(filter => ({
+            ...filter,
+            member: filter.member.startsWith('request.') ? filter.member : `request.${filter.member}`
+        }));
+
+        this.query.filters = this.query.filters ? [...this.query.filters, ...prefixedFilters] : prefixedFilters;
 
         return this;
     }

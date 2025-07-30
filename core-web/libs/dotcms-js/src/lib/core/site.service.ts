@@ -1,8 +1,8 @@
-import { Observable, Subject, of, merge } from 'rxjs';
+import { Observable, Subject, merge, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, map, take, switchMap, tap } from 'rxjs/operators';
+import { map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -75,11 +75,11 @@ export class SiteService {
         if (siteIdentifier === this.selectedSite.identifier) {
             name === 'ARCHIVE_SITE'
                 ? this.switchToDefaultSite()
-                      .pipe(
-                          take(1),
-                          switchMap((site) => this.switchSite(site))
-                      )
-                      .subscribe()
+                    .pipe(
+                        take(1),
+                        switchMap((site) => this.switchSite(site))
+                    )
+                    .subscribe()
                 : this.loadCurrentSite();
         }
     }
@@ -229,6 +229,14 @@ export class SiteService {
     }
 }
 
+/**
+ * @deprecated
+ * This interface is deprecated do not use it in new code.
+ * If you need to interact with the sites use the DotSiteService from @dotcms/data-access.
+ *
+ * @export
+ * @interface Site
+ */
 export interface Site {
     hostname: string;
     type: string;

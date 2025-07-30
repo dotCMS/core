@@ -12,20 +12,21 @@ import {
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageService,
     DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
-    PaginatorService,
+    DotWorkflowEventHandlerService,
     EmaAppConfigurationService,
-    DotGlobalMessageService,
-    DotFormatDateService,
-    DotIframeService,
-    DotWorkflowEventHandlerService
+    PaginatorService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
@@ -44,6 +45,8 @@ import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-serv
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
+
+
 
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
@@ -86,7 +89,8 @@ const PROVIDERS: Provider[] = [
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy
-    }
+    },
+    GlobalStore
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];
