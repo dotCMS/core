@@ -16,14 +16,14 @@ import { DestinationListingComponent } from './components/destination-listing/de
         <app-destination-listing [widgetCodeJSON]="$any(contentlet()).widgetCodeJSON">
         </app-destination-listing>
         } @default {
-        <ng-container [dotCMSShowWhen]="UVE_MODE.EDIT">
+        <ng-template [dotCMSShowWhen]="UVE_MODE.EDIT">
             <div class="bg-blue-100 p-4">
                 <h4>
                     No Component Type: {{ contentlet().componentType || 'generic' }} Found for VTL
                     Include
                 </h4>
             </div>
-        </ng-container>
+        </ng-template>
         } }
     `
 })
