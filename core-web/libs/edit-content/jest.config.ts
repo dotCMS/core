@@ -24,5 +24,5 @@ export default {
     coveragePathIgnorePatterns: [
         'node_modules/',
         'src/lib/custom-languages/.*-monaco-language.*\\.ts$'
-    ],
+    ]
 };

@@ -90,23 +90,19 @@ export class DotSelectExistingContentComponent implements OnInit {
     $staticColumns = signal(STATIC_COLUMNS);
 
     constructor() {
-        effect(
-            () => {
-                // Sync the selection items with the store
-                const selectionItems = this.$selectionItems();
-                if (selectionItems) {
-                    this.store.setSelectionItems(selectionItems);
-                }
+        effect(() => {
+            // Sync the selection items with the store
+            const selectionItems = this.$selectionItems();
+            if (selectionItems) {
+                this.store.setSelectionItems(selectionItems);
             }
-        );
+        });
 
-        effect(
-            () => {
-                // Sync the selection items with the store
-                const selectionItems = this.store.selectionItems();
-                this.$selectionItems.set(selectionItems);
-            }
-        );
+        effect(() => {
+            // Sync the selection items with the store
+            const selectionItems = this.store.selectionItems();
+            this.$selectionItems.set(selectionItems);
+        });
     }
 
     ngOnInit() {
