@@ -149,4 +149,177 @@ describe('DotAnalyticsDashboardTableComponent', () => {
             expect(spectator.component.$status()).toBe(ComponentStatus.INIT);
         });
     });
+
+    describe('Computed Properties', () => {
+        it('should correctly identify loading state', () => {
+            // Test LOADING state
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADING
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isLoading']()).toBe(true);
+
+            // Test INIT state
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.INIT
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isLoading']()).toBe(true);
+
+            // Test LOADED state
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADED
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isLoading']()).toBe(false);
+        });
+
+        it('should correctly identify empty state', () => {
+            // Test with empty array
+            spectator = createComponent({
+                props: {
+                    data: [],
+                    status: ComponentStatus.LOADED
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            // Test with null data
+            spectator = createComponent({
+                props: {
+                    data: null,
+                    status: ComponentStatus.LOADED
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            // Test with valid data
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADED
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isEmpty']()).toBe(false);
+        });
+
+        it('should correctly identify error state', () => {
+            // Test ERROR state
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.ERROR
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isError']()).toBe(true);
+
+            // Test non-error states
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADED
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isError']()).toBe(false);
+
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADING
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isError']()).toBe(false);
+        });
+    });
+
+    describe('Empty State', () => {
+        it('should show empty state when data is empty', () => {
+            spectator = createComponent({
+                props: {
+                    data: [],
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            expect(emptyState).toExist();
+        });
+
+        it('should show empty state icon and messages', () => {
+            spectator = createComponent({
+                props: {
+                    data: [],
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
+        });
+
+        it('should not show empty state when data is available', () => {
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            expect(emptyState).not.toExist();
+        });
+    });
+
+    describe('Error State', () => {
+        it('should show error state when status is ERROR', () => {
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.ERROR
+                } as unknown
+            });
+
+            const errorState = spectator.query('.table-error-state');
+            expect(errorState).toExist();
+        });
+
+        it('should not show error state when status is not ERROR', () => {
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const errorState = spectator.query('.table-error-state');
+            expect(errorState).not.toExist();
+        });
+
+        it('should show error state message component', () => {
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.ERROR
+                } as unknown
+            });
+
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
+        });
+    });
 });
