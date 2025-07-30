@@ -23,9 +23,11 @@ import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-co
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
+import { LanguageFieldComponent } from './components/language-field/language-field.component';
+import { SiteFieldComponent } from './components/site-field/site-field.component';
 import { SearchComponent } from './search.component';
 
-// Stub components for testing
+// Mock components for testing
 @Component({
     selector: 'dot-language-field',
     standalone: true,
@@ -33,12 +35,12 @@ import { SearchComponent } from './search.component';
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => StubLanguageFieldComponent),
+            useExisting: forwardRef(() => MockLanguageFieldComponent),
             multi: true
         }
     ]
 })
-class StubLanguageFieldComponent implements ControlValueAccessor {
+class MockLanguageFieldComponent implements ControlValueAccessor {
     languageControl = new FormControl({ isoCode: 'en-US', id: 1 });
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -56,12 +58,12 @@ class StubLanguageFieldComponent implements ControlValueAccessor {
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => StubSiteFieldComponent),
+            useExisting: forwardRef(() => MockSiteFieldComponent),
             multi: true
         }
     ]
 })
-class StubSiteFieldComponent implements ControlValueAccessor {
+class MockSiteFieldComponent implements ControlValueAccessor {
     siteControl = new FormControl({
         label: 'demo.dotcms.com',
         data: { id: 'site123', type: 'site' }
@@ -131,8 +133,8 @@ describe('SearchComponent', () => {
             InputTextModule,
             OverlayPanelModule,
             ChipModule,
-            StubLanguageFieldComponent,
-            StubSiteFieldComponent
+            MockLanguageFieldComponent,
+            MockSiteFieldComponent
         ],
         mocks: [DotMessagePipe],
         detectChanges: true,
@@ -188,10 +190,8 @@ describe('SearchComponent', () => {
                 languageControl: {
                     value: { isoCode: 'en-US', id: 1 }
                 }
-            };
-            jest.spyOn(component, '$languageField').mockReturnValue(
-                mockLanguageField as typeof mockLanguageField
-            );
+            } as unknown as LanguageFieldComponent;
+            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
 
             // Set up mock for site field component
             const mockSiteField = {
@@ -201,10 +201,8 @@ describe('SearchComponent', () => {
                         data: { id: 'site123', type: 'site' }
                     }
                 }
-            };
-            jest.spyOn(component, '$siteField').mockReturnValue(
-                mockSiteField as typeof mockSiteField
-            );
+            } as unknown as SiteFieldComponent;
+            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
         });
 
         it('should return empty filters when no active search params', () => {
@@ -426,10 +424,8 @@ describe('SearchComponent', () => {
                 languageControl: {
                     value: { isoCode: 'en-US', id: 1 }
                 }
-            };
-            jest.spyOn(component, '$languageField').mockReturnValue(
-                mockLanguageField as typeof mockLanguageField
-            );
+            } as unknown as LanguageFieldComponent;
+            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
 
             const label = component['getLanguageDisplayLabel'](1);
             expect(label).toBe('en-US');
@@ -450,10 +446,8 @@ describe('SearchComponent', () => {
                         data: { id: 'site123', type: 'site' }
                     }
                 }
-            };
-            jest.spyOn(component, '$siteField').mockReturnValue(
-                mockSiteField as typeof mockSiteField
-            );
+            } as unknown as SiteFieldComponent;
+            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe('demo.dotcms.com');
@@ -475,10 +469,8 @@ describe('SearchComponent', () => {
                         data: { id: 'site123', type: 'site' }
                     }
                 }
-            };
-            jest.spyOn(component, '$siteField').mockReturnValue(
-                mockSiteField as typeof mockSiteField
-            );
+            } as unknown as SiteFieldComponent;
+            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe(longLabel.substring(0, 70) + '...');
@@ -741,16 +733,12 @@ describe('SearchComponent', () => {
             // Mock the child components to return values
             const mockLanguageField = {
                 languageControl: { value: { isoCode: 'en-US', id: 1 } }
-            };
+            } as unknown as LanguageFieldComponent;
             const mockSiteField = {
                 siteControl: { value: { label: 'demo.dotcms.com' } }
-            };
-            jest.spyOn(component, '$languageField').mockReturnValue(
-                mockLanguageField as typeof mockLanguageField
-            );
-            jest.spyOn(component, '$siteField').mockReturnValue(
-                mockSiteField as typeof mockSiteField
-            );
+            } as unknown as SiteFieldComponent;
+            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
+            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
 
             spectator.detectChanges();
 
@@ -769,10 +757,8 @@ describe('SearchComponent', () => {
             // Mock the child components
             const mockLanguageField = {
                 languageControl: { value: { isoCode: 'en-US', id: 1 } }
-            };
-            jest.spyOn(component, '$languageField').mockReturnValue(
-                mockLanguageField as typeof mockLanguageField
-            );
+            } as unknown as LanguageFieldComponent;
+            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
 
             spectator.detectChanges();
 
