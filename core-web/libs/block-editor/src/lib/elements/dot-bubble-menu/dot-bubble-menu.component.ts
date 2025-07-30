@@ -182,7 +182,29 @@ export class DotBubbleMenuComponent implements OnInit {
         placement: 'top-start',
         trigger: 'manual',
         onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        onClickOutside: this.onClickOutside.bind(this)
+        onClickOutside: this.onClickOutside.bind(this),
+        appendTo: (element) => {
+            // Append it to the block editor host, so it is outside of the editor container
+            const blockEditorHost = element.parentElement.parentElement;
+
+            return blockEditorHost;
+        },
+        popperOptions: {
+            modifiers: [
+                // This modifier is needed to flip the bubble menu when it is too close to the edge of the screen
+                {
+                    name: 'flip',
+                    options: {
+                        fallbackPlacements: ['top', 'bottom']
+                    }
+                },
+                // This modifier adds an attribute to the tippy element to hide it when the reference is hidden
+                {
+                    name: 'hide',
+                    phase: 'main'
+                }
+            ]
+        }
     };
 
     ngOnInit() {
