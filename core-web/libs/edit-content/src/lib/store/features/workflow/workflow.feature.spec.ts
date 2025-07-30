@@ -250,7 +250,7 @@ describe('WorkflowFeature', () => {
                 // Use the updateContent method to update the contentlet
                 store.updateContent(updatedContentlet);
 
-                tick();
+                spectator.flushEffects();
 
                 // Verify the effect called updateCurrentContentActions
                 expect(workflowActionService.getByInode).toHaveBeenCalledWith(

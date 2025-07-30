@@ -83,6 +83,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             spectator.detectChanges();
 
             tick(50);
+            spectator.detectChanges();
 
             store.chooseNode({
                 originalEvent: createFakeEvent('click'),
@@ -90,6 +91,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             });
 
             tick(50);
+            spectator.detectChanges();
 
             expect(spectator.component.formControl.value).toBe('demo.dotcms.com:/');
             expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);
@@ -102,6 +104,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             spectator.detectChanges();
 
             tick(50);
+            spectator.detectChanges();
 
             store.chooseNode({
                 originalEvent: createFakeEvent('click'),
@@ -109,6 +112,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             });
 
             tick(50);
+            spectator.detectChanges();
 
             expect(spectator.component.formControl.value).toBe('demo.dotcms.com:/level1/child1/');
             expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);
