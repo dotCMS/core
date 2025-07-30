@@ -173,7 +173,11 @@
         }
     ],
     "defaultBase": "main",
-    "ignorePatterns": ["**/node_modules"],
+    "ignorePatterns": [
+        "**/node_modules",
+        "**/*vite.config*.timestamp-*.mjs",
+        "**/*vite.config*.timestamp-*.ts"
+    ],
     "release": {
         "version": {
             "preVersionCommand": "yarn nx run-many -t build"
