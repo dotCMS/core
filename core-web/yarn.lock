@@ -4695,9 +4695,9 @@
   resolved "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-14.2.29.tgz#9097b85893a51ca9ba3b9d1733a4aab954edeab5"
   integrity sha512-iPPwUEKnVs7pwR0EBLJlwxLD7TTHWS/AoVZx1l9ZQzfQciqaFEr5AlYzA2uB6Fyby1IF18t4PL0nTpB+k4Tzlw==
 
-"@ngneat/spectator@^19.4.1":
+"@ngneat/spectator@19.6.2":
   version "19.6.2"
-  resolved "https://registry.npmjs.org/@ngneat/spectator/-/spectator-19.6.2.tgz"
+  resolved "https://registry.npmjs.org/@ngneat/spectator/-/spectator-19.6.2.tgz#c854f20d3723ab6ab9f71b64afeec4ef1b1019d5"
   integrity sha512-3PzTluAI/LdeJSiOWQmwBu6zM6KyRnwejIt3l1FYCI5AfGRr8njTBIB4f9/6xLFA42AHcqIUQQdmZJCkEC0DUQ==
   dependencies:
     "@testing-library/dom" "^8.11.0"

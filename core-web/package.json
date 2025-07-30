@@ -157,7 +157,7 @@
         "@happy-dom/jest-environment": "^15.7.4",
         "@materia-ui/ngx-monaco-editor": "^6.0.0",
         "@mdx-js/react": "^2.1.2",
-        "@ngneat/spectator": "^19.4.1",
+        "@ngneat/spectator": "19.6.2",
         "@nx/devkit": "20.5.1",
         "@nx/esbuild": "20.5.1",
         "@nx/eslint": "20.5.1",

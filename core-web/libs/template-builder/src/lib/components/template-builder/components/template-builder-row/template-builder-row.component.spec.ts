@@ -22,6 +22,7 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
 
 @Component({
     selector: 'dotcms-host-component',
+    standalone: false,
     template: `
         <dotcms-template-builder-row [row]="row" [isResizing]="isResizing">
             <p>Some component</p>

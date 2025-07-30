@@ -12,7 +12,7 @@ import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
     template: `
         <p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>
     `,
-    imports: [ConfirmPopupModule]
+    imports: [ConfirmPopupModule, DotRemoveConfirmPopupWithEscapeDirective]
 })
 class CustomHostComponent {}
 
@@ -22,7 +22,6 @@ describe('DotRemoveConfirmPopupWithEscape', () => {
 
     const createHost = createHostFactory({
         component: CustomHostComponent,
-        imports: [ConfirmPopupModule, DotRemoveConfirmPopupWithEscapeDirective],
         providers: [ConfirmationService]
     });
 

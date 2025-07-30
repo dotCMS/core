@@ -21,6 +21,7 @@ import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
+    standalone: false,
     selector: 'dot-test-host-component',
     template: `
         <form [formGroup]="group">
