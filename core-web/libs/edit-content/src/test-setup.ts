@@ -1,10 +1,9 @@
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
 setupZoneTestEnv({
-  errorOnUnknownElements: true,
-  errorOnUnknownProperties: true,
+    errorOnUnknownElements: true,
+    errorOnUnknownProperties: true
 });
-
 
 // Workaround for the following issue:
 // https://github.com/jsdom/jsdom/issues/2177#issuecomment-1724971596
@@ -15,7 +14,6 @@ console.error = (...params) => {
         originalConsoleError(...params);
     }
 };
-
 
 // Mock DOM APIs not available in JSDOM
 Element.prototype.scrollIntoView = jest.fn();
