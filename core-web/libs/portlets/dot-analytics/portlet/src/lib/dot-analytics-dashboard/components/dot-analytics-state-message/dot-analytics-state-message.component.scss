@@ -1,0 +1,12 @@
+@use "variables" as *;
+:host {
+    flex: 1;
+}
+
+.state-message {
+    font-size: $font-size-sm;
+    color: $color-palette-gray-800;
+    font-weight: $font-weight-regular-bold;
+    text-align: center;
+    margin: 0;
+}
