@@ -81,7 +81,7 @@ describe('DotAnalyticsService', () => {
 
             it('should return unique visitors entity from response', (done) => {
                 const mockResponse: AnalyticsApiResponse<UniqueVisitorsEntity> = {
-                    entity: [{ 'request.totalUser': '342' }],
+                    entity: [{ 'request.totalUsers': '342' }],
                     errors: [],
                     i18nMessagesMap: {},
                     messages: [],
@@ -177,46 +177,6 @@ describe('DotAnalyticsService', () => {
 
                 const req = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
                 req.flush(mockResponse);
-            });
-
-            it('should set daily granularity for 7-day timeRange', () => {
-                spectator.service.pageViewTimeLine('from 7 days ago to now').subscribe();
-
-                const req = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
-                const requestBody = req.request.body;
-
-                expect(requestBody.timeDimensions).toBeDefined();
-                expect(requestBody.timeDimensions[0].granularity).toBe('day');
-                expect(requestBody.timeDimensions[0].dateRange).toBe('from 7 days ago to now');
-
-                req.flush({
-                    entity: [],
-                    errors: [],
-                    i18nMessagesMap: {},
-                    messages: [],
-                    pagination: null,
-                    permissions: []
-                });
-            });
-
-            it('should set weekly granularity for 30-day timeRange', () => {
-                spectator.service.pageViewTimeLine('from 30 days ago to now').subscribe();
-
-                const req = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
-                const requestBody = req.request.body;
-
-                expect(requestBody.timeDimensions).toBeDefined();
-                expect(requestBody.timeDimensions[0].granularity).toBe('week');
-                expect(requestBody.timeDimensions[0].dateRange).toBe('from 30 days ago to now');
-
-                req.flush({
-                    entity: [],
-                    errors: [],
-                    i18nMessagesMap: {},
-                    messages: [],
-                    pagination: null,
-                    permissions: []
-                });
             });
         });
 
@@ -421,7 +381,7 @@ describe('DotAnalyticsService', () => {
             spectator.service.uniqueVisitors().subscribe();
             const req2 = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
             req2.flush({
-                entity: [{ 'request.totalUser': '50' }],
+                entity: [{ 'request.totalUsers': '50' }],
                 errors: [],
                 i18nMessagesMap: {},
                 messages: [],

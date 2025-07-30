@@ -1,5 +1,18 @@
+import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
+import { Subscription } from 'rxjs';
+
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    input,
+    OnDestroy,
+    OnInit,
+    signal
+} from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
@@ -7,9 +20,9 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { ChartData, ChartOptions, ChartType } from '../../types';
+import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
  * Reusable chart component for analytics dashboard.
@@ -17,13 +30,24 @@ import { ChartData, ChartOptions, ChartType } from '../../types';
  */
 @Component({
     selector: 'dot-analytics-dashboard-chart',
-    imports: [CommonModule, CardModule, ChartModule, SkeletonModule, DotMessagePipe],
+    imports: [
+        CommonModule,
+        CardModule,
+        ChartModule,
+        SkeletonModule,
+        DotAnalyticsStateMessageComponent
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-chart.component.html',
     styleUrl: './dot-analytics-dashboard-chart.component.scss'
 })
-export class DotAnalyticsDashboardChartComponent {
+export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
     private readonly messageService = inject(DotMessageService);
+    private readonly breakpointObserver = inject(BreakpointObserver);
+    private breakpointSubscription?: Subscription;
+
+    /** Signal to track if we're on mobile/small screen */
+    protected readonly $isMobile = signal<boolean>(false);
 
     // Required inputs
     /** Chart type (line, pie, doughnut, bar, etc.) */
@@ -40,7 +64,7 @@ export class DotAnalyticsDashboardChartComponent {
     readonly $width = input<string>('100%', { alias: 'width' });
 
     /** Chart height as CSS value */
-    readonly $height = input<string>('300px', { alias: 'height' });
+    readonly $height = input<string>('100%', { alias: 'height' });
 
     /** Custom chart options to merge with defaults */
     readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });
@@ -53,90 +77,37 @@ export class DotAnalyticsDashboardChartComponent {
     protected readonly $chartOptions = computed((): ChartOptions => {
         const chartType = this.$type();
         const customOptions = this.$options();
+        const isMobile = this.$isMobile();
+
+        // For mobile pie/doughnut charts, position legend to the right for better space usage
+        const shouldUseSideLegend = isMobile && (chartType === 'pie' || chartType === 'doughnut');
+        const legendPosition = shouldUseSideLegend ? 'right' : 'bottom';
 
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: true,
-                    position: 'bottom',
-                    // Use smaller filled circular point style for all chart types
+                    display: chartType !== 'line', // Hide legend for line charts
+                    position: legendPosition,
                     labels: {
                         usePointStyle: true,
                         pointStyle: 'circle',
                         boxWidth: 10,
                         boxHeight: 10,
-                        padding: 20,
+                        padding: shouldUseSideLegend ? 15 : 20, // Slightly less padding for side legend
                         font: {
-                            size: 12
+                            size: shouldUseSideLegend ? 11 : 12 // Slightly smaller font for mobile
                         },
-                        // Custom legend generation for line charts to ensure solid points
-                        ...(chartType === 'line' && {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            generateLabels: (chart: any) => {
-                                const datasets = chart.data.datasets;
-
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                return datasets.map((dataset: any, i: number) => ({
-                                    text: dataset.label,
-                                    fillStyle: dataset.borderColor, // Use borderColor for solid legend
-                                    strokeStyle: dataset.borderColor,
-                                    lineWidth: 0,
-                                    pointStyle: 'circle',
-                                    hidden: false,
-                                    index: i,
-                                    datasetIndex: i
-                                }));
-                            }
-                        })
+                        ...this.getChartTypeSpecificLegendOptions(chartType)
                     }
                 },
                 tooltip: {
-                    // Custom tooltip callbacks to ensure translation
                     callbacks: {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        label: (context: any) => {
-                            const chartType = this.$type();
-                            const dataset = context.dataset;
-                            const parsedValue = context.parsed;
-
-                            if (chartType === 'pie' || chartType === 'doughnut') {
-                                // For pie/doughnut charts, parsed value is a number directly
-                                const value = parsedValue;
-                                const label = context.label
-                                    ? this.messageService.get(context.label)
-                                    : '';
-                                const total = dataset.data.reduce(
-                                    (sum: number, val: number) => sum + val,
-                                    0
-                                );
-                                const percentage = ((value / total) * 100).toFixed(1);
-
-                                return `${label}: ${value} (${percentage}%)`;
-                            } else {
-                                // For line/bar charts, parsed value is an object with x, y properties
-                                const value = parsedValue.y ?? parsedValue;
-                                const datasetLabel = dataset.label
-                                    ? this.messageService.get(dataset.label)
-                                    : '';
-
-                                return `${datasetLabel}: ${value}`;
-                            }
-                        },
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        title: (context: any) => {
-                            const chartType = this.$type();
-                            if (chartType === 'pie' || chartType === 'doughnut') {
-                                // For pie charts, translate the title if it's a translation key
-                                const title = context[0]?.label;
-
-                                return title ? this.messageService.get(title) : title;
-                            }
-
-                            // For other charts, return the label as is (usually dates/times)
-                            return context[0]?.label || '';
-                        }
+                        label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
+                            this.getTooltipLabel(context),
+                        title: (context: TooltipItem<keyof ChartTypeRegistry>[]) =>
+                            this.getTooltipTitle(context)
                     }
                 }
             }
@@ -175,4 +146,121 @@ export class DotAnalyticsDashboardChartComponent {
 
     /** Check if component is in error state */
     protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
+
+    /** Check if chart data is empty */
+    protected readonly $isEmpty = computed(() => {
+        const data = this.$data();
+
+        if (!data || !data.datasets) {
+            return true;
+        }
+
+        // Check if all datasets are empty or have no data
+        return (
+            data.datasets.length === 0 ||
+            data.datasets.every(
+                (dataset) =>
+                    !dataset.data ||
+                    dataset.data.length === 0 ||
+                    dataset.data.every((value) => value === null || value === undefined)
+            )
+        );
+    });
+
+    /**
+     * Get chart type specific legend options
+     */
+    private getChartTypeSpecificLegendOptions(chartType: ChartType) {
+        if (chartType === 'line') {
+            return {
+                generateLabels: (chart: Chart) => {
+                    const datasets = chart.data.datasets;
+
+                    return datasets.map((dataset: ChartDataset, i: number) => ({
+                        text: dataset.label,
+                        fillStyle: dataset.borderColor, // Use borderColor for solid legend
+                        strokeStyle: dataset.borderColor,
+                        lineWidth: 0,
+                        pointStyle: 'circle',
+                        hidden: false,
+                        index: i,
+                        datasetIndex: i
+                    }));
+                }
+            };
+        }
+
+        return {};
+    }
+
+    /**
+     * Get tooltip label based on chart type
+     */
+    private getTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
+        const chartType = this.$type();
+
+        if (chartType === 'pie' || chartType === 'doughnut') {
+            return this.getPieTooltipLabel(context);
+        } else {
+            return this.getLineTooltipLabel(context);
+        }
+    }
+
+    /**
+     * Get tooltip title based on chart type
+     */
+    private getTooltipTitle(context: TooltipItem<keyof ChartTypeRegistry>[]): string {
+        const chartType = this.$type();
+
+        if (chartType === 'pie' || chartType === 'doughnut') {
+            // For pie charts, translate the title if it's a translation key
+            const title = context[0]?.label;
+
+            return title ? this.messageService.get(title) : title;
+        }
+
+        // For other charts, return the label as is (usually dates/times)
+        return context[0]?.label || '';
+    }
+
+    /**
+     * Get tooltip label for pie/doughnut charts
+     */
+    private getPieTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
+        const dataset = context.dataset;
+        const parsedValue = context.parsed;
+        const value = parsedValue;
+        const label = context.label ? this.messageService.get(context.label) : '';
+        const total = dataset.data
+            .filter((val): val is number => typeof val === 'number')
+            .reduce((sum, val) => sum + val, 0);
+        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+
+        return `${label}: ${value} (${percentage}%)`;
+    }
+
+    /**
+     * Get tooltip label for line/bar charts
+     */
+    private getLineTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
+        const dataset = context.dataset;
+        const parsedValue = context.parsed;
+        const value = parsedValue.y ?? parsedValue;
+        const datasetLabel = dataset.label ? this.messageService.get(dataset.label) : '';
+
+        return `${datasetLabel}: ${value}`;
+    }
+
+    ngOnInit(): void {
+        // Watch for mobile breakpoint changes (991px and below to match SCSS)
+        this.breakpointSubscription = this.breakpointObserver
+            .observe('(max-width: 991px)')
+            .subscribe((result) => {
+                this.$isMobile.set(result.matches);
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.breakpointSubscription?.unsubscribe();
+    }
 }
