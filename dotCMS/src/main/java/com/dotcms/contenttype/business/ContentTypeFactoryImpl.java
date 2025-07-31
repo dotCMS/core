@@ -57,7 +57,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import com.dotmarketing.util.SecurityUtils;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
 import static com.liferay.util.StringPool.BLANK;
@@ -767,6 +770,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
     sqlBuilder.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
     
+    // SECURITY: Add safe condition if present
+    if (searchCondition.safeCondition != null) {
+        sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+    }
+    
     // SECURITY: Community edition filter applied via parameterized queries only
     if (searchCondition.isCommunityEdition) {
         sqlBuilder.append(" AND structuretype <> ? AND structuretype <> ? ");
@@ -801,6 +809,16 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(searchCondition.search);                      // inode like ?
     dc.addParam(searchCondition.search.toLowerCase());        // lower(name) like ?
     dc.addParam(searchCondition.search);                      // velocity_var_name like ?
+    
+    // SECURITY: Add safe condition parameter if present
+    if (searchCondition.safeCondition != null) {
+        // Convert value to appropriate type based on field
+        if ("structuretype".equals(searchCondition.safeCondition.field)) {
+            dc.addParam(Integer.parseInt(searchCondition.safeCondition.value));
+        } else {
+            dc.addParam(searchCondition.safeCondition.value);
+        }
+    }
     
     // SECURITY: Add community edition filter parameters
     if (searchCondition.isCommunityEdition) {
@@ -884,7 +902,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
 
-  // SECURITY: Fully parameterized count query - no SQL injection possible
+  // SECURITY: Fully parameterized count query with safe condition support
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
@@ -892,24 +910,56 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     SearchCondition searchCondition = new SearchCondition(search);
     DotConnect dc = new DotConnect();
     
-    // SECURITY: Use appropriate SQL template based on edition
+    // SECURITY: Build SQL with safe condition support
+    String sqlTemplate;
+    if (searchCondition.safeCondition != null) {
+      // Use template with safe condition placeholder
+      if (searchCondition.isCommunityEdition) {
+        sqlTemplate = String.format(this.contentTypeSql.SELECT_COUNT_CONDITION_COMMUNITY_WITH_SAFE, 
+                                   searchCondition.safeCondition.sqlCondition);
+      } else {
+        sqlTemplate = String.format(this.contentTypeSql.SELECT_COUNT_CONDITION_WITH_SAFE, 
+                                   searchCondition.safeCondition.sqlCondition);
+      }
+    } else {
+      // Use standard template without additional conditions
+      if (searchCondition.isCommunityEdition) {
+        sqlTemplate = this.contentTypeSql.SELECT_COUNT_CONDITION_COMMUNITY;
+      } else {
+        sqlTemplate = this.contentTypeSql.SELECT_COUNT_CONDITION;
+      }
+    }
+    
+    dc.setSQL(sqlTemplate);
+    
+    // Add search parameters
+    dc.addParam(searchCondition.search);                          // inode like ?
+    dc.addParam(searchCondition.search.toLowerCase());            // lower(name) like ?
+    dc.addParam(searchCondition.search);                          // velocity_var_name like ?
+    
+    // Add safe condition parameter if present
+    if (searchCondition.safeCondition != null) {
+      // Convert value to appropriate type based on field
+      if ("structuretype".equals(searchCondition.safeCondition.field)) {
+        dc.addParam(Integer.parseInt(searchCondition.safeCondition.value));
+      } else if ("system".equals(searchCondition.safeCondition.field) || 
+                 "fixed".equals(searchCondition.safeCondition.field) ||
+                 "default_structure".equals(searchCondition.safeCondition.field)) {
+        dc.addParam(Boolean.parseBoolean(searchCondition.safeCondition.value));
+      } else {
+        dc.addParam(searchCondition.safeCondition.value);
+      }
+    }
+    
+    // Add community edition filter parameters
     if (searchCondition.isCommunityEdition) {
-      dc.setSQL(this.contentTypeSql.SELECT_COUNT_CONDITION_COMMUNITY);
-      dc.addParam(searchCondition.search);                          // inode like ?
-      dc.addParam(searchCondition.search.toLowerCase());            // lower(name) like ?
-      dc.addParam(searchCondition.search);                          // velocity_var_name like ?
       dc.addParam(BaseContentType.FORM.getType());                  // structuretype <> ?
       dc.addParam(BaseContentType.PERSONA.getType());               // structuretype <> ?
-      dc.addParam(bottom);                                           // structuretype >= ?
-      dc.addParam(top);                                              // structuretype <= ?
-    } else {
-      dc.setSQL(this.contentTypeSql.SELECT_COUNT_CONDITION);
-      dc.addParam(searchCondition.search);                          // inode like ?
-      dc.addParam(searchCondition.search.toLowerCase());            // lower(name) like ?
-      dc.addParam(searchCondition.search);                          // velocity_var_name like ?
-      dc.addParam(bottom);                                           // structuretype >= ?
-      dc.addParam(top);                                              // structuretype <= ?
     }
+    
+    // Add base type range parameters
+    dc.addParam(bottom);                                           // structuretype >= ?
+    dc.addParam(top);                                              // structuretype <= ?
     
     return dc.getInt("test");
   }
@@ -976,29 +1026,149 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
   /**
-   * SECURITY: Safe search term processor that treats all input as search terms only.
-   * No raw SQL conditions are allowed to prevent injection attacks.
+   * SECURITY: Safe search condition processor that supports both text search and parameterized SQL conditions.
+   * Preserves legacy functionality while preventing SQL injection through safe parameterization.
    */
   static class SearchCondition {
     final String search;
     final boolean isCommunityEdition;
+    final SafeCondition safeCondition;
     
-    SearchCondition(final String searchTerm) {
+    SearchCondition(final String searchOrCondition) {
       this.isCommunityEdition = LicenseManager.getInstance().isCommunity();
       
-      if (!UtilMethods.isSet(searchTerm) || searchTerm.equals(PERCENT)) {
+      if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
         this.search = PERCENT;
+        this.safeCondition = null;
+      } else if (containsComparisonOperator(searchOrCondition)) {
+        // SECURITY: Parse comparison operators safely with parameterization
+        this.search = PERCENT;
+        this.safeCondition = SafeCondition.parse(searchOrCondition);
       } else {
-        // SECURITY: Always treat input as search terms, never as SQL conditions
-        this.search = PERCENT + searchTerm + PERCENT;
+        // Regular search term
+        this.search = PERCENT + searchOrCondition + PERCENT;
+        this.safeCondition = null;
       }
+    }
+    
+    /**
+     * SECURITY: Check for comparison operators that indicate SQL condition usage
+     */
+    private boolean containsComparisonOperator(final String searchOrCondition) {
+      return searchOrCondition.contains("<")
+              || searchOrCondition.contains("=")
+              || searchOrCondition.contains(">")
+              || searchOrCondition.toLowerCase().contains(" like ")
+              || searchOrCondition.toLowerCase().contains(" is ");
     }
     
     @Override
     public String toString() {
-      return "SearchCondition [search=" + search + ", isCommunityEdition=" + isCommunityEdition + "]";
+      return "SearchCondition [search=" + search + ", isCommunityEdition=" + isCommunityEdition + 
+             ", safeCondition=" + safeCondition + "]";
     }
 
+  }
+
+  /**
+   * SECURITY: Safe condition parser that converts comparison operators into parameterized SQL.
+   * Prevents SQL injection while preserving comparison functionality.
+   */
+  static class SafeCondition {
+    final String field;
+    final String operator;
+    final String value;
+    final String sqlCondition;
+    
+    private SafeCondition(String field, String operator, String value, String sqlCondition) {
+      this.field = field;
+      this.operator = operator;
+      this.value = value;
+      this.sqlCondition = sqlCondition;
+    }
+    
+    /**
+     * SECURITY: Parse user input into safe parameterized conditions.
+     * Only allows specific safe field names and operators.
+     */
+    static SafeCondition parse(String condition) {
+      if (!UtilMethods.isSet(condition)) {
+        return null;
+      }
+      
+      String trimmed = condition.trim();
+      if (trimmed.toLowerCase().startsWith("and ")) {
+        trimmed = trimmed.substring(4).trim();
+      }
+      
+      // SECURITY: Parse simple comparison patterns safely
+      // Pattern: field operator value
+      String[] patterns = {
+        // structuretype numeric comparisons
+        "structuretype\\s*=\\s*(\\d+)",
+        "structuretype\\s*>\\s*(\\d+)", 
+        "structuretype\\s*<\\s*(\\d+)",
+        "structuretype\\s*>=\\s*(\\d+)",
+        "structuretype\\s*<=\\s*(\\d+)",
+        "structuretype\\s*!=\\s*(\\d+)",
+        "structuretype\\s*<>\\s*(\\d+)",
+        
+        // mod_date comparisons
+        "mod_date\\s*=\\s*'([^']+)'",
+        "mod_date\\s*>\\s*'([^']+)'",
+        "mod_date\\s*<\\s*'([^']+)'",
+        "mod_date\\s*>=\\s*'([^']+)'",
+        "mod_date\\s*<=\\s*'([^']+)'",
+        
+        // string LIKE comparisons
+        "name\\s+like\\s+'([^']+)'",
+        "velocity_var_name\\s+like\\s+'([^']+)'",
+        "description\\s+like\\s+'([^']+)'",
+        "url_map_pattern\\s+like\\s+'([^']+)'",
+        
+        // boolean comparisons
+        "system\\s*=\\s*(true|false)",
+        "fixed\\s*=\\s*(true|false)",
+        "default_structure\\s*=\\s*(true|false)",
+        
+        // string equality comparisons
+        "host\\s*=\\s*'([^']+)'",
+        "folder\\s*=\\s*'([^']+)'"
+      };
+      
+      String[] operators = {"=", ">", "<", ">=", "<=", "!=", "<>", 
+                           "=", ">", "<", ">=", "<=",
+                           "like", "like", "like", "like",
+                           "=", "=", "=",
+                           "=", "="};
+      String[] fields = {"structuretype", "structuretype", "structuretype", "structuretype", "structuretype", 
+                        "structuretype", "structuretype",
+                        "mod_date", "mod_date", "mod_date", "mod_date", "mod_date",
+                        "name", "velocity_var_name", "description", "url_map_pattern",
+                        "system", "fixed", "default_structure",
+                        "host", "folder"};
+      
+      for (int i = 0; i < patterns.length; i++) {
+        Pattern pattern = Pattern.compile(patterns[i], Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(trimmed);
+        if (matcher.find()) {
+          String value = matcher.group(1);
+          // SECURITY: Build parameterized SQL condition
+          String sqlCondition = fields[i] + " " + operators[i] + " ?";
+          return new SafeCondition(fields[i], operators[i], value, sqlCondition);
+        }
+      }
+      
+      // SECURITY: If no safe pattern matches, return null (will be ignored)
+      Logger.warn(SafeCondition.class, 
+        "Unsafe or unsupported condition pattern rejected: " + SecurityUtils.sanitizeForLogging(condition));
+      return null;
+    }
+    
+    @Override
+    public String toString() {
+      return "SafeCondition[field=" + field + ", operator=" + operator + ", value=" + value + "]";
+    }
   }
 
   static class CleanURLMap {
