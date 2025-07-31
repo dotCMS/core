@@ -72,7 +72,7 @@ public abstract class ContentTypeSql {
 			+ "metadata=? "
 			+ "where inode=?";
 
-	// SECURITY: Removed String.format injection point - now fully parameterized
+	// SECURITY: Fully parameterized count query templates
 	public static final String SELECT_COUNT_CONDITION = "select count(*) as test from structure, inode "
 			+ "where inode.type='structure' and inode.inode=structure.inode and "
 			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
@@ -83,6 +83,22 @@ public abstract class ContentTypeSql {
 	public static final String SELECT_COUNT_CONDITION_COMMUNITY = "select count(*) as test from structure, inode "
 			+ "where inode.type='structure' and inode.inode=structure.inode and "
 			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
+			+ " and structuretype <> ? and structuretype <> ? "
+			+ " and structuretype>=? and structuretype<= ?"
+			+  NON_MARKED_FOR_DELETION;
+
+	// SECURITY: Count templates with additional safe condition support
+	public static final String SELECT_COUNT_CONDITION_WITH_SAFE = "select count(*) as test from structure, inode "
+			+ "where inode.type='structure' and inode.inode=structure.inode and "
+			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
+			+ " and %s " // Safe condition placeholder
+			+ " and structuretype>=? and structuretype<= ?"
+			+  NON_MARKED_FOR_DELETION;
+	
+	public static final String SELECT_COUNT_CONDITION_COMMUNITY_WITH_SAFE = "select count(*) as test from structure, inode "
+			+ "where inode.type='structure' and inode.inode=structure.inode and "
+			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
+			+ " and %s " // Safe condition placeholder  
 			+ " and structuretype <> ? and structuretype <> ? "
 			+ " and structuretype>=? and structuretype<= ?"
 			+  NON_MARKED_FOR_DELETION;
