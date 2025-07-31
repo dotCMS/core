@@ -251,7 +251,7 @@
                 <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
             </div>
 
-            <script>
+            <script type="text/javascript">
 
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (
@@ -262,21 +262,18 @@
                         const proseMirror = blockEditor.querySelector('.ProseMirror');
                         blockEditor.id = "block-editor-<%=field.getVelocityVarName()%>";
 
-                        const editorValue = <%=value%> || null;
+                        const editorValue = <%=safeTextValue%> || null;
                         let content;
 
-                        /**
-                         * If the value is a string, we need to convert it to HTML
-                         * using showdown.
-                         * If the value is an object, it means that the value is already Block Editor's
-                         */
-                        if (typeof editorValue === 'string') {
-                            const text = editorValue.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+                        try {
+                            content = JSON.parse(editorValue);
+                        } catch (e) {
+                            // If it can't be parsed as a JSON, then it means that the value is a string
+                              const text = editorValue.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
                             const converter = new showdown.Converter({ tables: true });
                             content = converter.makeHtml(text || '');
-                        } else {
-                            content = editorValue;
                         }
+
 
                         // Set current value in the hidden field
                         field.value = content || '';
@@ -292,7 +289,7 @@
                          * to the editor.
                          */
                         blockEditor.addEventListener('valueChange', ({ detail }) => {
-                            field.value = !detail ? null : JSON.stringify(detail);;
+                            field.value = !detail ? null : JSON.stringify(detail);
                         });
 
                         //
