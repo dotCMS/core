@@ -25,10 +25,10 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class SecurityThreatLogger {
 
-    // Rate limiting configuration
-    private static final long RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
-    private static final int MAX_LOGGED_THREATS_PER_MINUTE = 10;
-    private static final int MAX_INPUT_LENGTH_FOR_LOGGING = 200;
+    // Configurable rate limiting settings
+    private static final long RATE_LIMIT_WINDOW_MS = Config.getLongProperty("security.threat.logger.rate.limit.window.ms", 60000L); // Default: 1 minute
+    private static final int MAX_LOGGED_THREATS_PER_MINUTE = Config.getIntProperty("security.threat.logger.max.threats.per.minute", 10); // Default: 10 per minute
+    private static final int MAX_INPUT_LENGTH_FOR_LOGGING = Config.getIntProperty("security.threat.logger.max.input.length", 200); // Default: 200 chars
 
     // Thread-safe rate limiting storage
     private static final ConcurrentHashMap<String, AtomicLong> THREAT_LOG_COUNTERS = new ConcurrentHashMap<>();
