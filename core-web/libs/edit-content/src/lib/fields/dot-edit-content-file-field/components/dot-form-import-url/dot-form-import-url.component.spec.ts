@@ -73,7 +73,7 @@ describe('DotFormImportUrlComponent', () => {
             expect(dialogRef.close).toHaveBeenCalledWith(mockPreviewFile);
         });
 
-        fit('should disable and enable the form when isLoading is truthy', () => {
+        it('should disable and enable the form when isLoading is truthy', () => {
             spectator.detectChanges();
             const disableSpy = jest.spyOn(spectator.component.form, 'disable');
             const enableSpy = jest.spyOn(spectator.component.form, 'enable');

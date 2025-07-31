@@ -2,7 +2,7 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
 
-import { fakeAsync, tick } from '@angular/core/testing';
+import { fakeAsync } from '@angular/core/testing';
 
 import { withUI } from './ui.feature';
 
