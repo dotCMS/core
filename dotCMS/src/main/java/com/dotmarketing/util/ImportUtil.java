@@ -402,7 +402,7 @@ public class ImportUtil {
                         LineImportResultBuilder resultBuilder = null;
 
                         // Check for cancellation
-                        if (ImportAuditUtil.isImportCancelled(params.importId())) {
+                        if (ImportAuditUtil.cancelledImports.containsKey(params.importId())) {
                             messages.add(ValidationMessage.builder()
                                     .type(ValidationMessageType.INFO)
                                     .lineNumber(lineNumber)
