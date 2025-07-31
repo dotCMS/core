@@ -767,9 +767,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
     sqlBuilder.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
     
-    // Add search condition if present (already sanitized)
-    if (UtilMethods.isSet(searchCondition.condition)) {
-        sqlBuilder.append(SQLUtil.sanitizeCondition(searchCondition.condition));
+    // SECURITY: Community edition filter applied via parameterized queries only
+    if (searchCondition.isCommunityEdition) {
+        sqlBuilder.append(" AND structuretype <> ? AND structuretype <> ? ");
     }
     
     // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
@@ -801,6 +801,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(searchCondition.search);                      // inode like ?
     dc.addParam(searchCondition.search.toLowerCase());        // lower(name) like ?
     dc.addParam(searchCondition.search);                      // velocity_var_name like ?
+    
+    // SECURITY: Add community edition filter parameters
+    if (searchCondition.isCommunityEdition) {
+        dc.addParam(BaseContentType.FORM.getType());           // structuretype <> ?
+        dc.addParam(BaseContentType.PERSONA.getType());        // structuretype <> ?
+    }
     
     // Add site parameters for LIKE clauses (substring matching with escaping)
     if (!validatedSites.isEmpty()) {
@@ -852,38 +858,25 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     /**
-     * SECURITY: Simplified site validation that returns only valid site IDs.
-     * Used for exact matching queries (host = ?).
+     * SECURITY: Site validation that filters out invalid site IDs.
+     * Used for LIKE pattern matching queries (host LIKE ? ESCAPE '\\').
+     * Behavior aligned with HostUtil.resolveSiteIds() for consistency.
      */
-    private List<String> validateSiteIds(final List<String> siteIds) throws DotSecurityException {
+    private List<String> validateSiteIds(final List<String> siteIds) {
         if (UtilMethods.isNotSet(siteIds)) {
             return Collections.emptyList(); // Will match all hosts
         }
         
         List<String> validSites = new ArrayList<>();
-        boolean hasInvalidSites = false;
         
-        // SECURITY: Validate site IDs for exact matching (no LIKE escaping needed)
+        // SECURITY: Validate site IDs for LIKE pattern matching
         for (String siteId : siteIds) {
-            if (siteId != null) {
-                // Use basic validation without LIKE escaping since we're doing exact matches
-                if (IdentifierValidator.isValid(siteId, IdentifierValidator.SITE_PROFILE)) {
-                    validSites.add(siteId); // Use original unescaped site ID for exact match
-                } else {
-                    hasInvalidSites = true;
-                    Logger.warn(this, "Invalid site ID rejected during validation: " + siteId);
-                }
+            if (siteId != null && IdentifierValidator.isValid(siteId, IdentifierValidator.SITE_PROFILE)) {
+                validSites.add(siteId);
             } else {
-                hasInvalidSites = true;
-                Logger.warn(this, "Null site ID provided");
+                // SECURITY: Do not log user input to prevent log injection
+                Logger.warn(this, "Invalid site identifier rejected during validation");
             }
-        }
-        
-        // SECURITY: If ANY site IDs are invalid, this indicates a potentially malicious request.
-        // Per security requirements: reject the entire request rather than processing partial results.
-        if (hasInvalidSites) {
-            Logger.warn(this, "Request contained invalid site IDs - rejecting entire request for security");
-            throw new DotSecurityException("Invalid site identifiers provided in request");
         }
         
         return validSites;
@@ -891,24 +884,33 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
 
+  // SECURITY: Fully parameterized count query - no SQL injection possible
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
-
-    search = LicenseManager.getInstance().isCommunity() 
-                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() +" and structuretype <> " + BaseContentType.PERSONA.getType() 
-                    : search;
-    
     
     SearchCondition searchCondition = new SearchCondition(search);
-
     DotConnect dc = new DotConnect();
-    dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
-    dc.addParam( searchCondition.search );
-    dc.addParam( searchCondition.search.toLowerCase());
-    dc.addParam( searchCondition.search );
-    dc.addParam(bottom);
-    dc.addParam(top);
+    
+    // SECURITY: Use appropriate SQL template based on edition
+    if (searchCondition.isCommunityEdition) {
+      dc.setSQL(this.contentTypeSql.SELECT_COUNT_CONDITION_COMMUNITY);
+      dc.addParam(searchCondition.search);                          // inode like ?
+      dc.addParam(searchCondition.search.toLowerCase());            // lower(name) like ?
+      dc.addParam(searchCondition.search);                          // velocity_var_name like ?
+      dc.addParam(BaseContentType.FORM.getType());                  // structuretype <> ?
+      dc.addParam(BaseContentType.PERSONA.getType());               // structuretype <> ?
+      dc.addParam(bottom);                                           // structuretype >= ?
+      dc.addParam(top);                                              // structuretype <= ?
+    } else {
+      dc.setSQL(this.contentTypeSql.SELECT_COUNT_CONDITION);
+      dc.addParam(searchCondition.search);                          // inode like ?
+      dc.addParam(searchCondition.search.toLowerCase());            // lower(name) like ?
+      dc.addParam(searchCondition.search);                          // velocity_var_name like ?
+      dc.addParam(bottom);                                           // structuretype >= ?
+      dc.addParam(top);                                              // structuretype <= ?
+    }
+    
     return dc.getInt("test");
   }
 
@@ -974,50 +976,27 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
   /**
-   * parses legacy conditions passed in as raw sql
-   *
-   * @author root
-   *
+   * SECURITY: Safe search term processor that treats all input as search terms only.
+   * No raw SQL conditions are allowed to prevent injection attacks.
    */
   static class SearchCondition {
     final String search;
-    final String condition;
-
-    final String appendCondition = LicenseManager.getInstance().isCommunity() 
-                    ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
-                    : BLANK;
-
-    SearchCondition(final String searchOrCondition) {
-      if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
-        this.condition = appendCondition;
+    final boolean isCommunityEdition;
+    
+    SearchCondition(final String searchTerm) {
+      this.isCommunityEdition = LicenseManager.getInstance().isCommunity();
+      
+      if (!UtilMethods.isSet(searchTerm) || searchTerm.equals(PERCENT)) {
         this.search = PERCENT;
-      } else if (this.containsComparisonOperator(searchOrCondition)) {
-        this.search = PERCENT;
-        this.condition = searchOrCondition.toLowerCase().trim().startsWith("and")
-                ? searchOrCondition
-                : "AND " + searchOrCondition + appendCondition;
       } else {
-        this.condition = appendCondition;
-        this.search = PERCENT + searchOrCondition + PERCENT;
+        // SECURITY: Always treat input as search terms, never as SQL conditions
+        this.search = PERCENT + searchTerm + PERCENT;
       }
     }
-
-    /**
-    *
-    * @param searchOrCondition
-    * @return
-    */
-    private boolean containsComparisonOperator(final String searchOrCondition) {
-      return searchOrCondition.contains("<")
-              || searchOrCondition.contains("=")
-              || searchOrCondition.contains(">")
-              || searchOrCondition.toLowerCase().contains(" like ")
-              || searchOrCondition.toLowerCase().contains(" is ");
-    }
-
+    
     @Override
     public String toString() {
-      return "SearchCondition [search=" + search + ", condition=" + condition + "]";
+      return "SearchCondition [search=" + search + ", isCommunityEdition=" + isCommunityEdition + "]";
     }
 
   }
