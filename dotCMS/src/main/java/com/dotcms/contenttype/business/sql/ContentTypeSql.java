@@ -72,10 +72,18 @@ public abstract class ContentTypeSql {
 			+ "metadata=? "
 			+ "where inode=?";
 
+	// SECURITY: Removed String.format injection point - now fully parameterized
 	public static final String SELECT_COUNT_CONDITION = "select count(*) as test from structure, inode "
 			+ "where inode.type='structure' and inode.inode=structure.inode and "
 			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
-			+ " %s" //if we have a condition
+			+ " and structuretype>=? and structuretype<= ?"
+			+  NON_MARKED_FOR_DELETION;
+	
+	// SECURITY: Community edition filter for content types
+	public static final String SELECT_COUNT_CONDITION_COMMUNITY = "select count(*) as test from structure, inode "
+			+ "where inode.type='structure' and inode.inode=structure.inode and "
+			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
+			+ " and structuretype <> ? and structuretype <> ? "
 			+ " and structuretype>=? and structuretype<= ?"
 			+  NON_MARKED_FOR_DELETION;
 
