@@ -460,8 +460,8 @@ describe('SearchComponent', () => {
             expect(label).toBe('site123');
         });
 
-        it('should truncate long labels to 70 characters', () => {
-            const longLabel = 'a'.repeat(75);
+        it('should truncate long labels to 45 characters', () => {
+            const longLabel = 'a'.repeat(45);
             const mockSiteField = {
                 siteControl: {
                     value: {
@@ -473,7 +473,7 @@ describe('SearchComponent', () => {
             jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
 
             const label = component['getSiteDisplayLabel']('site123');
-            expect(label).toBe(longLabel.substring(0, 70) + '...');
+            expect(label).toBe(longLabel.substring(0, 45) + '...');
         });
     });
 

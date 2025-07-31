@@ -16,6 +16,12 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 
+interface ActiveFilter {
+    label: string;
+    value: string | number;
+    type: string;
+}
+
 /**
  * A standalone component that provides search functionality with language and site filtering.
  * This component includes a search input field and advanced filtering options through an overlay panel.
@@ -41,23 +47,24 @@ import { SiteFieldComponent } from './components/site-field/site-field.component
         InputGroupAddonModule,
         ChipModule
     ],
+    styleUrls: ['./search.component.scss'],
     templateUrl: './search.component.html'
 })
 export class SearchComponent {
     /**
      * Reference to the OverlayPanel component used for advanced search options.
      */
-    $overlayPanel = viewChild(OverlayPanel);
+    $overlayPanel = viewChild.required(OverlayPanel);
 
     /**
      * Reference to the language field component to access its store.
      */
-    $languageField = viewChild(LanguageFieldComponent);
+    $languageField = viewChild.required(LanguageFieldComponent);
 
     /**
      * Reference to the site field component to access its store.
      */
-    $siteField = viewChild(SiteFieldComponent);
+    $siteField = viewChild.required(SiteFieldComponent);
 
     /**
      * Output signal that emits search parameters when the search is performed.
@@ -81,12 +88,12 @@ export class SearchComponent {
      */
     $activeFilters = computed(() => {
         const searchParams = this.$activeSearchParams();
-        const filters = [];
+        const filters: ActiveFilter[] = [];
 
         if (!searchParams.systemSearchableFields) return filters;
 
         // Language filter
-        const languageId = searchParams.systemSearchableFields.languageId;
+        const languageId = searchParams.systemSearchableFields.languageId as number;
         if (languageId && languageId !== -1) {
             filters.push({
                 label: this.getLanguageDisplayLabel(languageId as number),
@@ -261,7 +268,7 @@ export class SearchComponent {
      * Gets a display-friendly label for the site/folder filter.
      *
      * @param siteOrFolderId - The site or folder ID in format "type:id"
-     * @returns A formatted label for display, truncated to 70 characters with ellipsis if needed
+     * @returns A formatted label for display, truncated to 45 characters with ellipsis if needed
      */
     private getSiteDisplayLabel(siteOrFolderId: string): string {
         const siteFieldValue = this.$siteField()?.siteControl?.value as TreeNodeItem;
@@ -275,7 +282,7 @@ export class SearchComponent {
             label = siteOrFolderId;
         }
 
-        // Truncate if longer than 70 characters
-        return label.length > 70 ? label.substring(0, 70) + '...' : label;
+        // Truncate if 45 characters or longer
+        return label.length >= 45 ? label.substring(0, 45) + '...' : label;
     }
 }
