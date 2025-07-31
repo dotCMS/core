@@ -29,6 +29,11 @@ public final class SecurityThreatLogger {
     private static final long RATE_LIMIT_WINDOW_MS = Config.getLongProperty("security.threat.logger.rate.limit.window.ms", 60000L); // Default: 1 minute
     private static final int MAX_LOGGED_THREATS_PER_MINUTE = Config.getIntProperty("security.threat.logger.max.threats.per.minute", 10); // Default: 10 per minute
     private static final int MAX_INPUT_LENGTH_FOR_LOGGING = Config.getIntProperty("security.threat.logger.max.input.length", 200); // Default: 200 chars
+    
+    // Rate limiting encoding constants
+    private static final int MAX_SUPPORTED_THREAT_COUNT = Integer.MAX_VALUE; // ~2.1 billion threats per minute
+    private static final long MINUTE_MASK = 0xFFFFFFFF00000000L; // High 32 bits for minute
+    private static final long COUNT_MASK = 0x00000000FFFFFFFFL;  // Low 32 bits for count
 
     // Thread-safe rate limiting storage
     private static final ConcurrentHashMap<String, AtomicLong> THREAT_LOG_COUNTERS = new ConcurrentHashMap<>();
@@ -39,6 +44,36 @@ public final class SecurityThreatLogger {
     // Private constructor to prevent instantiation
     private SecurityThreatLogger() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
+    }
+    
+    // Static initialization block to validate configuration
+    static {
+        validateConfiguration();
+    }
+    
+    /**
+     * Validates the security threat logger configuration to ensure it's within supported limits.
+     * 
+     * @throws IllegalStateException if configuration is invalid
+     */
+    private static void validateConfiguration() {
+        if (MAX_LOGGED_THREATS_PER_MINUTE <= 0) {
+            throw new IllegalStateException("security.threat.logger.max.threats.per.minute must be greater than 0");
+        }
+        
+        if (MAX_LOGGED_THREATS_PER_MINUTE > MAX_SUPPORTED_THREAT_COUNT) {
+            throw new IllegalStateException(
+                "security.threat.logger.max.threats.per.minute (" + MAX_LOGGED_THREATS_PER_MINUTE + 
+                ") exceeds maximum supported value (" + MAX_SUPPORTED_THREAT_COUNT + ")");
+        }
+        
+        if (RATE_LIMIT_WINDOW_MS <= 0) {
+            throw new IllegalStateException("security.threat.logger.rate.limit.window.ms must be greater than 0");
+        }
+        
+        Logger.info(SecurityThreatLogger.class, 
+            "SecurityThreatLogger initialized with rate limit: " + MAX_LOGGED_THREATS_PER_MINUTE + 
+            " threats per " + (RATE_LIMIT_WINDOW_MS / 1000) + " seconds");
     }
 
     /**
@@ -157,12 +192,12 @@ public final class SecurityThreatLogger {
         long currentValue, newValue;
         do {
             currentValue = counter.get();
-            long storedMinute = currentValue / 1000; // Extract minute from high bits
-            long threatCount = currentValue % 1000;  // Extract count from low bits
+            long storedMinute = (currentValue & MINUTE_MASK) >> 32; // Extract minute from high 32 bits
+            long threatCount = currentValue & COUNT_MASK; // Extract count from low 32 bits
             
             if (currentMinute > storedMinute) {
                 // Reset counter for new minute
-                newValue = currentMinute * 1000 + 1;
+                newValue = (currentMinute << 32) | 1L;
             } else {
                 // Check rate limit before incrementing
                 if (threatCount >= MAX_LOGGED_THREATS_PER_MINUTE) {
@@ -216,7 +251,7 @@ public final class SecurityThreatLogger {
             long cutoffTime = (System.currentTimeMillis() / RATE_LIMIT_WINDOW_MS) - maxAgeMinutes;
             
             THREAT_LOG_COUNTERS.entrySet().removeIf(entry -> {
-                long storedMinute = entry.getValue().get() / 1000;
+                long storedMinute = (entry.getValue().get() & MINUTE_MASK) >> 32; // Extract minute from high 32 bits
                 return storedMinute < cutoffTime;
             });
             
@@ -235,5 +270,15 @@ public final class SecurityThreatLogger {
      */
     public static int getRateLimitEntryCount() {
         return THREAT_LOG_COUNTERS.size();
+    }
+    
+    /**
+     * Gets the current rate limiting configuration for monitoring purposes.
+     * 
+     * @return String representation of current rate limiting configuration
+     */
+    public static String getRateLimitConfiguration() {
+        return String.format("Max threats per minute: %d, Window: %d ms, Supported max: %d", 
+                           MAX_LOGGED_THREATS_PER_MINUTE, RATE_LIMIT_WINDOW_MS, MAX_SUPPORTED_THREAT_COUNT);
     }
 }
