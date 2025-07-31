@@ -40,11 +40,6 @@ import java.util.regex.Pattern;
 import static com.liferay.util.StringPool.SPACE;
 
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Array;
-import java.util.Arrays;
-import java.util.Collections;
 
 /**
  * Utility class for sanitizing, tokenizing, and providing several common-use methods to create,
@@ -512,91 +507,5 @@ public class SQLUtil {
 		return orderByParam;
 	}
 
-    /**
-     * SECURITY: Create safe parameterized IN clause for ArrayList parameters.
-     * Handles both databases that support setArray() and those that don't (like MySQL).
-     * 
-     * @param connection Database connection
-     * @param parameterValues List of values for the IN clause
-     * @param sqlType SQL type (e.g., "VARCHAR", "BIGINT")
-     * @return SafeInClause containing the SQL fragment and how to set parameters
-     */
-    public static SafeInClause createSafeInClause(Connection connection, List<String> parameterValues, String sqlType) {
-        if (parameterValues == null || parameterValues.isEmpty()) {
-            throw new IllegalArgumentException("Parameter values cannot be null or empty for IN clause");
-        }
-
-        try {
-            // Try to use setArray() for databases that support it (PostgreSQL, H2, etc.)
-            Array array = connection.createArrayOf(sqlType, parameterValues.toArray());
-            return new SafeInClause(" = ANY(?)", Arrays.asList(array), true);
-        } catch (SQLException | AbstractMethodError e) {
-            // Fall back to multiple ? placeholders for MySQL and other databases
-            String placeholders = String.join(",", Collections.nCopies(parameterValues.size(), "?"));
-            return new SafeInClause(" IN (" + placeholders + ")", new ArrayList<>(parameterValues), false);
-        }
-    }
-
-    /**
-     * SECURITY: Create safe parameterized IN clause for Long/Integer ArrayList parameters.
-     */
-    public static SafeInClause createSafeInClauseForNumbers(Connection connection, List<? extends Number> parameterValues) {
-        if (parameterValues == null || parameterValues.isEmpty()) {
-            throw new IllegalArgumentException("Parameter values cannot be null or empty for IN clause");
-        }
-
-        try {
-            // Convert numbers to strings for array creation
-            String[] stringValues = parameterValues.stream()
-                .map(String::valueOf)
-                .toArray(String[]::new);
-            Array array = connection.createArrayOf("BIGINT", stringValues);
-            return new SafeInClause(" = ANY(?)", Arrays.asList(array), true);
-        } catch (SQLException | AbstractMethodError e) {
-            // Fall back to multiple ? placeholders
-            String placeholders = String.join(",", Collections.nCopies(parameterValues.size(), "?"));
-            return new SafeInClause(" IN (" + placeholders + ")", new ArrayList<>(parameterValues), false);
-        }
-    }
-
-    /**
-     * Helper class to encapsulate safe IN clause information
-     */
-    public static class SafeInClause {
-        public final String sqlFragment;
-        public final List<Object> parameters;
-        public final boolean usesArray;
-
-        public SafeInClause(String sqlFragment, List<Object> parameters, boolean usesArray) {
-            this.sqlFragment = sqlFragment;
-            this.parameters = parameters;
-            this.usesArray = usesArray;
-        }
-
-        /**
-         * Set parameters on a PreparedStatement starting at the given index
-         * @param stmt PreparedStatement to set parameters on
-         * @param startIndex Starting parameter index (1-based)
-         * @return Next available parameter index
-         */
-        public int setParameters(PreparedStatement stmt, int startIndex) throws SQLException {
-            if (usesArray) {
-                stmt.setArray(startIndex, (Array) parameters.get(0));
-                return startIndex + 1;
-            } else {
-                for (int i = 0; i < parameters.size(); i++) {
-                    Object param = parameters.get(i);
-                    if (param instanceof String) {
-                        stmt.setString(startIndex + i, (String) param);
-                    } else if (param instanceof Number) {
-                        stmt.setLong(startIndex + i, ((Number) param).longValue());
-                    } else {
-                        stmt.setObject(startIndex + i, param);
-                    }
-                }
-                return startIndex + parameters.size();
-            }
-        }
-    }
 
 }
