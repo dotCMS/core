@@ -122,28 +122,6 @@ public final class IdentifierValidator {
     }
 
     /**
-     * Sanitizes an identifier for use in SQL LIKE patterns.
-     * 
-     * @param identifier The identifier to sanitize
-     * @param profile The validation profile to use
-     * @return the sanitized identifier safe for LIKE queries, or null if invalid
-     */
-    public static String sanitizeForSQLLike(final String identifier, final ValidationProfile profile) {
-        if (UtilMethods.isNotSet(identifier)) {
-            return null;
-        }
-        
-        if (!isValid(identifier, profile)) {
-            return null;
-        }
-        
-        // Escape LIKE wildcards
-        return identifier.replace("\\", "\\\\")
-                        .replace("%", "\\%")
-                        .replace("_", "\\_");
-    }
-
-    /**
      * Logs suspicious identifier validation failures for threat intelligence.
      */
     private static void logSuspiciousIdentifier(final String identifier, final String reason, final String context) {
