@@ -404,6 +404,20 @@ public abstract class ContentletFactory {
      */
     public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException, DotSecurityException;
 
+    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param identifier
+     * @param bringOldVersions
+     * @param limit
+     * @param offset
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset, final String orderBy, final String orderDirection) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Retrieves all versions for a list of contentlet identifiers
 	 * @param identifiers

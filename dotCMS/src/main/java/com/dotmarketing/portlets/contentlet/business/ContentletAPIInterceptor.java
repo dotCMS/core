@@ -35,6 +35,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
+import org.elasticsearch.action.search.SearchResponse;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -44,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.elasticsearch.action.search.SearchResponse;
 
 /**
  * This interceptor class allows developers to execute Java <b>code</b> before
@@ -885,7 +886,26 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	@Override
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final User user, final boolean respectFrontendRoles,
+                                            final int limit, final int offset) throws DotSecurityException, DotDataException, DotStateException {
+        for (final ContentletAPIPreHook pre : preHooks) {
+            final boolean preResult = pre.findAllVersions(identifier, bringOldVersions, user, respectFrontendRoles, limit, offset);
+            if (!preResult) {
+                final String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+                Logger.error(this, errorMessage);
+                throw new DotRuntimeException(errorMessage);
+            }
+        }
+        final List<Contentlet> c = conAPI.findAllVersions(identifier, bringOldVersions, user, respectFrontendRoles, limit, offset);
+        for (final ContentletAPIPostHook post : postHooks) {
+            post.findAllVersions(identifier, bringOldVersions, user, respectFrontendRoles, limit, offset, c);
+        }
+        return c;
+    }
+
+    @Override
 	public List<Contentlet> findByStructure(Structure structure, User user,	boolean respectFrontendRoles, int limit, int offset)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findByStructure(structure, user, respectFrontendRoles, limit, offset);
