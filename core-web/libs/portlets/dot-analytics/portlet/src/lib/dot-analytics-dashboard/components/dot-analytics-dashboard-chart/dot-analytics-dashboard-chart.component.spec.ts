@@ -255,7 +255,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
 
             const errorElement = spectator.query('.chart-error');
             expect(errorElement).toExist();
-            expect(spectator.query('.error-message')).toExist();
+            expect(spectator.query('dot-analytics-state-message')).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
 
@@ -331,14 +331,76 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             });
             expect(spectator.component['$isError']()).toBe(false);
         });
+
+        it('should correctly identify empty state', () => {
+            // Test with empty datasets
+            const emptyData: ChartData = {
+                labels: [],
+                datasets: []
+            };
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: emptyData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            // Test with datasets but no data
+            const noDataChartData: ChartData = {
+                labels: ['January', 'February'],
+                datasets: [
+                    {
+                        label: 'Test',
+                        data: [],
+                        borderColor: 'red'
+                    }
+                ]
+            };
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: noDataChartData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            // Test with valid data
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: mockChartData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+            expect(spectator.component['$isEmpty']()).toBe(false);
+        });
     });
 
     describe('Chart Options Configuration', () => {
-        it('should have default chart options', () => {
+        it('should have default chart options with hidden legend for line charts', () => {
+            // This test uses 'line' chart type by default (set in beforeEach)
             const options = spectator.component['$chartOptions']();
 
             expect(options.responsive).toBe(true);
             expect(options.maintainAspectRatio).toBe(false);
+            // Line charts should have hidden legend
+            expect(options.plugins?.legend?.display).toBe(false);
+            expect(options.plugins?.legend?.position).toBe('bottom');
+        });
+
+        it('should show legend for non-line chart types', () => {
+            // Update component to use a different chart type
+            spectator.setInput('type', 'bar');
+            spectator.detectChanges();
+
+            const options = spectator.component['$chartOptions']();
+
+            expect(options.responsive).toBe(true);
+            expect(options.maintainAspectRatio).toBe(false);
+            // Non-line charts should show legend
             expect(options.plugins?.legend?.display).toBe(true);
             expect(options.plugins?.legend?.position).toBe('bottom');
         });
@@ -361,6 +423,59 @@ describe('DotAnalyticsDashboardChartComponent', () => {
 
             expect(spectator.component.$width()).toBe('600px');
             expect(spectator.component.$height()).toBe('400px');
+        });
+    });
+
+    describe('Empty State', () => {
+        it('should show empty state when data is empty', () => {
+            const emptyData: ChartData = {
+                labels: [],
+                datasets: []
+            };
+
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: emptyData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const emptyState = spectator.query('.chart-empty');
+            expect(emptyState).toExist();
+            expect(spectator.query(UIChart)).not.toExist();
+        });
+
+        it('should show empty state icon and messages', () => {
+            const emptyData: ChartData = {
+                labels: [],
+                datasets: []
+            };
+
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: emptyData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
+        });
+
+        it('should not show empty state when data is available', () => {
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: mockChartData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const emptyState = spectator.query('.chart-empty');
+            expect(emptyState).not.toExist();
+            expect(spectator.query(UIChart)).toExist();
         });
     });
 });

@@ -5,8 +5,9 @@ import {
     Granularity,
     MeasureField,
     OrderField,
-    SortDirection
-} from '../../types/cubequery.types';
+    SortDirection,
+    TimeRangeInput
+} from '../../types';
 
 /**
  * Simple CubeJS Query Builder for the 6 specific analytics requests
@@ -58,17 +59,33 @@ export class CubeQueryBuilder {
     }
 
     /**
-     * Add time range
+     * Add time range - automatically detects TimeRange string vs DateRange array
      */
     timeRange(
         dimension: DimensionField,
-        dateRange: string,
+        timeRangeInput: TimeRangeInput,
         granularity?: Granularity
     ): CubeQueryBuilder {
         const prefixedDimension = dimension.startsWith('request.')
             ? dimension
             : `request.${dimension}`;
-        const timeDimension: CubeJSTimeDimension = { dimension: prefixedDimension, dateRange };
+
+        let dateRangeValue: string | [string, string];
+
+        // Detect if it's a DateRange array or TimeRange string
+        if (Array.isArray(timeRangeInput)) {
+            // It's a DateRange array - use as tuple for CubeJS
+            dateRangeValue = timeRangeInput as [string, string];
+        } else {
+            // It's a TimeRange string - use as-is
+            dateRangeValue = timeRangeInput as string;
+        }
+
+        const timeDimension: CubeJSTimeDimension = {
+            dimension: prefixedDimension,
+            dateRange: dateRangeValue
+        };
+
         if (granularity) {
             timeDimension.granularity = granularity;
         }

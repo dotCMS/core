@@ -1,5 +1,7 @@
 import { CubeQueryBuilder, createCubeQuery } from './cube-query-builder.util';
 
+import { TimeRangeOptions } from '../../types';
+
 describe('CubeQueryBuilder', () => {
     let builder: CubeQueryBuilder;
 
@@ -53,21 +55,23 @@ describe('CubeQueryBuilder', () => {
 
     describe('Time Range', () => {
         it('should add time range with string date range', () => {
-            const query = builder.timeRange('createdAt', 'last 1 week').build();
+            const query = builder.timeRange('createdAt', TimeRangeOptions.LAST_7_DAYS).build();
             expect(query.timeDimensions).toEqual([
                 {
                     dimension: 'request.createdAt',
-                    dateRange: 'last 1 week'
+                    dateRange: TimeRangeOptions.LAST_7_DAYS
                 }
             ]);
         });
 
         it('should add time range with granularity', () => {
-            const query = builder.timeRange('createdAt', 'last 12 weeks', 'week').build();
+            const query = builder
+                .timeRange('createdAt', TimeRangeOptions.LAST_30_DAYS, 'week')
+                .build();
             expect(query.timeDimensions).toEqual([
                 {
                     dimension: 'request.createdAt',
-                    dateRange: 'last 12 weeks',
+                    dateRange: TimeRangeOptions.LAST_30_DAYS,
                     granularity: 'week'
                 }
             ]);
@@ -98,7 +102,7 @@ describe('CubeQueryBuilder', () => {
             const query = createCubeQuery()
                 .measures(['totalRequest'])
                 .pageviews()
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TimeRangeOptions.LAST_7_DAYS)
                 .build();
 
             expect(query).toEqual({
@@ -113,7 +117,7 @@ describe('CubeQueryBuilder', () => {
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TimeRangeOptions.LAST_7_DAYS
                     }
                 ]
             });
@@ -123,7 +127,7 @@ describe('CubeQueryBuilder', () => {
             const query = createCubeQuery()
                 .measures(['totalSessions'])
                 .pageviews()
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TimeRangeOptions.LAST_7_DAYS)
                 .build();
 
             expect(query).toEqual({
@@ -138,7 +142,7 @@ describe('CubeQueryBuilder', () => {
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TimeRangeOptions.LAST_7_DAYS
                     }
                 ]
             });
@@ -149,7 +153,7 @@ describe('CubeQueryBuilder', () => {
                 .measures(['totalRequest'])
                 .pageviews()
                 .orderBy('totalRequest', 'desc')
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TimeRangeOptions.LAST_7_DAYS)
                 .limit(1)
                 .build();
 
@@ -166,7 +170,7 @@ describe('CubeQueryBuilder', () => {
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TimeRangeOptions.LAST_7_DAYS
                     }
                 ],
                 limit: 1
@@ -178,7 +182,7 @@ describe('CubeQueryBuilder', () => {
                 .measures(['totalRequest'])
                 .pageviews()
                 .orderBy('createdAt', 'asc')
-                .timeRange('createdAt', 'last 1 week', 'day')
+                .timeRange('createdAt', TimeRangeOptions.LAST_7_DAYS, 'day')
                 .build();
 
             expect(query).toEqual({
@@ -194,7 +198,7 @@ describe('CubeQueryBuilder', () => {
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week',
+                        dateRange: TimeRangeOptions.LAST_7_DAYS,
                         granularity: 'day'
                     }
                 ]
@@ -207,7 +211,7 @@ describe('CubeQueryBuilder', () => {
                 .measures(['totalRequest'])
                 .pageviews()
                 .orderBy('totalRequest', 'desc')
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TimeRangeOptions.LAST_7_DAYS)
                 .limit(10)
                 .build();
 
@@ -225,7 +229,7 @@ describe('CubeQueryBuilder', () => {
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TimeRangeOptions.LAST_7_DAYS
                     }
                 ],
                 limit: 10
@@ -238,7 +242,7 @@ describe('CubeQueryBuilder', () => {
                 .measures(['totalRequest'])
                 .pageviews()
                 .orderBy('totalRequest', 'desc')
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TimeRangeOptions.LAST_7_DAYS)
                 .limit(50)
                 .build();
 
@@ -256,7 +260,7 @@ describe('CubeQueryBuilder', () => {
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TimeRangeOptions.LAST_7_DAYS
                     }
                 ],
                 limit: 50

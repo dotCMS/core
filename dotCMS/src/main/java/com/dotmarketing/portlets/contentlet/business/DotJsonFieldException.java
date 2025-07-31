@@ -15,6 +15,11 @@ public class DotJsonFieldException extends DotContentletStateException {
     private final String parseError;
     private final String field;
 
+    public static String cleanJsonErrorMessage(String errorMessage) {
+        String pattern = "\\[([^\\]]*?)(?:;\\s*)?(line:\\s*\\d+,\\s*column:\\s*\\d+)\\]";
+        return errorMessage.replaceAll(pattern, "[$2]");
+    }
+
     public DotJsonFieldException(
             @NotNull String field, @NotNull String invalidJson,
             int line, int column, @NotNull String parseError) {
@@ -24,7 +29,7 @@ public class DotJsonFieldException extends DotContentletStateException {
         this.invalidJson = Objects.requireNonNullElse(invalidJson, StringPool.BLANK);
         this.line = Math.max(line, 0); // Ensure non-negative line numbers
         this.column = Math.max(column, 0); // Ensure non-negative column numbers
-        this.parseError = StringUtils.defaultIfBlank(parseError, StringPool.UNKNOWN);
+        this.parseError = cleanJsonErrorMessage(StringUtils.defaultIfBlank(parseError, StringPool.UNKNOWN));
     }
 
     public String getAbbreviatedParseError() {
@@ -48,7 +53,7 @@ public class DotJsonFieldException extends DotContentletStateException {
 
     public Map<String, Object> getContext() {
         return Map.of(
-                "parseError", getAbbreviatedParseError(),
+                "errorHint", getAbbreviatedParseError(),
                 "line", this.line,
                 "column", this.column
         );
