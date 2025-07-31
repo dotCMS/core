@@ -6,7 +6,8 @@ FROM ubuntu:24.04 as pg-base-builder
 SHELL ["/bin/bash", "-c"]
 ARG DEBIAN_FRONTEND=noninteractive
 
-# packages needed to install pg_dump (ca-certificates needed at runtime for SSL)
+# packages needed to install pg_dump
+# ca-certificates included for base image completeness
 ARG BUILD_PACKAGES="postgresql-common gnupg"
 ARG RUNTIME_PACKAGES="ca-certificates"
 
