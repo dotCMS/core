@@ -1390,107 +1390,120 @@ public class FolderAPIImpl implements FolderAPI  {
 	
 	private void fixFolderIdsPostgres() {
 		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			// allow deferred constraints
 			conn.createStatement().execute(POSTGRES_DEFER_CONSTRAINT_SQL);
 			conn.setAutoCommit(false);
 			
-			try {
-				conn.createStatement().execute(POSTGRES_SET_DEFERRED_SQL);
-				executeCommonUpdates(conn);
-				conn.createStatement().execute(POSTGRES_UPDATE_FOLDER_IDENTIFIERS);
-				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
-				conn.commit();
-			} catch (Exception e) {
-				conn.rollback();
-				throw e;
-			} finally {
-				conn.setAutoCommit(true);
-			}
+			// defer folder/identifier constraint
+			conn.createStatement().execute(POSTGRES_SET_DEFERRED_SQL);
+			
+			// execute updates
+			executeCommonUpdates(conn);
+			conn.createStatement().execute(POSTGRES_UPDATE_FOLDER_IDENTIFIERS);
+			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+			
+			conn.commit();
+			conn.setAutoCommit(true);
 			
 			clearCaches();
 		} catch (Exception e) {
-			Logger.error(this, "Error fixing folder IDs for PostgreSQL", e);
+			Logger.error(this, e);
 			throw new DotRuntimeException(e);
 		} finally {
+			// reset the constraint to not deferred
 			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 				conn.createStatement().execute(POSTGRES_RESET_CONSTRAINT_SQL);
 			} catch (Exception e) {
-				Logger.error(this, "Error resetting PostgreSQL constraint", e);
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
 			}
 		}
 	}
 	
 	private void fixFolderIdsMySql() {
 		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			// disable foreign key checks
 			conn.createStatement().execute(MYSQL_DISABLE_FK_SQL);
 			conn.setAutoCommit(false);
 			
-			try {
-				executeCommonUpdates(conn);
-				conn.createStatement().execute(MYSQL_UPDATE_FOLDER_IDENTIFIERS);
-				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
-				conn.commit();
-			} catch (Exception e) {
-				conn.rollback();
-				throw e;
-			} finally {
-				conn.setAutoCommit(true);
-				conn.createStatement().execute(MYSQL_ENABLE_FK_SQL);
-			}
+			// execute updates
+			executeCommonUpdates(conn);
+			conn.createStatement().execute(MYSQL_UPDATE_FOLDER_IDENTIFIERS);
+			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+			
+			conn.commit();
+			conn.setAutoCommit(true);
 			
 			clearCaches();
 		} catch (Exception e) {
-			Logger.error(this, "Error fixing folder IDs for MySQL", e);
+			Logger.error(this, e);
 			throw new DotRuntimeException(e);
+		} finally {
+			// re-enable foreign key checks
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				conn.createStatement().execute(MYSQL_ENABLE_FK_SQL);
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
 		}
 	}
 	
 	private void fixFolderIdsMsSql() {
 		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			// disable constraint
 			conn.createStatement().execute(MSSQL_DISABLE_CONSTRAINT_SQL);
 			conn.setAutoCommit(false);
 			
-			try {
-				executeCommonUpdates(conn);
-				conn.createStatement().execute(MSSQL_UPDATE_FOLDER_IDENTIFIERS);
-				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
-				conn.commit();
-			} catch (Exception e) {
-				conn.rollback();
-				throw e;
-			} finally {
-				conn.setAutoCommit(true);
-				conn.createStatement().execute(MSSQL_ENABLE_CONSTRAINT_SQL);
-			}
+			// execute updates
+			executeCommonUpdates(conn);
+			conn.createStatement().execute(MSSQL_UPDATE_FOLDER_IDENTIFIERS);
+			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+			
+			conn.commit();
+			conn.setAutoCommit(true);
 			
 			clearCaches();
 		} catch (Exception e) {
-			Logger.error(this, "Error fixing folder IDs for MSSQL", e);
+			Logger.error(this, e);
 			throw new DotRuntimeException(e);
+		} finally {
+			// re-enable constraint
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				conn.createStatement().execute(MSSQL_ENABLE_CONSTRAINT_SQL);
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
 		}
 	}
 	
 	private void fixFolderIdsOracle() {
 		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			// disable constraint
 			conn.createStatement().execute(ORACLE_DISABLE_CONSTRAINT_SQL);
 			conn.setAutoCommit(false);
 			
-			try {
-				executeCommonUpdates(conn);
-				conn.createStatement().execute(ORACLE_UPDATE_FOLDER_IDENTIFIERS);
-				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
-				conn.commit();
-			} catch (Exception e) {
-				conn.rollback();
-				throw e;
-			} finally {
-				conn.setAutoCommit(true);
-				conn.createStatement().execute(ORACLE_ENABLE_CONSTRAINT_SQL);
-			}
+			// execute updates
+			executeCommonUpdates(conn);
+			conn.createStatement().execute(ORACLE_UPDATE_FOLDER_IDENTIFIERS);
+			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+			
+			conn.commit();
+			conn.setAutoCommit(true);
 			
 			clearCaches();
 		} catch (Exception e) {
-			Logger.error(this, "Error fixing folder IDs for Oracle", e);
+			Logger.error(this, e);
 			throw new DotRuntimeException(e);
+		} finally {
+			// re-enable constraint
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				conn.createStatement().execute(ORACLE_ENABLE_CONSTRAINT_SQL);
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
 		}
 	}
 	
@@ -1499,26 +1512,23 @@ public class FolderAPIImpl implements FolderAPI  {
 		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 			conn.setAutoCommit(false);
 			
-			try {
-				executeCommonUpdates(conn);
-				// Use a simple approach that should work on most databases
-				DotConnect dc = new DotConnect();
-				dc.setSQL("update identifier set id = (select inode from folder where folder.identifier = identifier.id) "
-						+ "where id in (select identifier from folder where identifier <> inode)");
-				dc.loadResult(conn);
-				
-				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
-				conn.commit();
-			} catch (Exception e) {
-				conn.rollback();
-				throw e;
-			} finally {
-				conn.setAutoCommit(true);
-			}
+			// execute updates
+			executeCommonUpdates(conn);
+			
+			// Use a simple approach that should work on most databases
+			DotConnect dc = new DotConnect();
+			dc.setSQL("update identifier set id = (select inode from folder where folder.identifier = identifier.id) "
+					+ "where id in (select identifier from folder where identifier <> inode)");
+			dc.loadResult(conn);
+			
+			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+			
+			conn.commit();
+			conn.setAutoCommit(true);
 			
 			clearCaches();
 		} catch (Exception e) {
-			Logger.error(this, "Error fixing folder IDs for generic database", e);
+			Logger.error(this, e);
 			throw new DotRuntimeException(e);
 		}
 	}
