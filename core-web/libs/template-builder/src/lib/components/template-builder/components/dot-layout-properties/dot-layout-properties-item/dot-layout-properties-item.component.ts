@@ -68,6 +68,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
      * @memberof DotLayoutPropertiesItemComponent
      */
     registerOnChange(
+        // eslint-disable-next-line @typescript-eslint/no-empty-object-type
         fn: () => {
             /**/
         }

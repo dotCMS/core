@@ -69,6 +69,7 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor {
      * @memberof DotLayoutSidebarComponent
      */
     registerOnChange(
+        // eslint-disable-next-line @typescript-eslint/no-empty-object-type
         fn: () => {
             /* */
         }
