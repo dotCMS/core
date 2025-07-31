@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
-import com.dotmarketing.util.importer.exception.ImportLineErrorAware;
+import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.Optional;
 
 public class DotNumericFieldException extends DotContentletStateException implements
-        ImportLineErrorAware {
+        ImportLineError {
 
     public static final String INVALID_NUMERIC_FIELD_MESSAGE = "Unable to set string value '%s' as a %s for the field: %s";
 

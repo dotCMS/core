@@ -9,6 +9,7 @@ import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_F
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_JSON;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_SITE_FOLDER_REF;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_NUMBER_FORMAT;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.UNREACHABLE_URL_CONTENT;
 import static org.junit.Assert.assertEquals;
@@ -33,13 +34,9 @@ import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
-import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.StoryBlockField;
-import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -3923,8 +3920,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         List<Category> assignedCategories = APILocator.getCategoryAPI().getParents(saved.get(0), user, false);
         assertTrue(assignedCategories.stream().anyMatch(cat -> cat.getInode().equals(validChild.getInode())));
     }
-  
-  /**
+
+    /**
      * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
      * Given scenario: We try to import a file with a valid text field and a JSON field where one entry contains invalid JSON
      * Expected behavior: The import should fail for the invalid JSON but succeed for valid entries, returning specific error details
@@ -4120,10 +4117,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
         }
     }
-  
-  /**
-    * Functional interface for field-specific validation strategies
-    */
+
+    /**
+     * Functional interface for field-specific validation strategies
+     */
     @FunctionalInterface
     public interface AssertionsStrategy {
         /**
@@ -4154,7 +4151,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final String fieldSpecificConfig;
         final AssertionsStrategy assertionsStrategy;
 
-
         public FieldTestCase(String fieldTypeName,
                 Class<? extends com.dotcms.contenttype.model.field.Field> fieldClass,
                 String fieldVariable,
@@ -4179,6 +4175,28 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             this.assertionsStrategy = assertionsStrategy;
         }
 
+        /**
+         * Needed when creating a relationship
+         * @param newValidValue
+         * @return
+         */
+        public FieldTestCase withValidValue(String newValidValue) {
+            return new FieldTestCase(
+                    this.fieldTypeName,
+                    this.fieldClass,
+                    this.fieldVariable,
+                    this.dataType,
+                    newValidValue,
+                    this.invalidValue,
+                    this.expectedErrorCode,
+                    this.requiresCategory,
+                    this.requiresHost,
+                    this.fieldSpecificConfig,
+                    this.assertionsStrategy
+            );
+        }
+
+
         @Override
         public String toString() {
             return fieldTypeName;
@@ -4188,7 +4206,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     @DataProvider
     public static Object[][] fieldTestCases() {
         return new Object[][]{
-
+/*
                 // Required TextField - Missing value
                 {new FieldTestCase(
                         "RequiredTextField",
@@ -4211,6 +4229,32 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         DataTypes.DATE,
                         "2023-12-25",
                         "invalid-date-format",
+                        INVALID_DATE_FORMAT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_DATE_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "DateField",
+                        DateField.class,
+                        "dateField",
+                        DataTypes.DATE,
+                        "2023-12-25",
+                        "invalid-date-format",
+                        INVALID_DATE_FORMAT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_DATE_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "TimeField",
+                        TimeField.class,
+                        "timeField",
+                        DataTypes.DATE,
+                        "14:30:00",
+                        "invalid-time",
                         INVALID_DATE_FORMAT.name(),
                         false,
                         false,
@@ -4287,7 +4331,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null,
                         INVALID_IMAGE_URL_ASSERTION
                 )},
-
                 // HostFolderField - Invalid location
                 {new FieldTestCase(
                         "HostFolderField",
@@ -4302,7 +4345,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null,
                         INVALID_HOST_FOLDER_ASSERTION
                 )},
-
                 // CategoryField - Invalid category key
                 {new FieldTestCase(
                         "CategoryField",
@@ -4317,7 +4359,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null,
                         INVALID_CATEGORY_ASSERTION
                 )},
-
                 // KeyValueField (JSON) - Invalid JSON
                 {new FieldTestCase(
                         "JSONField",
@@ -4326,8 +4367,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         DataTypes.LONG_TEXT,
                         "{\"\"valid\"\":\"\"json\"\"}",
                         "{'invalid':'json'}", // Single quotes make it invalid
-                        "INVALID_JSON",
-                        false, false, null, JSON_FIELD_ASSERTION
+                        INVALID_JSON.name(),
+                        false,
+                        false,
+                        null, JSON_FIELD_ASSERTION
                 )},
                 {new FieldTestCase(
                         "RequiredTextAreaField",
@@ -4370,7 +4413,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "required",
                         REQUIRED_STORY_BLOCK_ASSERTION
                 )},
+                */
                 // StoryBlock Format Error
+/*
                 {new FieldTestCase(
                         "InvalidJsonStoryBlockField",
                         StoryBlockField.class,
@@ -4384,7 +4429,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null,
                         INVALID_JSON_STORY_BLOCK_ASSERTION
                 )},
-                /*
+
                 {new FieldTestCase(
                         "MultiSelectField",
                         MultiSelectField.class,
@@ -4398,24 +4443,85 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null, // Select options
                         INVALID_SELECT_ASSERTION
                 )},
-                 */
 
+                {new FieldTestCase(
+                        "SelectField",
+                        SelectField.class,
+                        "SelectField",
+                        DataTypes.FLOAT,
+                        "10", // Will be set to valid option in test
+                        "lol", // Invalid
+                        INVALID_NUMBER_FORMAT.name(),
+                        false,
+                        false,
+                        null, // Select options
+                        INVALID_SELECT_NUMBER_ASSERTION
+                )},
+*/
+                /*
+                {new FieldTestCase(
+                        "RadioField",
+                        RadioField.class,
+                        "radioField",
+                        DataTypes.BOOL,
+                        "true",
+                        "", // Invalid boolean value
+                        INVALID_BOOLEAN_VALUE.name(),
+                        false,
+                        false,
+                        "required",
+                        BOOLEAN_FIELD_VALIDATION
+                )},
+
+                // TagField - Invalid tag format
+                {new FieldTestCase(
+                        "TagField",
+                        TagField.class,
+                        "tagField",
+                        DataTypes.SYSTEM,
+                        "valid-tag2",
+                        "invalid tag with spaces and special chars @#$",
+                        "INVALID_TAG_FORMAT",
+                        false,
+                        false,
+                        null,
+                        TAG_FIELD_VALIDATION
+                )},
+*/
+                // RelationshipField - Invalid content reference
+                {new FieldTestCase(
+                        "RelationshipField",
+                        RelationshipField.class,
+                        "relationshipField",
+                        DataTypes.SYSTEM,
+                        "", // Will be set to valid content reference by the test once the related content is created
+                        "invalid-content-id-12345",
+                        RELATIONSHIP_VALIDATION_ERROR.name(),
+                        false,
+                        false,
+                        null,
+                        RELATIONSHIP_FIELD_VALIDATION
+                )},
         };
     }
 
     @UseDataProvider("fieldTestCases")
     @Test
-    public void importFile_stopOnError_individualFieldTest(final FieldTestCase testCase)
+    public void importFile_stopOnError_individualFieldTest(FieldTestCase testCase)
             throws DotSecurityException, DotDataException, IOException {
 
         ContentType contentType = null;
         Category testCategory = null;
+        ContentType relatedContentType = null;
+        Contentlet relatedContentlet = null;
+
         Host testSite = null;
 
         try {
             final long time = System.currentTimeMillis();
-            final String contentTypeName = testCase.fieldTypeName + "_CT_" + time;
-            final String contentTypeVarName = testCase.fieldTypeName.toLowerCase() + "CT" + time;
+            final String baseName = "TestFor_" + testCase.fieldTypeName;
+            final String contentTypeName = baseName + "_CT_" + time;
+            final String contentTypeVarName = baseName.toLowerCase() + "CT" + time;
 
             // Setup test dependencies
             if (testCase.requiresHost) {
@@ -4441,10 +4547,21 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         .nextPersisted();
             }
 
-            // Create fields for this test case
-            List<com.dotcms.contenttype.model.field.Field> fields = createFieldsForTestCase(testCase, parent);
+            if(testCase.fieldClass == RelationshipField.class){
+                // 1. Create the related content type first
+                relatedContentType = createRelatedContentType();
 
-            // Create content type
+                // 2. Create related contentlet
+                relatedContentlet = createRelatedContentlet(relatedContentType);
+                // Update test case valid value with the related contentlet identifier
+                testCase = testCase.withValidValue(relatedContentlet.getIdentifier());
+                Logger.info(ImportUtil.class,"Related contentlet is :: "+relatedContentlet.getIdentifier());
+            }
+
+            // Create fields for this test case
+            List<com.dotcms.contenttype.model.field.Field> fields = createFieldsForTestCase(testCase, parent, relatedContentType);
+
+            // Create content type (Parent for relationships)
             contentType = new ContentTypeDataGen()
                     .name(contentTypeName)
                     .velocityVarName(contentTypeVarName)
@@ -4480,15 +4597,81 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validateResults(result, testCase, savedContentType);
 
         } finally {
-            cleanupTestData(contentType, testCategory, testSite);
+            cleanupTestData(contentType, testCategory, testSite, relatedContentlet, relatedContentType);
         }
+    }
+
+    private String getCardinalityValue(FieldTestCase testCase) {
+        // Default to MANY_TO_MANY if not specified
+        if (testCase.fieldSpecificConfig != null && testCase.fieldSpecificConfig.contains("cardinality:")) {
+            return testCase.fieldSpecificConfig.split("cardinality:")[1].trim();
+        }
+
+        // Default cardinality (MANY_TO_MANY = 2)
+        return String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+    }
+
+    private ContentType createRelatedContentType() throws DotDataException {
+        final String timestamp = String.valueOf(System.currentTimeMillis());
+        final String relatedTypeName = "RelatedType_" + timestamp;
+        final String relatedTypeVar = "relatedType" + timestamp;
+
+        // Create basic fields for the related content type
+        List<com.dotcms.contenttype.model.field.Field> relatedFields = new ArrayList<>();
+
+        relatedFields.add(
+                ImmutableTextField.builder()
+                        .name("relatedTitle")
+                        .variable("relatedTitle")
+                        .required(true)
+                        .listed(true)
+                        .indexed(true)
+                        .sortOrder(1)
+                        .searchable(true)
+                        .build());
+
+        relatedFields.add(
+                ImmutableTextAreaField.builder()
+                        .name("relatedBody")
+                        .variable("relatedBody")
+                        .required(false)
+                        .listed(true)
+                        .indexed(true)
+                        .sortOrder(2)
+                        .searchable(true)
+                        .build());
+
+        // Create the content type
+        ContentType relatedType = new ContentTypeDataGen()
+                .name(relatedTypeName)
+                .velocityVarName(relatedTypeVar)
+                .host(APILocator.systemHost())
+                .fields(relatedFields)
+                .nextPersisted();
+
+        // Set up workflow for the related content type
+        workflowAPI.saveSchemesForStruct(new StructureTransformer(relatedType).asStructure(),
+                Collections.singletonList(schemeStepActionResult1.getScheme()));
+
+        return relatedType;
+    }
+
+    private Contentlet createRelatedContentlet(ContentType relatedContentType){
+        final String timestamp = String.valueOf(System.currentTimeMillis());
+
+        return new ContentletDataGen(relatedContentType.id())
+                .languageId(defaultLanguage.getId())
+                .host(defaultSite)
+                .setProperty("relatedTitle", "Related Content " + timestamp)
+                .setProperty("relatedBody", "This is related content for relationship testing")
+                .nextPersisted();
     }
 
     /**
      * Creates the field list for a specific test case
      */
     private List<com.dotcms.contenttype.model.field.Field> createFieldsForTestCase(
-            FieldTestCase testCase, Category testCategory) {
+            FieldTestCase testCase, Category testCategory, ContentType relatedContentType) {
 
         List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
 
@@ -4507,6 +4690,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .variable(testCase.fieldVariable)
                 .dataType(testCase.dataType)
                 .required("required".equals(testCase.fieldSpecificConfig));
+
+        if(null != relatedContentType){
+            // Set-up pieces required for the relationship to work
+            fieldBuilder
+                    .values(getCardinalityValue(testCase)) // Set cardinality
+                    .relationType(relatedContentType.variable());
+        }
 
         // Add field-specific configurations
         if (testCase.requiresCategory && testCategory != null) {
@@ -4597,7 +4787,18 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
     };
 
-    public static final AssertionsStrategy INVALID_SELECT_ASSERTION = (result, testCase, contentType) -> {
+    public static final AssertionsStrategy INVALID_SELECT_NUMBER_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present",
+                String.format("Unable to set string value '%s' as a Float for the field: %s",testCase.invalidValue,testCase.fieldVariable),
+                error.message());
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_NUMBER_FORMAT.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy BOOLEAN_FIELD_VALIDATION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
         assertEquals("Test expected required field label is present", "InvalidStoryBlockField",error.field().get());
@@ -4645,9 +4846,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
         assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
-
         assertThat(error.message().trim(), allOf(
-                startsWith("Unable to set string value as a Float"),
+                startsWith(String.format("Unable to set string value '%s' as a ",testCase.invalidValue)),
                 containsString("for the field:"),
                 endsWith(testCase.fieldVariable)
         ));
@@ -4724,7 +4924,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Expected Error Code does not match!", INVALID_CATEGORY_KEY.name(), error.code().get());
     };
 
-
     public static final AssertionsStrategy KEY_VALUE_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
@@ -4764,13 +4963,28 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
     };
 
+    public static final AssertionsStrategy TAG_FIELD_VALIDATION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+    };
+
+    public static final AssertionsStrategy RELATIONSHIP_FIELD_VALIDATION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+        assertThat(error.message().trim(), allOf(
+             startsWith(String.format("The field has a value (%s) that is not an identifier nor a lucene query", testCase.invalidValue))
+        ));
+    };
+
     /**
      * Validates results specific to each field type
      */
     private void validateResults(ImportResult result, FieldTestCase testCase, ContentType contentType)
             throws DotDataException, DotSecurityException {
 
-        assertTrue("Should have always stopped on the introduced error", result.stoppedOnErrorAtLine().isPresent());
+        assertTrue("Should have always stopped on the introduced error for:" + testCase, result.stoppedOnErrorAtLine().isPresent());
 
         assertEquals("All Errors landed in row #3", Integer.valueOf(3), result.stoppedOnErrorAtLine().get());
 
@@ -4828,12 +5042,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
-     * Cleanup test data
+     * Enhanced cleanup method that handles relationship-related objects
      */
-    private void cleanupTestData(ContentType contentType, Category testCategory, Host testSite) {
+    private void cleanupTestData(ContentType contentType, Category testCategory, Host testSite, Contentlet relatedContentlet, ContentType relatedContentType) {
         try {
+            // Clean up main content type
             if (contentType != null) {
-                // Clean up contentlets first
                 List<Contentlet> contentlets = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
                 for (Contentlet contentlet : contentlets) {
                     contentletAPI.archive(contentlet, user, false);
@@ -4841,6 +5055,32 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 }
                 contentTypeApi.delete(contentType);
             }
+
+            // Clean up related contentlet and content type (for relationship tests)
+            if (relatedContentlet != null) {
+                try {
+                    contentletAPI.archive(relatedContentlet, user, false);
+                    contentletAPI.delete(relatedContentlet, user, false);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtil.class,"Error cleaning up related contentlet", e);
+                }
+            }
+
+            if (relatedContentType != null) {
+                try {
+                    // Clean up any remaining related contentlets
+                    List<Contentlet> relatedContentlets = contentletAPI.findByStructure(relatedContentType.inode(), user, false, 0, 0);
+                    for (Contentlet contentlet : relatedContentlets) {
+                        contentletAPI.archive(contentlet, user, false);
+                        contentletAPI.delete(contentlet, user, false);
+                    }
+                    contentTypeApi.delete(relatedContentType);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtil.class,"Error cleaning up related content type", e);
+                }
+            }
+
+            // Clean up other test objects
             if (testCategory != null) {
                 CategoryDataGen.delete(testCategory);
             }

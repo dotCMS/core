@@ -283,10 +283,10 @@ public class ImportContentletsAction extends DotPortletAction {
 
 						} finally{
 
-							if(!ImportAuditUtil.cancelledImports.containsKey(importId)){
+							if(!ImportAuditUtil.isImportCancelled(importId)){
 								ImportAuditUtil.setAuditRecordCompleted(importId);
 							}else{
-								ImportAuditUtil.cancelledImports.remove(importId);
+								ImportAuditUtil.removeCancelled(importId);
 							}
 						}
 					}

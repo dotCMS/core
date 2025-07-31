@@ -62,7 +62,7 @@ public class DotJsonFieldException extends DotContentletStateException implement
     @Override
     public Optional<Map<String, ?>> getContext() {
         return Optional.of(Map.of(
-                "parseError", getAbbreviatedParseError(),
+                "errorHint", getAbbreviatedParseError(),
                 "line", this.line,
                 "column", this.column
         ));

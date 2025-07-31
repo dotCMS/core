@@ -610,7 +610,21 @@ public final class WebKeys {
     {
         public static final String RELATIONSHIP_EDIT = "com.dotmarketing.relationships.edit_relationship";
         public static final String RELATIONSHIP_REQUIRED = "com.dotmarketing.relationships.required";
-    	public static enum RELATIONSHIP_CARDINALITY { ONE_TO_MANY , MANY_TO_MANY, ONE_TO_ONE, MANY_TO_ONE };
+    	public enum RELATIONSHIP_CARDINALITY {
+            ONE_TO_MANY ,
+            MANY_TO_MANY,
+            ONE_TO_ONE,
+            MANY_TO_ONE;
+
+            public static RELATIONSHIP_CARDINALITY fromOrdinal(int ordinal) {
+                RELATIONSHIP_CARDINALITY[] values = RELATIONSHIP_CARDINALITY.values();
+                if (ordinal >= 0 && ordinal < values.length) {
+                    return values[ordinal];
+                }
+                throw new IllegalArgumentException("Invalid ordinal: " + ordinal);
+            }
+
+        }
     	public static final String RELATIONSHIPS = "RELATIONSHIPS";
     	public static final String STRUCTURES_LIST = "STRUCTURES_LIST";
     }

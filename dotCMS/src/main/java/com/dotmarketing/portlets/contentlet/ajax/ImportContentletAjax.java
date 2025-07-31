@@ -6,7 +6,7 @@ import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 public class ImportContentletAjax {
 	
 	public boolean checkImportStatus(Long id) {
-		Boolean result = ImportAuditUtil.isImportfinished(id);
+		Boolean result = ImportAuditUtil.isImportFinished(id);
 		return result;
 	}
 	

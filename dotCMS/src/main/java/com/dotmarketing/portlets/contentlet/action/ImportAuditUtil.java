@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.commons.collections.map.LRUMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.*;
 
@@ -17,9 +17,21 @@ public class ImportAuditUtil {
 	public static final int STATUS_PENDING = 10;
 	public static final int STATUS_COMPLETED = 20;
 	public static final int STATUS_USERSTOPPED = 30;
-	
-	public static LRUMap cancelledImports = new LRUMap(50); 
-	
+
+	private static final Map<Long, Date> cancelledImports = new ConcurrentHashMap<>(50);
+
+	public static boolean isImportCancelled(Long id) {
+		return cancelledImports.containsKey(id);
+	}
+
+	public static void removeCancelled(Long id) {
+		cancelledImports.remove(id);
+	}
+
+	public static void markCancelledImport(Long id) {
+		cancelledImports.put(id,Calendar.getInstance().getTime());
+	}
+
 	/**
 	 * Should only be used when the system is starting to clean imports
 	 * that were running when the system restarted itself.
@@ -44,10 +56,10 @@ public class ImportAuditUtil {
 		
 	}
 	@CloseDBIfOpened
-	public static Boolean isImportfinished (Long Id){
+	public static Boolean isImportFinished(Long id){
 		DotConnect db = new DotConnect();
 		db.setSQL("SELECT coalesce(status,0) as status FROM import_audit where id = ?");
-		db.addParam(Id);
+		db.addParam(id);
 		int status = db.getInt("status");
 		if(status == STATUS_PENDING){
 			return false;

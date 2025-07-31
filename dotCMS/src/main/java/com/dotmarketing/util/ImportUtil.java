@@ -63,7 +63,7 @@ import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.exception.HeaderValidationException;
-import com.dotmarketing.util.importer.exception.ImportLineErrorAware;
+import com.dotmarketing.util.importer.exception.ImportLineError;
 import com.dotmarketing.util.importer.exception.ImportLineException;
 import com.dotmarketing.util.importer.exception.ValidationMessageException;
 import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
@@ -402,7 +402,7 @@ public class ImportUtil {
                         LineImportResultBuilder resultBuilder = null;
 
                         // Check for cancellation
-                        if (ImportAuditUtil.cancelledImports.containsKey(params.importId())) {
+                        if (ImportAuditUtil.isImportCancelled(params.importId())) {
                             messages.add(ValidationMessage.builder()
                                     .type(ValidationMessageType.INFO)
                                     .lineNumber(lineNumber)
@@ -808,8 +808,8 @@ public class ImportUtil {
                     .context(validationMessageException.getContext());
         }
 
-        if(ex instanceof ImportLineErrorAware){
-            final var importCodeErrorAware = (ImportLineErrorAware) ex;
+        if(ex instanceof ImportLineError){
+            final var importCodeErrorAware = (ImportLineError) ex;
             messageBuilder
                     .code(importCodeErrorAware.getCode())
                     .field(importCodeErrorAware.getField())
@@ -2663,7 +2663,7 @@ public class ImportUtil {
                 if (null != relationship) {
                     Logger.warn(ImportUtil.class,
                             String.format("A validation error occurred with Relationship " +
-                                            "'%s'[%s]: e.getMessage()", relationship.getRelationTypeValue(),
+                                            "'%s'[%s]: %s", relationship.getRelationTypeValue(),
                                     relationship.getInode(), e
                                             .getMessage()), e);
                 } else {
