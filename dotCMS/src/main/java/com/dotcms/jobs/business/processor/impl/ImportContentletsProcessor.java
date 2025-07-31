@@ -41,6 +41,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -319,7 +320,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         cancellationRequested.set(true);
 
         final var importId = jobIdToLong(job.id());
-        ImportAuditUtil.markCancelledImport(importId);
+        ImportAuditUtil.cancelledImports.put(importId, Calendar.getInstance().getTime());
     }
 
     /**
@@ -382,7 +383,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             throw new JobProcessingException(job.id(), errorMessage, e);
         } finally {
             final var importId = jobIdToLong(job.id());
-            ImportAuditUtil.removeCancelled(importId);
+            ImportAuditUtil.cancelledImports.remove(importId);
         }
     }
 
