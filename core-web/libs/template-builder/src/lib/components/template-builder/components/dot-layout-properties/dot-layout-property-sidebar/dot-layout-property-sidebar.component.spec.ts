@@ -21,8 +21,8 @@ import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    standalone: false,
     selector: 'dot-test-host-component',
+    standalone: false,
     template: `
         <form [formGroup]="group">
             <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
