@@ -640,6 +640,4 @@ import java.util.function.Predicate;
 	 */
 	void fixFolderIds();
 
-	@CloseDBIfOpened
-	void fixFolderId(String inode, String identifier);
 }

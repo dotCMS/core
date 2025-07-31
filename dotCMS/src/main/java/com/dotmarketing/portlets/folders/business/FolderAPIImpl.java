@@ -69,6 +69,7 @@ import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -1329,118 +1330,211 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	}
-	String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
-	String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
-	String DEFER_CONSTRAINT_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
-	String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder' or id='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
-	String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
-	String UPDATE_FOLDER_IDENTIFIERS="update identifier "
-			+ "set id =subquery.inode "
+	
+	// PostgreSQL-specific SQL
+	private static final String POSTGRES_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
+	private static final String POSTGRES_SET_DEFERRED_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
+	private static final String POSTGRES_RESET_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
+	private static final String POSTGRES_UPDATE_FOLDER_IDENTIFIERS = "update identifier "
+			+ "set id = subquery.inode "
 			+ "from (select inode, identifier from folder where identifier <> inode) as subquery "
-			+ "where  "
-			+ "subquery.identifier =identifier.id;";
-
-	String UPDATE_ALL_FOLDERS = "update folder set identifier = inode where identifier <> inode;";
-
+			+ "where subquery.identifier = identifier.id;";
+	
+	// MySQL-specific SQL
+	private static final String MYSQL_DISABLE_FK_SQL = "SET FOREIGN_KEY_CHECKS = 0;";
+	private static final String MYSQL_ENABLE_FK_SQL = "SET FOREIGN_KEY_CHECKS = 1;";
+	private static final String MYSQL_UPDATE_FOLDER_IDENTIFIERS = "update identifier i "
+			+ "inner join folder f on f.identifier = i.id "
+			+ "set i.id = f.inode "
+			+ "where f.identifier <> f.inode;";
+	
+	// MSSQL-specific SQL
+	private static final String MSSQL_DISABLE_CONSTRAINT_SQL = "ALTER TABLE folder NOCHECK CONSTRAINT folder_identifier_fk;";
+	private static final String MSSQL_ENABLE_CONSTRAINT_SQL = "ALTER TABLE folder WITH CHECK CHECK CONSTRAINT folder_identifier_fk;";
+	private static final String MSSQL_UPDATE_FOLDER_IDENTIFIERS = "update i "
+			+ "set i.id = f.inode "
+			+ "from identifier i "
+			+ "inner join folder f on f.identifier = i.id "
+			+ "where f.identifier <> f.inode;";
+	
+	// Oracle-specific SQL
+	private static final String ORACLE_DISABLE_CONSTRAINT_SQL = "ALTER TABLE folder DISABLE CONSTRAINT folder_identifier_fk";
+	private static final String ORACLE_ENABLE_CONSTRAINT_SQL = "ALTER TABLE folder ENABLE CONSTRAINT folder_identifier_fk";
+	private static final String ORACLE_UPDATE_FOLDER_IDENTIFIERS = "update identifier i "
+			+ "set i.id = (select f.inode from folder f where f.identifier = i.id and f.identifier <> f.inode) "
+			+ "where exists (select 1 from folder f where f.identifier = i.id and f.identifier <> f.inode)";
+	
+	// Common SQL (works across all databases)
+	private static final String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id = 'SYSTEM_FOLDER' where parent_path = '/System folder' or id = '" + FolderAPI.OLD_SYSTEM_FOLDER_ID + "'";
+	private static final String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier = 'SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode = '" + FolderAPI.OLD_SYSTEM_FOLDER_ID + "'";
+	private static final String UPDATE_ALL_FOLDERS = "update folder set identifier = inode where identifier <> inode";
 
 	@CloseDBIfOpened
 	@Override
 	public void fixFolderIds() {
-		Logger.info(this,
-				"Found non-matching folder inodes/identifiers, Fixing folder IDs task.");
-
+		Logger.info(this, "Found non-matching folder inodes/identifiers, Fixing folder IDs task.");
+		
+		if (DbConnectionFactory.isPostgres()) {
+			fixFolderIdsPostgres();
+		} else if (DbConnectionFactory.isMySql()) {
+			fixFolderIdsMySql();
+		} else if (DbConnectionFactory.isMsSql()) {
+			fixFolderIdsMsSql();
+		} else if (DbConnectionFactory.isOracle()) {
+			fixFolderIdsOracle();
+		} else {
+			// H2 or other databases - use generic approach
+			fixFolderIdsGeneric();
+		}
+	}
+	
+	private void fixFolderIdsPostgres() {
 		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-			// allow deferred constraints
-			conn.createStatement().execute(ALLOW_DEFER_CONSTRAINT_SQL);
-
+			conn.createStatement().execute(POSTGRES_DEFER_CONSTRAINT_SQL);
 			conn.setAutoCommit(false);
-
-			// defer folder/identifier constraint
-			conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
-
-			// update system folder identifier
-			conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_IDENTIFIER);
-
-			// update system folder folder
-			conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_FOLDER);
-
-			// update folder ids with the inodes
-			conn.createStatement().execute(UPDATE_FOLDER_IDENTIFIERS);
-
-			// set all folder inodes=identifer
-			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
-
-			conn.commit();
-
-			conn.setAutoCommit(true);
-
-			// just in case
-			CacheLocator.getFolderCache().clearCache();
-			CacheLocator.getPermissionCache().clearCache();
-
+			
+			try {
+				conn.createStatement().execute(POSTGRES_SET_DEFERRED_SQL);
+				executeCommonUpdates(conn);
+				conn.createStatement().execute(POSTGRES_UPDATE_FOLDER_IDENTIFIERS);
+				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+				conn.commit();
+			} catch (Exception e) {
+				conn.rollback();
+				throw e;
+			} finally {
+				conn.setAutoCommit(true);
+			}
+			
+			clearCaches();
 		} catch (Exception e) {
-			Logger.error(this, e);
+			Logger.error(this, "Error fixing folder IDs for PostgreSQL", e);
 			throw new DotRuntimeException(e);
 		} finally {
-
-			// reset the constraint to not deferred
 			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
+				conn.createStatement().execute(POSTGRES_RESET_CONSTRAINT_SQL);
 			} catch (Exception e) {
-				Logger.error(this, e);
-				throw new DotRuntimeException(e);
+				Logger.error(this, "Error resetting PostgreSQL constraint", e);
 			}
 		}
-
+	}
+	
+	private void fixFolderIdsMySql() {
+		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			conn.createStatement().execute(MYSQL_DISABLE_FK_SQL);
+			conn.setAutoCommit(false);
+			
+			try {
+				executeCommonUpdates(conn);
+				conn.createStatement().execute(MYSQL_UPDATE_FOLDER_IDENTIFIERS);
+				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+				conn.commit();
+			} catch (Exception e) {
+				conn.rollback();
+				throw e;
+			} finally {
+				conn.setAutoCommit(true);
+				conn.createStatement().execute(MYSQL_ENABLE_FK_SQL);
+			}
+			
+			clearCaches();
+		} catch (Exception e) {
+			Logger.error(this, "Error fixing folder IDs for MySQL", e);
+			throw new DotRuntimeException(e);
+		}
+	}
+	
+	private void fixFolderIdsMsSql() {
+		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			conn.createStatement().execute(MSSQL_DISABLE_CONSTRAINT_SQL);
+			conn.setAutoCommit(false);
+			
+			try {
+				executeCommonUpdates(conn);
+				conn.createStatement().execute(MSSQL_UPDATE_FOLDER_IDENTIFIERS);
+				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+				conn.commit();
+			} catch (Exception e) {
+				conn.rollback();
+				throw e;
+			} finally {
+				conn.setAutoCommit(true);
+				conn.createStatement().execute(MSSQL_ENABLE_CONSTRAINT_SQL);
+			}
+			
+			clearCaches();
+		} catch (Exception e) {
+			Logger.error(this, "Error fixing folder IDs for MSSQL", e);
+			throw new DotRuntimeException(e);
+		}
+	}
+	
+	private void fixFolderIdsOracle() {
+		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			conn.createStatement().execute(ORACLE_DISABLE_CONSTRAINT_SQL);
+			conn.setAutoCommit(false);
+			
+			try {
+				executeCommonUpdates(conn);
+				conn.createStatement().execute(ORACLE_UPDATE_FOLDER_IDENTIFIERS);
+				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+				conn.commit();
+			} catch (Exception e) {
+				conn.rollback();
+				throw e;
+			} finally {
+				conn.setAutoCommit(true);
+				conn.createStatement().execute(ORACLE_ENABLE_CONSTRAINT_SQL);
+			}
+			
+			clearCaches();
+		} catch (Exception e) {
+			Logger.error(this, "Error fixing folder IDs for Oracle", e);
+			throw new DotRuntimeException(e);
+		}
+	}
+	
+	private void fixFolderIdsGeneric() {
+		// For H2 and other databases, try a transaction-based approach without constraint manipulation
+		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			conn.setAutoCommit(false);
+			
+			try {
+				executeCommonUpdates(conn);
+				// Use a simple approach that should work on most databases
+				DotConnect dc = new DotConnect();
+				dc.setSQL("update identifier set id = (select inode from folder where folder.identifier = identifier.id) "
+						+ "where id in (select identifier from folder where identifier <> inode)");
+				dc.loadResult(conn);
+				
+				conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+				conn.commit();
+			} catch (Exception e) {
+				conn.rollback();
+				throw e;
+			} finally {
+				conn.setAutoCommit(true);
+			}
+			
+			clearCaches();
+		} catch (Exception e) {
+			Logger.error(this, "Error fixing folder IDs for generic database", e);
+			throw new DotRuntimeException(e);
+		}
+	}
+	
+	private void executeCommonUpdates(Connection conn) throws SQLException {
+		conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_IDENTIFIER);
+		conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_FOLDER);
+	}
+	
+	private void clearCaches() {
+		CacheLocator.getFolderCache().clearCache();
+		CacheLocator.getPermissionCache().clearCache();
 	}
 
 
 
-	@CloseDBIfOpened
-	@Override
-	public void fixFolderId(String inode, String identifier) {
-		// allow deferred constraints
-
-		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-			conn.createStatement().execute(ALLOW_DEFER_CONSTRAINT_SQL);
-
-			conn.setAutoCommit(false);
-
-			// defer folder/identifier constraint
-			conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
-
-			DotConnect db = new DotConnect();
-			db.setSQL("update identifier set id = ? where id = ?");
-			db.addParam(inode);
-			db.addParam(identifier);
-			db.loadResult(conn);
-
-			db.setSQL("update folder set identifier = inode where inode = ?");
-			db.addParam(inode);
-			db.loadResult(conn);
-
-			conn.commit();
-
-			conn.setAutoCommit(true);
-
-
-		} catch (Exception e) {
-			Logger.error(this, e);
-			throw new DotRuntimeException(e);
-		} finally {
-
-			// reset the constraint to not deferred
-			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
-			} catch (Exception e) {
-				Logger.error(this, e);
-				throw new DotRuntimeException(e);
-			}
-		}
-
-
-
-	}
 
 
 
