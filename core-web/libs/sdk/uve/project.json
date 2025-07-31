@@ -48,7 +48,6 @@
                 "project": "libs/sdk/uve/package.json",
                 "entryFile": "libs/sdk/uve/src/script/sdk-editor.ts",
                 "external": ["react/jsx-runtime"],
-                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
                 "compiler": "tsc",
                 "extractCss": false,
                 "minify": true,
