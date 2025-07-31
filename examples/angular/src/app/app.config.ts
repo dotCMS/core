@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { DotCMSEditablePageService, provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -29,6 +30,6 @@ export const appConfig: ApplicationConfig = {
          * For further customization, you can provide your own image loader implementation.
          */
         provideDotCMSImageLoader(environment.dotcmsUrl),
-        DotCMSEditablePageService
+        DotCMSEditablePageService, provideClientHydration(withEventReplay())
     ]
 };
