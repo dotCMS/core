@@ -6,6 +6,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    RequestState,
+    TopPerformaceTableEntity,
+    transformTopPagesTableData
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../constants';
@@ -40,14 +45,13 @@ const SKELETON_WIDTH_MAP = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAnalyticsDashboardTableComponent {
-    /** Array of data objects to display in table rows */
-    readonly $data = input.required<unknown[]>({ alias: 'data' });
+    /** Complete table state from analytics store */
+    readonly $tableState = input.required<RequestState<TopPerformaceTableEntity[]>>({
+        alias: 'tableState'
+    });
 
-    /** Component status for loading/error states */
-    readonly $status = input.required<ComponentStatus>({ alias: 'status' });
-
-    /** Table title - now configurable */
-    readonly $title = input<string>('analytics.table.title', { alias: 'title' });
+    /** Transformed table data ready for display */
+    protected readonly $data = computed(() => transformTopPagesTableData(this.$tableState().data));
 
     /** Static column configuration for top pages table */
     protected readonly columns: TableColumn[] = [...TOP_PAGES_TABLE_COLUMNS];
@@ -57,13 +61,15 @@ export class DotAnalyticsDashboardTableComponent {
 
     /** Check if component is in loading state */
     protected readonly $isLoading = computed(() => {
-        const status = this.$status();
+        const status = this.$tableState().status;
 
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
     });
 
     /** Check if component is in error state */
-    protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
+    protected readonly $isError = computed(
+        () => this.$tableState().status === ComponentStatus.ERROR
+    );
 
     /** Check if table data is empty */
     protected readonly $isEmpty = computed(() => {

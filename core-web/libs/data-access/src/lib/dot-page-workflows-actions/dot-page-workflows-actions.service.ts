@@ -12,7 +12,6 @@ export interface DotCMSPageWorkflowState {
     actions: DotCMSWorkflowAction[];
     page: DotCMSContentlet;
 }
-
 @Injectable()
 export class DotPageWorkflowsActionsService {
     private http = inject(HttpClient);

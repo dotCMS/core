@@ -5,10 +5,10 @@ import {
     Component,
     ElementRef,
     forwardRef,
+    inject,
     OnDestroy,
     OnInit,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -79,7 +79,7 @@ export class DotThemeSelectorDropdownComponent
             try {
                 this.currentSiteIdentifier = this.siteService.currentSite.identifier;
                 clearInterval(interval);
-            } catch (e) {
+            } catch {
                 /* */
             }
         }, 0);

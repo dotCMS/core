@@ -4,6 +4,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    inject,
     Input,
     OnChanges,
     OnDestroy,
@@ -11,14 +12,15 @@ import {
     Output,
     signal,
     SimpleChanges,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
 
 import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
+import { SiteEntity } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 
@@ -40,6 +42,7 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component';
     standalone: false
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
+    #globalStore = inject(GlobalStore);
     private siteService = inject(SiteService);
     paginationService = inject(PaginatorService);
     private dotEventsService = inject(DotEventsService);
@@ -170,6 +173,8 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
      * @memberof DotSiteSelectorComponent
      */
     siteChange(site: Site): void {
+        // Set the current site in the global store
+        this.#globalStore.setCurrentSite(site as unknown as SiteEntity);
         this.switch.emit(site);
     }
     /**

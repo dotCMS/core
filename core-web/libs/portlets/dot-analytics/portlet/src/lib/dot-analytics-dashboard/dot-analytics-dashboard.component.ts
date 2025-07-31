@@ -1,11 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotAnalyticsDashboardStore, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    DotAnalyticsDashboardStore,
+    extractPageTitle,
+    extractPageViews,
+    extractSessions,
+    extractTopPageValue,
+    MetricData,
+    TimeRangeInput
+} from '@dotcms/portlets/dot-analytics/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
@@ -49,14 +58,17 @@ import {
     styleUrl: './dot-analytics-dashboard.component.scss'
 })
 export default class DotAnalyticsDashboardComponent implements OnInit {
-    private readonly store = inject(DotAnalyticsDashboardStore);
     private readonly route = inject(ActivatedRoute);
-    private readonly router = inject(Router);
+    private readonly store = inject(DotAnalyticsDashboardStore);
+    private readonly destroyRef = inject(DestroyRef);
 
-    // Direct access to raw store signals - flexible and powerful
+    // Current site ID
+    private readonly $currentSiteId = inject(GlobalStore).currentSiteId;
+
+    // Current time range
     protected readonly $currentTimeRange = this.store.timeRange;
 
-    // Individual resource signals - you can access .data(), .status(), .error()
+    // Metrics signals
     protected readonly $totalPageViews = this.store.totalPageViews;
     protected readonly $uniqueVisitors = this.store.uniqueVisitors;
     protected readonly $topPagePerformance = this.store.topPagePerformance;
@@ -64,23 +76,44 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
     protected readonly $pageViewDeviceBrowsers = this.store.pageViewDeviceBrowsers;
     protected readonly $topPagesTable = this.store.topPagesTable;
 
-    // Computed/transformed data from store
-    protected readonly $metricsData = this.store.metricsData;
-    protected readonly $topPagesTableData = this.store.topPagesTableData;
-    protected readonly $pageviewsTimelineData = this.store.pageViewTimeLineData;
-    protected readonly $deviceBreakdownData = this.store.pageViewDeviceBrowsersData;
-    protected readonly $deviceBreakdownStatus = this.store.pageViewDeviceBrowsers.status;
-
-    private readonly destroyRef = inject(DestroyRef);
+    // Computed signals for data transformations
+    protected readonly $metricsData = computed((): MetricData[] => [
+        {
+            name: 'analytics.metrics.total-pageviews',
+            value: extractPageViews(this.$totalPageViews().data),
+            subtitle: 'analytics.metrics.total-pageviews.subtitle',
+            icon: 'pi-eye',
+            status: this.$totalPageViews().status,
+            error: this.$totalPageViews().error
+        },
+        {
+            name: 'analytics.metrics.unique-visitors',
+            value: extractSessions(this.$uniqueVisitors().data),
+            subtitle: 'analytics.metrics.unique-visitors.subtitle',
+            icon: 'pi-users',
+            status: this.$uniqueVisitors().status,
+            error: this.$uniqueVisitors().error
+        },
+        {
+            name: 'analytics.metrics.top-page-performance',
+            value: extractTopPageValue(this.$topPagePerformance().data),
+            subtitle: extractPageTitle(this.$topPagePerformance().data),
+            icon: 'pi-chart-bar',
+            status: this.$topPagePerformance().status,
+            error: this.$topPagePerformance().error
+        }
+    ]);
 
     /**
      * Refresh dashboard data
      */
     onRefresh(): void {
         const timeRange = this.$currentTimeRange();
+        const currentSiteId = this.$currentSiteId();
 
-        // Refresh all dashboard data using the coordinated method
-        this.store.loadAllDashboardData(timeRange);
+        if (currentSiteId && timeRange) {
+            this.store.loadAllDashboardData(timeRange, currentSiteId);
+        }
     }
 
     ngOnInit(): void {
@@ -108,7 +141,7 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
                     internalTimeRange !== CUSTOM_TIME_RANGE &&
                     isValidTimeRange(internalTimeRange)
                 ) {
-                    this.store.setTimeRange(internalTimeRange as TimeRange);
+                    this.store.setTimeRange(internalTimeRange as TimeRangeInput);
                 }
             }
         });
