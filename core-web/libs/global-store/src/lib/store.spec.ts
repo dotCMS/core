@@ -2,7 +2,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/sp
 import { of } from 'rxjs';
 
 import { DotSiteService } from '@dotcms/data-access';
-import { Site } from '@dotcms/dotcms-js';
+import { SiteEntity } from '@dotcms/dotcms-models';
 
 import { GlobalStore } from './store';
 import { mockSiteEntity, mockUserData, mockUserDataAlt } from './store.mock';
@@ -33,7 +33,7 @@ describe('GlobalStore', () => {
     describe('Site Management', () => {
         it('should call DotSiteService.getCurrentSite when loadCurrentSite is invoked', () => {
             const mockService = spectator.inject(DotSiteService);
-            mockService.getCurrentSite.mockReturnValue(of(mockSiteEntity as Site));
+            mockService.getCurrentSite.mockReturnValue(of(mockSiteEntity as SiteEntity));
 
             store.loadCurrentSite();
 
