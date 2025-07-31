@@ -1,26 +1,21 @@
 package com.dotcms.content.elasticsearch.business.field;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotNumericFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -28,9 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Factory to get the FieldHandlerStrategy
@@ -46,8 +43,7 @@ public class FieldHandlerStrategyFactory {
     }
 
     private static final Set<String> TEXT_STRATEGY_EXCLUSIONS_TYPES = Set.of(
-            LegacyFieldTypes.JSON_FIELD.legacyValue(),
-            LegacyFieldTypes.STORY_BLOCK_FIELD.legacyValue()
+            LegacyFieldTypes.JSON_FIELD.legacyValue()
     );
 
     private boolean isExcludedTextField(Field field) {
@@ -61,8 +57,6 @@ public class FieldHandlerStrategyFactory {
         addFieldStrategy(LegacyFieldTypes.KEY_VALUE.legacyValue(), this::keyValueStrategy);
         addFieldStrategy(LegacyFieldTypes.BINARY.legacyValue(), this::binaryStrategy);
         addFieldStrategy(LegacyFieldTypes.JSON_FIELD.legacyValue(), this::jsonStrategy);
-        //StoryBlock should probably have its own strategy since the json is very specific in form
-        addFieldStrategy(LegacyFieldTypes.STORY_BLOCK_FIELD.legacyValue(), this::jsonStrategy);
 
         addMatchingFieldStrategy(field ->
                 field.dbColumn().startsWith("text") &&
@@ -114,19 +108,8 @@ public class FieldHandlerStrategyFactory {
     }
 
     /**
-     * Adds a new field strategy associated to a starts with text
-     * @param strategy
-     */
-    public void addStartsWithFieldStrategy (final String fieldTypeText, final FieldHandlerStrategy strategy) {
-
-        if (Objects.nonNull(fieldTypeText) && Objects.nonNull(strategy)) {
-
-            addMatchingFieldStrategy(field -> field.dbColumn().startsWith(fieldTypeText), strategy);
-        }
-    }
-
-    /**
      * Adds a new field strategy associated to a predicate
+     * @param fieldTypePredicate
      * @param strategy
      */
     public void addMatchingFieldStrategy (final Predicate<Field> fieldTypePredicate, final FieldHandlerStrategy strategy) {
@@ -261,23 +244,6 @@ public class FieldHandlerStrategyFactory {
         } catch (IOException e) {
             throw new DotContentletStateException(
                     "Unable to set binary file Object: " + e.getMessage(), e);
-        }
-    }
-
-    private void multiSelectValueStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
-        if (value instanceof String) {
-            String stringValue = value.toString().trim();
-
-            // Split strictly by comma and clean up each part
-            String processedValue = Arrays.stream(stringValue.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.joining(","));
-
-
-            textStrategy(contentlet, field, processedValue);
-        } else {
-            Logger.error(FieldHandlerStrategyFactory.class,"MultiSelect is expecting a String value for field: " + field.variable());
         }
     }
 

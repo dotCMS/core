@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
@@ -27,6 +28,7 @@ import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBa
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -35,8 +37,12 @@ import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -4206,7 +4212,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     @DataProvider
     public static Object[][] fieldTestCases() {
         return new Object[][]{
-/*
+
                 // Required TextField - Missing value
                 {new FieldTestCase(
                         "RequiredTextField",
@@ -4413,7 +4419,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "required",
                         REQUIRED_STORY_BLOCK_ASSERTION
                 )},
-                */
+
                 // StoryBlock Format Error
 /*
                 {new FieldTestCase(
@@ -4488,6 +4494,20 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         TAG_FIELD_VALIDATION
                 )},
 */
+
+                {new FieldTestCase(
+                        "UniqueTextField",
+                        TextField.class,
+                        "uniqueTextField",
+                        DataTypes.TEXT,
+                        "dupe-value",
+                        "dupe-value", // Test should fail here
+                        DUPLICATE_UNIQUE_VALUE.name(),
+                        false,
+                        false,
+                        "unique",
+                        UNIQUE_TEXT_FIELD_ASSERTION
+                )},
                 // RelationshipField - Invalid content reference
                 {new FieldTestCase(
                         "RelationshipField",
@@ -4501,7 +4521,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         false,
                         null,
                         RELATIONSHIP_FIELD_VALIDATION
-                )},
+                )}
         };
     }
 
@@ -4689,7 +4709,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .name(testCase.fieldVariable)
                 .variable(testCase.fieldVariable)
                 .dataType(testCase.dataType)
-                .required("required".equals(testCase.fieldSpecificConfig));
+                .required("required".equals(testCase.fieldSpecificConfig))
+                .unique("unique".equals(testCase.fieldSpecificConfig));
 
         if(null != relatedContentType){
             // Set-up pieces required for the relationship to work
@@ -4805,6 +4826,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy UNIQUE_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertThat(error.message().trim(), allOf(
+            containsString(testCase.fieldVariable)
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", DUPLICATE_UNIQUE_VALUE.name(), error.code().get());
     };
 
     private static void assertRequiredField(FieldTestCase testCase, ValidationMessage error) {
@@ -4953,7 +4985,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 endsWith(testCase.fieldVariable)
         ));
 
-        assertThat(error.context().get("parseError").toString().trim(), allOf(
+        assertThat(error.context().get("errorHint").toString().trim(), allOf(
                 startsWith("Unexpected character (''' (code 39)): was expecting double-quote to start field name"),
                 not(containsString("[Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled);")),
                 containsString("line: 1, column: 2")

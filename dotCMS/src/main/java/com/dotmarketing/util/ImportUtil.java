@@ -438,7 +438,8 @@ public class ImportUtil {
                                 //Importing content record...
                                 resultBuilder = new LineImportResultBuilder(lineNumber);
                                 importLine(csvLine, params.siteId(),
-                                        contentType, params.preview(), params.isMultilingual(), params.user(), identifier,
+                                        contentType, params.preview(), params.stopOnError(),
+                                        params.isMultilingual(), params.user(), identifier,
                                         workflowActionIdColumnIndex, lineNumber, languageToImport,
                                         headers, keyFields, chosenKeyFields, keyContentUpdated,
                                         contentTypePermissions, uniqueFieldBeans, uniqueFields,
@@ -809,12 +810,12 @@ public class ImportUtil {
         }
 
         if(ex instanceof ImportLineError){
-            final var importCodeErrorAware = (ImportLineError) ex;
+            final var importLineError = (ImportLineError) ex;
             messageBuilder
-                    .code(importCodeErrorAware.getCode())
-                    .field(importCodeErrorAware.getField())
-                    .invalidValue(importCodeErrorAware.getValue())
-                    .context(importCodeErrorAware.getContext().orElseGet(Map::of));
+                    .code(importLineError.getCode())
+                    .field(importLineError.getField())
+                    .invalidValue(importLineError.getValue())
+                    .context(importLineError.getContext().orElseGet(Map::of));
         }
 
         messageBuilder.message(ex.getMessage());
@@ -1664,6 +1665,7 @@ public class ImportUtil {
             final String currentHostId,
             final Structure contentType,
             final boolean preview,
+            final boolean stopOnError,
             boolean isMultilingual,
             final User user,
             final String identifier,
@@ -1705,12 +1707,11 @@ public class ImportUtil {
             resultBuilder.setIgnoreLine(true);
             return;
         }
-
         //Check if line has repeated values for a unique field, if it does then ignore the line
         if (!uniqueFieldBeans.isEmpty()) {
-            boolean ignoreLine = validateUniqueFields(user, lineNumber, language,
-                    uniqueFieldBeans, uniqueFields, resultBuilder);
-            if (ignoreLine) {
+            final boolean hasErrors = validateUniqueFields(user, lineNumber, language,
+                    uniqueFieldBeans, uniqueFields, resultBuilder, stopOnError);
+            if (hasErrors) {
                 resultBuilder.setIgnoreLine(true);
                 return;
             }
@@ -4623,26 +4624,31 @@ public class ImportUtil {
      */
     private static boolean validateUniqueFields(User user, int lineNumber, long language,
             List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields,
-            final LineImportResultBuilder resultBuilder) throws LanguageException {
-        boolean ignoreLine = false;
+            final LineImportResultBuilder resultBuilder,
+            final boolean stopOnError) throws LanguageException {
+        boolean hasErrors = false;
         for (Field f : uniqueFields) {
             Object value = null;
             int count = 0;
             for (UniqueFieldBean bean : uniqueFieldBeans) {
                 if (bean.field().equals(f) && language == bean.languageId()) {
                     if (count > 0 && value != null && value.equals(bean.value())
-                            && lineNumber == bean
-                            .lineNumber()) {
+                            && lineNumber == bean.lineNumber()) {
                         resultBuilder.incrementContentToCreate(-1);
-                        ignoreLine = true;
+                        hasErrors = true;
+                        if(stopOnError){
+                           throw ImportLineException.builder()
+                                .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
+                                .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
+                                .field(f.getVelocityVarName())
+                                .invalidValue(bean.value().toString())
+                                .lineNumber(lineNumber)
+                                .build();
+                        }
+
                         resultBuilder.addValidationMessage(ValidationMessage.builder()
                                 .type(ValidationMessageType.WARNING)
-                                .message(LanguageUtil
-                                        .get(user,
-                                                "contains-duplicate-values-for-structure-unique-field")
-                                        + " '"
-                                        + f.getVelocityVarName() + "', " + LanguageUtil.get(user,
-                                        "and-will-be-ignored"))
+                                .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
                                 .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
                                 .field(bean.field().getVelocityVarName())
                                 .invalidValue(bean.value().toString())
@@ -4651,11 +4657,24 @@ public class ImportUtil {
                     }
                     value = bean.value();
                     count++;
-
                 }
             }
         }
-        return ignoreLine;
+        return hasErrors;
+    }
+
+    /**
+     * Builds a duplicate unique field validation message using String.format
+     *
+     * @param user the user for localization
+     * @param velocityVarName the field variable name
+     * @return the formatted message
+     */
+    private static String dupeUniqueFieldMessage(User user, String velocityVarName)
+            throws LanguageException {
+        String basePattern = LanguageUtil.get(user, "contains-duplicate-values-for-structure-unique-field") + " '%s'";
+        String fullPattern = basePattern + ", " + LanguageUtil.get(user, "and-will-be-ignored");
+        return String.format(fullPattern, velocityVarName);
     }
 
     /**
