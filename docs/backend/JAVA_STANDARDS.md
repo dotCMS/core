@@ -238,4 +238,9 @@ StructureAPI structureAPI = APILocator.getStructureAPI();
 Logger.info(this, "message");
 Config.getStringProperty("property", "default");
 ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI();
+
+// ✅ For class metadata analysis, prefer Jandex over reflection
+List<Class<?>> annotatedClasses = JandexClassMetadataScanner.findClassesWithAnnotation(
+    MyAnnotation.class, "com.dotcms.mypackage");
+// See: docs/backend/JANDEX_METADATA_SCANNING.md
 ```
