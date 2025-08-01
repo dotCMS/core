@@ -34,10 +34,16 @@ public class DotNumericFieldException extends DotContentletStateException implem
     }
 
     public static DotNumericFieldException newLongFieldException(String field, Object value) {
-        return new DotNumericFieldException(String.format(String.format(INVALID_NUMERIC_FIELD_MESSAGE,value,"Long",field)), field, value);
+        return new DotNumericFieldException(
+                String.format(INVALID_NUMERIC_FIELD_MESSAGE,value,"Long",field),
+                field, value
+        );
     }
 
     public static DotNumericFieldException newFloatFieldException(String field, Object value) {
-        return new DotNumericFieldException(String.format(String.format(INVALID_NUMERIC_FIELD_MESSAGE,value,"Float",field)), field, value);
+        return new DotNumericFieldException(
+                String.format(INVALID_NUMERIC_FIELD_MESSAGE,value,"Float",field),
+                field, value
+        );
     }
 }

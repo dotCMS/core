@@ -1709,9 +1709,9 @@ public class ImportUtil {
         }
         //Check if line has repeated values for a unique field, if it does then ignore the line
         if (!uniqueFieldBeans.isEmpty()) {
-            final boolean hasErrors = validateUniqueFields(user, lineNumber, language,
-                    uniqueFieldBeans, uniqueFields, resultBuilder, stopOnError);
-            if (hasErrors) {
+            final boolean ignoreLine = validateUniqueFields(user, lineNumber, language,
+                    uniqueFieldBeans, uniqueFields, resultBuilder);
+            if (ignoreLine && !stopOnError) {
                 resultBuilder.setIgnoreLine(true);
                 return;
             }
@@ -4624,28 +4624,16 @@ public class ImportUtil {
      */
     private static boolean validateUniqueFields(User user, int lineNumber, long language,
             List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields,
-            final LineImportResultBuilder resultBuilder,
-            final boolean stopOnError) throws LanguageException {
-        boolean hasErrors = false;
+            final LineImportResultBuilder resultBuilder) throws LanguageException {
+        boolean ignoreLine = false;
         for (Field f : uniqueFields) {
             Object value = null;
             int count = 0;
             for (UniqueFieldBean bean : uniqueFieldBeans) {
                 if (bean.field().equals(f) && language == bean.languageId()) {
-                    if (count > 0 && value != null && value.equals(bean.value())
-                            && lineNumber == bean.lineNumber()) {
+                    if (count > 0 && value != null && value.equals(bean.value()) && lineNumber == bean.lineNumber()) {
                         resultBuilder.incrementContentToCreate(-1);
-                        hasErrors = true;
-                        if(stopOnError){
-                           throw ImportLineException.builder()
-                                .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
-                                .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
-                                .field(f.getVelocityVarName())
-                                .invalidValue(bean.value().toString())
-                                .lineNumber(lineNumber)
-                                .build();
-                        }
-
+                        ignoreLine = true;
                         resultBuilder.addValidationMessage(ValidationMessage.builder()
                                 .type(ValidationMessageType.WARNING)
                                 .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
@@ -4660,7 +4648,7 @@ public class ImportUtil {
                 }
             }
         }
-        return hasErrors;
+        return ignoreLine;
     }
 
     /**
