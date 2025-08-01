@@ -1,4 +1,4 @@
-import AUTOSCROLLER_JS from './autoscroller.js.js';
+import AUTOSCROLLER_JS from './autoscroller.js';
 import DRAGULA_JS from './dragula.min.js';
 import { EDIT_PAGE_JS } from './iframe-edit-mode.js';
 
