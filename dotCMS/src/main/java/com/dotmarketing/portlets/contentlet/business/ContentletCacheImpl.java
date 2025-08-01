@@ -13,6 +13,7 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.lang.SerializationUtils;
 
 /**
  * @author Jason Tesser
@@ -92,11 +93,13 @@ public class ContentletCacheImpl extends ContentletCache {
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
-		return content;
+		return (Contentlet) SerializationUtils.clone(content);
 	}
 
 	/* (non-Javadoc)
      * @see com.dotmarketing.business.PermissionCache#clearCache()
+
+
      */
 	public void clearCache() {
 		// clear the cache
