@@ -59,3 +59,5 @@ This maintenance release includes the following code fixes:
 53. https://github.com/dotCMS/core/issues/31792 : Static Push Fails with uppercase extensions #31792
 54. https://github.com/dotCMS/core/issues/29324 : Unable to Upload Image from Custom Tool Group #29324
 55. https://github.com/dotCMS/core/issues/32127 : Bring Back older versions of Container missing #32127
+56. https://github.com/dotCMS/core/issues/31688 : dotAI Auto Update Index is not creating/updating indexes #31688
+

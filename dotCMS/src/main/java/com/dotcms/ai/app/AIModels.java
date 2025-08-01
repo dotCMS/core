@@ -297,7 +297,9 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
                 .build()
                 .doResponse(OpenAIModels.class);
 
-        if (!CircuitBreakerUrl.isSuccessResponse(response)) {
+        if (response.getStatusCode() == 401) {
+            throw new InvalidAIKeyException("AI key authentication failed. Please ensure the key is valid, active, and correctly configured.");
+        } else if (!CircuitBreakerUrl.isSuccessResponse(response)) {
             appConfig.debugLogger(
                     AIModels.class,
                     () -> String.format(
