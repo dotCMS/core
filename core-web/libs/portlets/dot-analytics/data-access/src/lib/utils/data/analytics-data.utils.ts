@@ -130,14 +130,35 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
             new Date(a['request.createdAt']).getTime() - new Date(b['request.createdAt']).getTime()
     );
 
+    // Check if all data points are from the same day
+    const allDatesAreSameDay = sortedData.every((item, index, arr) => {
+        if (index === 0) return true;
+        const currentDate = new Date(item['request.createdAt']);
+        const firstDate = new Date(arr[0]['request.createdAt']);
+
+        return (
+            currentDate.getFullYear() === firstDate.getFullYear() &&
+            currentDate.getMonth() === firstDate.getMonth() &&
+            currentDate.getDate() === firstDate.getDate()
+        );
+    });
+
     const labels = sortedData.map((item) => {
         const date = new Date(item['request.createdAt']);
 
-        // Format as short weekday + date (e.g., "Mon 21", "Tue 22")
-        return date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            day: 'numeric'
-        });
+        if (allDatesAreSameDay) {
+            // Format as hours when all data is from the same day (e.g., "10 AM", "11 AM", "12 PM")
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                hour12: true
+            });
+        } else {
+            // Format as short weekday + date when data spans multiple days (e.g., "Mon 21", "Tue 22")
+            return date.toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: 'numeric'
+            });
+        }
     });
 
     const chartData = sortedData.map((item) => Number(item['request.totalRequest']) || 0);
