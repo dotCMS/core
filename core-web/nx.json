@@ -175,8 +175,8 @@
     "defaultBase": "main",
     "ignorePatterns": [
         "**/node_modules",
-        "**/vite.config.*.timestamp*",
-        "**/vitest.config.*.timestamp*"
+        "**/*vite.config*.timestamp*",
+        "**/*vitest.config*.timestamp*"
     ],
     "release": {
         "version": {
