@@ -78,7 +78,8 @@ export type MeasureField = (typeof MeasureField)[keyof typeof MeasureField];
 const FilterField = {
     EVENT_TYPE: 'eventType',
     PATH: 'path',
-    USER_AGENT: 'userAgent'
+    USER_AGENT: 'userAgent',
+    SITE_ID: 'siteId'
 } as const;
 
 export type FilterField = (typeof FilterField)[keyof typeof FilterField];
