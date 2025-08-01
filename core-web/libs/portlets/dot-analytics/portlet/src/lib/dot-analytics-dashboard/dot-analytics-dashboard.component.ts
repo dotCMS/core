@@ -1,15 +1,33 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotAnalyticsDashboardStore, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    DotAnalyticsDashboardStore,
+    extractPageTitle,
+    extractPageViews,
+    extractSessions,
+    extractTopPageValue,
+    MetricData,
+    TimeRangeInput
+} from '@dotcms/portlets/dot-analytics/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
 import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
 import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
+import { CUSTOM_TIME_RANGE } from './constants';
+import { DateRange } from './types';
+import {
+    fromUrlFriendly,
+    isValidCustomDateRange,
+    isValidTimeRange
+} from './utils/dot-analytics.utils';
 
 /**
  * Main analytics dashboard component for DotCMS.
@@ -40,13 +58,18 @@ import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-
     templateUrl: './dot-analytics-dashboard.component.html',
     styleUrl: './dot-analytics-dashboard.component.scss'
 })
-export default class DotAnalyticsDashboardComponent {
+export default class DotAnalyticsDashboardComponent implements OnInit {
+    private readonly route = inject(ActivatedRoute);
     private readonly store = inject(DotAnalyticsDashboardStore);
+    private readonly destroyRef = inject(DestroyRef);
 
-    // Direct access to raw store signals - flexible and powerful
+    // Current site ID
+    private readonly $currentSiteId = inject(GlobalStore).currentSiteId;
+
+    // Current time range
     protected readonly $currentTimeRange = this.store.timeRange;
 
-    // Individual resource signals - you can access .data(), .status(), .error()
+    // Metrics signals
     protected readonly $totalPageViews = this.store.totalPageViews;
     protected readonly $uniqueVisitors = this.store.uniqueVisitors;
     protected readonly $topPagePerformance = this.store.topPagePerformance;
@@ -54,30 +77,74 @@ export default class DotAnalyticsDashboardComponent {
     protected readonly $pageViewDeviceBrowsers = this.store.pageViewDeviceBrowsers;
     protected readonly $topPagesTable = this.store.topPagesTable;
 
-    // Computed/transformed data from store
-    protected readonly $metricsData = this.store.metricsData;
-    protected readonly $topPagesTableData = this.store.topPagesTableData;
-    protected readonly $pageviewsTimelineData = this.store.pageViewTimeLineData;
-    protected readonly $deviceBreakdownData = this.store.pageViewDeviceBrowsersData;
-    protected readonly $deviceBreakdownStatus = this.store.pageViewDeviceBrowsers.status;
-
-    /**
-     * Handles time period filter changes.
-     * Updates the store and URL query parameters.
-     *
-     * @param period - Selected time period value
-     */
-    onTimeRangeChange(timeRange: TimeRange): void {
-        this.store.setTimeRange(timeRange);
-    }
+    // Computed signals for data transformations
+    protected readonly $metricsData = computed((): MetricData[] => [
+        {
+            name: 'analytics.metrics.total-pageviews',
+            value: extractPageViews(this.$totalPageViews().data),
+            subtitle: 'analytics.metrics.total-pageviews.subtitle',
+            icon: 'pi-eye',
+            status: this.$totalPageViews().status,
+            error: this.$totalPageViews().error
+        },
+        {
+            name: 'analytics.metrics.unique-visitors',
+            value: extractSessions(this.$uniqueVisitors().data),
+            subtitle: 'analytics.metrics.unique-visitors.subtitle',
+            icon: 'pi-users',
+            status: this.$uniqueVisitors().status,
+            error: this.$uniqueVisitors().error
+        },
+        {
+            name: 'analytics.metrics.top-page-performance',
+            value: extractTopPageValue(this.$topPagePerformance().data),
+            subtitle: extractPageTitle(this.$topPagePerformance().data),
+            icon: 'pi-chart-bar',
+            status: this.$topPagePerformance().status,
+            error: this.$topPagePerformance().error
+        }
+    ]);
 
     /**
      * Refresh dashboard data
      */
     onRefresh(): void {
         const timeRange = this.$currentTimeRange();
+        const currentSiteId = this.$currentSiteId();
 
-        // Refresh all dashboard data using the coordinated method
-        this.store.loadAllDashboardData(timeRange);
+        if (currentSiteId && timeRange) {
+            this.store.loadAllDashboardData(timeRange, currentSiteId);
+        }
+    }
+
+    ngOnInit(): void {
+        // Listen to query param changes and sync with store
+        this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+            const urlTimeRange = params['time_range'];
+            const fromDate = params['from'];
+            const toDate = params['to'];
+
+            if (urlTimeRange) {
+                // Convert URL-friendly value to internal value
+                const internalTimeRange = fromUrlFriendly(urlTimeRange);
+
+                // Handle custom date range
+                if (internalTimeRange === CUSTOM_TIME_RANGE) {
+                    // Only set if we have valid from and to dates
+                    if (fromDate && toDate && isValidCustomDateRange(fromDate, toDate)) {
+                        const customDateRange: DateRange = [fromDate, toDate];
+                        this.store.setTimeRange(customDateRange);
+                    }
+                    // If invalid or incomplete, ignore (don't set anything)
+                }
+                // Handle predefined time range (excluding CUSTOM_TIME_RANGE)
+                else if (
+                    internalTimeRange !== CUSTOM_TIME_RANGE &&
+                    isValidTimeRange(internalTimeRange)
+                ) {
+                    this.store.setTimeRange(internalTimeRange as TimeRangeInput);
+                }
+            }
+        });
     }
 }

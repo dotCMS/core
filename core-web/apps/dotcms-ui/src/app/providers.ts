@@ -12,20 +12,21 @@ import {
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageService,
     DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
-    PaginatorService,
+    DotWorkflowEventHandlerService,
     EmaAppConfigurationService,
-    DotGlobalMessageService,
-    DotFormatDateService,
-    DotIframeService,
-    DotWorkflowEventHandlerService
+    PaginatorService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
@@ -86,7 +87,8 @@ const PROVIDERS: Provider[] = [
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy
-    }
+    },
+    GlobalStore
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];
