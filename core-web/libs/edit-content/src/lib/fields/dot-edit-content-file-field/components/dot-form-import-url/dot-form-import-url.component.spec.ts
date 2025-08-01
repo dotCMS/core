@@ -68,6 +68,7 @@ describe('DotFormImportUrlComponent', () => {
                 status: ComponentStatus.LOADED
             });
 
+            spectator.detectChanges();
             spectator.flushEffects();
 
             expect(dialogRef.close).toHaveBeenCalledWith(mockPreviewFile);

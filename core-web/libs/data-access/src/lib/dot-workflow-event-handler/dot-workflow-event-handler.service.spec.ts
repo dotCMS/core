@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -12,9 +12,9 @@ import {
     DotMessageSeverity,
     DotMessageType,
     DotProcessedWorkflowPayload,
-    DotWorkflowPayload,
+    DotWizardInput,
     DotWizardStep,
-    DotWizardInput
+    DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -26,19 +26,17 @@ import {
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
-import {
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    PushPublishService,
-    DotIframeService,
-    DotWorkflowEventHandlerService
-} from './dot-workflow-event-handler.service';
+import { DotWorkflowEventHandlerService } from './dot-workflow-event-handler.service';
 
-import { DotMessageService } from '../dot-alert-confirm/dot-alert-confirm.service';
 import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
 import { DotGlobalMessageService } from '../dot-global-message/dot-global-message.service';
-import { DotWorkflowActionsFireService } from '../dot-upload-file/dot-upload-file.service';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotIframeService } from '../dot-iframe/dot-iframe.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotWizardService } from '../dot-wizard/dot-wizard.service';
+import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { PushPublishService } from '../push-publish/push-publish.service';
 
 const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(

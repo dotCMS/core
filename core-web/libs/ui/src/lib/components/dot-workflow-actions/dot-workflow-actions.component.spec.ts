@@ -11,7 +11,7 @@ import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testi
 import { DotWorkflowActionsComponent } from './dot-workflow-actions.component';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-import { DotClipboardUtil } from '../dot-copy-button/dot-copy-button.component';
+import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
 
 const WORKFLOW_ACTIONS_SEPARATOR_MOCK: DotCMSWorkflowAction = {
     assignable: true,
