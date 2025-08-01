@@ -297,17 +297,17 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   @Override
-  public int searchCount(String search) throws DotDataException {
+  public int searchCount(String search) throws DotDataException, DotSecurityException {
       return dbCount(search, BaseContentType.ANY.getType());
   }
 
   @Override
-  public int searchCount(String search, int baseType) throws DotDataException {
+  public int searchCount(String search, int baseType) throws DotDataException, DotSecurityException {
       return dbCount(search, baseType);
   }
 
   @Override
-  public int searchCount(String search, BaseContentType baseType) throws DotDataException {
+  public int searchCount(String search, BaseContentType baseType) throws DotDataException, DotSecurityException {
       return dbCount(search, baseType.getType());
   }
 
@@ -814,7 +814,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     if (searchCondition.safeCondition != null) {
         // Convert value to appropriate type based on field
         if ("structuretype".equals(searchCondition.safeCondition.field)) {
-            dc.addParam(Integer.parseInt(searchCondition.safeCondition.value));
+            try {
+                // SECURITY: Validate integer range to prevent overflow
+                String value = searchCondition.safeCondition.value;
+                long longValue = Long.parseLong(value);
+                if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+                    Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
+                    throw new DotSecurityException("Invalid structuretype value: out of range");
+                }
+                dc.addParam((int) longValue);
+            } catch (NumberFormatException e) {
+                Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(searchCondition.safeCondition.value));
+                throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
+            }
         } else {
             dc.addParam(searchCondition.safeCondition.value);
         }
@@ -903,7 +915,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
   // SECURITY: Fully parameterized count query with safe condition support
-  private int dbCount(String search, int baseType) throws DotDataException {
+  private int dbCount(String search, int baseType) throws DotDataException, DotSecurityException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
     
@@ -941,7 +953,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     if (searchCondition.safeCondition != null) {
       // Convert value to appropriate type based on field
       if ("structuretype".equals(searchCondition.safeCondition.field)) {
-        dc.addParam(Integer.parseInt(searchCondition.safeCondition.value));
+        try {
+          // SECURITY: Validate integer range to prevent overflow
+          String value = searchCondition.safeCondition.value;
+          long longValue = Long.parseLong(value);
+          if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+            Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
+            throw new DotSecurityException("Invalid structuretype value: out of range");
+          }
+          dc.addParam((int) longValue);
+        } catch (NumberFormatException e) {
+          Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(searchCondition.safeCondition.value));
+          throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
+        }
       } else if ("system".equals(searchCondition.safeCondition.field) || 
                  "fixed".equals(searchCondition.safeCondition.field) ||
                  "default_structure".equals(searchCondition.safeCondition.field)) {
