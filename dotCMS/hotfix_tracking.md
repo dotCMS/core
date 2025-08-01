@@ -140,4 +140,6 @@ This maintenance release includes the following code fixes:
 134. https://github.com/dotCMS/core/issues/29324 : Unable to Upload Image from Custom Tool Group #29324
 135. https://github.com/dotCMS/core/issues/32127 : Bring Back older versions of Container missing #32127
 136. https://github.com/dotCMS/core/issues/28417 : Unable to bring back old versions of templates #28417
+137. https://github.com/dotCMS/core/issues/31077 : PrimeNG Datepicker Displays Incorrectly When Appended to Body #31077
+
 
