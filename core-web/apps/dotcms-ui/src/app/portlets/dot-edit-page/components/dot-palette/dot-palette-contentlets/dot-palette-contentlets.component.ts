@@ -2,9 +2,9 @@ import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angu
 
 import { LazyLoadEvent } from 'primeng/api';
 
-import { DotContentletEditorService } from '@dotcms/app/view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 @Component({

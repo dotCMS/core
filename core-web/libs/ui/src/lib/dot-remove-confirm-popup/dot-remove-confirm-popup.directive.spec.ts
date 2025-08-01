@@ -5,7 +5,7 @@ import { Component } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
-import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
+import { DotRemoveConfirmPopupWithEscapeDirective } from './dot-remove-confirm-popup.directive';
 
 @Component({
     selector: 'dot-escape-confirm-popup-host',

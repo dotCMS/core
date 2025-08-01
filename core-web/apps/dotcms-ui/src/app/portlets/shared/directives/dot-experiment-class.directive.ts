@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { Directive, ElementRef, OnDestroy, Renderer2, inject } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
-import { DotEditPageNavComponent } from '@portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component';
+import { DotEditPageNavComponent } from '../../dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component';
 
 const EDIT_PAGE_VARIANT = 'edit-page-variant-mode';
 

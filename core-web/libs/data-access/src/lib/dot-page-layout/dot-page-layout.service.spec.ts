@@ -3,11 +3,12 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockDotLayout } from '@dotcms/utils-testing';
 
 import { DotPageLayoutService } from './dot-page-layout.service';
+
+import { DotSessionStorageService } from '../dot-edit-page/dot-edit-page.service';
 
 describe('DotPageLayoutService', () => {
     let injector: TestBed;

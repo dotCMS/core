@@ -24,12 +24,12 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TableModule } from 'primeng/table';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
-import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ExistingContentStore } from './store/existing-content.store';
 
+import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
+import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { SelectionMode } from '../../models/relationship.models';
 
 type DialogData = {

@@ -19,7 +19,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './remove-confirm-dialog.component.html',
     styleUrls: ['./remove-confirm-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ConfirmPopupModule, ButtonModule, DotMessagePipe],
+    imports: [ConfirmPopupModule, ButtonModule],
     providers: [ConfirmationService, DotMessagePipe]
 })
 export class RemoveConfirmDialogComponent {

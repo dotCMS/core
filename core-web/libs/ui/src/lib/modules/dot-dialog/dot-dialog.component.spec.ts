@@ -6,7 +6,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 
 import { DotDialogActions } from '@dotcms/dotcms-models';
-import { DotDialogComponent } from '@dotcms/ui';
+
+import { DotDialogComponent } from './dot-dialog.component';
 
 const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
     const event = new KeyboardEvent('keydown', {

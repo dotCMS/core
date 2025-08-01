@@ -1,7 +1,8 @@
 import { Component, inject, Input, OnChanges, ViewChild } from '@angular/core';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotRouterService } from '@dotcms/data-access';
+
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 
 @Component({
     selector: 'dot-container-history',

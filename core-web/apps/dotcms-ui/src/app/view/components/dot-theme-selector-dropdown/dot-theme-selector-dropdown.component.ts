@@ -16,11 +16,12 @@ import { LazyLoadEvent } from 'primeng/api';
 
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
-import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
+
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',

@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

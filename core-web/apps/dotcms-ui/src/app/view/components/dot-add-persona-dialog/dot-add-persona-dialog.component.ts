@@ -2,13 +2,14 @@ import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } fro
 
 import { take } from 'rxjs/operators';
 
-import { DotCreatePersonaFormComponent } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotDialogActions, DotPersona } from '@dotcms/dotcms-models';
+
+import { DotCreatePersonaFormComponent } from './dot-create-persona-form/dot-create-persona-form.component';
 
 const PERSONA_CONTENT_TYPE = 'persona';
 

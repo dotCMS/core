@@ -4,12 +4,13 @@ import { Component, DebugElement, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
 
 import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
+
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotDOMHtmlUtilService } from '../../services/html/dot-dom-html-util.service';
 
 @Component({
     selector: 'dot-test',

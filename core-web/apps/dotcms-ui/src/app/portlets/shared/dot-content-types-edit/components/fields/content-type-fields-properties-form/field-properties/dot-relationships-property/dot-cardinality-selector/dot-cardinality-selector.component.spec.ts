@@ -9,10 +9,11 @@ import { DropdownModule } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 
 import { DotCardinalitySelectorComponent } from './dot-cardinality-selector.component';
+
+import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
+import { DotRelationshipService } from '../services/dot-relationship.service';
 
 const cardinalities: DotRelationshipCardinality[] = [
     {

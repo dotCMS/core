@@ -9,11 +9,11 @@ import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dy
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 
 import { DotFormImportUrlComponent } from './dot-form-import-url.component';
 import { FormImportUrlStore } from './store/form-import-url.store';
 
+import { UploadedFile } from '../../../../models/dot-edit-content-file.model';
 import { NEW_FILE_MOCK } from '../../../../utils/mocks';
 import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 

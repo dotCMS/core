@@ -11,9 +11,6 @@ import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
     DotEventsService,
@@ -50,6 +47,10 @@ import {
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
+
+import { DotUiColorsService } from '../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 @Component({
     selector: 'dot-pages-favorite-panel',

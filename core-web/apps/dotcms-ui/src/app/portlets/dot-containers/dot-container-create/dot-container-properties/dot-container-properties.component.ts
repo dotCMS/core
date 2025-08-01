@@ -8,11 +8,13 @@ import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
-import { MonacoEditor } from '@models/monaco-editor';
+
 import {
     DotContainerPropertiesState,
     DotContainerPropertiesStore
-} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
+} from './store/dot-container-properties.store';
+
+import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-editor.model';
 
 @Component({
     animations: [

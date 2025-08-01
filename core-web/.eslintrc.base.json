@@ -9,7 +9,7 @@
                 "@nx/enforce-module-boundaries": [
                     "error",
                     {
-                        "allowCircularSelfDependency": true,
+                        "allowCircularSelfDependency": false,
                         "enforceBuildableLibDependency": true,
                         "allow": [],
                         "depConstraints": [
@@ -60,6 +60,14 @@
                     }
                 ],
                 "no-duplicate-imports": "error",
+                "import/no-cycle": [
+                    "error",
+                    {
+                        "maxDepth": 10,
+                        "ignoreExternal": true
+                    }
+                ],
+                "import/no-self-import": "error",
                 "ban/ban": [
                     2,
                     {

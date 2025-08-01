@@ -23,8 +23,6 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
-import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FooterComponent } from './components/dot-select-existing-content/components/footer/footer.component';
@@ -36,6 +34,8 @@ import { getContentTypeIdFromRelationship } from './utils';
 
 import { DotEditContentDialogComponent } from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
+import { LanguagePipe } from '../../pipes/language.pipe';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',

@@ -14,7 +14,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
 
-import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -42,9 +41,11 @@ import {
     MockDotMessageService,
     MockPushPublishService
 } from '@dotcms/utils-testing';
-import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 
+import { DotContentTypeStore } from './dot-content-type.store';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
+
+import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
 
 const DELETE_MENU_ITEM_INDEX = 4;
 const ADD_TO_MENU_INDEX = 2;

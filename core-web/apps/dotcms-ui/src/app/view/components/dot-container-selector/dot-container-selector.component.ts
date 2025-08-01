@@ -4,10 +4,11 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 
 import { map, take } from 'rxjs/operators';
 
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
+
+import { DotTemplateContainersCacheService } from '../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { PaginationEvent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @Component({
     providers: [PaginatorService],

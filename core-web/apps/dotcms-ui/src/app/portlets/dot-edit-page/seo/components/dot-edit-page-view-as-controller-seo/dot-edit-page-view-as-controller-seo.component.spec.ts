@@ -7,9 +7,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotDevicesService,
     DotLanguagesService,
@@ -39,6 +36,10 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as-controller-seo.component';
+
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
     selector: 'dot-test-host',

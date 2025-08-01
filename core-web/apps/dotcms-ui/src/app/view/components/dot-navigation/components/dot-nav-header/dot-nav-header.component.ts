@@ -1,7 +1,7 @@
 import { Component, input, inject, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
 
 @Component({
     selector: 'dot-nav-header',

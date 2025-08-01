@@ -9,7 +9,8 @@ import { take, takeUntil } from 'rxjs/operators';
 
 import { DotRolesService } from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+
+import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',

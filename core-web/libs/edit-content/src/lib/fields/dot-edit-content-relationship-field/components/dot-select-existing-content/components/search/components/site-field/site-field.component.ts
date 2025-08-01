@@ -17,10 +17,11 @@ import {
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
-import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { SiteFieldStore } from './site-field.store';
+
+import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pipe';
 
 /**
  * Component for selecting a site from a tree structure.
@@ -74,10 +75,8 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     constructor() {
         effect(() => {
             const valueToSave = this.store.valueToSave();
-
-            if (valueToSave) {
-                this.onChange(valueToSave);
-            }
+            // Call onChange for both selection (valueToSave is truthy) and deselection (valueToSave is null)
+            this.onChange(valueToSave || '');
         });
 
         effect(() => {
@@ -119,8 +118,9 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      * Implements ControlValueAccessor method to update the control's value programmatically.
      */
     writeValue(value: string): void {
-        if (value === '') {
+        if (!value) {
             this.siteControl.setValue('');
+            this.store.clearSelection();
         }
     }
 

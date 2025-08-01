@@ -36,12 +36,13 @@ import {
     DotStringFormatPipe
 } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table';
 
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonAction } from '../../../shared/models/action-header/button-action.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 
 @Component({

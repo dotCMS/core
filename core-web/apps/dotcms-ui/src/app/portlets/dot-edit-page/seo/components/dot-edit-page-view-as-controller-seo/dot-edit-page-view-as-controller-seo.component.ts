@@ -13,10 +13,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
-import { DotDeviceSelectorModule } from '@components/dot-device-selector/dot-device-selector.module';
-import { DotIframeDialogModule } from '@components/dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
 import {
     DotAlertConfirmService,
     DotLicenseService,
@@ -33,7 +29,12 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+
+import { DotDeviceSelectorModule } from '../../../../../view/components/dot-device-selector/dot-device-selector.module';
+import { DotIframeDialogModule } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorModule } from '../../../../../view/components/dot-persona-selector/dot-persona.selector.module';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller-seo',
@@ -47,7 +48,6 @@ import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
         DotPersonaSelectorModule,
         DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
-        DotSafeHtmlPipe,
         DotIconModule,
         CheckboxModule,
         ConfirmDialogModule,
