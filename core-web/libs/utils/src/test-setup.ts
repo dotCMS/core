@@ -1,8 +1,8 @@
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
 setupZoneTestEnv({
-  errorOnUnknownElements: true,
-  errorOnUnknownProperties: true,
+    errorOnUnknownElements: true,
+    errorOnUnknownProperties: true
 });
 
 /* global mocks for jsdom */
