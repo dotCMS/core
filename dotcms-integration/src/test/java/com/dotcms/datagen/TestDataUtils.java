@@ -2390,6 +2390,7 @@ public class TestDataUtils {
                                 .velocityVarName("textFieldNumeric")
                                 .type(TextField.class)
                                 .dataType(DataTypes.INTEGER)
+                                .defaultValue("0")
                                 .next()
                 );
                 fields.add(
@@ -2398,6 +2399,7 @@ public class TestDataUtils {
                                 .velocityVarName("textFieldFloat")
                                 .type(TextField.class)
                                 .dataType(DataTypes.FLOAT)
+                                .defaultValue("0")
                                 .next()
                 );
                 fields.add(
@@ -2462,6 +2464,7 @@ public class TestDataUtils {
                                 .name("keyValueField")
                                 .velocityVarName("keyValueField")
                                 .type(KeyValueField.class)
+                                .defaultValue("{}")
                                 .next()
                 );
 

@@ -1975,6 +1975,15 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
 	 */
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException;
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
+	 */
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException;
 	
 	/**
 	 * Use to validate your contentlet.
