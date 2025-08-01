@@ -48,6 +48,7 @@ import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -1062,7 +1063,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final boolean isCommunityEdition;
     final SafeCondition safeCondition;
     
-    SearchCondition(final String searchOrCondition) {
+    SearchCondition(final String searchOrCondition) throws DotDataException {
       this.isCommunityEdition = LicenseManager.getInstance().isCommunity();
       
       if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
@@ -1116,10 +1117,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
     
     /**
-     * SECURITY: Parse user input into safe parameterized conditions.
-     * Only allows specific safe field names and operators.
+     * SECURITY: Parse user input into safe parameterized conditions using Config-based whitelist.
+     * Much simpler approach that focuses on SQL safety patterns rather than specific field hardcoding.
      */
-    static SafeCondition parse(String condition) {
+    static SafeCondition parse(String condition) throws DotDataException {
       if (!UtilMethods.isSet(condition)) {
         return null;
       }
@@ -1129,119 +1130,139 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         trimmed = trimmed.substring(4).trim();
       }
       
-      // SECURITY: Parse simple comparison patterns safely
-      // Pattern: field operator value
-      String[] patterns = {
-        // structuretype numeric comparisons
-        "structuretype\\s*=\\s*(\\d+)",
-        "structuretype\\s*>\\s*(\\d+)", 
-        "structuretype\\s*<\\s*(\\d+)",
-        "structuretype\\s*>=\\s*(\\d+)",
-        "structuretype\\s*<=\\s*(\\d+)",
-        "structuretype\\s*!=\\s*(\\d+)",
-        "structuretype\\s*<>\\s*(\\d+)",
+      // SECURITY: Simple pattern-based validation using Config properties
+      // This approach focuses on SQL safety patterns rather than specific field whitelisting
+      
+      // Get allowed column names from Config (fallback to known safe defaults)
+      Set<String> allowedColumns = getAllowedColumns();
+      
+      // Parse the condition using safe SQL patterns
+      return parseConditionSafely(trimmed, allowedColumns);
+    }
+    
+    /**
+     * SECURITY: Gets allowed column names from Config with safe defaults
+     * Config property: contenttype.safe.condition.allowed.columns
+     */
+    private static Set<String> getAllowedColumns() {
+      String configColumns = Config.getStringProperty(
+          "contenttype.safe.condition.allowed.columns", 
+          // Safe defaults based on structure table columns
+          "inode,name,description,default_structure,page_detail,structuretype,system,fixed," +
+          "velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var," +
+          "mod_date,icon,sort_order,marked_for_deletion"
+      );
+      
+      return Arrays.stream(configColumns.split(","))
+          .map(String::trim)
+          .map(String::toLowerCase)
+          .collect(Collectors.toSet());
+    }
+    
+    /**
+     * SECURITY: Parses SQL conditions using safe patterns and validation
+     * Supports: column = 'value', column = number, column IS [NOT] NULL, column LIKE 'pattern'
+     */
+    private static SafeCondition parseConditionSafely(String condition, Set<String> allowedColumns) throws DotDataException {
+      // SECURITY: Basic SQL injection patterns to reject immediately
+      if (containsDangerousPatterns(condition)) {
+        Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Dangerous SQL pattern detected in condition: " + SecurityUtils.sanitizeForLogging(condition));
+        throw new DotDataException("Invalid condition format");  
+      }
+      
+      // Pattern 1: column = 'value' or column = number
+      Pattern equalityPattern = Pattern.compile(
+          "^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|!=|<>|>|<|>=|<=)\\s*(?:'([^']*)'|(\\d+))\\s*$", 
+          Pattern.CASE_INSENSITIVE
+      );
+      
+      Matcher equalityMatcher = equalityPattern.matcher(condition);
+      if (equalityMatcher.matches()) {
+        String column = equalityMatcher.group(1).toLowerCase();
+        String operator = equalityMatcher.group(2);
+        String stringValue = equalityMatcher.group(3);
+        String numericValue = equalityMatcher.group(4);
         
-        // mod_date comparisons
-        "mod_date\\s*=\\s*'([^']+)'",
-        "mod_date\\s*>\\s*'([^']+)'",
-        "mod_date\\s*<\\s*'([^']+)'",
-        "mod_date\\s*>=\\s*'([^']+)'",
-        "mod_date\\s*<=\\s*'([^']+)'",
+        if (!allowedColumns.contains(column)) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Column not allowed: " + column);
+        }
         
-        // string LIKE comparisons
-        "name\\s+like\\s+'([^']+)'",
-        "velocity_var_name\\s+like\\s+'([^']+)'",
-        "description\\s+like\\s+'([^']+)'",
-        "url_map_pattern\\s+like\\s+'([^']+)'",
+        String value = stringValue != null ? stringValue : numericValue;
+        String sqlCondition = column + " " + operator + " ?";
+        return new SafeCondition(column, operator, value, sqlCondition);
+      }
+      
+      // Pattern 2: column IS [NOT] NULL
+      Pattern nullPattern = Pattern.compile(
+          "^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s+IS\\s+(NOT\\s+)?NULL\\s*$", 
+          Pattern.CASE_INSENSITIVE
+      );
+      
+      Matcher nullMatcher = nullPattern.matcher(condition);
+      if (nullMatcher.matches()) {
+        String column = nullMatcher.group(1).toLowerCase();
+        String notPart = nullMatcher.group(2);
+        String operator = notPart != null ? "IS NOT NULL" : "IS NULL";
         
-        // boolean comparisons
-        "system\\s*=\\s*(true|false)",
-        "fixed\\s*=\\s*(true|false)",
-        "default_structure\\s*=\\s*(true|false)",
+        if (!allowedColumns.contains(column)) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Column not allowed: " + column);
+        }
         
-        // string equality comparisons
-        "host\\s*=\\s*'([^']+)'",
-        "folder\\s*=\\s*'([^']+)'",
+        String sqlCondition = column + " " + operator;
+        return new SafeCondition(column, operator, null, sqlCondition);
+      }
+      
+      // Pattern 3: column LIKE 'pattern'
+      Pattern likePattern = Pattern.compile(
+          "^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s+LIKE\\s+'([^']*)'\\s*$", 
+          Pattern.CASE_INSENSITIVE
+      );
+      
+      Matcher likeMatcher = likePattern.matcher(condition);
+      if (likeMatcher.matches()) {
+        String column = likeMatcher.group(1).toLowerCase();
+        String pattern = likeMatcher.group(2);
         
-        // page_detail identifier comparisons
-        "page_detail\\s*=\\s*'([^']+)'",
+        if (!allowedColumns.contains(column)) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Column not allowed: " + column);
+        }
         
-        // inode identifier comparisons
-        "inode\\s*=\\s*'([^']+)'",
-        
-        // sort_order numeric comparisons
-        "sort_order\\s*=\\s*(\\d+)",
-        "sort_order\\s*>\\s*(\\d+)",
-        "sort_order\\s*<\\s*(\\d+)",
-        "sort_order\\s*>=\\s*(\\d+)",
-        "sort_order\\s*<=\\s*(\\d+)",
-        
-        // expire_date_var and publish_date_var field references
-        "expire_date_var\\s*=\\s*'([^']+)'",
-        "publish_date_var\\s*=\\s*'([^']+)'",
-        
-        // icon field
-        "icon\\s*=\\s*'([^']+)'",
-        
-        // IS NULL and IS NOT NULL patterns
-        "page_detail\\s+is\\s+null",
-        "page_detail\\s+is\\s+not\\s+null",
-        "expire_date_var\\s+is\\s+null",
-        "expire_date_var\\s+is\\s+not\\s+null",
-        "publish_date_var\\s+is\\s+null",
-        "publish_date_var\\s+is\\s+not\\s+null",
-        "url_map_pattern\\s+is\\s+null",
-        "url_map_pattern\\s+is\\s+not\\s+null"
+        String sqlCondition = column + " LIKE ?";
+        return new SafeCondition(column, "LIKE", pattern, sqlCondition);
+      }
+      
+      // If no patterns match, reject the condition
+      Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Invalid condition format: " + SecurityUtils.sanitizeForLogging(condition));
+      throw new DotDataException("Invalid condition format");
+    }
+    
+    /**
+     * SECURITY: Detects dangerous SQL patterns that should never be allowed
+     */
+    private static boolean containsDangerousPatterns(String condition) {
+      String lower = condition.toLowerCase();
+      
+      // Check for dangerous SQL keywords
+      String[] dangerousKeywords = {
+          "union", "select", "insert", "update", "delete", "drop", "create", "alter", 
+          "exec", "execute", "--", "/*", "*/", ";", "xp_", "sp_", "@@"
       };
       
-      String[] operators = {"=", ">", "<", ">=", "<=", "!=", "<>", 
-                           "=", ">", "<", ">=", "<=",
-                           "like", "like", "like", "like",
-                           "=", "=", "=",
-                           "=", "=",
-                           "=",
-                           "=",
-                           "=", ">", "<", ">=", "<=",
-                           "=", "=",
-                           "=",
-                           "IS NULL", "IS NOT NULL", "IS NULL", "IS NOT NULL", "IS NULL", "IS NOT NULL", "IS NULL", "IS NOT NULL"};
-      String[] fields = {"structuretype", "structuretype", "structuretype", "structuretype", "structuretype", 
-                        "structuretype", "structuretype",
-                        "mod_date", "mod_date", "mod_date", "mod_date", "mod_date",
-                        "name", "velocity_var_name", "description", "url_map_pattern",
-                        "system", "fixed", "default_structure",
-                        "host", "folder",
-                        "page_detail",
-                        "inode",
-                        "sort_order", "sort_order", "sort_order", "sort_order", "sort_order",
-                        "expire_date_var", "publish_date_var",
-                        "icon",
-                        "page_detail", "page_detail", "expire_date_var", "expire_date_var", "publish_date_var", "publish_date_var", "url_map_pattern", "url_map_pattern"};
-      
-      for (int i = 0; i < patterns.length; i++) {
-        Pattern pattern = Pattern.compile(patterns[i], Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(trimmed);
-        if (matcher.find()) {
-          String value = null;
-          String sqlCondition;
-          
-          // Handle IS NULL/IS NOT NULL patterns (no parameter needed)
-          if (operators[i].startsWith("IS")) {
-            sqlCondition = fields[i] + " " + operators[i];
-          } else {
-            // Regular patterns with parameters
-            value = matcher.group(1);
-            sqlCondition = fields[i] + " " + operators[i] + " ?";
-          }
-          
-          return new SafeCondition(fields[i], operators[i], value, sqlCondition);
+      for (String keyword : dangerousKeywords) {
+        if (lower.contains(keyword)) {
+          return true;
         }
       }
       
-      // SECURITY: If no safe pattern matches, return null (will be ignored)
-      Logger.warn(SafeCondition.class, 
-        "Unsafe or unsupported condition pattern rejected: " + SecurityUtils.sanitizeForLogging(condition));
-      return null;
+      // Check for suspicious character combinations
+      if (lower.contains("''") || lower.contains("char") || lower.contains("+")) {
+        return true;
+      }
+      
+      return false;
     }
     
     @Override
