@@ -141,5 +141,6 @@ This maintenance release includes the following code fixes:
 135. https://github.com/dotCMS/core/issues/32127 : Bring Back older versions of Container missing #32127
 136. https://github.com/dotCMS/core/issues/28417 : Unable to bring back old versions of templates #28417
 137. https://github.com/dotCMS/core/issues/31077 : PrimeNG Datepicker Displays Incorrectly When Appended to Body #31077
+138. https://github.com/dotCMS/core/issues/32578 : Special characters in key being removed for a key value field on a content type #32578
 
 
