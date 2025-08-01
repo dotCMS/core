@@ -806,42 +806,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
     
-    // Add search parameters
-    dc.addParam(searchCondition.search);                      // inode like ?
-    dc.addParam(searchCondition.search.toLowerCase());        // lower(name) like ?
-    dc.addParam(searchCondition.search);                      // velocity_var_name like ?
-    
-    // SECURITY: Add safe condition parameter if present
-    if (searchCondition.safeCondition != null) {
-        // Only add parameters for non-IS NULL conditions
-        if (searchCondition.safeCondition.value != null) {
-            // Convert value to appropriate type based on field
-            if ("structuretype".equals(searchCondition.safeCondition.field)) {
-                try {
-                    // SECURITY: Validate integer range to prevent overflow
-                    String value = searchCondition.safeCondition.value;
-                    long longValue = Long.parseLong(value);
-                    if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
-                        Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
-                        throw new DotSecurityException("Invalid structuretype value: out of range");
-                    }
-                    dc.addParam((int) longValue);
-                } catch (NumberFormatException e) {
-                    Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(searchCondition.safeCondition.value));
-                    throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
-                }
-            } else {
-                dc.addParam(searchCondition.safeCondition.value);
-            }
-        }
-        // IS NULL/IS NOT NULL conditions don't need parameters
-    }
-    
-    // SECURITY: Add community edition filter parameters
-    if (searchCondition.isCommunityEdition) {
-        dc.addParam(BaseContentType.FORM.getType());           // structuretype <> ?
-        dc.addParam(BaseContentType.PERSONA.getType());        // structuretype <> ?
-    }
+    // Add common search parameters using helper method
+    addCommonSearchParameters(dc, searchCondition);
     
     // Add site parameters for LIKE clauses (substring matching with escaping)
     if (!validatedSites.isEmpty()) {
@@ -917,7 +883,69 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         return validSites;
     }
 
+    /**
+     * SECURITY: Adds common search parameters to DotConnect for both search and count queries
+     */
+    private void addCommonSearchParameters(DotConnect dc, SearchCondition searchCondition) throws DotSecurityException {
+        // Add search parameters
+        dc.addParam(searchCondition.search);                      // inode like ?
+        dc.addParam(searchCondition.search.toLowerCase());        // lower(name) like ?
+        dc.addParam(searchCondition.search);                      // velocity_var_name like ?
+        
+        // Add safe condition parameter if present
+        if (searchCondition.safeCondition != null) {
+            addSafeConditionParameter(dc, searchCondition.safeCondition);
+        }
+        
+        // Add community edition filter parameters
+        if (searchCondition.isCommunityEdition) {
+            dc.addParam(BaseContentType.FORM.getType());           // structuretype <> ?
+            dc.addParam(BaseContentType.PERSONA.getType());        // structuretype <> ?
+        }
+    }
 
+    /**
+     * SECURITY: Adds safe condition parameter with proper type conversion and validation
+     */
+    private void addSafeConditionParameter(DotConnect dc, SafeCondition safeCondition) throws DotSecurityException {
+        // Only add parameters for non-IS NULL conditions
+        if (safeCondition.value == null) {
+            return; // IS NULL/IS NOT NULL conditions don't need parameters
+        }
+        
+        if ("structuretype".equals(safeCondition.field)) {
+            addStructureTypeParameter(dc, safeCondition.value);
+        } else if (isBooleanField(safeCondition.field)) {
+            dc.addParam(Boolean.parseBoolean(safeCondition.value));
+        } else {
+            dc.addParam(safeCondition.value);
+        }
+    }
+
+    /**
+     * SECURITY: Adds structuretype parameter with integer validation and overflow protection
+     */
+    private void addStructureTypeParameter(DotConnect dc, String value) throws DotSecurityException {
+        try {
+            // SECURITY: Validate integer range to prevent overflow
+            long longValue = Long.parseLong(value);
+            if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+                Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
+                throw new DotSecurityException("Invalid structuretype value: out of range");
+            }
+            dc.addParam((int) longValue);
+        } catch (NumberFormatException e) {
+            Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(value));
+            throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
+        }
+    }
+
+    /**
+     * SECURITY: Checks if a field is a boolean type field
+     */
+    private boolean isBooleanField(String field) {
+        return "system".equals(field) || "fixed".equals(field) || "default_structure".equals(field);
+    }
 
   // SECURITY: Fully parameterized count query with safe condition support
   private int dbCount(String search, int baseType) throws DotDataException, DotSecurityException {
@@ -949,42 +977,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
     dc.setSQL(sqlTemplate);
     
-    // Add search parameters
-    dc.addParam(searchCondition.search);                          // inode like ?
-    dc.addParam(searchCondition.search.toLowerCase());            // lower(name) like ?
-    dc.addParam(searchCondition.search);                          // velocity_var_name like ?
-    
-    // Add safe condition parameter if present
-    if (searchCondition.safeCondition != null) {
-      // Convert value to appropriate type based on field
-      if ("structuretype".equals(searchCondition.safeCondition.field)) {
-        try {
-          // SECURITY: Validate integer range to prevent overflow
-          String value = searchCondition.safeCondition.value;
-          long longValue = Long.parseLong(value);
-          if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
-            Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
-            throw new DotSecurityException("Invalid structuretype value: out of range");
-          }
-          dc.addParam((int) longValue);
-        } catch (NumberFormatException e) {
-          Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(searchCondition.safeCondition.value));
-          throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
-        }
-      } else if ("system".equals(searchCondition.safeCondition.field) || 
-                 "fixed".equals(searchCondition.safeCondition.field) ||
-                 "default_structure".equals(searchCondition.safeCondition.field)) {
-        dc.addParam(Boolean.parseBoolean(searchCondition.safeCondition.value));
-      } else {
-        dc.addParam(searchCondition.safeCondition.value);
-      }
-    }
-    
-    // Add community edition filter parameters
-    if (searchCondition.isCommunityEdition) {
-      dc.addParam(BaseContentType.FORM.getType());                  // structuretype <> ?
-      dc.addParam(BaseContentType.PERSONA.getType());               // structuretype <> ?
-    }
+    // Add common search parameters using helper method
+    addCommonSearchParameters(dc, searchCondition);
     
     // Add base type range parameters
     dc.addParam(bottom);                                           // structuretype >= ?
@@ -1160,6 +1154,16 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
     
     /**
+     * SECURITY: Validates column name against allowed columns whitelist
+     */
+    private static void validateColumn(String column, Set<String> allowedColumns) throws DotDataException {
+      if (!allowedColumns.contains(column)) {
+        Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
+        throw new DotDataException("Column not allowed: " + column);
+      }
+    }
+    
+    /**
      * SECURITY: Parses SQL conditions using safe patterns and validation
      * Supports: column = 'value', column = number, column IS [NOT] NULL, column LIKE 'pattern'
      */
@@ -1183,10 +1187,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         String stringValue = equalityMatcher.group(3);
         String numericValue = equalityMatcher.group(4);
         
-        if (!allowedColumns.contains(column)) {
-          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
-          throw new DotDataException("Column not allowed: " + column);
-        }
+        validateColumn(column, allowedColumns);
         
         String value = stringValue != null ? stringValue : numericValue;
         String sqlCondition = column + " " + operator + " ?";
@@ -1205,10 +1206,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         String notPart = nullMatcher.group(2);
         String operator = notPart != null ? "IS NOT NULL" : "IS NULL";
         
-        if (!allowedColumns.contains(column)) {
-          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
-          throw new DotDataException("Column not allowed: " + column);
-        }
+        validateColumn(column, allowedColumns);
         
         String sqlCondition = column + " " + operator;
         return new SafeCondition(column, operator, null, sqlCondition);
@@ -1225,10 +1223,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         String column = likeMatcher.group(1).toLowerCase();
         String pattern = likeMatcher.group(2);
         
-        if (!allowedColumns.contains(column)) {
-          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
-          throw new DotDataException("Column not allowed: " + column);
-        }
+        validateColumn(column, allowedColumns);
         
         String sqlCondition = column + " LIKE ?";
         return new SafeCondition(column, "LIKE", pattern, sqlCondition);
