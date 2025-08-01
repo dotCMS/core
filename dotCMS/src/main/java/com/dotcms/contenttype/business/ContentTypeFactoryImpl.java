@@ -812,24 +812,28 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
     // SECURITY: Add safe condition parameter if present
     if (searchCondition.safeCondition != null) {
-        // Convert value to appropriate type based on field
-        if ("structuretype".equals(searchCondition.safeCondition.field)) {
-            try {
-                // SECURITY: Validate integer range to prevent overflow
-                String value = searchCondition.safeCondition.value;
-                long longValue = Long.parseLong(value);
-                if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
-                    Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
-                    throw new DotSecurityException("Invalid structuretype value: out of range");
+        // Only add parameters for non-IS NULL conditions
+        if (searchCondition.safeCondition.value != null) {
+            // Convert value to appropriate type based on field
+            if ("structuretype".equals(searchCondition.safeCondition.field)) {
+                try {
+                    // SECURITY: Validate integer range to prevent overflow
+                    String value = searchCondition.safeCondition.value;
+                    long longValue = Long.parseLong(value);
+                    if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+                        Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
+                        throw new DotSecurityException("Invalid structuretype value: out of range");
+                    }
+                    dc.addParam((int) longValue);
+                } catch (NumberFormatException e) {
+                    Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(searchCondition.safeCondition.value));
+                    throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
                 }
-                dc.addParam((int) longValue);
-            } catch (NumberFormatException e) {
-                Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(searchCondition.safeCondition.value));
-                throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
+            } else {
+                dc.addParam(searchCondition.safeCondition.value);
             }
-        } else {
-            dc.addParam(searchCondition.safeCondition.value);
         }
+        // IS NULL/IS NOT NULL conditions don't need parameters
     }
     
     // SECURITY: Add community edition filter parameters
@@ -1157,28 +1161,79 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         
         // string equality comparisons
         "host\\s*=\\s*'([^']+)'",
-        "folder\\s*=\\s*'([^']+)'"
+        "folder\\s*=\\s*'([^']+)'",
+        
+        // page_detail identifier comparisons
+        "page_detail\\s*=\\s*'([^']+)'",
+        
+        // inode identifier comparisons
+        "inode\\s*=\\s*'([^']+)'",
+        
+        // sort_order numeric comparisons
+        "sort_order\\s*=\\s*(\\d+)",
+        "sort_order\\s*>\\s*(\\d+)",
+        "sort_order\\s*<\\s*(\\d+)",
+        "sort_order\\s*>=\\s*(\\d+)",
+        "sort_order\\s*<=\\s*(\\d+)",
+        
+        // expire_date_var and publish_date_var field references
+        "expire_date_var\\s*=\\s*'([^']+)'",
+        "publish_date_var\\s*=\\s*'([^']+)'",
+        
+        // icon field
+        "icon\\s*=\\s*'([^']+)'",
+        
+        // IS NULL and IS NOT NULL patterns
+        "page_detail\\s+is\\s+null",
+        "page_detail\\s+is\\s+not\\s+null",
+        "expire_date_var\\s+is\\s+null",
+        "expire_date_var\\s+is\\s+not\\s+null",
+        "publish_date_var\\s+is\\s+null",
+        "publish_date_var\\s+is\\s+not\\s+null",
+        "url_map_pattern\\s+is\\s+null",
+        "url_map_pattern\\s+is\\s+not\\s+null"
       };
       
       String[] operators = {"=", ">", "<", ">=", "<=", "!=", "<>", 
                            "=", ">", "<", ">=", "<=",
                            "like", "like", "like", "like",
                            "=", "=", "=",
-                           "=", "="};
+                           "=", "=",
+                           "=",
+                           "=",
+                           "=", ">", "<", ">=", "<=",
+                           "=", "=",
+                           "=",
+                           "IS NULL", "IS NOT NULL", "IS NULL", "IS NOT NULL", "IS NULL", "IS NOT NULL", "IS NULL", "IS NOT NULL"};
       String[] fields = {"structuretype", "structuretype", "structuretype", "structuretype", "structuretype", 
                         "structuretype", "structuretype",
                         "mod_date", "mod_date", "mod_date", "mod_date", "mod_date",
                         "name", "velocity_var_name", "description", "url_map_pattern",
                         "system", "fixed", "default_structure",
-                        "host", "folder"};
+                        "host", "folder",
+                        "page_detail",
+                        "inode",
+                        "sort_order", "sort_order", "sort_order", "sort_order", "sort_order",
+                        "expire_date_var", "publish_date_var",
+                        "icon",
+                        "page_detail", "page_detail", "expire_date_var", "expire_date_var", "publish_date_var", "publish_date_var", "url_map_pattern", "url_map_pattern"};
       
       for (int i = 0; i < patterns.length; i++) {
         Pattern pattern = Pattern.compile(patterns[i], Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(trimmed);
         if (matcher.find()) {
-          String value = matcher.group(1);
-          // SECURITY: Build parameterized SQL condition
-          String sqlCondition = fields[i] + " " + operators[i] + " ?";
+          String value = null;
+          String sqlCondition;
+          
+          // Handle IS NULL/IS NOT NULL patterns (no parameter needed)
+          if (operators[i].startsWith("IS")) {
+            sqlCondition = fields[i] + " " + operators[i];
+          } else {
+            // Regular patterns with parameters
+            value = matcher.group(1);
+            sqlCondition = fields[i] + " " + operators[i] + " ?";
+          }
+          
           return new SafeCondition(fields[i], operators[i], value, sqlCondition);
         }
       }
