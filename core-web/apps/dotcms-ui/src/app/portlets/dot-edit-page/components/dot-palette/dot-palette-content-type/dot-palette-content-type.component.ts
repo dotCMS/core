@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 @Component({

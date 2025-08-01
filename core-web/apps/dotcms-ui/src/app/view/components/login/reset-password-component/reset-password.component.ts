@@ -6,10 +6,11 @@ import { ActivatedRoute } from '@angular/router';
 
 import { take, tap } from 'rxjs/operators';
 
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
     providers: [],

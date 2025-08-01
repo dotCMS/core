@@ -6,9 +6,6 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { EMPTY_TEMPLATE_DESIGN } from '@dotcms/app/portlets/dot-templates/dot-template-create-edit/store/dot-template.store';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -22,6 +19,10 @@ import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-mo
 import { MockDotMessageService, mockDotRenderedPage } from '@dotcms/utils-testing';
 
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
+
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotShowHideFeatureDirective } from '../../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { EMPTY_TEMPLATE_DESIGN } from '../../../dot-templates/dot-template-create-edit/store/dot-template.store';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector

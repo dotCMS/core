@@ -8,7 +8,9 @@ import {
 } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
+
+import { ActionHeaderOptions } from '../../../../shared/models/action-header/action-header-options.model';
+import { ButtonAction } from '../../../../shared/models/action-header/button-action.model';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

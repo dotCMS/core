@@ -17,10 +17,11 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 
-import { UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
+
+import { UploadedFile } from '../../../../models/dot-edit-content-file.model';
 
 type DialogProps = {
     allowFileNameEdit: boolean;

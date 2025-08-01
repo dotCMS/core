@@ -15,8 +15,7 @@ import {
     DotDropdownDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe,
-    DotSafeHtmlPipe
+    DotMessagePipe
 } from '@dotcms/ui';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
@@ -32,7 +31,6 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
         DotDropdownDirective,
         DotFieldRequiredDirective,
         DotFieldValidationMessageComponent,
-        DotSafeHtmlPipe,
         DropdownModule,
         DotMessagePipe,
         InputTextModule,

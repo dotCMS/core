@@ -5,12 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotDeviceSelectorModule } from '@components/dot-device-selector/dot-device-selector.module';
-import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
+
+import { DotDeviceSelectorModule } from '../../../../../view/components/dot-device-selector/dot-device-selector.module';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorModule } from '../../../../../view/components/dot-persona-selector/dot-persona.selector.module';
 
 @NgModule({
     imports: [

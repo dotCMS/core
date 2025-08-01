@@ -5,7 +5,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -25,11 +24,13 @@ import {
     DotEnvironment,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import { ActionHeaderOptions } from '@models/action-header';
-import { ButtonModel } from '@models/action-header/button.model';
-import { DataTableColumn } from '@models/data-table';
 
 import { DotContentTypeStore } from './dot-content-type.store';
+
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonModel } from '../../../shared/models/action-header/button.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 type DotRowActions = {
     pushPublish: boolean;

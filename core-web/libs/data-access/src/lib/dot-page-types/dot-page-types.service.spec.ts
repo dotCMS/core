@@ -1,9 +1,10 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotPageTypesService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+
+import { DotPageTypesService } from './dot-page-types.service';
 
 const fakeResponse = {
     entity: [{ ...dotcmsContentTypeBasicMock }]

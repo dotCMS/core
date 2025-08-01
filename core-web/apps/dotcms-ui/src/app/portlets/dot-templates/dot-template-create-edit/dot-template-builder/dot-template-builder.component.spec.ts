@@ -16,9 +16,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotGlobalMessageComponent } from '@components/_common/dot-global-message/dot-global-message.component';
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
@@ -26,6 +23,9 @@ import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testi
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
+import { DotShowHideFeatureDirective } from '../../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import {
     DotTemplateItem,
     EMPTY_TEMPLATE_ADVANCED,

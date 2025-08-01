@@ -1,4 +1,3 @@
-import { NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding, inject } from '@angular/core';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
@@ -9,7 +8,7 @@ import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/grids
     templateUrl: './template-builder-background-columns.component.html',
     styleUrls: ['./template-builder-background-columns.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [NgStyle]
+    imports: []
 })
 export class TemplateBuilderBackgroundColumnsComponent {
     private sanitizer = inject(DomSanitizer);

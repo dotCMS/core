@@ -24,7 +24,8 @@ import { map } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields, DotDialogActions } from '@dotcms/dotcms-models';
 import { DotValidators } from '@dotcms/ui';
-import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
+
+import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
 
 @Component({
     selector: 'dot-content-type-copy-dialog',

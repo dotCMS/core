@@ -11,8 +11,8 @@ import {
 } from '@angular/core';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
-import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
 
+import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({

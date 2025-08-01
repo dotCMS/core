@@ -10,11 +10,12 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotRouterService } from '@dotcms/data-access';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContainerHistoryComponent } from './dot-container-history.component';
+
+import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @Component({
     selector: 'dot-iframe',

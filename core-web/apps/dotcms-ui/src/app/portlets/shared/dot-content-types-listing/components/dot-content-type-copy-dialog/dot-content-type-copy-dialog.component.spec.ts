@@ -7,8 +7,6 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotMdIconSelectorModule } from '@components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -18,9 +16,12 @@ import {
     DotSafeHtmlPipe
 } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, SiteServiceMock } from '@dotcms/utils-testing';
-import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
+
+import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
+import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 @Component({
     selector: 'dot-test-host-component',

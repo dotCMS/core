@@ -7,7 +7,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotApp } from '@dotcms/dotcms-models';
@@ -20,6 +19,8 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotAppsListComponent } from './dot-apps-list.component';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 export class AppsServicesMock {
     get() {

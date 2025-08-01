@@ -365,17 +365,15 @@ export const DotAnalyticsDashboardStore = signalStore(
     withHooks({
         onInit: (store, globalStore = inject(GlobalStore)) => {
             // Auto-load data when both timeRange and currentSiteId are available
-            effect(
-                () => {
-                    const timeRange = store.timeRange();
-                    const currentSiteId = globalStore.currentSiteId();
+            effect(() => {
+                const timeRange = store.timeRange();
+                const currentSiteId = globalStore.currentSiteId();
 
-                    // Only load data if we have a valid site ID
-                    if (currentSiteId) {
-                        store.loadAllDashboardData(timeRange, currentSiteId);
-                    }
+                // Only load data if we have a valid site ID
+                if (currentSiteId) {
+                    store.loadAllDashboardData(timeRange, currentSiteId);
                 }
-            );
+            });
         }
     })
 );

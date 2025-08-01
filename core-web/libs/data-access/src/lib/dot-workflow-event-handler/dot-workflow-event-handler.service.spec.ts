@@ -3,18 +3,6 @@ import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import {
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotWorkflowActionsFireService,
-    DotFormatDateService,
-    PushPublishService,
-    DotGlobalMessageService,
-    DotIframeService,
-    DotWizardService,
-    DotWorkflowEventHandlerService
-} from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
@@ -37,6 +25,20 @@ import {
     dotcmsContentletMock,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
+
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    PushPublishService,
+    DotIframeService,
+    DotWorkflowEventHandlerService
+} from './dot-workflow-event-handler.service';
+
+import { DotMessageService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
+import { DotGlobalMessageService } from '../dot-global-message/dot-global-message.service';
+import { DotWorkflowActionsFireService } from '../dot-upload-file/dot-upload-file.service';
+import { DotWizardService } from '../dot-wizard/dot-wizard.service';
 
 const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(

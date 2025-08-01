@@ -5,13 +5,14 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { NgControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { CategoriesPropertyComponent } from './categories-property.component';
+
+import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
+import { PaginationEvent } from '../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @Component({
     selector: 'dot-searchable-dropdown',

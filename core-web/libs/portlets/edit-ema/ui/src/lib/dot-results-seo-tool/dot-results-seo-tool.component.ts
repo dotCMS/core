@@ -2,7 +2,6 @@ import { Observable } from 'rxjs';
 
 import {
     AsyncPipe,
-    JsonPipe,
     NgClass,
     NgFor,
     NgIf,
@@ -45,7 +44,6 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
         NgFor,
         TitleCasePipe,
         NgIf,
-        JsonPipe,
         NgSwitch,
         NgSwitchCase,
         NgSwitchDefault,

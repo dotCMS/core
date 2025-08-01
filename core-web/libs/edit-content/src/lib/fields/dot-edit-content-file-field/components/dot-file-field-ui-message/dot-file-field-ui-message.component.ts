@@ -1,8 +1,9 @@
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding, input, Input } from '@angular/core';
 
-import { UIMessage } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { UIMessage } from '../../../../models/dot-edit-content-file.model';
 
 @Component({
     selector: 'dot-file-field-ui-message',

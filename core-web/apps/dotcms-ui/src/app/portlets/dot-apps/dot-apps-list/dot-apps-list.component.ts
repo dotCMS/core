@@ -5,10 +5,10 @@ import { ActivatedRoute } from '@angular/router';
 
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
 
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({

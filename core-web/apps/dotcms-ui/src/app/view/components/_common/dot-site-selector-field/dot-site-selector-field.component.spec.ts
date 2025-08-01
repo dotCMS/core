@@ -3,11 +3,12 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { SiteService } from '@dotcms/dotcms-js';
 import { SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.component';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-fake-form',

@@ -17,10 +17,11 @@ import {
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
-import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { SiteFieldStore } from './site-field.store';
+
+import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pipe';
 
 /**
  * Component for selecting a site from a tree structure.

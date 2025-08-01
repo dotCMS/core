@@ -12,9 +12,10 @@ import {
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotDialogComponent } from '@dotcms/ui';
+
+import { DotParseHtmlService } from '../../../api/services/dot-parse-html/dot-parse-html.service';
 
 interface DotLargeMessageDisplayParams {
     title: string;

@@ -6,7 +6,6 @@ import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotPageRender,
@@ -17,6 +16,8 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;

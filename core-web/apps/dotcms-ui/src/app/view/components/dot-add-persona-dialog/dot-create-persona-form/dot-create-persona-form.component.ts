@@ -8,7 +8,8 @@ import { takeUntil } from 'rxjs/operators';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { camelCase } from '@dotcms/utils';
-import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
+
+import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-file-upload.model';
 
 @Component({
     selector: 'dot-create-persona-form',

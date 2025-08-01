@@ -12,10 +12,11 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { INPUT_TYPE, INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe, DotFieldValidationMessageComponent, DotValidators } from '@dotcms/ui';
 
 import { FormImportUrlStore } from './store/form-import-url.store';
+
+import { INPUT_TYPE, INPUT_TYPES } from '../../../../models/dot-edit-content-file.model';
 
 type DialogData = {
     inputType: INPUT_TYPE;

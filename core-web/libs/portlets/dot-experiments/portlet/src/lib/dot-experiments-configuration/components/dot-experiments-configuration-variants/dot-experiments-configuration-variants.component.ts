@@ -48,7 +48,6 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         CommonModule,
         DotMessagePipe,
         DotIconModule,
-        DotExperimentsConfigurationVariantsAddComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,

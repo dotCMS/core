@@ -9,12 +9,13 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
-import { TreeNodeItem } from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
+
+import { TreeNodeItem } from '../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { SearchParams } from '../../../../models/search.model';
 
 interface ActiveFilter {
     label: string;

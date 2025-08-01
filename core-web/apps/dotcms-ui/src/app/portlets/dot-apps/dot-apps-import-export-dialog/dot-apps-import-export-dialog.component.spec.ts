@@ -9,7 +9,6 @@ import { By } from '@angular/platform-browser';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DotApp,
@@ -26,6 +25,8 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {

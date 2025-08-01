@@ -6,12 +6,6 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import {
-    DotAlertConfirmService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotRouterService
-} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotMessageDisplayServiceMock,
@@ -21,6 +15,13 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
+
+import {
+    DotAlertConfirmService,
+    DotMessageService
+} from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotMessageDisplayService } from '../dot-workflow-event-handler/dot-workflow-event-handler.service';
 
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;

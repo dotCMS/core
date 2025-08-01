@@ -6,8 +6,11 @@ import { Component } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotFieldValidationMessageComponent } from './dot-field-validation-message.component';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const messageServiceMock = new MockDotMessageService({
     'contentType.errors.input.maxlength': 'Value must be no more than {0} characters',

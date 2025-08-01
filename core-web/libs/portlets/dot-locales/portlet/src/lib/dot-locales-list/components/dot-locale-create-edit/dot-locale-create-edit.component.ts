@@ -1,6 +1,5 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -43,7 +42,6 @@ export interface DotLocaleCreateEditData {
         ButtonModule,
         DotMessagePipe,
         InputTextModule,
-        CdkCopyToClipboard,
         TooltipModule,
         DotCopyButtonComponent
     ],

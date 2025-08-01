@@ -1,11 +1,12 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPersonalizeService } from './dot-personalize.service';
+
+import { DotSessionStorageService } from '../dot-edit-page/dot-edit-page.service';
 
 describe('DotPersonalizeService', () => {
     let injector: TestBed;
