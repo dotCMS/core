@@ -5,7 +5,7 @@ import { SEO_RULES_COLORS, SEO_RULES_ICONS } from '@dotcms/dotcms-models';
 
 import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 
-import { DotMessageService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 describe('DotSeoMetaTagsUtilService', () => {
     let spectator: SpectatorService<DotSeoMetaTagsUtilService>;

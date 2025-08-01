@@ -11,10 +11,8 @@ import { DotAIImageOrientation, DotGeneratedAIImage, PromptType } from '@dotcms/
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
 
 import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
-import {
-    DotClipboardUtil,
-    DotCopyButtonComponent
-} from '../../../dot-copy-button/dot-copy-button.component';
+import { DotClipboardUtil } from '../../../../services/clipboard/ClipboardUtil';
+import { DotCopyButtonComponent } from '../../../dot-copy-button/dot-copy-button.component';
 
 const MOCK_FORM_VALUE = {
     text: 'Test',

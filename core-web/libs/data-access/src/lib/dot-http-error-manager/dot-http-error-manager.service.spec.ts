@@ -16,12 +16,10 @@ import {
 
 import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
 
-import {
-    DotAlertConfirmService,
-    DotMessageService
-} from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
-import { DotMessageDisplayService } from '../dot-workflow-event-handler/dot-workflow-event-handler.service';
 
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
