@@ -99,8 +99,8 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
         }
 
         const element = this.elementRef.nativeElement;
-        const isEmptyParagraph = this.isEmptyParagraph(node);
-        element.style.display = isEmptyParagraph ? 'none' : '';
+        const isEmptyNode = this.isEmptyNode(node);
+        element.style.display = isEmptyNode ? 'none' : '';
     }
 
     /**
@@ -115,11 +115,11 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
     }
 
     /**
-     * Check if the node is an empty paragraph
+     * Check if the node is an empty node
      * @param node - The node to check
-     * @returns True if the node is an empty paragraph, false otherwise
+     * @returns True if the node is an empty node, false otherwise
      */
-    private isEmptyParagraph(node: Node): boolean {
+    private isEmptyNode(node: Node): boolean {
         const isEmpty = !node.isLeaf && isNodeEmpty(node) && !node.childCount;
 
         return isEmpty;
