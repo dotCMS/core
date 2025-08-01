@@ -55,4 +55,9 @@ p-inputgroup > .p-inputgroup {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
     }
+
+    .p-chip.p-component:last-child {
+        border-top-left-radius: $border-radius-sm;
+        border-bottom-left-radius: $border-radius-sm;
+    }
 }

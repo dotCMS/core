@@ -1,4 +1,14 @@
-import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+// Import shared types from data-access
+import {
+    DateRange,
+    DEFAULT_TIME_RANGE,
+    TimeRange,
+    TimeRangeInput,
+    TimeRangeOptions
+} from '@dotcms/portlets/dot-analytics/data-access';
+
+// Re-export shared types for consumers
+export { DateRange, DEFAULT_TIME_RANGE, TimeRange, TimeRangeInput, TimeRangeOptions };
 
 /** Union type for supported chart types in the analytics dashboard */
 export type ChartType = 'line' | 'pie' | 'bar' | 'doughnut';
@@ -108,6 +118,8 @@ export interface TableColumn {
     alignment?: 'left' | 'center' | 'right';
     /** Whether column is sortable */
     sortable?: boolean;
+    /** Column width (CSS value: %, px, rem, etc.) */
+    width?: string;
 }
 
 /** Data structure for metric card display */
