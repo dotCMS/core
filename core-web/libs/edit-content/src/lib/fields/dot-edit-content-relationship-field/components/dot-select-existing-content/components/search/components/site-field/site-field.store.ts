@@ -133,6 +133,13 @@ export const SiteFieldStore = signalStore(
                 }
 
                 patchState(store, { nodeSelected });
+            },
+            /**
+             * Clears the selected node when a node is deselected
+             * @method clearSelection
+             */
+            clearSelection: () => {
+                patchState(store, { nodeSelected: null });
             }
         };
     })

@@ -9,15 +9,16 @@ import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotEventsService,
+    DotIframeService,
     DotLocalstorageService,
-    DotRouterService,
-    DotIframeService
+    DotRouterService
 } from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 export const replaceSectionsMap = {
-    'edit-page': 'site-browser'
+    'edit-page': 'site-browser',
+    analytics: 'analytics-dashboard'
 };
 
 const replaceIdForNonMenuSection = (id) => {

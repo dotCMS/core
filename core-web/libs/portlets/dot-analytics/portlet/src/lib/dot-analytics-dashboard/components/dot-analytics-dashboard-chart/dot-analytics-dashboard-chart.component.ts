@@ -20,13 +20,36 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    PageViewDeviceBrowsersEntity,
+    PageViewTimeLineEntity,
+    RequestState,
+    transformDeviceBrowsersData,
+    transformPageViewTimeLineData
+} from '@dotcms/portlets/dot-analytics/data-access';
 
 import { ChartData, ChartOptions, ChartType } from '../../types';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
+ * Chart height constants based on chart type
+ */
+const CHART_TYPE_HEIGHTS = {
+    line: '21.875rem',
+    pie: '23.125rem'
+} as const;
+
+/**
+ * Union type for chart raw data
+ */
+type ChartRawData =
+    | RequestState<PageViewTimeLineEntity[]> // For line charts
+    | RequestState<PageViewDeviceBrowsersEntity[]>; // For pie charts
+
+/**
  * Reusable chart component for analytics dashboard.
  * Supports line, pie, doughnut, and bar chart types with loading states.
+ * Now receives raw data and transforms it internally based on chart type.
  */
 @Component({
     selector: 'dot-analytics-dashboard-chart',
@@ -54,24 +77,39 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
     /** Chart type (line, pie, doughnut, bar, etc.) */
     readonly $type = input.required<ChartType>({ alias: 'type' });
 
-    /** Chart data with labels and datasets */
-    readonly $data = input.required<ChartData>({ alias: 'data' });
+    /** Complete chart state from analytics store */
+    readonly $chartState = input.required<ChartRawData>({ alias: 'chartState' });
 
-    // Optional inputs
     /** Chart title displayed in header */
-    readonly $title = input<string>('', { alias: 'title' });
-
-    /** Chart width as CSS value */
-    readonly $width = input<string>('100%', { alias: 'width' });
-
-    /** Chart height as CSS value */
-    readonly $height = input<string>('100%', { alias: 'height' });
+    readonly $title = input.required<string>({ alias: 'title' });
 
     /** Custom chart options to merge with defaults */
     readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });
 
-    /** Component status for loading/error states */
-    readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
+    /** Transformed chart data ready for display */
+    protected readonly $data = computed((): ChartData => {
+        const type = this.$type();
+        const rawData = this.$chartState().data;
+
+        // Transform data based on chart type
+        if (type === 'line') {
+            return transformPageViewTimeLineData(rawData as PageViewTimeLineEntity[] | null);
+        } else if (type === 'pie' || type === 'doughnut') {
+            return transformDeviceBrowsersData(rawData as PageViewDeviceBrowsersEntity[] | null);
+        }
+
+        // Fallback for unsupported types
+        return { labels: [], datasets: [] };
+    });
+
+    /** Chart height determined automatically by chart type */
+    protected readonly $height = computed(() => {
+        const type = this.$type();
+
+        return (
+            CHART_TYPE_HEIGHTS[type as keyof typeof CHART_TYPE_HEIGHTS] || CHART_TYPE_HEIGHTS.line
+        );
+    });
 
     // Computed properties
     /** Complete chart configuration merging defaults with custom options */
@@ -140,13 +178,15 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
 
     /** Check if component is in loading state */
     protected readonly $isLoading = computed(() => {
-        const status = this.$status();
+        const status = this.$chartState().status;
 
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
     });
 
     /** Check if component is in error state */
-    protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
+    protected readonly $isError = computed(
+        () => this.$chartState().status === ComponentStatus.ERROR
+    );
 
     /** Check if chart data is empty */
     protected readonly $isEmpty = computed(() => {
