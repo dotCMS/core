@@ -61,4 +61,5 @@ This maintenance release includes the following code fixes:
 55. https://github.com/dotCMS/core/issues/32127 : Bring Back older versions of Container missing #32127
 56. https://github.com/dotCMS/core/issues/31688 : dotAI Auto Update Index is not creating/updating indexes #31688
 57. https://github.com/dotCMS/core/issues/31077 : PrimeNG Datepicker Displays Incorrectly When Appended to Body #31077
+58. https://github.com/dotCMS/core/issues/32578 : Special characters in key being removed for a key value field on a content type #32578
 
