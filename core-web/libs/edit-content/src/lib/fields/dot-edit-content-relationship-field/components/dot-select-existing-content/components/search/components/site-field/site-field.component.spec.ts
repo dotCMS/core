@@ -109,6 +109,126 @@ describe('SiteFieldComponent', () => {
         });
     });
 
+    describe('ViewChild Access', () => {
+        it('should access TreeSelect component', () => {
+            spectator.detectChanges();
+
+            const treeSelect = component.$treeSelect();
+            expect(treeSelect).toBeDefined();
+        });
+    });
+
+    describe('Effects', () => {
+        it('should call onChange when valueToSave changes', () => {
+            const onChangeSpy = jest.fn();
+            component.registerOnChange(onChangeSpy);
+
+            spectator.detectChanges();
+
+            const mockEvent: TreeNodeSelectItem = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Test Node',
+                    data: { id: '123', hostname: 'test.com', path: 'test', type: 'folder' }
+                }
+            };
+
+            store.chooseNode(mockEvent);
+            spectator.detectChanges();
+
+            expect(onChangeSpy).toHaveBeenCalledWith('folder:123');
+        });
+
+        it('should call onChange with empty string when valueToSave is null', () => {
+            const onChangeSpy = jest.fn();
+            component.registerOnChange(onChangeSpy);
+
+            spectator.detectChanges();
+
+            store.clearSelection();
+            spectator.detectChanges();
+
+            expect(onChangeSpy).toHaveBeenCalledWith('');
+        });
+
+        it('should update TreeSelect when nodeExpanded changes', () => {
+            spectator.detectChanges();
+
+            const treeSelect = component.$treeSelect();
+            const mockTreeViewChild = {
+                updateSerializedValue: jest.fn()
+            };
+            const mockCd = {
+                detectChanges: jest.fn()
+            };
+
+            // Mock the treeViewChild and cd properties
+            Object.defineProperty(treeSelect, 'treeViewChild', {
+                value: mockTreeViewChild,
+                writable: true
+            });
+            Object.defineProperty(treeSelect, 'cd', {
+                value: mockCd,
+                writable: true
+            });
+
+            const mockEvent: TreeNodeSelectItem = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Parent',
+                    data: {
+                        id: 'parent-id',
+                        hostname: 'demo.dotcms.com',
+                        path: 'parent',
+                        type: 'folder' as const
+                    },
+                    icon: 'pi pi-folder',
+                    leaf: false,
+                    children: []
+                }
+            };
+
+            store.loadChildren(mockEvent);
+            spectator.detectChanges();
+
+            expect(mockTreeViewChild.updateSerializedValue).toHaveBeenCalled();
+            expect(mockCd.detectChanges).toHaveBeenCalled();
+        });
+
+        it('should not update TreeSelect when treeViewChild is not available', () => {
+            spectator.detectChanges();
+
+            const treeSelect = component.$treeSelect();
+
+            // Ensure treeViewChild is null
+            Object.defineProperty(treeSelect, 'treeViewChild', {
+                value: null,
+                writable: true
+            });
+
+            const mockEvent: TreeNodeSelectItem = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Parent',
+                    data: {
+                        id: 'parent-id',
+                        hostname: 'demo.dotcms.com',
+                        path: 'parent',
+                        type: 'folder' as const
+                    },
+                    icon: 'pi pi-folder',
+                    leaf: false,
+                    children: []
+                }
+            };
+
+            expect(() => {
+                store.loadChildren(mockEvent);
+                spectator.detectChanges();
+            }).not.toThrow();
+        });
+    });
+
     describe('ControlValueAccessor Implementation', () => {
         const testValue = 'test-site-id';
 
@@ -117,6 +237,16 @@ describe('SiteFieldComponent', () => {
 
             component.writeValue(testValue);
             expect(component.siteControl.value).toBe('');
+        });
+
+        it('should clear selection when writeValue is called with empty string', () => {
+            const clearSelectionSpy = jest.spyOn(store, 'clearSelection');
+            spectator.detectChanges();
+
+            component.writeValue('');
+
+            expect(component.siteControl.value).toBe('');
+            expect(clearSelectionSpy).toHaveBeenCalled();
         });
 
         it('should register onChange callback', () => {
@@ -182,8 +312,12 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should handle empty string in writeValue', () => {
+            const clearSelectionSpy = jest.spyOn(store, 'clearSelection');
+
             component.writeValue('');
+
             expect(component.siteControl.value).toBe('');
+            expect(clearSelectionSpy).toHaveBeenCalled();
         });
 
         it('should not emit change when writeValue is called with same value', () => {
