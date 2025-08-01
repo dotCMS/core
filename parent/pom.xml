@@ -32,7 +32,7 @@
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
         <java.module.args>
-            --add-modules java.se
+            --add-modules java.se,jdk.management.agent
             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
             --add-opens java.base/java.lang=ALL-UNNAMED
             --add-opens java.base/java.nio=ALL-UNNAMED
@@ -200,6 +200,15 @@
         <debug.args/>
         <docker.debug.args/>
         <docker.debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</docker.debug.args.default>
+        
+        <!-- JMX Configuration -->
+        <jmx.port>9999</jmx.port>
+        <jmx.rmi.port>9998</jmx.rmi.port>
+        <jmx.args.default>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=${jmx.port} -Dcom.sun.management.jmxremote.rmi.port=${jmx.rmi.port} -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost</jmx.args.default>
+        <jmx.args/>
+        <docker.jmx.args/>
+        <docker.jmx.args.default>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=${jmx.port} -Dcom.sun.management.jmxremote.rmi.port=${jmx.rmi.port} -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=${docker.host.address}</docker.jmx.args.default>
+        <docker.debug.jmx.args.default>${docker.debug.args.default} ${docker.jmx.args.default}</docker.debug.jmx.args.default>
         <disable.custom.properties>false</disable.custom.properties>
         <config.environment>dev</config.environment>
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
@@ -1413,6 +1422,73 @@
                                     <run>
                                         <ports combine.children="append">
                                             <port>debug.port:${debug.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jmx</id>
+            <activation>
+                <property>
+                    <name>jmx.enable</name>
+                </property>
+            </activation>
+            <properties>
+                <jmx.args>${jmx.args.default}</jmx.args>
+                <docker.debug.args>${docker.jmx.args.default}</docker.debug.args>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>${jmx.port}:${jmx.port}</port>
+                                            <port>${jmx.rmi.port}:${jmx.rmi.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jmx-debug</id>
+            <activation>
+                <property>
+                    <name>jmx.debug.enable</name>
+                </property>
+            </activation>
+            <properties>
+                <jmx.args>${jmx.args.default}</jmx.args>
+                <debug.args>${debug.args.default}</debug.args>
+                <docker.debug.args>${docker.debug.jmx.args.default}</docker.debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>debug.port:${debug.port}</port>
+                                            <port>${jmx.port}:${jmx.port}</port>
+                                            <port>${jmx.rmi.port}:${jmx.rmi.port}</port>
                                         </ports>
                                     </run>
                                 </dotcms>

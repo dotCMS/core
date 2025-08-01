@@ -14,7 +14,8 @@ import {
     signal,
     viewChild,
     OnInit,
-    DestroyRef
+    DestroyRef,
+    computed
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -46,7 +47,7 @@ import {
     quoteIcon,
     ulIcon
 } from '../../utils/icons';
-import { getCurrentNodeType } from '../../utils/prosemirror';
+import { getCurrentLeafBlock } from '../../utils/prosemirror';
 
 interface NodeTypeOption {
     name: string;
@@ -55,12 +56,12 @@ interface NodeTypeOption {
     command: () => boolean;
 }
 
-const BUBBLE_MENU_HIDDEN_NODES = {
-    table: true,
-    youtube: true,
-    dotVideo: true,
-    aiContent: true,
-    loader: true
+const BUBBLE_MENU_VISIBLE_NODES = {
+    text: true,
+    heading: true,
+    dotImage: true,
+    paragraph: true,
+    dotContent: true
 };
 
 @Component({
@@ -96,9 +97,10 @@ export class DotBubbleMenuComponent implements OnInit {
 
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
+    protected readonly currentNodeType = signal<string>('paragraph');
     protected readonly showShould = signal<boolean>(true);
-    protected readonly showImageMenu = signal<boolean>(false);
-    protected readonly showContentMenu = signal<boolean>(false);
+    protected readonly showImageMenu = computed(() => this.currentNodeType() === 'dotImage');
+    protected readonly showContentMenu = computed(() => this.currentNodeType() === 'dotContent');
 
     protected nodeTypeOptions = [
         {
@@ -180,7 +182,29 @@ export class DotBubbleMenuComponent implements OnInit {
         placement: 'top-start',
         trigger: 'manual',
         onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        onClickOutside: this.onClickOutside.bind(this)
+        onClickOutside: this.onClickOutside.bind(this),
+        appendTo: (element) => {
+            // Append it to the block editor host, so it is outside of the editor container
+            const blockEditorHost = element?.parentElement?.parentElement ?? document.body;
+
+            return blockEditorHost;
+        },
+        popperOptions: {
+            modifiers: [
+                // This modifier is needed to flip the bubble menu when it is too close to the edge of the screen
+                {
+                    name: 'flip',
+                    options: {
+                        fallbackPlacements: ['top', 'bottom']
+                    }
+                },
+                // This modifier adds an attribute to the tippy element to hide it when the reference is hidden
+                {
+                    name: 'hide',
+                    phase: 'main'
+                }
+            ]
+        }
     };
 
     ngOnInit() {
@@ -326,9 +350,6 @@ export class DotBubbleMenuComponent implements OnInit {
     }
 
     private onBeforeUpdate() {
-        this.checkIfShowBubbleMenu();
-        this.checkIfShowImageMenu();
-        this.checkIfIsContentlet();
         this.setCurrentSelectedNode();
         this.detectChanges();
     }
@@ -339,28 +360,16 @@ export class DotBubbleMenuComponent implements OnInit {
     }
 
     private setCurrentSelectedNode() {
-        const currentNodeType = getCurrentNodeType(this.editor());
+        const currentNodeType = getCurrentLeafBlock(this.editor());
+        const baseNodeType = currentNodeType.startsWith('heading') ? 'heading' : currentNodeType;
 
-        // CRITICAL: Always use the exact reference from nodeTypeOptions
+        // For the dropdown, we need the heading with the level. E.g. heading-1, heading-2, etc.
         const foundOption = this.nodeTypeOptions.find((option) => option.value === currentNodeType);
 
         // Use the found reference or the first item's reference
         this.dropdownItem.set(foundOption ?? this.nodeTypeOptions[0]);
-    }
-
-    private checkIfShowBubbleMenu() {
-        const currentNodeType = getCurrentNodeType(this.editor());
-        this.showShould.set(!BUBBLE_MENU_HIDDEN_NODES[currentNodeType]);
-    }
-
-    private checkIfShowImageMenu() {
-        const currentNodeType = getCurrentNodeType(this.editor());
-        this.showImageMenu.set(currentNodeType === 'dotImage');
-    }
-
-    private checkIfIsContentlet() {
-        const currentNodeType = getCurrentNodeType(this.editor());
-        this.showContentMenu.set(currentNodeType === 'dotContent');
+        this.currentNodeType.set(baseNodeType);
+        this.showShould.set(BUBBLE_MENU_VISIBLE_NODES[baseNodeType]);
     }
 
     /**

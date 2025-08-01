@@ -185,7 +185,7 @@ RUN chown -R dotcms:dotcms /srv && \
 
 ### Stage 2: Runtime Image
 ```dockerfile
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # Install runtime dependencies
 RUN apt-get update && \
@@ -581,6 +581,283 @@ NOT included with -pl :dotcms-core:
 # With specific options
 ./dev-run --debug --glowroot
 ```
+
+## JMX Remote Monitoring
+
+⚠️ **Base Image Dependency**: JMX functionality requires the dotCMS Java base image to be rebuilt with the `jdk.management.agent` module. The JMX features will not work until the base image includes this module.
+
+### Overview
+dotCMS supports JMX (Java Management Extensions) remote monitoring for development and troubleshooting. This allows you to connect tools like JConsole, VisualVM, or Mission Control to monitor JVM metrics, memory usage, garbage collection, thread activity, and MBean operations.
+
+### JMX Configuration
+**Default Ports:**
+- JMX Remote Port: `9999`
+- RMI Registry Port: `9998`
+
+**Security Configuration:**
+- Authentication: Disabled (development only)
+- SSL: Disabled (development only)
+- Hostname: `localhost` (local connections only)
+
+### Starting dotCMS with JMX
+
+#### Basic JMX Monitoring
+```bash
+# Start dotCMS with JMX enabled
+./mvnw -pl :dotcms-core -Pdocker-start -Djmx.enable=true
+
+# Alternative using Just command
+just dev-run-jmx
+```
+
+#### Custom JMX Ports
+```bash
+# Specify custom ports
+./mvnw -pl :dotcms-core -Pdocker-start -Djmx.enable=true -Djmx.port=7777 -Djmx.rmi.port=7778
+
+# Alternative using Just command
+just dev-run-jmx-ports 7777 7778
+```
+
+#### Combined JMX + Debug
+```bash
+# Enable both JMX monitoring and Java debugging
+./mvnw -pl :dotcms-core -Pdocker-start,jmx-debug -Djmx.debug.enable=true
+
+# Alternative using Just command
+just dev-run-jmx-debug
+```
+
+#### Full Monitoring Stack
+```bash
+# Enable JMX + Debug + Glowroot profiler
+./mvnw -pl :dotcms-core -Pdocker-start,jmx-debug,glowroot -Djmx.debug.enable=true -Ddocker.glowroot.enabled=true
+
+# Alternative using Just command  
+just dev-run-jmx-debug-glowroot
+```
+
+### Just Commands for JMX
+
+The following Just commands provide convenient shortcuts for JMX monitoring:
+
+```bash
+# Basic JMX monitoring
+just dev-run-jmx
+
+# Custom port configuration
+just dev-run-jmx-ports <jmx_port> <rmi_port>
+
+# Combined JMX and debugging
+just dev-run-jmx-debug
+
+# Full monitoring stack (JMX + Debug + Glowroot)
+just dev-run-jmx-debug-glowroot
+```
+
+### Connecting with JConsole
+
+#### Prerequisites
+- Java Development Kit (JDK) installed with JConsole
+- dotCMS running with JMX enabled
+- JConsole typically located at `$JAVA_HOME/bin/jconsole`
+
+#### Connection Steps
+
+**1. Start dotCMS with JMX:**
+```bash
+just dev-run-jmx
+# or
+./mvnw -pl :dotcms-core -Pdocker-start -Djmx.enable=true
+```
+
+**2. Launch JConsole:**
+```bash
+# Launch JConsole GUI
+jconsole
+
+# Or connect directly to localhost:9999
+jconsole localhost:9999
+
+# Connect to custom port
+jconsole localhost:7777  # if using custom ports
+```
+
+**3. Connection Options in JConsole:**
+- **Remote Process**: Select "Remote Process"
+- **Connection String**: Enter `localhost:9999` (or your custom port)
+- **Username/Password**: Leave blank (authentication disabled for development)
+- Click "Connect"
+
+#### JConsole Monitoring Capabilities
+
+Once connected, JConsole provides access to:
+
+**Memory Monitoring:**
+- Heap memory usage (Eden, Survivor, Old Generation spaces)
+- Non-heap memory (Metaspace, Code Cache)  
+- Garbage collection statistics and trends
+- Memory leak detection
+
+**Thread Analysis:**
+- Thread count and CPU usage
+- Thread states (Running, Waiting, Blocked)
+- Deadlock detection
+- Thread stack traces
+
+**Runtime Information:**
+- JVM version and system properties
+- Classpath and boot classpath
+- Environment variables
+- JVM arguments
+
+**MBeans Management:**
+- dotCMS custom MBeans
+- Application server MBeans
+- JVM platform MBeans
+- Custom application metrics
+
+### Alternative JMX Tools
+
+#### VisualVM
+```bash
+# Install VisualVM (if not included with JDK)
+# Download from: https://visualvm.github.io/
+
+# Connect to JMX
+visualvm --jdkhome $JAVA_HOME
+# Add JMX connection: localhost:9999
+```
+
+#### Mission Control (Oracle JDK)
+```bash
+# Launch Mission Control
+jmc
+
+# Add connection: localhost:9999
+```
+
+#### Command Line Tools
+```bash
+# View JVM information
+jinfo <pid>
+
+# Heap dump analysis  
+jmap -dump:format=b,file=heapdump.hprof <pid>
+
+# Thread dump
+jstack <pid>
+```
+
+### JMX Profile Configuration
+
+The JMX functionality is implemented through Maven profiles:
+
+#### JMX Profile (`-Djmx.enable=true`)
+```xml
+<profile>
+    <id>jmx</id>
+    <activation>
+        <property>
+            <name>jmx.enable</name>
+        </property>
+    </activation>
+    <properties>
+        <jmx.args>${jmx.args.default}</jmx.args>
+        <docker.debug.args>${docker.jmx.args.default}</docker.debug.args>
+    </properties>
+</profile>
+```
+
+#### JMX + Debug Profile (`-Djmx.debug.enable=true`)
+```xml
+<profile>
+    <id>jmx-debug</id>
+    <activation>
+        <property>
+            <name>jmx.debug.enable</name>
+        </property>
+    </activation>
+    <properties>
+        <jmx.args>${jmx.args.default}</jmx.args>
+        <debug.args>${debug.args.default}</debug.args>
+        <docker.debug.args>${docker.debug.jmx.args.default}</docker.debug.args>
+    </properties>
+</profile>
+```
+
+### JVM Arguments Applied
+
+When JMX is enabled, the following JVM arguments are automatically applied:
+
+```bash
+-Dcom.sun.management.jmxremote
+-Dcom.sun.management.jmxremote.port=9999  
+-Dcom.sun.management.jmxremote.rmi.port=9998
+-Dcom.sun.management.jmxremote.authenticate=false
+-Dcom.sun.management.jmxremote.ssl=false
+-Djava.rmi.server.hostname=localhost
+```
+
+### Docker Port Exposure
+
+JMX profiles automatically expose the required Docker ports:
+
+```yaml
+ports:
+  - "9999:9999"  # JMX Remote Port
+  - "9998:9998"  # RMI Registry Port
+  - "8080:8080"  # dotCMS Application
+  - "8000:8000"  # Java Debug Port (if debug enabled)
+  - "4000:4000"  # Glowroot Profiler (if enabled)
+```
+
+### Troubleshooting JMX Connections
+
+#### Common Issues
+
+**1. Connection Refused**
+- Ensure dotCMS is running with JMX enabled
+- Check that ports 9999 and 9998 are not blocked by firewall
+- Verify Docker port mappings are correct
+
+**2. Authentication Failed**
+- Ensure username/password fields are empty in JConsole
+- JMX authentication is disabled for development
+
+**3. Wrong JConsole Version**
+- Use JConsole from same JDK version as dotCMS (Java 21)
+- Avoid mixing different Java versions
+
+**4. Base Image Issues**
+- Verify Java base image includes `jdk.management.agent` module
+- Rebuild base image if JMX module is missing
+
+#### Debug JMX Connection
+```bash
+# Check JMX port is listening
+netstat -an | grep 9999
+
+# Test connection
+telnet localhost 9999
+
+# Check Docker port mapping
+docker port <container_name>
+```
+
+### Production Considerations
+
+⚠️ **Security Warning**: The current JMX configuration is designed for development only:
+
+- **Authentication disabled**: No username/password required
+- **SSL disabled**: Unencrypted communication
+- **Localhost only**: Connections limited to local machine
+
+For production environments, additional security configuration is required:
+- Enable JMX authentication
+- Configure SSL/TLS encryption
+- Restrict network access with firewalls
+- Use secure connection methods
 
 ## Environment Configuration
 

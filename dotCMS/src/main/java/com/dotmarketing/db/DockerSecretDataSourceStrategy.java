@@ -1,6 +1,5 @@
 package com.dotmarketing.db;
 
-
 import com.dotmarketing.util.Constants;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
@@ -82,9 +81,8 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         config.setConnectionTimeout(Integer.parseInt(
                 dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_CONNECTION_TIMEOUT, "5000")));
         config.setIdleTimeout(
-                Integer.parseInt(dockerSecretsMap.getOrDefault(
-                        DataSourceStrategyProvider.CONNECTION_DB_MIN_IDLE, "10"))
-                        * 1000);
+                Long.parseLong(
+                        dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_IDLE_TIMEOUT, "600000")));
         config.setMaxLifetime(Integer.parseInt(
                 dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT, "60000")));
         config.setConnectionTestQuery(dockerSecretsMap.get(
