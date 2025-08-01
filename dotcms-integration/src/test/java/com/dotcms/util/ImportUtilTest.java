@@ -27,6 +27,7 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtil;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
@@ -35,8 +36,10 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
@@ -839,7 +842,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             fieldAPI.save(hostField, user);
 
             workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                    Arrays.asList(schemeStepActionResult1.getScheme()));
+                    Collections.singletonList(schemeStepActionResult1.getScheme()));
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testNumber, testHost" + "\r\n" +
@@ -4212,7 +4215,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     @DataProvider
     public static Object[][] fieldTestCases() {
         return new Object[][]{
-
                 // Required TextField - Missing value
                 {new FieldTestCase(
                         "RequiredTextField",
@@ -4367,16 +4369,30 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 )},
                 // KeyValueField (JSON) - Invalid JSON
                 {new FieldTestCase(
-                        "JSONField",
+                        "KeyValueField",
                         KeyValueField.class,
-                        "jsonField",
+                        "keyValueField",
                         DataTypes.LONG_TEXT,
                         "{\"\"valid\"\":\"\"json\"\"}",
                         "{'invalid':'json'}", // Single quotes make it invalid
                         INVALID_JSON.name(),
                         false,
                         false,
-                        null, JSON_FIELD_ASSERTION
+                        null,
+                        JSON_FIELD_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "JsonField",
+                        JSONField.class,
+                        "jsonField",
+                        DataTypes.LONG_TEXT,
+                        "{}",
+                        "{'invalid':'json'}", // Single quotes make it invalid
+                        INVALID_JSON.name(),
+                        false,
+                        false,
+                        null,
+                        JSON_FIELD_ASSERTION
                 )},
                 {new FieldTestCase(
                         "RequiredTextAreaField",
@@ -4420,36 +4436,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         REQUIRED_STORY_BLOCK_ASSERTION
                 )},
 
-                // StoryBlock Format Error
-/*
-                {new FieldTestCase(
-                        "InvalidJsonStoryBlockField",
-                        StoryBlockField.class,
-                        "InvalidStoryBlockField",
-                        DataTypes.LONG_TEXT,
-                        "{\"\"blocks\"\":[{\"\"type\"\":\"\"paragraph\"\",\"\"data\"\":{\"\"text\"\":\"\"Valid block\"\"}}]}",
-                        "{\"blocks\":[[[[[}", //invalid json
-                        INVALID_JSON.name(),
-                        false,
-                        false,
-                        null,
-                        INVALID_JSON_STORY_BLOCK_ASSERTION
-                )},
-
-                {new FieldTestCase(
-                        "MultiSelectField",
-                        MultiSelectField.class,
-                        "MultiSelectField",
-                        DataTypes.LONG_TEXT,
-                        "option1,option2,option3", // Will be set to valid option in test
-                        null,
-                        "INVALID_SELECT_OPTION", // You'll need to add this error code
-                        false,
-                        false,
-                        null, // Select options
-                        INVALID_SELECT_ASSERTION
-                )},
-
                 {new FieldTestCase(
                         "SelectField",
                         SelectField.class,
@@ -4463,38 +4449,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null, // Select options
                         INVALID_SELECT_NUMBER_ASSERTION
                 )},
-*/
-                /*
-                {new FieldTestCase(
-                        "RadioField",
-                        RadioField.class,
-                        "radioField",
-                        DataTypes.BOOL,
-                        "true",
-                        "", // Invalid boolean value
-                        INVALID_BOOLEAN_VALUE.name(),
-                        false,
-                        false,
-                        "required",
-                        BOOLEAN_FIELD_VALIDATION
-                )},
-
-                // TagField - Invalid tag format
-                {new FieldTestCase(
-                        "TagField",
-                        TagField.class,
-                        "tagField",
-                        DataTypes.SYSTEM,
-                        "valid-tag2",
-                        "invalid tag with spaces and special chars @#$",
-                        "INVALID_TAG_FORMAT",
-                        false,
-                        false,
-                        null,
-                        TAG_FIELD_VALIDATION
-                )},
-*/
-
                 {new FieldTestCase(
                         "UniqueTextField",
                         TextField.class,
@@ -4521,7 +4475,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         false,
                         null,
                         RELATIONSHIP_FIELD_VALIDATION
-                )}
+                )},
         };
     }
 
@@ -4811,6 +4765,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy INVALID_SELECT_NUMBER_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
         assertEquals("Test expected required field label is present",
                 String.format("Unable to set string value '%s' as a Float for the field: %s",testCase.invalidValue,testCase.fieldVariable),
                 error.message());
@@ -4956,22 +4911,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Expected Error Code does not match!", INVALID_CATEGORY_KEY.name(), error.code().get());
     };
 
-    public static final AssertionsStrategy KEY_VALUE_ASSERTION = (result, testCase, contentType) -> {
-        final ValidationMessage error = result.error().get(0);
-        assertTrue(error.field().isPresent());
-        assertTrue(error.invalidValue().isPresent());
-
-        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
-        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
-
-        assertThat(error.message().trim(), allOf(
-                startsWith("Invalid category key found:"),
-                containsString("It must exist and be a child of")
-        ));
-        assertTrue(error.code().isPresent());
-        assertEquals("Expected Error Code does not match!", INVALID_CATEGORY_KEY.name(), error.code().get());
-    };
-
     public static final AssertionsStrategy JSON_FIELD_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
@@ -4981,7 +4920,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
 
         assertThat(error.message().trim(), allOf(
-                startsWith("Invalid JSON field provided. Key Value Field variable:"),
+                startsWith("Invalid JSON field provided."),
                 endsWith(testCase.fieldVariable)
         ));
 
