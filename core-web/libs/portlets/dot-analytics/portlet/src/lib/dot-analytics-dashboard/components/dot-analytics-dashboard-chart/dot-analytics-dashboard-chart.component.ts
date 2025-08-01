@@ -125,6 +125,11 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index' as const,
+                intersect: false,
+                axis: 'x' as const
+            },
             plugins: {
                 legend: {
                     display: chartType !== 'line', // Hide legend for line charts
@@ -142,6 +147,8 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
                     }
                 },
                 tooltip: {
+                    mode: 'index' as const,
+                    intersect: false,
                     callbacks: {
                         label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
                             this.getTooltipLabel(context),

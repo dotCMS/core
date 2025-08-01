@@ -173,7 +173,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 2,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                cubicInterpolationMode: 'monotone'
             }
         ]
     };
