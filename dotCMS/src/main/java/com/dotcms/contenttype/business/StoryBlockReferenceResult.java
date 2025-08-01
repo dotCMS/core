@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.cost.RequestCost;
+
 /**
  * Holds the result of updating any Contentlet references in a Story Block field so that it can be handled correctly in
  * upper layers of the system.
@@ -20,7 +22,7 @@ public class StoryBlockReferenceResult {
      * @param value     The Contentlet object with the updated properties. If it DID NOT have to be updated, then the
      *                  original Contentlet must be set.
      */
-
+    @RequestCost(increment = 1)
     public StoryBlockReferenceResult(final boolean refreshed, final Object value) {
         this.refreshed = refreshed;
         this.value = value;
