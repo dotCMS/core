@@ -16,6 +16,7 @@ Backend unit tests in dotCMS are located in `dotCMS/src/test/java` and use JUnit
 - **`UnitTestBase`**: Common setup for unit tests
 - **`UnitTestBaseMarker`**: Marker interface for test categorization
 - **Mock utilities**: Extensive use of Mockito for dependency mocking
+- **Class metadata scanning**: Use `JandexClassMetadataScanner` for high-performance class analysis (see [Jandex Integration](../backend/JANDEX_METADATA_SCANNING.md))
 
 ## Testing Patterns
 

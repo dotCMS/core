@@ -4023,21 +4023,21 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals("Context should have 3 entries", 3, context.size());
             assertTrue("Context should contain 'line' key", context.containsKey("line"));
             assertTrue("Context should contain 'column' key", context.containsKey("column"));
-            assertTrue("Context should contain 'parseError' key", context.containsKey("parseError"));
+            assertTrue("Context should contain 'errorHint' key", context.containsKey("errorHint"));
 
             // Validate context values
             assertEquals("Context line should be 1", 1, context.get("line"));
             assertEquals("Context column should be 2", 2, context.get("column"));
 
             // Validate parse error details
-            String parseError = (String) context.get("parseError");
-            assertNotNull("Parse error should not be null", parseError);
+            String errorHint = (String) context.get("errorHint");
+            assertNotNull("Parse error should not be null", errorHint);
             assertTrue("Parse error should mention unexpected character",
-                    parseError.contains("Unexpected character"));
+                    errorHint.contains("Unexpected character"));
             assertTrue("Parse error should mention single quote character code",
-                    parseError.contains("''' (code 39)"));
+                    errorHint.contains("''' (code 39)"));
             assertTrue("Parse error should mention expecting double-quote",
-                    parseError.contains("was expecting double-quote to start field name"));
+                    errorHint.contains("was expecting double-quote to start field name"));
 
 
             Logger.info(this, "JSON Validation Error Details:");

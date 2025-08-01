@@ -6,7 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, SiteEntity } from '@dotcms/dotcms-models';
 
 export interface SiteParams {
     archived: boolean;
@@ -83,9 +83,9 @@ export class DotSiteService {
      * @return {*}  {Observable<Site>}
      * @memberof DotSiteService
      */
-    getCurrentSite(): Observable<Site> {
+    getCurrentSite(): Observable<SiteEntity> {
         return this.#http
-            .get<{ entity: Site }>(`${BASE_SITE_URL}/currentSite`)
+            .get<{ entity: SiteEntity }>(`${BASE_SITE_URL}/currentSite`)
             .pipe(pluck('entity'));
     }
 
