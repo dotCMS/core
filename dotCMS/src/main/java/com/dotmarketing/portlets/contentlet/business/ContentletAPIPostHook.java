@@ -1116,7 +1116,15 @@ public interface ContentletAPIPostHook {
 	 * @param value
 	 */
 	public default void setContentletProperty(Contentlet contentlet, Field field, Object value){}
-	
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 */
+	public default void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value){}
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet
