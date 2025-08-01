@@ -14,7 +14,7 @@ import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
 import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { ExtraContent, Blog } from '../../shared/contentlet.model';
 import { PageState } from '../../shared/models';
-import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
+import { DotCMSClient } from '@dotcms/angular';
 
 // Function to debounce calls
 function debounce<T extends (...args: any[]) => void>(
@@ -58,7 +58,7 @@ type DotCMSPage = {
 export class BlogListingComponent implements OnInit {
     readonly #editablePageService = inject<EditablePageService<DotCMSPage>>(EditablePageService);
     // Use proper client injection via token
-    private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+    private readonly client = inject(DotCMSClient);
 
     $pageState!: Signal<PageState<DotCMSPage>>;
     searchQuery = signal('');

@@ -68,7 +68,7 @@ any commit can go through:
 1. **Initialize**: Sets up the environment and determines what needs to be run.
 2. **Build**: Compiles the code and generates necessary artifacts.
 3. **Test**: Runs various test suites (unit tests, integration tests, etc.).
-4. **SonarQube**: Performs code quality analysis.
+4. **Semgrep**: Performs code quality analysis.
 5. **Deployment**: Handles deployment to various environments.
 6. **Release**: (TODO) Publishes releases to the appropriate channels.
 6. **Finalize**: Aggregates results and performs cleanup tasks.
@@ -116,7 +116,7 @@ A typical PR goes through the following steps:
 1. **Initialize**: Determine what has changed and what needs to be verified.
 2. **Build**: Compile the code and generate necessary artifacts.
 3. **Parallel Testing**: Run various test suites concurrently (unit tests, integration tests, Postman tests).
-4. **SonarQube Analysis**: Perform code quality checks.
+4. **Semgrep Analysis**: Perform code quality checks.
 5. **Finalize**: Aggregate results from all previous steps.
 6. **Reporting**: Generate a comprehensive report of the PR check process.
 

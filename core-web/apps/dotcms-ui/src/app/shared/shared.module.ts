@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { ModuleWithProviders, NgModule } from '@angular/core';
 
 // Common Modules
-import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { MainNavigationModule } from '@components/dot-navigation/dot-navigation.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '@dotcms/data-access';
@@ -30,11 +29,10 @@ const dotEventSocketURLFactory = () => {
 
 @NgModule({
     declarations: [],
-    imports: [CommonModule, DotDropdownModule, MainNavigationModule],
+    imports: [CommonModule, MainNavigationModule],
     exports: [
         CommonModule,
         // Common Modules
-        DotDropdownModule,
         MainNavigationModule
     ]
 })

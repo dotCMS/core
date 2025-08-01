@@ -8,7 +8,8 @@ import {
     OnChanges,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -28,6 +29,12 @@ import { FieldDragDropService } from '../fields/service';
     templateUrl: 'content-types-layout.component.html'
 })
 export class ContentTypesLayoutComponent implements OnChanges, OnInit {
+    private dotMessageService = inject(DotMessageService);
+    private dotMenuService = inject(DotMenuService);
+    private fieldDragDropService = inject(FieldDragDropService);
+    private dotEventsService = inject(DotEventsService);
+    private dotCurrentUserService = inject(DotCurrentUserService);
+
     @Input() contentType: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<unknown> = new EventEmitter();
     @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
@@ -42,14 +49,6 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     addToMenuContentType = false;
 
     actions: MenuItem[];
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotMenuService: DotMenuService,
-        private fieldDragDropService: FieldDragDropService,
-        private dotEventsService: DotEventsService,
-        private dotCurrentUserService: DotCurrentUserService
-    ) {}
 
     ngOnInit(): void {
         this.showPermissionsTab = this.dotCurrentUserService.hasAccessToPortlet('permissions');

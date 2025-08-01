@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { describe, expect } from '@jest/globals';
 import {
     byTestId,
@@ -9,7 +12,6 @@ import {
 import { of } from 'rxjs';
 
 import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
-import { By } from '@angular/platform-browser';
 
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
@@ -86,9 +88,8 @@ describe('DotEditContentTagFieldComponent', () => {
         });
 
         it('should be connected to form control', () => {
-            const control = formGroup.get(TAG_FIELD_MOCK.variable);
-            expect(spectator.component.formControl).toBeDefined();
-            expect(spectator.component.formControl).toBe(control);
+            spectator.component.writeValue([]);
+            expect(spectator.component.$values()).toEqual([]);
         });
     });
 
@@ -119,57 +120,62 @@ describe('DotEditContentTagFieldComponent', () => {
                 autocompleteInput = spectator.query('input[role="combobox"]');
             });
 
-            const simulateEnterKey = () => {
-                const enterEvent = new KeyboardEvent('keydown', {
-                    key: 'Enter',
-                    bubbles: true,
-                    cancelable: true
-                });
-                autocompleteInput.dispatchEvent(enterEvent);
-            };
-
             it('should add new tag when Enter is pressed with non-empty value', () => {
                 const newTag = 'newTag';
                 autocompleteInput.value = newTag;
 
-                simulateEnterKey();
+                spectator.component.onEnterKey({
+                    preventDefault: () => {
+                        // do nothing
+                    },
+                    target: autocompleteInput
+                } as any);
                 spectator.detectChanges();
 
-                expect(spectator.component.formControl?.value).toEqual([newTag]);
+                expect(spectator.component.$values()).toEqual([newTag]);
                 expect(autocompleteInput.value).toBe('');
             });
 
             it('should not add empty tag when Enter is pressed with empty value', () => {
                 autocompleteInput.value = '   ';
 
-                simulateEnterKey();
+                spectator.component.onEnterKey({
+                    preventDefault: () => {},
+                    target: autocompleteInput
+                } as any);
                 spectator.detectChanges();
 
-                expect(spectator.component.formControl?.value).toEqual([]);
+                expect(spectator.component.$values()).toEqual([]);
             });
 
             it('should append new tag to existing tags', () => {
                 const existingTags = ['tag1', 'tag2'];
                 const newTag = 'tag3';
-                spectator.component.formControl?.setValue(existingTags);
+                spectator.component.writeValue(existingTags);
                 autocompleteInput.value = newTag;
 
-                simulateEnterKey();
+                spectator.component.onEnterKey({
+                    preventDefault: () => {},
+                    target: autocompleteInput
+                } as any);
                 spectator.detectChanges();
 
-                expect(spectator.component.formControl?.value).toEqual([...existingTags, newTag]);
+                expect(spectator.component.$values()).toEqual([...existingTags, newTag]);
                 expect(autocompleteInput.value).toBe('');
             });
 
             it('should not add duplicate tag due to AutoComplete unique property', () => {
                 const existingTag = 'existingTag';
-                spectator.component.formControl?.setValue([existingTag]);
+                spectator.component.writeValue([existingTag]);
                 autocompleteInput.value = existingTag;
 
-                simulateEnterKey();
+                spectator.component.onEnterKey({
+                    preventDefault: () => {},
+                    target: autocompleteInput
+                } as any);
                 spectator.detectChanges();
 
-                expect(spectator.component.formControl?.value).toEqual([existingTag]);
+                expect(spectator.component.$values()).toEqual([existingTag]);
                 expect(autocompleteInput.value).toBe(existingTag);
                 expect(autocomplete.unique).toBe(true);
             });
@@ -182,30 +188,20 @@ describe('DotEditContentTagFieldComponent', () => {
             service.getTags.mockReturnValue(of([selectedTag]));
 
             // Simulate user selecting a tag
-            const selectAutocomplete = spectator.debugElement.query(
-                By.css(`[data-testid="tag-field-container-${TAG_FIELD_MOCK.variable}"]`)
-            );
-            spectator.triggerEventHandler(selectAutocomplete, 'completeMethod', {
-                query: selectedTag
-            });
-
+            spectator.component.onTagsChange([selectedTag]);
             await spectator.fixture.whenStable();
 
-            const formControl = spectator.component.formControl;
-            formControl?.setValue([selectedTag]);
-
-            expect(formControl?.value).toEqual([selectedTag]);
+            expect(spectator.component.$values()).toEqual([selectedTag]);
         });
 
         it('should allow multiple tag selection', async () => {
             const tags = ['angular', 'typescript'];
             service.getTags.mockReturnValue(of(tags));
-            const formControl = spectator.component.formControl;
 
             // Simulate user selecting multiple tags
-            formControl?.setValue(tags);
+            spectator.component.onTagsChange(tags);
 
-            expect(formControl?.value).toEqual(tags);
+            expect(spectator.component.$values()).toEqual(tags);
         });
     });
 });

@@ -8,13 +8,13 @@ import {
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 
-import { DOTCMS_CLIENT_TOKEN } from '../app.config';
+import { DotCMSClient } from '@dotcms/angular';
 
 @Injectable({
     providedIn: 'root'
 })
 export class PageService {
-    private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+    private readonly client = inject(DotCMSClient);
 
     /**
      * Get the page and navigation for the given url and params.
@@ -28,6 +28,7 @@ export class PageService {
         url: string,
         params: DotCMSPageRequestParams
     ): Observable<DotCMSComposedPageResponse<T>> {
+
         return from(
             this.client.page.get<T>(url, {
                 ...params

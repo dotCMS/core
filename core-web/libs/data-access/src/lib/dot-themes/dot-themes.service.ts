@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ import { DotTheme } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotThemesService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Get Theme information based on the inode.

@@ -19,6 +19,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         group: 'block',
         inline: false,
         draggable: true,
+        selectable: true,
 
         addAttributes() {
             return {

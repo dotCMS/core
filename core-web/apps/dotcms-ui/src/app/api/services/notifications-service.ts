@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -16,9 +16,11 @@ interface DotNotificationServiceUrls {
 
 @Injectable()
 export class NotificationsService {
+    private coreWebService = inject(CoreWebService);
+
     private urls: DotNotificationServiceUrls;
 
-    constructor(private coreWebService: CoreWebService) {
+    constructor() {
         this.urls = {
             dismissNotificationsUrl: 'v1/notification/delete',
             getLastNotificationsUrl: 'v1/notification/getNotifications/offset/0/limit/24',

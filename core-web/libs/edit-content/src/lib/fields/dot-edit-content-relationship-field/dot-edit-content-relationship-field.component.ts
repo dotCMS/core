@@ -34,6 +34,9 @@ import { PaginationComponent } from './components/pagination/pagination.componen
 import { RelationshipFieldStore } from './store/relationship-field.store';
 import { getContentTypeIdFromRelationship } from './utils';
 
+import { DotEditContentDialogComponent } from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
+import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+
 @Component({
     selector: 'dot-edit-content-relationship-field',
     standalone: true,
@@ -49,7 +52,6 @@ import { getContentTypeIdFromRelationship } from './utils';
     ],
     providers: [
         RelationshipFieldStore,
-        DialogService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -66,6 +68,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * This store is used to manage the state and actions related to the relationship field.
      */
     readonly store = inject(RelationshipFieldStore);
+
     /**
      * A readonly private field that injects the DotMessageService.
      * This service is used for handling message-related functionalities within the component.
@@ -104,6 +107,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      */
     $menuItems = computed<MenuItem[]>(() => {
         const isDisabledCreateNewContent = this.store.isDisabledCreateNewContent();
+        const isNewEditorEnabled = this.store.isNewEditorEnabled();
 
         return [
             {
@@ -113,6 +117,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 disabled: isDisabledCreateNewContent || this.$isDisabled(),
                 command: () => {
                     this.showExistingContentDialog();
+                }
+            },
+            {
+                label: this.#dotMessageService.get('dot.file.relationship.field.table.new.content'),
+                disabled: isDisabledCreateNewContent || this.$isDisabled() || !isNewEditorEnabled,
+                command: () => {
+                    this.showCreateNewContentDialog();
                 }
             }
         ];
@@ -145,15 +156,17 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 const contentlet = this.$contentlet();
 
                 const cardinality = field?.relationships?.cardinality ?? null;
+                const contentTypeId = getContentTypeIdFromRelationship(field);
 
-                if (cardinality === null || !field?.variable) {
+                if (cardinality === null || !field?.variable || !contentTypeId) {
                     return;
                 }
 
                 this.store.initialize({
                     cardinality,
                     contentlet,
-                    variable: field?.variable
+                    variable: field?.variable,
+                    contentTypeId
                 });
             },
             {
@@ -257,6 +270,14 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             return;
         }
 
+        const attributes = this.$attributes();
+        const contentTypeId = attributes.contentTypeId;
+
+        // Don't open dialog if contentTypeId is null (invalid field data)
+        if (!contentTypeId) {
+            return;
+        }
+
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             closeOnEscape: false,
@@ -270,7 +291,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
-                contentTypeId: this.$attributes().contentTypeId,
+                contentTypeId: contentTypeId,
                 selectionMode: this.store.selectionMode(),
                 currentItemsIds: this.store.data().map((item) => item.inode)
             },
@@ -300,5 +321,46 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
         }
 
         this.store.setData(this.store.data());
+    }
+
+    /**
+     * Opens the new content dialog for creating content using the Angular editor
+     */
+    showCreateNewContentDialog(): void {
+        const contentType = this.store.contentType();
+        if (this.$isDisabled() || !contentType) {
+            return;
+        }
+
+        const dialogData: EditContentDialogData = {
+            mode: 'new',
+            contentTypeId: contentType.id,
+            relationshipInfo: {
+                parentContentletId: this.$contentlet()?.inode,
+                relationshipName: this.$field()?.variable,
+                isParent: true // This could be determined based on relationship configuration
+            },
+            onContentSaved: (contentlet: DotCMSContentlet) => {
+                // Add the created contentlet to the relationship
+                const currentData = this.store.data();
+                this.store.setData([...currentData, contentlet]);
+            }
+        };
+
+        this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
+            appendTo: 'body',
+            closeOnEscape: true,
+            draggable: false,
+            keepInViewport: false,
+            modal: true,
+            resizable: true,
+            position: 'center',
+            width: '95%',
+            height: '95%',
+            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
+            style: { 'max-width': '1400px', 'max-height': '900px' },
+            data: dialogData,
+            header: `Create ${contentType.name}`
+        });
     }
 }

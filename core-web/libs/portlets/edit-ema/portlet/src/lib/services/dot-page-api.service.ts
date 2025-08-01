@@ -1,11 +1,11 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
+import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
@@ -23,6 +23,9 @@ export interface DotPageApiParams {
     experimentId?: string;
     clientHost?: string;
     publishDate?: string;
+    // We need this to allow any other query param to be passed by the user
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [x: string]: any;
 }
 
 export enum DotPageAssetKeys {
@@ -57,7 +60,7 @@ export interface PaginationData {
 
 @Injectable()
 export class DotPageApiService {
-    constructor(private http: HttpClient) {}
+    private http = inject(HttpClient);
 
     /**
      * Get a page from the Page API

@@ -16,7 +16,10 @@ cube(`Events`, {
     COUNT(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
     SUM(CASE WHEN (E.isexperimentpage = true AND C.maxDate = E.utc_time AND event_type = 'pageview') THEN 1 ELSE 0 END) as experimentPageLastVisited
     FROM events E JOIN CountsAndLastURL C ON C.lookbackwindow = E.lookbackwindow
-    WHERE event_type = 'pageview'
+    WHERE ${FILTER_PARAMS.request.customerId.filter('customer_id')}
+        AND ${FILTER_PARAMS.request.cluster_id ? FILTER_PARAMS.request.cluster_id.filter('cluster_id') : '(cluster_id IS NULL OR cluster_id = \'\')'}
+        AND ${FILTER_PARAMS.request.experiment.filter('experiment')}
+        AND event_type = 'pageview'
     GROUP BY experiment, runningid, lookbackwindow, variant, day
     having isSession = 1
     order by day
@@ -186,39 +189,36 @@ cube('request', {
     }
   },*/
   dimensions: {
-    id: {
-      sql: `CONCAT(${CUBE}.request_id, '-', ${CUBE}.event_type, '-', ${CUBE}.object_identifier)`,
-      type: `string`,
-      primaryKey: true
-    },
-    conHost: { sql: 'conhost', type: `string` },
-    conHostName: { sql: 'conhostname', type: `string` },
-    contentTypeName: { sql: 'object_contenttypename', type: `string` },
-    contentTypeId: { sql: 'object_contenttypeid', type: `string` },
-    contentTypeVariable: { sql: 'object_contenttype', type: `string` },
-    live: { sql: 'object_live', type: `boolean` },
-    working: { sql: 'object_working', type: `boolean` },
-    baseType: { sql: 'object_basetype', type: `string` },
-    identifier: { sql: 'object_identifier', type: `string` },
-    title: { sql: 'object_title', type: `string` },
+    eventType: { sql: 'event_type', type: `string` },
+    userAgent: { sql: 'user_agent', type: `string` },
+    referer: { sql: 'referer', type: `string` },
+    url: { sql: 'url', type: `string` },
+    encoding: { sql: 'doc_encoding', type: `string` },
+    pageTitle: { sql: 'page_title', type: `string` },
+    languageId: { sql: 'language_id', type: `string` },
+    persona: { sql: 'persona', type: `string` },
+    path: { sql: 'doc_path', type: `string` },
+    domain: { sql: 'doc_host', type: `string` },
+    protocol: { sql: 'doc_protocol', type: `string` },
+    urlHash: { sql: 'doc_hash', type: `string` },
+    queryParameters: { sql: 'doc_search', type: `string` },
+    screenResolution: { sql: 'screen_resolution', type: `string` },
+    browserLanguage: { sql: 'user_language', type: `string` },
+    viewportHeight: { sql: 'viewport_height', type: `string` },
+    viewPortWidth: { sql: 'viewport_width', type: `string` },
+    utmCampaign: { sql: 'utm_campaign', type: `string` },
+    utmMedium: { sql: 'utm_medium', type: `string` },
+    utmSource: { sql: 'utm_source', type: `string` },
+    utmTerm: { sql: 'utm_term', type: `string` },
+    utmContent: { sql: 'utm_content', type: `string` },
+    key: { sql: 'context_site_key', type: `string` },
+    siteId: { sql: 'context_site_id', type: `string` },
+    sessionID: { sql: 'sessionid', type: `string` },
+    userId: { sql: 'context_user_id', type: `string` },
     requestId: { sql: 'request_id', type: `string` },
     clusterId: { sql: 'cluster_id', type: `string` },
     customerId: { sql: 'customer_id', type: `string` },
-    sessionId: { sql: 'sessionid', type: `string` },
-    isSessionNew: { sql: 'sessionnew', type: `number` },
     createdAt: { sql: 'utc_time', type: `time`, },
-    sourceIp: { sql: 'source_ip', type: `string` },
-    language: { sql: 'language', type: `string` },
-    languageId: { sql: 'languageid', type: `string` },
-    userAgent: { sql: 'useragent', type: `string` },
-    referer: { sql: 'referer', type: `string` },
-    persona: { sql: 'persona', type: `string` },
-    url: { sql: 'url', type: `string` },
-    forwardTo: { sql: 'object_forwardto', type: `string` },
-    action: { sql: 'object_action', type: `string` },
-    eventType: { sql: 'event_type', type: `string` },
-    eventSource: { sql: 'event_source', type: `string` },
-    httpResponseCode: { sql: `${HttpResponses.httpResponseCode}`, type: `number` }
   },
   measures: {
     count: {
@@ -234,36 +234,10 @@ cube('request', {
       type: 'countDistinct',
       title: 'Total Requests'
     },
-    fileRequest: {
-      sql: `CASE WHEN ${CUBE}.object_basetype = 'FILEASSET' THEN 1 ELSE NULL END`,
-      type: 'count',
-      title: 'Count of FileAsset Request'
-    },
-    fileRequestAverage: {
-      sql: `${fileRequest} / NULLIF(${totalRequest}, 0)`,
-      type: 'number',
-      title: 'FileRequest Average'
-    },
-    pageRequest: {
-      sql: `CASE WHEN ${CUBE}.object_basetype = 'HTMLPAGE' THEN 1 ELSE NULL END`,
-      type: 'count',
-      title: 'Count of Page request'
-    },
-    pageRequestAverage: {
-      sql: `${request.pageRequest} / NULLIF(${totalRequest}, 0)`,
-      type: 'number',
-      title: 'Page Request Average'
-    },
-    otherRequestAverage: {
-      sql: `(${totalRequest} - (${fileRequest} + ${pageRequest})) / NULLIF(${totalRequest}, 0)`,
-      type: 'number',
-      title: 'No FIle OR Page Average'
-    }
-  },
-  joins: {
-    HttpResponses: {
-      sql: `${CUBE}.request_id = ${HttpResponses.requestId}`,
-      relationship: `one_to_one`
+    totalUsers: {
+      sql: 'context_user_id',
+      type: 'countDistinct',
+      title: 'Total Users'
     }
   }
 });

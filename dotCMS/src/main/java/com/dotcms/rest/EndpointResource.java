@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -50,6 +51,7 @@ import java.util.Set;
  * Endpoint for managing PP endpoints
  @author jsanca
  */
+@Tag(name = "Environment")
 @Path("/v1/environments/endpoints")
 public class EndpointResource {
 

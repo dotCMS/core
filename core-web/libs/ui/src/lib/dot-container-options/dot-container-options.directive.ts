@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { ChangeDetectorRef, Directive, OnInit, Optional, Self } from '@angular/core';
+import { ChangeDetectorRef, Directive, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Dropdown } from 'primeng/dropdown';
@@ -28,16 +28,16 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
     standalone: true
 })
 export class DotContainerOptionsDirective implements OnInit {
+    private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });
+    private readonly dotContainersService = inject(DotContainersService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly changeDetectorRef = inject(ChangeDetectorRef);
+
     private readonly control: Dropdown;
     private readonly maxOptions = 10;
     private readonly loadErrorMessage: string;
 
-    constructor(
-        @Optional() @Self() private readonly primeDropdown: Dropdown,
-        private readonly dotContainersService: DotContainersService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly changeDetectorRef: ChangeDetectorRef
-    ) {
+    constructor() {
         this.control = this.primeDropdown;
         this.loadErrorMessage = this.dotMessageService.get(
             'dot.template.builder.box.containers.error'

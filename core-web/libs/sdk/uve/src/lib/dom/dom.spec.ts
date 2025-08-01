@@ -9,7 +9,8 @@ import {
     getContainersData,
     getDotContentletAttributes,
     combineClasses,
-    getColumnPositionClasses
+    getColumnPositionClasses,
+    findDotCMSElement
 } from './dom.utils';
 
 describe('getDotCMSContentletsBound', () => {
@@ -377,5 +378,203 @@ describe('getDotContainerAttributes', () => {
             'data-max-contentlets': '5',
             'data-dot-uuid': 'test-uuid'
         });
+    });
+});
+
+describe('findDotCMSElement', () => {
+    const createElement = (tagName = 'div'): HTMLElement => {
+        return document.createElement(tagName);
+    };
+
+    const setDataAttribute = (element: HTMLElement, key: string, value: string): void => {
+        element.setAttribute(`data-${key}`, value);
+    };
+
+    it('should return null when element is null', () => {
+        const result = findDotCMSElement(null);
+        expect(result).toBeNull();
+    });
+
+    it('should return element when it has data-dot-object="contentlet"', () => {
+        const element = createElement();
+        setDataAttribute(element, 'dot-object', 'contentlet');
+
+        const result = findDotCMSElement(element);
+        expect(result).toBe(element);
+    });
+
+    it('should return element when it has data-dot-object="container" and contains empty content', () => {
+        const container = createElement();
+        const emptyContent = createElement();
+
+        setDataAttribute(container, 'dot-object', 'container');
+        setDataAttribute(emptyContent, 'dot-object', 'empty-content');
+
+        container.appendChild(emptyContent);
+
+        const result = findDotCMSElement(container);
+        expect(result).toBe(container);
+    });
+
+    it('should return element when it has data-dot-object="container" and has no children', () => {
+        const container = createElement();
+        setDataAttribute(container, 'dot-object', 'container');
+
+        const result = findDotCMSElement(container);
+        expect(result).toBe(container);
+    });
+
+    it('should not return container when it has children but no empty content', () => {
+        const container = createElement();
+        const child = createElement();
+
+        setDataAttribute(container, 'dot-object', 'container');
+        container.appendChild(child);
+
+        // Mock parentElement to avoid infinite recursion
+        Object.defineProperty(container, 'parentElement', {
+            value: null,
+            writable: true
+        });
+
+        const result = findDotCMSElement(container);
+        expect(result).toBeNull();
+    });
+
+    it('should return null when no element is found', () => {
+        const parent = createElement();
+        const child = createElement();
+
+        // Neither element has the required data attributes
+        parent.appendChild(child);
+
+        Object.defineProperty(child, 'parentElement', {
+            value: parent,
+            writable: true
+        });
+        Object.defineProperty(parent, 'parentElement', {
+            value: null,
+            writable: true
+        });
+
+        const result = findDotCMSElement(child);
+        expect(result).toBeNull();
+    });
+
+    it('should find contentlet in parent when child does not match', () => {
+        const parent = createElement();
+        const child = createElement();
+
+        setDataAttribute(parent, 'dot-object', 'contentlet');
+        parent.appendChild(child);
+
+        Object.defineProperty(child, 'parentElement', {
+            value: parent,
+            writable: true
+        });
+        Object.defineProperty(parent, 'parentElement', {
+            value: null,
+            writable: true
+        });
+
+        const result = findDotCMSElement(child);
+        expect(result).toBe(parent);
+    });
+
+    it('should find container with empty content in parent hierarchy', () => {
+        const grandParent = createElement();
+        const parent = createElement();
+        const child = createElement();
+        const emptyContent = createElement();
+
+        setDataAttribute(grandParent, 'dot-object', 'container');
+        setDataAttribute(emptyContent, 'dot-object', 'empty-content');
+
+        grandParent.appendChild(emptyContent);
+        grandParent.appendChild(parent);
+        parent.appendChild(child);
+
+        Object.defineProperty(child, 'parentElement', {
+            value: parent,
+            writable: true
+        });
+        Object.defineProperty(parent, 'parentElement', {
+            value: grandParent,
+            writable: true
+        });
+        Object.defineProperty(grandParent, 'parentElement', {
+            value: null,
+            writable: true
+        });
+
+        const result = findDotCMSElement(child);
+        expect(result).toBe(grandParent);
+    });
+
+    it('should find empty container in parent hierarchy', () => {
+        const grandParent = createElement();
+        const parent = createElement();
+        const child = createElement();
+
+        setDataAttribute(grandParent, 'dot-object', 'container');
+        // grandParent has no children initially
+
+        // Add parent after setting up the container
+        grandParent.appendChild(parent);
+        parent.appendChild(child);
+
+        Object.defineProperty(child, 'parentElement', {
+            value: parent,
+            writable: true
+        });
+        Object.defineProperty(parent, 'parentElement', {
+            value: grandParent,
+            writable: true
+        });
+        Object.defineProperty(grandParent, 'parentElement', {
+            value: null,
+            writable: true
+        });
+
+        // Since grandParent now has children, it won't match the empty container criteria
+        // Let's test with an empty container instead
+        const emptyContainer = createElement();
+        setDataAttribute(emptyContainer, 'dot-object', 'container');
+
+        Object.defineProperty(child, 'parentElement', {
+            value: emptyContainer,
+            writable: true
+        });
+        Object.defineProperty(emptyContainer, 'parentElement', {
+            value: null,
+            writable: true
+        });
+
+        const result = findDotCMSElement(child);
+        expect(result).toBe(emptyContainer);
+    });
+
+    it('should handle complex DOM hierarchy with multiple levels', () => {
+        const level4 = createElement(); // contentlet
+        const level3 = createElement();
+        const level2 = createElement();
+        const level1 = createElement();
+        const level0 = createElement(); // starting point
+
+        setDataAttribute(level4, 'dot-object', 'contentlet');
+
+        level4.appendChild(level3);
+        level3.appendChild(level2);
+        level2.appendChild(level1);
+        level1.appendChild(level0);
+
+        Object.defineProperty(level0, 'parentElement', { value: level1, writable: true });
+        Object.defineProperty(level1, 'parentElement', { value: level2, writable: true });
+        Object.defineProperty(level2, 'parentElement', { value: level3, writable: true });
+        Object.defineProperty(level3, 'parentElement', { value: level4, writable: true });
+        Object.defineProperty(level4, 'parentElement', { value: null, writable: true });
+
+        const result = findDotCMSElement(level0);
+        expect(result).toBe(level4);
     });
 });

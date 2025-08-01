@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -50,6 +51,7 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  * @since Apre 26th, 2017
  */
 @Path("/v1/contenttype/{typeId}/fields")
+@Tag(name = "Content Type Field", description = "Content type field management and configuration")
 public class FieldVariableResource implements Serializable {
 
 	private final transient WebResource webResource;

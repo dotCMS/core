@@ -144,6 +144,7 @@ export class DotEditContentBinaryFieldComponent
 
     $field = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
     $variable = computed(() => this.$field()?.variable);
+    $disabled = signal<boolean>(false);
 
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
@@ -247,6 +248,10 @@ export class DotEditContentBinaryFieldComponent
         this.onTouched = fn;
     }
 
+    setDisabledState(isDisabled: boolean): void {
+        this.$disabled.set(isDisabled);
+    }
+
     ngOnDestroy() {
         this.#dotBinaryFieldEditImageService.removeListener();
         this.#dialogRef?.close();
@@ -259,6 +264,10 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     openDialog(mode: BinaryFieldMode) {
+        if (this.$disabled()) {
+            return;
+        }
+
         if (mode === BinaryFieldMode.AI) {
             this.openAIImagePrompt();
         } else {
@@ -322,6 +331,10 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     openFilePicker() {
+        if (this.$disabled()) {
+            return;
+        }
+
         this.inputFile.nativeElement.click();
     }
 
@@ -332,6 +345,10 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     handleFileSelection(event: Event) {
+        if (this.$disabled()) {
+            return;
+        }
+
         const input = event.target as HTMLInputElement;
         const file = input.files[0];
         this.#dotBinaryFieldStore.handleUploadFile(file);
@@ -343,6 +360,10 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     removeFile() {
+        if (this.$disabled()) {
+            return;
+        }
+
         this.#dotBinaryFieldStore.removeFile();
     }
 
@@ -397,6 +418,10 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     handleFileDrop({ validity, file }: DropZoneFileEvent): void {
+        if (this.$disabled()) {
+            return;
+        }
+
         if (!validity.valid) {
             this.handleFileDropError(validity);
 

@@ -1,3 +1,5 @@
+import { DecorationSet, type DecorationSource } from 'prosemirror-view';
+
 import { Component, Injector, Input, Type } from '@angular/core';
 
 import {
@@ -13,8 +15,6 @@ import {
 import { AngularRenderer } from './AngularRenderer';
 
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
-import type { DecorationSource } from 'prosemirror-view';
-import { DecorationSet } from 'prosemirror-view';
 
 export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unknown>;
 
@@ -146,10 +146,13 @@ class AngularNodeView extends NodeView<
 
     selectNode() {
         this.renderer.updateProps({ selected: true });
+
+        this.renderer.elementRef.nativeElement.classList.add('ProseMirror-selectednode');
     }
 
     deselectNode() {
         this.renderer.updateProps({ selected: false });
+        this.renderer.elementRef.nativeElement.classList.remove('ProseMirror-selectednode');
     }
 
     destroy() {

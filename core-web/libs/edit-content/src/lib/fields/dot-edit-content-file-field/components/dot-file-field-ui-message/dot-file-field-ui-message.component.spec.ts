@@ -55,4 +55,43 @@ describe('DotFileFieldUiMessageComponent', () => {
             expect(messageText).toContainText('Drag and Drop File');
         });
     });
+
+    describe('when disabled', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    uiMessage: getUiMessage('DEFAULT'),
+                    disabled: true
+                } as unknown
+            });
+            spectator.detectChanges();
+        });
+
+        it('should add disabled class to host element', () => {
+            expect(spectator.element).toHaveClass('disabled');
+        });
+
+        it('should add disabled class to icon container', () => {
+            const iconContainer = spectator.query(byTestId('ui-message-icon-container'));
+            expect(iconContainer).toHaveClass('disabled');
+        });
+
+        it('should add disabled class to text element', () => {
+            const textElement = spectator.query('.text');
+            expect(textElement).toHaveClass('disabled');
+        });
+
+        it('should still display message content when disabled', () => {
+            const expectMessage = getUiMessage('DEFAULT');
+
+            const severity = spectator.query(byTestId('ui-message-icon-container'));
+            const messageIcon = spectator.query(byTestId('ui-message-icon'));
+            const messageText = spectator.query(byTestId('ui-message-span'));
+
+            expect(severity).toHaveClass(expectMessage.severity);
+            expect(severity).toHaveClass('disabled');
+            expect(messageIcon).toHaveClass(expectMessage.icon);
+            expect(messageText).toContainText('Drag and Drop File');
+        });
+    });
 });

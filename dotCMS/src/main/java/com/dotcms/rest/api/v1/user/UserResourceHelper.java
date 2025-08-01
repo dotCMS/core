@@ -345,7 +345,7 @@ public class UserResourceHelper implements Serializable {
 			mapResponse.put("nUsers", countUsersByNameOrEmail);
 		}
 
-		return new ResponseEntityView(mapResponse );
+		return new ResponseEntityView<>(mapResponse );
 	}
 
 	/**

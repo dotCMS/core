@@ -1,0 +1,17 @@
+@use "variables" as *;
+
+.analytics-error-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: $spacing-4;
+    background: $white;
+
+    ::ng-deep dot-empty-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

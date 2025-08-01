@@ -85,8 +85,8 @@ This example uses the following npm packages from dotCMS:
 
 | Package | Purpose | Description |
 |---------|---------|-------------|
-| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/v/next) | API Communication | Core API client for fetching content from dotCMS |
-| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/v/next) | UI Components | React components and hooks for rendering dotCMS content |
+| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/) | API Communication | Core API client for fetching content from dotCMS |
+| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/) | UI Components | React components and hooks for rendering dotCMS content |
 | [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) | Visual Editing | Universal Visual Editor integration |
 | [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) | Type Safety | TypeScript type definitions for dotCMS |
 
@@ -279,7 +279,7 @@ The process works as follows:
 Here's how the client is configured:
 
 ```js
-import { createDotCMSClient } from "@dotcms/client/next";
+import { createDotCMSClient } from "@dotcms/client";
 
 export const dotCMSClient = createDotCMSClient({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
@@ -304,7 +304,18 @@ export const getDotCMSPage = async (path, searchParams) => {
 };
 ```
 
-Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/v/next).
+Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/).
+
+### How dotCMS Routes Pages
+dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Next.js application needs to handle these variations.
+
+To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Next.js.
+
+How to Implement in Next.js:
+
+Implement a dynamic route like `[[...slug]]` in your Next.js app. This route will capture all URL segments, allowing your application to correctly process any path dotCMS uses for your content.
+
+You can learn more about Next.js routing strategies [here](https://nextjs.org/docs/app/api-reference/file-conventions/dynamic-routes#typescript)
 
 ### How to Render Your Page
 
@@ -326,7 +337,7 @@ Here's how this looks in code:
 ```js
 "use client";
 
-import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react/next";
+import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react";
 
 // Define custom components for specific Content Types
 // The key is the Content Type variable name in dotCMS
@@ -409,7 +420,7 @@ This mapping should be passed to the `DotCMSBodyLayout` component as shown in th
 **Learn more about dotCMS Content and Components:**
 - [Understanding Content Types in dotCMS](https://dev.dotcms.com/docs/content-types) - In-depth explanation of content types and their structure
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
-- [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/v/next) - Complete reference for the React components library
+- [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/) - Complete reference for the React components library
 
 ## Conclusion
 
@@ -434,4 +445,3 @@ To deepen your understanding of this integration, explore these official dotCMS 
 Additional resources:
 - [dotCMS Developer Documentation](https://dev.dotcms.com/)
 - [Next.js Documentation](https://nextjs.org/docs)
-

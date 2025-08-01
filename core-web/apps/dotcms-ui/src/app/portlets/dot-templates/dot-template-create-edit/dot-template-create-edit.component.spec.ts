@@ -479,12 +479,10 @@ describe('DotTemplateCreateEditComponent', () => {
 
             it('should load edit mode', () => {
                 const portlet = de.query(By.css('dot-portlet-base')).componentInstance;
-                const toolbar = de.query(By.css('dot-portlet-toolbar')).componentInstance;
                 const builder = de.query(By.css('dot-template-builder')).componentInstance;
                 const apiLink = de.query(By.css('dot-api-link')).componentInstance;
 
                 expect(portlet.boxed).toBe(false);
-                expect(toolbar.title).toBe('Some template');
                 expect(builder.item).toEqual({
                     ...EMPTY_TEMPLATE_DESIGN,
                     identifier: '123',

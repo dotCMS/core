@@ -1,7 +1,7 @@
 // tslint:disable:typedef
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
@@ -17,12 +17,12 @@ window['mapsApiReady'] = () => {
 
 @Injectable()
 export class GoogleMapService {
+    private siteService = inject(SiteService);
+    private dotSiteService = inject(DotSiteService);
+
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
     private destroy$ = new Subject<boolean>();
-    constructor(
-        private siteService: SiteService,
-        private dotSiteService: DotSiteService
-    ) {
+    constructor() {
         this.loadApi(this.siteService.currentSite.identifier).subscribe();
         this.mapsApi$ = window['mapsApi$'];
         this.mapsApi$.subscribe();

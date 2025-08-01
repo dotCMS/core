@@ -1,6 +1,6 @@
 import { Observable, forkJoin, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -22,13 +22,11 @@ import { DotSeoMetaTagsUtilService } from '../dot-seo-meta-tags-utils/dot-seo-me
 
 @Injectable()
 export class DotSeoMetaTagsService {
+    private dotMessageService = inject(DotMessageService);
+    private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
+
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
     seoMedia: string;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
-    ) {}
 
     /**
      * Get the object with the SEO Result,

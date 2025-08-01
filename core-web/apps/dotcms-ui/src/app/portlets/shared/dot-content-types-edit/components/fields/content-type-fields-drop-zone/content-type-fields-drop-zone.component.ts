@@ -13,7 +13,8 @@ import {
     Output,
     Renderer2,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
@@ -46,6 +47,15 @@ import { FieldPropertyService } from '../service/field-properties.service';
     templateUrl: './content-type-fields-drop-zone.component.html'
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
+    private dotMessageService = inject(DotMessageService);
+    private fieldDragDropService = inject(FieldDragDropService);
+    private fieldPropertyService = inject(FieldPropertyService);
+    private dotEventsService = inject(DotEventsService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dragulaService = inject(DragulaService);
+    private elRef = inject(ElementRef);
+    private rendered = inject(Renderer2);
+
     readonly OVERVIEW_TAB_INDEX = 0;
     readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
 
@@ -76,17 +86,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     @Output()
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private fieldDragDropService: FieldDragDropService,
-        private fieldPropertyService: FieldPropertyService,
-        private dotEventsService: DotEventsService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dragulaService: DragulaService,
-        private elRef: ElementRef,
-        private rendered: Renderer2
-    ) {}
 
     private _loading: boolean;
 

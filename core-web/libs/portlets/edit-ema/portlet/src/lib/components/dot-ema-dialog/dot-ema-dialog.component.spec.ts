@@ -16,7 +16,6 @@ import { By } from '@angular/platform-browser';
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -29,7 +28,7 @@ import {
 import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotCMSPage } from '@dotcms/types';
+import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
 import {
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
@@ -194,7 +193,7 @@ describe('DotEmaDialogComponent', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
         });
 
@@ -217,7 +216,7 @@ describe('DotEmaDialogComponent', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
         });
     });
@@ -482,6 +481,14 @@ describe('DotEmaDialogComponent', () => {
                 title: 'test',
                 url: 'https://demo.dotcms.com/jsp.jsp'
             });
+        });
+
+        it('should trigger resetActionPayload in the store', () => {
+            const resetActionPayloadSpy = jest.spyOn(storeSpy, 'resetActionPayload');
+
+            component.resetActionPayload();
+
+            expect(resetActionPayloadSpy).toHaveBeenCalled();
         });
     });
 

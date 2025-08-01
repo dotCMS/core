@@ -1,4 +1,4 @@
-import { NgModule, inject } from '@angular/core';
+import { inject, NgModule } from '@angular/core';
 import {
     ActivatedRouteSnapshot,
     Route,
@@ -15,7 +15,7 @@ import { DotLoginPageComponent } from '@components/login/main/dot-login-page.com
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
 import { DotExperimentsService, EmaAppConfigurationService } from '@dotcms/data-access';
-import { dotAnalyticsHealthCheckResolver, DotEnterpriseLicenseResolver } from '@dotcms/ui';
+import { DotEnterpriseLicenseResolver } from '@dotcms/ui';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
@@ -71,22 +71,26 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () =>
             import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
     },
+    // TODO: We need a fix from BE to remove those redirects
     {
         path: 'analytics-search',
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
+        redirectTo: 'analytics/search'
+    },
+    {
+        path: 'analytics-dashboard',
+        redirectTo: 'analytics/dashboard'
+    },
+    {
+        path: 'analytics',
         providers: [DotEnterpriseLicenseResolver, DotExperimentsService],
         resolve: {
-            isEnterprise: DotEnterpriseLicenseResolver,
-            healthCheck: dotAnalyticsHealthCheckResolver
+            isEnterprise: DotEnterpriseLicenseResolver
         },
         data: {
             reuseRoute: false
         },
-        loadComponent: () =>
-            import('@dotcms/portlets/dot-analytics-search/portlet').then(
-                (m) => m.DotAnalyticsSearchComponent
-            )
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-analytics/portlet').then((m) => m.DotAnalyticsRoutes)
     },
     {
         path: 'forms',
@@ -149,6 +153,11 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'pages',
         loadChildren: () =>
             import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
+    },
+    {
+        path: 'content-drive',
+        loadChildren: () =>
+            import('@dotcms/portlets/content-drive/portlet').then((m) => m.DotContentDriveRoutes)
     },
     {
         path: '',

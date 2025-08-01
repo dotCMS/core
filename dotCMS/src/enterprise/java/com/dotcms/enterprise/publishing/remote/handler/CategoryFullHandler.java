@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publisher.util.PushCategoryUtil;
@@ -53,7 +54,7 @@ public class CategoryFullHandler implements IHandler {
     private final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
     private final UserAPI     userAPI     = APILocator.getUserAPI();
     private PushCategoryUtil pushCategoryUtil;
-    private PublisherConfig config;
+    private final PublisherConfig config;
     private int categoryHandledCounter = 0;
 
     public CategoryFullHandler(PublisherConfig config) {
@@ -116,7 +117,7 @@ public class CategoryFullHandler implements IHandler {
             	handleCategory(null, topLevel.getCategory());
             	
                 // try with children
-                if (null != topLevel.getChildren() && topLevel.getChildren().size() > 0) {
+                if (null != topLevel.getChildren() && !topLevel.getChildren().isEmpty()) {
 
                     for (final String inode : topLevel.getChildren()) {
                         childCategoryInode = inode;
@@ -129,7 +130,7 @@ public class CategoryFullHandler implements IHandler {
             PushPublishLogger.log(getClass(), "Categories published", config.getId());
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when publishing Category Inode '%s', Parent " +
-                    "Inode '%s': %s", childCategoryInode, topLevelCategoryInode, e.getMessage());
+                    "Inode '%s': %s", childCategoryInode, topLevelCategoryInode, ExceptionUtil.getErrorMessage(e));
             Logger.error(this, errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
         }
@@ -146,7 +147,7 @@ public class CategoryFullHandler implements IHandler {
         handleCategory(parent.getCategory(), wrapper.getCategory());
 
         // the category has children
-        if (null != wrapper.getChildren() && wrapper.getChildren().size() > 0) {
+        if (null != wrapper.getChildren() && !wrapper.getChildren().isEmpty()) {
 
             for (final String inode : wrapper.getChildren()) {
 
@@ -182,4 +183,5 @@ public class CategoryFullHandler implements IHandler {
                 "delete from tree where parent not in (select inode from category) and relation_type = 'child' ");
         db.loadResult();
     }
+
 }

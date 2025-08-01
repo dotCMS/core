@@ -33,7 +33,7 @@ describe('DotAppsListResolver', () => {
     let dotAppsListResolver: DotAppsListResolver;
 
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotAppsListResolver,
                 { provide: DotLicenseService, useClass: DotLicenseServicesMock },
@@ -44,9 +44,9 @@ describe('DotAppsListResolver', () => {
                 }
             ]
         });
-        dotAppsService = testbed.get(DotAppsService);
-        dotLicenseServices = testbed.get(DotLicenseService);
-        dotAppsListResolver = testbed.get(DotAppsListResolver);
+        dotAppsService = TestBed.inject(DotAppsService);
+        dotLicenseServices = TestBed.inject(DotLicenseService);
+        dotAppsListResolver = TestBed.inject(DotAppsListResolver);
     });
 
     it('should get if portlet can be accessed', () => {

@@ -1,6 +1,6 @@
 import { of, throwError } from 'rxjs';
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, inject as inject_1 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     FormsModule,
@@ -37,9 +37,11 @@ const messageServiceMock = new MockDotMessageService({
     `
 })
 class TestHostComponent {
+    private fb = inject_1(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             id: '123'
         });

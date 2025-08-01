@@ -60,7 +60,7 @@ Feature: Checking JSON Attributes
         "body": "This is my Test Generic Content",
         "creationDate": "#notnull",
         "owner": "#notnull",
-        "ownerName": "#notnull",
+        "ownerUserName": "#notnull",
         "modDate": "#notnull",
         "modUser": "#notnull",
         "modUserName": "#notnull",

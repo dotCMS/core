@@ -1,0 +1,79 @@
+<p-table
+    [value]="$items()"
+    [tableStyle]="{ width: '100%' }"
+    dataKey="identifier"
+    [paginator]="true"
+    [rows]="20"
+    [rowsPerPageOptions]="[20, 40, 60]"
+    [totalRecords]="$totalItems()"
+    [lazy]="true"
+    (onPage)="onPage($event)"
+    sortMode="single"
+    [(selection)]="selectedItems"
+    selectionMode="multiple"
+    (selectionChange)="onSelectionChange()"
+    styleClass="dotTable"
+    sortField="modDate"
+    data-testId="table"
+    (onSort)="onSort($event)">
+    <ng-template pTemplate="header">
+        <tr data-testId="header-row">
+            <th style="width: 2.5rem"><p-tableHeaderCheckbox data-testId="header-checkbox" /></th>
+            @for (column of HEADER_COLUMNS; track column.field) {
+                @if (column.sortable) {
+                    <th
+                        [pSortableColumn]="column.field"
+                        [width]="column.width"
+                        data-testId="header-column-sortable">
+                        {{ column.header | dm }}
+                        <p-sortIcon [field]="column.field" data-testId="sort-icon" />
+                    </th>
+                } @else {
+                    <th [width]="column.width" data-testId="header-column-not-sortable">
+                        {{ column.header | dm }}
+                    </th>
+                }
+            }
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+        @let status = item | dotContentletStatus;
+
+        @if ($loading()) {
+            <tr data-testId="loading-row">
+                <td [colSpan]="SKELETON_SPAN">
+                    <p-skeleton height="3rem" width="100%" />
+                </td>
+            </tr>
+        } @else {
+            <tr data-testId="item-row">
+                <td data-testId="item-checkbox">
+                    <p-tableCheckbox [value]="item" />
+                </td>
+                <td class="list-view-title" style="max-width: 100%" data-testId="item-title">
+                    <div class="container-thumbnail">
+                        <dot-contentlet-thumbnail
+                            [fieldVariable]="item?.contentType"
+                            [iconSize]="'48px'"
+                            [contentlet]="item"
+                            data-testId="contentlet-thumbnail" />
+                    </div>
+                    {{ item.title }}
+                </td>
+                <td data-testId="item-status">
+                    @if (status === 'Published') {
+                        <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
+                    } @else if (status === 'Archived') {
+                        <p-chip styleClass="p-chip-sm p-chip-danger" [label]="status" />
+                    } @else {
+                        <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
+                    }
+                </td>
+                <td data-testId="item-base-type">{{ item.baseType | dm }}</td>
+                <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
+                <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
+            </tr>
+        }
+    </ng-template>
+</p-table>

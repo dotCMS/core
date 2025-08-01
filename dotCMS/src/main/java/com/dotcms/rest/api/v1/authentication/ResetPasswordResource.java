@@ -27,6 +27,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * This resource change the user password.
@@ -34,6 +35,7 @@ import com.liferay.util.LocaleUtil;
  * Otherwise returns 500 and the exception as Json.
  */
 @Path("/v1/changePassword")
+@Tag(name = "Authentication", description = "User authentication and session management")
 public class ResetPasswordResource {
 
     private final UserManager userManager;

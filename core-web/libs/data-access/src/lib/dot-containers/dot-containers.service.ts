@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -16,7 +16,7 @@ export const CONTAINER_API_URL = '/api/v1/containers/';
  */
 @Injectable()
 export class DotContainersService {
-    constructor(private readonly http: HttpClient) {}
+    private readonly http = inject(HttpClient);
 
     /**
      * Get the container filtered by tittle or inode.

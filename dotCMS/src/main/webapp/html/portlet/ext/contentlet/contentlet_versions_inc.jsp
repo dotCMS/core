@@ -45,14 +45,25 @@
 
 
 
-<div class="contentIdentifier">
+<div class="contentIdentifier" style="margin: 0px 18px 18px 18px;">
 <%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %>
+	<style>
+		.hoverable-box {
+			float: right;
+			padding: 4px 8px;
+			border: 1px solid #ccc;
+			cursor: pointer;
+			border-radius: 3px;
+			text-align: center;
+			transition: background 0.3s;
+		}
+		.hoverable-box:hover {
+			background: #e6f3ff; /* Light blue */
+		}
+	</style>
+	<div class="hoverable-box">
 
-
-
-	<div style="float:right">
-	(&nbsp;<a href="/api/content/id/<%=ident.getId() %>" target="_blank">json</a> |
-	<a href="/api/content/id/<%=ident.getId() %>/type/xml" target="_blank">xml</a>&nbsp;)
+		<a href="/api/v1/content/<%=ident.getId() %>" style="text-decoration: none;font-weight: normal" target="_blank">API</a>
 	</div>
 </div>
 <table class="listingTable">
@@ -151,5 +162,3 @@
 	<% } %>
 
 </table>
-
-

@@ -36,6 +36,7 @@ form {
     .p-inputtext.p-inputtextarea {
         padding: $spacing-1 $spacing-6 $spacing-1 $spacing-4;
         min-height: $spacing-8;
+        resize: vertical;
     }
 
     dot-copy-button {
@@ -58,6 +59,7 @@ dot-empty-container {
 }
 
 .ai-content__input-text {
+    resize: vertical;
     height: $spacing-8;
 }
 
