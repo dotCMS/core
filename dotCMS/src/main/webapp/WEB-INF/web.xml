@@ -103,6 +103,11 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>SassQueryParamFilter</filter-name>
+		<filter-class>com.dotcms.csspreproc.SassQueryParamFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
 		<init-param>
@@ -192,6 +197,10 @@
 	</filter-mapping>
 	<filter-mapping>
 		<filter-name>LoginRequiredFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>SassQueryParamFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	<filter-mapping>
@@ -386,6 +395,7 @@
         <servlet-name>SassPreProcessServlet</servlet-name>
         <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
     </servlet>
+
     <!-- REST -->
   <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -441,6 +451,7 @@
       <servlet-name>SassPreProcessServlet</servlet-name>
       <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
+
     
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
