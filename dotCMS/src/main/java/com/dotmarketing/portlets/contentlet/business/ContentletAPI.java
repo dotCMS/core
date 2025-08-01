@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
@@ -64,6 +65,18 @@ public interface ContentletAPI {
 			"M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
 			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
 	};
+
+	/**
+	 * Returns the {@link Contentlet} date formats
+	 * @return String array of formats
+	 */
+	default String [] getContentletDateFormats () {
+
+		final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats",
+				ContentletAPI.DEFAULT_DATE_FORMATS);
+
+		return dateFormats;
+	}
 
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
@@ -1889,7 +1902,16 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
 	 */
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException;
-	
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
+	 */
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException;
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet

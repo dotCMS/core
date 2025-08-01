@@ -65,6 +65,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	private List<ContentletAPIPostHook> postHooks = new ArrayList<>();
 	private final ContentletAPI conAPI;
 
+
+	private static final String PREHOOK_FAILED_MESSAGE = "The following prehook failed: %s";
 	/**
 	 * Default class constructor.
 	 */
@@ -1974,6 +1976,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		conAPI.setContentletProperty(contentlet, field, value);
+		for(ContentletAPIPostHook post : postHooks){
+			post.setContentletProperty(contentlet, field, value);
+		}
+	}
+
+	@Override
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.setContentletProperty(contentlet, field, value);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.setContentletProperty(contentlet, field, value);
