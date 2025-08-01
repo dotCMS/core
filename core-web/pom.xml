@@ -121,14 +121,14 @@
                     </execution>
 
                     <execution>
-                        <id>build-affected</id>
+                        <id>build-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>compile</phase>
+                        <phase>generate-resources</phase>
                         <configuration>
-                            <arguments>nx affected -t build --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
+                            <arguments>nx run-many -t build  --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
