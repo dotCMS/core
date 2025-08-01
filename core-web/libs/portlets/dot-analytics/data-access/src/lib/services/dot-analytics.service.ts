@@ -31,13 +31,16 @@ export class DotAnalyticsService {
      * Total de pageviews en el período especificado
      */
     totalPageViews(
-        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<TotalPageViewsEntity> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .measures(['totalRequest'])
             .pageviews()
-            .timeRange('createdAt', timeRange)
-            .build();
+            .siteId(siteId)
+            .timeRange('createdAt', timeRange);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<TotalPageViewsEntity>>(this.#BASE_URL, query)
@@ -48,13 +51,16 @@ export class DotAnalyticsService {
      * Visitantes únicos (sesiones únicas) en el período especificado
      */
     uniqueVisitors(
-        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<UniqueVisitorsEntity> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .measures(['totalUsers'])
             .pageviews()
-            .timeRange('createdAt', timeRange)
-            .build();
+            .siteId(siteId)
+            .timeRange('createdAt', timeRange);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<UniqueVisitorsEntity>>(this.#BASE_URL, query)
@@ -65,16 +71,19 @@ export class DotAnalyticsService {
      * Top page performance metric (total requests from the most visited page)
      */
     topPagePerformance(
-        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<TopPagePerformanceEntity> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .dimensions(['path', 'pageTitle'])
             .measures(['totalRequest'])
             .pageviews()
+            .siteId(siteId)
             .orderBy('totalRequest', 'desc')
             .timeRange('createdAt', timeRange)
-            .limit(1)
-            .build();
+            .limit(1);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<TopPagePerformanceEntity>>(this.#BASE_URL, query)
@@ -85,18 +94,21 @@ export class DotAnalyticsService {
      * Get page view timeline data
      */
     pageViewTimeLine(
-        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<PageViewTimeLineEntity[]> {
         // Determine granularity based on specific timeRange values
         const granularity = Array.isArray(timeRange)
             ? 'day' // For custom date ranges, default to day granularity
             : determineGranularityForTimeRange(timeRange);
 
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .measures(['totalRequest'])
             .pageviews()
-            .timeRange('createdAt', timeRange, granularity)
-            .build();
+            .siteId(siteId)
+            .timeRange('createdAt', timeRange, granularity);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<PageViewTimeLineEntity>>(this.#BASE_URL, query)
@@ -107,16 +119,19 @@ export class DotAnalyticsService {
      * Pageviews by device/browser for distribution chart
      */
     pageViewDeviceBrowsers(
-        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<PageViewDeviceBrowsersEntity[]> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .dimensions(['userAgent'])
             .measures(['totalRequest'])
             .pageviews()
+            .siteId(siteId)
             .orderBy('totalRequest', 'desc')
             .timeRange('createdAt', timeRange)
-            .limit(DEFAULT_COUNT_LIMIT)
-            .build();
+            .limit(DEFAULT_COUNT_LIMIT);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<PageViewDeviceBrowsersEntity>>(this.#BASE_URL, query)
@@ -128,16 +143,19 @@ export class DotAnalyticsService {
      */
     getTopPagePerformanceTable(
         timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[],
         limit = DEFAULT_COUNT_LIMIT
     ): Observable<TopPerformaceTableEntity[]> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .dimensions(['path', 'pageTitle'])
             .measures(['totalRequest'])
             .pageviews()
+            .siteId(siteId)
             .orderBy('totalRequest', 'desc')
             .timeRange('createdAt', timeRange)
-            .limit(limit)
-            .build();
+            .limit(limit);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<TopPerformaceTableEntity>>(this.#BASE_URL, query)
