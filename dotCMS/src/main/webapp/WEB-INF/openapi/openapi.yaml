@@ -103,8 +103,8 @@ tags:
   name: Content Report
 - description: Publishing environment management and configuration
   name: Environment
-- description: A/B testing and experimentation
-  name: Experiment
+- description: A/B testing and experimentation management
+  name: Experiments
 - description: File asset management and download operations
   name: File Assets
 - description: Language management and localization
@@ -117,22 +117,42 @@ tags:
   name: Notifications
 - description: OSGi plugin management and dynamic deployment
   name: OSGi Plugins
+- description: Content persona management and targeting
+  name: Personas
 - description: Content personalization and persona management
   name: Personalization
 - description: Portlet management and administration
   name: Portlets
 - description: Content publishing and deployment operations
   name: Publishing
+- description: Remote content publishing and synchronization
+  name: Push Publishing
 - description: Business rules and conditional logic management
   name: Rules Engine
 - description: SAML SSO authentication and integration
   name: SAML Authentication
 - description: Content search and query operations
   name: Search
+- description: System-level operations and Redis management
+  name: System
 - description: Storage providers and data replication management
   name: System Storage
+- description: Server log file monitoring and real-time viewing
+  name: TailLog
 - description: Temporary file upload and management operations
   name: Temporary Files
+- description: Testing utilities and development endpoints
+  name: Testing
+- description: Theme design and management
+  name: Themes
+- description: Administrative tool group management
+  name: Tool Groups
+- description: Version control and content archiving
+  name: Versionables
+- description: Velocity Template Language execution and rendering
+  name: VTL
+- description: Web asset management and operations
+  name: Web Assets
 - description: Widget development and rendering
   name: Widgets
 paths:
@@ -3801,6 +3821,23 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/caches/menucache:
+    delete:
+      description: Just deletes the menu cache by request
+      operationId: deleteMenuCache
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Action(s) returned successfully
+        "500":
+          description: General Error
+      summary: Deletes the menu cache
+      tags:
+      - Maintenance
+      - Cache Management
   /v1/caches/provider/{provider}/flush:
     delete:
       operationId: flushAll

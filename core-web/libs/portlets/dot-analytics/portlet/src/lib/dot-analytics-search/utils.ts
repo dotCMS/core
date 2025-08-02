@@ -41,188 +41,134 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         title: 'analytics.search.query.by.hits',
         query: `
 {
-   "measures":[
+   "measures": [
       "request.totalRequest"
    ],
-   "dimensions":[
-      "request.identifier",
-      "request.title",
-      "request.baseType",
+   "dimensions": [
+      "request.pageTitle",
       "request.url"
    ],
-   "order":{
-      "request.totalRequest":"desc"
+   "order": {
+      "request.totalRequest": "desc"
    }
+}`
+    },
+    {
+        title: 'analytics.search.query.popular.pages',
+        query: `
+{
+   "measures": [
+      "request.totalRequest",
+      "request.totalSessions"
+   ],
+   "dimensions": [
+      "request.pageTitle",
+      "request.url"
+   ],
+   "order": {
+      "request.totalRequest": "desc"
+   },
+   "limit": 10
+}`
+    },
+    {
+        title: 'analytics.search.query.by.total.sessions',
+        query: `
+{
+   "measures": [
+      "request.totalRequest",
+      "request.totalUsers"
+   ],
+   "dimensions": [
+      "request.domain"
+   ],
+   "order": {
+      "request.totalRequest": "desc"
+   }
+}`
+    },
+    {
+        title: 'analytics.search.query.user.agents',
+        query: `
+{
+   "measures": [
+      "request.totalUsers",
+      "request.totalSessions"
+   ],
+   "dimensions": [
+      "request.userAgent"
+   ],
+   "order": {
+      "request.totalUsers": "desc"
+   },
+   "limit": 20
 }`
     },
     {
         title: 'analytics.search.query.by.time.frame',
         query: `
 {
-   "measures":[
-      "request.totalRequest"
-   ],
-   "dimensions":[
-      "request.identifier",
-      "request.title",
-      "request.baseType",
-      "request.url"
-   ],
-   "order":{
-      "request.totalRequest":"desc"
-   },
-   "timeDimensions":[
-      {
-         "dimension":"request.createdAt",
-         "dateRange":"last 7 days",
-         "granularity":"day"
-      }
-   ]
-}
-`
-    },
-    {
-        title: 'analytics.search.query.by.object.type',
-        query: `
-{
-   "measures":[
-      "request.totalRequest"
-   ],
-   "dimensions":[
-      "request.baseType"
-   ],
-   "order":{
-      "request.totalRequest":"desc"
-   }
-}
-`
-    },
-    {
-        title: 'analytics.search.query.by.average.request',
-        query: `
-{
-   "dimensions":[
-      "request.createdAt"
-   ],
-   "measures":[
-      "request.fileRequestAverage",
-      "request.pageRequestAverage",
-      "request.otherRequestAverage"
-   ],
-   "order":{
-      "request.createdAt":"desc"
-   },
-   "timeDimensions":[
-      {
-         "dimension":"request.createdAt",
-         "granularity":"day"
-      }
-   ]
-}
-`
-    },
-    {
-        title: 'analytics.search.query.by.total.sessions',
-        query: `
-{
-   "dimensions":[
-      "request.conHost",
-      "request.conHostName"
-   ],
-   "measures":[
-      "request.totalSessions",
-      "request.totalRequest"
-   ],
-   "order":{
-      "request.conHostName":"desc"
-   }
-}
-`
-    },
-    {
-        title: 'analytics.search.query.by.unique.request',
-        query: `
-{
-   "dimensions":[
-      "request.identifier",
-      "request.title"
-   ],
-   "measures":[
+   "measures": [
+      "request.totalRequest",
       "request.totalSessions"
    ],
-   "filters":[
+   "timeDimensions": [
       {
-         "member":"request.baseType",
-         "operator":"equals",
-         "values":[
-            "HTMLPAGE"
-         ]
+         "dimension": "request.createdAt",
+         "dateRange": "last 7 days",
+         "granularity": "day"
       }
    ],
-   "order":{
-      "request.totalSessions":"desc"
+   "order": {
+      "request.createdAt": "asc"
    }
-}
-`
+}`
     },
     {
-        title: 'analytics.search.query.by.filter.event',
+        title: 'analytics.search.query.utm.campaigns',
         query: `
 {
-   "dimensions":[
-      "request.identifier",
-      "request.title",
-      "request.url"
+   "measures": [
+      "request.totalRequest",
+      "request.totalUsers"
    ],
-   "measures":[
-      "request.totalRequest"
+   "dimensions": [
+      "request.utmCampaign",
+      "request.utmSource",
+      "request.utmMedium"
    ],
-   "filters":[
+   "filters": [
       {
-         "member":"request.baseType",
-         "operator":"equals",
-         "values":[
-            "HTMLPAGE"
-         ]
+         "member": "request.utmCampaign",
+         "operator": "set"
       }
    ],
-   "order":{
-      "request.totalRequest":"desc"
+   "order": {
+      "request.totalRequest": "desc"
+   }
+}`
+    },
+    {
+        title: 'analytics.search.query.referrer.analysis',
+        query: `
+{
+   "measures": [
+      "request.totalRequest",
+      "request.totalSessions"
+   ],
+   "dimensions": [
+      "request.referer"
+   ],
+   "filters": [
+      {
+         "member": "request.referer",
+         "operator": "set"
+      }
+   ],
+   "order": {
+      "request.totalRequest": "desc"
    },
-   "timeDimensions":[
-      {
-         "dimension":"request.createdAt",
-         "granularity":"day",
-         "dateRange":"This week"
-      }
-   ]
-}
-`
-    },
-    {
-        title: 'analytics.search.query.by.blogs.hits',
-        query: `
-{
-   "dimensions":[
-      "request.identifier",
-      "request.title"
-   ],
-   "measures":[
-      "request.totalRequest"
-   ],
-   "filters":[
-      {
-         "member":"request.contentTypeName",
-         "operator":"equals",
-         "values":[
-            "Blog"
-         ]
-      }
-   ],
-   "order":{
-      "request.totalRequest":"desc"
-   }
-}
-`
+   "limit": 15
+}`
     }
 ];

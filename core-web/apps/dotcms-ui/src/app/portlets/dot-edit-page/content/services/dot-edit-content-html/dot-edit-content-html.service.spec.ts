@@ -1235,7 +1235,7 @@ xdescribe('DotEditContentHtmlService', () => {
             spyOn(service, 'renderEditedContentlet');
 
             service.currentContainer = currentContainer;
-            dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
+            dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
         });
 
         it('should render added form', () => {

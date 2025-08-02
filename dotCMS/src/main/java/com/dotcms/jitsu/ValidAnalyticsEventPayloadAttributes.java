@@ -25,4 +25,6 @@ public interface ValidAnalyticsEventPayloadAttributes {
     String EVENT_TYPE_ATTRIBUTE_NAME = "event_type";
 
     String LOCAL_TIME_ATTRIBUTE_NAME = "local_time";
+
+    String SITE_ID_ATTRIBUTE_NAME = "site_id";
 }
