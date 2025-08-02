@@ -3489,12 +3489,23 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             csvreader.setSafetySwitch(false);
             final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
 
-            final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
-                    contentType.inode(),
-                    new String[]{titleField.id(), uniqueField.id()}, true, false,
-                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                    -1, reader,
-                    schemeStepActionResult1.getAction().getId(), getHttpRequest());
+            final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
+                    .importId(0L)
+                    .siteId(defaultSite.getInode())
+                    .contentTypeInode(contentType.inode())
+                    .keyFields(titleField.id(), uniqueField.id())
+                    .user(user)
+                    .language(defaultLanguage.getId())
+                    .csvHeaders(csvHeaders)
+                    .csvReader(csvreader)
+                    .languageCodeHeaderColumn(-1)
+                    .countryCodeHeaderColumn(-1)
+                    .stopOnError(true)
+                    .workflowActionId(schemeStepActionResult1.getAction().getId())
+                    .request(getHttpRequest())
+                    .build();
+            final ImportResult result = ImportUtil.importFileResult(importFileParams);
+            final  HashMap<String, List<String>> imported = ImportResultConverter.toLegacyFormat(result, user);
 
             //Check import result
             final List<String> results = imported.get("results");
