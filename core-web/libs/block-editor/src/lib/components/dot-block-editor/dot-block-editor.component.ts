@@ -1,5 +1,6 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
+import tippy from 'tippy.js';
 
 import {
     ChangeDetectorRef,
@@ -121,7 +122,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly dotDragHandleOptions = {
-        duration: 250
+        duration: 250,
+        zIndex: 5
     };
 
     constructor(
@@ -175,6 +177,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
+        tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),
@@ -494,14 +497,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
+                    if (node.type.name === 'table') {
+                        return '';
+                    }
+
                     return this.#dotMessageService.get('block-editor.placeholder.paragraph');
                 }
             }),
-            DotCMSPlusButton.configure({
-                showOnlyWhenEditable: true,
-                showOnlyCurrent: true,
-                includeChildren: false
-            }),
+            DotCMSPlusButton,
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef)
         ];

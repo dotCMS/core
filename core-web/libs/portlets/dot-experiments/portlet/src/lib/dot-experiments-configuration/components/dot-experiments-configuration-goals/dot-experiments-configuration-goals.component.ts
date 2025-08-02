@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -53,6 +53,11 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessagePipe = inject(DotMessagePipe);
+
     vm$: Observable<{
         experimentId: string;
         goals: Goals | null;
@@ -69,13 +74,6 @@ export class DotExperimentsConfigurationGoalsComponent {
     protected readonly GOAL_TYPES = GOAL_TYPES;
 
     private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotMessageService: DotMessageService,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotMessagePipe: DotMessagePipe
-    ) {}
 
     /**
      * Open the sidebar to select the principal goal

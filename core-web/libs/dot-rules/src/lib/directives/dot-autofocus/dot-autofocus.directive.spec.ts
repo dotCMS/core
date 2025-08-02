@@ -1,15 +1,16 @@
 import { DebugElement, Component } from '@angular/core';
-import { TestBed, ComponentFixture, waitForAsync, async } from '@angular/core/testing';
+import { TestBed, ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotAutofocusDirective } from './dot-autofocus.directive';
 
 @Component({
     template: `
-        <input *ngIf="disabled; else not" type="text" dotAutofocus disabled />
-        <ng-template #not>
+        @if (disabled) {
+            <input type="text" dotAutofocus disabled />
+        } @else {
             <input type="text" dotAutofocus />
-        </ng-template>
+        }
     `
 })
 class TestHostComponent {
@@ -33,7 +34,7 @@ describe('Directive: DotAutofocus', () => {
         component = fixture.componentInstance;
     });
 
-    it('should call focus', async(() => {
+    it('should call focus', waitForAsync(() => {
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));
         spyOn(inputEl.nativeElement, 'focus');
@@ -43,7 +44,7 @@ describe('Directive: DotAutofocus', () => {
         });
     }));
 
-    it('should NOT call focus', async(() => {
+    it('should NOT call focus', waitForAsync(() => {
         component.setDisabled(true);
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));

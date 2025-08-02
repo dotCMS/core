@@ -25,6 +25,7 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
     -   [Debugging Tips](#debugging-tips)
     -   [Version Compatibility](#version-compatibility)
     -   [Still Having Issues?](#still-having-issues)
+-   [Migration from Alpha to 1.0.X](./MIGRATION.md)
 -   [dotCMS Support](#dotcms-support)
 -   [How To Contribute](#how-to-contribute)
 -   [Licensing Information](#licensing-information)

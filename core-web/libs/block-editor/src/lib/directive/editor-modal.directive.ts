@@ -19,6 +19,22 @@ export class EditorModalDirective implements OnInit, OnDestroy {
 
     private editorElement: HTMLElement;
 
+    private readonly PROPER_MODIFIERS = {
+        modifiers: [
+            {
+                name: 'flip',
+                options: { fallbackPlacements: ['top-start'] }
+            }
+        ]
+    };
+
+    /**
+     * The native element of the Tippy instance.
+     */
+    get nativeElement() {
+        return this.elRef.nativeElement;
+    }
+
     ngOnInit(): void {
         const { element: editorElement } = this.editor().options;
         const editorIsAttached = !!editorElement.parentElement;
@@ -34,6 +50,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             interactive: true,
             trigger: 'manual',
             placement: 'bottom-start',
+            popperOptions: this.PROPER_MODIFIERS,
             hideOnClick: 'toggle',
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions()

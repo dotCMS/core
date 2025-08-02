@@ -7,6 +7,7 @@ import com.dotcms.health.model.HealthResponse;
 import com.dotcms.health.model.HealthStatus;
 import com.dotcms.health.model.HealthCheckResult;
 import com.dotcms.health.service.HealthStateManager;
+import com.dotcms.health.config.HealthEndpointConstants;
 import com.dotmarketing.util.Config;
 import org.junit.Before;
 import org.junit.After;
@@ -71,9 +72,9 @@ public class HealthProbeServletTest {
     }
 
     @Test
-    public void testLivezEndpointReturnsTextResponse() throws Exception {
-        // Setup - Kubernetes liveness endpoint
-        when(request.getServletPath()).thenReturn("/livez");
+    public void testDotmgtLivezEndpointReturnsTextResponse() throws Exception {
+        // Setup - Management liveness endpoint (new direct mapping)
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.LIVENESS);
         
         HealthResponse healthResponse = HealthResponse.builder()
             .status(HealthStatus.UP)
@@ -83,20 +84,20 @@ public class HealthProbeServletTest {
         when(healthStateManager.getLivenessHealth()).thenReturn(healthResponse);
         
         // Execute
-        servlet.doGet(request, response);
+        servlet.doManagementGet(request, response);
         
         // Verify minimal text response
         verify(response).setStatus(HttpServletResponse.SC_OK);
         verify(response).setContentType("text/plain");
         verify(response).setCharacterEncoding("UTF-8");
         printWriter.flush();
-        assertEquals("alive", responseWriter.toString());
+        assertEquals(HealthEndpointConstants.Responses.ALIVE_RESPONSE, responseWriter.toString());
     }
 
     @Test
-    public void testReadyzEndpointReturnsTextResponse() throws Exception {
-        // Setup - Kubernetes readiness endpoint
-        when(request.getServletPath()).thenReturn("/readyz");
+    public void testDotmgtReadyzEndpointReturnsTextResponse() throws Exception {
+        // Setup - Management readiness endpoint (new direct mapping)
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.READINESS);
         
         HealthResponse healthResponse = HealthResponse.builder()
             .status(HealthStatus.UP)
@@ -106,14 +107,35 @@ public class HealthProbeServletTest {
         when(healthStateManager.getReadinessHealth()).thenReturn(healthResponse);
         
         // Execute
-        servlet.doGet(request, response);
+        servlet.doManagementGet(request, response);
         
         // Verify minimal text response
         verify(response).setStatus(HttpServletResponse.SC_OK);
         verify(response).setContentType("text/plain");
         verify(response).setCharacterEncoding("UTF-8");
         printWriter.flush();
-        assertEquals("ready", responseWriter.toString());
+        assertEquals(HealthEndpointConstants.Responses.READY_RESPONSE, responseWriter.toString());
+    }
+
+    @Test
+    public void testDotmgtHealthEndpointReturnsJsonResponse() throws Exception {
+        // Setup - Management health endpoint (new direct mapping)
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.HEALTH);
+        
+        HealthResponse healthResponse = HealthResponse.builder()
+            .status(HealthStatus.UP)
+            .checks(Collections.emptyList())
+            .timestamp(Instant.now())
+            .build();
+        when(healthStateManager.getCurrentHealth()).thenReturn(healthResponse);
+        
+        // Execute
+        servlet.doManagementGet(request, response);
+        
+        // Verify JSON response
+        verify(response).setStatus(HttpServletResponse.SC_OK);
+        verify(response).setContentType("application/json");
+        verify(response).setCharacterEncoding("UTF-8");
     }
 
 
@@ -124,7 +146,7 @@ public class HealthProbeServletTest {
         // "FIRST SUCCESS" logging issue identified in the conversation summary
         
         // Setup - liveness endpoint should wait for servlet container to be ready
-        when(request.getServletPath()).thenReturn("/livez");
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.LIVENESS);
         
         // Create a health response where servlet container is still starting up
         HealthCheckResult servletContainerStarting = HealthCheckResult.builder()
@@ -143,7 +165,7 @@ public class HealthProbeServletTest {
         when(healthStateManager.getLivenessHealth()).thenReturn(healthResponse);
         
         // Execute
-        servlet.doGet(request, response);
+        servlet.doManagementGet(request, response);
         
         // Verify that system reports as not alive until servlet container is truly ready
         verify(response).setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
@@ -173,7 +195,7 @@ public class HealthProbeServletTest {
         when(healthStateManager.getLivenessHealth()).thenReturn(readyHealthResponse);
         
         // Execute again
-        servlet.doGet(request, response);
+        servlet.doManagementGet(request, response);
         
         // Verify that system now reports as alive since servlet container is ready
         verify(response).setStatus(HttpServletResponse.SC_OK);
@@ -186,7 +208,7 @@ public class HealthProbeServletTest {
     @Test
     public void testReadyzWithDegradedStatusReturns200() throws Exception {
         // Setup - Degraded readiness check (from MONITOR_MODE)
-        when(request.getServletPath()).thenReturn("/readyz");
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.READINESS);
         
         HealthResponse healthResponse = HealthResponse.builder()
             .status(HealthStatus.DEGRADED)
@@ -196,7 +218,7 @@ public class HealthProbeServletTest {
         when(healthStateManager.getReadinessHealth()).thenReturn(healthResponse);
         
         // Execute
-        servlet.doGet(request, response);
+        servlet.doManagementGet(request, response);
         
         // Verify 200 status with ready response (MONITOR_MODE behavior)
         verify(response).setStatus(HttpServletResponse.SC_OK);
@@ -208,7 +230,7 @@ public class HealthProbeServletTest {
     @Test
     public void testReadyzWithDownStatusReturns503() throws Exception {
         // Setup - Genuine DOWN status (with a DOWN health check result)
-        when(request.getServletPath()).thenReturn("/readyz");
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.READINESS);
         
         HealthCheckResult downCheck = HealthCheckResult.builder()
             .name("database")
@@ -226,7 +248,7 @@ public class HealthProbeServletTest {
         when(healthStateManager.getReadinessHealth()).thenReturn(healthResponse);
         
         // Execute
-        servlet.doGet(request, response);
+        servlet.doManagementGet(request, response);
         
         // Verify 503 status and not ready response
         verify(response).setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
