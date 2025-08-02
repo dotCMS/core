@@ -42,6 +42,15 @@ export interface ChartOptions {
     responsive?: boolean;
     /** Whether to maintain aspect ratio on resize */
     maintainAspectRatio?: boolean;
+    /** Interaction configuration */
+    interaction?: {
+        /** Interaction mode */
+        mode?: 'point' | 'nearest' | 'index' | 'dataset' | 'x' | 'y';
+        /** Whether interaction requires intersection with element */
+        intersect?: boolean;
+        /** Axis for interaction detection */
+        axis?: 'x' | 'y' | 'xy';
+    };
     /** Plugin configurations */
     plugins?: {
         /** Title configuration */
@@ -91,6 +100,10 @@ export interface ChartOptions {
         };
         /** Tooltip configuration */
         tooltip?: {
+            /** Tooltip mode */
+            mode?: 'point' | 'nearest' | 'index' | 'dataset' | 'x' | 'y';
+            /** Whether tooltip requires intersection with element */
+            intersect?: boolean;
             /** Tooltip callback functions */
             callbacks?: {
                 /** Custom label callback */

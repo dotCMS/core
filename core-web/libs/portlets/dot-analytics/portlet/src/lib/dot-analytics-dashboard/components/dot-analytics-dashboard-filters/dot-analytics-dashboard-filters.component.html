@@ -13,7 +13,7 @@
         optionLabel="label"
         optionValue="value"
         [placeholder]="timePeriodPlaceholder"
-        [style]="{ minWidth: '150px' }"
+        [style]="{ minWidth: '250px' }"
         data-testid="period-dropdown"></p-dropdown>
 
     <!-- Custom Date Range Calendar -->
@@ -22,7 +22,7 @@
             [(ngModel)]="$customDateRange"
             selectionMode="range"
             [readonlyInput]="false"
-            [showIcon]="true"
+            [showIcon]="false"
             [placeholder]="customDatePlaceholder"
             dateFormat="mm/dd/yy"
             [showButtonBar]="true"

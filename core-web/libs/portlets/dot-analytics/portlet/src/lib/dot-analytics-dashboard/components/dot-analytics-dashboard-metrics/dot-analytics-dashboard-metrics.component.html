@@ -36,7 +36,9 @@
             <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
 
             <!-- Error message centered -->
-            <div class="flex flex-column justify-content-center align-items-center flex-1">
+            <div
+                class="flex flex-column justify-content-center align-items-center flex-1"
+                [@fadeInContent]>
                 <dot-analytics-state-message
                     message="analytics.metrics.error.reload"
                     icon="pi-exclamation-triangle" />
@@ -49,7 +51,9 @@
             <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
 
             <!-- Empty message centered -->
-            <div class="flex flex-column justify-content-center align-items-center flex-1">
+            <div
+                class="flex flex-column justify-content-center align-items-center flex-1"
+                [@fadeInContent]>
                 <dot-analytics-state-message
                     message="analytics.metrics.empty.insufficient-data"
                     icon="pi-info-circle" />
@@ -59,21 +63,21 @@
         <!-- Loading state with skeleton -->
         <div class="flex flex-column justify-content-between h-full gap-3">
             <!-- Header with title and icon skeletons -->
-            <div class="flex justify-content-between align-items-start">
-                <p-skeleton width="10rem" height="1.5rem"></p-skeleton>
+            <div class="flex justify-content-between align-items-start" [@fadeInContent]>
+                <p-skeleton width="10rem" height="1.4rem"></p-skeleton>
                 @if (hasIcon) {
                     <p-skeleton width="1.5rem" height="1.5rem" shape="circle"></p-skeleton>
                 }
             </div>
 
             <!-- Skeleton content -->
-            <div class="flex flex-column gap-3">
+            <div class="flex flex-column gap-3" [@fadeInContent]>
                 <!-- Skeleton value -->
-                <p-skeleton width="1.5rem" height="1.5rem"></p-skeleton>
+                <p-skeleton width="1.5rem" height="1.4rem"></p-skeleton>
             </div>
 
             <!-- Skeleton subtitle -->
-            <p-skeleton width="10rem" height="1rem"></p-skeleton>
+            <p-skeleton width="10rem" height="1rem" [@fadeInContent]></p-skeleton>
         </div>
     } @else {
         <!-- Normal content - only shown when LOADED -->
@@ -82,7 +86,7 @@
             <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
 
             <!-- Contenido principal -->
-            <div class="flex flex-column gap-3">
+            <div class="flex flex-column gap-3" [@fadeInContent]>
                 <div class="metric-value" data-testid="metric-value">
                     {{ formattedValue }}
                 </div>
@@ -90,7 +94,7 @@
 
             <!-- Subtítulo -->
             @if (hasSubtitle) {
-                <div class="metric-subtitle" data-testid="metric-subtitle">
+                <div class="metric-subtitle" data-testid="metric-subtitle" [@fadeInContent]>
                     {{ metricSubtitle | dm }}
                 </div>
             }
