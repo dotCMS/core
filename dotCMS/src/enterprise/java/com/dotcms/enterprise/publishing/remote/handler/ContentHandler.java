@@ -809,27 +809,19 @@ public class ContentHandler implements IHandler {
 			holdDefaultHostConfiguration(content, userToUse);
 		}
 
-		//Verify if this contentlet is a FileAsset
-        if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())) {
-			Folder testFolder = APILocator.getFolderAPI().find(content.getFolder(), APILocator.systemUser(), false);
-			if(testFolder != null && testFolder.getInode() != null) {
-				// Wiping out the thumbnails and resized versions
-				APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
-			}
-        }
+      // Wiping out the thumbnails and resized versions (if a fileAsset)
+      APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
 
-        //Verify if this contentlet is a HTMLPage
-        if (BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())) {
-            //Adding to the page a listener in order to invalidate the page after being save
-            final IHTMLPage hp = HandlerUtil.fromContentlet( content, false );
-            HibernateUtil.addCommitListener( new FlushCacheRunnable() {
-                public void run () {
-
-                        new PageLoader().invalidate(hp);
-
-                }
-            } );
-        }
+      //Verify if this contentlet is a HTMLPage
+      if (BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())) {
+        //Adding to the page a listener in order to invalidate the page after being save
+        final IHTMLPage hp = HandlerUtil.fromContentlet(content, false);
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+          public void run() {
+            new PageLoader().invalidate(hp);
+          }
+        });
+      }
 
         //Saving the content
         if (content.isArchived()){
