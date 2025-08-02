@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -16,7 +15,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
@@ -640,6 +638,5 @@ import java.util.function.Predicate;
 	 */
 	void fixFolderIds();
 
-	@CloseDBIfOpened
-	void fixFolderId(String inode, String identifier);
+
 }

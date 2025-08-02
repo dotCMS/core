@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.folders.business;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -27,7 +33,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
@@ -59,13 +64,11 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys.Cache;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -83,12 +86,6 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
  *
@@ -1393,55 +1390,6 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 	}
-
-
-
-	@CloseDBIfOpened
-	@Override
-	public void fixFolderId(String inode, String identifier) {
-		// allow deferred constraints
-
-		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-			conn.createStatement().execute(ALLOW_DEFER_CONSTRAINT_SQL);
-
-			conn.setAutoCommit(false);
-
-			// defer folder/identifier constraint
-			conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
-
-			DotConnect db = new DotConnect();
-			db.setSQL("update identifier set id = ? where id = ?");
-			db.addParam(inode);
-			db.addParam(identifier);
-			db.loadResult(conn);
-
-			db.setSQL("update folder set identifier = inode where inode = ?");
-			db.addParam(inode);
-			db.loadResult(conn);
-
-			conn.commit();
-
-			conn.setAutoCommit(true);
-
-
-		} catch (Exception e) {
-			Logger.error(this, e);
-			throw new DotRuntimeException(e);
-		} finally {
-
-			// reset the constraint to not deferred
-			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
-			} catch (Exception e) {
-				Logger.error(this, e);
-				throw new DotRuntimeException(e);
-			}
-		}
-
-
-
-	}
-
 
 
 }
