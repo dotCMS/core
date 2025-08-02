@@ -17,6 +17,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.HISTORY_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
@@ -89,7 +90,7 @@ public class StrategyResolverImpl implements StrategyResolver {
         strategyTriggeredByOptionMap.put(RENDER_FIELDS, () -> new RenderFieldStrategy(toolBox));
         strategyTriggeredByOptionMap.put(JSON_VIEW, () -> new JSONViewStrategy(toolBox));
         strategyTriggeredByOptionMap.put(DATETIME_FIELDS_TO_TIMESTAMP, () -> new DateTimeFieldsToTimeStampStrategy(toolBox));
-
+        strategyTriggeredByOptionMap.put(HISTORY_VIEW, () -> new HistoryViewStrategy(toolBox));
         return strategyTriggeredByOptionMap;
     }
 

@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.content;
 
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
-
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -27,15 +25,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -46,18 +40,31 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.JSONP;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+
+/**
+ *
+ *
+ * @author Fabrizzio Araya
+ * @since Dec 18th, 2018
+ */
 @Path("/v1/content/versions")
 @Tag(name = "Content", description = "Endpoints for managing content and contentlets")
 public class ContentVersionResource {
 
     private static final String FIND_BY_ID_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-id";
     private static final String FIND_BY_INODE_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-inode";
-    private static final String DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
+    private static final String DATATYPE_MISMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
     private static final String BAD_REQUEST_ERROR_MESSAGE_KEY = "Bad-Request";
 
     private static final String VERSIONS = "versions";
@@ -165,6 +172,44 @@ public class ContentVersionResource {
 
     }
 
+    @GET
+    @JSONP
+    @NoCache
+    @Path("/id/{identifier}/history")
+    @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
+    public Response history(@Context final HttpServletRequest request,
+                            @Context final HttpServletResponse response,
+                            @PathParam("identifier") final String identifier,
+                            @QueryParam("groupByLang") final boolean groupByLanguage,
+                            @QueryParam("limit") int limit,
+                            @QueryParam("offset") int offset)
+            throws DotDataException, DotStateException, DotSecurityException {
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initDataObject.getUser();
+        final Identifier identifierObj = this.getIdentifier(identifier, user);
+        if (null == identifier) {
+            throw new BadRequestException(getFormattedMessage(user.getLocale(), BAD_REQUEST_ERROR_MESSAGE_KEY));
+        }
+        limit = limit > MAX ? MAX : limit <= 0 ? MIN : limit;
+        offset = offset <= 0 ? -1 : offset;
+        final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;
+        Logger.debug(this,
+                "Getting versions for identifier: " + identifier + " and limit: " + limit);
+        final List<Contentlet> contentletVersions = contentletAPI.findAllVersions(identifierObj,
+                true, user, respectFrontendRoles, limit, offset);
+        if (groupByLanguage) {
+            final Map<String, List<Map<String, Object>>> historyByLang =
+                    this.mapHistoryByLang(contentletVersions);
+            return Response.ok(new ResponseEntityView<>(Map.of(VERSIONS, historyByLang))).build();
+        } else {
+            final List<Map<String, Object>> versions = this.mapHistory(contentletVersions);
+            return Response.ok(new ResponseEntityView<>(Map.of(VERSIONS, versions))).build();
+        }
+    }
+
     /**
      * Utility method to get an identifier object. Given a full identifier string or a shorty
      * @param identifier The input string
@@ -261,6 +306,40 @@ public class ContentVersionResource {
         return versionsByLang;
     }
 
+    /**
+     *
+     * @param contentlets
+     * @return
+     */
+    private List<Map<String, Object>> mapHistory(final List<Contentlet> contentlets){
+        return contentlets.stream().map(this::contentletHistoryToMap).collect(Collectors.toList());
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @return
+     */
+    private Map<String, Object> contentletHistoryToMap( final Contentlet contentlet) {
+        return new DotTransformerBuilder().historyToMapTransformer().content(contentlet).build().toMaps().get(0);
+    }
+
+    /**
+     *
+     * @param contentlets
+     * @return
+     */
+    private Map<String, List<Map<String, Object>>> mapHistoryByLang(final List<Contentlet> contentlets){
+        final Map<String, List<Map<String, Object>>> versionsByLang = new HashMap<>();
+        final Map<Long, List<Contentlet>> contentByLangMap = contentlets.stream().collect(Collectors.groupingBy(Contentlet::getLanguageId));
+        contentByLangMap.forEach((langId, contentletList) -> {
+            final Language lang = languageAPI.getLanguage(langId);
+            final List<Map<String, Object>> asMapList = contentletList.stream()
+                    .map(this::contentletHistoryToMap).collect(Collectors.toList());
+            versionsByLang.put(lang.toString(), asMapList);
+        });
+        return versionsByLang;
+    }
 
     /**
      * Simple method to be used specifically with only one inode
@@ -291,7 +370,7 @@ public class ContentVersionResource {
 
             if (shorty.type != ShortType.INODE) {
                 throw new BadRequestException(
-                        getFormattedMessage(user.getLocale(), DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY));
+                        getFormattedMessage(user.getLocale(), DATATYPE_MISMATCH_ERROR_MESSAGE_KEY));
             }
 
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, respectFrontendRoles);

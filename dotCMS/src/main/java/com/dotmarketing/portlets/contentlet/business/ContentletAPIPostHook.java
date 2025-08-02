@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -1042,6 +1043,8 @@ public interface ContentletAPIPostHook {
 			final User user, boolean respectFrontendRoles){
 
 	}
+
+    default void findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles, final int limit, final int offset, List<Contentlet> returnValue){}
 
 	/**
 	 * Retrieves all versions for a contentlet identifier

@@ -31,6 +31,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -1894,6 +1895,21 @@ public interface ContentletAPI {
 	 */
 
 	public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
+
+    /**
+     *
+     * @param identifier
+     * @param bringOldVersions
+     * @param user
+     * @param respectFrontendRoles
+     * @param limit
+     * @param offset
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws DotStateException
+     */
+    List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final User user, final boolean respectFrontendRoles, final int limit, final int offset) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user

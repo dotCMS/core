@@ -42,6 +42,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -1142,36 +1143,50 @@ public class ESContentFactoryImpl extends ContentletFactory {
     public List<Contentlet> findAllVersions(final Identifier identifier,
             final boolean bringOldVersions, final Integer maxResults)
             throws DotDataException, DotStateException, DotSecurityException {
-
-	    if(!InodeUtils.isSet(identifier.getId())) {
-            return new ArrayList<>();
-        }
-
-        final DotConnect dc = new DotConnect();
-        final StringBuffer query = new StringBuffer();
-
-        if(bringOldVersions) {
-            query.append("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
-
-        } else {
-            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi "
-                    + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) "
-                    + "WHERE c.identifier=? order by c.mod_date desc ");
-        }
-
-        dc.setSQL(query.toString());
-        dc.addObject(identifier.getId());
-
-        if (maxResults != null){
-            dc.setMaxRows(maxResults);
-        }
-        List<Map<String,Object>> list=dc.loadObjectResults();
-        ArrayList<String> inodes=new ArrayList<>(list.size());
-        for(Map<String,Object> r : list)
-            inodes.add(r.get("inode").toString());
-        return findContentlets(inodes);
+        return findAllVersions(identifier, bringOldVersions, null != maxResults ? maxResults : 0, 0);
 	}
 
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit,
+                                            final int offset) throws DotDataException, DotSecurityException {
+        return findAllVersions(identifier, bringOldVersions, limit, offset, "mod_date", "DESC");
+    }
+
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit, final int offset, final String orderBy,
+                                            final String orderDirection) throws DotDataException, DotSecurityException {
+        if (!InodeUtils.isSet(identifier.getId())) {
+            return new ArrayList<>();
+        }
+        final DotConnect dc = new DotConnect();
+        final StringBuilder query = new StringBuilder();
+        if (bringOldVersions) {
+            query.append("SELECT inode FROM contentlet WHERE identifier = ? ORDER BY ")
+                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
+                    .append(SQLUtil.sanitizeCondition(orderDirection));
+        } else {
+            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi ")
+                    .append("ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) ")
+                    .append("WHERE c.identifier = ? ORDER BY c.")
+                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
+                    .append(SQLUtil.sanitizeCondition(orderDirection));
+        }
+        dc.setSQL(query.toString());
+        dc.addObject(identifier.getId());
+        if (limit > 0) {
+            dc.setMaxRows(limit);
+        }
+        if (offset > 0) {
+            dc.setStartRow(offset);
+        }
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<String> inodes = results.stream().map(
+                        row -> row.get("inode").toString())
+                .collect(Collectors.toList());
+        return findContentlets(inodes);
+    }
 
     /**
      * Find all versions for  the given set of identifiers

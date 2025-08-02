@@ -104,7 +104,13 @@ public enum TransformOptions {
      * I hate to introduce this but seems like the safest way to avoid breaking backward compatibility
      * This options controls the Strategy that gets fired by the Widget Content Type which by default will render the widget code
      */
-    SKIP_WIDGET_CODE_RENDERING;
+    SKIP_WIDGET_CODE_RENDERING,
+
+    /** */
+    CLEAR_EXISTING_DATA,
+
+    /** */
+    HISTORY_VIEW;
 
     // -----------------------------------------------------------------------------------------
     // Plug additional Transform Options to manipulate the outcome as a particular type of view

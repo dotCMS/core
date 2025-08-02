@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -1191,6 +1192,10 @@ public interface ContentletAPIPreHook {
 	 */
 	public default boolean findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles){
       return true;
+    }
+
+    default boolean findAllVersions(final Identifier identifier, final boolean bringOldVersions, final User user, final boolean respectFrontendRoles, final int limit, final int offset) {
+        return true;
     }
 
 	/**

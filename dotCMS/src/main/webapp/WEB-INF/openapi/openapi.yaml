@@ -5777,6 +5777,36 @@ paths:
           description: default response
       tags:
       - Content
+  /v1/content/versions/id/{identifier}/history:
+    get:
+      operationId: history
+      parameters:
+      - in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: groupByLang
+        schema:
+          type: boolean
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          content:
+            application/json;charset=UTF-8: {}
+          description: default response
+      tags:
+      - Content
   /v1/content/versions/{inode}:
     get:
       operationId: findByInode
