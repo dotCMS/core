@@ -87,7 +87,25 @@ pull_dotcms_starter_zip () {
 
 }
 
-
+download_starter_url () {
+  echo "- Downloading starter from $DOTCMS_STARTER_URL"
+    if [ ! -f "$STARTER_ZIP" ]; then
+        su -c "rm -rf $STARTER_ZIP.tmp"
+        echo "- Downloading Starter"
+        su -c "wget --no-check-certificate -t 1 -O $STARTER_ZIP.tmp $DOTCMS_STARTER_URL" dotcms
+        if [ -s $STARTER_ZIP.tmp ]; then
+          su -c "mv $STARTER_ZIP.tmp $STARTER_ZIP"
+          export DOT_STARTER_DATA_LOAD=$STARTER_ZIP
+        else
+          su -c "rm -rf $STARTER_ZIP.tmp"
+          echo "starter download failed, please check your credentials and try again"
+          exit 1
+        fi
+    else
+      echo "- $STARTER_ZIP exists.  Not re-downloading. Delete the starter.zip file if you would like to download a fresh starter"
+    fi
+    export DOT_STARTER_DATA_LOAD=$STARTER_ZIP
+}
 
 pull_dotcms_backups () {
 
@@ -105,6 +123,10 @@ pull_dotcms_backups () {
         rm -rf $STARTER_ZIP
     fi
 
+    if  [ -n "$DOTCMS_STARTER_URL" ] ; then
+      download_starter_url
+      return 0
+    fi
 
     if [ -z "$DOTCMS_SOURCE_ENVIRONMENT" ]; then
         echo "- No dotCMS env to clone, starting normally"
@@ -120,7 +142,7 @@ pull_dotcms_backups () {
     if [ -n  "$DOTCMS_API_TOKEN"  ]; then
         echo "- Using Authorization: Bearer"
         export AUTH_HEADER="Authorization: Bearer $DOTCMS_API_TOKEN"
-    else
+    elif [ -n  "$DOTCMS_USERNAME_PASSWORD"  ]; then
         echo "- Using Authorization: Basic"
         export AUTH_HEADER="Authorization: Basic $(echo -n $DOTCMS_USERNAME_PASSWORD | base64)"
     fi
@@ -132,6 +154,10 @@ pull_dotcms_backups () {
       pull_dotcms_starter_zip
       return 0
     fi
+
+
+
+
 
     if [ -f "$ASSETS_BACKUP_FILE" ] && [ -f $DB_BACKUP_FILE ]; then
 
