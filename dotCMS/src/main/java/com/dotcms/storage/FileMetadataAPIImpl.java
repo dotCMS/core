@@ -3,11 +3,13 @@ package com.dotcms.storage;
 
 import static com.dotmarketing.util.FileUtil.binaryPath;
 import static com.dotmarketing.util.UtilMethods.isSet;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.cost.RequestCost;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
@@ -17,7 +19,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -314,6 +315,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return
      */
+    @RequestCost(increment = 1)
     @Override
     public Metadata getOrGenerateMetadata(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException {
