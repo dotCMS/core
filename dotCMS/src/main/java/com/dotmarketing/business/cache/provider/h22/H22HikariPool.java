@@ -65,6 +65,7 @@ public class H22HikariPool {
 		config.setConnectionTimeout(connectionTimeout);
 		config.setIdleTimeout(idleTimeoutMs); 
 		config.setMinimumIdle(minPoolSize);
+		config.setRegisterMbeans(Config.getBooleanProperty("hikari.register.mbeans", true));
 		Logger.info(this.getClass(), "H22 on disk cache:" + getDbUrl());
 		if(setLeakDetectionThreshold>0){
 			config.setLeakDetectionThreshold(setLeakDetectionThreshold);
