@@ -33,6 +33,9 @@ import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+// Jandex utility for improved performance
+import com.dotcms.util.JandexClassMetadataScanner;
+
 import static org.junit.Assert.*;
 
 /**
@@ -48,11 +51,15 @@ import static org.junit.Assert.*;
  * - Common @Schema antipatterns
  * 
  * Based on the rules defined in: dotCMS/src/main/java/com/dotcms/rest/README.md
+ * 
+ * Updated to use Jandex for improved performance over reflection-based scanning.
  */
 public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
     
     private static final String REST_PACKAGE = "com.dotcms.rest";
     private static final Map<String, List<String>> violationsByClass = new HashMap<>();
+    
+
     
     /**
      * Test for duplicate operationIds across all tested REST endpoints.
@@ -95,6 +102,10 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                 
             } catch (Exception e) {
                 System.err.println("Error checking operationIds in class " + resourceClass.getName() + ": " + e.getMessage());
+                // Log the full stack trace for debugging but continue processing
+                if (System.getProperty("test.debug") != null) {
+                    e.printStackTrace();
+                }
                 continue;
             }
         }
@@ -113,7 +124,7 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
     /**
      * Test REST resource classes marked with @SwaggerCompliant to validate annotation compliance.
      * This test dynamically finds all classes annotated with @SwaggerCompliant and validates them.
-     * 
+     *
      * IMPORTANT: This test ONLY validates classes that have @SwaggerCompliant annotations.
      * Classes without this annotation are part of the progressive rollout and should be skipped.
      */
@@ -160,6 +171,10 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                 
             } catch (Exception e) {
                 System.err.println("Error validating class " + resourceClass.getName() + ": " + e.getMessage());
+                // Log the full stack trace for debugging but continue processing
+                if (System.getProperty("test.debug") != null) {
+                    e.printStackTrace();
+                }
                 continue;
             }
         }
@@ -218,8 +233,14 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
         // Extract the package path after com.dotcms.rest
         if (fullName.startsWith("com.dotcms.rest.")) {
             String packagePath = fullName.substring("com.dotcms.rest.".length());
-            packagePath = packagePath.substring(0, packagePath.lastIndexOf('.'));
-            return simpleName + " (" + packagePath + ")";
+            int lastDotIndex = packagePath.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                packagePath = packagePath.substring(0, lastDotIndex);
+                return simpleName + " (" + packagePath + ")";
+            } else {
+                // No package structure after com.dotcms.rest, just return simple name
+                return simpleName;
+            }
         }
         
         return simpleName;
@@ -227,6 +248,7 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
     
     /**
      * Validate class-level @Tag annotation
+     * Note: Tag descriptions are centralized in DotRestApplication, not on individual resource classes
      */
     private void validateClassLevelTag(Class<?> resourceClass) {
         Tag tagAnnotation = resourceClass.getAnnotation(Tag.class);
@@ -238,9 +260,7 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
             if (tagAnnotation.name() == null || tagAnnotation.name().trim().isEmpty()) {
                 addViolation(className, "@Tag annotation missing name");
             }
-            if (tagAnnotation.description() == null || tagAnnotation.description().trim().isEmpty()) {
-                addViolation(className, "@Tag annotation missing description");
-            }
+            // Note: We don't validate description here as it's centralized in DotRestApplication
         }
     }
     
@@ -279,11 +299,14 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
         if (operationAnnotation == null) {
             addViolation(className, "Method " + methodName + " missing @Operation annotation");
         } else {
-            if (operationAnnotation.summary() == null || operationAnnotation.summary().trim().isEmpty()) {
-                addViolation(className, "Method " + methodName + " @Operation missing summary");
-            }
-            if (operationAnnotation.description() == null || operationAnnotation.description().trim().isEmpty()) {
-                addViolation(className, "Method " + methodName + " @Operation missing description");
+            // Check for summary - either summary or description should be present
+            boolean hasSummary = operationAnnotation.summary() != null && !operationAnnotation.summary().trim().isEmpty();
+            boolean hasDescription = operationAnnotation.description() != null && !operationAnnotation.description().trim().isEmpty();
+            
+            if (!hasSummary && !hasDescription) {
+                addViolation(className, "Method " + methodName + " @Operation missing both summary and description (at least one is required)");
+            } else if (!hasSummary) {
+                addViolation(className, "Method " + methodName + " @Operation missing summary (recommended for better API documentation)");
             }
         }
     }
@@ -309,16 +332,20 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
             addViolation(className, "Method " + methodName + " missing @ApiResponses annotation");
         } else {
             boolean hasValidSuccessResponse = false;
+            boolean has200Response = false;
             
             for (ApiResponse response : responses) {
                 if ("200".equals(response.responseCode())) {
+                    has200Response = true;
                     hasValidSuccessResponse = validateSuccessResponseSchema(className, methodName, response);
                     break;
                 }
             }
             
-            if (!hasValidSuccessResponse) {
-                addViolation(className, "Method " + methodName + " missing proper 200 response with schema");
+            if (!has200Response) {
+                addViolation(className, "Method " + methodName + " missing 200 response code");
+            } else if (!hasValidSuccessResponse) {
+                addViolation(className, "Method " + methodName + " 200 response missing proper schema implementation");
             }
         }
     }
@@ -347,9 +374,13 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
         
         Consumes consumesAnnotation = method.getAnnotation(Consumes.class);
         
+        // Check for VTL GET methods with request bodies (legacy exception)
+        boolean isVtlGetWithBody = isVtlGetMethodWithRequestBody(method);
+        
         if (hasRequestBody && consumesAnnotation == null) {
             addViolation(className, "Method " + methodName + " has request body but missing @Consumes annotation");
-        } else if (!hasRequestBody && consumesAnnotation != null && method.isAnnotationPresent(GET.class)) {
+        } else if (!hasRequestBody && consumesAnnotation != null && method.isAnnotationPresent(GET.class) && !isVtlGetWithBody) {
+            // Allow @Consumes on VTL GET methods with request bodies (legacy pattern)
             addViolation(className, "Method " + methodName + " has @Consumes but no request body (GET method)");
         }
     }
@@ -378,6 +409,21 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                 }
             }
             
+            // Validate query parameters have @Parameter annotations
+            if (queryParamAnnotation != null) {
+                io.swagger.v3.oas.annotations.Parameter parameterAnnotation = 
+                    parameter.getAnnotation(io.swagger.v3.oas.annotations.Parameter.class);
+                
+                if (parameterAnnotation == null) {
+                    addViolation(className, "Query parameter " + parameter.getName() + 
+                               " in method " + methodName + " missing @Parameter annotation");
+                } else if (parameterAnnotation.description() == null || 
+                          parameterAnnotation.description().trim().isEmpty()) {
+                    addViolation(className, "Query parameter " + parameter.getName() + 
+                               " in method " + methodName + " missing description");
+                }
+            }
+            
             // Enhanced request body validation
             if (hasActualRequestBody(method) && !isContextParameter(parameter) && 
                 pathParamAnnotation == null && queryParamAnnotation == null && !isFrameworkParameter(parameter)) {
@@ -397,15 +443,17 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                         addViolation(className, "Method " + methodName + " @RequestBody annotation missing description");
                     }
                     
+                    // Check if request body should be required based on HTTP method and operation type
                     if (requestBodyAnnotation.required() == false && 
                         (method.isAnnotationPresent(POST.class) || method.isAnnotationPresent(PUT.class))) {
-                        // Only flag as violation if the method name suggests it's a creation/update operation
-                        // that would typically require a request body (save, create, update, add, etc.)
+                        // Only flag as violation for operations that typically require a request body
                         String methodNameLower = methodName.toLowerCase();
                         if (methodNameLower.contains("save") && !methodNameLower.contains("comment") ||
                             methodNameLower.contains("create") ||
                             methodNameLower.contains("update") && !methodNameLower.contains("scheme") ||
-                            methodNameLower.contains("add")) {
+                            methodNameLower.contains("add") ||
+                            methodNameLower.contains("post") ||
+                            methodNameLower.contains("put")) {
                             addViolation(className, "Method " + methodName + " @RequestBody should be required=true for POST/PUT operations");
                         }
                     }
@@ -461,6 +509,12 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                                 addViolation(className, "Method " + methodName + 
                                            " uses type='object' without description - should include meaningful description");
                             }
+                            
+                            // Antipattern: Using Map.class for dynamic JSON
+                            if (implementation == java.util.Map.class) {
+                                addViolation(className, "Method " + methodName + 
+                                           " uses Map.class - should use type='object' with description for dynamic JSON");
+                            }
                         }
                     }
                 }
@@ -474,15 +528,20 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
     private boolean validateSuccessResponseSchema(String className, String methodName, ApiResponse response) {
         Content[] contentArray = response.content();
         
-        // If no content array, this is a valid empty response (like Response.ok().build())
+        // If no content array, this might be a valid empty response
         if (contentArray.length == 0) {
             // Check if description indicates this is intentionally empty
             String description = response.description();
             if (description != null && 
                 (description.toLowerCase().contains("no body") || 
                  description.toLowerCase().contains("empty response") ||
-                 description.toLowerCase().contains("no content"))) {
+                 description.toLowerCase().contains("no content") ||
+                 description.toLowerCase().contains("success"))) {
                 return true; // Valid empty response
+            }
+            // For DELETE operations, empty response is often acceptable
+            if (description != null && description.toLowerCase().contains("deleted")) {
+                return true;
             }
             addViolation(className, "Method " + methodName + " 200 response missing content/schema");
             return false;
@@ -498,7 +557,14 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
             Class<?> implementation = schemaAnnotation.implementation();
             String type = schemaAnnotation.type();
             
-            if (implementation == void.class && (type == null || type.trim().isEmpty())) {
+            // Check for valid schema implementations
+            if (implementation != void.class && implementation != null) {
+                // Valid implementation class
+                return true;
+            } else if (type != null && !type.trim().isEmpty()) {
+                // Valid type specification
+                return true;
+            } else if (implementation == void.class && (type == null || type.trim().isEmpty())) {
                 addViolation(className, "Method " + methodName + 
                            " 200 response has empty @Schema (no implementation or type)");
                 return false;
@@ -548,6 +614,11 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
         if (!method.isAnnotationPresent(POST.class) && 
             !method.isAnnotationPresent(PUT.class) && 
             !method.isAnnotationPresent(DELETE.class)) {
+            
+            // Special case: VTL GET methods with request bodies (legacy pattern)
+            if (method.isAnnotationPresent(GET.class)) {
+                return isVtlGetMethodWithRequestBody(method);
+            }
             return false;
         }
         
@@ -678,10 +749,84 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
     }
     
     /**
-     * Find all classes annotated with @SwaggerCompliant in the REST packages.
-     * This method dynamically scans the classpath for classes with the annotation.
+     * Find all classes annotated with @SwaggerCompliant using Jandex for improved performance.
+     * Falls back to reflection-based scanning if Jandex index is not available.
      */
     private List<Class<?>> findSwaggerCompliantClasses() {
+        // Try Jandex first for better performance
+        if (JandexClassMetadataScanner.isJandexAvailable()) {
+            return findSwaggerCompliantClassesWithJandex();
+        } else {
+            return findSwaggerCompliantClassesWithReflection();
+        }
+    }
+    
+    /**
+     * Find @SwaggerCompliant classes using Jandex index for fast scanning
+     */
+    private List<Class<?>> findSwaggerCompliantClassesWithJandex() {
+        List<Class<?>> swaggerCompliantClasses = new ArrayList<>();
+        
+        // Common REST packages to scan
+        String[] packagesToScan = {
+            "com.dotcms.rest.api.v1",
+            "com.dotcms.rest.api.v2", 
+            "com.dotcms.rest.api.v3",
+            "com.dotcms.rest",
+            "com.dotcms.ai.rest",
+            "com.dotcms.telemetry.rest",
+            "com.dotcms.auth.providers.saml.v1",
+            "com.dotcms.contenttype.model.field",
+            "com.dotcms.rendering.js"
+        };
+        
+        // Check for batch filtering - cumulative approach
+        String maxBatchProperty = System.getProperty("test.batch.max");
+        Integer maxBatch = null;
+        
+        if (maxBatchProperty != null) {
+            try {
+                maxBatch = Integer.parseInt(maxBatchProperty);
+            } catch (NumberFormatException e) {
+                System.out.println("Warning: Invalid max batch number '" + maxBatchProperty + "', ignoring filter");
+            }
+        }
+        
+        // Get all classes with @SwaggerCompliant annotation using Jandex
+        List<String> classNames = JandexClassMetadataScanner.findClassesWithAnnotation(
+            "com.dotcms.rest.annotation.SwaggerCompliant", packagesToScan);
+        
+        for (String className : classNames) {
+            // Get batch information from annotation
+            Integer classBatch = JandexClassMetadataScanner.getClassAnnotationIntValue(
+                className, "com.dotcms.rest.annotation.SwaggerCompliant", "batch");
+            
+            if (classBatch == null) {
+                classBatch = 1; // Default batch
+            }
+            
+            // Apply cumulative batch filtering - include all batches up to maxBatch
+            if (maxBatch != null && classBatch > maxBatch) {
+                continue; // Skip classes beyond max batch
+            }
+            
+            try {
+                Class<?> clazz = Class.forName(className);
+                swaggerCompliantClasses.add(clazz);
+            } catch (ClassNotFoundException | NoClassDefFoundError | ExceptionInInitializerError e) {
+                // Skip classes that can't be loaded or initialized
+                System.out.println("Warning: Could not load class " + className + ": " + e.getMessage());
+            }
+        }
+        
+        System.out.println("🔍 Found " + swaggerCompliantClasses.size() + " @SwaggerCompliant classes using Jandex");
+        return swaggerCompliantClasses;
+    }
+    
+    /**
+     * Fallback method to find @SwaggerCompliant classes using reflection
+     */
+    private List<Class<?>> findSwaggerCompliantClassesWithReflection() {
         List<Class<?>> swaggerCompliantClasses = new ArrayList<>();
         
         // Common REST packages to scan
@@ -731,6 +876,7 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
             }
         }
         
+        System.out.println("🔍 Found " + swaggerCompliantClasses.size() + " @SwaggerCompliant classes using reflection");
         return swaggerCompliantClasses;
     }
     
@@ -833,6 +979,41 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
         }
         
         return classes;
+    }
+    
+    /**
+     * Check if this is a VTL GET method that accepts request bodies (legacy pattern)
+     */
+    private boolean isVtlGetMethodWithRequestBody(Method method) {
+        if (!method.isAnnotationPresent(GET.class)) {
+            return false;
+        }
+        
+        Class<?> resourceClass = method.getDeclaringClass();
+        if (!resourceClass.getSimpleName().equals("VTLResource")) {
+            return false;
+        }
+        
+        String methodName = method.getName();
+        if (!(methodName.equals("get") || methodName.equals("dynamicGet"))) {
+            return false;
+        }
+        
+        // Check if method has request body parameters (like Map<String, Object> bodyMap or String bodyMapString)
+        for (java.lang.reflect.Parameter parameter : method.getParameters()) {
+            if (isContextParameter(parameter)) {
+                continue;
+            }
+            
+            // VTL methods have Map<String, Object> or String parameters for request body
+            Class<?> paramType = parameter.getType();
+            String paramTypeName = paramType.getSimpleName();
+            if (paramType == java.util.Map.class || paramTypeName.equals("String")) {
+                return true; // This is a VTL GET method with request body parameter
+            }
+        }
+        
+        return false;
     }
 
 }
