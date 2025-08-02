@@ -17,9 +17,9 @@ public class ImportAuditUtil {
 	public static final int STATUS_PENDING = 10;
 	public static final int STATUS_COMPLETED = 20;
 	public static final int STATUS_USERSTOPPED = 30;
-	
-	public static LRUMap cancelledImports = new LRUMap(50); 
-	
+
+	public static LRUMap cancelledImports = new LRUMap(50);
+
 	/**
 	 * Should only be used when the system is starting to clean imports
 	 * that were running when the system restarted itself.

@@ -146,7 +146,7 @@ public abstract class ImportFileParams {
     @Value.Parameter
     @Value.Default
     public boolean stopOnError() {
-        return true;
+        return false;
     }
 
     /**
