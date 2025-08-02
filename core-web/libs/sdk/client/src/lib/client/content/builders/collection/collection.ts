@@ -333,16 +333,19 @@ export class CollectionBuilder<T = unknown> {
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | GetCollectionError> {
-        return this.fetch().then(async (data) => {
+    ): Promise<GetCollectionResponse<T> | GetCollectionError | void> {
+        return this.fetch().then((data) => {
             const formattedResponse = this.formatResponse<T>(data);
 
-            const finalResponse =
-                typeof onfulfilled === 'function'
-                    ? onfulfilled(formattedResponse)
-                    : formattedResponse;
+            if (typeof onfulfilled === 'function') {
+                const result = onfulfilled(formattedResponse);
 
-            return finalResponse;
+                if (result !== undefined) {
+                    return result;
+                }
+            }
+
+            return formattedResponse;
         }, onrejected);
     }
 
@@ -380,7 +383,7 @@ export class CollectionBuilder<T = unknown> {
      * @return {Promise<any>} The fetch response data.
      * @memberof CollectionBuilder
      */
-    private fetch(): Promise<any> {
+    private fetch(): Promise<GetCollectionRawResponse<T>> {
         const finalQuery = this.currentQuery
             .field('languageId')
             .equals(this.#languageId.toString())
@@ -392,7 +395,7 @@ export class CollectionBuilder<T = unknown> {
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return this.#httpClient.request(this.url, {
+        return this.#httpClient.request<GetCollectionRawResponse<T>>(this.url, {
             ...this.#requestOptions,
             method: 'POST',
             headers: {

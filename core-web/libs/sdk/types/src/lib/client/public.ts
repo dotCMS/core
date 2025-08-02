@@ -118,7 +118,7 @@ export interface DotCMSPageRequestParams {
 /**
  * Options for configuring fetch requests, excluding body and method properties.
  */
-export type RequestOptions = Omit<RequestInit, 'body' | 'method'>;
+export type RequestOptions = RequestInit;
 
 /**
  * Configuration options for the DotCMS client.
