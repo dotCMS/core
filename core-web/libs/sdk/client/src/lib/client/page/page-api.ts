@@ -1,4 +1,4 @@
-import consola from 'consola';
+import { consola } from 'consola';
 
 import {
     DotCMSClientConfig,
@@ -6,7 +6,8 @@ import {
     DotCMSExtendedPageResponse,
     DotCMSPageResponse,
     DotCMSPageRequestParams,
-    RequestOptions
+    RequestOptions,
+    HttpClient
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
@@ -37,10 +38,17 @@ export class PageClient {
     private dotcmsUrl: string;
 
     /**
+     * HTTP client for making requests.
+     * @private
+     */
+    private httpClient: HttpClient;
+
+    /**
      * Creates a new PageClient instance.
      *
      * @param {DotCMSClientConfig} config - Configuration options for the DotCMS client
      * @param {RequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @param {HttpClient} httpClient - HTTP client for making requests
      * @example
      * ```typescript
      * const pageClient = new PageClient(
@@ -53,14 +61,16 @@ export class PageClient {
      *     headers: {
      *       Authorization: 'Bearer your-auth-token'
      *     }
-     *   }
+     *   },
+     *   httpClient
      * );
      * ```
      */
-    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
+    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions, httpClient: HttpClient) {
         this.requestOptions = requestOptions;
         this.siteId = config.siteId || '';
         this.dotcmsUrl = config.dotcmsUrl;
+        this.httpClient = httpClient;
     }
 
     /**
@@ -156,7 +166,8 @@ export class PageClient {
             const { data, errors } = await fetchGraphQL({
                 baseURL: this.dotcmsUrl,
                 body: requestBody,
-                headers: requestHeaders
+                headers: requestHeaders,
+                httpClient: this.httpClient
             });
 
             if (errors) {

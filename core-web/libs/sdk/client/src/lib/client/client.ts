@@ -1,7 +1,8 @@
 import { consola } from 'consola';
 
-import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
+import { DotCMSClientConfig, RequestOptions, HttpClient } from '@dotcms/types';
 
+import { FetchHttpClient } from './adapters/fetch-http-client';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';
@@ -38,6 +39,7 @@ const defaultConfig: DotCMSClientConfig = {
 class DotCMSClient {
     private config: DotCMSClientConfig;
     private requestOptions!: RequestOptions;
+    private httpClient: HttpClient;
 
     /**
      * Client for content-related operations.
@@ -62,12 +64,13 @@ class DotCMSClient {
      */
     constructor(config: DotCMSClientConfig = defaultConfig) {
         this.config = config;
+        this.httpClient = config.httpClient || new FetchHttpClient();
         this.requestOptions = this.createAuthenticatedRequestOptions(this.config);
 
-        // Initialize clients
-        this.page = new PageClient(this.config, this.requestOptions);
-        this.nav = new NavigationClient(this.config, this.requestOptions);
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
+        // Initialize clients with httpClient
+        this.page = new PageClient(this.config, this.requestOptions, this.httpClient);
+        this.nav = new NavigationClient(this.config, this.requestOptions, this.httpClient);
+        this.content = new Content(this.requestOptions, this.config.dotcmsUrl, this.httpClient);
     }
 
     /**

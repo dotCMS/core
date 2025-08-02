@@ -2,17 +2,19 @@ import {
     DotCMSClientConfig,
     DotCMSNavigationRequestParams,
     RequestOptions,
-    DotCMSNavigationItem
+    DotCMSNavigationItem,
+    HttpClient
 } from '@dotcms/types';
 
 export class NavigationClient {
     private requestOptions: RequestOptions;
-
     private BASE_URL: string;
+    private httpClient: HttpClient;
 
-    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
+    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions, httpClient: HttpClient) {
         this.requestOptions = requestOptions;
         this.BASE_URL = `${config?.dotcmsUrl}/api/v1/nav`;
+        this.httpClient = httpClient;
     }
 
     /**
@@ -35,15 +37,9 @@ export class NavigationClient {
         const parsedPath = path.replace(/^\/+/, '/').replace(/\/+$/, '/');
         const url = `${this.BASE_URL}${parsedPath}${urlParams ? `?${urlParams}` : ''}`;
 
-        const response = await fetch(url, this.requestOptions);
+        const response = await this.httpClient.request<{ entity: DotCMSNavigationItem[] }>(url, this.requestOptions);
 
-        if (!response.ok) {
-            throw new Error(
-                `Failed to fetch navigation data: ${response.statusText} - ${response.status}`
-            );
-        }
-
-        return response.json().then((data) => data.entity);
+        return response.entity;
     }
 
     private mapToBackendParams(params: DotCMSNavigationRequestParams): Record<string, string> {

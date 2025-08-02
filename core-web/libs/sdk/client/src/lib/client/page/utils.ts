@@ -1,6 +1,6 @@
 import { consola } from 'consola';
 
-import { ErrorMessages } from '../models';
+import { HttpClient, HttpClientRequestOptions } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -257,35 +257,57 @@ export function mapResponseData(
  * @param {Object} options - Options for the fetch request
  * @param {string} options.body - GraphQL query string
  * @param {Record<string, string>} options.headers - HTTP headers for the request
+ * @param {HttpClient} options.httpClient - HTTP client for making requests
  * @returns {Promise<any>} Parsed JSON response from the GraphQL API
  * @throws {Error} If the HTTP response is not successful
  */
 export async function fetchGraphQL({
     baseURL,
     body,
-    headers
+    headers,
+    httpClient
 }: {
     baseURL: string;
     body: string;
     headers: Record<string, string>;
+    httpClient: HttpClient;
 }) {
     const url = new URL(baseURL);
     url.pathname = '/api/v1/graphql';
 
-    const response = await fetch(url.toString(), {
+    return httpClient.request(url.toString(), {
         method: 'POST',
         body,
         headers
-    });
-
-    if (!response.ok) {
-        const error = {
-            status: response.status,
-            message: ErrorMessages[response.status] || response.statusText
-        };
-
-        throw error;
-    }
-
-    return await response.json();
+    } as HttpClientRequestOptions);
 }
+
+// export async function fetchGraphQL2({
+//     baseURL,
+//     body,
+//     headers
+// }: {
+//     baseURL: string;
+//     body: string;
+//     headers: Record<string, string>;
+// }) {
+//     const url = new URL(baseURL);
+//     url.pathname = '/api/v1/graphql';
+
+//     const response = await fetch(url.toString(), {
+//         method: 'POST',
+//         body,
+//         headers
+//     });
+
+//     if (!response.ok) {
+//         const error = {
+//             status: response.status,
+//             message: ErrorMessages[response.status] || response.statusText
+//         };
+
+//         throw error;
+//     }
+
+//     return await response.json();
+// }

@@ -1,3 +1,5 @@
+import { HttpClient } from '@dotcms/types';
+
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
@@ -36,18 +38,21 @@ export class CollectionBuilder<T = unknown> {
 
     #serverUrl: string;
     #requestOptions: ClientOptions;
+    #httpClient: HttpClient;
 
     /**
      * Creates an instance of CollectionBuilder.
      * @param {ClientOptions} requestOptions Options for the client request.
      * @param {string} serverUrl The server URL.
      * @param {string} contentType The content type to fetch.
+     * @param {HttpClient} httpClient HTTP client for making requests.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string) {
+    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string, httpClient: HttpClient) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
         this.#contentType = contentType;
+        this.#httpClient = httpClient;
 
         // Build the default query with the contentType field
         this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
@@ -329,23 +334,15 @@ export class CollectionBuilder<T = unknown> {
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
     ): Promise<GetCollectionResponse<T> | GetCollectionError> {
-        return this.fetch().then(async (response) => {
-            const data = await response.json();
-            if (response.ok) {
-                const formattedResponse = this.formatResponse<T>(data);
+        return this.fetch().then(async (data) => {
+            const formattedResponse = this.formatResponse<T>(data);
 
-                const finalResponse =
-                    typeof onfulfilled === 'function'
-                        ? onfulfilled(formattedResponse)
-                        : formattedResponse;
+            const finalResponse =
+                typeof onfulfilled === 'function'
+                    ? onfulfilled(formattedResponse)
+                    : formattedResponse;
 
-                return finalResponse;
-            } else {
-                return {
-                    status: response.status,
-                    ...data
-                };
-            }
+            return finalResponse;
         }, onrejected);
     }
 
@@ -380,10 +377,10 @@ export class CollectionBuilder<T = unknown> {
      * Calls the content API to fetch the content.
      *
      * @private
-     * @return {Promise<Response>} The fetch response.
+     * @return {Promise<any>} The fetch response data.
      * @memberof CollectionBuilder
      */
-    private fetch(): Promise<Response> {
+    private fetch(): Promise<any> {
         const finalQuery = this.currentQuery
             .field('languageId')
             .equals(this.#languageId.toString())
@@ -395,7 +392,7 @@ export class CollectionBuilder<T = unknown> {
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return fetch(this.url, {
+        return this.#httpClient.request(this.url, {
             ...this.#requestOptions,
             method: 'POST',
             headers: {

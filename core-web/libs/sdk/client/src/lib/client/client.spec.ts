@@ -1,4 +1,4 @@
-import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
+import { DotCMSClientConfig, RequestOptions, HttpClient } from '@dotcms/types';
 
 import { createDotCMSClient } from './client';
 import { Content } from './content/content-api';
@@ -49,10 +49,11 @@ describe('DotCMSClient', () => {
                 authToken: 'test-token',
                 siteId: 'test-site'
             }),
-            expectedRequestOptions
+            expectedRequestOptions,
+            expect.any(Object) // httpClient
         );
 
-        expect(Content).toHaveBeenCalledWith(expectedRequestOptions, 'https://demo.dotcms.com');
+        expect(Content).toHaveBeenCalledWith(expectedRequestOptions, 'https://demo.dotcms.com', expect.any(Object));
 
         expect(NavigationClient).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -60,7 +61,8 @@ describe('DotCMSClient', () => {
                 authToken: 'test-token',
                 siteId: 'test-site'
             }),
-            expectedRequestOptions
+            expectedRequestOptions,
+            expect.any(Object) // httpClient
         );
     });
 
@@ -78,7 +80,8 @@ describe('DotCMSClient', () => {
                 headers: {
                     Authorization: 'Bearer test-token'
                 }
-            })
+            }),
+            expect.any(Object) // httpClient
         );
     });
 
@@ -92,7 +95,8 @@ describe('DotCMSClient', () => {
                     'Content-Type': 'application/json',
                     Authorization: 'Bearer test-token'
                 }
-            })
+            }),
+            expect.any(Object) // httpClient
         );
     });
 
@@ -141,7 +145,38 @@ describe('DotCMSClient', () => {
 
             createDotCMSClient(configWithPath);
 
-            expect(Content).toHaveBeenCalledWith(expect.anything(), 'https://demo.dotcms.com');
+            expect(Content).toHaveBeenCalledWith(expect.anything(), 'https://demo.dotcms.com', expect.any(Object));
         });
     });
+});
+
+describe('DotCMSClient with custom HTTP client', () => {
+  it('should use custom HTTP client when provided', async () => {
+    const mockHttpClient: HttpClient = {
+      request: jest.fn().mockResolvedValue({ entity: [{ name: 'test' }] })
+    };
+
+    const client = createDotCMSClient({
+      dotcmsUrl: 'https://demo.dotcms.com',
+      authToken: 'token',
+      httpClient: mockHttpClient
+    });
+
+    await client.nav.get('/test');
+
+    expect(mockHttpClient.request).toHaveBeenCalled();
+  });
+
+  it('should use default FetchHttpClient when no custom client provided', () => {
+    const client = createDotCMSClient({
+      dotcmsUrl: 'https://demo.dotcms.com',
+      authToken: 'token'
+    });
+
+    // The client should be created successfully with default HTTP client
+    expect(client).toBeDefined();
+    expect(client.nav).toBeDefined();
+    expect(client.page).toBeDefined();
+    expect(client.content).toBeDefined();
+  });
 });

@@ -1,4 +1,4 @@
-import { RequestOptions } from '@dotcms/types';
+import { RequestOptions, HttpClient } from '@dotcms/types';
 
 import { CollectionBuilder } from './builders/collection/collection';
 
@@ -54,15 +54,18 @@ import { CollectionBuilder } from './builders/collection/collection';
 export class Content {
     #requestOptions: RequestOptions;
     #serverUrl: string;
+    #httpClient: HttpClient;
 
     /**
      * Creates an instance of Content.
      * @param {RequestOptions} requestOptions - The options for the client request.
      * @param {string} serverUrl - The server URL.
+     * @param {HttpClient} httpClient - HTTP client for making requests.
      */
-    constructor(requestOptions: RequestOptions, serverUrl: string) {
+    constructor(requestOptions: RequestOptions, serverUrl: string, httpClient: HttpClient) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
+        this.#httpClient = httpClient;
     }
 
     /**
@@ -131,6 +134,6 @@ export class Content {
      *
      */
     getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
-        return new CollectionBuilder<T>(this.#requestOptions, this.#serverUrl, contentType);
+        return new CollectionBuilder<T>(this.#requestOptions, this.#serverUrl, contentType, this.#httpClient);
     }
 }

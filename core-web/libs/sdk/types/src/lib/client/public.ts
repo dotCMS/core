@@ -1,6 +1,38 @@
 import { UVE_MODE } from '../editor/public';
 
 /**
+ * Interface for HTTP client implementations.
+ * Allows the SDK to work with different HTTP libraries.
+ */
+export interface HttpClient {
+  /**
+   * Makes an HTTP request.
+   *
+   * @param url - The URL to request
+   * @param options - Request options (method, headers, body, etc.)
+   * @returns A promise that resolves with the response data
+   */
+  request<T = unknown>(url: string, options?: RequestOptions): Promise<T>;
+}
+
+/**
+ * Request options for HTTP client implementations.
+ * Extends the native RequestInit interface to be compatible with fetch.
+ */
+export interface HttpClientRequestOptions extends Omit<RequestInit, 'body' | 'method'> {
+    /**
+     * The HTTP method to use for the request.
+     */
+    method?: string;
+
+    /**
+     * The request body.
+     */
+    body?: string | FormData | URLSearchParams | ReadableStream | null;
+  }
+
+
+/**
  * The GraphQL parameters for a page request.
  * @public
  */
@@ -115,6 +147,13 @@ export interface DotCMSClientConfig {
      * @example `{ headers: { 'Content-Type': 'application/json' } }`
      */
     requestOptions?: RequestOptions;
+
+    /**
+     * Custom HTTP client implementation.
+     * If not provided, the default FetchHttpClient will be used.
+     * @example `{ httpClient: new AxiosHttpClient() }`
+     */
+    httpClient?: HttpClient;
 }
 
 /**
