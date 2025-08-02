@@ -92,8 +92,8 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
             // Check that when editor exists, setEditable is called properly
             const mockEditor = {
                 setEditable: jest.fn()
-            };
-            blockEditorComponent.editor = mockEditor as any;
+            } as Partial<typeof blockEditorComponent.editor>;
+            blockEditorComponent.editor = mockEditor as typeof blockEditorComponent.editor;
 
             blockEditorComponent.setDisabledState(false);
             expect(mockEditor.setEditable).toHaveBeenCalledWith(true);
