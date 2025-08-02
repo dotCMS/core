@@ -346,7 +346,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	}
 
 	@Test
-	public void searchCount() throws DotDataException {
+	public void searchCount() throws DotDataException, DotSecurityException {
 		String query = " velocity_var_name like '%content%'";
 		List<ContentType> types = contentTypeFactory.search(query, -1);
 
@@ -903,6 +903,74 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		assertEquals(countBefore, countAfter);
 
+	}
+
+	/**
+	 * Test that the dbSearch method properly handles numeric overflow in structuretype values.
+	 * Given: A search condition with structuretype value that exceeds Integer.MAX_VALUE
+	 * Should: Throw DotDataException wrapping DotSecurityException instead of NumberFormatException
+	 *
+	 * @throws DotDataException
+	 */
+	@Test(expected = DotDataException.class)
+	public void testSearchNumericOverflowProtection() throws DotDataException {
+		// Test with value larger than Integer.MAX_VALUE
+		String overflowCondition = "structuretype=99999999999999999999";
+		FactoryLocator.getContentTypeFactory().search(overflowCondition, BaseContentType.ANY, "name", 10, 0);
+	}
+
+	/**
+	 * Test that the search method properly handles invalid numeric format in structuretype values.
+	 * Given: A search condition with structuretype value that is not a valid number
+	 * Should: Throw DotDataException wrapping DotSecurityException instead of NumberFormatException
+	 *
+	 * @throws DotDataException
+	 */
+	@Test(expected = DotDataException.class)
+	public void testSearchInvalidNumericFormat() throws DotDataException {
+		// Test with non-numeric value
+		String invalidCondition = "structuretype=not_a_number";
+		FactoryLocator.getContentTypeFactory().search(invalidCondition, BaseContentType.ANY, "name", 10, 0);
+	}
+
+	/**
+	 * Test that the search method properly handles valid structuretype values.
+	 * Given: A search condition with valid structuretype value
+	 * Should: Execute successfully without throwing exceptions
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void testSearchValidStructureType() throws DotDataException {
+		// Test with valid integer value
+		String validCondition = "structuretype=1";
+		// Should not throw any exception
+		FactoryLocator.getContentTypeFactory().search(validCondition, BaseContentType.ANY, "name", 10, 0);
+	}
+
+	/**
+	 * Test that the searchCount method properly handles numeric overflow in structuretype values.
+	 * Given: A search condition with structuretype value that exceeds Integer.MAX_VALUE
+	 * Should: Throw DotSecurityException instead of NumberFormatException
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void testSearchCountNumericOverflowProtection() throws DotDataException {
+		// Test with value larger than Integer.MAX_VALUE
+		String overflowCondition = "structuretype=99999999999999999999";
+		try {
+			int result = FactoryLocator.getContentTypeFactory().searchCount(overflowCondition, BaseContentType.ANY);
+			Assert.fail("Expected exception to be thrown for integer overflow, but got result: " + result);
+		} catch (DotSecurityException e) {
+			// Expected behavior - verify the exception message contains overflow info
+			assertTrue("Exception message should contain overflow information: " + e.getMessage(), 
+				e.getMessage().contains("out of range") || e.getMessage().contains("overflow") || e.getMessage().contains("Invalid structuretype"));
+		} catch (NumberFormatException e) {
+			Assert.fail("Should throw DotSecurityException instead of NumberFormatException: " + e.getMessage());
+		} catch (Exception e) {
+			Assert.fail("Unexpected exception type: " + e.getClass().getName() + " - " + e.getMessage());
+		}
 	}
 
 }
