@@ -201,6 +201,8 @@ public class ImportUtil {
      * a more structured response format.
      * <p>
      * This method maintains backwards compatibility with existing code.
+     * It SO is IMPORTANT to notice thar on this method {@code stopOnError} is set to false
+     * as it didn't exist before and the default value of the {@code stopOnError} flag is false.
      *
      * @param importId
      *            - The ID of this data import.
@@ -1709,9 +1711,9 @@ public class ImportUtil {
         }
         //Check if line has repeated values for a unique field, if it does then ignore the line
         if (!uniqueFieldBeans.isEmpty()) {
-            final boolean ignoreLine = validateUniqueFields(user, lineNumber, language,
+            final boolean ignoreLine = validateUniqueFields(user, lineNumber, language, stopOnError,
                     uniqueFieldBeans, uniqueFields, resultBuilder);
-            if (ignoreLine && !stopOnError) {
+            if (ignoreLine && !stopOnError) { //Do not ignore the line if the stopOnError flag is on so an exception will be thrown
                 resultBuilder.setIgnoreLine(true);
                 return;
             }
@@ -4622,7 +4624,7 @@ public class ImportUtil {
      * false.
      * @throws LanguageException If an error occurs during language validation.
      */
-    private static boolean validateUniqueFields(User user, int lineNumber, long language,
+    private static boolean validateUniqueFields(User user, int lineNumber, long language, boolean stopOnError,
             List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields,
             final LineImportResultBuilder resultBuilder) throws LanguageException {
         boolean ignoreLine = false;
@@ -4634,14 +4636,11 @@ public class ImportUtil {
                     if (count > 0 && value != null && value.equals(bean.value()) && lineNumber == bean.lineNumber()) {
                         resultBuilder.incrementContentToCreate(-1);
                         ignoreLine = true;
-                        resultBuilder.addValidationMessage(ValidationMessage.builder()
-                                .type(ValidationMessageType.WARNING)
-                                .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
-                                .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
-                                .field(bean.field().getVelocityVarName())
-                                .invalidValue(bean.value().toString())
-                                .lineNumber(lineNumber)
-                                .build());
+                        if(!stopOnError) {
+                            //this is clearly an error that will cause an exception that will be thrown downstream
+                            //Therefore we don't need it reported twice so only log it as a warning when stopOnError is not on
+                            resultBuilder.addValidationMessage(dupeWarning(user, lineNumber, f, bean));
+                        }
                     }
                     value = bean.value();
                     count++;
@@ -4649,6 +4648,27 @@ public class ImportUtil {
             }
         }
         return ignoreLine;
+    }
+
+    /**
+     * Build the warning message describing the offending dupe value encountered situation
+     * @param user
+     * @param lineNumber
+     * @param f
+     * @param bean
+     * @return
+     * @throws LanguageException
+     */
+    private static ValidationMessage dupeWarning(User user, int lineNumber, Field f,
+            UniqueFieldBean bean) throws LanguageException {
+        return ValidationMessage.builder()
+                .type(ValidationMessageType.WARNING)
+                .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
+                .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
+                .field(bean.field().getVelocityVarName())
+                .invalidValue(bean.value().toString())
+                .lineNumber(lineNumber)
+                .build();
     }
 
     /**

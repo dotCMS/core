@@ -108,6 +108,7 @@ import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.ResultData;
 import com.dotmarketing.util.importer.model.ValidationMessage;
