@@ -6,7 +6,8 @@ import { AutoCompleteSelectEvent, AutoCompleteUnselectEvent } from 'primeng/auto
 @Component({
     selector: 'dot-autocomplete-tags',
     templateUrl: './dot-autocomplete-tags.component.html',
-    styleUrls: ['./dot-autocomplete-tags.component.css']
+    styleUrls: ['./dot-autocomplete-tags.component.css'],
+    standalone: false
 })
 export class DotAutocompleteTagsComponent implements OnInit {
     @Input() inputId: string;

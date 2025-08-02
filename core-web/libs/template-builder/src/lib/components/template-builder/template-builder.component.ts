@@ -76,7 +76,8 @@ import {
     templateUrl: './template-builder.component.html',
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DotTemplateBuilderStore]
+    providers: [DotTemplateBuilderStore],
+    standalone: false
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     private store = inject(DotTemplateBuilderStore);

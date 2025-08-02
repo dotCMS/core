@@ -3,7 +3,8 @@ import { Component, Input, OnChanges } from '@angular/core';
 @Component({
     selector: 'dot-content-compare-preview-field',
     templateUrl: './dot-content-compare-preview-field.component.html',
-    styleUrls: ['./dot-content-compare-preview-field.component.scss']
+    styleUrls: ['./dot-content-compare-preview-field.component.scss'],
+    standalone: false
 })
 export class DotContentComparePreviewFieldComponent implements OnChanges {
     @Input() fileURL: string;

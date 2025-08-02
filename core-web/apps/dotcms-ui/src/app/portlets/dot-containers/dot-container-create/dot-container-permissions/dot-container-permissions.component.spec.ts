@@ -2,13 +2,14 @@ import { Component, DebugElement, ElementRef, Input, ViewChild } from '@angular/
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-
 import { DotContainerPermissionsComponent } from './dot-container-permissions.component';
+
+import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -19,7 +20,8 @@ export class IframeMockComponent {
     selector: `dot-host-component`,
     template: `
         <dot-container-permissions [containerId]="containerId"></dot-container-permissions>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     containerId = '';

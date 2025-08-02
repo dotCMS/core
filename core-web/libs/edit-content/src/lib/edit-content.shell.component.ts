@@ -6,7 +6,6 @@ import { ToastModule } from 'primeng/toast';
 
 @Component({
     selector: 'dot-edit-content',
-    standalone: true,
     imports: [RouterModule, ToastModule],
     providers: [MessageService],
     template: '<p-toast /> <router-outlet />',

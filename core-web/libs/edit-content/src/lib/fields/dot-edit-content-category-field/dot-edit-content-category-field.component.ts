@@ -32,7 +32,6 @@ import { CategoryFieldStore } from './store/content-category-field.store';
  */
 @Component({
     selector: 'dot-edit-content-category-field',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         ButtonModule,

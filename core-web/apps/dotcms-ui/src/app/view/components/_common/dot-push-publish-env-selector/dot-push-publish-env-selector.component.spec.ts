@@ -8,12 +8,13 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 export class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];
@@ -48,7 +49,8 @@ export class PushPublishServiceMock {
                 showList="true"
                 formControlName="environment"></dot-push-publish-env-selector>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     group: UntypedFormGroup;

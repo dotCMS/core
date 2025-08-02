@@ -52,7 +52,6 @@ interface dotPreviewResourceLink {
 
 @Component({
     selector: 'dot-binary-field-preview',
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,

@@ -21,8 +21,6 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -33,20 +31,16 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import {
-    DotFavoritePageComponent,
-    DotDeviceSelectorSeoComponent
-} from '@dotcms/portlets/dot-ema/ui';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
+import { DotGlobalMessageModule } from '../../../../../view/components/_common/dot-global-message/dot-global-message.module';
+import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotEditPageWorkflowsActionsModule } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-as-controller-seo/dot-edit-page-view-as-controller-seo.component';
 
 @Component({
-    standalone: true,
     selector: 'dot-edit-page-toolbar-seo',
     templateUrl: './dot-edit-page-toolbar-seo.component.html',
     styleUrls: ['./dot-edit-page-toolbar-seo.component.scss'],
@@ -61,15 +55,11 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotSafeHtmlPipe,
         DotGlobalMessageModule,
-        DotFavoritePageComponent,
         DotIconModule,
-        DotEditPageNavDirective,
         RouterLink,
         TagModule,
         DotEditPageInfoSeoComponent,
-        DotDeviceSelectorSeoComponent,
         DotEditPageStateControllerSeoComponent,
         DotMessagePipe
     ]

@@ -22,7 +22,6 @@ import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
 
 @Component({
     selector: 'dot-edit-ema-palette-content-type',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         DotIconModule,

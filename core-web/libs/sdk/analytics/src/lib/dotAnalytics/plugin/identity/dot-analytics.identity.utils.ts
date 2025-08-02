@@ -101,7 +101,7 @@ export const hasUTMChanged = (currentUTM: Record<string, string>): boolean => {
         }
 
         return false;
-    } catch (error) {
+    } catch {
         return false;
     }
 };

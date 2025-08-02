@@ -5,13 +5,15 @@ import { By } from '@angular/platform-browser';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
     BINARY_OPTION,
     DotBinaryOptionSelectorComponent
 } from './dot-binary-option-selector.component';
+
+import { DotAutofocusDirective } from '../../directives/dot-autofocus/dot-autofocus.directive';
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.mock.option1.message': 'Message 1',

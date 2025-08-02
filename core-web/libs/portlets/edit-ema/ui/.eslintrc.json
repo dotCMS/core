@@ -24,7 +24,11 @@
                         "prefix": "dot",
                         "style": "kebab-case"
                     }
-                ]
+                ],
+                "@angular-eslint/prefer-standalone": "off",
+                "@angular-eslint/no-input-rename": "off",
+                "@angular-eslint/no-output-on-prefix": "off",
+                "@angular-eslint/no-output-native": "off"
             }
         },
         {

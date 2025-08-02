@@ -13,7 +13,8 @@ import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detai
  */
 @Component({
     selector: 'dot-workflow-task-detail',
-    templateUrl: './dot-workflow-task-detail.component.html'
+    templateUrl: './dot-workflow-task-detail.component.html',
+    standalone: false
 })
 export class DotWorkflowTaskDetailComponent implements OnInit {
     private dotWorkflowTaskDetailService = inject(DotWorkflowTaskDetailService);

@@ -13,9 +13,9 @@ import {
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotRouterService } from '@dotcms/data-access';
 
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
 export const AUTOSAVE_DEBOUNCE_TIME = 5000;
@@ -23,7 +23,8 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 @Component({
     selector: 'dot-template-builder',
     templateUrl: './dot-template-builder.component.html',
-    styleUrls: ['./dot-template-builder.component.scss']
+    styleUrls: ['./dot-template-builder.component.scss'],
+    standalone: false
 })
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     readonly #dotRouterService = inject(DotRouterService);

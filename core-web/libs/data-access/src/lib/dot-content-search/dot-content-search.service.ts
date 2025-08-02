@@ -11,7 +11,6 @@ export enum ESOrderDirectionSearch {
     ASC = 'ASC',
     DESC = 'DESC'
 }
-
 export interface EsQueryParamsSearch {
     itemsPerPage?: number;
     filter?: string;
@@ -23,7 +22,6 @@ export interface EsQueryParamsSearch {
     sort?: string;
     sortOrder?: ESOrderDirectionSearch;
 }
-
 export interface DotContentSearchParams {
     globalSearch?: string;
     systemSearchableFields?: Record<string, unknown>;
@@ -31,7 +29,6 @@ export interface DotContentSearchParams {
     page?: number;
     perPage?: number;
 }
-
 export interface DotContentSearchResponse {
     entity: {
         jsonObjectView: {
@@ -40,7 +37,6 @@ export interface DotContentSearchResponse {
         resultsSize: number;
     };
 }
-
 @Injectable({
     providedIn: 'root'
 })

@@ -1,7 +1,8 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotContentletService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+
+import { DotContentletService } from './dot-contentlet.service';
 
 const mockContentletVersionsResponse = {
     entity: {

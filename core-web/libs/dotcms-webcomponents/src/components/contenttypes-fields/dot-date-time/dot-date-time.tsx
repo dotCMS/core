@@ -96,7 +96,7 @@ export class DotDateTimeComponent {
     @State()
     classNames: DotFieldStatusClasses;
     @State()
-    errorMessageElement: JSX.Element;
+    errorMessageElement: any;
 
     @Event()
     dotValueChange: EventEmitter<DotFieldValueEvent>;

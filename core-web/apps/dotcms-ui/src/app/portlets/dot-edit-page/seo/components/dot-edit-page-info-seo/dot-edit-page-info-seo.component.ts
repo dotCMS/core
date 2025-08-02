@@ -3,14 +3,9 @@ import { Component, Input, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotLinkComponent } from '@components/dot-link/dot-link.component';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import {
-    DotApiLinkComponent,
-    DotCopyButtonComponent,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
+import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+
+import { LOCATION_TOKEN } from '../../../../../providers';
 
 /**
  * Basic page information for edit mode
@@ -22,15 +17,7 @@ import {
     selector: 'dot-edit-page-info-seo',
     templateUrl: './dot-edit-page-info-seo.component.html',
     styleUrls: ['./dot-edit-page-info-seo.component.scss'],
-    standalone: true,
-    imports: [
-        ButtonModule,
-        DotCopyButtonComponent,
-        DotApiLinkComponent,
-        DotSafeHtmlPipe,
-        DotMessagePipe,
-        DotLinkComponent
-    ],
+    imports: [ButtonModule, DotCopyButtonComponent, DotApiLinkComponent, DotMessagePipe],
     providers: [{ provide: LOCATION_TOKEN, useValue: window.location }]
 })
 export class DotEditPageInfoSeoComponent {

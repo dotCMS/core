@@ -10,7 +10,8 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 @Component({
     selector: 'dot-toolbar',
     styleUrls: ['./dot-toolbar.component.scss'],
-    templateUrl: './dot-toolbar.component.html'
+    templateUrl: './dot-toolbar.component.html',
+    standalone: false
 })
 export class DotToolbarComponent implements OnInit {
     readonly #dotRouterService = inject(DotRouterService);

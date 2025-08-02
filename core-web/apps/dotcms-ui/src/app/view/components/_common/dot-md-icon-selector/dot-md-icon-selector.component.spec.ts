@@ -16,7 +16,8 @@ import { DotMdIconSelectorComponent } from './dot-md-icon-selector.component';
         <form [formGroup]="form">
             <dot-md-icon-selector formControlName="icon"></dot-md-icon-selector>
         </form>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     private fb = inject(UntypedFormBuilder);

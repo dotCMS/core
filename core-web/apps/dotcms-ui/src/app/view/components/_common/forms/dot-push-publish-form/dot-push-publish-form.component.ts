@@ -17,7 +17,6 @@ import { SelectItem } from 'primeng/api';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -26,12 +25,15 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+
+import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
 
 @Component({
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
-    styleUrls: ['./dot-push-publish-form.component.scss']
+    styleUrls: ['./dot-push-publish-form.component.scss'],
+    standalone: false
 })
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>

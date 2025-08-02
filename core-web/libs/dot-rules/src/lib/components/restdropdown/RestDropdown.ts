@@ -32,7 +32,8 @@ import { Verify } from '../../services/validation/Verify';
             [allowAdditions]="allowAdditions"
             [options]="options | async"
             placeholder="{{ placeholder }}"></cw-input-dropdown>
-    `
+    `,
+    standalone: false
 })
 export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAccessor {
     private coreWebService = inject(CoreWebService);

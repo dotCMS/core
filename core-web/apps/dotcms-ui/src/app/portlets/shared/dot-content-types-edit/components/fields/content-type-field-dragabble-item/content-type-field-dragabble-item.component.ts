@@ -26,7 +26,8 @@ import { FieldService } from '../service';
     selector: 'dot-content-type-field-dragabble-item',
     styleUrls: ['./content-type-field-dragabble-item.component.scss'],
     templateUrl: './content-type-field-dragabble-item.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

@@ -16,7 +16,8 @@ import { DotCMSWorkflow } from '@dotcms/dotcms-models';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotWorkflowsSelectorFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
     private dotWorkflowService = inject(DotWorkflowService);

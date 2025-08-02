@@ -22,7 +22,6 @@ import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experi
 
 @Component({
     selector: 'dot-experiments-configuration-scheduling',
-    standalone: true,
     imports: [
         CommonModule,
         DotDynamicDirective,

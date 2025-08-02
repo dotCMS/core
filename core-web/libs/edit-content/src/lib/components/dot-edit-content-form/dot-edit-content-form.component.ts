@@ -84,7 +84,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  */
 @Component({
     selector: 'dot-edit-content-form',
-    standalone: true,
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
@@ -184,18 +183,15 @@ export class DotEditContentFormComponent implements OnInit {
         /**
          * Effect that enables or disables the form based on the loading state.
          */
-        effect(
-            () => {
-                const isLoading = this.$store.isLoading();
+        effect(() => {
+            const isLoading = this.$store.isLoading();
 
-                if (isLoading) {
-                    this.form.disable();
-                } else {
-                    this.form.enable();
-                }
-            },
-            { allowSignalWrites: true }
-        );
+            if (isLoading) {
+                this.form.disable();
+            } else {
+                this.form.enable();
+            }
+        });
 
         /**
          * Effect that initializes the form and form listener when copying locale.

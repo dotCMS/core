@@ -18,7 +18,6 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
 
 @Component({
     selector: 'dotcms-template-builder-row',
-    standalone: true,
     templateUrl: './template-builder-row.component.html',
     styleUrls: ['./template-builder-row.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

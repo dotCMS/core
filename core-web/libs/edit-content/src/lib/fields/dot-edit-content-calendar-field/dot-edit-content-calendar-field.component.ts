@@ -9,7 +9,6 @@ import { CALENDAR_OPTIONS_PER_TYPE } from './utils';
 
 @Component({
     selector: 'dot-edit-content-calendar-field',
-    standalone: true,
     imports: [CalendarModule, ReactiveFormsModule],
     templateUrl: 'dot-edit-content-calendar-field.component.html',
     styleUrls: ['./dot-edit-content-calendar-field.component.scss'],

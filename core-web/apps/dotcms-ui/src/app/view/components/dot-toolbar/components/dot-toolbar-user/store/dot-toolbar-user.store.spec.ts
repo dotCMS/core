@@ -2,10 +2,6 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotEventsService,
     DotMessageService,
@@ -26,6 +22,11 @@ import {
 import { LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
+
+import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
+import { LOCATION_TOKEN } from '../../../../../../providers';
+import { dotEventSocketURLFactory } from '../../../../../../test/dot-test-bed';
+import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
 describe('DotToolbarUserStore', () => {
     let store: DotToolbarUserStore;

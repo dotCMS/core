@@ -17,22 +17,6 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
-import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
-import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
-import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import { IFrameModule } from '@components/_common/iframe';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
-import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
 import {
     DotAddToBundleComponent,
@@ -47,44 +31,54 @@ import {
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
-import {
-    ContentTypeFieldsAddRowModule,
-    ContentTypeFieldsDropZoneComponent,
-    ContentTypeFieldsPropertiesFormComponent,
-    ContentTypeFieldsRowComponent,
-    ContentTypeFieldsTabComponent,
-    ContentTypesFieldDragabbleItemComponent,
-    ContentTypesFieldsListComponent
-} from '@portlets/shared/dot-content-types-edit/components/fields';
-import {
-    CategoriesPropertyComponent,
-    CheckboxPropertyComponent,
-    DataTypePropertyComponent,
-    DefaultValuePropertyComponent,
-    HintPropertyComponent,
-    NamePropertyComponent,
-    RegexCheckPropertyComponent,
-    ValuesPropertyComponent
-} from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties';
-import { DotRelationshipsModule } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
-import { DynamicFieldPropertyDirective } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
-import { DotContentTypeFieldsVariablesModule } from '@portlets/shared/dot-content-types-edit/components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
-import {
-    FieldDragDropService,
-    FieldPropertyService,
-    FieldService
-} from '@portlets/shared/dot-content-types-edit/components/fields/service';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotBinarySettingsComponent } from './components/dot-binary-settings/dot-binary-settings.component';
 import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { ContentTypesFieldDragabbleItemComponent } from './components/fields/content-type-field-dragabble-item';
+import { ContentTypeFieldsAddRowModule } from './components/fields/content-type-fields-add-row/content-type-fields-add-row.module';
+import { ContentTypeFieldsDropZoneComponent } from './components/fields/content-type-fields-drop-zone';
+import { ContentTypeFieldsPropertiesFormComponent } from './components/fields/content-type-fields-properties-form';
+import { CategoriesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/categories-property';
+import { CheckboxPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/checkbox-property';
+import { DataTypePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/data-type-property';
+import { DefaultValuePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/default-value-property';
+import { DotRelationshipsModule } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
+import { DynamicFieldPropertyDirective } from './components/fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
+import { HintPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/hint-property';
+import { NamePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/name-property';
+import { RegexCheckPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/regex-check-property';
+import { ValuesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/values-property';
+import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
+import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
+import { ContentTypesFieldsListComponent } from './components/fields/content-types-fields-list';
+import { DotContentTypeFieldsVariablesModule } from './components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+import { FieldDragDropService } from './components/fields/service/field-drag-drop.service';
+import { FieldPropertyService } from './components/fields/service/field-properties.service';
+import { FieldService } from './components/fields/service/field.service';
 import { ContentTypesFormComponent } from './components/form/content-types-form.component';
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
+import { DotDirectivesModule } from '../../../shared/dot-directives.module';
+import { DotInlineEditModule } from '../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
+import { DotMdIconSelectorModule } from '../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
+import { DotPageSelectorModule } from '../../../view/components/_common/dot-page-selector/dot-page-selector.module';
+import { SiteSelectorFieldModule } from '../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotTextareaContentModule } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotWorkflowsActionsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
+import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { IFrameModule } from '../../../view/components/_common/iframe/iframe.module';
+import { SearchableDropDownModule } from '../../../view/components/_common/searchable-dropdown/searchable-dropdown.module';
+import { DotBaseTypeSelectorModule } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.module';
+import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotFieldHelperModule } from '../../../view/components/dot-field-helper/dot-field-helper.module';
+import { DotPortletBoxModule } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotRelationshipTreeModule } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.module';
+import { DotSecondaryToolbarModule } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
+import { DotMaxlengthModule } from '../../../view/directives/dot-maxlength/dot-maxlength.module';
 import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.module';
 
 @NgModule({

@@ -1,7 +1,7 @@
 /*
 - TODO: maybe crawl the html to find the form parent and save one @Input
 */
-/* eslint-disable @typescript-eslint/padding-line-between-statements */
+/* eslint-disable @stylistic/padding-line-between-statements */
 
 import { Subject } from 'rxjs';
 
@@ -33,9 +33,8 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
-    standalone: true,
-    imports: [DotMessagePipe],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DotMessagePipe]
 })
 export class DotFieldValidationMessageComponent implements OnDestroy {
     private readonly cd = inject(ChangeDetectorRef);

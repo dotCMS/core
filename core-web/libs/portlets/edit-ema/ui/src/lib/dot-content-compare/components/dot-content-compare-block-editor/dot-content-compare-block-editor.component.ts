@@ -11,7 +11,8 @@ import { DotContentCompareTableData } from '../../store/dot-content-compare.stor
 
 @Component({
     selector: 'dot-content-compare-block-editor',
-    templateUrl: './dot-content-compare-block-editor.component.html'
+    templateUrl: './dot-content-compare-block-editor.component.html',
+    standalone: false
 })
 export class DotContentCompareBlockEditorComponent implements AfterViewInit {
     private sanitizer = inject(DomSanitizer);

@@ -25,7 +25,8 @@ import { DotLoopEditorComponent } from './dot-loop-editor.component';
             [formControl]="editor"
             [label]="label"
             [isEditorVisible]="isEditorVisible"></dot-loop-editor>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     isEditorVisible = true;
@@ -46,7 +47,8 @@ class DotTestHostComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input() show;

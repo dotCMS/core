@@ -8,12 +8,14 @@ import { takeUntil } from 'rxjs/operators';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { camelCase } from '@dotcms/utils';
-import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
+
+import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-file-upload.model';
 
 @Component({
     selector: 'dot-create-persona-form',
     templateUrl: './dot-create-persona-form.component.html',
-    styleUrls: ['./dot-create-persona-form.component.scss']
+    styleUrls: ['./dot-create-persona-form.component.scss'],
+    standalone: false
 })
 export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

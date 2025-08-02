@@ -7,7 +7,8 @@ import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit
     selector: 'dot-categories-create-edit-list',
     templateUrl: './dot-categories-create-edit.component.html',
     styleUrls: ['./dot-categories-create-edit.component.scss'],
-    providers: [DotCategoriesCreateEditStore]
+    providers: [DotCategoriesCreateEditStore],
+    standalone: false
 })
 export class DotCategoriesCreateEditComponent {
     readonly #store = inject(DotCategoriesCreateEditStore);

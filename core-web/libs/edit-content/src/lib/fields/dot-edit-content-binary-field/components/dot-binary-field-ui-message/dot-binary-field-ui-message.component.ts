@@ -7,7 +7,6 @@ import { UiMessageI } from '../../interfaces';
 
 @Component({
     selector: 'dot-binary-field-ui-message',
-    standalone: true,
     imports: [CommonModule, DotMessagePipe],
     templateUrl: './dot-binary-field-ui-message.component.html',
     styleUrls: ['./dot-binary-field-ui-message.component.scss'],

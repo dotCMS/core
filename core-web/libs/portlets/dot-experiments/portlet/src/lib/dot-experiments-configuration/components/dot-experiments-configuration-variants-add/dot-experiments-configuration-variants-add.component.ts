@@ -27,16 +27,13 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
-
         DotSidebarHeaderComponent,
         DotMessagePipe,
         DotFieldValidationMessageComponent,
         DotSidebarDirective,
-
         //PrimeNg
         SidebarModule,
         ButtonModule,

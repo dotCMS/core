@@ -4,7 +4,8 @@ import { ActivatedRoute } from '@angular/router';
 @Component({
     selector: 'dot-portlet-detail',
     templateUrl: './dot-portlet-detail.component.html',
-    styleUrls: ['./dot-portlet-detail.component.scss']
+    styleUrls: ['./dot-portlet-detail.component.scss'],
+    standalone: false
 })
 export class DotPortletDetailComponent implements OnInit {
     private route = inject(ActivatedRoute);

@@ -7,9 +7,6 @@ import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
-import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { PushPublishService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import {
@@ -19,6 +16,11 @@ import {
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
+
+import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
+
+import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { PushPublishEnvSelectorModule } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 
 @NgModule({
     declarations: [DotPushPublishFormComponent],

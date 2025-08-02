@@ -19,7 +19,8 @@ import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
             <div data-testId="leftExtraContent" left></div>
             <div data-testId="rightExtraContent" right></div>
         </dot-portlet-toolbar>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 

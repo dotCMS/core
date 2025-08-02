@@ -24,7 +24,6 @@ import { DotMessagePipe } from './../../../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-ai-image-prompt-gallery',
-    standalone: true,
     templateUrl: './ai-image-prompt-gallery.component.html',
     imports: [
         GalleriaModule,

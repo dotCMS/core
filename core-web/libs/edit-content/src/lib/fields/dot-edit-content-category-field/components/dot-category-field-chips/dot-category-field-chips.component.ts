@@ -26,7 +26,6 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
  */
 @Component({
     selector: 'dot-category-field-chips',
-    standalone: true,
     imports: [ButtonModule, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-chips.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

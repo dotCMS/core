@@ -15,7 +15,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { filter, tap, delay } from 'rxjs/operators';
 
-import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
 import { DotMessageService, DotWizardService } from '@dotcms/data-access';
 import {
     DialogButton,
@@ -25,15 +24,17 @@ import {
     DotWizardStep
 } from '@dotcms/dotcms-models';
 import { DotDialogComponent } from '@dotcms/ui';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
 
+import { DotFormModel } from '../../../../shared/models/dot-form/dot-form.model';
+import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 @Component({
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
-    styleUrls: ['./dot-wizard.component.scss']
+    styleUrls: ['./dot-wizard.component.scss'],
+    standalone: false
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };

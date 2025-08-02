@@ -9,8 +9,9 @@ import { of } from 'rxjs';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DotExperimentsService } from '@dotcms/data-access';
-import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { getExperimentMock } from '@dotcms/utils-testing';
+
+import { DotExperimentExperimentResolver } from './dot-experiment-experiment.resolver';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 

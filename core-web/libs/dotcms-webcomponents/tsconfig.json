@@ -5,15 +5,16 @@
         "allowUnreachableCode": false,
         "declaration": false,
         "experimentalDecorators": true,
-        "lib": ["dom", "es2017"],
+        "lib": ["dom", "es2015"],
         "moduleResolution": "node",
         "module": "esnext",
         "target": "es2017",
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "jsx": "react",
-        "jsxFactory": "h"
+        "jsxFactory": "h",
+        "types": ["node"]
     },
-    "include": ["src"],
-    "exclude": ["**/*.stories.ts", "**/*.stories.js"]
+    "exclude": ["**/*.spec.ts", "**/*.spec.tsx"],
+    "include": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
 }

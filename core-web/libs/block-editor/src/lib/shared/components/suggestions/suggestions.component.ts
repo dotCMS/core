@@ -42,7 +42,8 @@ export enum ItemsType {
 @Component({
     selector: 'dot-suggestions',
     templateUrl: './suggestions.component.html',
-    styleUrls: ['./suggestions.component.scss']
+    styleUrls: ['./suggestions.component.scss'],
+    standalone: false
 })
 export class SuggestionsComponent implements OnInit {
     @ViewChild('list', { static: false }) list: SuggestionListComponent;

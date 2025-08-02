@@ -19,10 +19,10 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
 import { withWorkflow } from './workflow.feature';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import {
     MOCK_CONTENTLET_1_TAB,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
@@ -250,7 +250,7 @@ describe('WorkflowFeature', () => {
                 // Use the updateContent method to update the contentlet
                 store.updateContent(updatedContentlet);
 
-                tick();
+                spectator.flushEffects();
 
                 // Verify the effect called updateCurrentContentActions
                 expect(workflowActionService.getByInode).toHaveBeenCalledWith(

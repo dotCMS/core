@@ -17,15 +17,16 @@ import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
-import { TreeNodeItem } from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 import { SearchComponent } from './search.component';
+
+import { TreeNodeItem } from '../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '../../../../../../services/dot-edit-content.service';
+import { SearchParams } from '../../../../models/search.model';
 
 // Mock components for testing
 @Component({

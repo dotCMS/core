@@ -629,7 +629,7 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
                 move
             } as ContentletDragPayload
         };
-    } catch (error) {
+    } catch {
         // It can fail if the data.item is not a valid JSON
         // In that case, we are draging an invalid element from the window
         return null;

@@ -31,7 +31,7 @@ export const ANALYTICS_RESULTS_MONACO_EDITOR_OPTIONS: MonacoEditorConstructionOp
 export const isValidJson = (jsonString: string): boolean | JsonObject => {
     try {
         return JSON.parse(jsonString);
-    } catch (e) {
+    } catch {
         return false;
     }
 };

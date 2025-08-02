@@ -55,7 +55,6 @@ import { convertLocalTimeToUTC } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
-    standalone: true,
     imports: [
         NgClass,
         NgTemplateOutlet,

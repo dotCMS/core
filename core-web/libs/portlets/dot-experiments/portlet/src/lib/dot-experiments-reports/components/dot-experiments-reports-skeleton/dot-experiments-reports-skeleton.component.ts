@@ -4,7 +4,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 @Component({
     selector: 'dot-experiments-reports-skeleton',
-    standalone: true,
     imports: [SkeletonModule],
     templateUrl: './dot-experiments-reports-skeleton.component.html',
     styleUrls: ['./dot-experiments-reports-skeleton.component.scss'],

@@ -21,7 +21,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-form-dialog',
-    standalone: true,
     imports: [ButtonModule, FocusTrapModule, DotMessagePipe],
     templateUrl: './dot-form-dialog.component.html',
     styleUrls: ['./dot-form-dialog.component.scss']

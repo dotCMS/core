@@ -36,7 +36,6 @@ const MAX_LOCALES = 9;
  */
 @Component({
     selector: 'dot-edit-content-sidebar-locales',
-    standalone: true,
     imports: [CommonModule, ChipModule, SkeletonModule, DotIsoCodePipe],
     templateUrl: './dot-edit-content-sidebar-locales.component.html',
     styleUrl: './dot-edit-content-sidebar-locales.component.scss',

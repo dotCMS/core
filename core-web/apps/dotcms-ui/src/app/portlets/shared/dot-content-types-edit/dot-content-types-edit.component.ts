@@ -39,7 +39,8 @@ import { ContentTypesFormComponent } from './components/form';
 @Component({
     selector: 'dot-content-types-edit',
     templateUrl: './dot-content-types-edit.component.html',
-    styleUrls: ['./dot-content-types-edit.component.scss']
+    styleUrls: ['./dot-content-types-edit.component.scss'],
+    standalone: false
 })
 export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     private contentTypesInfoService = inject(DotContentTypesInfoService);

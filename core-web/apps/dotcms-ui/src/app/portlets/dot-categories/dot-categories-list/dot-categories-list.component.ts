@@ -13,7 +13,8 @@ import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-cate
     selector: 'dot-categories-list',
     templateUrl: './dot-categories-list.component.html',
     styleUrls: ['./dot-categories-list.component.scss'],
-    providers: [DotCategoriesListStore]
+    providers: [DotCategoriesListStore],
+    standalone: false
 })
 export class DotCategoriesListComponent {
     readonly #store = inject(DotCategoriesListStore);

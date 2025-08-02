@@ -43,7 +43,8 @@ import { debounceTime, tap } from 'rxjs/operators';
     ],
     selector: 'dot-searchable-dropdown',
     styleUrls: ['./searchable-dropdown.component.scss'],
-    templateUrl: './searchable-dropdown.component.html'
+    templateUrl: './searchable-dropdown.component.html',
+    standalone: false
 })
 export class SearchableDropdownComponent
     implements ControlValueAccessor, OnChanges, AfterContentInit, AfterViewInit
@@ -433,7 +434,7 @@ export class SearchableDropdownComponent
             : this.labelPropertyName;
     }
 
-    private getValueToPropagate(): string {
+    private getValueToPropagate() {
         return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
     }
 }

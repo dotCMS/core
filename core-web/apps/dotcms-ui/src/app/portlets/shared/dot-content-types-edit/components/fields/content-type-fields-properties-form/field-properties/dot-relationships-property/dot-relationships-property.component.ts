@@ -18,7 +18,8 @@ import { FieldProperty } from '../field-properties.model';
     providers: [],
     selector: 'dot-relationships-property',
     templateUrl: './dot-relationships-property.component.html',
-    styleUrls: ['./dot-relationships-property.component.scss']
+    styleUrls: ['./dot-relationships-property.component.scss'],
+    standalone: false
 })
 export class DotRelationshipsPropertyComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

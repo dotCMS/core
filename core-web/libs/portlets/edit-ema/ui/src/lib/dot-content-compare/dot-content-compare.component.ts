@@ -11,7 +11,8 @@ import { DotContentCompareState, DotContentCompareStore } from './store/dot-cont
     selector: 'dot-content-compare',
     templateUrl: './dot-content-compare.component.html',
     styleUrls: ['./dot-content-compare.component.scss'],
-    providers: [DotContentCompareStore]
+    providers: [DotContentCompareStore],
+    standalone: false
 })
 export class DotContentCompareComponent {
     store = inject(DotContentCompareStore);

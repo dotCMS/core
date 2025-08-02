@@ -46,7 +46,6 @@ import {
 } from '../utils';
 @Component({
     selector: 'dot-ema-shell',
-    standalone: true,
     providers: [
         UVEStore,
         DotPageApiService,

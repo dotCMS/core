@@ -5,11 +5,12 @@ import { ActivatedRoute } from '@angular/router';
 
 import { combineLatest, switchMap } from 'rxjs/operators';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 
 @Component({
     selector: 'dot-legacy-addtional-actions',
-    templateUrl: './dot-legacy-template-additional-actions-iframe.component.html'
+    templateUrl: './dot-legacy-template-additional-actions-iframe.component.html',
+    standalone: false
 })
 export class DotLegacyTemplateAdditionalActionsComponent implements OnInit {
     private route = inject(ActivatedRoute);

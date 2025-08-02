@@ -1,4 +1,4 @@
-import { DotIsoCodePipe } from '@dotcms/ui';
+import { DotIsoCodePipe } from './dot-iso-code.pipe';
 
 describe('DotIsoCodePipe', () => {
     let pipe: DotIsoCodePipe;

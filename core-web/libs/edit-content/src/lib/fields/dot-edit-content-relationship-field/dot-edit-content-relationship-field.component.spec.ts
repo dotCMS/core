@@ -15,11 +15,12 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
-import { createFormGroupDirectiveMock } from '@dotcms/edit-content/utils/mocks';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
+
+import { createFormGroupDirectiveMock } from '../../utils/mocks';
 
 const mockField = createFakeRelationshipField({
     relationships: {

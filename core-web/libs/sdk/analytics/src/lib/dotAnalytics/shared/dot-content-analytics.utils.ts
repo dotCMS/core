@@ -172,7 +172,7 @@ export const getSessionId = (): string => {
         sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionDataToStore));
 
         return newSessionId;
-    } catch (error) {
+    } catch {
         // Fallback to simple session ID if storage fails
         return generateSecureId('session_fallback');
     }

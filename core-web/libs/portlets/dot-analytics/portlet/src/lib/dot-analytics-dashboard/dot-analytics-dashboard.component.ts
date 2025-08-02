@@ -45,7 +45,6 @@ import {
  */
 @Component({
     selector: 'lib-dot-analytics-dashboard',
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,

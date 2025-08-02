@@ -65,7 +65,8 @@ import { I18nService } from './services/system/locale/I18n';
                 </div>
             </div>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class ConditionGroupComponent implements OnChanges {
     private loggerService = inject(LoggerService);

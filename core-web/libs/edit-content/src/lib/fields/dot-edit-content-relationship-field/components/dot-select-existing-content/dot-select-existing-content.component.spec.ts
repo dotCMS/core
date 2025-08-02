@@ -114,7 +114,7 @@ describe('DotSelectExistingContentComponent', () => {
             const mockItems = [createFakeContentlet({ inode: '1' })];
 
             spectator.component.$selectionItems.set(mockItems);
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.selectionItems()).toEqual(mockItems);
         });

@@ -10,7 +10,8 @@ import { ColorUtil } from '../../../api/util/ColorUtil';
  * </code>
  */
 @Directive({
-    selector: '[dotMdRipple]'
+    selector: '[dotMdRipple]',
+    standalone: false
 })
 export class DotRippleEffectDirective {
     private host = inject(ElementRef);

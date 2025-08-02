@@ -16,7 +16,6 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
  */
 @Component({
     selector: 'dot-analytics-dashboard-metrics',
-    standalone: true,
     imports: [
         CommonModule,
         CardModule,

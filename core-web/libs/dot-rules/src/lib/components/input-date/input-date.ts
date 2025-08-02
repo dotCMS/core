@@ -27,7 +27,8 @@ import { isEmpty } from '@dotcms/utils';
             [tabindex]="tabIndex || ''"
             hourFormat="12"
             showButtonBar="true"></p-calendar>
-    `
+    `,
+    standalone: false
 })
 export class InputDate implements ControlValueAccessor {
     private _elementRef = inject(ElementRef);

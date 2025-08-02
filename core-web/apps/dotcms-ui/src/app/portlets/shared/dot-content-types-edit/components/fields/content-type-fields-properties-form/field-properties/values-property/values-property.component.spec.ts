@@ -10,16 +10,18 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ValuesPropertyComponent } from './index';
 
+import { DotFieldHelperModule } from '../../../../../../../../view/components/dot-field-helper/dot-field-helper.module';
+
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input() field: NgControl;
@@ -35,7 +37,8 @@ class TestFieldValidationMessageComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input() show;

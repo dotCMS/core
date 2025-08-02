@@ -6,14 +6,13 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
-import {
-    DotHttpErrorManagerService,
-    DotPageStateService,
-    DotRouterService,
-    DotSessionStorageService
-} from '@dotcms/data-access';
 import { HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
+
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 /**
  * With the url return a string of the edit page html

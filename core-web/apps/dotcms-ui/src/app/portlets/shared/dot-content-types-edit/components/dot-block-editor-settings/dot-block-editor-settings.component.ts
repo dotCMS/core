@@ -36,7 +36,8 @@ const BLOCK_EDITOR_ASSETS = [
     selector: 'dot-block-editor-settings',
     templateUrl: './dot-block-editor-settings.component.html',
     styleUrls: ['./dot-block-editor-settings.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnChanges {
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);

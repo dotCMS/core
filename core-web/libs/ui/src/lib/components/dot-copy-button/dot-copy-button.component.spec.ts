@@ -14,8 +14,11 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotCopyButtonComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotCopyButtonComponent } from './dot-copy-button.component';
+
+import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
 
 const messageServiceMock = new MockDotMessageService({
     Copy: 'Copy',

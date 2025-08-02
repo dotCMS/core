@@ -309,7 +309,8 @@ describe('LockFeature', () => {
 
             // Trigger the effect by updating the contentlet
             store.updateContent(mockContentlet);
-            tick();
+
+            spectator.flushEffects();
 
             expect(dotContentletService.canLock).toHaveBeenCalledWith('123');
             expect(store.canLock()).toBe(true);

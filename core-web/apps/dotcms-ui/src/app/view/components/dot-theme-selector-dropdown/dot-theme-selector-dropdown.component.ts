@@ -5,10 +5,10 @@ import {
     Component,
     ElementRef,
     forwardRef,
+    inject,
     OnDestroy,
     OnInit,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -16,11 +16,12 @@ import { LazyLoadEvent } from 'primeng/api';
 
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
-import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
+
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',
@@ -32,7 +33,8 @@ import { DotTheme } from '@dotcms/dotcms-models';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotThemeSelectorDropdownComponent
     implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit
@@ -78,7 +80,7 @@ export class DotThemeSelectorDropdownComponent
             try {
                 this.currentSiteIdentifier = this.siteService.currentSite.identifier;
                 clearInterval(interval);
-            } catch (e) {
+            } catch {
                 /* */
             }
         }, 0);

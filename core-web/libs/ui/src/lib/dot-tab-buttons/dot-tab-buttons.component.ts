@@ -23,7 +23,6 @@ interface TabButtonOptions {
  */
 @Component({
     selector: 'dot-tab-buttons',
-    standalone: true,
     imports: [ButtonModule, NgClass, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tab-buttons.component.html',
     styleUrls: ['./dot-tab-buttons.component.scss']

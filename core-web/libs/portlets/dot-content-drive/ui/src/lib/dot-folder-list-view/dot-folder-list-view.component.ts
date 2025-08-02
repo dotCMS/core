@@ -18,7 +18,6 @@ import { HEADER_COLUMNS } from '../shared/constants';
 
 @Component({
     selector: 'dot-folder-list-view',
-    standalone: true,
     imports: [
         TableModule,
         DotRelativeDatePipe,

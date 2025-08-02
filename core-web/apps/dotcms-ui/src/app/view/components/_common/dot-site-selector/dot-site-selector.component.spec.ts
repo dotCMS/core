@@ -50,7 +50,8 @@ const sites: Site[] = [
     selector: 'dot-test-host-component',
     template: `
         <dot-site-selector [id]="id" [cssClass]="cssClass"></dot-site-selector>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() id: string;

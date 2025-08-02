@@ -25,7 +25,6 @@ interface ContentSidebarInformation {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-information',
-    standalone: true,
     imports: [
         CommonModule,
         RouterLink,

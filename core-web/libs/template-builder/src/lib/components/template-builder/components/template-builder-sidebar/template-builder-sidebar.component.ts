@@ -11,7 +11,6 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
 
 @Component({
     selector: 'dotcms-template-builder-sidebar',
-    standalone: true,
     imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipe],
     templateUrl: './template-builder-sidebar.component.html',
     styleUrls: ['./template-builder-sidebar.component.scss']

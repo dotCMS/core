@@ -41,7 +41,8 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
                 </div>
             </div>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class RuleActionComponent implements OnInit {
     private loggerService = inject(LoggerService);

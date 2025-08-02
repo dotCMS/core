@@ -22,7 +22,6 @@ import { Orientation } from '../../../../../store/models';
 
 @Component({
     selector: 'dot-uve-device-selector',
-    standalone: true,
     imports: [ButtonModule, TooltipModule, DotMessagePipe, NgClass, MenuModule],
     templateUrl: './dot-uve-device-selector.component.html',
     styleUrl: './dot-uve-device-selector.component.scss',

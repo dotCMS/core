@@ -1,12 +1,13 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
-import { DotESContentService, ESOrderDirection } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 
 import { DotFavoritePageService } from './dot-favorite-page.service';
+
+import { DotESContentService, ESOrderDirection } from '../dot-es-content/dot-es-content.service';
 
 describe('DotFavoritePageService', () => {
     let injector: TestBed;

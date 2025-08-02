@@ -37,7 +37,8 @@ import { KeyCode } from '../services/util/key-util';
                     class="ui-button-secondary"></button>
             </p-footer>
         </p-dialog>
-    `
+    `,
+    standalone: false
 })
 export class ModalDialogComponent {
     @Input() okEnabled = true;

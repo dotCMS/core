@@ -22,7 +22,8 @@ enum FieldStatus {
 @Component({
     selector: 'dot-apps-configuration-detail-form',
     templateUrl: './dot-apps-configuration-detail-form.component.html',
-    styleUrls: ['./dot-apps-configuration-detail-form.component.scss']
+    styleUrls: ['./dot-apps-configuration-detail-form.component.scss'],
+    standalone: false
 })
 export class DotAppsConfigurationDetailFormComponent implements OnInit {
     #dotMessageService = inject(DotMessageService);

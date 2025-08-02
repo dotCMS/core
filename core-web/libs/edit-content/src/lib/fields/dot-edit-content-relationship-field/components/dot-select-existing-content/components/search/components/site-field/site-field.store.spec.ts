@@ -7,13 +7,14 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+
+import { PEER_PAGE_LIMIT, SiteFieldStore } from './site-field.store';
+
 import {
     TreeNodeItem,
     TreeNodeSelectItem
-} from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
-
-import { PEER_PAGE_LIMIT, SiteFieldStore } from './site-field.store';
+} from '../../../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '../../../../../../../../services/dot-edit-content.service';
 
 describe('SiteFieldStore', () => {
     let store: InstanceType<typeof SiteFieldStore>;

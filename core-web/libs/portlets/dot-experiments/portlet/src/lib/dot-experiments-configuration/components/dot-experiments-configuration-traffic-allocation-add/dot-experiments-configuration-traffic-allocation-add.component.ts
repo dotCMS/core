@@ -27,11 +27,9 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-traffic-allocation-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
-
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,

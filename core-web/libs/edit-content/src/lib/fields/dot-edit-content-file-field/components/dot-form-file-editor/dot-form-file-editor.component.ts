@@ -17,10 +17,11 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 
-import { UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
+
+import { UploadedFile } from '../../../../models/dot-edit-content-file.model';
 
 type DialogProps = {
     allowFileNameEdit: boolean;
@@ -30,7 +31,6 @@ type DialogProps = {
 
 @Component({
     selector: 'dot-form-file-editor',
-    standalone: true,
     imports: [
         DotMessagePipe,
         ReactiveFormsModule,
@@ -101,21 +101,16 @@ export class DotFormFileEditorComponent implements OnInit {
             }
         });
 
-        effect(
-            () => {
-                const isDone = this.store.isDone();
-                const uploadedFile = this.store.uploadedFile();
+        effect(() => {
+            const isDone = this.store.isDone();
+            const uploadedFile = this.store.uploadedFile();
 
-                untracked(() => {
-                    if (isDone) {
-                        this.#dialogRef.close(uploadedFile);
-                    }
-                });
-            },
-            {
-                allowSignalWrites: true
-            }
-        );
+            untracked(() => {
+                if (isDone) {
+                    this.#dialogRef.close(uploadedFile);
+                }
+            });
+        });
 
         this.nameField.valueChanges
             .pipe(

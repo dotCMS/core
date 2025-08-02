@@ -45,7 +45,6 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
  */
 @Component({
     selector: 'dot-experiments-inplace-edit-text',
-    standalone: true,
     imports: [
         NgIf,
         ReactiveFormsModule,

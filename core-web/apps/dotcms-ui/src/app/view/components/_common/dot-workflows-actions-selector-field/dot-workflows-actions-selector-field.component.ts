@@ -36,7 +36,8 @@ interface DropdownEvent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit

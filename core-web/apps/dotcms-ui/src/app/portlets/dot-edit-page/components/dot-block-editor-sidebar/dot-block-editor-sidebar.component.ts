@@ -27,7 +27,8 @@ export interface BlockEditorInput {
 @Component({
     selector: 'dot-block-editor-sidebar',
     templateUrl: './dot-block-editor-sidebar.component.html',
-    styleUrls: ['./dot-block-editor-sidebar.component.scss']
+    styleUrls: ['./dot-block-editor-sidebar.component.scss'],
+    standalone: false
 })
 export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);

@@ -2,9 +2,10 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { portletHaveLicenseResolver } from '@dotcms/ui';
-import { DotContentTypeEditResolver } from '@portlets/shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
 
 import { DotFormBuilderComponent } from './dot-form-builder.component';
+
+import { DotContentTypeEditResolver } from '../shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
 
 const routes: Routes = [
     {
@@ -19,7 +20,7 @@ const routes: Routes = [
     },
     {
         loadChildren: () =>
-            import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(
+            import('../shared/dot-content-types-edit/dot-content-types-edit.module').then(
                 (m) => m.DotContentTypesEditModule
             ),
         path: 'create',
@@ -34,7 +35,7 @@ const routes: Routes = [
     },
     {
         loadChildren: () =>
-            import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(
+            import('../shared/dot-content-types-edit/dot-content-types-edit.module').then(
                 (m) => m.DotContentTypesEditModule
             ),
         path: 'edit/:id',

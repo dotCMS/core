@@ -13,7 +13,8 @@ import { DotEditPageInfoSeoComponent } from './dot-edit-page-info-seo.component'
             [title]="title"
             [url]="url"
             [apiLink]="apiLink"></dot-edit-page-info-seo>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     title = 'A title';

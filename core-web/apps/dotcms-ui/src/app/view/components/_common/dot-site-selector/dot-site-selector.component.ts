@@ -38,7 +38,8 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component';
     selector: 'dot-site-selector',
     styleUrls: ['./dot-site-selector.component.scss'],
     templateUrl: 'dot-site-selector.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     #globalStore = inject(GlobalStore);

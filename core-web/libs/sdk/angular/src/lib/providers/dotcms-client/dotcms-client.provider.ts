@@ -1,4 +1,4 @@
-import { makeEnvironmentProviders, EnvironmentProviders } from '@angular/core';
+import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 
 import { createDotCMSClient } from '@dotcms/client';
 import { DotCMSClientConfig } from '@dotcms/types';
@@ -21,7 +21,7 @@ type ClientType = ReturnType<typeof createDotCMSClient>;
  * dotcmsClient = inject(DotCMSClient);
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging, @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging, @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
 export interface DotCMSClient extends ClientType {}
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

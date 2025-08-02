@@ -15,18 +15,19 @@ import {
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
-    templateUrl: 'iframe.component.html'
+    templateUrl: 'iframe.component.html',
+    standalone: false
 })
 export class IframeComponent implements OnInit, OnDestroy {
     private dotIframeService = inject(DotIframeService);

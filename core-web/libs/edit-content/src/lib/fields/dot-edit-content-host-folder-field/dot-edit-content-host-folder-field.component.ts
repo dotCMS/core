@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,8 +28,7 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
  */
 @Component({
     selector: 'dot-edit-content-host-folder-field',
-    standalone: true,
-    imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe, NgClass],
+    imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [

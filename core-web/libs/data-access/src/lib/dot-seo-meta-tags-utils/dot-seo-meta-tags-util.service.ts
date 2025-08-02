@@ -4,7 +4,6 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import {
     DotCMSTempFile,
     IMG_NOT_FOUND_KEY,
@@ -19,6 +18,9 @@ import {
     SeoMetaTagsResult,
     SeoRulesResult
 } from '@dotcms/dotcms-models';
+
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotUploadService } from '../dot-upload/dot-upload.service';
 
 @Injectable()
 export class DotSeoMetaTagsUtilService {

@@ -36,7 +36,6 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
 
 @Component({
     selector: 'dot-block-editor-sidebar',
-    standalone: true,
     templateUrl: './dot-block-editor-sidebar.component.html',
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
     imports: [

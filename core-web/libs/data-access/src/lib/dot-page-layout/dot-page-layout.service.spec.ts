@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockDotLayout } from '@dotcms/utils-testing';
 
 import { DotPageLayoutService } from './dot-page-layout.service';
+
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 describe('DotPageLayoutService', () => {
     let injector: TestBed;

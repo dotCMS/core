@@ -10,6 +10,7 @@ import { DotKeyValueComponent } from '@dotcms/ui';
 import { DotEditContentKeyValueComponent } from './dot-edit-content-key-value.component';
 
 @Component({
+    standalone: false,
     selector: 'dot-custom-host',
     template: ''
 })

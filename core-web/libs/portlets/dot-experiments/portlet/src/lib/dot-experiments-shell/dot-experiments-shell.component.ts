@@ -9,7 +9,6 @@ import { DotExperimentsService } from '@dotcms/data-access';
 import { DotExperimentsStore } from './store/dot-experiments.store';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-shell',
     imports: [RouterModule, ToastModule],
     providers: [MessageService, DotExperimentsStore, DotExperimentsService],

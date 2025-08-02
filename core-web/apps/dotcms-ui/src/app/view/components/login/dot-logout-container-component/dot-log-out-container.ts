@@ -8,7 +8,8 @@ import { LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-log-out-container',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotLogOutContainerComponent {
     constructor() {

@@ -40,7 +40,6 @@ import {
  */
 @Component({
     selector: 'dot-analytics-dashboard-filters',
-    standalone: true,
     imports: [CommonModule, CalendarModule, DropdownModule, FormsModule, DotMessagePipe],
     templateUrl: './dot-analytics-dashboard-filters.component.html',
     styleUrls: ['./dot-analytics-dashboard-filters.component.scss'],
@@ -68,17 +67,14 @@ export class DotAnalyticsDashboardFiltersComponent {
         this.initFromUrl();
 
         // Clear custom date range when switching away from custom
-        effect(
-            () => {
-                const selectedTimeRange = this.$selectedTimeRange();
+        effect(() => {
+            const selectedTimeRange = this.$selectedTimeRange();
 
-                // Clear custom date range when switching to non-custom options
-                if (selectedTimeRange !== CUSTOM_TIME_RANGE) {
-                    this.$customDateRange.set(null);
-                }
-            },
-            { allowSignalWrites: true }
-        );
+            // Clear custom date range when switching to non-custom options
+            if (selectedTimeRange !== CUSTOM_TIME_RANGE) {
+                this.$customDateRange.set(null);
+            }
+        });
 
         // Synchronize filter changes to URL (avoiding infinite loop)
         effect(() => {

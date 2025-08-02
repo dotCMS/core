@@ -4,7 +4,8 @@ import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { DotContainerEntity } from '@dotcms/dotcms-models';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 
 @Injectable()
 export class DotContainerEditResolver implements Resolve<DotContainerEntity> {

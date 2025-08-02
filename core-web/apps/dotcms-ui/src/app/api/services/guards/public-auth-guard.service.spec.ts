@@ -4,11 +4,12 @@ import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 
 import { PublicAuthGuardService } from './public-auth-guard.service';
+
+import { DOTTestBed } from '../../../test/dot-test-bed';
 
 @Injectable()
 class MockLoginService {

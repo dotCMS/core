@@ -7,7 +7,6 @@ import { SelectItem } from 'primeng/api';
 
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import {
     DotMessageService,
     DotPushPublishFilter,
@@ -15,6 +14,8 @@ import {
 } from '@dotcms/data-access';
 import { DotDialogActions } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
+
+import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 enum DownloadType {
     UNPUBLISH = 'unpublish',
@@ -26,7 +27,8 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
 @Component({
     selector: 'dot-download-bundle-dialog',
     templateUrl: './dot-download-bundle-dialog.component.html',
-    styleUrls: ['./dot-download-bundle-dialog.component.scss']
+    styleUrls: ['./dot-download-bundle-dialog.component.scss'],
+    standalone: false
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     fb = inject(UntypedFormBuilder);

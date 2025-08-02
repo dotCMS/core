@@ -5,9 +5,10 @@ import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/r
 
 import { map } from 'rxjs/operators';
 
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
+
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 @Injectable()
 export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {

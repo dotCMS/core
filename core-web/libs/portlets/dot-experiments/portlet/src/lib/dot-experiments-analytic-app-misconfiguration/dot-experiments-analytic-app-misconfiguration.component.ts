@@ -12,7 +12,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 
 @Component({
     selector: 'dot-experiments-analytic-app-misconfiguration',
-    standalone: true,
     imports: [
         DotExperimentsUiHeaderComponent,
         DotMessagePipe,

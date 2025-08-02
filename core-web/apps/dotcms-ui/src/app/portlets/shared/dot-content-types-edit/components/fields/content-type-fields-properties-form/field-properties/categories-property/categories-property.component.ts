@@ -17,7 +17,8 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     providers: [PaginatorService],
     selector: 'dot-categories-property',
-    templateUrl: './categories-property.component.html'
+    templateUrl: './categories-property.component.html',
+    standalone: false
 })
 export class CategoriesPropertyComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

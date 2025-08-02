@@ -4,7 +4,6 @@ import { Injectable, inject } from '@angular/core';
 
 import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
 
-import { DotCurrentUserService, DotFormatDateService } from '@dotcms/data-access';
 import { ApiRoot, CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
@@ -12,6 +11,9 @@ import {
     DotEnvironment,
     DotPushPublishData
 } from '@dotcms/dotcms-models';
+
+import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
 
 /**
  * Provide method to push publish to content types

@@ -81,7 +81,8 @@ import {
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);

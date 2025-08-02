@@ -9,8 +9,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -51,10 +49,14 @@ import {
     DotMessageDisplayServiceMock,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+
+import { DotCustomEventHandlerService } from './dot-custom-event-handler.service';
+
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotMenuService } from '../dot-menu.service';
+import { DotUiColorsService } from '../dot-ui-colors/dot-ui-colors.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;

@@ -5,7 +5,8 @@ import { FloatingMenuPlugin, FloatingMenuPluginProps } from '@tiptap/extension-f
 
 @Directive({
     // eslint-disable-next-line @angular-eslint/directive-selector
-    selector: 'tiptap-floating-menu[editor], [tiptapFloatingMenu][editor]'
+    selector: 'tiptap-floating-menu[editor], [tiptapFloatingMenu][editor]',
+    standalone: false
 })
 export class FloatingMenuDirective implements OnInit, OnDestroy {
     @Input() pluginKey: FloatingMenuPluginProps['pluginKey'] = 'NgxTiptapFloatingMenu';

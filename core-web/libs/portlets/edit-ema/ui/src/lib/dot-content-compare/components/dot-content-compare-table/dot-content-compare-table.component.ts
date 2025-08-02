@@ -8,7 +8,8 @@ import { DotContentCompareTableData } from '../../store/dot-content-compare.stor
 @Component({
     selector: 'dot-content-compare-table',
     templateUrl: './dot-content-compare-table.component.html',
-    styleUrls: ['./dot-content-compare-table.component.scss']
+    styleUrls: ['./dot-content-compare-table.component.scss'],
+    standalone: false
 })
 export class DotContentCompareTableComponent {
     private dotMessageService = inject(DotMessageService);

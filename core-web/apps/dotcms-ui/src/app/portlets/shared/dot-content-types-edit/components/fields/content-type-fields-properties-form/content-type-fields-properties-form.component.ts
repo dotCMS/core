@@ -24,7 +24,8 @@ import { FieldPropertyService } from '../service';
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     styleUrls: ['./content-type-fields-properties-form.component.scss'],
-    templateUrl: './content-type-fields-properties-form.component.html'
+    templateUrl: './content-type-fields-properties-form.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

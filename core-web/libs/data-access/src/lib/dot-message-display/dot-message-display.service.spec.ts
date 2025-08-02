@@ -3,12 +3,13 @@ import { describe, it, expect } from '@jest/globals';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotMessage, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotMessageDisplayService } from './dot-message-display.service';
+
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 describe('DotMessageDisplayService', () => {
     const mockDotcmsEventsService: DotcmsEventsServiceMock = new DotcmsEventsServiceMock();

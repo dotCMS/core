@@ -48,7 +48,6 @@ interface SearchResultItem {
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
     styleUrls: ['./dot-link-editor-popover.component.scss'],
-    standalone: true,
     imports: [
         FormsModule,
         ListboxModule,

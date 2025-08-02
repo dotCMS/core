@@ -3,7 +3,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 @Component({
     selector: 'dot-pages-card',
     templateUrl: './dot-pages-card.component.html',
-    styleUrls: ['./dot-pages-card.component.scss']
+    styleUrls: ['./dot-pages-card.component.scss'],
+    standalone: false
 })
 export class DotPagesCardComponent {
     @Input() actionButtonId: string;

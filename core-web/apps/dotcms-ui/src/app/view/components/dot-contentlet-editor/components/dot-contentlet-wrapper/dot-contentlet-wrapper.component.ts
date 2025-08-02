@@ -32,7 +32,8 @@ interface DotCSMSavePageEvent {
 @Component({
     selector: 'dot-contentlet-wrapper',
     templateUrl: './dot-contentlet-wrapper.component.html',
-    styleUrls: ['./dot-contentlet-wrapper.component.scss']
+    styleUrls: ['./dot-contentlet-wrapper.component.scss'],
+    standalone: false
 })
 export class DotContentletWrapperComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);

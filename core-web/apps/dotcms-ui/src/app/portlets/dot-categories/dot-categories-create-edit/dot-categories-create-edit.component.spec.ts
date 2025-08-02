@@ -3,13 +3,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 
+import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
 import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 
-@Pipe({ name: 'dm' })
+@Pipe({
+    name: 'dm',
+    standalone: false
+})
 class MockPipe implements PipeTransform {
     transform(value: string): string {
         return value;

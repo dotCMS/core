@@ -6,14 +6,14 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
 

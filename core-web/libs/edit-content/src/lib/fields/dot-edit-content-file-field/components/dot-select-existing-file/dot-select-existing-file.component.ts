@@ -10,12 +10,13 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
-import { DotFileFieldUploadService } from '@dotcms/edit-content/fields/dot-edit-content-file-field/services/upload-file/upload-file.service';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
 import { SelectExisingFileStore } from './store/select-existing-file.store';
+
+import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 
 type DialogData = {
     mimeTypes: string[];
@@ -23,7 +24,6 @@ type DialogData = {
 
 @Component({
     selector: 'dot-select-existing-file',
-    standalone: true,
     imports: [DotSideBarComponent, DotDataViewComponent, ButtonModule, DotMessagePipe],
     templateUrl: './dot-select-existing-file.component.html',
     styleUrls: ['./dot-select-existing-file.component.scss'],

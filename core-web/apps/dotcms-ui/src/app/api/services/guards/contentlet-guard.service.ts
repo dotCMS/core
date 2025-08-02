@@ -5,8 +5,9 @@ import { ActivatedRouteSnapshot, CanActivateChild, RouterStateSnapshot } from '@
 
 import { map } from 'rxjs/operators';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotContentTypeService } from '@dotcms/data-access';
+
+import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 
 /**
  * Route Guard that checks if a User have access to the specified Content Type.

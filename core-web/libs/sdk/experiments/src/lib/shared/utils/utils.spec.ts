@@ -39,7 +39,7 @@ describe('Utility ', () => {
             try {
                 getDataExperimentAttributes(location);
                 expect('This should not be reached if an error is thrown').toBeNull();
-            } catch (error) {
+            } catch {
                 expect(() => getDataExperimentAttributes(location)).toThrow(
                     'You need specify the `data-experiment-api-key`'
                 );

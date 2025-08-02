@@ -8,12 +8,12 @@ import { computed, inject } from '@angular/core';
 import { tap, exhaustMap, switchMap, map, filter } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
 import {
     TreeNodeItem,
     TreeNodeSelectItem
 } from '../../../models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
 export const PEER_PAGE_LIMIT = 7000;
 

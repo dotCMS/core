@@ -47,7 +47,8 @@ export interface DotActionsMenuEventParams {
     providers: [DotPageStore],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
-    templateUrl: './dot-pages.component.html'
+    templateUrl: './dot-pages.component.html',
+    standalone: false
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private dotRouterService = inject(DotRouterService);

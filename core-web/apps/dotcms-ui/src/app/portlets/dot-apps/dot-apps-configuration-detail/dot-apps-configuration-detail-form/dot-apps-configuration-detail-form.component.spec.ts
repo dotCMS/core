@@ -126,7 +126,8 @@ const formState = {
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `
+    `,
+    standalone: false
 })
 class MockMarkdownComponent {}
 

@@ -7,10 +7,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 
-import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
-import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -26,6 +22,11 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DotAutocompleteTagsComponent } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
+import { DotAutocompleteTagsModule } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
+import { SiteSelectorFieldModule } from '../../_common/dot-site-selector-field/dot-site-selector-field.module';
 
 const FROM_INITIAL_VALUE = {
     hostFolder: mockSites[0].identifier,

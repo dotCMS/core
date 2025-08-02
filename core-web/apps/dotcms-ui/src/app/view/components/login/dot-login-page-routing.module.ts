@@ -5,21 +5,19 @@ const routes: Routes = [
     {
         path: 'forgotPassword',
         loadChildren: () =>
-            import('@components/login/forgot-password-component/forgot-password.module').then(
+            import('./forgot-password-component/forgot-password.module').then(
                 (m) => m.ForgotPasswordModule
             )
     },
     {
         path: 'login',
         loadChildren: () =>
-            import('@components/login/dot-login-component/dot-login.module').then(
-                (m) => m.DotLoginModule
-            )
+            import('./dot-login-component/dot-login.module').then((m) => m.DotLoginModule)
     },
     {
         path: 'resetPassword/:token',
         loadChildren: () =>
-            import('@components/login/reset-password-component/reset-password.module').then(
+            import('./reset-password-component/reset-password.module').then(
                 (m) => m.ResetPasswordModule
             )
     },

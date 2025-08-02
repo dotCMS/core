@@ -24,7 +24,6 @@ import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.componen
     styleUrls: ['./dot-toolbar-user.component.scss'],
     templateUrl: './dot-toolbar-user.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         CommonModule,
         DotGravatarDirective,

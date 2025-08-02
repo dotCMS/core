@@ -14,7 +14,6 @@ const INVALID_DATE_MSG = 'Invalid date';
 export function _isValid(date: string, formatPattern: string) {
     return isValid(parse(date, formatPattern, new Date()));
 }
-
 @Injectable({
     providedIn: 'root'
 })
@@ -62,10 +61,10 @@ export class DotFormatDateService {
 
         try {
             localeLang = await import(`date-fns/locale/${langCode}-${countryCode}/index.js`);
-        } catch (error) {
+        } catch {
             try {
                 localeLang = await import(`date-fns/locale/${langCode}/index.js`);
-            } catch (error) {
+            } catch {
                 localeLang = await import(`date-fns/locale/en-US`);
             }
         }

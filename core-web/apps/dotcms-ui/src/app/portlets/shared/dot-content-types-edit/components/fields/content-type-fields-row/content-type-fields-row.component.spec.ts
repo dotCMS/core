@@ -7,7 +7,6 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -19,6 +18,7 @@ import {
 
 import { ContentTypeFieldsRowComponent } from '.';
 
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { FieldDragDropService } from '../service';
 
 const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
@@ -46,7 +46,8 @@ mockFieldRow.columns[1].fields = [
 
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldDraggableItemComponent {
     @Input()
@@ -59,7 +60,8 @@ class TestContentTypeFieldDraggableItemComponent {
 
 @Component({
     selector: 'dot-test-host',
-    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>'
+    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>',
+    standalone: false
 })
 class DotTestHostComponent {
     data: DotCMSContentTypeLayoutRow;

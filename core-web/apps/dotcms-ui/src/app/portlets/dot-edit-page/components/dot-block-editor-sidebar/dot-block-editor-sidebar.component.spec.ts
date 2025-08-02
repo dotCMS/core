@@ -22,7 +22,8 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
-import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+
+import { DotBlockEditorSidebarComponent } from './dot-block-editor-sidebar.component';
 
 const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
@@ -71,7 +72,8 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
 
 @Component({
     selector: 'dot-block-editor',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class MockDotBlockEditorComponent {
     @Input() languageId = 1;

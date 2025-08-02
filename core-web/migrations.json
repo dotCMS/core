@@ -1,0 +1,11 @@
+{
+    "migrations": [
+        {
+            "description": "Replace several properties with a single props object",
+            "version": "19.0.0-rc.0",
+            "factory": "./19_0_0-rc_0-props/index",
+            "package": "@ngrx/signals",
+            "name": "19_0_0-rc_0-props"
+        }
+    ]
+}

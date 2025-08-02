@@ -8,14 +8,16 @@ import { DotPortletBaseComponent } from './dot-portlet-base.component';
 @Component({
     template: `
         <dot-portlet-base><div>Hello World</div></dot-portlet-base>
-    `
+    `,
+    standalone: false
 })
 class DefaultTestHostComponent {}
 
 @Component({
     template: `
         <dot-portlet-base [boxed]="false"><div>Hello World</div></dot-portlet-base>
-    `
+    `,
+    standalone: false
 })
 class DefaultTestHostUnboxedComponent {}
 
@@ -25,13 +27,15 @@ class DefaultTestHostUnboxedComponent {}
             <dot-portlet-toolbar></dot-portlet-toolbar>
             <div>Hello World</div>
         </dot-portlet-base>
-    `
+    `,
+    standalone: false
 })
 class DefaultTestHostWithToolbarComponent {}
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class DotToolbarMockComponent {}
 

@@ -16,7 +16,6 @@ import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
  */
 @Component({
     imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterModule, BreadcrumbModule],
-    standalone: true,
     selector: 'dot-collapse-breadcrumb',
     templateUrl: './dot-collapse-breadcrumb.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

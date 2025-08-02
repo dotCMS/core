@@ -14,7 +14,8 @@ import { DotCMSContentTypeField, DotDynamicFieldComponent } from '@dotcms/dotcms
 import { FieldPropertyService } from '../../../service';
 
 @Directive({
-    selector: '[dotDynamicFieldProperty]'
+    selector: '[dotDynamicFieldProperty]',
+    standalone: false
 })
 export class DynamicFieldPropertyDirective implements OnChanges {
     private viewContainerRef = inject(ViewContainerRef);

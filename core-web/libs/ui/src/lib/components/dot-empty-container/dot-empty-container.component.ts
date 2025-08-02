@@ -16,7 +16,6 @@ export interface PrincipalConfiguration {
  */
 @Component({
     selector: 'dot-empty-container',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-empty-container.component.html',
     styleUrls: ['./dot-empty-container.component.scss'],

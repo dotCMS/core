@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -6,20 +6,6 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import {
-    DotAlertConfirmService,
-    DotContentletLockerService,
-    DotESContentService,
-    DotFavoritePageService,
-    DotHttpErrorManagerService,
-    DotLicenseService,
-    DotMessageDisplayService,
-    DotPageRenderService,
-    DotRouterService,
-    DotSessionStorageService,
-    DotFormatDateService,
-    DotExperimentsService
-} from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
@@ -46,6 +32,19 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotPageStateService } from './dot-page-state.service';
+
+import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotContentletLockerService } from '../dot-contentlet-locker/dot-contentlet-locker.service';
+import { DotESContentService } from '../dot-es-content/dot-es-content.service';
+import { DotExperimentsService } from '../dot-experiments/dot-experiments.service';
+import { DotFavoritePageService } from '../dot-favorite-page/dot-favorite-page.service';
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotLicenseService } from '../dot-license/dot-license.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotPageRenderService } from '../dot-page-render/dot-page-render.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet, runningExperiment = null) => {

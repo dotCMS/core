@@ -3,14 +3,12 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
-import {
-    DotFolder,
-    DotPageSelectorItem
-} from '@components/_common/dot-page-selector/models/dot-page-selector.models';
 import { CoreWebService, Site } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPageAsset, DotPageSelectorService } from './dot-page-selector.service';
+
+import { DotFolder, DotPageSelectorItem } from '../models/dot-page-selector.models';
 
 const MAX_RESULTS_SIZE = 20;
 
