@@ -139,6 +139,7 @@ import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -4888,5 +4889,39 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
 
     }
+
+    String[] unboundESQueries = {
+        "Here%20is%20an%20example%20of%20an%20unbound%20es%20query%20with%20many%20clauses",
+        "+catchall:*",
+        "+host:* title:*",
+        "+live:true",
+        "+working:true",
+    };
+
+    String[] boundESQueries = {
+        "+host:SYSTEM_HOST",
+        "+catchall:doesThisWork",
+        "+live:false +contentType:anyContentType",
+    };
+
+
+    @Test
+    public void test_validateESQueryProperlyBound() throws Exception{
+    ESContentletAPIImpl impl = new ESContentletAPIImpl();
+
+        for(String query: unboundESQueries){
+            assertFalse(impl.validateESQueryProperlyBound(query));
+        }
+        for(String query: boundESQueries){
+            assertTrue(impl.validateESQueryProperlyBound(query));
+        }
+
+
+
+    }
+
+
+
+
 
 }
