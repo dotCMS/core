@@ -751,8 +751,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // Our legacy code passes in raw sql conditions. We need to detect
     // and handle those
     final SearchCondition searchCondition = new SearchCondition(search);
-    if (SQLUtil.sanitizeSortBy(orderBy).isEmpty()) {
-    	orderBy = ContentTypeFactory.MOD_DATE_COLUMN;
+    
+    // SECURITY: Sanitize orderBy parameter to prevent SQL injection
+    String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+    if (sanitizedOrderBy.isEmpty()) {
+    	sanitizedOrderBy = ContentTypeFactory.MOD_DATE_COLUMN;
     }
 
     // SECURITY: Validate and prepare site parameters
@@ -799,7 +802,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         sqlBuilder.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
     }
     
-    sqlBuilder.append(" order by ").append(orderBy);
+    sqlBuilder.append(" order by ").append(sanitizedOrderBy);
     
     // SECURITY: Execute with proper parameter binding
     dc.setSQL(sqlBuilder.toString());
@@ -1135,20 +1138,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
     
     /**
-     * SECURITY: Gets allowed column names from Config with safe defaults
-     * Config property: contenttype.safe.condition.allowed.columns
+     * SECURITY: Gets allowed column names from the consolidated whitelist in SQLUtil
+     * Uses the same whitelist as other SQL operations for consistency
      */
     private static Set<String> getAllowedColumns() {
-      String configColumns = Config.getStringProperty(
-          "contenttype.safe.condition.allowed.columns", 
-          // Safe defaults based on structure table columns
-          "inode,name,description,default_structure,page_detail,structuretype,system,fixed," +
-          "velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var," +
-          "mod_date,icon,sort_order,marked_for_deletion"
-      );
-      
-      return Arrays.stream(configColumns.split(","))
-          .map(String::trim)
+      // SECURITY: Use consolidated whitelist from SQLUtil for consistency
+      return Arrays.stream(SQLUtil.getConditionalColumnsWhitelist().toArray(new String[0]))
           .map(String::toLowerCase)
           .collect(Collectors.toSet());
     }
@@ -1235,25 +1230,40 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
     
     /**
-     * SECURITY: Detects dangerous SQL patterns that should never be allowed
+     * SECURITY: Detects obvious SQL injection attack patterns to prevent them from reaching the database
+     * Focuses on clear attack indicators rather than individual keywords that might be legitimate parameter values
      */
     private static boolean containsDangerousPatterns(String condition) {
       String lower = condition.toLowerCase();
       
-      // Check for dangerous SQL keywords
-      String[] dangerousKeywords = {
-          "union", "select", "insert", "update", "delete", "drop", "create", "alter", 
-          "exec", "execute", "--", "/*", "*/", ";", "xp_", "sp_", "@@"
-      };
-      
-      for (String keyword : dangerousKeywords) {
-        if (lower.contains(keyword)) {
-          return true;
-        }
+      // Check for SQL comment patterns (almost never legitimate in condition values)
+      if (lower.contains("--") || lower.contains("/*") || lower.contains("*/")) {
+        return true;
       }
       
-      // Check for suspicious character combinations
-      if (lower.contains("''") || lower.contains("char") || lower.contains("+")) {
+      // Check for statement terminators (should never appear in condition values)
+      if (lower.contains(";")) {
+        return true;
+      }
+      
+      // Check for obvious multi-statement injection patterns
+      if (lower.matches(".*\\b(union|select|insert|update|delete|drop|create|alter)\\s+(select|from|into|table|database)\\b.*")) {
+        return true;
+      }
+      
+      // Check for system function calls (pg_, xp_, sp_, @@)
+      if (lower.contains("pg_") || lower.contains("xp_") || lower.contains("sp_") || 
+          lower.contains("@@")) {
+        return true;
+      }
+      
+      // Check for obvious string escape attempts
+      if (lower.contains("''") || lower.matches(".*\\bchar\\s*\\(.*")) {
+        return true;
+      }
+      
+      // Check for obvious concatenation attempts
+      if (lower.matches(".*\\|\\|.*") || lower.matches(".*\\bconcat\\s*\\(.*")) {
         return true;
       }
       

@@ -135,6 +135,22 @@ public class SQLUtil {
 			"description","category_","sort_order","hostName", "keywords",
 			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
 			"parent_relation_name","inode");
+
+	/**
+	 * SECURITY: Whitelist of allowed conditional column names for WHERE clauses
+	 * Based on structure table columns and other legitimate database columns
+	 * This prevents SQL injection in conditional statements
+	 */
+	private final static Set<String> CONDITIONAL_COLUMNS_WHITELIST = ImmutableSet.of(
+			// Structure table columns
+			"inode", "name", "description", "default_structure", "page_detail", "structuretype", 
+			"system", "fixed", "velocity_var_name", "url_map_pattern", "host", "folder", 
+			"expire_date_var", "publish_date_var", "mod_date", "icon", "sort_order", "marked_for_deletion",
+			// Common additional columns
+			"title", "upper(title)", "filename", "moddate", "tagname", "pageurl",
+			"category_name", "category_velocity_var_name", "status", "assigned_to",
+			"category_key", "page_url", "keywords", "upper(name)"
+	);
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<>();
@@ -466,6 +482,16 @@ public class SQLUtil {
 	 */
 	public static Set<String> getEvilSqlConditionWords() {
 		return EVIL_SQL_CONDITION_WORDS;
+	}
+
+	/**
+	 * Returns the whitelist of allowed conditional column names for WHERE clauses.
+	 * This prevents SQL injection in conditional statements by restricting columns to a safe set.
+	 *
+	 * @return The set of allowed conditional column names.
+	 */
+	public static Set<String> getConditionalColumnsWhitelist() {
+		return CONDITIONAL_COLUMNS_WHITELIST;
 	}
 
 	/**
