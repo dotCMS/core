@@ -1,6 +1,6 @@
 import { consola } from 'consola';
 
-import { DotHttpClient, HttpError, DotCMSGraphQLError, DotGraphQLApiResponse } from '@dotcms/types';
+import { DotHttpClient, DotCMSGraphQLError, DotGraphQLApiResponse } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -284,11 +284,7 @@ export async function fetchGraphQL({
         method: 'POST',
         body,
         headers
-    });
-
-    if (response instanceof HttpError) {
-        throw new Error(response.message);
-    }
+    } as RequestInit);
 
     // Check for GraphQL errors in the response
     if (response.errors && response.errors.length > 0) {
