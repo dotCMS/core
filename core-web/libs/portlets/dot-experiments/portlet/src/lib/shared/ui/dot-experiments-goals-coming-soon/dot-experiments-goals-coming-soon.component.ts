@@ -7,7 +7,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-goals-coming-soon',
-    standalone: true,
     imports: [CommonModule, CardModule, DotMessagePipe],
     templateUrl: './dot-experiments-goals-coming-soon.component.html',
     styleUrls: ['./dot-experiments-goals-coming-soon.component.scss'],

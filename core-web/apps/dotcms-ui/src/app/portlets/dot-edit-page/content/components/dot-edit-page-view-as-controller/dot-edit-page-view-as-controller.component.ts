@@ -23,7 +23,8 @@ import {
 @Component({
     selector: 'dot-edit-page-view-as-controller',
     templateUrl: './dot-edit-page-view-as-controller.component.html',
-    styleUrls: ['./dot-edit-page-view-as-controller.component.scss']
+    styleUrls: ['./dot-edit-page-view-as-controller.component.scss'],
+    standalone: false
 })
 export class DotEditPageViewAsControllerComponent implements OnInit {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

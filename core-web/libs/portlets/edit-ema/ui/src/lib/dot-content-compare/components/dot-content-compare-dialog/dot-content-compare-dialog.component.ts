@@ -12,7 +12,8 @@ const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 @Component({
     selector: 'dot-content-compare-dialog',
     templateUrl: './dot-content-compare-dialog.component.html',
-    styleUrls: ['./dot-content-compare-dialog.component.scss']
+    styleUrls: ['./dot-content-compare-dialog.component.scss'],
+    standalone: false
 })
 export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
     private dotEventsService = inject(DotEventsService);

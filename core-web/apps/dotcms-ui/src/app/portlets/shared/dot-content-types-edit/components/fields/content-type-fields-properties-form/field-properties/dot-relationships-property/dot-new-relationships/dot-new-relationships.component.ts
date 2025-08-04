@@ -20,7 +20,8 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
     providers: [PaginatorService],
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',
-    styleUrls: ['./dot-new-relationships.component.scss']
+    styleUrls: ['./dot-new-relationships.component.scss'],
+    standalone: false
 })
 export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     paginatorService = inject(PaginatorService);

@@ -32,7 +32,6 @@ const SKELETON_WIDTH_MAP = {
  */
 @Component({
     selector: 'dot-analytics-dashboard-table',
-    standalone: true,
     imports: [
         CommonModule,
         CardModule,

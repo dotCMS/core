@@ -17,7 +17,8 @@ import { DotMessage } from '@dotcms/dotcms-models';
     providers: [MessageService],
     selector: 'dot-message-display',
     styleUrls: ['dot-message-display.component.scss'],
-    templateUrl: 'dot-message-display.component.html'
+    templateUrl: 'dot-message-display.component.html',
+    standalone: false
 })
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
     private dotMessageDisplayService = inject(DotMessageDisplayService);

@@ -1,9 +1,9 @@
 import { Meta, StoryObj, moduleMetadata, componentWrapperDecorator } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { DotCrumbtrailComponent } from '@components/dot-crumbtrail/dot-crumbtrail.component';
-import { DotCrumbtrailModule } from '@components/dot-crumbtrail/dot-crumbtrail.module';
-import { DotCrumbtrailService } from '@components/dot-crumbtrail/service/dot-crumbtrail.service';
+import { DotCrumbtrailComponent } from '../../../app/view/components/dot-crumbtrail/dot-crumbtrail.component';
+import { DotCrumbtrailModule } from '../../../app/view/components/dot-crumbtrail/dot-crumbtrail.module';
+import { DotCrumbtrailService } from '../../../app/view/components/dot-crumbtrail/service/dot-crumbtrail.service';
 
 const meta: Meta<DotCrumbtrailComponent> = {
     title: 'DotCMS/Menu/DotCrumbtrail',

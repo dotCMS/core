@@ -21,11 +21,11 @@ export class DotFormColumnComponent {
             : null;
     }
 
-    private getField(field: DotCMSContentTypeField): JSX.Element {
+    private getField(field: DotCMSContentTypeField) {
         return shouldShowField(field, this.fieldsToShow) ? this.getFieldTag(field) : null;
     }
 
-    private getFieldTag(field: DotCMSContentTypeField): JSX.Element {
+    private getFieldTag(field: DotCMSContentTypeField) {
         return fieldMap[field.fieldType] ? fieldMap[field.fieldType](field) : '';
     }
 }

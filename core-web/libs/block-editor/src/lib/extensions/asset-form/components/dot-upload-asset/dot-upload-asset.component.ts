@@ -33,7 +33,8 @@ export enum STATUS {
     templateUrl: './dot-upload-asset.component.html',
     styleUrls: ['./dot-upload-asset.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    animations: [shakeAnimation]
+    animations: [shakeAnimation],
+    standalone: false
 })
 export class DotUploadAssetComponent implements OnDestroy {
     @Output()

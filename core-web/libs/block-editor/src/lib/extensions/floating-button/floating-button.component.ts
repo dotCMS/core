@@ -5,7 +5,8 @@ import { FileStatus } from '@dotcms/data-access';
 @Component({
     selector: 'dot-floating-button',
     templateUrl: './floating-button.component.html',
-    styleUrls: ['./floating-button.component.scss']
+    styleUrls: ['./floating-button.component.scss'],
+    standalone: false
 })
 export class FloatingButtonComponent {
     @Input() label = '';

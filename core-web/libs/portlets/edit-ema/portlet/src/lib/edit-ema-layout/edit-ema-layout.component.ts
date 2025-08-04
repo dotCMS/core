@@ -35,7 +35,6 @@ export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-ema-layout',
-    standalone: true,
     imports: [CommonModule, TemplateBuilderModule],
     templateUrl: './edit-ema-layout.component.html',
     styleUrls: ['./edit-ema-layout.component.scss'],
