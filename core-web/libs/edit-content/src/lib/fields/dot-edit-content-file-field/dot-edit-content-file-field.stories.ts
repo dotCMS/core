@@ -13,14 +13,14 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { UIMessage } from '@dotcms/edit-content/models/dot-edit-content-file.model';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
 import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.component';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 import { MessageServiceMock } from './utils/mocks';
 
+import { UIMessage } from '../../models/dot-edit-content-file.model';
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     BINARY_FIELD_MOCK,
     FILE_FIELD_MOCK,

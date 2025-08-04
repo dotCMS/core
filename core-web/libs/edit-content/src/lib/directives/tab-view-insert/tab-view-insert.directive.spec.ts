@@ -11,6 +11,7 @@ import { MockResizeObserver } from '../../utils/mocks';
 
 // Mock component
 @Component({
+    standalone: false,
     template: `
         <p-tabView>
             <ng-template

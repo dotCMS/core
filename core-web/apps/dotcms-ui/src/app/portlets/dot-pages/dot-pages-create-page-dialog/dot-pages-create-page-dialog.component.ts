@@ -20,7 +20,6 @@ import { DotAutofocusDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui
 
 @Component({
     selector: 'dot-pages-create-page-dialog',
-    standalone: true,
     imports: [CommonModule, DotAutofocusDirective, DotIconModule, DotMessagePipe, InputTextModule],
     providers: [
         DotESContentService,

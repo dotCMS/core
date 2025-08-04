@@ -28,7 +28,8 @@ interface DotContainerContent extends DotCMSContentType {
     ],
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
-    styleUrls: ['./dot-container-code.component.scss']
+    styleUrls: ['./dot-container-code.component.scss'],
+    standalone: false
 })
 export class DotContentEditorComponent implements OnInit, OnChanges {
     private dialogService = inject(DialogService);

@@ -18,13 +18,13 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createCustomFieldConfig } from '@dotcms/edit-content';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
 import { CustomFieldConfig } from '../../models/dot-edit-content-custom-field.interface';
 import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../models/dot-edit-content-field.constant';
+import { createCustomFieldConfig } from '../../utils/functions.util';
 import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
 
 /**
@@ -33,7 +33,6 @@ import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
  */
 @Component({
     selector: 'dot-edit-content-custom-field',
-    standalone: true,
     imports: [
         SafeUrlPipe,
         DotIconModule,

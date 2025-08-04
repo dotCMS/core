@@ -11,14 +11,15 @@ import {
 } from '@angular/core';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
-import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
 
+import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
-    styleUrls: ['./dot-nav-item.component.scss']
+    styleUrls: ['./dot-nav-item.component.scss'],
+    standalone: false
 })
 export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);
