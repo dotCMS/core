@@ -1,9 +1,9 @@
-import { HttpClient, HttpClientRequestOptions } from '@dotcms/types';
+import { DotHttpClient, HttpClientRequestOptions } from '@dotcms/types';
 
 /**
  * Default HTTP client implementation using the native fetch API.
  */
-export class FetchHttpClient implements HttpClient {
+export class FetchHttpClient implements DotHttpClient {
   async request<T = unknown>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await fetch(url, options);
 

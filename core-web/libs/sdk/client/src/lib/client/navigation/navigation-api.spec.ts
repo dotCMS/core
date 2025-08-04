@@ -1,4 +1,4 @@
-import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
+import { DotCMSClientConfig, DotRequestOptions } from '@dotcms/types';
 
 import { NavigationClient } from './navigation-api';
 
@@ -12,7 +12,7 @@ describe('NavigationClient', () => {
         siteId: 'test-site'
     };
 
-    const requestOptions: RequestOptions = {
+    const requestOptions: DotRequestOptions = {
         headers: {
             Authorization: 'Bearer test-token'
         }
@@ -138,7 +138,7 @@ describe('NavigationClient', () => {
     });
 
     it('should merge additional request options', async () => {
-        const optionsWithCache: RequestOptions = {
+        const optionsWithCache: DotRequestOptions = {
             ...requestOptions,
             cache: 'no-cache',
             credentials: 'include'

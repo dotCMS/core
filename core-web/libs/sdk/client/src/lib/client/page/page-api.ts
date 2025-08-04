@@ -4,8 +4,8 @@ import {
     DotCMSPageResponse,
     DotCMSExtendedPageResponse,
     DotCMSComposedPageResponse,
-    HttpClient,
-    RequestOptions,
+    DotHttpClient,
+    DotRequestOptions,
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
@@ -21,7 +21,7 @@ export class PageClient {
      * Request options including authorization headers.
      * @private
      */
-    private requestOptions: RequestOptions;
+    private requestOptions: DotRequestOptions;
 
     /**
      * Site ID for page requests.
@@ -39,14 +39,14 @@ export class PageClient {
      * HTTP client for making requests.
      * @private
      */
-    private httpClient: HttpClient;
+    private httpClient: DotHttpClient;
 
     /**
      * Creates a new PageClient instance.
      *
      * @param {DotCMSClientConfig} config - Configuration options for the DotCMS client
-     * @param {RequestOptions} requestOptions - Options for fetch requests including authorization headers
-     * @param {HttpClient} httpClient - HTTP client for making requests
+     * @param {DotRequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @param {DotHttpClient} httpClient - HTTP client for making requests
      * @example
      * ```typescript
      * const pageClient = new PageClient(
@@ -64,7 +64,7 @@ export class PageClient {
      * );
      * ```
      */
-    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions, httpClient: HttpClient) {
+    constructor(config: DotCMSClientConfig, requestOptions: DotRequestOptions, httpClient: DotHttpClient) {
         this.requestOptions = requestOptions;
         this.siteId = config.siteId || '';
         this.dotcmsUrl = config.dotcmsUrl;

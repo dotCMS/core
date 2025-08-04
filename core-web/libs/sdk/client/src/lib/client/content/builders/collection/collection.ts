@@ -1,4 +1,4 @@
-import { HttpClient } from '@dotcms/types';
+import { DotHttpClient } from '@dotcms/types';
 
 import { CONTENT_API_URL } from '../../shared/const';
 import {
@@ -38,17 +38,17 @@ export class CollectionBuilder<T = unknown> {
 
     #serverUrl: string;
     #requestOptions: ClientOptions;
-    #httpClient: HttpClient;
+    #httpClient: DotHttpClient;
 
     /**
      * Creates an instance of CollectionBuilder.
      * @param {ClientOptions} requestOptions Options for the client request.
      * @param {string} serverUrl The server URL.
      * @param {string} contentType The content type to fetch.
-     * @param {HttpClient} httpClient HTTP client for making requests.
+     * @param {DotHttpClient} httpClient HTTP client for making requests.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string, httpClient: HttpClient) {
+    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string, httpClient: DotHttpClient) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
         this.#contentType = contentType;

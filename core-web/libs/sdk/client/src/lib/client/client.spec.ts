@@ -1,4 +1,4 @@
-import { DotCMSClientConfig, RequestOptions, HttpClient } from '@dotcms/types';
+import { DotCMSClientConfig, DotRequestOptions, DotHttpClient } from '@dotcms/types';
 
 import { createDotCMSClient } from './client';
 import { Content } from './content/content-api';
@@ -36,7 +36,7 @@ describe('DotCMSClient', () => {
     it('should initialize sub-clients with correct parameters', () => {
         createDotCMSClient(validConfig);
 
-        const expectedRequestOptions: RequestOptions = {
+        const expectedRequestOptions: DotRequestOptions = {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: 'Bearer test-token'
@@ -152,7 +152,7 @@ describe('DotCMSClient', () => {
 
 describe('DotCMSClient with custom HTTP client', () => {
   it('should use custom HTTP client when provided', async () => {
-    const mockHttpClient: HttpClient = {
+    const mockHttpClient: DotHttpClient = {
       request: jest.fn().mockResolvedValue({ entity: [{ name: 'test' }] })
     };
 

@@ -31,7 +31,7 @@ export interface HttpErrorDetails {
  * Interface for HTTP client implementations.
  * Allows the SDK to work with different HTTP libraries.
  */
-export interface HttpClient {
+export interface DotHttpClient {
   /**
    * Makes an HTTP request.
    *
@@ -40,7 +40,7 @@ export interface HttpClient {
    * @returns A promise that resolves with the response data
    * @throws {HttpError} When the request fails (non-2xx status or network error)
    */
-  request<T = unknown>(url: string, options?: RequestOptions): Promise<T>;
+  request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
 }
 
 /**
@@ -146,7 +146,7 @@ export interface DotCMSPageRequestParams {
 /**
  * Options for configuring fetch requests, excluding body and method properties.
  */
-export type RequestOptions = RequestInit;
+export type DotRequestOptions = RequestInit;
 
 /**
  * Configuration options for the DotCMS client.
@@ -174,14 +174,14 @@ export interface DotCMSClientConfig {
      * Additional options for the fetch request.
      * @example `{ headers: { 'Content-Type': 'application/json' } }`
      */
-    requestOptions?: RequestOptions;
+    requestOptions?: DotRequestOptions;
 
     /**
      * Custom HTTP client implementation.
      * If not provided, the default FetchHttpClient will be used.
      * @example `{ httpClient: new AxiosHttpClient() }`
      */
-    httpClient?: HttpClient;
+    httpClient?: DotHttpClient;
 }
 
 /**

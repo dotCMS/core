@@ -1,6 +1,6 @@
 import { consola } from 'consola';
 
-import { HttpClient, HttpClientRequestOptions, HttpError, DotCMSGraphQLError, DotGraphQLApiResponse } from '@dotcms/types';
+import { DotHttpClient, HttpClientRequestOptions, HttpError, DotCMSGraphQLError, DotGraphQLApiResponse } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -262,7 +262,7 @@ export function mapContentResponse(
  * @param {Object} options - Options for the fetch request
  * @param {string} options.body - GraphQL query string
  * @param {Record<string, string>} options.headers - HTTP headers for the request
- * @param {HttpClient} options.httpClient - HTTP client for making requests
+ * @param {DotHttpClient} options.httpClient - HTTP client for making requests
  * @returns {Promise<DotGraphQLApiResponse>} Parsed JSON response from the GraphQL API
  * @throws {Error} If the HTTP response is not successful or GraphQL errors are present
  */
@@ -275,7 +275,7 @@ export async function fetchGraphQL({
     baseURL: string;
     body: string;
     headers?: HeadersInit;
-    httpClient: HttpClient;
+    httpClient: DotHttpClient;
 }): Promise<DotGraphQLApiResponse> {
     const url = new URL(baseURL);
     url.pathname = '/api/v1/graphql';

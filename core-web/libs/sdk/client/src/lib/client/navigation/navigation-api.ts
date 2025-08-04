@@ -1,17 +1,17 @@
 import {
     DotCMSClientConfig,
     DotCMSNavigationRequestParams,
-    RequestOptions,
+    DotRequestOptions,
     DotCMSNavigationItem,
-    HttpClient
+    DotHttpClient
 } from '@dotcms/types';
 
 export class NavigationClient {
-    private requestOptions: RequestOptions;
+    private requestOptions: DotRequestOptions;
     private BASE_URL: string;
-    private httpClient: HttpClient;
+    private httpClient: DotHttpClient;
 
-    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions, httpClient: HttpClient) {
+    constructor(config: DotCMSClientConfig, requestOptions: DotRequestOptions, httpClient: DotHttpClient) {
         this.requestOptions = requestOptions;
         this.BASE_URL = `${config?.dotcmsUrl}/api/v1/nav`;
         this.httpClient = httpClient;

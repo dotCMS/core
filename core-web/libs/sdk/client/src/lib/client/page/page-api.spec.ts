@@ -6,7 +6,7 @@ import * as consola from 'consola';
 import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
-    RequestOptions,
+    DotRequestOptions,
     DotCMSGraphQLPageResponse,
     DotCMSPageResponse
 } from '@dotcms/types';
@@ -25,7 +25,7 @@ describe('PageClient', () => {
         siteId: 'test-site'
     };
 
-    const requestOptions: RequestOptions = {
+    const requestOptions: DotRequestOptions = {
         headers: {
             Authorization: 'Bearer test-token'
         }

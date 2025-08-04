@@ -1,6 +1,6 @@
 import { consola } from 'consola';
 
-import { DotCMSClientConfig, RequestOptions, HttpClient } from '@dotcms/types';
+import { DotCMSClientConfig, DotRequestOptions, DotHttpClient } from '@dotcms/types';
 
 import { FetchHttpClient } from './adapters/fetch-http-client';
 import { Content } from './content/content-api';
@@ -38,8 +38,8 @@ const defaultConfig: DotCMSClientConfig = {
  */
 class DotCMSClient {
     private config: DotCMSClientConfig;
-    private requestOptions!: RequestOptions;
-    private httpClient: HttpClient;
+    private requestOptions!: DotRequestOptions;
+    private httpClient: DotHttpClient;
 
     /**
      * Client for content-related operations.
@@ -79,7 +79,7 @@ class DotCMSClient {
      * @param config - The client configuration
      * @returns Request options with authorization headers
      */
-    private createAuthenticatedRequestOptions(config: DotCMSClientConfig): RequestOptions {
+    private createAuthenticatedRequestOptions(config: DotCMSClientConfig): DotRequestOptions {
         return {
             ...config.requestOptions,
             headers: {
