@@ -1,10 +1,23 @@
 import { BaseHttpClient, DotRequestOptions } from '@dotcms/types';
 
+
 /**
- * Default HTTP client implementation using the native fetch API.
- * Extends BaseHttpClient to ensure consistent error handling.
+ * HTTP client implementation using the Fetch API.
+ *
+ * Extends BaseHttpClient to provide a standard interface for making HTTP requests.
+ * Handles JSON and non-JSON responses, error parsing, and network error handling.
  */
 export class FetchHttpClient extends BaseHttpClient {
+  /**
+   * Sends an HTTP request using the Fetch API.
+   *
+   * @template T - The expected response type.
+   * @param {string} url - The URL to send the request to.
+   * @param {DotRequestOptions} [options] - Optional fetch options (headers, method, body, etc).
+   * @returns {Promise<T>} - Resolves with the parsed response or throws an error.
+   * @throws {HttpError} - Throws if the response is not ok (status 4xx/5xx).
+   * @throws {NetworkError} - Throws if a network error occurs.
+   */
   async request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T> {
     try {
       const response = await fetch(url, options);
