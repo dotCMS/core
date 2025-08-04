@@ -4,6 +4,7 @@
 
 <p-treeSelect
     (onNodeSelect)="store.chooseNode($event)"
+    (onNodeUnselect)="store.clearSelection()"
     (onNodeExpand)="store.loadChildren($event)"
     [formControl]="siteControl"
     data-testid="site-field-search"

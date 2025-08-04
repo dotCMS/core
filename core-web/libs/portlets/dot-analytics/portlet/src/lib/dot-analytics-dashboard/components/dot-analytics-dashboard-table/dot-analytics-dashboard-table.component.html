@@ -2,7 +2,7 @@
 @let isErrorState = $isError();
 @let isEmptyState = $isEmpty();
 @let tableData = $data();
-@let tableTitle = $title();
+
 @let columnsConfig = $columnConfigs();
 @let hasData = tableData && tableData.length > 0;
 @let showRealTable = !isLoadingState && !isErrorState && !isEmptyState && hasData;
@@ -11,7 +11,7 @@
     <div class="table-loading-state h-full">
         <p-card class="h-full">
             <ng-template pTemplate="header">
-                <h3 class="table-title">{{ tableTitle | dm }}</h3>
+                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
             </ng-template>
             <!-- Loading State -->
             <div class="flex flex-column gap-3 h-full">
@@ -63,7 +63,7 @@
     <div class="table-error-state h-full">
         <p-card class="h-full">
             <ng-template pTemplate="header">
-                <h3 class="table-title">{{ tableTitle | dm }}</h3>
+                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
             </ng-template>
             <!-- Error State -->
             <div class="flex flex-column gap-3 h-full">
@@ -77,7 +77,7 @@
     <div class="table-empty-state h-full" data-testid="empty-table-state">
         <p-card class="h-full">
             <ng-template pTemplate="header">
-                <h3 class="table-title">{{ tableTitle | dm }}</h3>
+                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
             </ng-template>
             <!-- Empty State -->
             <div class="flex flex-column gap-3 h-full">
@@ -90,7 +90,7 @@
 } @else if (showRealTable) {
     <p-card class="h-full">
         <ng-template pTemplate="header">
-            <h3 class="table-title">{{ tableTitle | dm }}</h3>
+            <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
         </ng-template>
         <!-- Loaded State -->
         <div class="flex flex-column gap-3 h-full">

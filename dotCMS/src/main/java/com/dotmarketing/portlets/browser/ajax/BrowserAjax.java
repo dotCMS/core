@@ -10,6 +10,8 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -290,7 +292,8 @@ public class BrowserAjax {
 		List<Map<String, Object>> listToReturn;
         try {
         	// Only show folders if the parent is not a Site
-        	final boolean showFolders = APILocator.getHostAPI().find(parentId,APILocator.systemUser(),false) == null;
+			Optional<ShortyId> folderShorty = APILocator.getShortyAPI().getShorty(parentId);
+        	final boolean showFolders = folderShorty.isPresent() && folderShorty.get().subType == ShortType.FOLDER;
 			// By default, return Shorty IDs for folder items
 			final boolean showShorties = Boolean.TRUE;
 			final Map<String, Object> resultsMap = getFolderContent(parentId, 0, -1, "", null, null, showArchived,
