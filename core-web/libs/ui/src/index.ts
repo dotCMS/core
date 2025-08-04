@@ -66,3 +66,6 @@ export * from './lib/resolvers/dot-portlet-have-license.resolver';
 export * from './lib/resolvers/dot-push-publish-enviroments-resolver.service';
 // Validators
 export * from './lib/validators/dotValidators';
+
+// Animations
+export * from './lib/animations/fade.animations';

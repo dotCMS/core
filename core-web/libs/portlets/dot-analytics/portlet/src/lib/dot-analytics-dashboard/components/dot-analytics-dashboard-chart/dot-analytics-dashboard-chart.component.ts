@@ -124,6 +124,11 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index' as const,
+                intersect: false,
+                axis: 'x' as const
+            },
             plugins: {
                 legend: {
                     display: chartType !== 'line', // Hide legend for line charts
@@ -133,14 +138,16 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
                         pointStyle: 'circle',
                         boxWidth: 10,
                         boxHeight: 10,
-                        padding: shouldUseSideLegend ? 15 : 20, // Slightly less padding for side legend
+                        padding: shouldUseSideLegend ? 15 : 20,
                         font: {
-                            size: shouldUseSideLegend ? 11 : 12 // Slightly smaller font for mobile
+                            size: shouldUseSideLegend ? 11 : 12
                         },
                         ...this.getChartTypeSpecificLegendOptions(chartType)
                     }
                 },
                 tooltip: {
+                    mode: 'index' as const,
+                    intersect: false,
                     callbacks: {
                         label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
                             this.getTooltipLabel(context),
@@ -148,7 +155,20 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
                             this.getTooltipTitle(context)
                     }
                 }
-            }
+            },
+            scales:
+                chartType === 'line'
+                    ? {
+                          x: {
+                              ticks: {
+                                  maxTicksLimit: isMobile ? 6 : 10,
+                                  autoSkip: true,
+                                  maxRotation: 45,
+                                  minRotation: 0
+                              }
+                          }
+                      }
+                    : undefined
         };
 
         // Merge with custom options

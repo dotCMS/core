@@ -297,6 +297,169 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.datasets[0].data).toEqual([0]);
             });
+
+            describe('Date and Time Formatting', () => {
+                it('should format labels as hours when all data is from the same day', () => {
+                    // Use local dates to ensure same day detection works properly
+                    const baseDate = new Date('2023-12-01T12:00:00'); // Local time, midday
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() - 3 * 60 * 60 * 1000
+                            ).toISOString(), // 9 AM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 2 * 60 * 60 * 1000
+                            ).toISOString(), // 2 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '150'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 6 * 60 * 60 * 1000
+                            ).toISOString(), // 6 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '200'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // Should format as hours (AM/PM format) when all data is from same day
+                    expect(result.labels).toHaveLength(3);
+                    // Check that labels contain time format with AM/PM
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                    });
+                });
+
+                it('should format labels as short date when data spans multiple days', () => {
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T12:00:00',
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-02T12:00:00',
+                            'request.createdAt.day': '2023-12-02',
+                            'request.totalRequest': '150'
+                        },
+                        {
+                            'request.createdAt': '2023-12-03T12:00:00',
+                            'request.createdAt.day': '2023-12-03',
+                            'request.totalRequest': '200'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // Should format as day + weekday when data spans multiple days
+                    expect(result.labels).toHaveLength(3);
+                    // Check that labels contain date format (day number + weekday)
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/);
+                    });
+                });
+
+                it('should handle same day detection correctly for edge cases', () => {
+                    // Test data with same date but different times - use local time
+                    const baseDate = new Date('2023-12-01T12:00:00');
+                    const sameDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() - 12 * 60 * 60 * 1000
+                            ).toISOString(), // Midnight
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '50'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 11 * 60 * 60 * 1000
+                            ).toISOString(), // 11 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '75'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(sameDayData);
+
+                    // Should still format as hours since it's the same day
+                    expect(result.labels).toHaveLength(2);
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                    });
+                });
+
+                it('should handle data spanning just two different days', () => {
+                    const twoDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T22:00:00',
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-02T02:00:00',
+                            'request.createdAt.day': '2023-12-02',
+                            'request.totalRequest': '120'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(twoDayData);
+
+                    // Should format as dates since data spans multiple days
+                    expect(result.labels).toHaveLength(2);
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/);
+                    });
+                });
+
+                it('should maintain chronological order when formatting hours', () => {
+                    const baseDate = new Date('2023-12-01T12:00:00');
+                    const unorderedSameDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 3 * 60 * 60 * 1000
+                            ).toISOString(), // 3 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '200'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() - 3 * 60 * 60 * 1000
+                            ).toISOString(), // 9 AM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 9 * 60 * 60 * 1000
+                            ).toISOString(), // 9 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '150'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(unorderedSameDayData);
+
+                    // Should be sorted chronologically: 9 AM, 3 PM, 9 PM
+                    expect(result.datasets[0].data).toEqual([100, 200, 150]);
+                    expect(result.labels).toHaveLength(3);
+
+                    // Verify hour format is used
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                    });
+                });
+            });
         });
 
         describe('transformDeviceBrowsersData', () => {
