@@ -71,3 +71,6 @@ export * from './lib/resolvers/dot-analytics-health-check.resolver.service';
 
 // Validators
 export * from './lib/validators/dotValidators';
+
+// Animations
+export * from './lib/animations/fade.animations';
