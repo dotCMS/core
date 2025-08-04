@@ -44,23 +44,6 @@ export interface DotHttpClient {
 }
 
 /**
- * Request options for HTTP client implementations.
- * Extends the native RequestInit interface to be compatible with fetch.
- */
-export interface HttpClientRequestOptions extends Omit<RequestInit, 'body' | 'method'> {
-    /**
-     * The HTTP method to use for the request.
-     */
-    method?: string;
-
-    /**
-     * The request body.
-     */
-    body?: string | FormData | URLSearchParams | ReadableStream | null;
-  }
-
-
-/**
  * The GraphQL parameters for a page request.
  * @public
  */
@@ -146,7 +129,7 @@ export interface DotCMSPageRequestParams {
 /**
  * Options for configuring fetch requests, excluding body and method properties.
  */
-export type DotRequestOptions = RequestInit;
+export type DotRequestOptions = Omit<RequestInit, 'body' | 'method'>;
 
 /**
  * Configuration options for the DotCMS client.

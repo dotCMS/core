@@ -1,6 +1,6 @@
 import { consola } from 'consola';
 
-import { DotHttpClient, HttpClientRequestOptions, HttpError, DotCMSGraphQLError, DotGraphQLApiResponse } from '@dotcms/types';
+import { DotHttpClient, HttpError, DotCMSGraphQLError, DotGraphQLApiResponse } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
