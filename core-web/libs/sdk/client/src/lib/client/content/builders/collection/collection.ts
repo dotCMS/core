@@ -340,9 +340,7 @@ export class CollectionBuilder<T = unknown> {
             if (typeof onfulfilled === 'function') {
                 const result = onfulfilled(formattedResponse);
 
-                if (result !== undefined) {
-                    return result;
-                }
+                return result;
             }
 
             return formattedResponse;
