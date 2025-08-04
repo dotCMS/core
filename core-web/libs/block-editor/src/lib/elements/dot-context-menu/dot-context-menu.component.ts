@@ -2,10 +2,12 @@ import { marked } from 'marked';
 import { DOMSerializer } from 'prosemirror-model';
 import TurndownService from 'turndown';
 
+import { CommonModule } from '@angular/common';
 import { Component, computed, input, OnInit, signal } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ContextMenuModule } from 'primeng/contextmenu';
+import { RippleModule } from 'primeng/ripple';
 
 import { Editor } from '@tiptap/core';
 
@@ -14,7 +16,7 @@ import { Editor } from '@tiptap/core';
     templateUrl: './dot-context-menu.component.html',
     styleUrls: ['./dot-context-menu.component.scss'],
     standalone: true,
-    imports: [ContextMenuModule]
+    imports: [CommonModule, ContextMenuModule, RippleModule]
 })
 export class DotContextMenuComponent implements OnInit {
     editor = input.required<Editor>();
@@ -22,16 +24,40 @@ export class DotContextMenuComponent implements OnInit {
     protected readonly items = signal<MenuItem[]>([]);
     protected readonly target = computed(() => this.editor().view.dom.parentElement);
 
+    private get isMac(): boolean {
+        return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    }
+
+    private getShortcut(mac: string, pc: string): string {
+        return this.isMac ? mac : pc;
+    }
+
     ngOnInit() {
         this.items.set([
-            { label: 'Cut', icon: '', command: () => this.cutCommand() },
-            { label: 'Copy', icon: '', command: () => this.copyCommand() },
-            { label: 'Copy as Markdown', icon: '', command: () => this.copyAsMarkdownCommand() },
-            { label: 'Paste', icon: '', command: () => this.pasteCommand() },
+            {
+                label: 'Cut',
+                command: () => this.cutCommand(),
+                shortcut: this.getShortcut('⌘X', 'Ctrl+X')
+            },
+            {
+                label: 'Copy',
+                command: () => this.copyCommand(),
+                shortcut: this.getShortcut('⌘C', 'Ctrl+C')
+            },
+            {
+                label: 'Copy as Markdown',
+                command: () => this.copyAsMarkdownCommand()
+            },
+            { separator: true },
+            {
+                label: 'Paste',
+                command: () => this.pasteCommand(),
+                shortcut: this.getShortcut('⌘V', 'Ctrl+V')
+            },
             {
                 label: 'Paste from Markdown',
-                icon: '',
-                command: () => this.pasteFromMarkdownCommand()
+                command: () => this.pasteFromMarkdownCommand(),
+                shortcut: this.getShortcut('⌘⇧V', 'Ctrl+Shift+V')
             }
         ]);
     }
