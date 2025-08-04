@@ -401,7 +401,6 @@ describe('DotUveToolbarComponent', () => {
 
             it('should have attrs', () => {
                 expect(button.attributes).toEqual({
-                    class: 'ng-star-inserted',
                     icon: 'pi pi-copy',
                     'data-testId': 'uve-toolbar-copy-url',
                     'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
@@ -589,6 +588,18 @@ describe('DotUveToolbarComponent', () => {
             store = spectator.inject(UVEStore, true);
         });
 
+        it('should have a dot-ema-bookmarks component', () => {
+            expect(spectator.query(DotEmaBookmarksComponent)).toBeTruthy();
+        });
+
+        it('should have a copy url button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-copy-url'))).toBeTruthy();
+        });
+
+        it('should have a api link button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
+        });
+
         it('should have a device selector', () => {
             expect(spectator.query(byTestId('uve-toolbar-device-selector'))).toBeTruthy();
         });
@@ -628,6 +639,18 @@ describe('DotUveToolbarComponent', () => {
             });
 
             store = spectator.inject(UVEStore, true);
+        });
+
+        it('should have a dot-ema-bookmarks component', () => {
+            expect(spectator.query(DotEmaBookmarksComponent)).toBeTruthy();
+        });
+
+        it('should have a copy url button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-copy-url'))).toBeTruthy();
+        });
+
+        it('should have a api link button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
         });
 
         it('should have a device selector', () => {
