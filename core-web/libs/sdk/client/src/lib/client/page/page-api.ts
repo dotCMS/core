@@ -168,10 +168,6 @@ export class PageClient {
                 httpClient: this.httpClient
             });
 
-            if (!response.data) {
-                throw new Error('No data received from GraphQL response');
-            }
-
             const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {

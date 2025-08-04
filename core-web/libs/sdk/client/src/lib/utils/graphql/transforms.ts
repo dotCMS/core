@@ -24,7 +24,7 @@ import {
  */
 export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | null => {
     // If there is no page, return null
-    if (!page) {
+    if (!page || (typeof page === 'object' && Object.keys(page).length === 0)) {
         return null;
     }
 
