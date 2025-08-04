@@ -65,28 +65,44 @@ public class CSSPreProcessServlet extends HttpServlet {
             final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             final String originalURI = req.getRequestURI();
             
-            // Handle requests with dotsass=true parameter
+            // Check for dotsass=true query parameter to enable SASS compilation for non-standard URLs
             final String dotsassParam = req.getParameter("dotsass");
             final boolean isDotsassParam = dotsassParam != null && dotsassParam.equalsIgnoreCase("true");
             
             String fileUri;
             if (isDotsassParam) {
-                // Handle requests with dotsass=true parameter
+                // Process request with dotsass=true parameter
                 Logger.debug(this, "Processing request with dotsass=true parameter");
                 
-                if (originalURI.startsWith("/dA/")) {
-                    // Handle /dA/{identifier} pattern
-                    fileUri = handleShortyRequest(req, resp, originalURI, currentSite, live, user);
+                // Check if this is a forwarded request from ShortyServlet
+                String shortyURI = (String) req.getAttribute("originalShortyURI");
+                String uriToProcess = originalURI;
+                if (shortyURI != null) {
+                    Logger.info(this, "Received forwarded request from ShortyServlet with original URI: " + shortyURI);
+                    // Use the original URI from the ShortyServlet
+                    uriToProcess = shortyURI;
+                }
+                
+                if (uriToProcess.startsWith("/dA/")) {
+                    // Handle shorty ID pattern: /dA/{identifier}?dotsass=true
+                    fileUri = handleShortyRequest(req, resp, uriToProcess, currentSite, live, user);
                     if (fileUri == null) {
                         // Error already handled in handleShortyRequest
                         return;
                     }
                 } else {
-                    // Direct file path
-                    fileUri = originalURI;
+                    // Handle direct file path pattern: /path/to/file.scss?dotsass=true
+                    // For direct SCSS files with dotsass=true, we need to ensure they're processed as SASS
+                    if (uriToProcess.toLowerCase().endsWith(".scss")) {
+                        Logger.debug(this, "Processing direct SCSS file with dotsass=true: " + uriToProcess);
+                        fileUri = uriToProcess;
+                    } else {
+                        // For other files, just use the original URI
+                        fileUri = originalURI;
+                    }
                 }
             } else {
-                // Regular SASS preprocessing request
+                // Handle standard SASS preprocessing request: /DOTSASS/path/to/file.scss
                 fileUri = originalURI.replace(SassPreProcessServlet.DOTSASS_PREFIX,"");
             }
             
@@ -369,6 +385,8 @@ public class CSSPreProcessServlet extends HttpServlet {
     
     /**
      * Handles requests with shorty IDs like /dA/{identifier}?dotsass=true
+     * This method extracts the shorty ID from the URI, resolves it to a file asset,
+     * verifies it's a SCSS file, and returns the file path for SASS compilation.
      * 
      * @param req The HTTP request
      * @param resp The HTTP response
