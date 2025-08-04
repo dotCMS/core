@@ -13,7 +13,7 @@ export interface TotalPageViewsEntity {
  * Unique visitors entity response
  */
 export interface UniqueVisitorsEntity {
-    'request.totalUser': string;
+    'request.totalUsers': string;
 }
 
 /**
@@ -100,6 +100,7 @@ export interface ChartDataset {
     borderWidth?: number;
     fill?: boolean;
     tension?: number;
+    cubicInterpolationMode?: 'default' | 'monotone';
 }
 
 /**
@@ -126,7 +127,7 @@ export interface TablePageData {
 const AnalyticsKeys = {
     TOTAL_REQUEST: 'request.totalRequest',
     TOTAL_SESSIONS: 'request.totalSessions',
-    TOTAL_USER: 'request.totalUser',
+    TOTAL_USERS: 'request.totalUsers',
     PAGE_TITLE: 'request.pageTitle',
     CREATED_AT: 'request.createdAt',
     CREATED_AT_DAY: 'request.createdAt.day',

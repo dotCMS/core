@@ -5,7 +5,9 @@ import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
+
+import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
  * Metric card component for displaying key analytics metrics.
@@ -15,10 +17,17 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-analytics-dashboard-metrics',
     standalone: true,
-    imports: [CommonModule, CardModule, SkeletonModule, DotMessagePipe],
+    imports: [
+        CommonModule,
+        CardModule,
+        SkeletonModule,
+        DotMessagePipe,
+        DotAnalyticsStateMessageComponent
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-metrics.component.html',
-    styleUrl: './dot-analytics-dashboard-metrics.component.scss'
+    styleUrl: './dot-analytics-dashboard-metrics.component.scss',
+    animations: [fadeInContent]
 })
 export class DotAnalyticsDashboardMetricsComponent {
     // Inputs
@@ -49,11 +58,11 @@ export class DotAnalyticsDashboardMetricsComponent {
         return val;
     });
 
-    /** Generates complete CSS classes for the metric icon */
+    /** Computed signal for complete icon classes */
     protected readonly $iconClasses = computed(() => {
         const iconName = this.$icon();
 
-        return `pi ${iconName} `;
+        return iconName ? `pi ${iconName}` : '';
     });
 
     /** Check if component is in loading state */
@@ -65,4 +74,23 @@ export class DotAnalyticsDashboardMetricsComponent {
 
     /** Check if component is in error state */
     protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
+
+    /** Check if metric data is empty or insufficient - 0 is a VALID metric value */
+    protected readonly $isEmpty = computed(() => {
+        const value = this.$value();
+        const status = this.$status();
+
+        // Don't show empty state if we're loading or have an error
+        if (
+            status === ComponentStatus.LOADING ||
+            status === ComponentStatus.INIT ||
+            status === ComponentStatus.ERROR
+        ) {
+            return false;
+        }
+
+        // Show empty state only when we have NO data (null/undefined)
+        // 0 is a valid metric value and should NOT be considered empty
+        return value === null || value === undefined;
+    });
 }

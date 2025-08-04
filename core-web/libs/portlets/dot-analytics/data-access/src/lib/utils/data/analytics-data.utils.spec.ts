@@ -1,4 +1,5 @@
 import {
+    determineGranularityForTimeRange,
     extractPageTitle,
     extractPageViews,
     extractSessions,
@@ -9,9 +10,11 @@ import {
 } from './analytics-data.utils';
 
 import type {
+    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
+    TimeRange,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
@@ -55,7 +58,7 @@ describe('Analytics Data Utils', () => {
         describe('extractSessions', () => {
             it('should extract sessions from valid data', () => {
                 const mockData: UniqueVisitorsEntity = {
-                    'request.totalUser': '342'
+                    'request.totalUsers': '342'
                 };
 
                 const result = extractSessions(mockData);
@@ -67,7 +70,7 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(0);
             });
 
-            it('should return NaN when totalUser is missing', () => {
+            it('should return NaN when totalUsers is missing', () => {
                 const mockData: Partial<UniqueVisitorsEntity> = {};
 
                 const result = extractSessions(mockData as UniqueVisitorsEntity);
@@ -294,6 +297,169 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.datasets[0].data).toEqual([0]);
             });
+
+            describe('Date and Time Formatting', () => {
+                it('should format labels as hours when all data is from the same day', () => {
+                    // Use local dates to ensure same day detection works properly
+                    const baseDate = new Date('2023-12-01T12:00:00'); // Local time, midday
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() - 3 * 60 * 60 * 1000
+                            ).toISOString(), // 9 AM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 2 * 60 * 60 * 1000
+                            ).toISOString(), // 2 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '150'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 6 * 60 * 60 * 1000
+                            ).toISOString(), // 6 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '200'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // Should format as hours (AM/PM format) when all data is from same day
+                    expect(result.labels).toHaveLength(3);
+                    // Check that labels contain time format with AM/PM
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                    });
+                });
+
+                it('should format labels as short date when data spans multiple days', () => {
+                    const mockData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T12:00:00',
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-02T12:00:00',
+                            'request.createdAt.day': '2023-12-02',
+                            'request.totalRequest': '150'
+                        },
+                        {
+                            'request.createdAt': '2023-12-03T12:00:00',
+                            'request.createdAt.day': '2023-12-03',
+                            'request.totalRequest': '200'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(mockData);
+
+                    // Should format as day + weekday when data spans multiple days
+                    expect(result.labels).toHaveLength(3);
+                    // Check that labels contain date format (day number + weekday)
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/);
+                    });
+                });
+
+                it('should handle same day detection correctly for edge cases', () => {
+                    // Test data with same date but different times - use local time
+                    const baseDate = new Date('2023-12-01T12:00:00');
+                    const sameDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() - 12 * 60 * 60 * 1000
+                            ).toISOString(), // Midnight
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '50'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 11 * 60 * 60 * 1000
+                            ).toISOString(), // 11 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '75'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(sameDayData);
+
+                    // Should still format as hours since it's the same day
+                    expect(result.labels).toHaveLength(2);
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                    });
+                });
+
+                it('should handle data spanning just two different days', () => {
+                    const twoDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': '2023-12-01T22:00:00',
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': '2023-12-02T02:00:00',
+                            'request.createdAt.day': '2023-12-02',
+                            'request.totalRequest': '120'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(twoDayData);
+
+                    // Should format as dates since data spans multiple days
+                    expect(result.labels).toHaveLength(2);
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/);
+                    });
+                });
+
+                it('should maintain chronological order when formatting hours', () => {
+                    const baseDate = new Date('2023-12-01T12:00:00');
+                    const unorderedSameDayData: PageViewTimeLineEntity[] = [
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 3 * 60 * 60 * 1000
+                            ).toISOString(), // 3 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '200'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() - 3 * 60 * 60 * 1000
+                            ).toISOString(), // 9 AM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '100'
+                        },
+                        {
+                            'request.createdAt': new Date(
+                                baseDate.getTime() + 9 * 60 * 60 * 1000
+                            ).toISOString(), // 9 PM
+                            'request.createdAt.day': '2023-12-01',
+                            'request.totalRequest': '150'
+                        }
+                    ];
+
+                    const result = transformPageViewTimeLineData(unorderedSameDayData);
+
+                    // Should be sorted chronologically: 9 AM, 3 PM, 9 PM
+                    expect(result.datasets[0].data).toEqual([100, 200, 150]);
+                    expect(result.labels).toHaveLength(3);
+
+                    // Verify hour format is used
+                    result.labels?.forEach((label) => {
+                        expect(typeof label).toBe('string');
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                    });
+                });
+            });
         });
 
         describe('transformDeviceBrowsersData', () => {
@@ -414,6 +580,62 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.labels).toEqual(['No Data']);
                 expect(result.datasets[0].data).toEqual([1]);
+            });
+        });
+    });
+
+    describe('determineGranularityForTimeRange', () => {
+        it('should return hour granularity for today', () => {
+            const result = determineGranularityForTimeRange('today' as TimeRange);
+            expect(result).toBe('hour' as Granularity);
+        });
+
+        it('should return hour granularity for yesterday', () => {
+            const result = determineGranularityForTimeRange('yesterday' as TimeRange);
+            expect(result).toBe('hour' as Granularity);
+        });
+
+        it('should return day granularity for last 7 days', () => {
+            const result = determineGranularityForTimeRange('from 7 days ago to now' as TimeRange);
+            expect(result).toBe('day' as Granularity);
+        });
+
+        it('should return day granularity for last 30 days', () => {
+            const result = determineGranularityForTimeRange('from 30 days ago to now' as TimeRange);
+            expect(result).toBe('day' as Granularity);
+        });
+
+        it('should return day granularity for CUSTOM_TIME_RANGE (default for custom ranges)', () => {
+            const result = determineGranularityForTimeRange('CUSTOM_TIME_RANGE' as TimeRange);
+            expect(result).toBe('day' as Granularity);
+        });
+
+        describe('all valid TimeRange values', () => {
+            it('should handle all dropdown options correctly', () => {
+                const testCases = [
+                    { value: 'today', expected: 'hour' },
+                    { value: 'yesterday', expected: 'hour' },
+                    { value: 'from 7 days ago to now', expected: 'day' },
+                    { value: 'from 30 days ago to now', expected: 'day' },
+                    { value: 'CUSTOM_TIME_RANGE', expected: 'day' }
+                ];
+
+                testCases.forEach(({ value, expected }) => {
+                    const result = determineGranularityForTimeRange(value as TimeRange);
+                    expect(result).toBe(expected as Granularity);
+                });
+            });
+        });
+
+        describe('edge cases (fallback behavior)', () => {
+            it('should return day granularity for unknown patterns', () => {
+                // These would only occur in edge cases or custom implementations
+                const edgeCases = ['invalid format', 'from custom date to custom date', ''];
+
+                edgeCases.forEach((timeRange) => {
+                    const result = determineGranularityForTimeRange(timeRange as TimeRange);
+                    expect(result).toBe('day' as Granularity);
+                });
             });
         });
     });
