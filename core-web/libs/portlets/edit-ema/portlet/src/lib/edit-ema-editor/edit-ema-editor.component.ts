@@ -14,7 +14,8 @@ import {
     WritableSignal,
     effect,
     inject,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -175,38 +176,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     });
 
-    readonly $handleReloadContentEffect = effect(
-        () => {
-            const { code, isTraditionalPage, enableInlineEdit, isClientReady } =
-                this.uveStore.$reloadEditorContent();
+    readonly $handleReloadContentEffect = effect(() => {
+        /**
+         * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
+         * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
+         */
+        const { isTraditionalPage } = this.uveStore.$reloadEditorContent();
+        const isClientReady = untracked(() => this.uveStore.isClientReady());
 
+        untracked(() => {
             this.uveStore.resetEditorProperties();
-            this.dialog?.resetDialog();
+            this.dialog?.resetActionPayload();
+        });
 
-            if (!isTraditionalPage) {
-                if (isClientReady) {
-                    // This should have another name.
-                    return this.reloadIframeContent();
-                }
-
-                return;
-            }
-
-            this.setIframeContent(code, enableInlineEdit);
-
-            /**
-             * The status of isClientReady is changed outside of editor
-             * so we need to set it to true here to avoid the editor to be in a loading state
-             * This is only for traditional pages. For Headless, the isClientReady is set from the client application
-             */
-            this.uveStore.setIsClientReady(true);
-
+        if (isTraditionalPage || !isClientReady) {
             return;
-        },
-        {
-            allowSignalWrites: true
         }
-    );
+        this.reloadIframeContent();
+    });
 
     readonly $handleIsDraggingEffect = effect(() => {
         const isDragging = this.uveStore.$editorIsInDraggingState();
@@ -737,6 +724,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 this.uveStore.savePage(pageContainers);
+                this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
@@ -809,6 +797,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.uveStore.setUveStatus(UVE_STATUS.LOADED);
                         } else {
                             this.uveStore.savePage(pageContainers);
+                            this.dialog.resetDialog();
                         }
                     });
             },

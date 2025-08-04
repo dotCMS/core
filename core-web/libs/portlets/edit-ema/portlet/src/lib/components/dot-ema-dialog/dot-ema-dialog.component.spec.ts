@@ -483,6 +483,14 @@ describe('DotEmaDialogComponent', () => {
                 url: 'https://demo.dotcms.com/jsp.jsp'
             });
         });
+
+        it('should trigger resetActionPayload in the store', () => {
+            const resetActionPayloadSpy = jest.spyOn(storeSpy, 'resetActionPayload');
+
+            component.resetActionPayload();
+
+            expect(resetActionPayloadSpy).toHaveBeenCalled();
+        });
     });
 
     describe('Compare dialog', () => {

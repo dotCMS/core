@@ -91,6 +91,10 @@ export class DotEmaDialogComponent {
         this.store.resetDialog();
     }
 
+    resetActionPayload() {
+        this.store.resetActionPayload();
+    }
+
     /**
      * Add contentlet
      *
