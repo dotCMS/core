@@ -779,6 +779,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
     }
     
+    // SECURITY: Add community edition filtering (hardcoded values - not user input)
+    if (searchCondition.isCommunityEdition) {
+        sqlBuilder.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
+                  .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+    }
+    
     // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
     if (!validatedSites.isEmpty()) {
         // Build multiple OR conditions with proper parameterization and escaping
@@ -894,12 +900,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         if (searchCondition.safeCondition != null) {
             addSafeConditionParameter(dc, searchCondition.safeCondition);
         }
-        
-        // Add community edition filter parameters
-        if (searchCondition.isCommunityEdition) {
-            dc.addParam(BaseContentType.FORM.getType());           // structuretype <> ?
-            dc.addParam(BaseContentType.PERSONA.getType());        // structuretype <> ?
-        }
     }
 
     /**
@@ -962,6 +962,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // SECURITY: Add safe condition if present
     if (searchCondition.safeCondition != null) {
         sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+    }
+    
+    // SECURITY: Add community edition filtering (hardcoded values - not user input)
+    if (searchCondition.isCommunityEdition) {
+        sqlBuilder.append(" AND st.structuretype <> ").append(BaseContentType.FORM.getType())
+                  .append(" AND st.structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
     }
     
     sqlBuilder.append(" AND st.structuretype >= ? AND st.structuretype <= ? ");
