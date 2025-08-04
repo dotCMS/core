@@ -21,10 +21,6 @@
     .p-contextmenu .p-menuitem-link {
         padding: 0.75rem 0.75rem;
         color: #14151a;
-        border-radius: 0;
-        transition: none;
-        -webkit-user-select: none;
-        user-select: none;
         transition: background-color 0.15s ease;
         border-radius: 6px;
 
@@ -39,6 +35,14 @@
         &:focus {
             outline: none;
             box-shadow: none;
+        }
+    }
+
+    .p-contextmenu .p-disabled {
+        .p-menuitem-link {
+            background-color: #f0f0f0;
+            color: #888;
+            border-radius: unset;
         }
     }
 

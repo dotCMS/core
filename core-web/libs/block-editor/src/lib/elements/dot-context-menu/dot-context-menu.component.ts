@@ -3,9 +3,8 @@ import { DOMSerializer } from 'prosemirror-model';
 import TurndownService from 'turndown';
 
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, OnInit, signal } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
 import { ContextMenuModule } from 'primeng/contextmenu';
 import { RippleModule } from 'primeng/ripple';
 
@@ -18,69 +17,56 @@ import { Editor } from '@tiptap/core';
     standalone: true,
     imports: [CommonModule, ContextMenuModule, RippleModule]
 })
-export class DotContextMenuComponent implements OnInit {
+export class DotContextMenuComponent {
     editor = input.required<Editor>();
 
-    protected readonly items = signal<MenuItem[]>([]);
     protected readonly target = computed(() => this.editor().view.dom.parentElement);
 
     private get isMac(): boolean {
         return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     }
 
-    private getShortcut(mac: string, pc: string): string {
-        return this.isMac ? mac : pc;
-    }
+    private readonly hasSelection = signal(false);
 
-    ngOnInit() {
-        this.items.set([
-            {
-                label: 'Cut',
-                command: () => this.cutCommand(),
-                shortcut: this.getShortcut('⌘X', 'Ctrl+X')
-            },
-            {
-                label: 'Copy',
-                command: () => this.copyCommand(),
-                shortcut: this.getShortcut('⌘C', 'Ctrl+C')
-            },
-            {
-                label: 'Copy as Markdown',
-                command: () => this.copyAsMarkdownCommand()
-            },
-            { separator: true },
-            {
-                label: 'Paste',
-                command: () => this.pasteCommand(),
-                shortcut: this.getShortcut('⌘V', 'Ctrl+V')
-            },
-            {
-                label: 'Paste from Markdown',
-                command: () => this.pasteFromMarkdownCommand(),
-                shortcut: this.getShortcut('⌘⇧V', 'Ctrl+Shift+V')
-            }
-        ]);
-    }
+    protected readonly items = computed(() => [
+        {
+            label: 'Cut',
+            command: () => this.cutCommand(),
+            shortcut: this.getShortcut('⌘X', 'Ctrl+X'),
+            disabled: !this.hasSelection()
+        },
+        {
+            label: 'Copy',
+            command: () => this.copyCommand(),
+            shortcut: this.getShortcut('⌘C', 'Ctrl+C'),
+            disabled: !this.hasSelection()
+        },
+        {
+            label: 'Copy as Markdown',
+            command: () => this.copyAsMarkdownCommand(),
+            disabled: !this.hasSelection()
+        },
+        { separator: true },
+        {
+            label: 'Paste',
+            command: () => this.pasteCommand(),
+            shortcut: this.getShortcut('⌘V', 'Ctrl+V')
+        },
+        {
+            label: 'Paste from Markdown',
+            command: () => this.pasteFromMarkdownCommand(),
+            shortcut: this.getShortcut('⌘⇧V', 'Ctrl+Shift+V')
+        }
+    ]);
 
     private cutCommand() {
-        const hasSelection = this.editor().state.selection.content().size > 0;
-        if (hasSelection) {
-            document.execCommand('cut');
-        }
+        this.editor().commands.focus();
+        document.execCommand('cut');
     }
 
     private copyCommand() {
-        const hasSelection = this.editor().state.selection.content().size > 0;
-        if (hasSelection) {
-            document.execCommand('copy');
-        }
-    }
-
-    private pasteCommand() {
-        navigator.clipboard.readText().then((text) => {
-            // console.log(text);
-            this.editor().commands.insertContent(text);
-        });
+        this.editor().commands.focus();
+        document.execCommand('copy');
     }
 
     private async copyAsMarkdownCommand() {
@@ -88,14 +74,13 @@ export class DotContextMenuComponent implements OnInit {
         if (html) {
             const cleanHtml = this.cleanHtmlForMarkdown(html);
             const turndownService = new TurndownService({
-                headingStyle: 'atx', // Use # for headers instead of underlines
+                headingStyle: 'atx',
                 hr: '---',
                 bulletListMarker: '-',
                 codeBlockStyle: 'fenced',
                 emDelimiter: '_'
             });
 
-            // Ensure tables are properly converted
             turndownService.addRule('tables', {
                 filter: 'table',
                 replacement: function (content, node) {
@@ -106,22 +91,29 @@ export class DotContextMenuComponent implements OnInit {
             });
 
             const markdown = turndownService.turndown(cleanHtml);
-            // console.log('Markdown:', markdown);
-            // console.log('Clean HTML:', cleanHtml);
 
-            // Copy to clipboard
             try {
                 await navigator.clipboard.writeText(markdown);
             } catch (err) {
                 console.warn('Failed to copy markdown to clipboard:', err);
+            } finally {
+                this.editor().commands.focus();
             }
         }
+    }
+
+    private pasteCommand() {
+        navigator.clipboard.readText().then((text) => {
+            this.editor().commands.insertContent(text);
+            this.editor().commands.focus();
+        });
     }
 
     private pasteFromMarkdownCommand() {
         navigator.clipboard.readText().then((text) => {
             const html = marked.parse(text);
             this.editor().commands.insertContent(html);
+            this.editor().commands.focus();
         });
     }
 
@@ -172,6 +164,16 @@ export class DotContextMenuComponent implements OnInit {
         tempDiv.appendChild(fragment);
 
         return tempDiv.innerHTML;
+    }
+
+    private getShortcut(mac: string, pc: string): string {
+        return this.isMac ? mac : pc;
+    }
+
+    onContextMenuShow() {
+        // Update selection signal which will trigger items computed to update
+        const hasSelection = !this.editor().view.state.selection.empty;
+        this.hasSelection.set(hasSelection);
     }
 }
 
