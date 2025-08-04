@@ -35,6 +35,7 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import { DragHandleDirective } from './directive/drag-handle.directive';
 import { DotBubbleMenuComponent } from './elements/dot-bubble-menu/dot-bubble-menu.component';
+import { DotContextMenuComponent } from './elements/dot-context-menu/dot-context-menu.component';
 import {
     BubbleFormComponent,
     FloatingButtonComponent,
@@ -70,7 +71,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotSpinnerModule,
         DotBubbleMenuComponent,
         TiptapBubbleMenuDirective,
-        DragHandleDirective
+        DragHandleDirective,
+        DotContextMenuComponent
     ],
     declarations: [
         EditorDirective,
