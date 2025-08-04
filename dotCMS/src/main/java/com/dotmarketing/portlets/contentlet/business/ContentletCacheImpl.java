@@ -12,6 +12,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import org.apache.commons.lang.SerializationUtils;
 
@@ -20,6 +21,8 @@ import org.apache.commons.lang.SerializationUtils;
  * @since 1.6
  */
 public class ContentletCacheImpl extends ContentletCache {
+
+	private static final String ENABLED_CLONED_CACHED_CONTENTLET = "ENABLED_CLONED_CACHED_CONTENTLET";
 
 	private DotCacheAdministrator cache;
 
@@ -93,7 +96,11 @@ public class ContentletCacheImpl extends ContentletCache {
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
-		return (Contentlet) SerializationUtils.clone(content);
+
+		boolean enabledClonedCachedContentlet =
+				Config.getBooleanProperty(ENABLED_CLONED_CACHED_CONTENTLET, false);
+
+		return enabledClonedCachedContentlet ? (Contentlet) SerializationUtils.clone(content) : content;
 	}
 
 	/* (non-Javadoc)
