@@ -29,6 +29,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import javax.servlet.http.HttpServletRequest;
 
+import static org.apache.commons.lang3.BooleanUtils.toBoolean;
+
 /**
  * Factory to get the FieldHandlerStrategy
  * @author jsanca
@@ -314,17 +316,16 @@ public class FieldHandlerStrategyFactory {
     private void booleanStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
 
         if (value instanceof Boolean) {
-
             contentlet.setBoolProperty(field.variable(), (Boolean) value);
         } else if (value instanceof String) {
             try {
                 final String auxValue = (String) value;
-                final Boolean auxBoolean =
-                        (auxValue.equalsIgnoreCase("1") || auxValue.equalsIgnoreCase("true")
-                                || auxValue.equalsIgnoreCase("t")) ? Boolean.TRUE
-                                : Boolean.FALSE;
+                //toBoolean deals with ("true","yes","1","t","on")
+                final boolean auxBoolean = toBoolean(auxValue);
                 contentlet.setBoolProperty(field.variable(), auxBoolean);
             } catch (Exception e) {
+                //This exception isn't really ever thrown
+                // As anything outside the range of values accepted as true will be set as false
                 throw new DotContentletStateException(
                         "Unable to set string value as a Boolean for the field: " +
                                 field.variable());

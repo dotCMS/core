@@ -4227,7 +4227,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     @DataProvider
     public static Object[][] fieldTestCases() {
         return new Object[][]{
-                /*
+
                 // Required TextField - Missing value
                 {new FieldTestCase(
                         "RequiredTextField",
@@ -4462,8 +4462,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null, // Select options
                         INVALID_SELECT_NUMBER_ASSERTION
                 )},
-
-                 */
                 {new FieldTestCase(
                         "UniqueTextField",
                         TextField.class,
@@ -4477,7 +4475,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "unique",
                         UNIQUE_TEXT_FIELD_ASSERTION
                 )},
-                /*
                 // RelationshipField - Invalid content reference
                 {new FieldTestCase(
                         "RelationshipField",
@@ -4492,7 +4489,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null,
                         RELATIONSHIP_FIELD_VALIDATION
                 )},
-                 */
         };
     }
 
