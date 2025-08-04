@@ -1,5 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -10,6 +12,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardMetricsComponent,
+        imports: [NoopAnimationsModule],
         mocks: [DotMessageService]
     });
 
@@ -326,6 +329,40 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
             expect(spectator.query(byTestId('metric-subtitle'))).toBeTruthy();
             expect(spectator.query(byTestId('metric-icon'))).toBeTruthy();
+        });
+    });
+
+    describe('Animations', () => {
+        it('should have animation triggers configured', () => {
+            // Arrange & Act
+            spectator.setInput('name', 'test.metric');
+            spectator.setInput('value', 100);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            // Assert - Since we're using NoopAnimationsModule, we can't test the actual animation behavior
+            // but we can verify the component renders correctly with animations configured
+            expect(spectator.component).toBeTruthy();
+            expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
+        });
+
+        it('should render correctly during state transitions with animations', () => {
+            // Arrange - Start with loading state
+            spectator.setInput('name', 'test.metric');
+            spectator.setInput('value', 100);
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
+
+            // Assert loading state
+            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
+
+            // Act - Change to loaded state
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            // Assert loaded state
+            expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
+            expect(spectator.queryAll('p-skeleton').length).toBe(0);
         });
     });
 });
