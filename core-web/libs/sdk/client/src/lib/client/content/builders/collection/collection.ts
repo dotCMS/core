@@ -1,4 +1,4 @@
-import { DotHttpClient, DotRequestOptions } from '@dotcms/types';
+import { DotHttpClient, DotRequestOptions, HttpError } from '@dotcms/types';
 
 import { CONTENT_API_URL } from '../../shared/const';
 import {
@@ -6,7 +6,6 @@ import {
     BuildQuery,
     SortBy,
     GetCollectionRawResponse,
-    GetCollectionError,
     OnFullfilled,
     OnRejected
 } from '../../shared/types';
@@ -325,13 +324,13 @@ export class CollectionBuilder<T = unknown> {
      *
      * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
      * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
-     * @return {Promise<GetCollectionResponse<T> | GetCollectionError>} A promise that resolves to the content or rejects with an error.
+     * @return {Promise<GetCollectionResponse<T> | HttpError | void>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | GetCollectionError | void> {
+    ): Promise<GetCollectionResponse<T> | HttpError | void> {
         return this.fetch().then((data) => {
             const formattedResponse = this.formatResponse<T>(data);
 

@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 
-import { DotRequestOptions } from '@dotcms/types';
+import { DotRequestOptions, HttpError } from '@dotcms/types';
 
 import { CollectionBuilder } from './collection';
 
@@ -488,10 +488,8 @@ describe('CollectionBuilder', () => {
                 expect(e).toEqual(new Error('Network error'));
             }
         });
-    });
 
-    describe('fetch resolves on error', () => {
-        xit('should have the error content on then', async () => {
+        it('should throw HttpError when HTTP request fails', async () => {
             const contentType = 'song';
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
@@ -500,25 +498,60 @@ describe('CollectionBuilder', () => {
                 new FetchHttpClient()
             ).limit(10);
 
-            const error = {
-                message: 'Internal server error',
-                buffer: {
-                    stacktrace: 'Some really long server stacktrace'
-                }
-            };
+            const httpError = new HttpError({
+                status: 404,
+                statusText: 'Not Found',
+                message: 'Content not found',
+                data: { error: 'Content type does not exist' }
+            });
 
-            // Mock the request to return an error response
-            mockRequest.mockResolvedValue({
+            // Mock the request to throw an HttpError
+            mockRequest.mockRejectedValue(httpError);
+
+            try {
+                await collectionBuilder;
+                fail('Expected HttpError to be thrown');
+            } catch (error) {
+                expect(error).toBeInstanceOf(HttpError);
+                expect(error).toEqual(httpError);
+                expect((error as HttpError).status).toBe(404);
+                expect((error as HttpError).statusText).toBe('Not Found');
+                expect((error as HttpError).message).toBe('Content not found');
+                expect((error as HttpError).data).toEqual({ error: 'Content type does not exist' });
+            }
+        });
+
+        it('should handle HttpError in onrejected callback', (done) => {
+            const contentType = 'song';
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            ).language(13);
+
+            const httpError = new HttpError({
                 status: 500,
-                ...error
+                statusText: 'Internal Server Error',
+                message: 'Server error occurred',
+                data: { error: 'Internal server error' }
             });
 
-            collectionBuilder.then((response) => {
-                expect(response).toEqual({
-                    status: 500,
-                    ...error
-                });
-            });
+            // Mock the request to throw an HttpError
+            mockRequest.mockRejectedValue(httpError);
+
+            collectionBuilder.then(
+                () => {
+                    fail('Expected onrejected callback to be called');
+                },
+                (error) => {
+                    expect(error).toBeInstanceOf(HttpError);
+                    expect(error).toEqual(httpError);
+                    expect((error as HttpError).status).toBe(500);
+                    expect((error as HttpError).statusText).toBe('Internal Server Error');
+                    done();
+                }
+            );
         });
     });
 });
