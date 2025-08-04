@@ -42,8 +42,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import io.vavr.control.Try;
-import org.apache.commons.beanutils.BeanUtils;
-
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -52,6 +50,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * This handler class is part of the Push Publishing mechanism that deals with Folder-related information inside a
@@ -131,7 +130,6 @@ public class FolderHandler implements IHandler {
 		Identifier folderId=null;
 		Host host = null;
         File workingOn = null;
-		Folder folder = new Folder();
 		try{
 	        XStream xstream = XStreamHandler.newXStreamInstance();
 	        //Handle folders
@@ -144,14 +142,16 @@ public class FolderHandler implements IHandler {
                      folderWrapper = (FolderWrapper) xstream.fromXML(input);
                 }
 
-	        	folder = folderWrapper.getFolder();
-				if (folder.isSystemFolder()) {
+
+	      final Folder folder = folderWrapper.getFolder();
+				if (folder.isSystemFolder() || FolderAPI.OLD_SYSTEM_FOLDER_ID.equalsIgnoreCase( folder.getIdentifier()) ) {
 					continue;
 				}
 
 	        	folderName = Try.of(folder::getPath).getOrNull();
 	        	folderId = folderWrapper.getFolderId();
 	        	host = folderWrapper.getHost();
+
 
 
 	        	if(folder.getOwner() == null){
@@ -178,7 +178,7 @@ public class FolderHandler implements IHandler {
 
                     Identifier id = iAPI.find(folder.getIdentifier());
         			if(id ==null || !UtilMethods.isSet(id.getId())){
-        				Identifier folderIdNew = null;
+						Identifier folderIdNew;
         				if(folderId.getParentPath().equals("/")) {
 	            			folderIdNew = iAPI.createNew(folder,
 	            					localHost,
@@ -283,7 +283,15 @@ public class FolderHandler implements IHandler {
                         }
                     }
 
-                	BeanUtils.copyProperties(temp, folder);
+					temp.setOwner(folder.getOwner());
+					temp.setModDate(folder.getModDate());
+					temp.setDefaultFileType( folder.getDefaultFileType());
+					temp.setName(folder.getName());
+					temp.setSortOrder(folder.getSortOrder());
+					temp.setIDate(folder.getIDate());
+					temp.setFilesMasks(folder.getFilesMasks());
+					temp.setTitle(folder.getTitle());
+
 
                 	fAPI.save(temp, systemUser, false);
                 	
