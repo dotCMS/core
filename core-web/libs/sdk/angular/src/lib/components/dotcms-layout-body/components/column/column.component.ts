@@ -13,7 +13,6 @@ import { ContainerComponent } from '../container/container.component';
  */
 @Component({
     selector: 'dotcms-column',
-    standalone: true,
     imports: [ContainerComponent],
     template: `
         <div [class]="column.styleClass" data-testid="dotcms-column">

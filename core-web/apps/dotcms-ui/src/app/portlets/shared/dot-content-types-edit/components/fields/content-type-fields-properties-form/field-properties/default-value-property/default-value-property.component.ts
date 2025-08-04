@@ -7,7 +7,8 @@ import { FieldProperty } from '../field-properties.model';
 
 @Component({
     selector: 'dot-default-value-property',
-    templateUrl: './default-value-property.component.html'
+    templateUrl: './default-value-property.component.html',
+    standalone: false
 })
 export class DefaultValuePropertyComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

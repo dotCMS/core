@@ -9,16 +9,18 @@ import { SelectItem } from 'primeng/api';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
+
 @Component({
     selector: 'dot-login-component',
     templateUrl: './dot-login.component.html',
-    styleUrls: ['./dot-login.component.scss']
+    styleUrls: ['./dot-login.component.scss'],
+    standalone: false
 })
 /**
  * The login component allows the user to fill all

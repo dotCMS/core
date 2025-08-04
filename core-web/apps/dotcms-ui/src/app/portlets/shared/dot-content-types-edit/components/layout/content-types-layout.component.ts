@@ -16,17 +16,18 @@ import { MenuItem } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotInlineEditComponent } from '@components/_common/dot-inline-edit/dot-inline-edit.component';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-type-layout',
     styleUrls: ['./content-types-layout.component.scss'],
-    templateUrl: 'content-types-layout.component.html'
+    templateUrl: 'content-types-layout.component.html',
+    standalone: false
 })
 export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     private dotMessageService = inject(DotMessageService);

@@ -7,7 +7,8 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-loading-indicator',
     styleUrls: ['./dot-loading-indicator.component.scss'],
-    templateUrl: 'dot-loading-indicator.component.html'
+    templateUrl: 'dot-loading-indicator.component.html',
+    standalone: false
 })
 export class DotLoadingIndicatorComponent {
     dotLoadingIndicatorService = inject(DotLoadingIndicatorService);

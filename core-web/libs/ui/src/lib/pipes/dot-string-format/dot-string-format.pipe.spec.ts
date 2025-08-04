@@ -1,4 +1,4 @@
-import { DotStringFormatPipe } from '@dotcms/ui';
+import { DotStringFormatPipe } from './dot-string-format.pipe';
 
 describe('DotStringFormatPipe', () => {
     it('should replace tokens correctly', () => {

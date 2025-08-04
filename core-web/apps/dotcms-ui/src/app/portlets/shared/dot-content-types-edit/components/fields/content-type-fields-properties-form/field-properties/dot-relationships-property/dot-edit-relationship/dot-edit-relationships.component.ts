@@ -32,7 +32,8 @@ interface CardinalitySorted {
 @Component({
     providers: [PaginatorService],
     selector: 'dot-edit-relationships',
-    templateUrl: './dot-edit-relationships.component.html'
+    templateUrl: './dot-edit-relationships.component.html',
+    standalone: false
 })
 export class DotEditRelationshipsComponent implements OnInit {
     dotPaginatorService = inject(PaginatorService);

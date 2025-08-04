@@ -92,7 +92,7 @@ export class DotDateTimeComponent {
     timeLabel = 'Time';
 
     @State() classNames: DotFieldStatusClasses;
-    @State() errorMessageElement: JSX.Element;
+    @State() errorMessageElement: any;
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;

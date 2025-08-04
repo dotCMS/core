@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
+
+import { DotSiteSelectorModule } from '../_common/dot-site-selector/dot-site-selector.module';
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 @NgModule({
     declarations: [DotThemeSelectorDropdownComponent],

@@ -53,7 +53,6 @@ type ChartRawData =
  */
 @Component({
     selector: 'dot-analytics-dashboard-chart',
-    standalone: true,
     imports: [
         CommonModule,
         CardModule,

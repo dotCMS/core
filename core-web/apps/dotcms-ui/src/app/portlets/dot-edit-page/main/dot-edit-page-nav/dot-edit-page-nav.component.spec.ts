@@ -8,7 +8,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
@@ -20,6 +19,8 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
+
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 class ActivatedRouteMock {
     get snapshot() {
@@ -69,7 +70,8 @@ export class MockDotPropertiesService {
     selector: 'dot-test-host-component',
     template: `
         <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input()
