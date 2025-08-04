@@ -33,7 +33,7 @@ RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat && \
 # ----------------------------------------------
 # Stage 2: Final stage for minimal runtime image
 # ----------------------------------------------
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 LABEL com.dotcms.contact="support@dotcms.com" \
       com.dotcms.vendor="dotCMS LLC" \
@@ -60,13 +60,12 @@ RUN apt update && \
 
 # Install PostgreSQL client and pg_dump
 RUN apt update && \
-    apt install -y --no-install-recommends wget gnupg2 lsb-release && \
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
-    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-    apt update && \
-    apt install -y --no-install-recommends postgresql-client-16 && \
-    /usr/bin/pg_dump --version || exit 1 && \
-    apt purge -y wget gnupg2 lsb-release && \
+    apt install -y --no-install-recommends postgresql-common && \
+        /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+        apt update && \
+        apt install -y --no-install-recommends postgresql-client-16 && \
+        /usr/bin/pg_dump --version || exit 1 && \
+        apt purge -y postgresql-common && \
     rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"
