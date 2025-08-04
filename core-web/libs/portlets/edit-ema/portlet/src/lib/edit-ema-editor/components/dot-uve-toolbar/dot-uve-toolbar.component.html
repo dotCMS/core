@@ -25,27 +25,26 @@
             target="_blank"
             data-testId="uve-toolbar-api-link"
             [href]="$apiURL()"></a>
+        @if (preview || live) {
+            @if ($devices()?.length) {
+                <dot-uve-device-selector
+                    [devices]="$devices()"
+                    data-testId="uve-toolbar-device-selector" />
+            }
+        } @else {
+            @if ($urlContentMap(); as urlContentMap) {
+                <p-button
+                    (click)="editUrlContentMap.emit(urlContentMap)"
+                    [pTooltip]="
+                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                    "
+                    tooltipPosition="bottom"
+                    icon="pi pi-pencil"
+                    styleClass="p-button-text p-button-sm p-button-rounded"
+                    data-testId="edit-url-content-map" />
+            }
+        }
     </div>
-
-    @if (preview || live) {
-        @if ($devices()?.length) {
-            <dot-uve-device-selector
-                [devices]="$devices()"
-                data-testId="uve-toolbar-device-selector" />
-        }
-    } @else {
-        @if ($urlContentMap(); as urlContentMap) {
-            <p-button
-                (click)="editUrlContentMap.emit(urlContentMap)"
-                [pTooltip]="
-                    'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
-                "
-                tooltipPosition="bottom"
-                icon="pi pi-pencil"
-                styleClass="p-button-text p-button-sm p-button-rounded"
-                data-testId="edit-url-content-map" />
-        }
-    }
 
     @if (live && !$socialMedia()) {
         <div class="p-toolbar-group-center">
