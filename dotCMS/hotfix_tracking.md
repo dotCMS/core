@@ -63,4 +63,5 @@ This maintenance release includes the following code fixes:
 57. https://github.com/dotCMS/core/issues/31077 : PrimeNG Datepicker Displays Incorrectly When Appended to Body #31077
 58. https://github.com/dotCMS/core/issues/32578 : Special characters in key being removed for a key value field on a content type #32578
 59. https://github.com/dotCMS/core/issues/32545 : api/v1/workflow/actions/default/fire/PUBLISH not respecting default value #32545
+60. https://github.com/dotCMS/core/issues/32413 : [Containers]: Pagination is not working #32413
 
