@@ -14,6 +14,7 @@ p.is-empty {
     margin: 0 0 $spacing-1 0;
     padding: $spacing-0 0;
     min-height: $spacing-4; // Prevents collapse
+    box-sizing: content-box;
 }
 
 // Ensure empty paragraphs have consistent spacing
