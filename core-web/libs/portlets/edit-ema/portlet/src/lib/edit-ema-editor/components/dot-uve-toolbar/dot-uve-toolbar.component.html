@@ -5,27 +5,6 @@
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
-
-        @if (preview || live) {
-            @if ($devices()?.length) {
-                <dot-uve-device-selector
-                    [devices]="$devices()"
-                    data-testId="uve-toolbar-device-selector" />
-            }
-        } @else {
-            @if ($urlContentMap(); as urlContentMap) {
-                <p-button
-                    (click)="editUrlContentMap.emit(urlContentMap)"
-                    [pTooltip]="
-                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
-                    "
-                    tooltipPosition="bottom"
-                    icon="pi pi-pencil"
-                    styleClass="p-button-text p-button-sm p-button-rounded"
-                    data-testId="edit-url-content-map" />
-            }
-        }
-
         <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
         <p-button
             [pTooltip]="'editpage.header.copy' | dm"
@@ -47,6 +26,26 @@
             data-testId="uve-toolbar-api-link"
             [href]="$apiURL()"></a>
     </div>
+
+    @if (preview || live) {
+        @if ($devices()?.length) {
+            <dot-uve-device-selector
+                [devices]="$devices()"
+                data-testId="uve-toolbar-device-selector" />
+        }
+    } @else {
+        @if ($urlContentMap(); as urlContentMap) {
+            <p-button
+                (click)="editUrlContentMap.emit(urlContentMap)"
+                [pTooltip]="
+                    'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                "
+                tooltipPosition="bottom"
+                icon="pi pi-pencil"
+                styleClass="p-button-text p-button-sm p-button-rounded"
+                data-testId="edit-url-content-map" />
+        }
+    }
 
     @if (live && !$socialMedia()) {
         <div class="p-toolbar-group-center">

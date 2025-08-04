@@ -90,7 +90,9 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
 
         // We have a discrepancy between the type of the photo in the API and the type of the photo in GQL
         this.photo =
-            typeof this.value.photo == 'string' ? this.value.photo : this.value.photo?.versionPath;
+            typeof this.value?.photo == 'string'
+                ? this.value?.photo
+                : this.value?.photo?.versionPath;
     }
 
     ngAfterViewInit(): void {
