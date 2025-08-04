@@ -1,4 +1,4 @@
-<p-contextMenu #cm [model]="items()" [global]="true" [appendTo]="'body'">
+<p-contextMenu #cm [model]="items()" [target]="target()" [appendTo]="'body'">
     <ng-template pTemplate="item" let-item>
         <a
             pRipple
