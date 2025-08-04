@@ -1,5 +1,6 @@
 package com.dotcms.cost;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import io.vavr.Lazy;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
@@ -41,7 +42,14 @@ public class RequestCostApi {
     if (requestCost.get() < 0) {
       return;
     }
+
     requestCost.set(requestCost.get() + delta);
+
+    // set as a request attribute as well.
+    if (HttpServletRequestThreadLocal.INSTANCE.getRequest() != null) {
+      HttpServletRequestThreadLocal.INSTANCE.getRequest().setAttribute("dotRequestCost", requestCost.get());
+    }
+
   }
 
   /**
