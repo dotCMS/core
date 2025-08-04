@@ -1,4 +1,4 @@
-import { DotHttpClient } from '@dotcms/types';
+import { DotHttpClient, DotRequestOptions } from '@dotcms/types';
 
 import { CONTENT_API_URL } from '../../shared/const';
 import {
@@ -13,8 +13,6 @@ import {
 import { sanitizeQueryForContentType } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
-
-export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.
@@ -37,18 +35,18 @@ export class CollectionBuilder<T = unknown> {
     #draft = false;
 
     #serverUrl: string;
-    #requestOptions: ClientOptions;
+    #requestOptions: DotRequestOptions;
     #httpClient: DotHttpClient;
 
     /**
      * Creates an instance of CollectionBuilder.
-     * @param {ClientOptions} requestOptions Options for the client request.
+     * @param {DotRequestOptions} requestOptions Options for the client request.
      * @param {string} serverUrl The server URL.
      * @param {string} contentType The content type to fetch.
      * @param {DotHttpClient} httpClient HTTP client for making requests.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string, httpClient: DotHttpClient) {
+    constructor(requestOptions: DotRequestOptions, serverUrl: string, contentType: string, httpClient: DotHttpClient) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
         this.#contentType = contentType;
