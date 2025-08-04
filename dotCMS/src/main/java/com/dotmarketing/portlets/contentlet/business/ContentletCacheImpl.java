@@ -100,7 +100,8 @@ public class ContentletCacheImpl extends ContentletCache {
 		boolean enabledClonedCachedContentlet =
 				Config.getBooleanProperty(ENABLED_CLONED_CACHED_CONTENTLET, false);
 
-		return enabledClonedCachedContentlet ? (Contentlet) SerializationUtils.clone(content) : content;
+		return enabledClonedCachedContentlet && content != null
+				? (Contentlet) SerializationUtils.clone(content) : content;
 	}
 
 	/* (non-Javadoc)
