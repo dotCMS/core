@@ -1,16 +1,14 @@
-import { consola } from 'consola';
-
 import {
     DotCMSClientConfig,
-    DotCMSComposedPageResponse,
-    DotCMSExtendedPageResponse,
-    DotCMSPageResponse,
     DotCMSPageRequestParams,
+    DotCMSPageResponse,
+    DotCMSExtendedPageResponse,
+    DotCMSComposedPageResponse,
+    HttpClient,
     RequestOptions,
-    HttpClient
 } from '@dotcms/types';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 
@@ -159,30 +157,28 @@ export class PageClient {
             ...variables
         };
 
-        const requestHeaders = this.requestOptions.headers as Record<string, string>;
+        const requestHeaders = this.requestOptions.headers;
         const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
 
         try {
-            const { data, errors } = await fetchGraphQL({
+            const response = await fetchGraphQL({
                 baseURL: this.dotcmsUrl,
                 body: requestBody,
                 headers: requestHeaders,
                 httpClient: this.httpClient
             });
 
-            if (errors) {
-                errors.forEach((error: { message: string }) => {
-                    consola.error('[DotCMS GraphQL Error]: ', error.message);
-                });
+            if (!response.data) {
+                throw new Error('No data received from GraphQL response');
             }
 
-            const pageResponse = graphqlToPageEntity(data);
+            const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {
-                throw new Error('No page data found');
+                throw new Error('No page data found. Please check the page URL and the GraphQL query.');
             }
 
-            const contentResponse = mapResponseData(data, Object.keys(content));
+            const contentResponse = mapContentResponse(response.data.content, Object.keys(content));
 
             return {
                 pageAsset: pageResponse,

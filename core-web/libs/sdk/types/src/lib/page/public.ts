@@ -1179,6 +1179,17 @@ export interface DotCMSPageContainerContentlets {
 }
 
 /**
+ * dotCMS's GraphQL API response with a page and content query
+ */
+export interface DotGraphQLApiResponse {
+    data: {
+        page: DotCMSGraphQLPage;
+        content?: Record<string, unknown>;
+    };
+    errors?: DotCMSGraphQLError[];
+}
+
+/**
  * Represents a GraphQL error
  * @interface DotCMSGraphQLError
  */
@@ -1190,19 +1201,6 @@ export interface DotCMSGraphQLError {
     }[];
     extensions: {
         classification: string;
-    };
-}
-
-/**
- * Represents the complete response from a page query from the GraphQL API
- */
-export interface DotCMSGraphQLPageResponse {
-    page: DotCMSGraphQLPage;
-    content?: Record<string, unknown> | unknown;
-    errors?: DotCMSGraphQLError;
-    graphql: {
-        query: string;
-        variables: Record<string, unknown>;
     };
 }
 

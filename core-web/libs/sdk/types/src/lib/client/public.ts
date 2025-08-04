@@ -1,6 +1,33 @@
 import { UVE_MODE } from '../editor/public';
 
 /**
+ * Standardized HTTP error details
+ */
+export interface HttpErrorDetails {
+    status: number;
+    statusText: string;
+    message: string;
+    data?: any; // Error response body if available
+  }
+
+  /**
+   * Standardized HTTP error class for all HTTP client implementations
+   */
+  export class HttpError extends Error implements HttpErrorDetails {
+    status: number;
+    statusText: string;
+    data?: unknown;
+
+    constructor(details: HttpErrorDetails) {
+      super(details.message);
+      this.name = 'HttpError';
+      this.status = details.status;
+      this.statusText = details.statusText;
+      this.data = details.data;
+    }
+  }
+
+/**
  * Interface for HTTP client implementations.
  * Allows the SDK to work with different HTTP libraries.
  */
@@ -11,6 +38,7 @@ export interface HttpClient {
    * @param url - The URL to request
    * @param options - Request options (method, headers, body, etc.)
    * @returns A promise that resolves with the response data
+   * @throws {HttpError} When the request fails (non-2xx status or network error)
    */
   request<T = unknown>(url: string, options?: RequestOptions): Promise<T>;
 }

@@ -3,7 +3,7 @@
 import {
     DotCMSBasicContentlet,
     DotCMSGraphQLPageContainer,
-    DotCMSGraphQLPageResponse,
+    DotCMSGraphQLPage,
     DotCMSPageAssetContainers,
     DotCMSPageContainerContentlets,
     DotCMSPage,
@@ -22,11 +22,7 @@ import {
  * const pageEntity = graphqlToPageEntity(graphQLPageResponse);
  * ```
  */
-export const graphqlToPageEntity = (
-    graphQLPageResponse: DotCMSGraphQLPageResponse
-): DotCMSPageAsset | null => {
-    const { page } = graphQLPageResponse;
-
+export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | null => {
     // If there is no page, return null
     if (!page) {
         return null;
@@ -62,7 +58,7 @@ export const graphqlToPageEntity = (
         runningExperimentId,
         site: host,
         urlContentMap: urlContentMapData,
-        containers: parseContainers(containers as []),
+        containers: parseContainers(containers),
         page: {
             ...data,
             ...typedPageAsset
@@ -84,7 +80,7 @@ const parseContainers = (
             const { path, identifier, containerStructures, containerContentlets, ...rest } =
                 container;
 
-            const key = (path || identifier) as string;
+            const key = path || identifier;
 
             acc[key] = {
                 containerStructures,
