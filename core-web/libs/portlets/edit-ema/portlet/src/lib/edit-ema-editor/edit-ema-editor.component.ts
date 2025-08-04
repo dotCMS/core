@@ -49,6 +49,7 @@ import {
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
     DotCMSPage,
+    DotCMSURLContentMap,
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
@@ -1141,7 +1142,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {DotCMSContentlet} contentlet
      * @memberof EditEmaEditorComponent
      */
-    protected editContentMap(contentlet: DotCMSContentlet): void {
+    protected editContentMap(contentlet: DotCMSURLContentMap): void {
         this.dialog.editUrlContentMapContentlet(contentlet);
     }
 
