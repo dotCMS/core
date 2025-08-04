@@ -7,7 +7,7 @@ export interface HttpErrorDetails {
     status: number;
     statusText: string;
     message: string;
-    data?: any; // Error response body if available
+    data?: unknown; // Error response body if available
   }
 
   /**
@@ -30,6 +30,31 @@ export interface HttpErrorDetails {
 /**
  * Interface for HTTP client implementations.
  * Allows the SDK to work with different HTTP libraries.
+ *
+ * @important IMPLEMENTATION REQUIREMENTS:
+ * - ALL implementations MUST throw HttpError instances for failed requests
+ * - NEVER throw generic Error or other error types
+ * - Include response status, statusText, and message in HttpError
+ * - Attempt to parse error response body and include in HttpError.data
+ * - Handle network errors by wrapping them in HttpError (use createNetworkError helper)
+ *
+ * @example
+ * ```typescript
+ * // ✅ CORRECT - Throws HttpError
+ * if (!response.ok) {
+ *   throw new HttpError({
+ *     status: response.status,
+ *     statusText: response.statusText,
+ *     message: `Request failed: ${response.status}`,
+ *     data: await response.json()
+ *   });
+ * }
+ *
+ * // ❌ WRONG - Throws generic Error
+ * if (!response.ok) {
+ *   throw new Error(`HTTP ${response.status}`);
+ * }
+ * ```
  */
 export interface DotHttpClient {
   /**
@@ -39,8 +64,144 @@ export interface DotHttpClient {
    * @param options - Request options (method, headers, body, etc.)
    * @returns A promise that resolves with the response data
    * @throws {HttpError} When the request fails (non-2xx status or network error)
+   *
+   * @important This method MUST throw HttpError instances, not generic Error objects.
+   * Consumers expect HttpError with status, statusText, and data properties for proper error handling.
    */
   request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
+}
+
+/**
+ * Abstract base class for HTTP client implementations.
+ * Provides common error handling utilities and enforces HttpError contract.
+ *
+ * @example
+ * ```typescript
+ * // Fetch API example
+ * export class FetchHttpClient extends BaseHttpClient {
+ *   async request<T>(url: string, options?: DotRequestOptions): Promise<T> {
+ *     try {
+ *       const response = await fetch(url, options);
+ *
+ *       if (!response.ok) {
+ *         // Parse response body and headers
+ *         let errorBody: string | unknown;
+ *         try {
+ *           const contentType = response.headers.get('content-type');
+ *           if (contentType?.includes('application/json')) {
+ *             errorBody = await response.json();
+ *           } else {
+ *             errorBody = await response.text();
+ *           }
+ *         } catch {
+ *           errorBody = response.statusText;
+ *         }
+ *
+ *         const headers: Record<string, string> = {};
+ *         response.headers.forEach((value, key) => {
+ *           headers[key] = value;
+ *         });
+ *
+ *         throw this.createHttpError(
+ *           response.status,
+ *           response.statusText,
+ *           headers,
+ *           errorBody
+ *         );
+ *       }
+ *
+ *       return response.json();
+ *     } catch (error) {
+ *       if (error instanceof TypeError) {
+ *         throw this.createNetworkError(error);
+ *       }
+ *       throw error;
+ *     }
+ *   }
+ * }
+ *
+ * // Axios example
+ * export class AxiosHttpClient extends BaseHttpClient {
+ *   async request<T>(url: string, options?: DotRequestOptions): Promise<T> {
+ *     try {
+ *       const response = await axios(url, options);
+ *       return response.data;
+ *     } catch (error) {
+ *       if (axios.isAxiosError(error)) {
+ *         throw this.createHttpError(
+ *           error.response?.status || 0,
+ *           error.response?.statusText || 'Network Error',
+ *           error.response?.headers,
+ *           error.response?.data
+ *         );
+ *       }
+ *       throw this.createNetworkError(error);
+ *     }
+ *   }
+ * }
+ * ```
+ */
+export abstract class BaseHttpClient implements DotHttpClient {
+  abstract request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
+
+  /**
+   * Creates a standardized HttpError from HTTP response details.
+   * Handles parsing of error response body automatically.
+   *
+   * @param status - HTTP status code
+   * @param statusText - HTTP status text
+   * @param headers - Response headers (optional)
+   * @param body - Response body (optional)
+   * @param customMessage - Optional custom error message
+   * @returns HttpError instance with parsed response data
+   */
+  protected createHttpError(
+    status: number,
+    statusText: string,
+    headers?: Record<string, string>,
+    body?: string | unknown,
+    customMessage?: string
+  ): HttpError {
+    let errorData: unknown = body;
+
+    // If body is a string, try to parse as JSON
+    if (typeof body === 'string') {
+      try {
+        const contentType = headers?.['content-type'] || headers?.['Content-Type'];
+        if (contentType?.includes('application/json')) {
+          errorData = JSON.parse(body);
+        } else {
+          errorData = body;
+        }
+      } catch {
+        errorData = body;
+      }
+    }
+
+    return new HttpError({
+      status,
+      statusText,
+      message: customMessage || `HTTP ${status}: ${statusText}`,
+      data: errorData
+    });
+  }
+
+  /**
+   * Creates a standardized HttpError for network/connection errors.
+   *
+   * @param originalError - The original network error
+   * @returns HttpError instance representing a network error
+   */
+  protected createNetworkError(originalError: Error): HttpError {
+    return new HttpError({
+      status: 0, // Network error status
+      statusText: 'Network Error',
+      message: `Network error: ${originalError.message}`,
+      data: originalError
+    });
+  }
+
+
 }
 
 /**
