@@ -779,11 +779,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
     }
     
-    // SECURITY: Community edition filter applied via parameterized queries only
-    if (searchCondition.isCommunityEdition) {
-        sqlBuilder.append(" AND structuretype <> ? AND structuretype <> ? ");
-    }
-    
     // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
     if (!validatedSites.isEmpty()) {
         // Build multiple OR conditions with proper parameterization and escaping
@@ -950,7 +945,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         return "system".equals(field) || "fixed".equals(field) || "default_structure".equals(field);
     }
 
-  // SECURITY: Fully parameterized count query with safe condition support
+  // SECURITY: Fully parameterized count query with proper community edition handling
   private int dbCount(String search, int baseType) throws DotDataException, DotSecurityException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
@@ -958,27 +953,20 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     SearchCondition searchCondition = new SearchCondition(search);
     DotConnect dc = new DotConnect();
     
-    // SECURITY: Build SQL with safe condition support
-    String sqlTemplate;
+    // SECURITY: Build parameterized count query like dbSearch approach
+    StringBuilder sqlBuilder = new StringBuilder();
+    sqlBuilder.append("SELECT COUNT(*) as test FROM structure st, inode st_inode ");
+    sqlBuilder.append("WHERE st.inode = st_inode.inode AND st_inode.type = 'structure' ");
+    sqlBuilder.append("AND (st_inode.inode LIKE ? OR LOWER(st.name) LIKE ? OR st.velocity_var_name LIKE ?) ");
+    
+    // SECURITY: Add safe condition if present
     if (searchCondition.safeCondition != null) {
-      // Use template with safe condition placeholder
-      if (searchCondition.isCommunityEdition) {
-        sqlTemplate = String.format(this.contentTypeSql.SELECT_COUNT_CONDITION_COMMUNITY_WITH_SAFE, 
-                                   searchCondition.safeCondition.sqlCondition);
-      } else {
-        sqlTemplate = String.format(this.contentTypeSql.SELECT_COUNT_CONDITION_WITH_SAFE, 
-                                   searchCondition.safeCondition.sqlCondition);
-      }
-    } else {
-      // Use standard template without additional conditions
-      if (searchCondition.isCommunityEdition) {
-        sqlTemplate = this.contentTypeSql.SELECT_COUNT_CONDITION_COMMUNITY;
-      } else {
-        sqlTemplate = this.contentTypeSql.SELECT_COUNT_CONDITION;
-      }
+        sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
     }
     
-    dc.setSQL(sqlTemplate);
+    sqlBuilder.append(" AND st.structuretype >= ? AND st.structuretype <= ? ");
+    
+    dc.setSQL(sqlBuilder.toString());
     
     // Add common search parameters using helper method
     addCommonSearchParameters(dc, searchCondition);
@@ -1057,21 +1045,31 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
    */
   static class SearchCondition {
     final String search;
+    final String condition;
     final boolean isCommunityEdition;
     final SafeCondition safeCondition;
+
+    final String appendCondition = LicenseManager.getInstance().isCommunity() 
+                    ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
+                    : BLANK;
     
     SearchCondition(final String searchOrCondition) throws DotDataException {
       this.isCommunityEdition = LicenseManager.getInstance().isCommunity();
       
       if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
+        this.condition = appendCondition;
         this.search = PERCENT;
         this.safeCondition = null;
       } else if (containsComparisonOperator(searchOrCondition)) {
         // SECURITY: Parse comparison operators safely with parameterization
         this.search = PERCENT;
+        this.condition = searchOrCondition.toLowerCase().trim().startsWith("and")
+                ? searchOrCondition + appendCondition
+                : "AND " + searchOrCondition + appendCondition;
         this.safeCondition = SafeCondition.parse(searchOrCondition);
       } else {
         // Regular search term
+        this.condition = appendCondition;
         this.search = PERCENT + searchOrCondition + PERCENT;
         this.safeCondition = null;
       }
@@ -1176,9 +1174,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         throw new DotDataException("Invalid condition format");  
       }
       
-      // Pattern 1: column = 'value' or column = number
+      // Pattern 1: [table.]column = 'value' or [table.]column = number
+      // Handles both qualified (structure.system) and unqualified (system) column names
       Pattern equalityPattern = Pattern.compile(
-          "^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|!=|<>|>|<|>=|<=)\\s*(?:'([^']*)'|(\\d+))\\s*$", 
+          "^\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|!=|<>|>|<|>=|<=)\\s*(?:'([^']*)'|(\\d+))\\s*$", 
           Pattern.CASE_INSENSITIVE
       );
       
@@ -1196,9 +1195,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         return new SafeCondition(column, operator, value, sqlCondition);
       }
       
-      // Pattern 2: column IS [NOT] NULL
+      // Pattern 2: [table.]column IS [NOT] NULL
       Pattern nullPattern = Pattern.compile(
-          "^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s+IS\\s+(NOT\\s+)?NULL\\s*$", 
+          "^\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+IS\\s+(NOT\\s+)?NULL\\s*$", 
           Pattern.CASE_INSENSITIVE
       );
       
@@ -1214,9 +1213,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         return new SafeCondition(column, operator, null, sqlCondition);
       }
       
-      // Pattern 3: column LIKE 'pattern'
+      // Pattern 3: [table.]column LIKE 'pattern'
       Pattern likePattern = Pattern.compile(
-          "^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s+LIKE\\s+'([^']*)'\\s*$", 
+          "^\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+LIKE\\s+'([^']*)'\\s*$", 
           Pattern.CASE_INSENSITIVE
       );
       
