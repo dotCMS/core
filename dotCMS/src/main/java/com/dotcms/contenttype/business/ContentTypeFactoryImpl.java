@@ -1127,6 +1127,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         trimmed = trimmed.substring(4).trim();
       }
       
+      // SECURITY: Handle legacy "1=1" pattern as "no condition" to avoid SQL injection risk
+      // This pattern is used in legacy code for dynamic query building but should not reach the database
+      if ("1=1".equals(trimmed)) {
+        Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '1=1' condition to 'no condition' for safety");
+        return null; // No condition needed - return all results
+      }
+      
       // SECURITY: Simple pattern-based validation using Config properties
       // This approach focuses on SQL safety patterns rather than specific field whitelisting
       
