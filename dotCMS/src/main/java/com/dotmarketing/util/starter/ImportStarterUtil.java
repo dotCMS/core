@@ -287,6 +287,9 @@ public class ImportStarterUtil {
                 ident.setAssetName(ident.getAssetName());
             }
             Logger.info(this, "Importing folder path " + ident.getParentPath() + ident.getAssetName());
+            if(FolderAPI.OLD_SYSTEM_FOLDER_ID.equals(ident.getId())) {
+                ident.setId(FolderAPI.SYSTEM_FOLDER);
+            }
             APILocator.getIdentifierAPI().save(ident);
         }
 
@@ -294,6 +297,7 @@ public class ImportStarterUtil {
         for (final Identifier ident : otherIdents) {
             APILocator.getIdentifierAPI().save(ident);
         }
+
     }
 
     /**
