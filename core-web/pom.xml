@@ -126,7 +126,7 @@
                             <goal>yarn</goal>
                         </goals>
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
                         <configuration>
                             <arguments>nx run-many -t build  --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
                         </configuration>
