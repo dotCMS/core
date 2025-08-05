@@ -192,12 +192,36 @@ public class ContentHelper {
      */
     public String getUrl (final Contentlet contentlet) {
 
-        if(contentlet.getContentType().fieldMap((key) -> URL_FIELD) != null &&
-                contentlet.getStringProperty(URL_FIELD)!=null){
-            return contentlet.getStringProperty(URL_FIELD);
+        if(hasUrlField(contentlet)){
+            if(isPageOrFileAsset(contentlet)){
+                return contentlet.getStringProperty(URL_FIELD);
+            }
         }
         return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
     } // getUrl.
+
+    /**
+     * Determines if a contentlet is neither a file asset nor an HTML page.
+     * This method is used to check the type of a contentlet when processing URLs.
+     *
+     * @param contentlet The contentlet to check
+     * @return boolean True if the contentlet is neither a file asset nor an HTML page, false otherwise
+     */
+    private static boolean isPageOrFileAsset(Contentlet contentlet) {
+        return !contentlet.isFileAsset() && !contentlet.isHTMLPage();
+    }
+
+    /**
+     * Checks if a contentlet has a URL field in its content type and if that URL field has a non-null value.
+     * This method is used to determine if a contentlet has a valid URL property that can be accessed.
+     *
+     * @param contentlet The contentlet to check
+     * @return boolean True if the contentlet has a URL field with a non-null value, false otherwise
+     */
+    private static boolean hasUrlField(Contentlet contentlet) {
+        return contentlet.getContentType().fieldMap((key) -> URL_FIELD) != null &&
+                contentlet.getStringProperty(URL_FIELD) != null;
+    }
 
 
     /**
