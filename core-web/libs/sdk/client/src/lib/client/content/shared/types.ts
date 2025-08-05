@@ -1,4 +1,4 @@
-import { Contentlet, HttpError } from '@dotcms/types';
+import { Contentlet, DotHttpError } from '@dotcms/types';
 
 import { Equals } from '../builders/query/lucene-syntax';
 import { QueryBuilder } from '../builders/query/query';
@@ -45,11 +45,11 @@ export type OnFullfilled<T> =
  * Callback for a rejected promise.
  *
  * @callback OnRejected
- * @param {HttpError} error - The HTTP error object.
- * @returns {HttpError | PromiseLike<HttpError> | void} The processed error or a promise.
+ * @param {DotHttpError} error - The HTTP error object.
+ * @returns {DotHttpError | PromiseLike<DotHttpError> | void} The processed error or a promise.
  */
 export type OnRejected =
-    | ((error: HttpError) => HttpError | PromiseLike<HttpError> | void)
+    | ((error: DotHttpError) => DotHttpError | PromiseLike<DotHttpError> | void)
     | undefined
     | null;
 

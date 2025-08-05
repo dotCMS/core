@@ -13,7 +13,7 @@ export interface HttpErrorDetails {
   /**
    * Standardized HTTP error class for all HTTP client implementations
    */
-  export class HttpError extends Error implements HttpErrorDetails {
+  export class DotHttpError extends Error implements HttpErrorDetails {
     status: number;
     statusText: string;
     data?: unknown;
@@ -63,7 +63,7 @@ export interface DotHttpClient {
    * @param url - The URL to request
    * @param options - Request options (method, headers, body, etc.)
    * @returns A promise that resolves with the response data
-   * @throws {HttpError} When the request fails (non-2xx status or network error)
+   * @throws {DotHttpError} When the request fails (non-2xx status or network error)
    *
    * @important This method MUST throw HttpError instances, not generic Error objects.
    * Consumers expect HttpError with status, statusText, and data properties for proper error handling.
@@ -161,7 +161,7 @@ export abstract class BaseHttpClient implements DotHttpClient {
     headers?: Record<string, string>,
     body?: string | unknown,
     customMessage?: string
-  ): HttpError {
+  ): DotHttpError {
     let errorData: unknown = body;
 
     // If body is a string, try to parse as JSON
@@ -178,7 +178,7 @@ export abstract class BaseHttpClient implements DotHttpClient {
       }
     }
 
-    return new HttpError({
+    return new DotHttpError({
       status,
       statusText,
       message: customMessage || `HTTP ${status}: ${statusText}`,
@@ -192,8 +192,8 @@ export abstract class BaseHttpClient implements DotHttpClient {
    * @param originalError - The original network error
    * @returns HttpError instance representing a network error
    */
-  protected createNetworkError(originalError: Error): HttpError {
-    return new HttpError({
+  protected createNetworkError(originalError: Error): DotHttpError {
+    return new DotHttpError({
       status: 0, // Network error status
       statusText: 'Network Error',
       message: `Network error: ${originalError.message}`,

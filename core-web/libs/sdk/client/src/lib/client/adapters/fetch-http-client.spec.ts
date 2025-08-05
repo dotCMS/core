@@ -1,4 +1,4 @@
-import { HttpError } from '@dotcms/types';
+import { DotHttpError } from '@dotcms/types';
 
 import { FetchHttpClient } from './fetch-http-client';
 
@@ -105,7 +105,7 @@ describe('FetchHttpClient', () => {
           json: jest.fn().mockResolvedValue(errorBody)
         } as unknown as Response);
 
-        await expect(httpClient.request('https://api.example.com/test')).rejects.toThrow(HttpError);
+        await expect(httpClient.request('https://api.example.com/test')).rejects.toThrow(DotHttpError);
 
         // Reset mock for detailed error checking
         mockFetch.mockClear();
@@ -120,8 +120,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(400);
             expect(error.statusText).toBe('Bad Request');
             expect(error.data).toEqual(errorBody);
@@ -147,8 +147,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(500);
             expect(error.statusText).toBe('Internal Server Error');
             expect(error.data).toEqual(errorBody);
@@ -173,8 +173,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(503);
             expect(error.statusText).toBe('Service Unavailable');
             expect(error.data).toBe(errorText);
@@ -198,8 +198,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(400);
             expect(error.statusText).toBe('Bad Request');
             expect(error.data).toBe('Bad Request');
@@ -225,8 +225,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(429);
             // Note: Headers are passed to createHttpError but not exposed in HttpError interface
             // This test verifies the error is created with the correct status
@@ -243,8 +243,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(0);
             expect(error.statusText).toBe('Network Error');
             expect(error.message).toBe('Network error: Failed to fetch');
@@ -260,8 +260,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(0);
             expect(error.statusText).toBe('Network Error');
             expect(error.message).toBe('Network error: Network request failed');
@@ -321,8 +321,8 @@ describe('FetchHttpClient', () => {
         try {
           await httpClient.request('https://api.example.com/test');
         } catch (error: unknown) {
-          expect(error).toBeInstanceOf(HttpError);
-          if (error instanceof HttpError) {
+          expect(error).toBeInstanceOf(DotHttpError);
+          if (error instanceof DotHttpError) {
             expect(error.status).toBe(204);
             expect(error.statusText).toBe('No Content');
           }

@@ -1,6 +1,7 @@
 import { consola } from 'consola';
 
-import { DotHttpClient, DotCMSGraphQLError, DotGraphQLApiResponse } from '@dotcms/types';
+import { DotHttpClient, DotCMSGraphQLError, DotGraphQLApiResponse, DotHttpError } from '@dotcms/types';
+import { ErrorMessages } from '../models';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -286,11 +287,45 @@ export async function fetchGraphQL({
         headers
     } as RequestInit);
 
-    // Check for GraphQL errors in the response
-    if (response.errors && response.errors.length > 0) {
-        const errorMessages = response.errors.map((error: DotCMSGraphQLError) => error.message).join('; ');
-        throw new Error(`GraphQL errors: ${errorMessages}`);
+    if (response instanceof DotHttpError) {
+        const error = {
+            status: response.status,
+            message: ErrorMessages[response.status] || response.statusText
+        };
+
+        throw error;
     }
 
     return response;
 }
+
+// export async function fetchGraphQL({
+//     baseURL,
+//     body,
+//     headers
+// }: {
+//     baseURL: string;
+//     body: string;
+//     headers: Record<string, string>;
+// }) {
+//     const url = new URL(baseURL);
+//     url.pathname = '/api/v1/graphql';
+
+//     const response = await fetch(url.toString(), {
+//         method: 'POST',
+//         body,
+//         headers
+//     });
+
+//     if (!response.ok) {
+//         const error = {
+//             status: response.status,
+//             message: ErrorMessages[response.status] || response.statusText
+//         };
+
+//         throw error;
+//     }
+
+//     return await response.json();
+// }
+

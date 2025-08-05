@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 
-import { DotRequestOptions, HttpError } from '@dotcms/types';
+import { DotRequestOptions, DotHttpError } from '@dotcms/types';
 
 import { CollectionBuilder } from './collection';
 
@@ -498,7 +498,7 @@ describe('CollectionBuilder', () => {
                 new FetchHttpClient()
             ).limit(10);
 
-            const httpError = new HttpError({
+            const httpError = new DotHttpError({
                 status: 404,
                 statusText: 'Not Found',
                 message: 'Content not found',
@@ -512,12 +512,12 @@ describe('CollectionBuilder', () => {
                 await collectionBuilder;
                 fail('Expected HttpError to be thrown');
             } catch (error) {
-                expect(error).toBeInstanceOf(HttpError);
+                expect(error).toBeInstanceOf(DotHttpError);
                 expect(error).toEqual(httpError);
-                expect((error as HttpError).status).toBe(404);
-                expect((error as HttpError).statusText).toBe('Not Found');
-                expect((error as HttpError).message).toBe('Content not found');
-                expect((error as HttpError).data).toEqual({ error: 'Content type does not exist' });
+                expect((error as DotHttpError).status).toBe(404);
+                expect((error as DotHttpError).statusText).toBe('Not Found');
+                expect((error as DotHttpError).message).toBe('Content not found');
+                expect((error as DotHttpError).data).toEqual({ error: 'Content type does not exist' });
             }
         });
 
@@ -530,7 +530,7 @@ describe('CollectionBuilder', () => {
                 new FetchHttpClient()
             ).language(13);
 
-            const httpError = new HttpError({
+            const httpError = new DotHttpError({
                 status: 500,
                 statusText: 'Internal Server Error',
                 message: 'Server error occurred',
@@ -545,10 +545,10 @@ describe('CollectionBuilder', () => {
                     fail('Expected onrejected callback to be called');
                 },
                 (error) => {
-                    expect(error).toBeInstanceOf(HttpError);
+                    expect(error).toBeInstanceOf(DotHttpError);
                     expect(error).toEqual(httpError);
-                    expect((error as HttpError).status).toBe(500);
-                    expect((error as HttpError).statusText).toBe('Internal Server Error');
+                    expect((error as DotHttpError).status).toBe(500);
+                    expect((error as DotHttpError).statusText).toBe('Internal Server Error');
                     done();
                 }
             );
