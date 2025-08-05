@@ -5,7 +5,7 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 /**
  * Returns action url for create contentlet dialog

@@ -7,7 +7,6 @@ import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
  */
 @Component({
     selector: 'dotcms-page-error-message',
-    standalone: true,
     imports: [],
     template: `
         <div

@@ -21,7 +21,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-dataview',
-    standalone: true,
     imports: [
         ButtonModule,
         TableModule,

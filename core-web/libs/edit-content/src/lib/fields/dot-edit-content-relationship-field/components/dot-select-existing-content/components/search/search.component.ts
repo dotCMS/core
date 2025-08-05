@@ -1,4 +1,5 @@
 import { Component, inject, input, output, viewChild, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -9,12 +10,17 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
-import { TreeNodeItem } from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
+
+import { TreeNodeItem } from '../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { SearchParams } from '../../../../models/search.model';
+
+export const DEBOUNCE_TIME = 300;
 
 interface ActiveFilter {
     label: string;
@@ -33,7 +39,6 @@ interface ActiveFilter {
  */
 @Component({
     selector: 'dot-search',
-    standalone: true,
     imports: [
         InputTextModule,
         ButtonModule,
@@ -144,6 +149,20 @@ export class SearchComponent {
             siteOrFolderId: ['']
         })
     });
+
+    constructor() {
+        // debounced search.
+        this.form
+            .get('query')
+            ?.valueChanges.pipe(
+                takeUntilDestroyed(),
+                debounceTime(DEBOUNCE_TIME),
+                distinctUntilChanged()
+            )
+            .subscribe(() => {
+                this.doSearch();
+            });
+    }
 
     /**
      * Resets the search form to its initial state and clears active filters.

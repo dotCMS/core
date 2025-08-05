@@ -8,7 +8,6 @@ import { pluck } from 'rxjs/operators';
 import { DotContainer } from '@dotcms/dotcms-models';
 
 export const CONTAINER_API_URL = '/api/v1/containers/';
-
 /**
  * Provide util methods to handle containers in the system.
  * @export

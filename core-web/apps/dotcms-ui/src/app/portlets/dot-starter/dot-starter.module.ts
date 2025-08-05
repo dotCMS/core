@@ -3,12 +3,13 @@ import { NgModule } from '@angular/core';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { DotToolbarAnnouncementsComponent } from '@components/dot-toolbar/components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterRoutingModule } from './dot-starter-routing.module';
 import { DotStarterComponent } from './dot-starter.component';
+
+import { DotToolbarAnnouncementsComponent } from '../../view/components/dot-toolbar/components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 
 @NgModule({
     declarations: [DotStarterComponent],

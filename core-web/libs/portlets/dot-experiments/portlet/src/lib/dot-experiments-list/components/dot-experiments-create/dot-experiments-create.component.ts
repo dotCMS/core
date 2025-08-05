@@ -34,7 +34,6 @@ interface CreateForm {
 
 @Component({
     selector: 'dot-experiments-create',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,

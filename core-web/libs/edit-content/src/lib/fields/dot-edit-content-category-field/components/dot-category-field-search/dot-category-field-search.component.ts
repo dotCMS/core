@@ -18,7 +18,6 @@ const MINIMUM_CHARACTERS = 3;
 
 @Component({
     selector: 'dot-category-field-search',
-    standalone: true,
     imports: [
         DotMessagePipe,
         InputTextModule,

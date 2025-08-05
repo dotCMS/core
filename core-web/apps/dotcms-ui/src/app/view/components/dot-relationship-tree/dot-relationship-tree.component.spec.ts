@@ -28,7 +28,8 @@ const fakeContentType: DotCMSContentType = {
             [velocityVar]="velocityVar"
             [contentType]="contentType"
             [isParentField]="isParentField"></dot-relationship-tree>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     velocityVar = 'Parent.Children';
