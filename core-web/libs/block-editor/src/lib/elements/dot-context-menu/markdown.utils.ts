@@ -49,6 +49,10 @@ export function cleanHtmlForMarkdown(html: string): string {
     const buttons = tempDiv.querySelectorAll('button');
     buttons.forEach((button) => button.remove());
 
+    // Remove elements with data-dotCMS-contentlet attribute (custom contentlet blocks)
+    const contentletBlocks = tempDiv.querySelectorAll('[data-dotCMS-contentlet]');
+    contentletBlocks.forEach((block) => block.remove());
+
     // Remove colgroup and col elements
     const colgroups = tempDiv.querySelectorAll('colgroup');
     colgroups.forEach((colgroup) => colgroup.remove());
