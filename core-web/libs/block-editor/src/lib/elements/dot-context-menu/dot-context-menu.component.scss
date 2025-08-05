@@ -40,6 +40,10 @@
         }
     }
 
+    .p-contextmenu ul {
+        outline: none;
+    }
+
     .p-contextmenu .p-disabled {
         .p-menuitem-link {
             background-color: $color-palette-gray-200;
