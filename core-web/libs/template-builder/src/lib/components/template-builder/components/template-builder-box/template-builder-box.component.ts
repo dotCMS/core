@@ -8,7 +8,8 @@ import {
     EventEmitter,
     Input,
     OnChanges,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -30,7 +31,6 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     templateUrl: './template-builder-box.component.html',
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         NgClass,
         ButtonModule,
@@ -45,6 +45,9 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
+    private el = inject(ElementRef);
+    private dotMessage = inject(DotMessageService);
+
     @Output()
     editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
@@ -63,11 +66,6 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     boxVariant = TemplateBuilderBoxSize.small;
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
-
-    constructor(
-        private el: ElementRef,
-        private dotMessage: DotMessageService
-    ) {}
 
     private _dropdownLabel: string | null = null;
 

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AutoFocusModule } from 'primeng/autofocus';
@@ -27,16 +27,13 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
-
         DotSidebarHeaderComponent,
         DotMessagePipe,
         DotFieldValidationMessageComponent,
         DotSidebarDirective,
-
         //PrimeNg
         SidebarModule,
         ButtonModule,
@@ -50,15 +47,13 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     stepStatus = ComponentStatus;
     form: FormGroup;
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     ngOnInit(): void {
         this.initForm();

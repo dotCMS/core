@@ -1,20 +1,19 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+
 @Injectable()
 export class DotTempFileUploadService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Upload file to the dotcms temp service

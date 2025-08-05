@@ -18,6 +18,14 @@
     </div>
 
     <dot-bubble-menu [editor]="editor" />
+    <div
+        dotDragHandle
+        [editor]="editor"
+        [tippyOptions]="dotDragHandleOptions"
+        class="dot-drag-handle">
+        <i class="pi pi-ellipsis-v"></i>
+        <i class="pi pi-ellipsis-v"></i>
+    </div>
 
     @if (showCharData) {
         <dot-editor-count-bar

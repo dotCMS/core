@@ -14,11 +14,6 @@ import { MenuItem } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -37,11 +32,17 @@ import {
 
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotInlineEditModule } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.module';
+import { DotCopyLinkModule } from '../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotPortletBoxModule } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotSecondaryToolbarModule } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.module';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-types-fields-list',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsListComponent {
     @Input() baseType: string;
@@ -49,13 +50,15 @@ class TestContentTypeFieldsListComponent {
 
 @Component({
     selector: 'dot-content-type-fields-row-list',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsRowListComponent {}
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotIframeComponent {
     @Input() src: string;
@@ -63,7 +66,8 @@ class TestDotIframeComponent {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-content-type-layout [contentType]="contentType"></dot-content-type-layout>'
+    template: '<dot-content-type-layout [contentType]="contentType"></dot-content-type-layout>',
+    standalone: false
 })
 class TestHostComponent {
     @Input() contentType: DotCMSContentType;
@@ -72,13 +76,15 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-content-types-relationship-listing',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypesRelationshipListingComponent {}
 
 @Component({
     selector: 'dot-add-to-menu',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class MockDotAddToMenuComponent {
     @Input() contentType: DotCMSContentType;

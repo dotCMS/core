@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
 
-import { DotCurrentUserService, DotFormatDateService } from '@dotcms/data-access';
 import { ApiRoot, CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
@@ -13,6 +12,9 @@ import {
     DotPushPublishData
 } from '@dotcms/dotcms-models';
 
+import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
+
 /**
  * Provide method to push publish to content types
  * @export
@@ -20,6 +22,11 @@ import {
  */
 @Injectable()
 export class PushPublishService {
+    _apiRoot = inject(ApiRoot);
+    private coreWebService = inject(CoreWebService);
+    private currentUser = inject(DotCurrentUserService);
+    private dotFormatDateService = inject(DotFormatDateService);
+
     private pushEnvironementsUrl = '/api/environment/loadenvironments/roleId';
     /*
         TODO: I had to do this because this line concat'api/' into the URL
@@ -27,13 +34,6 @@ export class PushPublishService {
     */
     private publishUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
     private publishBundleURL = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle`;
-
-    constructor(
-        public _apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private currentUser: DotCurrentUserService,
-        private dotFormatDateService: DotFormatDateService
-    ) {}
 
     private _lastEnvironmentPushed!: string[];
 

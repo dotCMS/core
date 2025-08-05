@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -15,7 +15,7 @@ import { FieldType } from '../models';
  */
 @Injectable()
 export class FieldService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Get the field types

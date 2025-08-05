@@ -1,11 +1,15 @@
-import { TestBed } from '@angular/core/testing';
+import { expect, describe } from '@jest/globals';
+import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
+import { of, throwError } from 'rxjs';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { RelationshipFieldStore } from './relationship-field.store';
 
 describe('RelationshipFieldStore', () => {
+    let spectator: SpectatorService<InstanceType<typeof RelationshipFieldStore>>;
     let store: InstanceType<typeof RelationshipFieldStore>;
 
     const mockData = [
@@ -32,12 +36,39 @@ describe('RelationshipFieldStore', () => {
         variable: 'relationship_field'
     });
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [RelationshipFieldStore]
-        });
+    const mockContentType = {
+        id: 'test-content-type',
+        name: 'Test Content Type',
+        metadata: {
+            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+        }
+    };
 
-        store = TestBed.inject(RelationshipFieldStore);
+    const createStoreService = createServiceFactory({
+        service: RelationshipFieldStore,
+        providers: [
+            {
+                provide: DotContentTypeService,
+                useValue: {
+                    getContentType: jest.fn()
+                }
+            },
+            {
+                provide: DotHttpErrorManagerService,
+                useValue: {
+                    handle: jest.fn()
+                }
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createStoreService();
+        store = spectator.inject(RelationshipFieldStore);
+
+        // Set up default mock behavior
+        const dotContentTypeService = spectator.inject(DotContentTypeService);
+        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(of(mockContentType));
     });
 
     it('should be created', () => {
@@ -69,6 +100,7 @@ describe('RelationshipFieldStore', () => {
                     field,
                     contentlet: mockContentlet
                 });
+
                 expect(store.selectionMode()).toBe('single');
             });
 
@@ -82,6 +114,7 @@ describe('RelationshipFieldStore', () => {
                     field,
                     contentlet: mockContentlet
                 });
+
                 expect(store.selectionMode()).toBe('multiple');
             });
 
@@ -95,13 +128,32 @@ describe('RelationshipFieldStore', () => {
                     field,
                     contentlet: mockContentlet
                 });
+
                 expect(store.data()).toBeDefined();
+            });
+
+            it('should load content type when initialized', () => {
+                const dotContentTypeService = spectator.inject(DotContentTypeService);
+                const getContentTypeSpy = jest.spyOn(dotContentTypeService, 'getContentType');
+
+                store.initialize({
+                    cardinality: 0,
+                    contentlet: mockContentlet,
+                    variable: 'relationship_field',
+                    contentTypeId: 'test-content-type'
+                });
+
+                expect(getContentTypeSpy).toHaveBeenCalledWith('test-content-type');
+                expect(store.status()).toBe(ComponentStatus.LOADED);
+                expect(store.contentType()).toEqual(mockContentType);
+                expect(store.isNewEditorEnabled()).toBe(true);
             });
         });
 
         describe('setData', () => {
             it('should set data correctly', () => {
                 store.setData(mockData);
+
                 expect(store.data()).toEqual(mockData);
             });
         });
@@ -110,6 +162,7 @@ describe('RelationshipFieldStore', () => {
             it('should delete item by inode', () => {
                 store.setData(mockData);
                 store.deleteItem('inode1');
+
                 expect(store.data().length).toBe(2);
                 expect(store.data().find((item) => item.inode === 'inode1')).toBeUndefined();
             });
@@ -118,6 +171,7 @@ describe('RelationshipFieldStore', () => {
         describe('pagination', () => {
             it('should handle next page correctly', () => {
                 store.nextPage();
+
                 expect(store.pagination()).toEqual({
                     offset: 6,
                     currentPage: 2,
@@ -128,6 +182,7 @@ describe('RelationshipFieldStore', () => {
             it('should handle previous page correctly', () => {
                 store.nextPage();
                 store.previousPage();
+
                 expect(store.pagination()).toEqual({
                     offset: 0,
                     currentPage: 1,
@@ -141,6 +196,7 @@ describe('RelationshipFieldStore', () => {
         describe('totalPages', () => {
             it('should compute total pages correctly', () => {
                 store.setData(mockData);
+
                 expect(store.totalPages()).toBe(1);
             });
 
@@ -164,11 +220,13 @@ describe('RelationshipFieldStore', () => {
 
             it('should disable for single mode with one item', () => {
                 store.setData([mockData[0]]);
+
                 expect(store.isDisabledCreateNewContent()).toBe(true);
             });
 
             it('should not disable for single mode with no items', () => {
                 store.setData([]);
+
                 expect(store.isDisabledCreateNewContent()).toBe(false);
             });
 
@@ -183,6 +241,7 @@ describe('RelationshipFieldStore', () => {
                     contentlet: mockContentlet
                 });
                 store.setData(mockData);
+
                 expect(store.isDisabledCreateNewContent()).toBe(false);
             });
         });
@@ -190,6 +249,7 @@ describe('RelationshipFieldStore', () => {
         describe('formattedRelationship', () => {
             it('should format relationship IDs correctly', () => {
                 store.setData(mockData);
+
                 expect(store.formattedRelationship()).toBe('identifier1,identifier2,identifier3');
             });
 
@@ -199,6 +259,7 @@ describe('RelationshipFieldStore', () => {
 
             it('should handle single item', () => {
                 store.setData([mockData[0]]);
+
                 expect(store.formattedRelationship()).toBe('identifier1');
             });
 
@@ -208,6 +269,7 @@ describe('RelationshipFieldStore', () => {
                     createFakeContentlet({ identifier: 'def456', id: 'def456' })
                 ];
                 store.setData(customData);
+
                 expect(store.formattedRelationship()).toBe('abc123,def456');
             });
 
@@ -217,6 +279,7 @@ describe('RelationshipFieldStore', () => {
                     createFakeContentlet({ identifier: 'test_456', id: 'test_456' })
                 ];
                 store.setData(specialData);
+
                 expect(store.formattedRelationship()).toBe('test-123,test_456');
             });
         });
@@ -228,6 +291,7 @@ describe('RelationshipFieldStore', () => {
                 // Move forward two pages
                 store.nextPage();
                 store.nextPage();
+
                 expect(store.pagination()).toEqual({
                     offset: 12,
                     currentPage: 3,
@@ -236,6 +300,7 @@ describe('RelationshipFieldStore', () => {
 
                 // Move back one page
                 store.previousPage();
+
                 expect(store.pagination()).toEqual({
                     offset: 6,
                     currentPage: 2,
@@ -248,14 +313,18 @@ describe('RelationshipFieldStore', () => {
             it('should handle deletion of non-existent item gracefully', () => {
                 store.setData(mockData);
                 const initialLength = store.data().length;
+
                 store.deleteItem('non-existent-inode');
+
                 expect(store.data().length).toBe(initialLength);
             });
 
             it('should handle multiple deletions correctly', () => {
                 store.setData(mockData);
+
                 store.deleteItem('inode1');
                 store.deleteItem('inode2');
+
                 expect(store.data().length).toBe(1);
                 expect(store.data()[0].inode).toBe('inode3');
             });
@@ -277,6 +346,7 @@ describe('RelationshipFieldStore', () => {
                     field,
                     contentlet: emptyContentlet
                 });
+
                 expect(store.data()).toBeDefined();
                 expect(store.data().length).toBe(0);
             });
@@ -293,6 +363,7 @@ describe('RelationshipFieldStore', () => {
                         contentlet: mockContentlet
                     });
                 }).toThrowError();
+
             });
         });
     });

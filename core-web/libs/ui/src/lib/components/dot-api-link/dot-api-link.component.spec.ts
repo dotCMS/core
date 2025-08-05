@@ -3,12 +3,14 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotLinkComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotApiLinkComponent } from './dot-api-link.component';
 
+import { DotLinkComponent } from '../dot-link/dot-link.component';
+
 @Component({
+    standalone: false,
     template: `
         <dot-api-link [href]="href"></dot-api-link>
     `

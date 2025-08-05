@@ -15,11 +15,12 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
-import { createFormGroupDirectiveMock } from '@dotcms/edit-content/utils/mocks';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
+
+import { createFormGroupDirectiveMock } from '../../utils/mocks';
 
 const mockField = createFakeRelationshipField({
     relationships: {
@@ -75,7 +76,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
     let spectator: Spectator<DotEditContentRelationshipFieldComponent>;
     let store: InstanceType<typeof RelationshipFieldStore>;
     let dialogService: DialogService;
-    let contentTypeService: DotContentTypeService;
 
     const createComponent = createComponentFactory({
         component: DotEditContentRelationshipFieldComponent,
@@ -90,8 +90,12 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Mock Message')
             }),
-            mockProvider(DotContentTypeService),
-            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotContentTypeService, {
+                getContentType: jest.fn().mockReturnValue(of(mockContentType))
+            }),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn()
+            }),
             mockProvider(DotCurrentUserService),
             DialogService
         ],
@@ -108,7 +112,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
         store = spectator.inject(RelationshipFieldStore, true);
         dialogService = spectator.inject(DialogService);
-        contentTypeService = spectator.inject(DotContentTypeService);
     });
 
     describe('Component Initialization', () => {
@@ -159,8 +162,8 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             spectator.setInput({
-                $field: invalidField,
-                $contentlet: invalidContentlet
+                field: invalidField,
+                contentlet: invalidContentlet
             });
 
             spectator.detectChanges();
@@ -171,8 +174,8 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
         it('should handle null contentlet gracefully', () => {
             spectator.setInput({
-                $field: mockField,
-                $contentlet: null
+                field: mockField,
+                contentlet: null
             });
 
             spectator.detectChanges();
@@ -218,12 +221,12 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         });
 
         it('should not show create content dialog when disabled', () => {
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
+            const openSpy = jest.spyOn(dialogService, 'open');
             spectator.component.setDisabledState(true);
             spectator.detectChanges();
 
             spectator.component.showCreateNewContentDialog();
-            expect(getContentTypeSpy).not.toHaveBeenCalled();
+            expect(openSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -325,53 +328,99 @@ describe('DotEditContentRelationshipFieldComponent', () => {
     });
 
     describe('Create New Content Dialog', () => {
-        beforeEach(() => {
+        let openSpy: jest.SpyInstance;
+        let mockDialogRef: DynamicDialogRef;
+
+        beforeEach(async () => {
             spectator.detectChanges();
             // Initialize store with many-to-many cardinality (1) to allow multiple items
             store.initialize({
                 cardinality: 1, // MANY_TO_MANY
                 contentlet: createFakeContentlet({}),
-                variable: 'test'
+                variable: 'test',
+                contentTypeId: 'test-content-type'
             });
             store.setData([]);
+            // Flush effects to ensure async operations complete
+            spectator.flushEffects();
+
+            // Wait for the content type to load
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            spectator.flushEffects();
+
+            // Set up spy and mock dialog ref
+            mockDialogRef = {
+                onClose: of(null),
+                close: jest.fn()
+            } as unknown as DynamicDialogRef;
+
+            // Set up spy on the service instance
+            openSpy = jest
+                .spyOn(dialogService, 'open')
+                .mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
         });
 
-        it('should fetch content type when showing create dialog', () => {
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
-            getContentTypeSpy.mockReturnValue(of(mockContentType));
+        it('should open the new content dialog when the feature flag is enabled', () => {
+            // Check initial state
+            expect(spectator.component.$isDisabled()).toBe(false);
+            expect(store.contentType()).toEqual(mockContentType);
 
             spectator.component.showCreateNewContentDialog();
+            spectator.flushEffects();
 
-            expect(getContentTypeSpy).toHaveBeenCalled();
+            expect(openSpy).toHaveBeenCalledTimes(1);
+
+            const callArgs = openSpy.mock.calls[0];
+            expect(callArgs[0]).toBeDefined(); // Dialog component
+            expect(callArgs[1]).toBeDefined(); // Dialog config
+            expect(callArgs[1].modal).toBe(true);
+            expect(callArgs[1].width).toBe('95%');
+            expect(callArgs[1].height).toBe('95%');
+            expect(callArgs[1].data.contentTypeId).toBe('test-content-type');
+            expect(callArgs[1].data.relationshipInfo).toBeDefined();
+            expect(callArgs[1].data.relationshipInfo.relationshipName).toBe('relationshipField');
+            expect(callArgs[1].data.relationshipInfo.isParent).toBe(true);
+            expect(callArgs[1].header).toBe('Create Test Content Type');
         });
 
-        it('should call showCreateNewContentDialog without errors', () => {
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
+        it('should not open dialog when disabled', () => {
             const openSpy = jest.spyOn(dialogService, 'open');
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
 
-            getContentTypeSpy.mockReturnValue(of(mockContentType));
-            openSpy.mockReturnValue({} as DynamicDialogRef);
+            spectator.component.showCreateNewContentDialog();
+            spectator.flushEffects();
 
-            expect(() => {
-                spectator.component.showCreateNewContentDialog();
-            }).not.toThrow();
+            expect(openSpy).not.toHaveBeenCalled();
         });
 
-        it('should handle legacy content dialog when feature flag is disabled', () => {
-            const legacyContentType = {
-                ...mockContentType,
-                metadata: {
-                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                }
-            };
+        it('should not open dialog when content type is not available', () => {
+            // Mock the store's contentType method to return null
+            jest.spyOn(store, 'contentType').mockReturnValue(null);
 
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
-            getContentTypeSpy.mockReturnValue(of(legacyContentType));
+            spectator.component.showCreateNewContentDialog();
+            spectator.flushEffects();
 
-            // Since openLegacyContentDialog is currently a placeholder, we just verify it doesn't crash
-            expect(() => {
-                spectator.component.showCreateNewContentDialog();
-            }).not.toThrow();
+            expect(openSpy).not.toHaveBeenCalled();
+        });
+
+        it('should handle content creation callback', () => {
+            const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
+            const setDataSpy = jest.spyOn(store, 'setData');
+
+            spectator.component.showCreateNewContentDialog();
+            spectator.flushEffects();
+
+            // Verify that the dialog was opened
+            expect(openSpy).toHaveBeenCalled();
+
+            // Get the dialog data and call the onContentSaved callback
+            const dialogData = openSpy.mock.calls[0][1].data;
+            dialogData.onContentSaved(newContentlet);
+
+            expect(setDataSpy).toHaveBeenCalledTimes(1);
+            const callArgs = setDataSpy.mock.calls[0][0];
+            expect(callArgs).toContain(newContentlet);
         });
     });
 

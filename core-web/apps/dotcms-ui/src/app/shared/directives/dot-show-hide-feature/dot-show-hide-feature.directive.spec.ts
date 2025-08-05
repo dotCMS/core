@@ -15,7 +15,8 @@ import { DotShowHideFeatureDirective } from './dot-show-hide-feature.directive';
         <ng-container *dotShowHideFeature="featureFlag">
             <div data-testId="enabled-component">test</div>
         </ng-container>
-    `
+    `,
+    standalone: false
 })
 class TestComponent {
     featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
@@ -80,7 +81,8 @@ describe('DotShowHideFeatureDirective', () => {
         <ng-container
             *dotShowHideFeature="featureFlag; alternate: disabledComponent"
             [ngTemplateOutlet]="enabledComponent"></ng-container>
-    `
+    `,
+    standalone: false
 })
 class TestWithAlternateTemplateComponent {
     featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;

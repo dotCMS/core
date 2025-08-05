@@ -8,26 +8,34 @@ import {
     OnChanges,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotInlineEditComponent } from '@components/_common/dot-inline-edit/dot-inline-edit.component';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-type-layout',
     styleUrls: ['./content-types-layout.component.scss'],
-    templateUrl: 'content-types-layout.component.html'
+    templateUrl: 'content-types-layout.component.html',
+    standalone: false
 })
 export class ContentTypesLayoutComponent implements OnChanges, OnInit {
+    private dotMessageService = inject(DotMessageService);
+    private dotMenuService = inject(DotMenuService);
+    private fieldDragDropService = inject(FieldDragDropService);
+    private dotEventsService = inject(DotEventsService);
+    private dotCurrentUserService = inject(DotCurrentUserService);
+
     @Input() contentType: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<unknown> = new EventEmitter();
     @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
@@ -42,14 +50,6 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     addToMenuContentType = false;
 
     actions: MenuItem[];
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotMenuService: DotMenuService,
-        private fieldDragDropService: FieldDragDropService,
-        private dotEventsService: DotEventsService,
-        private dotCurrentUserService: DotCurrentUserService
-    ) {}
 
     ngOnInit(): void {
         this.showPermissionsTab = this.dotCurrentUserService.hasAccessToPortlet('permissions');

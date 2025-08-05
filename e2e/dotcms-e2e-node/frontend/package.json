@@ -31,7 +31,7 @@
     "start-ci": "CURRENT_ENV=ci yarn run start",
     "codegen": "yarn playwright codegen",
     "ui:local": "CURRENT_ENV=local yarn playwright test --ui",
-    "ui:dev": "CURRENT_ENV=dev yarn playwright test --ui",
+    "ui:local-dev": "CURRENT_ENV=dev yarn playwright test --ui",
     "ui:ci": "CURRENT_ENV=ci yarn playwright test --ui",
     "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js",
     "format": "prettier --write .",

@@ -1,7 +1,8 @@
 import { differenceInCalendarDays, format, formatDistanceStrict, isValid, parse } from 'date-fns';
 import { format as formatTZ, utcToZonedTime } from 'date-fns-tz';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotcmsConfigService, DotTimeZone, LoginService } from '@dotcms/dotcms-js';
 import { DotLocaleOptions } from '@dotcms/dotcms-models';
@@ -13,12 +14,12 @@ const INVALID_DATE_MSG = 'Invalid date';
 export function _isValid(date: string, formatPattern: string) {
     return isValid(parse(date, formatPattern, new Date()));
 }
-
 @Injectable({
     providedIn: 'root'
 })
 export class DotFormatDateService {
-    private loginService: LoginService = inject(LoginService);
+    private loginService = inject(LoginService);
+    private dotcmsConfigService = inject(DotcmsConfigService);
 
     private defaultDateFormatOptions: Intl.DateTimeFormatOptions = {
         year: 'numeric',
@@ -29,13 +30,12 @@ export class DotFormatDateService {
         hour12: true
     };
 
-    private _systemTimeZone!: DotTimeZone;
-
-    constructor(dotcmsConfigService: DotcmsConfigService) {
-        dotcmsConfigService
-            .getSystemTimeZone()
-            .subscribe((timezone) => (this._systemTimeZone = timezone));
-    }
+    private $systemTimeZone: Signal<DotTimeZone | null> = toSignal(
+        this.dotcmsConfigService.getSystemTimeZone(),
+        {
+            initialValue: null
+        }
+    );
 
     private _localeOptions!: DotLocaleOptions;
 
@@ -61,10 +61,10 @@ export class DotFormatDateService {
 
         try {
             localeLang = await import(`date-fns/locale/${langCode}-${countryCode}/index.js`);
-        } catch (error) {
+        } catch {
             try {
                 localeLang = await import(`date-fns/locale/${langCode}/index.js`);
-            } catch (error) {
+            } catch {
                 localeLang = await import(`date-fns/locale/en-US`);
             }
         }
@@ -148,9 +148,15 @@ export class DotFormatDateService {
      * @memberof DotFormatDateService
      */
     formatTZ(date: Date, formatPattern: string): string {
-        const zonedDate = utcToZonedTime(date, this._systemTimeZone.id);
+        const systemTimeZone = this.$systemTimeZone();
 
-        return formatTZ(zonedDate, formatPattern, { timeZone: this._systemTimeZone.id });
+        if (!systemTimeZone) {
+            return INVALID_DATE_MSG;
+        }
+
+        const zonedDate = utcToZonedTime(date, systemTimeZone.id);
+
+        return formatTZ(zonedDate, formatPattern, { timeZone: systemTimeZone.id });
     }
 
     /**

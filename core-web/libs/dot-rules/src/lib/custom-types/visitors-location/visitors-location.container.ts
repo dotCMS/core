@@ -1,7 +1,14 @@
 import { Observable, BehaviorSubject } from 'rxjs';
 
 import { DecimalPipe } from '@angular/common';
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    ChangeDetectionStrategy,
+    inject
+} from '@angular/core';
 import { UntypedFormControl } from '@angular/forms';
 
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -39,9 +46,14 @@ const I8N_BASE = 'api.sites.ruleengine';
             [comparisonControl]="comparisonControl"
             [comparisonOptions]="comparisonOptions"
             [fromLabel]="fromLabel"></cw-visitors-location-component>
-    `
+    `,
+    standalone: false
 })
 export class VisitorsLocationContainer {
+    resources = inject(I18nService);
+    decimalPipe = inject(DecimalPipe);
+    private loggerService = inject(LoggerService);
+
     @Input() componentInstance: ServerSideFieldModel;
 
     @Output()
@@ -66,11 +78,10 @@ export class VisitorsLocationContainer {
 
     private _rsrcCache: { [key: string]: Observable<string> };
 
-    constructor(
-        public resources: I18nService,
-        public decimalPipe: DecimalPipe,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const resources = this.resources;
+        const loggerService = this.loggerService;
+
         resources.get(I8N_BASE).subscribe((_rsrc) => {});
         this._rsrcCache = {};
 

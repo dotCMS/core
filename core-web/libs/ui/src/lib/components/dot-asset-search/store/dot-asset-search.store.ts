@@ -1,7 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { Observable } from 'rxjs/internal/Observable';
 import { map, switchMap, tap } from 'rxjs/operators';
@@ -35,6 +35,9 @@ const defaultState: DotAssetSearch = {
 
 @Injectable()
 export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
+    private dotContentSearchService = inject(DotContentSearchService);
+    private dotLanguagesService = inject(DotLanguagesService);
+
     // Selectors
     readonly vm$ = this.select((state) => state);
 
@@ -59,10 +62,7 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
 
     private languages: { [key: string]: DotLanguage } = {};
 
-    constructor(
-        private dotContentSearchService: DotContentSearchService,
-        private dotLanguagesService: DotLanguagesService
-    ) {
+    constructor() {
         super(defaultState);
 
         this.dotLanguagesService.get().subscribe((languages) => {

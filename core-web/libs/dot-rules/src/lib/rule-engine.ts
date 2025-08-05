@@ -139,9 +139,13 @@ const I8N_BASE = 'api.sites.ruleengine';
                 [saving]="rule._saving"
                 [errors]="rule._errors"></rule>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class RuleEngineComponent implements OnDestroy {
+    private ruleViewService = inject(RuleViewService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+
     @Input() rules: RuleModel[];
     @Input() ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
     @Input() loading: boolean;
@@ -190,11 +194,9 @@ export class RuleEngineComponent implements OnDestroy {
 
     private readonly route = inject(ActivatedRoute);
 
-    constructor(
-        resources: I18nService,
-        private ruleViewService: RuleViewService,
-        private dotPushPublishDialogService: DotPushPublishDialogService
-    ) {
+    constructor() {
+        const resources = inject(I18nService);
+
         this.resources = resources;
         resources.get(I8N_BASE).subscribe((_rsrc) => {});
         this.filterText = '';

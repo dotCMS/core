@@ -5,12 +5,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Dialog } from 'primeng/dialog';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotAlertConfirmComponent } from './dot-alert-confirm';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 describe('DotAlertConfirmComponent', () => {
     let component: DotAlertConfirmComponent;

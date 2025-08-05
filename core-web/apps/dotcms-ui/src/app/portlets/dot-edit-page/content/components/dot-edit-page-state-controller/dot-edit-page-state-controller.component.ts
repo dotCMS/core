@@ -8,7 +8,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { MenuItem, SelectItem } from 'primeng/api';
@@ -16,7 +17,6 @@ import { Menu } from 'primeng/menu';
 
 import { switchMap, take } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -32,7 +32,10 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotEditPageLockInfoComponent } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
+
+import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
+
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 enum DotConfirmationType {
     LOCK,
@@ -43,9 +46,17 @@ enum DotConfirmationType {
 @Component({
     selector: 'dot-edit-page-state-controller',
     templateUrl: './dot-edit-page-state-controller.component.html',
-    styleUrls: ['./dot-edit-page-state-controller.component.scss']
+    styleUrls: ['./dot-edit-page-state-controller.component.scss'],
+    standalone: false
 })
 export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPageStateService = inject(DotPageStateService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+    private dotContentletEditor = inject(DotContentletEditorService);
+    private dotPropertiesService = inject(DotPropertiesService);
+
     @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoComponent;
     @ViewChild('menu') menu: Menu;
 
@@ -68,15 +79,6 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
             this.menu.toggle(event);
         }
     };
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService,
-        private dotContentletEditor: DotContentletEditorService,
-        private dotPropertiesService: DotPropertiesService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges) {
         const pageState = changes.pageState?.currentValue;

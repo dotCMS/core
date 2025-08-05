@@ -1,7 +1,7 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
 
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
@@ -33,10 +33,10 @@ import {
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
+import { DragHandleDirective } from './directive/drag-handle.directive';
 import { DotBubbleMenuComponent } from './elements/dot-bubble-menu/dot-bubble-menu.component';
 import {
     BubbleFormComponent,
-    DragHandlerComponent,
     FloatingButtonComponent,
     UploadPlaceholderComponent
 } from './extensions';
@@ -69,12 +69,12 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         PaginatorModule,
         DotSpinnerModule,
         DotBubbleMenuComponent,
-        TiptapBubbleMenuDirective
+        TiptapBubbleMenuDirective,
+        DragHandleDirective
     ],
     declarations: [
         EditorDirective,
         ContentletBlockComponent,
-        DragHandlerComponent,
         BubbleFormComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
@@ -90,14 +90,11 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotContentSearchService,
         DotLanguagesService,
         DotContentTypeService,
-
         DotWorkflowActionsFireService,
-        {
-            provide: APP_INITIALIZER,
-            useFactory: initTranslations,
-            deps: [DotMessageService],
-            multi: true
-        }
+        provideAppInitializer(() => {
+            const initializerFn = initTranslations(inject(DotMessageService));
+            return initializerFn();
+        })
     ],
     exports: [
         EditorDirective,
@@ -106,7 +103,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        DotSpinnerModule
+        DotSpinnerModule,
+        DragHandleDirective
     ]
 })
 export class BlockEditorModule {}

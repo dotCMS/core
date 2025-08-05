@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
@@ -11,12 +11,13 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
 
 @Component({
     selector: 'dotcms-template-builder-sidebar',
-    standalone: true,
     imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipe],
     templateUrl: './template-builder-sidebar.component.html',
     styleUrls: ['./template-builder-sidebar.component.scss']
 })
 export class TemplateBuilderSidebarComponent {
+    private store = inject(DotTemplateBuilderStore);
+
     @Input() sidebarProperties: DotLayoutSideBar = {
         width: 'medium',
         containers: []
@@ -24,8 +25,6 @@ export class TemplateBuilderSidebarComponent {
 
     @Input() containerMap: DotContainerMap;
     readonly widthOptions = ['Small', 'Medium', 'Large'];
-
-    constructor(private store: DotTemplateBuilderStore) {}
 
     get width() {
         return (this.sidebarProperties.width ?? 'medium').replace(/^\w/g, (l) => l.toUpperCase());

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 
@@ -12,18 +12,17 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-content-type-selector',
     templateUrl: './dot-content-type-selector.component.html',
-    styleUrls: ['./dot-content-type-selector.component.scss']
+    styleUrls: ['./dot-content-type-selector.component.scss'],
+    standalone: false
 })
 export class DotContentTypeSelectorComponent implements OnInit {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotMessageService = inject(DotMessageService);
+
     @Input() value: SelectItem;
     @Output() selected = new EventEmitter<string>();
 
     options$: Observable<SelectItem[]>;
-
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit() {
         this.options$ = this.dotContentTypeService.getContentTypes({ page: 999 }).pipe(

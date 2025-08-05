@@ -15,7 +15,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAlertConfirmService,
     DotContentTypesInfoService,
@@ -50,11 +49,14 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+
 // eslint-disable-next-line max-len
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsDropZoneComponent {
     @Input() layout: DotCMSContentTypeLayoutRow[];
@@ -68,7 +70,8 @@ class TestContentTypeFieldsDropZoneComponent {
 
 @Component({
     selector: 'dot-content-type-layout',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 class TestContentTypeLayoutComponent {
     @Input() contentType: DotCMSContentType;
@@ -78,7 +81,8 @@ class TestContentTypeLayoutComponent {
 
 @Component({
     selector: 'dot-content-types-form',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
@@ -92,7 +96,8 @@ class TestContentTypesFormComponent {
 
 @Component({
     selector: 'dot-menu',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class TestDotMenuComponent {
     @Input() icon: string;
@@ -845,7 +850,7 @@ describe('DotContentTypesEditComponent', () => {
                 contentTypeForm = de.query(By.css('dot-content-types-form'));
             });
 
-            it('should udpate content type', () => {
+            it('should update content type', () => {
                 const responseContentType = Object.assign({}, fakeContentType, {
                     fields: [{ hello: 'world' }]
                 });

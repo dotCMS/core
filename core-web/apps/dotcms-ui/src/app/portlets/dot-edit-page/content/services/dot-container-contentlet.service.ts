@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -10,10 +10,8 @@ import { DotPage, DotPageContainer, DotPageContent } from '@dotcms/dotcms-models
 
 @Injectable()
 export class DotContainerContentletService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private dotSessionStorageService: DotSessionStorageService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
      * Get the HTML of a contentlet inside a container

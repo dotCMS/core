@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -60,9 +59,7 @@ interface GeneratedStringField {
  */
 @Component({
     selector: 'dot-apps-configuration-detail-generated-string-field',
-    standalone: true,
     imports: [
-        CommonModule,
         FormsModule,
         DotIconModule,
         DotMessagePipe,

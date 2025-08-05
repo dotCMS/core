@@ -1,6 +1,6 @@
 import { Subscription } from 'rxjs';
 
-import { Component, forwardRef, Input } from '@angular/core';
+import { Component, forwardRef, Input, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { Site, SiteService } from '@dotcms/dotcms-js';
@@ -21,9 +21,12 @@ import { Site, SiteService } from '@dotcms/dotcms-js';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotSiteSelectorFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
+    private siteService = inject(SiteService);
+
     @Input()
     archive: boolean;
     @Input()
@@ -36,8 +39,6 @@ export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
     value: string;
 
     private currentSiteSubscription: Subscription;
-
-    constructor(private siteService: SiteService) {}
 
     propagateChange = (_: unknown) => undefined;
 

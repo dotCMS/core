@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -19,10 +18,9 @@ import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
 @Component({
-    standalone: true,
     selector: 'dot-language-selector',
     templateUrl: './dot-language-selector.component.html',
-    imports: [DropdownModule, FormsModule, NgIf],
+    imports: [DropdownModule, FormsModule],
     providers: [DotLanguagesService],
     styleUrls: ['./dot-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -6,6 +6,8 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
@@ -325,6 +327,14 @@ public class LoginServiceAPIFactory implements Serializable {
                 if (Config.getBooleanProperty("show.lts.eol.message", false)) {
                     messageLTSVersionEOL(logInUser);
                 }
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    messageTokensToExpire(logInUser);
+                }).start();
             }
 
             if (authResult != Authenticator.SUCCESS) {
@@ -698,6 +708,69 @@ public class LoginServiceAPIFactory implements Serializable {
             return this.getLoggedInUser(request);
         }
     }
+
+    /**
+     * This function notifies API Tokens that are about to expire within the configured number of days.
+     * Uses EXPIRING_TOKEN_LOOKAHEAD_DAYS configuration (default: 7 days).
+     * Can be disabled using DISPLAY_EXPIRING_TOKEN_ALERTS configuration (default: true).
+     * If the user is an admin, shows all expiring tokens with link to REST API.
+     * If the user is not an admin, shows only their own tokens with notification to contact admin.
+     */
+    @CloseDBIfOpened
+    private void messageTokensToExpire(User logInUser) {
+
+        if (!Config.getBooleanProperty("DISPLAY_EXPIRING_TOKEN_ALERTS", true)) {
+            return;
+        }
+
+        final int daysLookahead = Config.getIntProperty("EXPIRING_TOKEN_LOOKAHEAD_DAYS", 7);
+
+        if (daysLookahead < 0) {
+            Logger.error(this, "Invalid EXPIRING_TOKEN_LOOKAHEAD_DAYS configuration: " + daysLookahead);
+            return;
+        }
+
+        try {
+            ApiTokenAPI apiTokenAPI = APILocator.getApiTokenAPI();
+            List<ApiToken> expiringTokens = apiTokenAPI.findExpiringTokens(daysLookahead, logInUser);
+
+            if (!expiringTokens.isEmpty()) {
+                SystemMessageBuilder message;
+
+                if (logInUser.isAdmin()) {
+
+                    String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.admin.message");
+                    message = new SystemMessageBuilder()
+                            .setMessage(msg)
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(86400000);
+                } else {
+
+                    String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.user.message");
+                    message = new SystemMessageBuilder()
+                            .setMessage(msg)
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(86400000);
+                }
+
+                sendMessage(message, logInUser);
+            }
+        } catch (Exception e) {
+            Logger.error(this, "Error checking for expiring tokens: " + e.getMessage(), e);
+        }
+    }
+
+    private void sendMessage(SystemMessageBuilder message, User user) {
+        try {
+            SystemMessageEventUtil.getInstance().pushMessage(message.create(), list(user.getUserId()));
+            Logger.info("", message.create().getMessage().toString());
+        } catch (Exception e) {
+            Logger.error(this, "Error sending message: " + e.getMessage(), e);
+        }
+    }
+    
 
     /**
      * Message to show LTS version is reaching or already reached EOL.

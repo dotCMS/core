@@ -1,10 +1,9 @@
 import { Observable, from, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import {
     DotCMSTempFile,
     IMG_NOT_FOUND_KEY,
@@ -20,12 +19,13 @@ import {
     SeoRulesResult
 } from '@dotcms/dotcms-models';
 
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotUploadService } from '../dot-upload/dot-upload.service';
+
 @Injectable()
 export class DotSeoMetaTagsUtilService {
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotUploadService: DotUploadService
-    ) {}
+    private dotMessageService = inject(DotMessageService);
+    private dotUploadService = inject(DotUploadService);
 
     /**
      * Get meta tags from the document

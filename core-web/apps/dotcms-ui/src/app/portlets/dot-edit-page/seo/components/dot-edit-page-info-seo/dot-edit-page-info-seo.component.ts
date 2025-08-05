@@ -1,16 +1,11 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, Inject, Input } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, Input, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotLinkComponent } from '@components/dot-link/dot-link.component';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import {
-    DotApiLinkComponent,
-    DotCopyButtonComponent,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
+import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+
+import { LOCATION_TOKEN } from '../../../../../providers';
 
 /**
  * Basic page information for edit mode
@@ -22,29 +17,22 @@ import {
     selector: 'dot-edit-page-info-seo',
     templateUrl: './dot-edit-page-info-seo.component.html',
     styleUrls: ['./dot-edit-page-info-seo.component.scss'],
-    standalone: true,
-    imports: [
-        CommonModule,
-        ButtonModule,
-        DotCopyButtonComponent,
-        DotApiLinkComponent,
-        DotSafeHtmlPipe,
-        DotMessagePipe,
-        DotLinkComponent
-    ],
+    imports: [ButtonModule, DotCopyButtonComponent, DotApiLinkComponent, DotMessagePipe],
     providers: [{ provide: LOCATION_TOKEN, useValue: window.location }]
 })
 export class DotEditPageInfoSeoComponent {
+    private document = inject<Document>(DOCUMENT);
+
     @Input() title: string;
     @Input() url: string;
     innerApiLink: string;
-    baseUrl: string;
+    baseUrl = '';
     seoImprovements: boolean;
     previewUrl: string;
 
-    constructor(@Inject(DOCUMENT) private document: Document) {
-        this.baseUrl = document.defaultView.location.href.includes('edit-page')
-            ? document.defaultView.location.origin
+    constructor() {
+        this.baseUrl = this.document.defaultView.location.href.includes('edit-page')
+            ? this.document.defaultView.location.origin
             : '';
     }
 

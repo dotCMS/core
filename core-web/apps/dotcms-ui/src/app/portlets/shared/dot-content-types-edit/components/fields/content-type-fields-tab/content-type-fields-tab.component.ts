@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -12,9 +12,13 @@ import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotc
 @Component({
     selector: 'dot-content-type-fields-tab',
     styleUrls: ['./content-type-fields-tab.component.scss'],
-    templateUrl: './content-type-fields-tab.component.html'
+    templateUrl: './content-type-fields-tab.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsTabComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+    private dotDialogService = inject(DotAlertConfirmService);
+
     @Input()
     fieldTab: DotCMSContentTypeLayoutRow;
 
@@ -25,11 +29,6 @@ export class ContentTypeFieldsTabComponent implements OnInit {
     removeTab: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
     label: string;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotDialogService: DotAlertConfirmService
-    ) {}
 
     ngOnInit() {
         this.label = this.fieldTab.divider.name;

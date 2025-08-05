@@ -212,11 +212,13 @@ cube('request', {
     utmTerm: { sql: 'utm_term', type: `string` },
     utmContent: { sql: 'utm_content', type: `string` },
     key: { sql: 'context_site_key', type: `string` },
+    siteId: { sql: 'context_site_id', type: `string` },
     sessionID: { sql: 'sessionid', type: `string` },
     userId: { sql: 'context_user_id', type: `string` },
     requestId: { sql: 'request_id', type: `string` },
     clusterId: { sql: 'cluster_id', type: `string` },
-    customerId: { sql: 'customer_id', type: `string` }
+    customerId: { sql: 'customer_id', type: `string` },
+    createdAt: { sql: 'utc_time', type: `time`, },
   },
   measures: {
     count: {
@@ -231,6 +233,11 @@ cube('request', {
       sql: 'request_id',
       type: 'countDistinct',
       title: 'Total Requests'
+    },
+    totalUsers: {
+      sql: 'context_user_id',
+      type: 'countDistinct',
+      title: 'Total Users'
     }
   }
 });

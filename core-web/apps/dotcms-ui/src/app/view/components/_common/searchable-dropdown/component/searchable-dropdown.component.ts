@@ -16,7 +16,8 @@ import {
     SimpleChange,
     SimpleChanges,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -42,11 +43,14 @@ import { debounceTime, tap } from 'rxjs/operators';
     ],
     selector: 'dot-searchable-dropdown',
     styleUrls: ['./searchable-dropdown.component.scss'],
-    templateUrl: './searchable-dropdown.component.html'
+    templateUrl: './searchable-dropdown.component.html',
+    standalone: false
 })
 export class SearchableDropdownComponent
     implements ControlValueAccessor, OnChanges, AfterContentInit, AfterViewInit
 {
+    private cd = inject(ChangeDetectorRef);
+
     @Input()
     data: Record<string, unknown>[];
 
@@ -158,8 +162,6 @@ export class SearchableDropdownComponent
         'ArrowLeft',
         'ArrowRight'
     ];
-
-    constructor(private cd: ChangeDetectorRef) {}
 
     propagateChange = (_: unknown) => {
         /**/
@@ -432,7 +434,7 @@ export class SearchableDropdownComponent
             : this.labelPropertyName;
     }
 
-    private getValueToPropagate(): string {
+    private getValueToPropagate() {
         return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
     }
 }

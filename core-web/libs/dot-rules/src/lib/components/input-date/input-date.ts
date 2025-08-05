@@ -5,7 +5,7 @@ import {
     EventEmitter,
     Input,
     Output,
-    Optional
+    inject
 } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
 
@@ -27,9 +27,12 @@ import { isEmpty } from '@dotcms/utils';
             [tabindex]="tabIndex || ''"
             hourFormat="12"
             showButtonBar="true"></p-calendar>
-    `
+    `,
+    standalone: false
 })
 export class InputDate implements ControlValueAccessor {
+    private _elementRef = inject(ElementRef);
+
     private static DEFAULT_VALUE: Date;
     @Input() placeholder = '';
     @Input() type = '';
@@ -60,10 +63,9 @@ export class InputDate implements ControlValueAccessor {
         return d;
     }
 
-    constructor(
-        @Optional() control: NgControl,
-        private _elementRef: ElementRef
-    ) {
+    constructor() {
+        const control = inject(NgControl, { optional: true });
+
         if (control) {
             control.valueAccessor = this;
         }

@@ -171,28 +171,26 @@ describe('Relationship Field Utils', () => {
             expect(result).toBe('contentTypeId');
         });
 
-        it('should throw error when relationships property is missing', () => {
+        it('should return null when relationships property is missing', () => {
             const field = createFakeRelationshipField({
                 contentTypeId: null,
                 relationships: null
             });
 
-            expect(() => getContentTypeIdFromRelationship(field)).toThrow(
-                'Content type ID not found in relationship field'
-            );
+            const result = getContentTypeIdFromRelationship(field);
+            expect(result).toBeNull();
         });
 
-        it('should throw error when velocityVar is missing', () => {
+        it('should return null when velocityVar is missing', () => {
             const field = createFakeRelationshipField({
                 relationships: null
             });
 
-            expect(() => getContentTypeIdFromRelationship(field)).toThrow(
-                'Content type ID not found in relationship field'
-            );
+            const result = getContentTypeIdFromRelationship(field);
+            expect(result).toBeNull();
         });
 
-        it('should throw error when velocityVar has invalid format', () => {
+        it('should return null when velocityVar has invalid format', () => {
             const field = createFakeRelationshipField({
                 relationships: {
                     cardinality: 0,
@@ -201,9 +199,21 @@ describe('Relationship Field Utils', () => {
                 }
             });
 
-            expect(() => getContentTypeIdFromRelationship(field)).toThrow(
-                'Content type ID not found in relationship field'
-            );
+            const result = getContentTypeIdFromRelationship(field);
+            expect(result).toBeNull();
+        });
+
+        it('should return null when velocityVar starts with dot', () => {
+            const field = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: '.fieldName'
+                }
+            });
+
+            const result = getContentTypeIdFromRelationship(field);
+            expect(result).toBeNull();
         });
     });
 });

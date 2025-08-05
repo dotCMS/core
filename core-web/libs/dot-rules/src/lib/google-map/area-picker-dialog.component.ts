@@ -6,7 +6,8 @@ import {
     Input,
     Output,
     EventEmitter,
-    OnChanges
+    OnChanges,
+    inject
 } from '@angular/core';
 
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -38,9 +39,13 @@ let mapIdCounter = 1;
                 <div *ngIf="!hidden" class="g-map" id="{{ mapId }}"></div>
             </div>
         </cw-modal-dialog>
-    `
+    `,
+    standalone: false
 })
 export class AreaPickerDialogComponent implements OnChanges {
+    mapsService = inject(GoogleMapService);
+    private loggerService = inject(LoggerService);
+
     @Input() apiKey = '';
     @Input() headerText = '';
     @Input() hidden = false;
@@ -57,10 +62,7 @@ export class AreaPickerDialogComponent implements OnChanges {
 
     private _prevCircle: GCircle;
 
-    constructor(
-        public mapsService: GoogleMapService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
         this.loggerService.debug('AreaPickerDialogComponent', 'constructor', this.mapId);
     }
 

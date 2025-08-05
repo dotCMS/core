@@ -1,8 +1,21 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY } from 'rxjs';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
-import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
+import { catchError, switchMap, tap } from 'rxjs/operators';
+
+import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    FeaturedFlags,
+  DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
+
 
 import { ACTION_COLUMN, DEFAULT_RELATIONSHIP_COLUMNS, REORDER_COLUMN } from '../dot-edit-content-relationship-field.constants';
 import { SelectionMode, TableColumn } from '../models/relationship.models';
@@ -184,8 +197,8 @@ export const RelationshipFieldStore = signalStore(
                     }
                 });
             }
-        };
-    })
+        })
+    )
 );
 
 

@@ -9,7 +9,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
@@ -23,9 +24,13 @@ import { FieldPropertyService } from '../service';
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     styleUrls: ['./content-type-fields-properties-form.component.scss'],
-    templateUrl: './content-type-fields-properties-form.component.html'
+    templateUrl: './content-type-fields-properties-form.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
+    private fb = inject(UntypedFormBuilder);
+    private fieldPropertyService = inject(FieldPropertyService);
+
     @Output() saveField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
 
     @Output() valid: EventEmitter<boolean> = new EventEmitter();
@@ -42,11 +47,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     private originalValue: DotCMSContentTypeField;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        private fieldPropertyService: FieldPropertyService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData?.currentValue && this.formFieldData) {

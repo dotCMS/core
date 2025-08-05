@@ -22,7 +22,9 @@
                         "type": "element",
                         "style": "kebab-case"
                     }
-                ]
+                ],
+                "@angular-eslint/prefer-standalone": "off",
+                "@angular-eslint/no-input-rename": "off"
             }
         },
         {

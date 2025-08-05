@@ -1,7 +1,7 @@
 import { from as observableFrom, Observable, merge, Subject } from 'rxjs';
 
 // tslint:disable-next-line:max-file-line-count
-import { Component, EventEmitter, ViewEncapsulation, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, ViewEncapsulation, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
@@ -114,9 +114,19 @@ export interface ConditionActionEvent extends RuleActionEvent {
             [showRules]="state.showRules"
             [pageId]="pageId"
             [isContentletHost]="isContentletHost"></cw-rule-engine>
-    `
+    `,
+    standalone: false
 })
 export class RuleEngineContainer implements OnDestroy {
+    _ruleService = inject(RuleService);
+    private _ruleActionService = inject(ActionService);
+    private _conditionGroupService = inject(ConditionGroupService);
+    private _conditionService = inject(ConditionService);
+    bundleService = inject(BundleService);
+    private route = inject(ActivatedRoute);
+    private loggerService = inject(LoggerService);
+    private ruleViewService = inject(RuleViewService);
+
     rules: RuleModel[];
     state: RuleEngineState = new RuleEngineState();
 
@@ -131,16 +141,7 @@ export class RuleEngineContainer implements OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        public _ruleService: RuleService,
-        private _ruleActionService: ActionService,
-        private _conditionGroupService: ConditionGroupService,
-        private _conditionService: ConditionService,
-        public bundleService: BundleService,
-        private route: ActivatedRoute,
-        private loggerService: LoggerService,
-        private ruleViewService: RuleViewService
-    ) {
+    constructor() {
         this.rules$.subscribe((rules) => {
             this.rules = rules;
         });

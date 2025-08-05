@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -19,11 +19,9 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 @Component({
     selector: 'dot-dot-experiments-configuration-scheduling-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
-
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
@@ -39,6 +37,8 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     form: FormGroup;
     scheduling: RangeOfDateAndTime;
     stepStatus = ComponentStatus;
@@ -54,10 +54,6 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         status: StepStatus;
         schedulingBoundaries: Record<string, number>;
     }> = this.dotExperimentsConfigurationStore.schedulingStepVm$;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     ngOnInit(): void {
         this.setInitialDate();
