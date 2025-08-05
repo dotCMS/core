@@ -17,6 +17,7 @@ import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -58,6 +59,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
 /**
  * Encapsulate helper method for the {@link com.dotcms.rest.ContentResource}
@@ -189,7 +192,22 @@ public class ContentHelper {
      */
     public String getUrl (final Contentlet contentlet) {
 
-        return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
+        Optional<com.dotcms.contenttype.model.field.Field> urlField = contentlet.getContentType().fields().stream()
+                .filter(field -> field.name().equals(URL_FIELD))
+                .findFirst();
+
+        if (urlField.isPresent()) {
+
+            if (contentlet.getStringProperty(URL_FIELD) != null) {
+                return contentlet.getStringProperty(URL_FIELD);
+            }
+
+            return FactoryLocator.getContentletFactory().findInDb(contentlet.getInode())
+                    .map(value -> value.getStringProperty(URL_FIELD))
+                    .orElse(null);
+        } else {
+            return this.getUrl(contentlet.getMap().get(ContentletForm.IDENTIFIER_KEY));
+        }
     } // getUrl.
 
 
