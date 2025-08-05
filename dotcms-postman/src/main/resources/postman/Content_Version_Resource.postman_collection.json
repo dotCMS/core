@@ -14,6 +14,45 @@
 					"name": "Generate Test Data",
 					"item": [
 						{
+							"name": "Find Spanish Language",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Spanish language must be present\", function () {",
+											"    const responseBody = pm.response.json();",
+											"    pm.expect(responseBody.errors.length).to.equal(0, \"An error occurred when retrieving the Spanish Language\");",
+											"",
+											"    pm.collectionVariables.set(\"esLangId\", responseBody.entity.id);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages/es_es",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages",
+										"es_es"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Create Test Content 1 - EN",
 							"event": [
 								{
@@ -162,7 +201,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 1\",\n        \"body\": \"Contenido de Prueba 1 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"2\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
+									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 1\",\n        \"body\": \"Contenido de Prueba 1 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{esLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -276,7 +315,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 2\",\n        \"body\": \"Contenido de Prueba 2 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"2\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
+									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 2\",\n        \"body\": \"Contenido de Prueba 2 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{esLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
