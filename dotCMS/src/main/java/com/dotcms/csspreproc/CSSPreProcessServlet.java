@@ -434,12 +434,12 @@ public class CSSPreProcessServlet extends HttpServlet {
             final ShortyId shorty = shortOpt.get();
             
             // Get the file path from the shorty ID
-            if (shorty.type == ShortType.IDENTIFIER) {
+            if (shorty.type == ShortType.IDENTIFIER || shorty.type == ShortType.INODE) {
                 // Get the file asset from the identifier
                 final long defLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-                final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(
-                    APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, live, defLang, user, true)
-                );
+                final FileAsset fileAsset = (shorty.type == ShortType.IDENTIFIER) 
+                    ?  APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, live, defLang, user, true))
+                    : APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(shorty.longId, user, true));
                 
                 // Check if it's a SCSS file
                 if (!fileAsset.getFileName().toLowerCase().endsWith(".scss")) {
