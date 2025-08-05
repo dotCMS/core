@@ -370,9 +370,10 @@
                     data: dataItems
                 });
 
-                if (null != aFilteringSelect) {
-
-                    aFilteringSelect.set('store', dojoSchemeStore);
+                // Update widget - either the provided one or find by ID
+                var widget = aFilteringSelect || dijit.byId('scheme_id');
+                if (null != widget) {
+                    widget.set('store', dojoSchemeStore);
                 }
             }
         }
@@ -384,8 +385,6 @@
 
         reloadSchemeStore(aFilteringSelect, dijit.byId("structure_inode")?dijit.byId("structure_inode").getValue():null);
     }
-
-    reloadSchemeStore(null, "<%=structureSelected%>");
 
     // Workflow Steps
     var dojoStepsStore = null;
@@ -489,7 +488,6 @@
                 id: "scheme_id",
                 name: "scheme_id_select",
                 value: "<%=schemeSelected%>",
-                store: dojoSchemeStore,
                 searchAttr: "textLabel",
                 labelAttr: "label",
                 labelType: "html",
@@ -503,6 +501,9 @@
                 }
             },
             dojo.byId("schemeSelectBox"));
+        
+        // Load the scheme data after widget is created
+        reloadSchemeStore(fsSchemes, "<%=structureSelected%>");
 
         // step select box
         var fsSteps = new dijit.form.FilteringSelect({
