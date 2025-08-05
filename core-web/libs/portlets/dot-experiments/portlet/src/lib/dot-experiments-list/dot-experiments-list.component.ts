@@ -36,7 +36,6 @@ import { DotExperimentsListStore, VmListExperiments } from './store/dot-experime
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-list',
     imports: [
         AsyncPipe,

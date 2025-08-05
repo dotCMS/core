@@ -54,7 +54,8 @@ enum SearchType {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotPageSelectorComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
     private dotPageSelectorService = inject(DotPageSelectorService);

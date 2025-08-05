@@ -1,5 +1,9 @@
-// Configure Jest for Angular [https://medium.com/@kyjungok/setup-jest-in-angular-application-22b22609cbcd]
-import 'jest-preset-angular/setup-jest';
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+
+setupZoneTestEnv({
+    errorOnUnknownElements: true,
+    errorOnUnknownProperties: true
+});
 
 import { NgModule } from '@angular/core';
 

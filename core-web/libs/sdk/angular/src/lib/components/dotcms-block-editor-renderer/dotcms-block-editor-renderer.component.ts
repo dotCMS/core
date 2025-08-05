@@ -35,7 +35,6 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
  */
 @Component({
     selector: 'dotcms-block-editor-renderer',
-    standalone: true,
     templateUrl: './dotcms-block-editor-renderer.component.html',
     styleUrls: ['./dotcms-block-editor-renderer.component.scss'],
     imports: [DotCMSBlockEditorItemComponent]

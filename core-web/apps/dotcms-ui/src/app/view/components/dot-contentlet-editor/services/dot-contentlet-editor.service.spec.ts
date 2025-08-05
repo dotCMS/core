@@ -6,7 +6,6 @@ import { TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
@@ -25,6 +24,8 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotContentletEditorService } from './dot-contentlet-editor.service';
+
+import { DotMenuService } from '../../../../api/services/dot-menu.service';
 
 describe('DotContentletEditorService', () => {
     const load = () => {

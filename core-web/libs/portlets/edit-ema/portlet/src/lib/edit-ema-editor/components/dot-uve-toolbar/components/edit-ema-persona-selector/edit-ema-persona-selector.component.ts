@@ -39,7 +39,6 @@ interface PersonaSelector {
 
 @Component({
     selector: 'dot-edit-ema-persona-selector',
-    standalone: true,
     imports: [
         NgClass,
         ButtonModule,

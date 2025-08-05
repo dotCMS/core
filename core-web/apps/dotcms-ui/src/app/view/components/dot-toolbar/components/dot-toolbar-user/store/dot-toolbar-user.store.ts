@@ -7,10 +7,11 @@ import { MenuItem } from 'primeng/api';
 
 import { filter, take } from 'rxjs/operators';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotMessageService } from '@dotcms/data-access';
 import { Auth, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
+
+import { LOCATION_TOKEN } from '../../../../../../providers';
+import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
 interface DotToolbarUserState {
     items: MenuItem[];

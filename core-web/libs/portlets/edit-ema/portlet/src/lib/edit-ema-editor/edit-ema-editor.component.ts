@@ -103,7 +103,6 @@ import {
 
 @Component({
     selector: 'dot-edit-ema-editor',
-    standalone: true,
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

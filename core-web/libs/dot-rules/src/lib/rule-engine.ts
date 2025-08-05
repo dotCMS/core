@@ -139,7 +139,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                 [saving]="rule._saving"
                 [errors]="rule._errors"></rule>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class RuleEngineComponent implements OnDestroy {
     private ruleViewService = inject(RuleViewService);

@@ -34,7 +34,8 @@ const messageServiceMock = new MockDotMessageService({
         <form [formGroup]="form">
             <dot-template-thumbnail-field formControlName="id"></dot-template-thumbnail-field>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     private fb = inject_1(UntypedFormBuilder);
