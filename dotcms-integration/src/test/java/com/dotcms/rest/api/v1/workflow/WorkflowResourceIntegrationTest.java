@@ -99,6 +99,7 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -2200,13 +2201,9 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID,
                             brandNewContentlet.getInode(), null, "FORCE", "-1", fireActionForm2);
 
-            final int statusCode2 = response2.getStatus();
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), statusCode2);
-            final ResponseEntityView errorEntityView = ResponseEntityView.class.cast(
-                    response2.getEntity());
-            assertEquals(1, errorEntityView.getErrors().stream()
-                    .filter(errorEntity -> "required".equals(
-                            ErrorEntity.class.cast(errorEntity).getErrorCode())).count());
+            fail("Should have thrown an exception");
+        } catch (DotContentletValidationException e) {
+            // nice
 
         } finally {
             if (null != contentType) {
@@ -2577,7 +2574,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
 
         if (field instanceof KeyValueField) {
-            return "{key1:value, key2:value }";
+            return "{\"key1\":\"value\", \"key2\":\"value\" }";
         }
 
         final DataTypes dataType = field.dataType();

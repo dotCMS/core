@@ -7366,7 +7366,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param value
      * @param dateFormats
      */
-    private static void parseDate(final Contentlet contentlet,
+    public static void parseDate(final Contentlet contentlet,
                                   final Field field,
                                   final Object value,
                                   final String... dateFormats) {
