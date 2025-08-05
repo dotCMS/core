@@ -6,7 +6,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 
 import { DotDialogActions } from '@dotcms/dotcms-models';
-import { DotDialogComponent } from '@dotcms/ui';
+
+import { DotDialogComponent } from './dot-dialog.component';
 
 const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
     const event = new KeyboardEvent('keydown', {
@@ -21,6 +22,7 @@ const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
 
 @Component({
     selector: 'dot-test-host-component',
+    standalone: false,
     template: `
         <dot-dialog
             [(visible)]="show"
@@ -54,6 +56,7 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-test-host-component',
+    standalone: false,
     template: `
         <dot-dialog (beforeClose)="beforeClose($event)" [(visible)]="show">
             <b>Dialog content</b>

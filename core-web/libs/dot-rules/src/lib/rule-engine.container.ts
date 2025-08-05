@@ -114,7 +114,8 @@ export interface ConditionActionEvent extends RuleActionEvent {
             [showRules]="state.showRules"
             [pageId]="pageId"
             [isContentletHost]="isContentletHost"></cw-rule-engine>
-    `
+    `,
+    standalone: false
 })
 export class RuleEngineContainer implements OnDestroy {
     _ruleService = inject(RuleService);

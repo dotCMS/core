@@ -10,7 +10,6 @@ import { SearchComponent } from '../search/search.component';
 
 @Component({
     selector: 'dot-relationship-header',
-    standalone: true,
     imports: [DotMessagePipe, SearchComponent, InputSwitchModule, FormsModule],
     templateUrl: './header.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

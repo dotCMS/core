@@ -17,12 +17,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotListingDataTableModule } from '@components/dot-listing-data-table';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotFormatDateService,
@@ -62,9 +56,16 @@ import {
     MockDotMessageService,
     mockSites
 } from '@dotcms/utils-testing';
-import { ButtonModel } from '@models/action-header';
 
 import { DotTemplateListComponent } from './dot-template-list.component';
+
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { ButtonModel } from '../../../shared/models/action-header/button.model';
+import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
+import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
 
 const templatesMock: DotTemplate[] = [
     {

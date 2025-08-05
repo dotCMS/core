@@ -10,7 +10,8 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-alert-confirm',
-    templateUrl: './dot-alert-confirm.html'
+    templateUrl: './dot-alert-confirm.html',
+    standalone: false
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     dotAlertConfirmService = inject(DotAlertConfirmService);

@@ -7,7 +7,8 @@ import { DotPortletBoxComponent } from './dot-portlet-box.component';
 @Component({
     template: `
         <dot-portlet-box><div>Hello World</div></dot-portlet-box>
-    `
+    `,
+    standalone: false
 })
 class DefaultTestHostComponent {}
 

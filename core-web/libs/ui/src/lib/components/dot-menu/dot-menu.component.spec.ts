@@ -7,7 +7,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotMenuComponent } from '@dotcms/ui';
+import { DotMenuComponent } from './dot-menu.component';
 
 describe('DotMenuComponent', () => {
     let component: DotMenuComponent;

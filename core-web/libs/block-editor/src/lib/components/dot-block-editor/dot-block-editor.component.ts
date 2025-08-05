@@ -81,7 +81,8 @@ import {
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
@@ -504,11 +505,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                     return this.#dotMessageService.get('block-editor.placeholder.paragraph');
                 }
             }),
-            DotCMSPlusButton.configure({
-                showOnlyWhenEditable: true,
-                showOnlyCurrent: true,
-                includeChildren: false
-            }),
+            DotCMSPlusButton,
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef)
         ];

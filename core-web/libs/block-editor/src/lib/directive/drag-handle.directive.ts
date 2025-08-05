@@ -8,7 +8,7 @@ import {
     signal
 } from '@angular/core';
 
-import { Editor } from '@tiptap/core';
+import { Editor, isNodeEmpty } from '@tiptap/core';
 import {
     DragHandlePlugin,
     dragHandlePluginDefaultKey,
@@ -75,13 +75,37 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
                 element: this.elementRef.nativeElement,
                 pluginKey: this.pluginKey(),
                 tippyOptions: this.tippyOptions(),
-                onNodeChange: this.onNodeChange()
+                onNodeChange: (data) => {
+                    const onNodeChange = this.onNodeChange();
+                    if (onNodeChange) {
+                        onNodeChange(data);
+                    } else {
+                        this.handleNodeChange(data.node);
+                    }
+                }
             })
         );
 
         editor.registerPlugin(this.plugin());
     }
 
+    ngOnDestroy(): void {
+        this.cleanupPlugin();
+    }
+
+    private handleNodeChange(node: Node | null): void {
+        if (!node) {
+            return;
+        }
+
+        const element = this.elementRef.nativeElement;
+        const isEmptyNode = this.isEmptyNode(node);
+        element.style.display = isEmptyNode ? 'none' : '';
+    }
+
+    /**
+     * Cleanup the plugin when the directive is destroyed
+     */
     private cleanupPlugin(): void {
         const editor = this.editor();
         if (editor && !editor.isDestroyed && this.plugin()) {
@@ -90,7 +114,14 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
         }
     }
 
-    ngOnDestroy(): void {
-        this.cleanupPlugin();
+    /**
+     * Check if the node is an empty node
+     * @param node - The node to check
+     * @returns True if the node is an empty node, false otherwise
+     */
+    private isEmptyNode(node: Node): boolean {
+        const isEmpty = !node.isLeaf && isNodeEmpty(node) && !node.childCount;
+
+        return isEmpty;
     }
 }

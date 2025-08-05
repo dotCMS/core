@@ -1,13 +1,6 @@
 import { Observable } from 'rxjs';
 
-import {
-    AsyncPipe,
-    LowerCasePipe,
-    NgClass,
-    NgIf,
-    PercentPipe,
-    TitleCasePipe
-} from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -19,7 +12,7 @@ import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsExperimentSummaryComponent } from './components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
@@ -30,30 +23,22 @@ import {
     VmReportExperiment
 } from './store/dot-experiments-reports-store';
 
-import { DotExperimentsDetailsTableComponent } from '../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @Component({
     selector: 'dot-experiments-reports',
-    standalone: true,
     imports: [
         AsyncPipe,
         NgIf,
-        LowerCasePipe,
-        PercentPipe,
-        NgClass,
         DotExperimentsUiHeaderComponent,
-        DotSafeHtmlPipe,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,
         DotExperimentsReportsChartComponent,
-        DotExperimentsDetailsTableComponent,
         DotDynamicDirective,
         DotMessagePipe,
         DotExperimentsReportDailyDetailsComponent,
         TagModule,
         ButtonModule,
-        TitleCasePipe,
         ConfirmPopupModule,
         TabViewModule
     ],

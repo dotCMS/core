@@ -6,7 +6,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MultiSelect } from 'primeng/multiselect';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -16,6 +15,8 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.workflows': 'Pick it up',
@@ -30,7 +31,8 @@ const messageServiceMock = new MockDotMessageService({
                 formControlName="workflows"></dot-workflows-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent {
     private fb = inject(UntypedFormBuilder);
