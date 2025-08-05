@@ -80,11 +80,11 @@ public class CSSPreProcessServlet extends HttpServlet {
                 String uriToProcess = originalURI;
                 
                 if (shortyURI != null) {
-                    Logger.info(this, "Received forwarded request from ShortyServlet with original URI: " + shortyURI);
+                    Logger.debug(this, "Received forwarded request from ShortyServlet with original URI: " + shortyURI);
                     // Use the original URI from the ShortyServlet
                     uriToProcess = shortyURI;
                 } else if (scssURI != null) {
-                    Logger.info(this, "Received forwarded request from ScssQueryParamFilter with original URI: " + scssURI);
+                    Logger.debug(this, "Received forwarded request from ScssQueryParamFilter with original URI: " + scssURI);
                     // Use the original URI from the ScssQueryParamFilter
                     uriToProcess = scssURI;
                 }

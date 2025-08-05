@@ -274,7 +274,7 @@ public class ShortyServlet extends HttpServlet {
     
     if (isDotsassParam) {
         // Forward to CSSPreProcessServlet for SASS compilation
-        Logger.info(this, "ShortyServlet forwarding request with dotsass=true parameter to CSSPreProcessServlet: " + request.getRequestURI());
+        Logger.debug(this, "ShortyServlet forwarding request with dotsass=true parameter to CSSPreProcessServlet: " + request.getRequestURI());
         
         // Create a new request attribute to pass the original URI to the CSSPreProcessServlet
         request.setAttribute("originalShortyURI", request.getRequestURI());

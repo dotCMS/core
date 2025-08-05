@@ -34,7 +34,7 @@ public class ScssQueryParamFilter implements Filter {
         
         // Only intercept .scss files with dotsass=true parameter
         if (uri.toLowerCase().endsWith(".scss") && isDotsassParam) {
-            Logger.info(this, "ScssQueryParamFilter forwarding request with dotsass=true parameter to CSSPreProcessServlet: " + uri);
+            Logger.debug(this, "ScssQueryParamFilter forwarding request with dotsass=true parameter to CSSPreProcessServlet: " + uri);
             
             // Create a new request attribute to pass the original URI to the CSSPreProcessServlet
             httpRequest.setAttribute("originalScssURI", uri);
