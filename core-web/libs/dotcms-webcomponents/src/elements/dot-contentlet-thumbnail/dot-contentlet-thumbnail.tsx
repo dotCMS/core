@@ -102,7 +102,7 @@ export class DotContentletThumbnail {
         if (this.isSVG) return `/contentAsset/image/${this.contentlet.inode}/asset`;
 
         if (this.contentlet['image'])
-            return `/dA/${this.contentlet.inode}/${this.contentlet['image']}/resize_w/250/quality_q/45`;
+            return `/dA/${this.contentlet.inode}/image/resize_w/250/quality_q/45`;
 
         return `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
             this.contentlet.modDateMilis || this.contentlet.modDate
