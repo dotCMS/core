@@ -85,9 +85,13 @@ export function createTurndownService(): TurndownService {
     const turndownService = new TurndownService(MARKDOWN_CONFIG);
 
     // Add custom rule for table processing
+    // NOTE: We override TurndownService's default table handling because rich text editors
+    // like TipTap/ProseMirror generate complex HTML with nested <p> tags, <colgroup> elements,
+    // and other structures that the default converter doesn't handle cleanly. Our custom
+    // processTable function ensures proper header detection and clean text extraction.
     turndownService.addRule('tables', {
         filter: 'table',
-        replacement: function (content, node) {
+        replacement: function (_content, node) {
             const table = node as HTMLTableElement;
 
             return '\n\n' + processTable(table) + '\n\n';
