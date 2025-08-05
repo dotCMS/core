@@ -2,9 +2,9 @@ import { marked } from 'marked';
 import { DOMSerializer } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, signal, viewChild } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 
-import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenuModule } from 'primeng/contextmenu';
 import { RippleModule } from 'primeng/ripple';
 
 import { Editor } from '@tiptap/core';
@@ -31,7 +31,6 @@ import { htmlToMarkdown } from './markdown.utils';
 })
 export class DotContextMenuComponent {
     editor = input.required<Editor>();
-    contextMenuElement = viewChild<ContextMenu>('contextMenu');
 
     protected readonly target = computed(() => this.editor().view.dom.parentElement);
     protected readonly items = computed(() => this.buildMenuItems());
@@ -42,8 +41,8 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Builds the complete menu items array with selection and paste items
-     * @returns Array of context menu items
+     * Builds the complete menu items array combining selection and paste items
+     * @returns Array of all available context menu items
      */
     private buildMenuItems(): ContextMenuItem[] {
         return [...this.buildSelectionMenuItems(), ...this.buildPasteMenuItems()];
@@ -51,6 +50,7 @@ export class DotContextMenuComponent {
 
     /**
      * Builds menu items that require text selection (cut, copy, copy as markdown)
+     * These items are disabled when no text is selected
      * @returns Array of selection-based menu items
      */
     private buildSelectionMenuItems(): ContextMenuItem[] {
@@ -78,8 +78,11 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Builds paste-related menu items (paste with formatting, paste without format, paste from markdown)
-     * @returns Array of paste menu items
+     * Builds paste-related menu items with different formatting options
+     * @returns Array of paste menu items including:
+     *   - Paste (with formatting preserved)
+     *   - Paste without format (plain text only)
+     *   - Paste from Markdown (converts markdown to HTML)
      */
     private buildPasteMenuItems(): ContextMenuItem[] {
         return [
@@ -101,7 +104,8 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Cuts the selected text to clipboard using the browser's cut command
+     * Cuts the selected text to clipboard using the browser's native cut command
+     * Focuses the editor first to ensure the selection is active
      */
     private cutCommand(): void {
         this.focusEditor();
@@ -109,7 +113,8 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Copies the selected text to clipboard using the browser's copy command
+     * Copies the selected text to clipboard using the browser's native copy command
+     * Focuses the editor first to ensure the selection is active
      */
     private copyCommand(): void {
         this.focusEditor();
@@ -117,8 +122,10 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Converts selected HTML content to Markdown and copies it to clipboard
-     * @returns Promise that resolves when copy operation completes
+     * Converts selected HTML content to Markdown format and copies it to clipboard
+     * This allows users to copy rich content as markdown syntax
+     * @returns Promise that resolves when the copy operation completes
+     * @throws Logs warning if clipboard operation fails
      */
     private async copyAsMarkdownCommand(): Promise<void> {
         const html = this.getSelectedHtml();
@@ -135,13 +142,14 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Pastes clipboard content with formatting preserved (HTML if available, fallback to plain text)
-     * @returns Promise that resolves when paste operation completes
+     * Pastes clipboard content with formatting preserved
+     * Attempts to read HTML content first, falls back to plain text if unavailable
+     * @returns Promise that resolves when the paste operation completes
+     * @throws Logs warning and falls back to plain text paste if HTML paste fails
      */
     private async pasteCommand(): Promise<void> {
         try {
             const htmlContent = await this.getHtmlContentFromClipboard();
-            // Try to read HTML content from clipboard first
 
             if (htmlContent) {
                 this.editor().commands.insertContent(htmlContent);
@@ -150,7 +158,6 @@ export class DotContextMenuComponent {
                 return;
             }
 
-            // Fallback to plain text if no HTML available
             this.pasteWithoutFormatCommand();
         } catch (err) {
             console.warn(
@@ -161,8 +168,10 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Pastes clipboard content as plain text without any formatting
-     * @returns Promise that resolves when paste operation completes
+     * Pastes clipboard content as plain text, stripping all formatting
+     * Preserves whitespace structure but removes HTML tags and styling
+     * @returns Promise that resolves when the paste operation completes
+     * @throws Logs warning if clipboard read operation fails
      */
     private async pasteWithoutFormatCommand(): Promise<void> {
         try {
@@ -176,6 +185,12 @@ export class DotContextMenuComponent {
         }
     }
 
+    /**
+     * Pastes clipboard content treating it as Markdown and converting to HTML
+     * Reads plain text from clipboard, parses as markdown, then inserts as HTML
+     * @returns Promise that resolves when the paste operation completes
+     * @throws Logs warning if clipboard read or markdown parsing fails
+     */
     private async pasteFromMarkdownCommand(): Promise<void> {
         try {
             const text = await navigator.clipboard.readText();
@@ -187,6 +202,11 @@ export class DotContextMenuComponent {
         }
     }
 
+    /**
+     * Extracts the currently selected content as HTML string
+     * Uses ProseMirror's DOMSerializer to convert the selection to HTML
+     * @returns HTML string of selected content, or empty string if no selection
+     */
     private getSelectedHtml(): string {
         const { view, state } = this.editor();
         const { from, to, empty } = view.state.selection;
@@ -204,14 +224,29 @@ export class DotContextMenuComponent {
         return tempDiv.innerHTML;
     }
 
+    /**
+     * Gets the appropriate keyboard shortcut string for the current platform
+     * @param shortcutConfig Configuration object with mac and pc shortcut strings
+     * @returns Platform-specific shortcut string (e.g., "⌘C" on Mac, "Ctrl+C" on PC)
+     */
     private getShortcut(shortcutConfig: { mac: string; pc: string }): string {
         return shortcutConfig[this.platform];
     }
 
+    /**
+     * Focuses the editor to ensure it's ready for operations
+     * Used after clipboard operations to maintain editor focus
+     */
     private focusEditor(): void {
         this.editor().commands.focus();
     }
 
+    /**
+     * Attempts to read HTML content from the system clipboard
+     * Iterates through clipboard items looking for HTML MIME type
+     * @returns Promise resolving to HTML string, or empty string if no HTML found
+     * @throws May throw if clipboard access is denied or fails
+     */
     private async getHtmlContentFromClipboard(): Promise<string> {
         const clipboardItems = await navigator.clipboard.read();
         for (const clipboardItem of clipboardItems) {
@@ -226,6 +261,10 @@ export class DotContextMenuComponent {
         return '';
     }
 
+    /**
+     * Event handler called when the context menu is about to be shown
+     * Updates the selection state to enable/disable selection-dependent menu items
+     */
     onContextMenuShow(): void {
         const hasSelection = !this.editor().view.state.selection.empty;
         this.hasSelection.set(hasSelection);
