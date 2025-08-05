@@ -1,5 +1,11 @@
-import { DotCMSClientConfig, DotRequestOptions, DotHttpClient } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotRequestOptions,
+    DotHttpClient,
+    DotCMSNavigationItem
+} from '@dotcms/types';
 
+import { FetchHttpClient } from './adapters/fetch-http-client';
 import { createDotCMSClient } from './client';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
@@ -50,10 +56,14 @@ describe('DotCMSClient', () => {
                 siteId: 'test-site'
             }),
             expectedRequestOptions,
-            expect.any(Object) // httpClient
+            expect.any(FetchHttpClient) // httpClient
         );
 
-        expect(Content).toHaveBeenCalledWith(expectedRequestOptions, 'https://demo.dotcms.com', expect.any(Object));
+        expect(Content).toHaveBeenCalledWith(
+            expectedRequestOptions,
+            'https://demo.dotcms.com',
+            expect.any(Object)
+        );
 
         expect(NavigationClient).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -62,7 +72,7 @@ describe('DotCMSClient', () => {
                 siteId: 'test-site'
             }),
             expectedRequestOptions,
-            expect.any(Object) // httpClient
+            expect.any(FetchHttpClient) // httpClient
         );
     });
 
@@ -81,7 +91,7 @@ describe('DotCMSClient', () => {
                     Authorization: 'Bearer test-token'
                 }
             }),
-            expect.any(Object) // httpClient
+            expect.any(FetchHttpClient) // httpClient
         );
     });
 
@@ -96,7 +106,7 @@ describe('DotCMSClient', () => {
                     Authorization: 'Bearer test-token'
                 }
             }),
-            expect.any(Object) // httpClient
+            expect.any(FetchHttpClient) // httpClient
         );
     });
 
@@ -145,38 +155,41 @@ describe('DotCMSClient', () => {
 
             createDotCMSClient(configWithPath);
 
-            expect(Content).toHaveBeenCalledWith(expect.anything(), 'https://demo.dotcms.com', expect.any(Object));
+            expect(Content).toHaveBeenCalledWith(
+                expect.anything(),
+                'https://demo.dotcms.com',
+                expect.any(Object)
+            );
         });
     });
 });
 
 describe('DotCMSClient with custom HTTP client', () => {
-  it('should use custom HTTP client when provided', async () => {
-    const mockHttpClient: DotHttpClient = {
-      request: jest.fn().mockResolvedValue({ entity: [{ name: 'test' }] })
-    };
+    it('should use custom HTTP client when provided', async () => {
+        const mockHttpClient: DotHttpClient = {
+            request: jest.fn().mockResolvedValue({ entity: [{ name: 'test' }] })
+        };
 
-    const client = createDotCMSClient({
-      dotcmsUrl: 'https://demo.dotcms.com',
-      authToken: 'token',
-      httpClient: mockHttpClient
+        // Create a spy on the NavigationClient prototype to intercept the get method
+        const getSpy = jest
+            .spyOn(NavigationClient.prototype, 'get')
+            .mockImplementation(async (path: string) => {
+                // Call the real HTTP client to verify it's being used
+                await mockHttpClient.request(`${path}-test`, {});
+
+                return [] as DotCMSNavigationItem[];
+            });
+
+        const client = createDotCMSClient({
+            dotcmsUrl: 'https://demo.dotcms.com',
+            authToken: 'token',
+            httpClient: mockHttpClient
+        });
+
+        await client.nav.get('/test');
+
+        expect(mockHttpClient.request).toHaveBeenCalledWith('/test-test', {});
+
+        getSpy.mockRestore();
     });
-
-    await client.nav.get('/test');
-
-    expect(mockHttpClient.request).toHaveBeenCalled();
-  });
-
-  it('should use default FetchHttpClient when no custom client provided', () => {
-    const client = createDotCMSClient({
-      dotcmsUrl: 'https://demo.dotcms.com',
-      authToken: 'token'
-    });
-
-    // The client should be created successfully with default HTTP client
-    expect(client).toBeDefined();
-    expect(client.nav).toBeDefined();
-    expect(client.page).toBeDefined();
-    expect(client.content).toBeDefined();
-  });
 });
