@@ -74,13 +74,19 @@ public class CSSPreProcessServlet extends HttpServlet {
                 // Process request with dotsass=true parameter
                 Logger.debug(this, "Processing request with dotsass=true parameter");
                 
-                // Check if this is a forwarded request from ShortyServlet
+                // Check if this is a forwarded request from ShortyServlet or ScssQueryParamFilter
                 String shortyURI = (String) req.getAttribute("originalShortyURI");
+                String scssURI = (String) req.getAttribute("originalScssURI");
                 String uriToProcess = originalURI;
+                
                 if (shortyURI != null) {
                     Logger.info(this, "Received forwarded request from ShortyServlet with original URI: " + shortyURI);
                     // Use the original URI from the ShortyServlet
                     uriToProcess = shortyURI;
+                } else if (scssURI != null) {
+                    Logger.info(this, "Received forwarded request from ScssQueryParamFilter with original URI: " + scssURI);
+                    // Use the original URI from the ScssQueryParamFilter
+                    uriToProcess = scssURI;
                 }
                 
                 if (uriToProcess.startsWith("/dA/")) {
