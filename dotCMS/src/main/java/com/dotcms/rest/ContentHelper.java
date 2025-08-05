@@ -192,22 +192,11 @@ public class ContentHelper {
      */
     public String getUrl (final Contentlet contentlet) {
 
-        Optional<com.dotcms.contenttype.model.field.Field> urlField = contentlet.getContentType().fields().stream()
-                .filter(field -> field.name().equals(URL_FIELD))
-                .findFirst();
-
-        if (urlField.isPresent()) {
-
-            if (contentlet.getStringProperty(URL_FIELD) != null) {
-                return contentlet.getStringProperty(URL_FIELD);
-            }
-
-            return FactoryLocator.getContentletFactory().findInDb(contentlet.getInode())
-                    .map(value -> value.getStringProperty(URL_FIELD))
-                    .orElse(null);
-        } else {
-            return this.getUrl(contentlet.getMap().get(ContentletForm.IDENTIFIER_KEY));
+        if(contentlet.getContentType().fieldMap((key) -> URL_FIELD) != null &&
+                contentlet.getStringProperty(URL_FIELD)!=null){
+            return contentlet.getStringProperty(URL_FIELD);
         }
+        return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
     } // getUrl.
 
 
