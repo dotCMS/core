@@ -15,6 +15,7 @@ import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { ExtraContent, Blog } from '../../shared/contentlet.model';
 import { PageState } from '../../shared/models';
 import { DotCMSClient } from '@dotcms/angular';
+import { HttpClient } from '@angular/common/http';
 
 // Function to debounce calls
 function debounce<T extends (...args: any[]) => void>(
@@ -59,6 +60,8 @@ export class BlogListingComponent implements OnInit {
     // Use proper client injection via token
     private readonly client = inject(DotCMSClient);
 
+    http = inject(HttpClient);
+
     $pageState!: Signal<PageState<DotCMSPage>>;
     searchQuery = signal('');
     filteredBlogs = signal<Blog[]>([]);
@@ -77,6 +80,14 @@ export class BlogListingComponent implements OnInit {
                 ...BASE_EXTRA_QUERIES
             }
         });
+
+        // this.client.page.get('/destination').then((response) => {
+        //     console.log(response);
+        // });
+
+        this.http.get('https://demo.dotcms.com/api/content/render/false/query/+contentType:Blog%20+(conhost:48190c8c-42c4-46af-8d1a-0cd5db894797%20conhost:SYSTEM_HOST)%20+languageId:1%20+deleted:false%20+working:true%20+variant:default/orderby/modDate%20desc').subscribe(res => {
+          console.log(res);
+        })
     }
 
     constructor() {
