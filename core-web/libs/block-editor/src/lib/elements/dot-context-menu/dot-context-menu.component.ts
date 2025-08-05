@@ -2,9 +2,9 @@ import { marked } from 'marked';
 import { DOMSerializer } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, input, signal, viewChild } from '@angular/core';
 
-import { ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { RippleModule } from 'primeng/ripple';
 
 import { Editor } from '@tiptap/core';
@@ -30,33 +30,23 @@ import { htmlToMarkdown } from './markdown.utils';
     imports: [CommonModule, ContextMenuModule, RippleModule]
 })
 export class DotContextMenuComponent {
-    // === INPUTS ===
     editor = input.required<Editor>();
+    contextMenuElement = viewChild<ContextMenu>('contextMenu');
 
-    // === COMPUTED PROPERTIES ===
     protected readonly target = computed(() => this.editor().view.dom.parentElement);
-
     protected readonly items = computed(() => this.buildMenuItems());
-
-    // === SIGNALS ===
     private readonly hasSelection = signal(false);
 
-    // === PLATFORM DETECTION ===
     private get platform(): Platform {
         return PLATFORM_PATTERNS.MAC.test(navigator.platform) ? 'mac' : 'pc';
     }
 
-    // === MENU BUILDING ===
     /**
      * Builds the complete menu items array with selection and paste items
      * @returns Array of context menu items
      */
     private buildMenuItems(): ContextMenuItem[] {
-        return [
-            ...this.buildSelectionMenuItems(),
-            { separator: true },
-            ...this.buildPasteMenuItems()
-        ];
+        return [...this.buildSelectionMenuItems(), ...this.buildPasteMenuItems()];
     }
 
     /**
@@ -106,7 +96,6 @@ export class DotContextMenuComponent {
         ];
     }
 
-    // === CLIPBOARD COMMANDS ===
     /**
      * Cuts the selected text to clipboard using the browser's cut command
      */
@@ -162,7 +151,6 @@ export class DotContextMenuComponent {
         }
     }
 
-    // === SELECTION UTILITIES ===
     private getSelectedHtml(): string {
         const { view, state } = this.editor();
         const { from, to, empty } = view.state.selection;
@@ -180,7 +168,6 @@ export class DotContextMenuComponent {
         return tempDiv.innerHTML;
     }
 
-    // === UTILITY METHODS ===
     private getShortcut(shortcutConfig: { mac: string; pc: string }): string {
         return shortcutConfig[this.platform];
     }
@@ -189,7 +176,6 @@ export class DotContextMenuComponent {
         this.editor().commands.focus();
     }
 
-    // === EVENT HANDLERS ===
     onContextMenuShow(): void {
         const hasSelection = !this.editor().view.state.selection.empty;
         this.hasSelection.set(hasSelection);
