@@ -5,10 +5,7 @@
     [appendTo]="'body'"
     (onShow)="onContextMenuShow()">
     <ng-template pTemplate="item" let-item>
-        <a
-            pRipple
-            class="flex align-items-center justify-content-between p-menuitem-link"
-            (mousedown)="item.command($event)">
+        <a pRipple class="flex align-items-center justify-content-between p-menuitem-link">
             <span class="menu-item-label">{{ item.label }}</span>
             <span *ngIf="item.shortcut" class="menu-item-shortcut">
                 {{ item.shortcut }}
