@@ -151,7 +151,7 @@ export class SearchComponent {
     });
 
     constructor() {
-        // Simple debounced search - clean and straightforward
+        // debounced search.
         this.form
             .get('query')
             ?.valueChanges.pipe(
