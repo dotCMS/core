@@ -14,18 +14,19 @@
 					"name": "Generate Test Data",
 					"item": [
 						{
-							"name": "Find Spanish Language",
+							"name": "Find Second Language",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
 											"",
-											"pm.test(\"Spanish language must be present\", function () {",
+											"pm.test(\"A second language must be present\", function () {",
 											"    const responseBody = pm.response.json();",
 											"    pm.expect(responseBody.errors.length).to.equal(0, \"An error occurred when retrieving the Spanish Language\");",
-											"",
-											"    pm.collectionVariables.set(\"esLangId\", responseBody.entity.id);",
+											"    pm.expect(responseBody.entity.length).to.greaterThan(1, \"There must be more than 1 language\");",
+											"    pm.collectionVariables.set(\"secondLangId\", responseBody.entity[1].id);",
+											"    pm.collectionVariables.set(\"isoCode\", responseBody.entity[1].isoCode);",
 											"});",
 											""
 										],
@@ -38,15 +39,14 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v2/languages/es_es",
+									"raw": "{{serverURL}}/api/v2/languages",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"v2",
-										"languages",
-										"es_es"
+										"languages"
 									]
 								}
 							},
@@ -170,14 +170,14 @@
 							"response": []
 						},
 						{
-							"name": "Create Test Content 1 - ES",
+							"name": "Create Test Content 1 - Second Lang",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Contenido de Prueba 1 ES was created successfully\", function () {",
-											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 1 ES\");",
+											"pm.test(\"Contenido de Prueba 1 in second language was created successfully\", function () {",
+											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 1 second language\");",
 											"});",
 											""
 										],
@@ -201,7 +201,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 1\",\n        \"body\": \"Contenido de Prueba 1 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{esLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
+									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 1\",\n        \"body\": \"Contenido de Prueba 1 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{secondLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -284,14 +284,14 @@
 							"response": []
 						},
 						{
-							"name": "Create Test Content 2- ES",
+							"name": "Create Test Content 2- Second Lang",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Contenido de Prueba 2 ES was created successfully\", function () {",
-											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 2 ES\");",
+											"pm.test(\"Contenido de Prueba 2 in second language was created successfully\", function () {",
+											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 2 second language\");",
 											"});",
 											""
 										],
@@ -315,7 +315,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 2\",\n        \"body\": \"Contenido de Prueba 2 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{esLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
+									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 2\",\n        \"body\": \"Contenido de Prueba 2 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{secondLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -341,7 +341,7 @@
 							"response": []
 						}
 					],
-					"description": "Creates a Contentlet and several different versions for it, in both English and Spanish:\n\n- Three versions in English.\n    \n- Two versions in Spanish.\n    \n\nOrdered by modification date -- descending order -- they will show up like this:\n\n1. _Spanish_.\n    \n2. English.\n    \n3. _Spanish_.\n    \n4. English.\n    \n5. English.",
+					"description": "Creates a Contentlet and several different versions for it, in both English and Spanish:\n\n- Three versions in English.\n    \n- Two versions in a second language.\n    \n\nOrdered by modification date -- descending order -- they will show up like this:\n\n1. _Second language_.\n    \n2. English.\n    \n3. _Second language_.\n    \n4. English.\n    \n5. English.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -448,19 +448,19 @@
 											"    pm.expect(entity).to.be.an('array').that.is.not.empty;",
 											"    const languageGroups = Object.keys(entity[0]);",
 											"    pm.expect(languageGroups.length).to.eql(2, \"There must be 2 sets of versions, one for each language\");",
-											"    pm.expect(languageGroups[0].length).to.eql(5, \"There\");",
 											"});",
 											"",
 											"pm.test(\"Checking number of entries for each language\", function() {",
 											"    // Ensure entity is defined and has language groups",
 											"    pm.expect(entity).to.be.an('array').that.is.not.empty;",
+											"    const isoCode = pm.collectionVariables.get(\"isoCode\");",
 											"    const enUsEntries = entity[0]['en-us'];",
-											"    const esEsEntries = entity[0]['es-es'];",
+											"    const secondLangEntries = entity[0][isoCode];",
 											"",
 											"    pm.expect(enUsEntries).to.be.an('array', \"The 'en-us' group should be an array\");",
-											"    pm.expect(esEsEntries).to.be.an('array', \"The 'es-es' group should be an array\");",
-											"    pm.expect(enUsEntries.length).to.eql(3, \"There should be 2 entries for 'en-us'\");",
-											"    pm.expect(esEsEntries.length).to.eql(2, \"There should be 2 entries for 'es-es'\");",
+											"    pm.expect(secondLangEntries).to.be.an('array', \"The second language '\" + isoCode + \"' group should be an array\");",
+											"    pm.expect(enUsEntries.length).to.eql(3, \"There should be 3 entries for 'en-us'\");",
+											"    pm.expect(secondLangEntries.length).to.eql(2, \"There should be 2 entries for '\" + isoCode +\"'\");",
 											"});",
 											""
 										],
