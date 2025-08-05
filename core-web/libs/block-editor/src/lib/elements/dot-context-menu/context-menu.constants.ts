@@ -7,7 +7,7 @@ export const SHORTCUTS: Record<string, ShortcutConfig> = {
     CUT: { mac: '⌘X', pc: 'Ctrl+X' },
     COPY: { mac: '⌘C', pc: 'Ctrl+C' },
     PASTE: { mac: '⌘V', pc: 'Ctrl+V' },
-    PASTE_MARKDOWN: { mac: '⌘⇧V', pc: 'Ctrl+Shift+V' }
+    PASTE_WITHOUT_FORMAT: { mac: '⌘⇧V', pc: 'Ctrl+Shift+V' }
 } as const;
 
 /**
@@ -18,6 +18,7 @@ export const MENU_LABELS = {
     COPY: 'Copy',
     COPY_MARKDOWN: 'Copy as Markdown',
     PASTE: 'Paste',
+    PASTE_WITHOUT_FORMAT: 'Paste without format',
     PASTE_MARKDOWN: 'Paste from Markdown'
 } as const;
 

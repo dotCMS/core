@@ -78,7 +78,7 @@ export class DotContextMenuComponent {
     }
 
     /**
-     * Builds paste-related menu items (paste, paste from markdown)
+     * Builds paste-related menu items (paste with formatting, paste without format, paste from markdown)
      * @returns Array of paste menu items
      */
     private buildPasteMenuItems(): ContextMenuItem[] {
@@ -89,9 +89,13 @@ export class DotContextMenuComponent {
                 shortcut: this.getShortcut(SHORTCUTS.PASTE)
             },
             {
+                label: MENU_LABELS.PASTE_WITHOUT_FORMAT,
+                command: () => this.pasteWithoutFormatCommand(),
+                shortcut: this.getShortcut(SHORTCUTS.PASTE_WITHOUT_FORMAT)
+            },
+            {
                 label: MENU_LABELS.PASTE_MARKDOWN,
-                command: () => this.pasteFromMarkdownCommand(),
-                shortcut: this.getShortcut(SHORTCUTS.PASTE_MARKDOWN)
+                command: () => this.pasteFromMarkdownCommand()
             }
         ];
     }
@@ -130,13 +134,45 @@ export class DotContextMenuComponent {
         }
     }
 
+    /**
+     * Pastes clipboard content with formatting preserved (HTML if available, fallback to plain text)
+     * @returns Promise that resolves when paste operation completes
+     */
     private async pasteCommand(): Promise<void> {
         try {
+            const htmlContent = await this.getHtmlContentFromClipboard();
+            // Try to read HTML content from clipboard first
+
+            if (htmlContent) {
+                this.editor().commands.insertContent(htmlContent);
+                this.focusEditor();
+
+                return;
+            }
+
+            // Fallback to plain text if no HTML available
+            this.pasteWithoutFormatCommand();
+        } catch (err) {
+            console.warn(
+                '[Block Editor] Try to paste with format failed, fallback to paste without format'
+            );
+            this.pasteWithoutFormatCommand();
+        }
+    }
+
+    /**
+     * Pastes clipboard content as plain text without any formatting
+     * @returns Promise that resolves when paste operation completes
+     */
+    private async pasteWithoutFormatCommand(): Promise<void> {
+        try {
             const text = await navigator.clipboard.readText();
-            this.editor().commands.insertContent(text);
+            this.editor().commands.insertContent(text, {
+                parseOptions: { preserveWhitespace: 'full' }
+            });
             this.focusEditor();
         } catch (err) {
-            console.warn('Failed to paste content:', err);
+            console.warn('Failed to paste plain text:', err);
         }
     }
 
@@ -174,6 +210,20 @@ export class DotContextMenuComponent {
 
     private focusEditor(): void {
         this.editor().commands.focus();
+    }
+
+    private async getHtmlContentFromClipboard(): Promise<string> {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const clipboardItem of clipboardItems) {
+            if (clipboardItem.types.includes('text/html')) {
+                const htmlBlob = await clipboardItem.getType('text/html');
+                const html = await htmlBlob.text();
+
+                return html;
+            }
+        }
+
+        return '';
     }
 
     onContextMenuShow(): void {
