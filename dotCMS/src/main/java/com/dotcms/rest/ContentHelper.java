@@ -193,7 +193,7 @@ public class ContentHelper {
     public String getUrl (final Contentlet contentlet) {
 
         if(hasUrlField(contentlet)){
-            if(isPageOrFileAsset(contentlet)){
+            if(IsNeitherPageOrFileAsset(contentlet)){
                 return contentlet.getStringProperty(URL_FIELD);
             }
         }
@@ -201,13 +201,13 @@ public class ContentHelper {
     } // getUrl.
 
     /**
-     * Determines if a contentlet is neither a file asset nor an HTML page.
+     * Determines if a contentlet is a regular content (neither a file asset nor an HTML page).
      * This method is used to check the type of a contentlet when processing URLs.
      *
      * @param contentlet The contentlet to check
-     * @return boolean True if the contentlet is neither a file asset nor an HTML page, false otherwise
+     * @return boolean True if the contentlet is regular content (neither a file asset nor an HTML page), false otherwise
      */
-    private static boolean isPageOrFileAsset(Contentlet contentlet) {
+    private static boolean IsNeitherPageOrFileAsset(Contentlet contentlet) {
         return !contentlet.isFileAsset() && !contentlet.isHTMLPage();
     }
 
