@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -21,6 +22,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -1191,6 +1193,17 @@ public interface ContentletAPIPreHook {
 	 */
 	public default boolean findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles){
       return true;
+    }
+
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param searchCriteria The {@link SearchCriteria} object that allows you to filter the data
+     *                       being pulled.
+     */
+    default boolean findAllVersions(final SearchCriteria searchCriteria) {
+        return true;
     }
 
 	/**
