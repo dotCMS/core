@@ -30,7 +30,7 @@ public class ScssQueryParamFilter implements Filter {
         
         String uri = httpRequest.getRequestURI();
         String dotsassParam = request.getParameter("dotsass");
-        boolean isDotsassParam = dotsassParam != null && dotsassParam.equalsIgnoreCase("true");
+        boolean isDotsassParam = "true".equalsIgnoreCase(dotsassParam);
         
         // Only intercept .scss files with dotsass=true parameter
         if (uri.toLowerCase().endsWith(".scss") && isDotsassParam) {

@@ -67,7 +67,7 @@ public class CSSPreProcessServlet extends HttpServlet {
             
             // Check for dotsass=true query parameter to enable SASS compilation for non-standard URLs
             final String dotsassParam = req.getParameter("dotsass");
-            final boolean isDotsassParam = dotsassParam != null && dotsassParam.equalsIgnoreCase("true");
+            final boolean isDotsassParam = "true".equalsIgnoreCase(dotsassParam);
             
             String fileUri;
             if (isDotsassParam) {
