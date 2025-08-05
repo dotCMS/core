@@ -22,7 +22,8 @@ import { BundleService, IBundle } from '../services/bundle-service';
             [bundleStores]="bundleService.bundles$ | async"
             [hidden]="hidden"
             [errorMessage]="errorMessage | async"></cw-add-to-bundle-dialog-component>
-    `
+    `,
+    standalone: false
 })
 // tslint:disable-next-line:component-class-suffix
 export class AddToBundleDialogContainer implements OnChanges {

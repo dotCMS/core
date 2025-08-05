@@ -23,8 +23,6 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
-import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FooterComponent } from './components/dot-select-existing-content/components/footer/footer.component';
@@ -36,10 +34,11 @@ import { getContentTypeIdFromRelationship } from './utils';
 
 import { DotEditContentDialogComponent } from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
+import { LanguagePipe } from '../../pipes/language.pipe';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
-    standalone: true,
     imports: [
         TableModule,
         ButtonModule,
@@ -150,29 +149,24 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @memberof DotEditContentRelationshipFieldComponent
      */
     constructor() {
-        effect(
-            () => {
-                const field = this.$field();
-                const contentlet = this.$contentlet();
+        effect(() => {
+            const field = this.$field();
+            const contentlet = this.$contentlet();
 
-                const cardinality = field?.relationships?.cardinality ?? null;
-                const contentTypeId = getContentTypeIdFromRelationship(field);
+            const cardinality = field?.relationships?.cardinality ?? null;
+            const contentTypeId = getContentTypeIdFromRelationship(field);
 
-                if (cardinality === null || !field?.variable || !contentTypeId) {
-                    return;
-                }
-
-                this.store.initialize({
-                    cardinality,
-                    contentlet,
-                    variable: field?.variable,
-                    contentTypeId
-                });
-            },
-            {
-                allowSignalWrites: true
+            if (cardinality === null || !field?.variable || !contentTypeId) {
+                return;
             }
-        );
+
+            this.store.initialize({
+                cardinality,
+                contentlet,
+                variable: field?.variable,
+                contentTypeId
+            });
+        });
 
         effect(() => {
             if (this.onChange && this.onTouched) {

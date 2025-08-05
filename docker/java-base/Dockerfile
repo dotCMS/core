@@ -1,7 +1,7 @@
 # ----------------------------------------------
 # Stage 1:  Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
-FROM ubuntu:20.04 AS base-builder
+FROM ubuntu:24.04 AS base-builder
 
 WORKDIR /srv
 

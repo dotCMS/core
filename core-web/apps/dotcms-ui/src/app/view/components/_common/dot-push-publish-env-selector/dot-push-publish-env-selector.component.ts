@@ -17,7 +17,8 @@ import { DotEnvironment } from '@dotcms/dotcms-models';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => PushPublishEnvSelectorComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
     private pushPublishService = inject(PushPublishService);

@@ -30,7 +30,6 @@ const DEFAULT_WORKFLOW_SELECTION: WorkflowSelection = {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-workflow',
-    standalone: true,
     imports: [
         DotMessagePipe,
         SkeletonModule,
@@ -39,7 +38,6 @@ const DEFAULT_WORKFLOW_SELECTION: WorkflowSelection = {
         DropdownModule,
         FormsModule
     ],
-
     templateUrl: './dot-edit-content-sidebar-workflow.component.html',
     styleUrl: './dot-edit-content-sidebar-workflow.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

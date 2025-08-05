@@ -3821,6 +3821,23 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/caches/menucache:
+    delete:
+      description: Just deletes the menu cache by request
+      operationId: deleteMenuCache
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Action(s) returned successfully
+        "500":
+          description: General Error
+      summary: Deletes the menu cache
+      tags:
+      - Maintenance
+      - Cache Management
   /v1/caches/provider/{provider}/flush:
     delete:
       operationId: flushAll

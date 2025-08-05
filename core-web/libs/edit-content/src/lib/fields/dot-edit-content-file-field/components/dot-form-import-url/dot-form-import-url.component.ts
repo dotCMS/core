@@ -12,10 +12,11 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { INPUT_TYPE, INPUT_TYPES } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe, DotFieldValidationMessageComponent, DotValidators } from '@dotcms/ui';
 
 import { FormImportUrlStore } from './store/form-import-url.store';
+
+import { INPUT_TYPE, INPUT_TYPES } from '../../../../models/dot-edit-content-file.model';
 
 type DialogData = {
     inputType: INPUT_TYPE;
@@ -24,7 +25,6 @@ type DialogData = {
 
 @Component({
     selector: 'dot-form-import-url',
-    standalone: true,
     imports: [
         DotMessagePipe,
         ReactiveFormsModule,
@@ -53,21 +53,16 @@ export class DotFormImportUrlComponent implements OnInit {
      * The `file` value is passed as the dialog result.
      */
     constructor() {
-        effect(
-            () => {
-                const file = this.store.file();
-                const isDone = this.store.isDone();
+        effect(() => {
+            const file = this.store.file();
+            const isDone = this.store.isDone();
 
-                untracked(() => {
-                    if (isDone) {
-                        this.#dialogRef.close(file);
-                    }
-                });
-            },
-            {
-                allowSignalWrites: true
-            }
-        );
+            untracked(() => {
+                if (isDone) {
+                    this.#dialogRef.close(file);
+                }
+            });
+        });
 
         effect(() => {
             const isLoading = this.store.isLoading();

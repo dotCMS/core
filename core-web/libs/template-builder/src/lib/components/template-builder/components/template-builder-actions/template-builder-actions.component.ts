@@ -24,7 +24,6 @@ import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-p
 
 @Component({
     selector: 'dotcms-template-builder-actions',
-    standalone: true,
     imports: [ButtonModule, DotLayoutPropertiesModule, DotMessagePipe],
     templateUrl: './template-builder-actions.component.html',
     styleUrls: ['./template-builder-actions.component.scss'],

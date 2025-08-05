@@ -10,7 +10,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
  * @implements {PipeTransform}
  */
 @Pipe({
-    name: 'contentletState'
+    name: 'contentletState',
+    standalone: false
 })
 export class ContentletStatePipe implements PipeTransform {
     transform({ live, working, deleted, hasLiveVersion }: DotCMSContentlet) {

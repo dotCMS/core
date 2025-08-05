@@ -20,7 +20,6 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-checkbox-field',
-    standalone: true,
     imports: [CheckboxModule, ReactiveFormsModule, FormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [

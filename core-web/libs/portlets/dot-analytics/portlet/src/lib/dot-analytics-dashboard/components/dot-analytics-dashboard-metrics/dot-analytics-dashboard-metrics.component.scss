@@ -3,53 +3,43 @@
 .metric-card {
     ::ng-deep .p-card-body {
         padding: $spacing-3;
-        min-height: 7.125rem; // 114px
     }
+
     ::ng-deep .p-card-content {
-        height: 100%;
+        min-height: 5.969rem;
+    }
+
+    &.metric-card--loading,
+    &.metric-card--empty,
+    &.metric-card--error {
+        ::ng-deep .p-card-content {
+            min-height: 5.969rem;
+        }
     }
 }
 
 .metric-title {
-    font-size: $font-size-md;
-    font-weight: $font-weight-regular-bold;
-    color: $color-palette-gray-800;
-    margin: 0;
+    font-size: $font-size-sm;
+    color: $color-palette-gray-600;
     text-transform: uppercase;
+    font-weight: $font-weight-regular-bold;
+    letter-spacing: 0.05em;
+    margin: 0;
 }
 
 .metric-value {
     font-size: $font-size-xl;
-    font-weight: $font-weight-medium-bold;
-    line-height: normal;
+    font-weight: $font-weight-bold;
+    color: $color-palette-gray-900;
     margin: 0;
-    color: $black;
 }
 
 .metric-subtitle {
     font-size: $font-size-sm;
-    font-weight: $font-weight-regular-bold;
-    color: $color-palette-gray-800;
-    line-height: $line-height-relative;
+    color: $color-palette-gray-600;
     margin: 0;
 }
 
 .metric-icon {
-    position: absolute;
-    top: 0;
-    right: 0;
-    font-size: $icon-md;
-    width: $icon-md-box;
-    color: $color-palette-gray-700;
-    z-index: 1;
-    aspect-ratio: 1/1;
-    line-height: 1;
-    justify-content: center;
-    align-items: center;
-    display: flex;
-}
-
-.metric-error {
-    font-size: $font-size-sm;
-    color: $color-palette-red;
+    flex-shrink: 0;
 }

@@ -50,7 +50,7 @@ export class DotBinaryFilePreviewComponent {
         this.previewUrl = null;
     }
 
-    private getPreviewElement(): JSX.Element {
+    private getPreviewElement() {
         return this.previewUrl ? (
             <img alt={this.fileName} src={this.previewUrl} />
         ) : (
