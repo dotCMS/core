@@ -24,18 +24,20 @@
                                 labelField;
                                 context: { field: field }
                             "></ng-container>
-                        <button
-                            (click)="onIntegrate(field.value)"
-                            [id]="field.name"
-                            [label]="field.label"
-                            [disabled]="!$appConfigured()"
-                            pButton
-                            type="button"></button>
-                        <ng-container
-                            *ngTemplateOutlet="
-                                warningIcon;
-                                context: { field: field }
-                            "></ng-container>
+                        <div>
+                            <button
+                                (click)="onIntegrate(field.value)"
+                                [id]="field.name"
+                                [label]="field.label"
+                                [disabled]="!$appConfigured()"
+                                pButton
+                                type="button"></button>
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    warningIcon;
+                                    context: { field: field }
+                                "></ng-container>
+                        </div>
                         <span class="form__group-hint">
                             <markdown>{{ field.hint }}</markdown>
                         </span>

@@ -1,21 +1,10 @@
 import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
-import {
-    DotContentletLockerService,
-    DotExperimentsService,
-    DotFavoritePageService,
-    DotHttpErrorHandled,
-    DotHttpErrorManagerService,
-    DotLicenseService,
-    DotMessageService,
-    DotPageRenderService,
-    DotRouterService
-} from '@dotcms/data-access';
 import { CurrentUser, HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
@@ -32,25 +21,35 @@ import {
 } from '@dotcms/dotcms-models';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
+import { DotContentletLockerService } from '../dot-contentlet-locker/dot-contentlet-locker.service';
+import { DotExperimentsService } from '../dot-experiments/dot-experiments.service';
+import { DotFavoritePageService } from '../dot-favorite-page/dot-favorite-page.service';
+import {
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService
+} from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotLicenseService } from '../dot-license/dot-license.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotPageRenderService } from '../dot-page-render/dot-page-render.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+
 @Injectable()
 export class DotPageStateService {
+    private dotContentletLockerService = inject(DotContentletLockerService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPageRenderService = inject(DotPageRenderService);
+    private dotRouterService = inject(DotRouterService);
+    private loginService = inject(LoginService);
+    private dotFavoritePageService = inject(DotFavoritePageService);
+    private dotExperimentsService = inject(DotExperimentsService);
+    private dotLicenseService = inject(DotLicenseService);
+
     state$: Subject<DotPageRenderState> = new Subject<DotPageRenderState>();
     haveContent$ = new BehaviorSubject<boolean>(false);
-    private currentState: DotPageRenderState;
+    private currentState!: DotPageRenderState;
 
     private isInternalNavigation = false;
-
-    constructor(
-        private dotContentletLockerService: DotContentletLockerService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotMessageService: DotMessageService,
-        private dotPageRenderService: DotPageRenderService,
-        private dotRouterService: DotRouterService,
-        private loginService: LoginService,
-        private dotFavoritePageService: DotFavoritePageService,
-        private dotExperimentsService: DotExperimentsService,
-        private dotLicenseService: DotLicenseService
-    ) {}
 
     get pagePersonalization() {
         const persona = this.currentState?.viewAs?.persona;

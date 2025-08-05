@@ -1,16 +1,17 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { LazyLoadEvent, MenuItem } from 'primeng/api';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
 import { DotActionMenuItem, DotCategory, DotMenuItemCommandEvent } from '@dotcms/dotcms-models';
-import { DataTableColumn } from '@models/data-table';
+
+import { DotCategoriesService } from '../../../../api/services/dot-categories/dot-categories.service';
+import { DataTableColumn } from '../../../../shared/models/data-table/data-table-column';
 
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];
@@ -28,6 +29,9 @@ export interface DotCategoriesListState {
 
 @Injectable()
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
+    private dotMessageService = inject(DotMessageService);
+    private categoryService = inject(DotCategoriesService);
+
     readonly vm$ = this.select((state: DotCategoriesListState) => state);
     /**
      * Get categories breadcrumbs
@@ -143,10 +147,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         );
     });
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private categoryService: DotCategoriesService
-    ) {
+    constructor() {
         super();
         this.setState({
             categoriesBulkActions: this.getCategoriesBulkActions(),

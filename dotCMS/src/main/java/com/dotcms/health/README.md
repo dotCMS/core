@@ -1636,13 +1636,26 @@ This health check system provides production-ready monitoring with built-in safe
 
 ## 🔒 **Filter Chain Configuration**
 
-### Health Check Filter Chain
+The infrastructure monitoring system uses a specialized filter chain to ensure both health check and management endpoints remain fast, reliable, and resilient. The `InfrastructureFilter` manages which filters are allowed to process infrastructure monitoring requests.
 
-The health check system uses a specialized filter chain to ensure health check endpoints remain fast, reliable, and resilient. The `HealthCheckFilter` manages which filters are allowed to process health check requests.
+#### Infrastructure Endpoints
+
+The filter bypass applies to these endpoint types:
+
+**Health Check Endpoints:**
+- `/livez` - Kubernetes liveness probe
+- `/readyz` - Kubernetes readiness probe  
+- `/api/v1/health` - Health check API
+
+**Management Endpoints:**
+- `/dotmgt/livez` - Management port liveness probe
+- `/dotmgt/readyz` - Management port readiness probe
+- `/dotmgt/health` - Management port health status
+- All other `/dotmgt/*` endpoints
 
 #### Essential Filters (Always Processed)
 
-The following filters are essential for health check endpoints and are always processed:
+The following filters are essential for infrastructure endpoints and are always processed:
 
 1. **NormalizationFilter**
    - Validates and normalizes request URIs
@@ -1659,70 +1672,18 @@ The following filters are essential for health check endpoints and are always pr
    - Sets HttpOnly and Secure flags
    - Ensures proper cookie security
 
-4. **ThreadNameFilter**
-   - Sets thread name for logging
-   - Improves debugging capabilities
-   - Helps track request flow
-
-5. **CharsetEncodingFilter**
-   - Ensures proper character encoding
-   - Handles internationalization
-   - Prevents encoding issues
-
 #### Excluded Filters
 
-The following filters are excluded from health check requests to prevent unnecessary processing and potential failures:
+The following filters are excluded from infrastructure endpoint requests to prevent unnecessary processing and potential failures:
 
-- **VisitorFilter** - Visitor tracking and analytics
-- **CMSFilter** - CMS content processing
-- **VanityURLFilter** - URL rewriting and vanity URLs
-- **AutoLoginFilter** - Authentication handling
-- **LoginRequiredFilter** - Authentication checks
-- **TimeMachineFilter** - Time machine functionality
-- **InterceptorFilter** - Various interceptors
-- **UrlRewriteFilter** - URL rewriting rules
-
-### Benefits
-
-1. **Performance**
-   - Reduced processing overhead
-   - Faster response times
-   - Lower resource usage
-
-2. **Reliability**
-   - No database dependencies
-   - No authentication requirements
-   - No CMS processing
-
-3. **Security**
-   - Essential security headers maintained
-   - Cookie security preserved
-   - Input validation enforced
-
-4. **Monitoring**
-   - Proper logging support
-   - Thread tracking enabled
-   - Character encoding handled
-
-### Configuration
-
-The filter chain is configured in `web.xml` with the `HealthCheckFilter` as the first filter in the chain:
-
-```xml
-<filter>
-    <filter-name>HealthCheckFilter</filter-name>
-    <filter-class>com.dotcms.health.filter.HealthCheckFilter</filter-class>
-</filter>
-<filter-mapping>
-    <filter-name>HealthCheckFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-    <dispatcher>REQUEST</dispatcher>
-</filter-mapping>
-```
-
-### Health Check Endpoints
-
-The filter chain applies to all health check endpoints:
-- `/livez` - Kubernetes liveness probe
-- `/readyz` - Kubernetes readiness probe
-- `/api/v1/health/*` - Health check API endpoints
+- **CharsetEncodingFilter** - Character encoding (not needed for infrastructure endpoints)
+- **ThreadNameFilter** - Thread naming (adds overhead)
+- **InterceptorFilter** - Various interceptors (expensive)
+- **TimeMachineFilter** - Time machine functionality (expensive)
+- **UrlRewriteFilter** - URL rewriting rules (not needed)
+- **VanityURLFilter** - URL rewriting and vanity URLs (expensive)
+- **VisitorFilter** - Visitor tracking and analytics (expensive)
+- **CMSFilter** - CMS content processing (expensive)
+- **AutoLoginFilter** - Authentication handling (not needed)
+- **LoginRequiredFilter** - Authentication checks (not needed)
+- **ManagementPortFilter** - Port restriction (bypassed via forwarding)

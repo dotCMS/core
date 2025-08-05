@@ -1,6 +1,6 @@
 {
   "name": "@dotcms/react",
-  "version": "0.0.1-beta-2",
+  "version": "1.0.1",
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"

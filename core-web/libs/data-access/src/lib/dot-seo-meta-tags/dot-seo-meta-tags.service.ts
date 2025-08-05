@@ -1,34 +1,32 @@
-import { Observable, forkJoin, of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
 import {
-    SEO_MEDIA_TYPES,
-    SeoMetaTagsResult,
-    SeoMediaKeys,
-    SEO_OPTIONS,
-    OpenGraphOptions,
-    SeoMetaTags,
-    SeoRulesResult,
     ImageMetaData,
+    IMG_NOT_FOUND_KEY,
+    OpenGraphOptions,
     SEO_LIMITS,
-    IMG_NOT_FOUND_KEY
+    SEO_MEDIA_TYPES,
+    SEO_OPTIONS,
+    SeoMediaKeys,
+    SeoMetaTags,
+    SeoMetaTagsResult,
+    SeoRulesResult
 } from '@dotcms/dotcms-models';
 
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotSeoMetaTagsUtilService } from '../dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
 
 @Injectable()
 export class DotSeoMetaTagsService {
+    private dotMessageService = inject(DotMessageService);
+    private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
+
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
     seoMedia: string;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
-    ) {}
 
     /**
      * Get the object with the SEO Result,

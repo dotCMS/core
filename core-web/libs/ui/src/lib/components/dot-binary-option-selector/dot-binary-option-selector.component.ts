@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -21,21 +21,20 @@ export interface BINARY_OPTION {
 
 @Component({
     selector: 'dot-binary-selector',
-    standalone: true,
     imports: [FormsModule, DotMessagePipe, ButtonModule, DynamicDialogModule],
     templateUrl: './dot-binary-option-selector.component.html',
     styleUrls: ['./dot-binary-option-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryOptionSelectorComponent {
+    private readonly ref = inject(DynamicDialogRef);
+    private readonly config = inject(DynamicDialogConfig);
+
     value: string;
     private options: BINARY_OPTION;
     private readonly defaultBtnLabel = 'next';
 
-    constructor(
-        private readonly ref: DynamicDialogRef,
-        private readonly config: DynamicDialogConfig
-    ) {
+    constructor() {
         const { options } = this.config.data || {};
         this.options = options;
         this.value = this.options.option1.value;

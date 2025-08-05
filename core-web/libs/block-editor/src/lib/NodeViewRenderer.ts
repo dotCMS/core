@@ -18,7 +18,10 @@ import type { Node as ProseMirrorNode } from 'prosemirror-model';
 
 export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unknown>;
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export class AngularNodeViewComponent implements NodeViewProps {
     @Input() editor!: NodeViewProps['editor'];
     @Input() node!: NodeViewProps['node'];
@@ -146,10 +149,13 @@ class AngularNodeView extends NodeView<
 
     selectNode() {
         this.renderer.updateProps({ selected: true });
+
+        this.renderer.elementRef.nativeElement.classList.add('ProseMirror-selectednode');
     }
 
     deselectNode() {
         this.renderer.updateProps({ selected: false });
+        this.renderer.elementRef.nativeElement.classList.remove('ProseMirror-selectednode');
     }
 
     destroy() {

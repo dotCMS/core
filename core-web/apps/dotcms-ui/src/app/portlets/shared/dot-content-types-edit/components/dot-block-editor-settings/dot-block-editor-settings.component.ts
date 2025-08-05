@@ -10,7 +10,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
@@ -35,9 +36,15 @@ const BLOCK_EDITOR_ASSETS = [
     selector: 'dot-block-editor-settings',
     templateUrl: './dot-block-editor-settings.component.html',
     styleUrls: ['./dot-block-editor-settings.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnChanges {
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly fieldVariablesService = inject(DotFieldVariablesService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly fb = inject(FormBuilder);
+
     @Output() changeControls = new EventEmitter<DotDialogActions>();
     @Output() valid = new EventEmitter<boolean>();
     @Output() save = new EventEmitter<DotFieldVariable[]>();
@@ -64,13 +71,6 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         */
     };
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly fieldVariablesService: DotFieldVariablesService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly fb: FormBuilder
-    ) {}
 
     get settings() {
         return Object.values(this.settingsMap);

@@ -6,7 +6,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-select-seo-tool',
-    standalone: true,
     imports: [NgClass, NgIf, DecimalPipe, DotMessagePipe],
     templateUrl: './dot-select-seo-tool.component.html',
     styleUrls: ['./dot-select-seo-tool.component.scss'],

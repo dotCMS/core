@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
@@ -62,9 +62,13 @@ import { I18nService } from './services/system/locale/I18n';
                     aria-label="Delete Condition"></button>
             </div>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class ConditionComponent implements OnInit {
+    private _resources = inject(I18nService);
+    private loggerService = inject(LoggerService);
+
     @Input() condition: ConditionModel;
     @Input() index: number;
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
@@ -88,11 +92,6 @@ export class ConditionComponent implements OnInit {
     }> = new EventEmitter(false);
 
     typeDropdown: any;
-
-    constructor(
-        private _resources: I18nService,
-        private loggerService: LoggerService
-    ) {}
 
     ngOnInit(): void {
         setTimeout(() => {

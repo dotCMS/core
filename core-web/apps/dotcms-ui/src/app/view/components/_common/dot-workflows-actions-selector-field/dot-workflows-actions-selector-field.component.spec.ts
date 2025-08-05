@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { Component, DebugElement, OnInit } from '@angular/core';
+import { Component, DebugElement, OnInit, inject } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -8,7 +8,6 @@ import { By } from '@angular/platform-browser';
 import { SelectItemGroup } from 'primeng/api';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -16,6 +15,8 @@ import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
 
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-fake-form',
@@ -26,13 +27,14 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
                 formControlName="action"></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent implements OnInit {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
     workfows: DotCMSWorkflow[] = [];
-
-    constructor(private fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         this.form = this.fb.group({

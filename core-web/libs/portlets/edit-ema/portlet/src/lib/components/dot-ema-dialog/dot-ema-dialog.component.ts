@@ -47,7 +47,6 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
 
 @Component({
     selector: 'dot-edit-ema-dialog',
-    standalone: true,
     templateUrl: './dot-ema-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [

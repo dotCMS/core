@@ -1,18 +1,21 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
-import { DotContentletEditorService } from '@dotcms/app/view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 @Component({
     selector: 'dot-palette-contentlets',
     templateUrl: './dot-palette-contentlets.component.html',
-    styleUrls: ['./dot-palette-contentlets.component.scss']
+    styleUrls: ['./dot-palette-contentlets.component.scss'],
+    standalone: false
 })
 export class DotPaletteContentletsComponent {
+    private dotContentletEditorService = inject(DotContentletEditorService);
+
     @Input() items: DotCMSContentlet[];
     @Input() loading: boolean;
     @Input() totalRecords: number;
@@ -24,8 +27,6 @@ export class DotPaletteContentletsComponent {
     itemsPerPage = 25;
 
     @ViewChild('inputFilter') inputFilter: DotPaletteInputFilterComponent;
-
-    constructor(private dotContentletEditorService: DotContentletEditorService) {}
 
     /**
      * Loads data with a specific page

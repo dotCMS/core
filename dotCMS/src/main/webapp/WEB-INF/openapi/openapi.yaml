@@ -106,8 +106,8 @@ tags:
   name: Content Report
 - description: Publishing environment management and configuration
   name: Environment
-- description: A/B testing and experimentation
-  name: Experiment
+- description: A/B testing and experimentation management
+  name: Experiments
 - description: File asset management and download operations
   name: File Assets
 - description: Language management and localization
@@ -120,22 +120,42 @@ tags:
   name: Notifications
 - description: OSGi plugin management and dynamic deployment
   name: OSGi Plugins
+- description: Content persona management and targeting
+  name: Personas
 - description: Content personalization and persona management
   name: Personalization
 - description: Portlet management and administration
   name: Portlets
 - description: Content publishing and deployment operations
   name: Publishing
+- description: Remote content publishing and synchronization
+  name: Push Publishing
 - description: Business rules and conditional logic management
   name: Rules Engine
 - description: SAML SSO authentication and integration
   name: SAML Authentication
 - description: Content search and query operations
   name: Search
+- description: System-level operations and Redis management
+  name: System
 - description: Storage providers and data replication management
   name: System Storage
+- description: Server log file monitoring and real-time viewing
+  name: TailLog
 - description: Temporary file upload and management operations
   name: Temporary Files
+- description: Testing utilities and development endpoints
+  name: Testing
+- description: Theme design and management
+  name: Themes
+- description: Administrative tool group management
+  name: Tool Groups
+- description: Version control and content archiving
+  name: Versionables
+- description: Velocity Template Language execution and rendering
+  name: VTL
+- description: Web asset management and operations
+  name: Web Assets
 - description: Widget development and rendering
   name: Widgets
 paths:
@@ -2979,6 +2999,46 @@ paths:
       summary: Issues an API token
       tags:
       - API Token
+  /v1/apitoken/expiring:
+    get:
+      description: |-
+        Returns a list of API tokens that will expire within the configured number of days.
+
+        For admin users, returns all expiring tokens from all users.
+        For limited users, returns only their own expiring tokens.
+
+        The number of days to look ahead can be configured via the EXPIRING_TOKEN_LOOKAHEAD_DAYS property (default: 7).
+      operationId: getExpiringApiTokens
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                  tokens:
+                  - expiresDate: 1844834400000
+                    id: apie3362144-8906-460d-b16e-e46a5bf69aef
+                    issueDate: 1750183464000
+                    userId: dotcms.org.1
+                  - expiresDate: 1844835400000
+                    id: apie46a5bf69aef-8906-460d-asde-e46a5bf69aef
+                    issueDate: 1750183464000
+                    userId: dotcms.org.1
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Expiring API tokens successfully retrieved
+        "401":
+          description: Invalid user
+        "403":
+          description: Forbidden
+        "500":
+          description: Unexpected server error
+      summary: Retrieves API tokens that are about to expire
+      tags:
+      - API Token
   /v1/apitoken/remote:
     put:
       description: |-
@@ -3764,6 +3824,23 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/caches/menucache:
+    delete:
+      description: Just deletes the menu cache by request
+      operationId: deleteMenuCache
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Action(s) returned successfully
+        "500":
+          description: General Error
+      summary: Deletes the menu cache
+      tags:
+      - Maintenance
+      - Cache Management
   /v1/caches/provider/{provider}/flush:
     delete:
       operationId: flushAll
@@ -17245,6 +17322,9 @@ components:
           type: boolean
         userId:
           type: string
+      required:
+      - password
+      - userId
     BayesianResult:
       type: object
       properties:
@@ -17615,6 +17695,8 @@ components:
         sortOrder:
           type: integer
           format: int32
+      required:
+      - categoryName
     CategoryKeysForm:
       type: object
       properties:
@@ -17782,8 +17864,6 @@ components:
           type: string
         prompt:
           type: string
-          maxLength: 4096
-          minLength: 1
         responseFormat:
           type: object
           additionalProperties:
@@ -18110,6 +18190,9 @@ components:
           type: boolean
         workflowActionId:
           type: string
+      required:
+      - contentType
+      - workflowActionId
     ContentImportParamsSchema:
       type: object
       description: Schema for content import parameters.
@@ -18197,6 +18280,8 @@ components:
           type: string
         variable:
           type: string
+      required:
+      - name
     CopyContentletForm:
       type: object
       properties:
@@ -18501,6 +18586,8 @@ components:
           type: array
           items:
             type: string
+      required:
+      - items
     DeletePPQueueElementsByIdentifierForm:
       type: object
       properties:
@@ -18520,6 +18607,10 @@ components:
           uniqueItems: true
         siteId:
           type: string
+      required:
+      - key
+      - params
+      - siteId
     DifferenceData:
       type: object
       properties:
@@ -18707,8 +18798,6 @@ components:
           minimum: 0
         query:
           type: string
-          maxLength: 4096
-          minLength: 1
         userId:
           type: string
         velocityTemplate:
@@ -18796,6 +18885,12 @@ components:
           type: string
         sending:
           type: boolean
+      required:
+      - address
+      - environmentId
+      - name
+      - port
+      - protocol
     Environment:
       type: object
       properties:
@@ -18823,6 +18918,9 @@ components:
           type: array
           items:
             type: string
+      required:
+      - name
+      - pushMode
     ErrorDetail:
       type: object
       properties:
@@ -18994,11 +19092,17 @@ components:
           type: boolean
         password:
           type: string
+      required:
+      - appKeysBySite
+      - exportAll
+      - password
     ExtraPackagesForm:
       type: object
       properties:
         packages:
           type: string
+      required:
+      - packages
     Field:
       type: object
       discriminator:
@@ -19626,6 +19730,8 @@ components:
       properties:
         userId:
           type: string
+      required:
+      - userId
     FormContentType:
       type: object
       allOf:
@@ -20560,6 +20666,9 @@ components:
           type: string
         value:
           type: string
+      required:
+      - key
+      - value
     Language:
       type: object
       properties:
@@ -20660,6 +20769,9 @@ components:
           type: string
         userId:
           type: string
+      required:
+      - password
+      - userId
     LookBackWindow:
       type: object
       properties:
@@ -21253,6 +21365,9 @@ components:
           type: string
         personaTag:
           type: string
+      required:
+      - pageId
+      - personaTag
     PublishingEndPoint:
       type: object
       properties:
@@ -21309,6 +21424,12 @@ components:
           format: int32
         orderBy:
           type: string
+      required:
+      - fieldVariable
+      - identifier
+      - limit
+      - offset
+      - orderBy
     PushPublishBean:
       type: object
       properties:
@@ -21597,6 +21718,9 @@ components:
           type: string
         token:
           type: string
+      required:
+      - password
+      - token
     ResponseContentletWorkflowStatusView:
       type: object
       properties:
@@ -23123,6 +23247,10 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/RestConditionValue"
+      required:
+      - conditionlet
+      - operator
+      - owningGroup
     RestConditionGroup:
       type: object
       properties:
@@ -23135,6 +23263,8 @@ components:
         priority:
           type: integer
           format: int32
+      required:
+      - operator
     RestConditionValue:
       type: object
       properties:
@@ -23145,6 +23275,8 @@ components:
           format: int32
         value:
           type: string
+      required:
+      - key
     RestLanguage:
       type: object
       properties:
@@ -23193,6 +23325,8 @@ components:
         priority:
           type: integer
           format: int32
+      required:
+      - owningRule
     RestTag:
       type: object
       properties:
@@ -23285,6 +23419,8 @@ components:
           type: string
         roleName:
           type: string
+      required:
+      - roleName
     RoleLayoutForm:
       type: object
       properties:
@@ -23585,6 +23721,9 @@ components:
           type: string
         value:
           type: object
+      required:
+      - key
+      - value
     SetHashForm:
       type: object
       properties:
@@ -23594,6 +23733,9 @@ components:
             type: object
         key:
           type: string
+      required:
+      - fields
+      - key
     ShortCategory:
       type: object
       properties:
@@ -24007,6 +24149,8 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/RestTag"
+      required:
+      - tags
     TagInode:
       type: object
       properties:
@@ -24090,6 +24234,8 @@ components:
           type: string
         title:
           type: string
+      required:
+      - title
     TemplateImageForm:
       type: object
       properties:
@@ -24459,11 +24605,17 @@ components:
           type: string
         tagName:
           type: string
+      required:
+      - siteId
+      - tagId
+      - tagName
     UpgradeTaskForm:
       type: object
       properties:
         upgradeTaskClass:
           type: string
+      required:
+      - upgradeTaskClass
     User:
       type: object
       properties:
@@ -24709,6 +24861,10 @@ components:
           type: string
         userId:
           type: string
+      required:
+      - email
+      - firstName
+      - lastName
     VanityUrlContentType:
       type: object
       allOf:
@@ -25079,6 +25235,14 @@ components:
           type: array
           items:
             type: string
+      required:
+      - actionAssignable
+      - actionCommentable
+      - actionName
+      - actionNextStep
+      - actionRoleHierarchyForAssign
+      - schemeId
+      - showOn
     WorkflowActionSeparatorForm:
       type: object
       properties:
@@ -25091,6 +25255,8 @@ components:
       properties:
         actionId:
           type: string
+      required:
+      - actionId
     WorkflowActionView:
       type: object
       properties:
@@ -25220,6 +25386,8 @@ components:
           type: object
           additionalProperties:
             type: string
+      required:
+      - actionletClass
     WorkflowActionletParameter:
       type: object
       properties:
@@ -25263,6 +25431,8 @@ components:
         order:
           type: integer
           format: int32
+      required:
+      - order
     WorkflowScheme:
       type: object
       properties:
@@ -25299,6 +25469,8 @@ components:
           type: string
         schemeName:
           type: string
+      required:
+      - schemeName
     WorkflowSchemeImportExportObjectView:
       type: object
       properties:
@@ -25351,6 +25523,8 @@ components:
           items:
             type: string
           uniqueItems: true
+      required:
+      - schemes
     WorkflowStep:
       type: object
       properties:
@@ -25390,6 +25564,13 @@ components:
           type: string
         stepResolved:
           type: boolean
+      required:
+      - enableEscalation
+      - escalationAction
+      - escalationTime
+      - schemeId
+      - stepName
+      - stepResolved
     WorkflowStepUpdateForm:
       type: object
       properties:
@@ -25406,6 +25587,12 @@ components:
           format: int32
         stepResolved:
           type: boolean
+      required:
+      - enableEscalation
+      - escalationTime
+      - stepName
+      - stepOrder
+      - stepResolved
     WorkflowSystemActionForm:
       type: object
       properties:
@@ -25426,6 +25613,9 @@ components:
           - UNARCHIVE
           - DELETE
           - DESTROY
+      required:
+      - actionId
+      - systemAction
     WorkflowTask:
       type: object
       properties:

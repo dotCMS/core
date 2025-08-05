@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
@@ -18,16 +18,15 @@ import { DotPageToolsSeoState, DotPageToolsSeoStore } from './store/dot-page-too
     imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule, NgIf],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPageToolsSeoComponent {
+    private dotPageToolsSeoStore = inject(DotPageToolsSeoStore);
+
     @Input() currentPageUrlParams: DotPageToolUrlParams;
     dialogHeader: string;
     tools$: Observable<DotPageToolsSeoState> = this.dotPageToolsSeoStore.tools$;
     visible = false;
-
-    constructor(private dotPageToolsSeoStore: DotPageToolsSeoStore) {}
 
     public toggleDialog(): void {
         if (!this.visible) {

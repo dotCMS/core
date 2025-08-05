@@ -25,6 +25,7 @@ import { DotContentCompareTableData } from '../../store/dot-content-compare.stor
 import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 
 @Component({
+    standalone: false,
     selector: 'dot-test-host-component',
     template:
         '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'

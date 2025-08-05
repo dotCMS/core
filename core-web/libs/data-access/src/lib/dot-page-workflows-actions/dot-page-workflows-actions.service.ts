@@ -1,21 +1,21 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { DotRenderMode } from '@dotcms/data-access';
 import { DotCMSWorkflowAction, DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { DotRenderMode } from '../dot-workflows-actions/dot-workflows-actions.service';
 
 export interface DotCMSPageWorkflowState {
     actions: DotCMSWorkflowAction[];
     page: DotCMSContentlet;
 }
-
 @Injectable()
 export class DotPageWorkflowsActionsService {
-    constructor(private http: HttpClient) {}
+    private http = inject(HttpClient);
 
     /**
      * Returns the workflow actions of the passed url, hostId and language

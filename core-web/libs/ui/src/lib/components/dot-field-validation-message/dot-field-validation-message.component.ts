@@ -1,7 +1,7 @@
 /*
 - TODO: maybe crawl the html to find the form parent and save one @Input
 */
-/* eslint-disable @typescript-eslint/padding-line-between-statements */
+/* eslint-disable @stylistic/padding-line-between-statements */
 
 import { Subject } from 'rxjs';
 
@@ -10,7 +10,8 @@ import {
     ChangeDetectorRef,
     Component,
     Input,
-    OnDestroy
+    OnDestroy,
+    inject
 } from '@angular/core';
 import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
 
@@ -32,22 +33,19 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
-    standalone: true,
-    imports: [DotMessagePipe],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DotMessagePipe]
 })
 export class DotFieldValidationMessageComponent implements OnDestroy {
+    private readonly cd = inject(ChangeDetectorRef);
+    private readonly dotMessageService = inject(DotMessageService);
+
     @Input()
     patternErrorMessage: string;
 
     defaultMessage: string;
     errorMsg = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private readonly cd: ChangeDetectorRef,
-        private readonly dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Manual message when the input has an error.

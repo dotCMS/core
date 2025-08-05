@@ -1,24 +1,24 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, pluck, take } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCurrentUser,
-    UserPermissions,
+    DotPermissionsType,
     PermissionsType,
-    DotPermissionsType
+    UserPermissions
 } from '@dotcms/dotcms-models';
 import { formatMessage } from '@dotcms/utils';
 @Injectable()
 export class DotCurrentUserService {
+    private coreWebService = inject(CoreWebService);
+
     private currentUsersUrl = 'v1/users/current/';
     private userPermissionsUrl = 'v1/permissions/_bypermissiontype?userid={0}';
     private porletAccessUrl = 'v1/portlet/{0}/_doesuserhaveaccess';
-
-    constructor(private coreWebService: CoreWebService) {}
 
     // TODO: We need to update the LoginService to get the userId in the User object
     /**

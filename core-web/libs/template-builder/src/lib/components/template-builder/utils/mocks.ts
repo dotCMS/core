@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import { Component, ElementRef } from '@angular/core';
+import { Component, ElementRef, inject } from '@angular/core';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -876,10 +876,13 @@ export const BOX_MOCK = {
  */
 @Component({
     selector: 'dotcms-grid-stack-element',
-    template: '<div>Element</div>'
+    template: '<div>Element</div>',
+    standalone: false
 })
 export class MockGridStackElementComponent {
-    constructor(public el: ElementRef) {
+    el = inject(ElementRef);
+
+    constructor() {
         this.el.nativeElement.ddElement = {
             on: () => {
                 /* noop */

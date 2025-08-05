@@ -10,7 +10,7 @@ import {
     HttpRequest,
     HttpResponse
 } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, filter, map } from 'rxjs/operators';
@@ -60,13 +60,11 @@ export interface DotRequestOptionsArgs {
  */
 @Injectable()
 export class CoreWebService {
-    private httpErrosSubjects: Subject<any>[] = [];
+    private loggerService = inject(LoggerService);
+    private router = inject(Router);
+    private http = inject(HttpClient);
 
-    constructor(
-        private loggerService: LoggerService,
-        private router: Router,
-        private http: HttpClient
-    ) {}
+    private httpErrosSubjects: Subject<any>[] = [];
 
     /**
      *

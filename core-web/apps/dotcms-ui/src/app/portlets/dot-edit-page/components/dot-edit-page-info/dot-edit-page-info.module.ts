@@ -3,8 +3,6 @@ import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotLinkComponent } from '@components/dot-link/dot-link.component';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
@@ -13,6 +11,9 @@ import {
 } from '@dotcms/ui';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
+
+import { LOCATION_TOKEN } from '../../../../providers';
+import { DotLinkComponent } from '../../../../view/components/dot-link/dot-link.component';
 
 @NgModule({
     imports: [

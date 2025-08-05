@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
@@ -8,14 +8,19 @@ import { takeUntil } from 'rxjs/operators';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { camelCase } from '@dotcms/utils';
-import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
+
+import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-file-upload.model';
 
 @Component({
     selector: 'dot-create-persona-form',
     templateUrl: './dot-create-persona-form.component.html',
-    styleUrls: ['./dot-create-persona-form.component.scss']
+    styleUrls: ['./dot-create-persona-form.component.scss'],
+    standalone: false
 })
 export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
+    private fb = inject(UntypedFormBuilder);
+    private siteService = inject(SiteService);
+
     @Input() personaName = '';
     @Output() isValid: EventEmitter<boolean> = new EventEmitter();
 
@@ -23,11 +28,6 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     tempUploadedFile: DotCMSTempFile;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        private siteService: SiteService
-    ) {}
 
     ngOnInit() {
         this.initPersonaForm();

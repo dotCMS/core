@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation } from '@angular/core';
+import { Component, Input, ViewEncapsulation, inject } from '@angular/core';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
@@ -7,13 +7,14 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-loading-indicator',
     styleUrls: ['./dot-loading-indicator.component.scss'],
-    templateUrl: 'dot-loading-indicator.component.html'
+    templateUrl: 'dot-loading-indicator.component.html',
+    standalone: false
 })
 export class DotLoadingIndicatorComponent {
+    dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+
     @Input()
     fullscreen: boolean;
-
-    constructor(public dotLoadingIndicatorService: DotLoadingIndicatorService) {}
 
     @Input()
     set show(status: ComponentStatus) {

@@ -35,7 +35,8 @@ import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-fa
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content><ng-content select="[footerActions]"></ng-content>',
-    styleUrls: []
+    styleUrls: [],
+    standalone: false
 })
 export class DotFormDialogMockComponent {
     @Input() saveButtonDisabled: boolean;
@@ -46,7 +47,8 @@ export class DotFormDialogMockComponent {
 
 @Component({
     selector: 'dot-html-to-image',
-    template: '<div></div>'
+    template: '<div></div>',
+    standalone: false
 })
 export class DotHtmlToImageMockComponent {
     @Input() height;
