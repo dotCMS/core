@@ -14,7 +14,6 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
  */
 @Component({
     selector: 'dot-edit-content-json-field',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         DotEditContentMonacoEditorControlComponent,

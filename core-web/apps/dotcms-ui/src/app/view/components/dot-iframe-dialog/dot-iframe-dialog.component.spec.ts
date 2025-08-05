@@ -7,13 +7,13 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDialogComponent, DotDialogModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { IFrameModule } from '../_common/iframe';
 import { IframeComponent } from '../_common/iframe/iframe-component';
 
@@ -40,7 +40,8 @@ const getTestConfig = (hostComponent) => {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>'
+    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>',
+    standalone: false
 })
 class TestHostComponent {
     url: string;
@@ -50,7 +51,8 @@ class TestHostComponent {
 @Component({
     selector: 'dot-test-host2-component',
     template:
-        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>'
+        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>',
+    standalone: false
 })
 class TestHost2Component {
     url: string;

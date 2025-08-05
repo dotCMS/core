@@ -12,7 +12,8 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-content-type-selector',
     templateUrl: './dot-content-type-selector.component.html',
-    styleUrls: ['./dot-content-type-selector.component.scss']
+    styleUrls: ['./dot-content-type-selector.component.scss'],
+    standalone: false
 })
 export class DotContentTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);

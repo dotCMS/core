@@ -6,7 +6,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotEventsService,
@@ -39,6 +38,7 @@ import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-h
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';
+import { DotContentletEditorService } from '../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 export class MockDotUiColorsService {
     setColors() {

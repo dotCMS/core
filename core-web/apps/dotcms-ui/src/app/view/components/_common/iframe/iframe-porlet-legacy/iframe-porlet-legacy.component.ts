@@ -5,17 +5,19 @@ import { ActivatedRoute, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+
 @Component({
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
-    templateUrl: 'iframe-porlet-legacy.component.html'
+    templateUrl: 'iframe-porlet-legacy.component.html',
+    standalone: false
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);

@@ -10,10 +10,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
-import { DotCrumbtrailComponent } from '@components/dot-crumbtrail/dot-crumbtrail.component';
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotRouterService, DotPropertiesService } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -33,7 +29,11 @@ import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notif
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 import { DotToolbarComponent } from './dot-toolbar.component';
 
+import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
@@ -47,19 +47,22 @@ class MockDotNavigationService {
 
 @Component({
     selector: 'dot-toolbar-user',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarUsersComponent {}
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarNotificationsComponent {}
 
 @Component({
     selector: 'dot-toolbar-announcements',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarAnnouncementsComponent {}
 

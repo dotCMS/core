@@ -6,13 +6,15 @@ import { ActivatedRoute } from '@angular/router';
 
 import { map, pluck, take } from 'rxjs/operators';
 
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
+
+import { DotAccountService } from '../../api/services/dot-account-service';
 
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
-    styleUrls: ['./dot-starter.component.scss']
+    styleUrls: ['./dot-starter.component.scss'],
+    standalone: false
 })
 export class DotStarterComponent implements OnInit {
     private route = inject(ActivatedRoute);
