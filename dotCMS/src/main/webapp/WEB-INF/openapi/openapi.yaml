@@ -3782,7 +3782,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapMapView"
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: User authentication successful
         "401":
           description: User not authenticated
@@ -3808,7 +3808,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityMapMapView"
           description: User data successfully collected
         "400":
           description: Bad request
