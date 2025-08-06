@@ -9,6 +9,7 @@ package com.dotmarketing.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -43,10 +44,6 @@ public class PermissionCacheImpl extends PermissionCache {
 	 * @see com.dotmarketing.business.PermissionCache#addToPermissionCache(java.lang.String, java.util.List)
 	 */
 	protected List<Permission> addToPermissionCache(final String key, List<Permission> permissions) {
-	    if(permissions!=null && permissions.isEmpty()) {
-	        Logger.warn(this.getClass(), ()->" !!! Putting an empty list of permissions in the cache for asset:" + key +". Every asset should have at least 1 permission (or inherited permission) associated with it");
-			Thread.dumpStack();
-	    }
 
         // Add the key to the cache
         cache.put(primaryGroup + key, permissions,primaryGroup);
