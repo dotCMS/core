@@ -209,7 +209,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Storing workflow data\", function () {",
+									"pm.test(\"Checking Content Type Information\", function () {",
 									"    let jsonData = pm.response.json();",
 									"    let length = jsonData.entity.length;",
 									"    let currentPage = jsonData.pagination.currentPage;",
