@@ -85,9 +85,7 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input<DotCMSContentTypeField | null>(null, {
-        alias: 'field'
-    });
+    $field = input.required<DotCMSContentTypeField | null>({ alias: 'field' });
 
     /**
      * Representing the currently selected editor.

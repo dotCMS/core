@@ -78,9 +78,7 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input<DotCMSContentTypeField | null>(null, {
-        alias: 'field'
-    });
+    $field = input.required<DotCMSContentTypeField | null>({ alias: 'field' });
 
     /**
      * Computed property that returns the current value of the field.
@@ -157,8 +155,7 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     }
 
     /**
-     * Insert language variable at current cursor positio
-     * n in textarea
+     * Insert language variable at current cursor position in textarea
      * @param textarea - The textarea element
      * @param languageVariable - The parsed language variable string to insert
      * @private
