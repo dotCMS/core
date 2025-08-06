@@ -3,7 +3,6 @@ package com.dotcms.contenttype.business;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 
 import java.util.Collection;
 import java.util.List;
@@ -79,9 +78,9 @@ public interface ContentTypeFactory {
 
 	List<ContentType> search(String search) throws DotDataException;
 
-	int searchCount(String search) throws DotDataException, DotSecurityException;
+	int searchCount(String search) throws DotDataException;
 
-	int searchCount(String search, int baseType) throws DotDataException, DotSecurityException;
+	int searchCount(String search, int baseType) throws DotDataException;
 
 	List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset) throws DotDataException;
 	
@@ -125,7 +124,7 @@ public interface ContentTypeFactory {
 	 */
 	List<ContentType> search(final List<String> sites, final String search, final int type, final String orderBy, final int limit, final int offset) throws DotDataException;
 
-	int searchCount(String search, BaseContentType baseType) throws DotDataException, DotSecurityException;
+	int searchCount(String search, BaseContentType baseType) throws DotDataException;
 
 	void delete(ContentType type) throws DotDataException;
 
