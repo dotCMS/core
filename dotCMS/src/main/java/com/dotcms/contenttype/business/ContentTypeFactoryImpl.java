@@ -30,6 +30,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -298,18 +299,30 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   @Override
-  public int searchCount(String search) throws DotDataException, DotSecurityException {
-      return dbCount(search, BaseContentType.ANY.getType());
+  public int searchCount(String search) throws DotDataException {
+      try {
+          return dbCount(search, BaseContentType.ANY.getType());
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
-  public int searchCount(String search, int baseType) throws DotDataException, DotSecurityException {
-      return dbCount(search, baseType);
+  public int searchCount(String search, int baseType) throws DotDataException {
+      try {
+          return dbCount(search, baseType);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
-  public int searchCount(String search, BaseContentType baseType) throws DotDataException, DotSecurityException {
-      return dbCount(search, baseType.getType());
+  public int searchCount(String search, BaseContentType baseType) throws DotDataException {
+      try {
+          return dbCount(search, baseType.getType());
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
@@ -971,6 +984,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
     
     sqlBuilder.append(" AND st.structuretype >= ? AND st.structuretype <= ? ");
+    sqlBuilder.append(" AND st.marked_for_deletion = ").append(DbConnectionFactory.getDBFalse());
     
     dc.setSQL(sqlBuilder.toString());
     

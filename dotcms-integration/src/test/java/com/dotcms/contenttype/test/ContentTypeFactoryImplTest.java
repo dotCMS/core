@@ -346,7 +346,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	}
 
 	@Test
-	public void searchCount() throws DotDataException, DotSecurityException {
+	public void searchCount() throws DotDataException {
 		String query = " velocity_var_name like '%content%'";
 		List<ContentType> types = contentTypeFactory.search(query, -1);
 
@@ -951,7 +951,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	/**
 	 * Test that the searchCount method properly handles numeric overflow in structuretype values.
 	 * Given: A search condition with structuretype value that exceeds Integer.MAX_VALUE
-	 * Should: Throw DotSecurityException instead of NumberFormatException
+	 * Should: Throw DotDataException (wrapping DotSecurityException) instead of NumberFormatException
 	 *
 	 * @throws DotDataException
 	 */
@@ -959,18 +959,28 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	public void testSearchCountNumericOverflowProtection() throws DotDataException {
 		// Test with value larger than Integer.MAX_VALUE
 		String overflowCondition = "structuretype=99999999999999999999";
+		boolean exceptionThrown = false;
 		try {
 			int result = FactoryLocator.getContentTypeFactory().searchCount(overflowCondition, BaseContentType.ANY);
 			Assert.fail("Expected exception to be thrown for integer overflow, but got result: " + result);
-		} catch (DotSecurityException e) {
-			// Expected behavior - verify the exception message contains overflow info
-			assertTrue("Exception message should contain overflow information: " + e.getMessage(), 
-				e.getMessage().contains("out of range") || e.getMessage().contains("overflow") || e.getMessage().contains("Invalid structuretype"));
+		} catch (DotDataException e) {
+			exceptionThrown = true;
+			// Expected: DotDataException wrapping DotSecurityException, or containing security/overflow info
+			if (e.getCause() instanceof DotSecurityException) {
+				// Expected wrapped behavior - verify the cause message contains overflow info
+				assertTrue("Wrapped exception message should contain overflow information: " + e.getCause().getMessage(), 
+					e.getCause().getMessage().contains("out of range") || e.getCause().getMessage().contains("overflow") || e.getCause().getMessage().contains("Invalid structuretype"));
+			} else {
+				// Acceptable DotDataException for invalid data
+				assertTrue("Exception message should indicate security/invalid data: " + e.getMessage(),
+					e.getMessage().contains("Security validation failed") || e.getMessage().contains("Invalid") || e.getMessage().contains("overflow"));
+			}
 		} catch (NumberFormatException e) {
-			Assert.fail("Should throw DotSecurityException instead of NumberFormatException: " + e.getMessage());
+			Assert.fail("Should throw DotDataException (wrapping security exception) instead of NumberFormatException: " + e.getMessage());
 		} catch (Exception e) {
 			Assert.fail("Unexpected exception type: " + e.getClass().getName() + " - " + e.getMessage());
 		}
+		assertTrue("An exception should have been thrown", exceptionThrown);
 	}
 
 }
