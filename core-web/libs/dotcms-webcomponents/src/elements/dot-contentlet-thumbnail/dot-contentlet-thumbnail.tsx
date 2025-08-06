@@ -1,3 +1,6 @@
+// We need `h` on scope to be able to render the component
+// But it is unused in this file, so we disable the rule so eslint doesn't complain
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Component, h, Host, Prop, State } from '@stencil/core';
 
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
