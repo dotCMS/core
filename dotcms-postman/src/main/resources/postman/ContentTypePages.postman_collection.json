@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "45b68571-8ba8-4364-8f24-bdd277843329",
-		"name": "ContentTypePages",
+		"name": "ContentTypePagesResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
 	},
@@ -22,7 +22,7 @@
 									"",
 									"pm.test(\"Storing workflow data\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.collectionVariables.set(\"currentSiteJost\", jsonData.entity.hostname);",
+									"    pm.collectionVariables.set(\"currentSiteHost\", jsonData.entity.hostname);",
 									"});",
 									""
 								],
@@ -71,6 +71,27 @@
 				},
 				{
 					"name": "CreatePageWithSystemTemplate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Storing workflow data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"currentPageId\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"currentPageUrl\", jsonData.entity.url);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -86,7 +107,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \n}",
+							"raw": "{\n\t\"contentlet\":{\n\t\t\"contentType\": \"htmlpageasset\",\n\t\t\"title\": \"Page1 {{$timestamp}}\",\n        \"url\": \"page1-{{$timestamp}}\",\n        \"friendlyName\":\"page1-{{$timestamp}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"0\",\n        \"hostFolder\":\"{{currentSiteHost}}\",\n        \"indexPolicy\":\"WAIT_FOR\"\n\t}\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -144,6 +165,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -200,6 +231,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -241,6 +282,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -327,6 +378,24 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "currentSiteJost",
+			"value": ""
+		},
+		{
+			"key": "currentSiteHost",
+			"value": ""
+		},
+		{
+			"key": "currentPageId",
+			"value": ""
+		},
+		{
+			"key": "currentPageUrl",
+			"value": ""
 		}
 	]
 }
