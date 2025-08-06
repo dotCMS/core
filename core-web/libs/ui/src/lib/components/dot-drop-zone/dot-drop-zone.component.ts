@@ -29,7 +29,6 @@ export interface DropZoneFileValidity {
 
 @Component({
     selector: 'dot-drop-zone',
-    standalone: true,
     imports: [],
     templateUrl: './dot-drop-zone.component.html',
     styleUrls: ['./dot-drop-zone.component.scss'],

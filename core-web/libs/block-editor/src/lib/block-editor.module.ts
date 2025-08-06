@@ -1,7 +1,7 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
 
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
@@ -93,12 +93,10 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotLanguagesService,
         DotContentTypeService,
         DotWorkflowActionsFireService,
-        {
-            provide: APP_INITIALIZER,
-            useFactory: initTranslations,
-            deps: [DotMessageService],
-            multi: true
-        }
+        provideAppInitializer(() => {
+            const initializerFn = initTranslations(inject(DotMessageService));
+            return initializerFn();
+        })
     ],
     exports: [
         EditorDirective,

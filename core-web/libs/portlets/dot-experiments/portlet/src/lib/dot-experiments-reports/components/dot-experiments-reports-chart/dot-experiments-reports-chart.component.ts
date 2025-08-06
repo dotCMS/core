@@ -14,7 +14,6 @@ import { htmlLegendPlugin } from './chartjs/plugins/dotHtmlLegend-chartjs.plugin
 import { getRandomUUID } from '../../../shared/dot-experiment.utils';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-reports-chart',
     imports: [ChartModule, NgIf, SkeletonModule, DotMessagePipe],
     templateUrl: './dot-experiments-reports-chart.component.html',

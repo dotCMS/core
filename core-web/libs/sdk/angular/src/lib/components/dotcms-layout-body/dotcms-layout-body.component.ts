@@ -29,7 +29,6 @@ import { DotCMSStore } from '../../store/dotcms.store';
  */
 @Component({
     selector: 'dotcms-layout-body',
-    standalone: true,
     imports: [PageErrorMessageComponent, RowComponent],
     providers: [DotCMSStore],
     template: `
