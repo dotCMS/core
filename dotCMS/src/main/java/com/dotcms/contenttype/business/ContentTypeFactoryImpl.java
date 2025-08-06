@@ -957,6 +957,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     private boolean isBooleanField(String field) {
         return "system".equals(field) || "fixed".equals(field) || "default_structure".equals(field);
     }
+    
+    /**
+     * SECURITY: Checks if a column name could be ambiguous in multi-table queries.
+     * These columns exist in both the 'inode' and 'structure' tables used in ContentType queries.
+     */
+    private static boolean isAmbiguousColumn(String column) {
+        return "inode".equals(column) || "name".equals(column);
+    }
 
   // SECURITY: Fully parameterized count query with proper community edition handling
   private int dbCount(String search, int baseType) throws DotDataException, DotSecurityException {
@@ -1145,11 +1153,21 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         trimmed = trimmed.substring(4).trim();
       }
       
-      // SECURITY: Handle legacy "1=1" pattern as "no condition" to avoid SQL injection risk
-      // This pattern is used in legacy code for dynamic query building but should not reach the database
-      if ("1=1".equals(trimmed)) {
-        Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '1=1' condition to 'no condition' for safety");
-        return null; // No condition needed - return all results
+      // SECURITY: Handle legacy integer=integer patterns for dynamic query building
+      // Equal integers (1=1, 0=0, etc.) = "always true" = no condition needed
+      // Different integers (1=0, 2=3, etc.) = "never matches" = empty results
+      Pattern integerEqualityPattern = Pattern.compile("^\\s*(\\d+)\\s*=\\s*(\\d+)\\s*$");
+      Matcher integerMatcher = integerEqualityPattern.matcher(trimmed);
+      if (integerMatcher.matches()) {
+        int left = Integer.parseInt(integerMatcher.group(1));
+        int right = Integer.parseInt(integerMatcher.group(2));
+        if (left == right) {
+          Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '" + trimmed + "' condition to 'no condition' for safety");
+          return null; // No condition needed - return all results
+        } else {
+          Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '" + trimmed + "' condition to 'never matches' for safety");
+          return new SafeCondition("1", "=", "0", "1 = 0"); // Never matches condition
+        }
       }
       
       // SECURITY: Simple pattern-based validation using Config properties
@@ -1197,56 +1215,87 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       // Pattern 1: [table.]column = 'value' or [table.]column = number
       // Handles both qualified (structure.system) and unqualified (system) column names
       Pattern equalityPattern = Pattern.compile(
-          "^\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|!=|<>|>|<|>=|<=)\\s*(?:'([^']*)'|(\\d+))\\s*$", 
+          "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|!=|<>|>|<|>=|<=)\\s*(?:'([^']*)'|(\\d+))\\s*$", 
           Pattern.CASE_INSENSITIVE
       );
       
       Matcher equalityMatcher = equalityPattern.matcher(condition);
       if (equalityMatcher.matches()) {
-        String column = equalityMatcher.group(1).toLowerCase();
-        String operator = equalityMatcher.group(2);
-        String stringValue = equalityMatcher.group(3);
-        String numericValue = equalityMatcher.group(4);
+        String table = equalityMatcher.group(1); // Can be null for unqualified columns
+        String column = equalityMatcher.group(2).toLowerCase();
+        String operator = equalityMatcher.group(3);
+        String stringValue = equalityMatcher.group(4);
+        String numericValue = equalityMatcher.group(5);
         
         validateColumn(column, allowedColumns);
         
         String value = stringValue != null ? stringValue : numericValue;
-        String sqlCondition = column + " " + operator + " ?";
+        
+        // SECURITY: Reject ambiguous columns - require explicit table qualification
+        if (isAmbiguousColumn(column) && table == null) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+        }
+        
+        // Use table qualification if provided, otherwise use column directly
+        String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+        
+        String sqlCondition = qualifiedColumn + " " + operator + " ?";
         return new SafeCondition(column, operator, value, sqlCondition);
       }
       
       // Pattern 2: [table.]column IS [NOT] NULL
       Pattern nullPattern = Pattern.compile(
-          "^\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+IS\\s+(NOT\\s+)?NULL\\s*$", 
+          "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+IS\\s+(NOT\\s+)?NULL\\s*$", 
           Pattern.CASE_INSENSITIVE
       );
       
       Matcher nullMatcher = nullPattern.matcher(condition);
       if (nullMatcher.matches()) {
-        String column = nullMatcher.group(1).toLowerCase();
-        String notPart = nullMatcher.group(2);
+        String table = nullMatcher.group(1); // Can be null for unqualified columns
+        String column = nullMatcher.group(2).toLowerCase();
+        String notPart = nullMatcher.group(3);
         String operator = notPart != null ? "IS NOT NULL" : "IS NULL";
         
         validateColumn(column, allowedColumns);
         
-        String sqlCondition = column + " " + operator;
+        // SECURITY: Reject ambiguous columns - require explicit table qualification
+        if (isAmbiguousColumn(column) && table == null) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+        }
+        
+        // Use table qualification if provided, otherwise use column directly
+        String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+        
+        String sqlCondition = qualifiedColumn + " " + operator;
         return new SafeCondition(column, operator, null, sqlCondition);
       }
       
       // Pattern 3: [table.]column LIKE 'pattern'
       Pattern likePattern = Pattern.compile(
-          "^\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+LIKE\\s+'([^']*)'\\s*$", 
+          "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+LIKE\\s+'([^']*)'\\s*$", 
           Pattern.CASE_INSENSITIVE
       );
       
       Matcher likeMatcher = likePattern.matcher(condition);
       if (likeMatcher.matches()) {
-        String column = likeMatcher.group(1).toLowerCase();
-        String pattern = likeMatcher.group(2);
+        String table = likeMatcher.group(1); // Can be null for unqualified columns
+        String column = likeMatcher.group(2).toLowerCase();
+        String pattern = likeMatcher.group(3);
         
         validateColumn(column, allowedColumns);
         
-        String sqlCondition = column + " LIKE ?";
+        // SECURITY: Reject ambiguous columns - require explicit table qualification
+        if (isAmbiguousColumn(column) && table == null) {
+          Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+          throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+        }
+        
+        // Use table qualification if provided, otherwise use column directly
+        String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+        
+        String sqlCondition = qualifiedColumn + " LIKE ?";
         return new SafeCondition(column, "LIKE", pattern, sqlCondition);
       }
       
