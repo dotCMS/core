@@ -3246,7 +3246,7 @@ public class ImportUtil {
             }
 
             // Validate the contentlet, it routes to the appropriate validation strategy weather or not it might have relationships
-            validateContentlet(lineNumber,
+            validateContentlet(
                     headers, categories, cont, csvRelationshipRecordsParentOnly,
                     csvRelationshipRecordsChildOnly, csvRelationshipRecords);
 
@@ -3300,7 +3300,6 @@ public class ImportUtil {
      * that includes relationship validation. Otherwise, a standard validation without
      * relationship checks is applied.
      *
-     * @param lineNumber The line number in the CSV file being processed
      * @param headers Map of column positions to their corresponding field definitions
      * @param categories Set of categories associated with this contentlet
      * @param cont The contentlet to validate
@@ -3309,7 +3308,7 @@ public class ImportUtil {
      * @param csvRelationshipRecords Map of bidirectional relationships
      * @throws DotDataException If validation fails or other data access issues occur
      */
-    private static void validateContentlet(final int lineNumber,
+    private static void validateContentlet(
             final Map<Integer, Field> headers,
             final Set<Category> categories,
             final Contentlet cont,
@@ -3322,7 +3321,6 @@ public class ImportUtil {
         final boolean hasRelationships = headers.values().stream()
                 .anyMatch((field -> field.getFieldType()
                         .equals(FieldType.RELATIONSHIP.toString())));
-        try {
             //if we have relationships, we need to validate them
             if (hasRelationships) {
                 ContentletRelationships contentletRelationships = loadRelationshipRecords(
@@ -3335,73 +3333,7 @@ public class ImportUtil {
                 //Otherwise, we call standard validation
                 conAPI.validateContentlet(cont, null, new ArrayList<>(categories), true);
             }
-        } catch (DotContentletValidationException ex) {
-            final String code = getErrorMappedCode(ex);
-            throw ImportLineException.builder()
-                    .message(ex.getMessage())
-                    .code(code)
-                    .lineNumber(lineNumber)
-                    .field(getOffendingFieldsAsString(ex))
-                    .build();
-        }
 
-    }
-
-    /**
-     * Extracts the error code from a DotContentletValidationException.
-     * @param ex The exception to extract the code from.
-     * @return The mapped error code as a string.
-     */
-    private static String getErrorMappedCode(final DotContentletValidationException ex) {
-        String code = ImportLineValidationCodes.UNKNOWN_ERROR.name();
-        if (null != ex.getNotValidRelationship() && !ex.getNotValidRelationship().isEmpty()) {
-            code = ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name();
-        } else if (null != ex.getNotValidFields()){
-            final Map<String, List<Field>> notValidFields = ex.getNotValidFields();
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_REQUIRED)) {
-                code = ImportLineValidationCodes.REQUIRED_FIELD_MISSING.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_PATTERN)) {
-                code = ImportLineValidationCodes.VALIDATION_FAILED_PATTERN.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_UNIQUE)) {
-                code = ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_BADTYPE)) {
-                code = ImportLineValidationCodes.INVALID_FIELD_TYPE.name();
-            }
-        }
-        return code;
-    }
-
-    /**
-     * Extracts the offending fields from a DotContentletValidationException.
-     * @param ex The exception to extract the fields from.
-     * @return A string representation of the offending fields.
-     */
-    private static String getOffendingFieldsAsString(final DotContentletValidationException ex) {
-        final StringBuilder sb = new StringBuilder();
-        final Map<String, List<Field>> errors = ex.getNotValidFields();
-        final Set<String> keys = errors.keySet();
-        for (String key : keys) {
-            sb.append(key).append(": ");
-            List<Field> fields = errors.get(key);
-            int count = 0;
-            for (Field field : fields) {
-                if (count > 0) {
-                    sb.append(", ");
-                }
-                sb.append(field.getVelocityVarName());
-                count++;
-            }
-            sb.append("\n");
-        }
-
-        String fields = null;
-        if (sb.length() > 0) {
-            fields = sb.toString();
-        }
-        return fields;
     }
 
     /**
