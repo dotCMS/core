@@ -38,7 +38,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.contenttype.transform.field.FieldTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.featureflag.FeatureFlagName;
@@ -206,7 +205,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -7149,6 +7147,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException(
                     "User: " + (identifier != null ? identifier.getId() : "Unknown")
                             + " cannot read Contentlet So Unable to View Versions");
+        }
+        return contentlets;
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException {
+        Logger.debug(this.getClass(), String.format("Retrieving all versions for Identifier [ %s ], " +
+                        "bringOldVersions [ %b ], limit [ %d ], offset [ %d ]", searchCriteria.identifier(),
+                searchCriteria.bringOldVersions(), searchCriteria.limit(), searchCriteria.offset()));
+        final List<Contentlet> contentlets = this.contentFactory.findAllVersions(searchCriteria.identifier(),
+                searchCriteria.bringOldVersions(), searchCriteria.limit(), searchCriteria.offset(), searchCriteria.orderDirection());
+        if (contentlets.isEmpty()) {
+            return List.of();
+        }
+        if (!permissionAPI.doesUserHavePermission(contentlets.get(0), PermissionAPI.PERMISSION_READ,
+                searchCriteria.user(), searchCriteria.respectFrontendRoles())) {
+            throw new DotSecurityException(String.format("User ID '%s' does not have READ permissions to access versions of Contentlet ID " +
+                    "'%s'", null != searchCriteria.user() ? searchCriteria.user().getUserId() : "- null -", searchCriteria.identifier().getId()));
         }
         return contentlets;
     }
