@@ -117,7 +117,7 @@ export class DotContentletThumbnail {
         return `${this.fieldVariable || this.contentlet.titleImage}/`;
     }
 
-    private switchToIcon(): any {
+    private switchToIcon(): void {
         this.renderImage = false;
     }
 
