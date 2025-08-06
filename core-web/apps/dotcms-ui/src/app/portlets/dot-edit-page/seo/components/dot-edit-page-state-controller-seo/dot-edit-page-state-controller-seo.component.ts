@@ -22,7 +22,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { switchMap, take } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -40,9 +39,11 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
+
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 enum DotConfirmationType {
     LOCK,
@@ -54,12 +55,10 @@ enum DotConfirmationType {
     selector: 'dot-edit-page-state-controller-seo',
     templateUrl: './dot-edit-page-state-controller-seo.component.html',
     styleUrls: ['./dot-edit-page-state-controller-seo.component.scss'],
-    standalone: true,
     imports: [
         FormsModule,
         InputSwitchModule,
         SelectButtonModule,
-        DotSafeHtmlPipe,
         DotMessagePipe,
         TooltipModule,
         ButtonModule,

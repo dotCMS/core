@@ -45,7 +45,6 @@ import {
  */
 @Component({
     selector: 'lib-dot-analytics-dashboard',
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,
@@ -135,7 +134,6 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
                         const customDateRange: DateRange = [fromDate, toDate];
                         this.store.setTimeRange(customDateRange);
                     }
-                    // If invalid or incomplete, ignore (don't set anything)
                 }
                 // Handle predefined time range (excluding CUSTOM_TIME_RANGE)
                 else if (

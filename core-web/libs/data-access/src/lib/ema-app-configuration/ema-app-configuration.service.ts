@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { pluck, map, defaultIfEmpty, catchError } from 'rxjs/operators';
+import { catchError, defaultIfEmpty, map, pluck } from 'rxjs/operators';
 
 interface EmaAppSecretValue {
     pattern: string;
@@ -41,7 +41,7 @@ export class EmaAppConfigurationService {
                         if (doesPathMatch(secret.pattern, url)) {
                             return secret;
                         }
-                    } catch (error) {
+                    } catch {
                         throw new Error('Error on match URL pattern');
                     }
                 }

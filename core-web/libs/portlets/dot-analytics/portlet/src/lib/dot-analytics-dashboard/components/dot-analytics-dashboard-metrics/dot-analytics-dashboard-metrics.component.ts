@@ -5,7 +5,7 @@ import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
 
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
@@ -16,7 +16,6 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
  */
 @Component({
     selector: 'dot-analytics-dashboard-metrics',
-    standalone: true,
     imports: [
         CommonModule,
         CardModule,
@@ -26,7 +25,8 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-metrics.component.html',
-    styleUrl: './dot-analytics-dashboard-metrics.component.scss'
+    styleUrl: './dot-analytics-dashboard-metrics.component.scss',
+    animations: [fadeInContent]
 })
 export class DotAnalyticsDashboardMetricsComponent {
     // Inputs

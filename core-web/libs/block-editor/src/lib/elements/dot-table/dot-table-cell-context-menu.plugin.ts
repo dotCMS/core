@@ -257,6 +257,10 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
                     return true;
                 }
 
+                if (key === 'ArrowRight' || key === 'ArrowLeft') {
+                    return true;
+                }
+
                 return false;
             },
             handleDOMEvents: {

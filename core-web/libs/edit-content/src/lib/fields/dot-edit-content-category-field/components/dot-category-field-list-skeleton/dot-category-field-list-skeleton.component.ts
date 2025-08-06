@@ -4,7 +4,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 @Component({
     selector: 'dot-category-field-list-skeleton',
-    standalone: true,
     imports: [SkeletonModule],
     template: `
         <ul class="m-0 p-1 list-none fadein animation-duration-500">

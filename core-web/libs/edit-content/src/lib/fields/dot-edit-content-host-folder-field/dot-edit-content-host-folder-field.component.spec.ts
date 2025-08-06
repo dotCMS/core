@@ -5,12 +5,12 @@ import { of } from 'rxjs';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 import { mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     HOST_FOLDER_TEXT_MOCK,
     TREE_SELECT_SITES_MOCK,
@@ -83,6 +83,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             spectator.detectChanges();
 
             tick(50);
+            spectator.detectChanges();
 
             store.chooseNode({
                 originalEvent: createFakeEvent('click'),
@@ -90,6 +91,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             });
 
             tick(50);
+            spectator.detectChanges();
 
             expect(spectator.component.formControl.value).toBe('demo.dotcms.com:/');
             expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);
@@ -102,6 +104,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             spectator.detectChanges();
 
             tick(50);
+            spectator.detectChanges();
 
             store.chooseNode({
                 originalEvent: createFakeEvent('click'),
@@ -109,6 +112,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             });
 
             tick(50);
+            spectator.detectChanges();
 
             expect(spectator.component.formControl.value).toBe('demo.dotcms.com:/level1/child1/');
             expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);

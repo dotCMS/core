@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotSecondaryToolbarComponent } from '@components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
+import { DotSecondaryToolbarComponent } from './dot-secondary-toolbar.component';
+
+import { DotExperimentClassDirective } from '../../../portlets/shared/directives/dot-experiment-class.directive';
 
 @NgModule({
     imports: [CommonModule, DotExperimentClassDirective],

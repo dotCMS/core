@@ -26,13 +26,13 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
-import { DotEditContentSidebarUntranslatedLocaleComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
+
+import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import {
     prepareContentletForCopy,
     sortLocalesTranslatedFirst
-} from '@dotcms/edit-content/utils/functions.util';
-
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
+} from '../../../utils/functions.util';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
 

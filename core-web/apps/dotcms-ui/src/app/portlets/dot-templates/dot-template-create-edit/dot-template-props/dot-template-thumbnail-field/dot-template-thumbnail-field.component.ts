@@ -29,7 +29,8 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTemplateThumbnailFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor {
     private dotTempFileUploadService = inject(DotTempFileUploadService);

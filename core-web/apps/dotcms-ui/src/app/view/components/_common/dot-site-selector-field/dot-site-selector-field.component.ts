@@ -21,7 +21,8 @@ import { Site, SiteService } from '@dotcms/dotcms-js';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotSiteSelectorFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
     private siteService = inject(SiteService);

@@ -16,7 +16,8 @@ import {
 @Component({
     selector: 'dot-push-publish-dialog',
     styleUrls: ['./dot-push-publish-dialog.component.scss'],
-    templateUrl: 'dot-push-publish-dialog.component.html'
+    templateUrl: 'dot-push-publish-dialog.component.html',
+    standalone: false
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private pushPublishService = inject(PushPublishService);
