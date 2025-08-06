@@ -41,11 +41,24 @@ export class DotContextMenuComponent {
     }
 
     /**
+     * Event handler called when the context menu is about to be shown
+     * Updates the selection state to enable/disable selection-dependent menu items
+     */
+    protected onContextMenuShow(): void {
+        const hasSelection = !this.editor().view.state.selection.empty;
+        this.hasSelection.set(hasSelection);
+    }
+
+    /**
      * Builds the complete menu items array combining selection and paste items
      * @returns Array of all available context menu items
      */
     private buildMenuItems(): ContextMenuItem[] {
-        return [...this.buildSelectionMenuItems(), ...this.buildPasteMenuItems()];
+        if (this.hasSelection()) {
+            return [...this.buildSelectionMenuItems(), ...this.buildPasteMenuItems()];
+        }
+
+        return this.buildPasteMenuItems();
     }
 
     /**
@@ -259,14 +272,5 @@ export class DotContextMenuComponent {
         }
 
         return '';
-    }
-
-    /**
-     * Event handler called when the context menu is about to be shown
-     * Updates the selection state to enable/disable selection-dependent menu items
-     */
-    onContextMenuShow(): void {
-        const hasSelection = !this.editor().view.state.selection.empty;
-        this.hasSelection.set(hasSelection);
     }
 }
