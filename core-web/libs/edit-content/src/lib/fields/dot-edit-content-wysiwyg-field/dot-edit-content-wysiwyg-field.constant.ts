@@ -194,16 +194,6 @@ export const JS_KEYWORDS = [
 ];
 
 /**
- * A string constant representing the default placeholder comment used by TinyMCE editor.
- *
- * This constant is used to identify and differentiate the areas within the content where the TinyMCE
- * WYSIWYG editor is initialized.
- *
- * @constant {string} COMMENT_TINYMCE
- */
-export const COMMENT_TINYMCE = '<!--dotcms:wysiwyg-->';
-
-/**
  * The theme definition for the Velocity language in Monaco Editor.
  */
 export const VELOCITY_THEME = {

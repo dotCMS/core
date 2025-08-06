@@ -25,10 +25,7 @@ import {
 } from './dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 import { DEFAULT_IMAGE_URL_PATTERN } from './dot-wysiwyg-plugin/utils/editor.utils';
-import {
-    WYSIWYG_FIELD_CONTENTLET_MOCK_NO_CONTENT,
-    WYSIWYG_MOCK
-} from './mocks/dot-edit-content-wysiwyg-field.mock';
+import { WYSIWYG_MOCK } from './mocks/dot-edit-content-wysiwyg-field.mock';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { createFormGroupDirectiveMock } from '../../utils/mocks';
@@ -87,8 +84,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         // end
         spectator = createComponent({
             props: {
-                field: WYSIWYG_MOCK,
-                contentlet: WYSIWYG_FIELD_CONTENTLET_MOCK_NO_CONTENT
+                field: WYSIWYG_MOCK
             } as unknown,
             detectChanges: false
         });
@@ -134,7 +130,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             spectator.click(options[1]);
             spectator.detectChanges();
 
-            const content = spectator.component.$fieldContent();
+            const content = spectator.component.$currentValue();
 
             expect(content.length).toBe(0);
             expect(onEditorChangeSpy).toHaveBeenCalled();

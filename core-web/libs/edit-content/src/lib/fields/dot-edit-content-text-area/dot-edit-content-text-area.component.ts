@@ -24,6 +24,10 @@ import {
 import { detectEditorType } from './utils/content-type-detector.util';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import {
+    addMonacoMarker,
+    removeMonacoMarker
+} from '../../shared/dot-edit-content-monaco-editor-control/monaco-marker.util';
 
 /**
  * Text area component that provides plain text and code editing capabilities.
@@ -141,11 +145,20 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
      * @param newEditor - The new editor
      */
     onEditorChange(newEditor: AvailableEditorTextArea) {
+        const control = this.controlContainer.control?.get(this.$field()?.variable);
+
+        if (newEditor === AvailableEditorTextArea.PlainText) {
+            control?.setValue(removeMonacoMarker(this.$currentValue()));
+        } else {
+            control?.setValue(addMonacoMarker(this.$currentValue()));
+        }
+
         this.$displayedEditor.set(newEditor);
     }
 
     /**
-     * Insert language variable at current cursor position in textarea
+     * Insert language variable at current cursor positio
+     * n in textarea
      * @param textarea - The textarea element
      * @param languageVariable - The parsed language variable string to insert
      * @private

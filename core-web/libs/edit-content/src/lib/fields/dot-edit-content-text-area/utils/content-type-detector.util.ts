@@ -1,34 +1,19 @@
-import {
-    isHtml,
-    isJavascript,
-    isMarkdown,
-    isVelocity
-} from '../../dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.utils';
+import { hasMonacoMarker } from '../../../shared/dot-edit-content-monaco-editor-control/monaco-marker.util';
 import { AvailableEditorTextArea } from '../dot-edit-content-text-area.constants';
 
 /**
  * Determines which editor to use based on content analysis.
- * Uses existing language detectors to determine if content needs Monaco editor.
  *
- * The content will be considered code (and use Monaco) if:
- * - It contains Velocity syntax
- * - It contains JavaScript code
- * - It contains HTML markup
- * - It contains Markdown syntax
- *
- * Otherwise, it will use the plain text editor.
+ * This function checks if the content has a Monaco marker (Zero Width Space character)
+ * to determine the appropriate editor type.
  *
  * @param content - The content to analyze
- * @returns The appropriate editor type to use
+ * @returns The appropriate editor type:
+ *   - AvailableEditorTextArea.Monaco if content has Monaco marker
+ *   - AvailableEditorTextArea.PlainText otherwise
  */
 export const detectEditorType = (content: string): AvailableEditorTextArea => {
-    // First check if it contains any code syntax
-    const isCode = [isVelocity, isJavascript, isHtml, isMarkdown].some((detector) =>
-        detector(content)
-    );
-
-    // If it's code, use Monaco
-    if (isCode) {
+    if (hasMonacoMarker(content)) {
         return AvailableEditorTextArea.Monaco;
     }
 

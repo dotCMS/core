@@ -10,26 +10,29 @@ import {
     model,
     viewChild
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 
 import { DotWysiwygTinymceComponent } from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
 import {
     AvailableEditor,
-    COMMENT_TINYMCE,
     DEFAULT_EDITOR,
     EditorOptions
 } from './dot-edit-content-wysiwyg-field.constant';
-import { shouldUseDefaultEditor } from './dot-edit-content-wysiwyg-field.utils';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import {
+    addMonacoMarker,
+    hasMonacoMarker,
+    removeMonacoMarker
+} from '../../shared/dot-edit-content-monaco-editor-control/monaco-marker.util';
 
 /**
  * Component representing a WYSIWYG (What You See Is What You Get) editor field for editing content in DotCMS.
@@ -39,6 +42,7 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
     selector: 'dot-edit-content-wysiwyg-field',
     imports: [
         FormsModule,
+        ReactiveFormsModule,
         DropdownModule,
         DotWysiwygTinymceComponent,
         DotEditContentMonacoEditorControlComponent,
@@ -51,9 +55,20 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
     host: {
         class: 'dot-wysiwyg__wrapper'
     },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
 export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
+    /**
+     * Control container for the form
+     */
+    private readonly controlContainer = inject(ControlContainer);
+
     /**
      * Signal to get the TinyMCE component.
      */
@@ -68,14 +83,11 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     #dotMessageService = inject(DotMessageService);
 
     /**
-     * This variable represents a required content type field in DotCMS.
+     * Input field DotCMSContentTypeField
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
-    /**
-     * A required input representing a DotCMS contentlet.
-     */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $field = input<DotCMSContentTypeField | null>(null, {
+        alias: 'field'
+    });
 
     /**
      * Representing the currently selected editor.
@@ -88,34 +100,27 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     $displayedEditor = model<AvailableEditor>(DEFAULT_EDITOR);
 
     /**
-     * Computed property that determines the default editor used for a contentlet.
+     * Computed property that returns the current value of the field.
      */
-    $contentEditorUsed = computed(() => {
-        const content = this.$fieldContent();
+    $currentValue = computed(() => {
+        const { variable } = this.$field();
+        const control = this.controlContainer.control?.get(variable);
 
-        if (shouldUseDefaultEditor(content)) {
-            return DEFAULT_EDITOR;
-        }
-
-        if (content.includes(COMMENT_TINYMCE)) {
-            return AvailableEditor.TinyMCE;
-        }
-
-        return AvailableEditor.Monaco;
+        return control?.value ?? '';
     });
 
     /**
-     * Computed property that returns the content corresponding to the specified field value.
+     * Computed property that determines the default editor used for a contentlet.
+     * Uses Monaco marker for centralized editor selection logic.
      */
-    $fieldContent = computed<string>(() => {
-        const fieldValue = this.$field().variable;
-        const contentlet = this.$contentlet();
+    $contentEditorUsed = computed(() => {
+        const content = this.$currentValue();
 
-        if (contentlet == null) {
-            return '';
+        if (hasMonacoMarker(content)) {
+            return AvailableEditor.Monaco;
         }
 
-        return contentlet[fieldValue] as string;
+        return AvailableEditor.TinyMCE;
     });
 
     readonly editorTypes = AvailableEditor;
@@ -130,10 +135,11 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
 
     /**
      * Handles the editor change event by prompting the user for confirmation.
+     * Adds or removes Monaco markers as needed when switching editors.
      */
     onEditorChange(newEditor: AvailableEditor) {
         const currentDisplayedEditor = this.$displayedEditor();
-        const content = this.$fieldContent();
+        const content = this.$currentValue();
 
         if (content?.length > 0 && this.$displayedEditor() !== AvailableEditor.TinyMCE) {
             this.#confirmationService.confirm({
@@ -147,6 +153,7 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
                 acceptIcon: 'none',
                 rejectIcon: 'none',
                 accept: () => {
+                    this.updateContentMarker(newEditor);
                     this.$displayedEditor.set(newEditor);
                 },
                 reject: () => {
@@ -154,8 +161,36 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
                 }
             });
         } else {
+            this.updateContentMarker(newEditor);
             this.$displayedEditor.set(newEditor);
         }
+    }
+
+    /**
+     * Updates the content with appropriate markers based on the selected editor.
+     * @private
+     */
+    private updateContentMarker(newEditor: AvailableEditor): void {
+        const fieldVariable = this.$field().variable;
+        const currentContent = this.$currentValue();
+        const control = this.controlContainer.control?.get(fieldVariable);
+
+        if (!control) {
+            return;
+        }
+
+        let updatedContent: string;
+
+        if (newEditor === AvailableEditor.Monaco) {
+            // Add Monaco marker for Monaco editor
+            updatedContent = addMonacoMarker(currentContent);
+        } else {
+            // Remove Monaco marker for TinyMCE editor
+            updatedContent = removeMonacoMarker(currentContent);
+        }
+
+        // Update form control value
+        control.setValue(updatedContent);
     }
 
     /**

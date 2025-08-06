@@ -1,5 +1,4 @@
 import {
-    COMMENT_TINYMCE,
     HTML_TAGS,
     JS_KEYWORDS,
     MD_SYNTAX,
@@ -25,20 +24,6 @@ export const CountOccurrences = (str: string, searchStr: string) => {
     const escapedSearchStr = escapeRegExp(searchStr);
 
     return (str.match(new RegExp(escapedSearchStr, 'gi')) || []).length;
-};
-
-/**
- * Determines if the default editor should be used based on the content.
- * @param {unknown} content - The content to check.
- * @returns {boolean} True if the default editor should be used, false otherwise.
- */
-export const shouldUseDefaultEditor = (content: unknown): boolean => {
-    return (
-        !content ||
-        typeof content !== 'string' ||
-        content.trim() === '' ||
-        content.trim() === COMMENT_TINYMCE
-    );
 };
 
 /**

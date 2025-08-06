@@ -19,10 +19,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
-import {
-    COMMENT_TINYMCE,
-    DEFAULT_TINYMCE_CONFIG
-} from '../../dot-edit-content-wysiwyg-field.constant';
+import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
 @Component({
@@ -83,17 +80,10 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             ...this.$customPropsContentField(),
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
-                // TODO: Remove this when the content type saved by the user can preserve the selection
-                const ensureSingleComment = (content: string): string => {
-                    if (content.includes(COMMENT_TINYMCE)) {
-                        content = content.replace(new RegExp(COMMENT_TINYMCE, 'g'), '');
-                    }
-
-                    return COMMENT_TINYMCE + content;
-                };
 
                 editor.on('GetContent', (e) => {
-                    e.content = ensureSingleComment(e.content);
+                    // Content processing can be added here if needed
+                    return e.content;
                 });
             }
         };

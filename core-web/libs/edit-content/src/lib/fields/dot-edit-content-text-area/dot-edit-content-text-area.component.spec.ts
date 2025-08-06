@@ -141,8 +141,9 @@ describe('DotEditContentTextAreaComponent', () => {
         const insertLanguageVariableInTextareaMock = jest.fn();
         component['insertLanguageVariableInTextarea'] = insertLanguageVariableInTextareaMock;
 
-        // Keep in PlainText mode
+        // Set to PlainText mode and trigger change detection to render textarea
         component.$displayedEditor.set(AvailableEditorTextArea.PlainText);
+        spectator.detectChanges();
 
         // Act: Simulate language variable selection
         const testVariable = '${testLanguageVariable}';
