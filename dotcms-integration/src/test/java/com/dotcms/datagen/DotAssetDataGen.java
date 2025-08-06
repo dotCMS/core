@@ -8,7 +8,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import java.io.File;
-import joptsimple.internal.Strings;
 
 public class DotAssetDataGen extends ContentletDataGen {
 
@@ -44,7 +43,7 @@ public class DotAssetDataGen extends ContentletDataGen {
   }
 
   public DotAssetDataGen tags(String... tags) {
-    setProperty(DotAssetContentType.TAGS_FIELD_VAR, Strings.join(tags,","));
+    setProperty(DotAssetContentType.TAGS_FIELD_VAR, String.join(",", tags));
     return this;
   }
 
