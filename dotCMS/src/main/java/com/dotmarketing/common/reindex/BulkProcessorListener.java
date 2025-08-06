@@ -2,16 +2,13 @@ package com.dotmarketing.common.reindex;
 
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.CacheLocator;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
-
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
-
 import io.vavr.control.Try;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,18 +46,16 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
       
         String serverId=APILocator.getServerAPI().readServerId();
         List<String> servers = Try.of(()->APILocator.getServerAPI().getReindexingServers()).getOrElse(ImmutableList.of(APILocator.getServerAPI().readServerId()));
-        Logger.info(this.getClass(), "-----------");
-        Logger.info(this.getClass(), "Reindexing Server #  : " + (servers.indexOf(serverId)+1) + " of " + servers.size());
-        Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
-        Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
-        Logger.info(this.getClass(), "BulkRequests created : " + request.numberOfActions());
+        Logger.debug(this.getClass(), "-----------");
+        Logger.info(this.getClass(),
+            "- Reindex Node: " + (servers.indexOf(serverId) + 1) + " of " + servers.size() + ", Total Indexed: "
+                + contentletsIndexed + ", working on:" + workingRecords.size());
+        Logger.debug(this.getClass(), "BulkRequests created : " + request.numberOfActions());
         
         contentletsIndexed += request.numberOfActions();
         final Optional<String> duration = APILocator.getContentletIndexAPI().reindexTimeElapsed();
-        if (duration.isPresent()) {
-            Logger.info(this,        "Full Reindex Elapsed : " + duration.get() + "");
-        }
-        Logger.info(this.getClass(), "-----------");
+        duration.ifPresent(s -> Logger.info(this, "-Full Reindex Elapsed : " + s));
+        Logger.debug(this.getClass(), "-----------");
     }
 
     @Override

@@ -3,14 +3,9 @@
  */
 package com.dotmarketing.common.reindex;
 
-import com.dotcms.contenttype.model.type.ContentType;
-import java.sql.Connection;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -23,6 +18,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import java.sql.Connection;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jason Tesser
@@ -147,7 +146,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     @Override
     public void addIdentifierReindex(final String id) throws DotDataException {
 
-        Logger.info(this, "addIdentifierReindex: " + id);
+        Logger.debug(this, "addIdentifierReindex: " + id);
 
         this.reindexQueueFactory.addIdentifierReindex(id);
     }
