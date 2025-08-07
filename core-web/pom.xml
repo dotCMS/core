@@ -128,7 +128,7 @@
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
                         <configuration>
-                            <arguments>nx run-many -t build --base=origin/main  --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
+                            <arguments>nx run-many -t build --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
