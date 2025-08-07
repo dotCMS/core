@@ -60,6 +60,7 @@ tiptap-editor ::ng-deep .ProseMirror {
             top: 50%;
             transform: translateY(-50%);
             left: -$spacing-6;
+            user-select: none;
         }
     }
 
