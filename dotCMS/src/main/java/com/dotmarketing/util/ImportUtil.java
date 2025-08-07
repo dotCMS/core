@@ -38,7 +38,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -2373,9 +2372,11 @@ public class ImportUtil {
         Pair<Host, Folder> siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
         if (siteAndFolder == null) {
             throw ImportLineException.builder()
-                    .message("Invalid Site or Folder reference: the provided inode/path does not exist or is not associated with a valid SiteFolder.")
+                    .message("The provided inode/path does not exist or is not associated with a valid Site or Folder.")
                     .code(ImportLineValidationCodes.INVALID_SITE_FOLDER_REF.name())
                     .field(field.getVelocityVarName())
+                    //Add context here
+                    .context(Map.of("errorHint", "The value must be a valid site-name folder path or their respective inodes."))
                     .invalidValue(value)
                     .build();
         }
@@ -2392,28 +2393,33 @@ public class ImportUtil {
      */
     private static Object validateBinaryField(final Field field, final String value) {
         if (UtilMethods.isNotSet(value)) {
-            // If the value is not set return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
+            // If the value is not set, return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
             return value;
         }
+        
         //Here we need to throw an exception if the value is not set and the value is required
         final boolean validURL = UtilMethods.isValidStrictURL(value);
         if(!validURL) {
+            
             // If the value is not a valid URL, we throw an exception
             throw ImportLineException.builder()
                     .message("The provided value is not a syntactically valid URL")
                     .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                     .field(field.getVelocityVarName())
                     .invalidValue(value)
+                    .context(Map.of("errorHint","The provided value must be a valid URL."))
                     .build();
         }
         if (UtilMethods.isSet(value)) {
             final boolean validUrl = Try.of(()->tempFileAPI.validUrl(value)).getOrElse(false);
             if (!validUrl) {
+                
                 throw ImportLineException.builder()
                         .message("URL is syntactically valid but returned a non-success HTTP response")
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
+                        .context(Map.of("errorHint","There's a problem accessing the content at the provided URL."))
                         .build();
             }
         }
@@ -2451,6 +2457,7 @@ public class ImportUtil {
                         .message("Unable to match the given path with a file stored in dotCMS")
                         .code(ImportLineValidationCodes.INVALID_FILE_PATH.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","The provided value must be a valid file /folder/file path in dotCMS or an external URL."))
                         .invalidValue(value)
                         .build();
             }
@@ -2462,6 +2469,7 @@ public class ImportUtil {
                         .message("The provided value is not a syntactically valid URL nor a valid dotCMS path")
                         .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","The provided value must be a valid URL or a valid dotCMS path."))
                         .invalidValue(value)
                         .build();
             }
@@ -2471,6 +2479,7 @@ public class ImportUtil {
                         .message("URL is syntactically valid but returned a non-success HTTP response")
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","There's a problem accessing the content at the provided URL."))
                         .invalidValue(value)
                         .build();
             }

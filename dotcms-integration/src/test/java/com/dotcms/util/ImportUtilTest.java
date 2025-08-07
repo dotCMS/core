@@ -4766,15 +4766,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
     };
 
-    public static final AssertionsStrategy INVALID_JSON_STORY_BLOCK_ASSERTION = (result, testCase, contentType) -> {
-        final ValidationMessage error = result.error().get(0);
-        assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "InvalidStoryBlockField",error.field().get());
-
-        assertTrue(error.code().isPresent());
-        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
-    };
-
     public static final AssertionsStrategy INVALID_SELECT_NUMBER_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
@@ -4785,15 +4776,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_NUMBER_FORMAT.name(), error.code().get());
-    };
-
-    public static final AssertionsStrategy BOOLEAN_FIELD_VALIDATION = (result, testCase, contentType) -> {
-        final ValidationMessage error = result.error().get(0);
-        assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "InvalidStoryBlockField",error.field().get());
-
-        assertTrue(error.code().isPresent());
-        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
     };
 
     public static final AssertionsStrategy UNIQUE_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
@@ -4945,12 +4927,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
-    };
-
-    public static final AssertionsStrategy TAG_FIELD_VALIDATION = (result, testCase, contentType) -> {
-        final ValidationMessage error = result.error().get(0);
-        assertTrue(error.field().isPresent());
-        assertTrue(error.invalidValue().isPresent());
     };
 
     public static final AssertionsStrategy RELATIONSHIP_FIELD_VALIDATION = (result, testCase, contentType) -> {

@@ -25,8 +25,10 @@ import com.dotmarketing.exception.DotDuplicateDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.portlets.contentlet.business.DotBinaryFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotDateFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotNumericFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -112,6 +114,8 @@ public class ExceptionUtil {
                     DotDataValidationException.class,
                     DotJsonFieldException.class,
                     DotNumericFieldException.class,
+                    DotDateFieldException.class,
+                    DotBinaryFieldException.class,
                     ValidationException.class,
                     BadRequestException.class,
                     JsonProcessingException.class,
