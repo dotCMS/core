@@ -14,12 +14,12 @@ export const SHORTCUTS: Record<string, ShortcutConfig> = {
  * Menu item labels
  */
 export const MENU_LABELS = {
-    CUT: 'Cut',
-    COPY: 'Copy',
-    COPY_MARKDOWN: 'Copy as Markdown',
-    PASTE: 'Paste',
-    PASTE_WITHOUT_FORMAT: 'Paste without format',
-    PASTE_MARKDOWN: 'Paste from Markdown'
+    CUT: 'block-editor.common.cut',
+    COPY: 'block-editor.common.copy',
+    COPY_MARKDOWN: 'block-editor.common.copy-markdown',
+    PASTE: 'block-editor.common.paste',
+    PASTE_WITHOUT_FORMAT: 'block-editor.common.paste-without-format',
+    PASTE_MARKDOWN: 'block-editor.common.paste-markdown'
 } as const;
 
 /**

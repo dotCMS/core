@@ -9,6 +9,8 @@ import { RippleModule } from 'primeng/ripple';
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { MENU_LABELS, PLATFORM_PATTERNS, SHORTCUTS } from './context-menu.constants';
 import { ContextMenuItem, Platform } from './context-menu.interfaces';
 import { htmlToMarkdown } from './markdown.utils';
@@ -27,7 +29,7 @@ import { htmlToMarkdown } from './markdown.utils';
     templateUrl: './dot-context-menu.component.html',
     styleUrls: ['./dot-context-menu.component.scss'],
     standalone: true,
-    imports: [CommonModule, ContextMenuModule, RippleModule]
+    imports: [CommonModule, ContextMenuModule, RippleModule, DotMessagePipe]
 })
 export class DotContextMenuComponent {
     editor = input.required<Editor>();
@@ -172,7 +174,7 @@ export class DotContextMenuComponent {
             }
 
             this.pasteWithoutFormatCommand();
-        } catch (err) {
+        } catch {
             console.warn(
                 '[Block Editor] Try to paste with format failed, fallback to paste without format'
             );
