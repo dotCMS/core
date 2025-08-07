@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2babf651-0ad5-44b7-a423-3462ffc3d080",
+		"_postman_id": "cb26d522-79ac-4555-ad8c-9f0122729670",
 		"name": "User Resource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1228,6 +1228,118 @@
 								"v1",
 								"users",
 								"{{userID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CreateUserReturnRoleId",
+			"item": [
+				{
+					"name": "CreateUserWithRoleId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verifica que el status de la respuesta sea 200",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verifica que la respuesta sea un JSON válido",
+									"pm.test(\"Response is a valid JSON\", function () {",
+									"    pm.response.to.be.withBody;",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"// Parsear el body de la respuesta",
+									"let jsonData = pm.response.json();",
+									"",
+									"// Verifica que el objeto entity existe",
+									"pm.test(\"Entity object is present\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"});",
+									"",
+									"// Verifica que el user object existe dentro de entity",
+									"pm.test(\"User object is present\", function () {",
+									"    pm.expect(jsonData.entity).to.have.property(\"user\");",
+									"});",
+									"",
+									"// Verifica que el user tiene un email válido",
+									"pm.test(\"User has a valid email\", function () {",
+									"    let email = jsonData.entity.user.emailAddress || \"\";",
+									"    pm.expect(email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+									"});",
+									"",
+									"// Verifica que el user está activo",
+									"pm.test(\"User is active\", function () {",
+									"    pm.expect(jsonData.entity.user.active).to.be.true;",
+									"});",
+									"",
+									"// Verifica que el ID del usuario esté presente y tenga formato",
+									"pm.test(\"User ID is present\", function () {",
+									"    let userId = jsonData.entity.user.id;",
+									"    pm.expect(userId).to.be.a(\"string\");",
+									"    pm.expect(userId).to.match(/^userid-/);",
+									"});",
+									"",
+									"// Verifica que el roleId tenga un UUID válido",
+									"pm.test(\"Role ID is a valid UUID\", function () {",
+									"    let roleId = jsonData.entity.roleId;",
+									"    pm.expect(roleId).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+									"});",
+									"",
+									"// Verifica que no hay errores",
+									"pm.test(\"No errors present\", function () {",
+									"    pm.expect(jsonData.errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									"",
+									"// Verifica que la propiedad frontendUser sea true",
+									"pm.test(\"User is a frontendUser\", function () {",
+									"    pm.expect(jsonData.entity.user.frontendUser).to.be.true;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"victory123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
 							]
 						}
 					},
