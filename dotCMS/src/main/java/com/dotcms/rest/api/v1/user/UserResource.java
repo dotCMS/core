@@ -719,10 +719,11 @@ public class UserResource implements Serializable {
 				);
 
 		if (isRoleAdministrator) {
+
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
-
-			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
