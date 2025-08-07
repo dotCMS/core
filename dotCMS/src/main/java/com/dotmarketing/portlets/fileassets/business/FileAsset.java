@@ -16,13 +16,11 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -283,7 +281,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * @throws DotStateException
 	 */
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
-	    return APILocator.getVersionableAPI().isLive(this);
+    return super.isLive();
 	}
 
 	/**
@@ -294,7 +292,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * @throws DotStateException
 	 */
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-       return APILocator.getVersionableAPI().isLocked(this);
+    return super.isLocked();
    }
 
 	public String getType(){
