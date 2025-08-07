@@ -24,7 +24,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.FileWriter;
@@ -51,6 +50,12 @@ import org.apache.commons.lang.StringUtils;
  */
 public class HostIntegrityChecker extends AbstractIntegrityChecker {
     private static final String INTEGER_KEYWORD = getIntegerKeyword();
+
+
+  private final static String HOST_FIELD_SELECT = "contentlet_as_json->'fields'->'hostName'->>'value'";
+
+
+
 
     /**
      * Gets the integrity type for this particular integrity checker.
@@ -85,8 +90,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             Logger.info(this, String.format("Generating Host integrity check CSV file: %s", csvFile.getAbsoluteFile()));
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
-            final String hostField = resolveHostField();
-            try (final PreparedStatement statement = getCsvQuery(hostField)) {
+          try (final PreparedStatement statement = getCsvQuery()) {
                 try (final ResultSet rs = statement.executeQuery()) {
                     int count = 0;
 
@@ -163,7 +167,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             final String tempTableName = getTempTableName(endpointId);
             // let's create a temp table AND insert all the records coming from the CSV file
             final String tempKeyword = DbConnectionFactory.getTempKeyword();
-            final boolean isOracle = DbConnectionFactory.isOracle();
+
             final StringBuilder createBuilder = new StringBuilder("CREATE ")
                     .append(tempKeyword)
                     .append(" TABLE ")
@@ -175,17 +179,13 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     .append(" language_id ").append(INTEGER_KEYWORD).append(",")
                     .append(" host VARCHAR(255),")
                     .append(" PRIMARY KEY (inode))");
-            if (isOracle) {
-                createBuilder.append(" ON COMMIT PRESERVE ROWS ");
-            }
-            final String createTempTable = isOracle
-                    ? createBuilder.toString().replaceAll("VARCHAR\\(", "VARCHAR2\\(")
-                    : createBuilder.toString();
+
+          final String createTempTable = createBuilder.toString();
             final String insertTempTable = "INSERT INTO " +
                     tempTableName +
                     " (inode, identifier, working_inode, live_inode, language_id, host)" +
                     " VALUES(?, ?, ?, ?, ?, ?)";
-            final String hostField = resolveHostField();
+
             final DotConnect dc = new DotConnect();
             dc.executeStatement("DROP TABLE IF EXISTS " + tempTableName);
 
@@ -202,7 +202,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     final String workingInode = getStringIfNotBlank("working_inode", hosts.get(2));
                     final String liveInode = StringUtils.defaultIfBlank(hosts.get(3), null);
                     final Long languageId = Long.valueOf(getStringIfNotBlank("language_id", hosts.get(4)));
-                    final String host = getStringIfNotBlank(hostField, hosts.get(5));
+                  final String host = hosts.get(5);
                     dc.setSQL(insertTempTable)
                             .addParam(inode)
                             .addParam(identifier)
@@ -228,14 +228,6 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 return false;
             }
 
-             String contentAsJson = StringPool.BLANK;
-
-            if (DbConnectionFactory.isPostgres()) {
-                contentAsJson = " or c.contentlet_as_json->'fields'->'hostName'->>'value' = ht.host";
-            }
-            if (DbConnectionFactory.isMsSql()) {
-                contentAsJson = " or (JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value') = ht.host)";
-            }
 
             // compare the data from the CSV to the local db data AND see if we
             // have conflicts
@@ -245,7 +237,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     " AND (c.inode = cvi.working_inode OR c.inode = cvi.live_inode)" +
                     " AND c.language_id = cvi.lang)" +
                     " JOIN structure s ON c.structure_inode = s.inode" +
-                    " JOIN " + tempTableName + " ht ON ( ( c." + hostField + " = ht.host "+contentAsJson+" ) "  +
+                " JOIN " + tempTableName + " ht ON ( ( c." + HOST_FIELD_SELECT + " = ht.host  ) " +
                     " AND c.language_id = cvi.lang)" +
                     " WHERE i.asset_type = 'contentlet'" +
                     " AND i.asset_subtype = 'Host'" +
@@ -255,14 +247,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("SELECT DISTINCT 1" + conflictSql).addParam(Host.SYSTEM_HOST);
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
-            String coalescedHostValue = StringPool.BLANK; //For non json supported databases we do blank string
-            //for other db lets see if we have something stored as json otherwise we rely on the traditional structure dynamic field
-            if(DbConnectionFactory.isPostgres()) {
-                coalescedHostValue = String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)", hostField);
-            }
-            if(DbConnectionFactory.isMsSql()) {
-                coalescedHostValue = String.format(" COALESCE(JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value'),c.%s)", hostField);
-            }
+
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
@@ -272,7 +257,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         " SELECT DISTINCT c.identifier as local_identifier, ht.identifier as remote_identifier," +
                         " '" + endpointId + "', cvi.working_inode as local_working_inode," +
                         " cvi.live_inode as local_live_inode, ht.working_inode as remote_working_inode," +
-                        " ht.live_inode as remote_live_inode, c.language_id, " + coalescedHostValue + " as host" +
+                    " ht.live_inode as remote_live_inode, c.language_id, " + HOST_FIELD_SELECT + " as host" +
                         conflictSql;
                 dc.setSQL(insertStmt)
                         .addParam(Host.SYSTEM_HOST)
@@ -340,26 +325,23 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
     /**
      * Prepares duplicates detection query to run prior to creating CSV file.
      *
-     * @param hostField column name used to retrieve the host name
      * @return a ready to use {@link PreparedStatement}
      * @throws SQLException
      */
-    private PreparedStatement getCsvQuery(final String hostField) throws SQLException {
+    private PreparedStatement getCsvQuery() throws SQLException {
         final Connection conn = DbConnectionFactory.getConnection();
         final String sql =
-                "SELECT c.inode, c.identifier, cvi.working_inode, cvi.live_inode, c.language_id, " + hostField + " as host_name , c.contentlet_as_json " +
-                        " FROM contentlet c" +
-                        " JOIN identifier i ON c.identifier = i.id" +
-                        " JOIN structure s ON c.structure_inode = s.inode" +
-                        " JOIN contentlet_version_info cvi ON (c.identifier = cvi.identifier" +
-                        " AND (c.inode = cvi.working_inode OR c.inode = cvi.live_inode)" +
-                        " AND c.language_id = cvi.lang)" +
-                        " WHERE i.asset_type = 'contentlet'" +
-                        " AND i.asset_subtype = 'Host'" +
-                        " AND s.name = 'Host'" +
-                        " AND c.identifier <> ?";
+            "SELECT c.inode, c.identifier, cvi.working_inode, cvi.live_inode, c.language_id, " + HOST_FIELD_SELECT
+                + " as host_name , c.contentlet_as_json \n"
+                + "FROM contentlet c \n"
+                + "JOIN identifier i ON c.identifier = i.id \n"
+                + "JOIN contentlet_version_info cvi ON (c.identifier = cvi.identifier \n"
+                + "AND (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) \n"
+                + "AND c.language_id = cvi.lang) \n"
+                + "WHERE i.asset_type = 'contentlet' \n"
+                + "AND i.asset_subtype = 'Host'  \n"
+                + "AND c.identifier <> 'SYSTEM_HOST' ";
         final PreparedStatement statement = conn.prepareStatement(sql);
-        statement.setString(1, Host.SYSTEM_HOST);
         return statement;
     }
 
@@ -751,18 +733,5 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 .loadResult();
     }
 
-    /**
-     * Resolves which contenlet table column to use as the hostname.
-     *
-     * @return column name to be used as host name
-     */
-    private String resolveHostField() {
-        return new DotConnect()
-                .setSQL("select f.field_contentlet" +
-                        " from field f" +
-                        " JOIN structure s on s.inode = f.structure_inode" +
-                        " where s.velocity_var_name = 'Host'" +
-                        " AND f.velocity_var_name = 'hostName'")
-                .getString("field_contentlet");
-    }
+
 }
