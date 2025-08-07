@@ -4725,7 +4725,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "requiredTextField",error.field().get());
+        assertEquals("Test expected required field label is present", "required: requiredTextField\n",error.field().get());
 
         assertRequiredField(testCase, error);
 
@@ -4736,7 +4736,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_TEXT_AREA_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "textAreaField",error.field().get());
+        assertEquals("Test expected required field label is present", "required: textAreaField\n",error.field().get());
 
         assertRequiredField(testCase, error);
 
@@ -4747,7 +4747,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_WYSIWYG_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "wysiwygField",error.field().get());
+        assertEquals("Test expected required field label is present", "required: wysiwygField\n",error.field().get());
 
         assertRequiredField(testCase, error);
 
@@ -4758,7 +4758,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_STORY_BLOCK_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "storyBlockField",error.field().get());
+        assertEquals("Test expected required field label is present", "required: storyBlockField\n",error.field().get());
 
         assertRequiredField(testCase, error);
 
