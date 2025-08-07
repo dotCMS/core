@@ -8,7 +8,8 @@ import {
     DotCMSPageContainerContentlets,
     DotCMSPage,
     DotCMSPageAsset,
-    DotCMSContainer
+    DotCMSContainer,
+    DotCMSURLContentMap
 } from '@dotcms/types';
 
 /**
@@ -60,7 +61,7 @@ export const graphqlToPageEntity = (
             },
             {}
         )
-    };
+    } as DotCMSURLContentMap;
 
     return {
         layout,
