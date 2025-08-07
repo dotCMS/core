@@ -1,6 +1,7 @@
 package com.dotmarketing.util.importer.exception;
 
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 
@@ -46,7 +47,7 @@ import java.util.Optional;
  * @see ImportLineValidationCodes
  * @see com.dotmarketing.portlets.contentlet.business.DotContentletValidationException
  */
-public interface ImportLineError {
+public interface ImportLineError extends Serializable {
 
     /**
      * Returns the standardized error code for this validation failure.
