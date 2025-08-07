@@ -48,11 +48,19 @@ export const graphqlToPageEntity = (
 
     const typedPageAsset = pageAsset as unknown as DotCMSPage;
 
-    // To prevent type errors, we cast the urlContentMap to an object
-    const urlContentMapObject = urlContentMap;
-
-    // Extract the _map data from the urlContentMap object
-    const urlContentMapData = urlContentMapObject?.['_map'];
+    // Merge all urlContentMap keys into _map, except _map itself
+    const mergedUrlContentMap = {
+        ...(urlContentMap?._map || {}),
+        ...Object.entries(urlContentMap || {}).reduce<Record<string, unknown>>(
+            (acc, [key, value]) => {
+                if (key !== '_map') {
+                    acc[key] = value;
+                }
+                return acc;
+            },
+            {}
+        )
+    };
 
     return {
         layout,
@@ -61,7 +69,7 @@ export const graphqlToPageEntity = (
         vanityUrl,
         runningExperimentId,
         site: host,
-        urlContentMap: urlContentMapData,
+        urlContentMap: mergedUrlContentMap,
         containers: parseContainers(containers as []),
         page: {
             ...data,
