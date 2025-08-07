@@ -122,18 +122,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
+    readonly viewContainerRef = inject(ViewContainerRef);
+    readonly dotMarketingConfigService = inject(DotMarketingConfigService);
+    readonly dotAiService = inject(DotAiService);
+
     readonly dotDragHandleOptions = {
         duration: 250,
-        zIndex: 5
+        zIndex: 5,
+        placement: 'left'
     };
-
-    constructor(
-        private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService,
-        private readonly dotAiService: DotAiService
-    ) {
-        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
-    }
 
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
@@ -143,6 +140,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         try {
             return JSON.parse(this.displayCountBar as string);
         } catch (e) {
+            console.error(e);
             return true;
         }
     }
@@ -178,6 +176,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
+        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
         tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
