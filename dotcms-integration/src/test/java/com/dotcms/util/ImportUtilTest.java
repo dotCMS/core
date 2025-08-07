@@ -4885,7 +4885,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
         assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
 
-        assertEquals("Test expected error is for the url","Invalid Site or Folder reference: the provided inode/path does not exist or is not associated with a valid SiteFolder.", error.message());
+        assertEquals("Test expected error is for the url","The provided inode/path does not exist or is not associated with a valid Site or Folder.", error.message());
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_SITE_FOLDER_REF.name(), error.code().get());
     };
