@@ -238,7 +238,7 @@ public class DotContentletValidationExceptionBuilderTest {
         // Verify base message is included
         assertTrue("Message should contain base message", message.contains("Validation failed"));
         
-        // Verify field validation details are included
+        // Verify field validation details are included without duplication
         assertTrue("Message should contain field validation details", message.contains("Fields:"));
         assertTrue("Message should mention REQUIRED fields", message.contains("[REQUIRED]"));
         assertTrue("Message should mention PATTERN fields", message.contains("[PATTERN]"));
@@ -247,13 +247,48 @@ public class DotContentletValidationExceptionBuilderTest {
         assertTrue("Message should contain relationship validation details", message.contains("Relationships:"));
         assertTrue("Message should mention REQREL relationship", message.contains("[REQREL]"));
         
-        // Ensure no repeated elements in message
-        String validationDetails = message.substring(message.indexOf(" - ") + 3);
-        int fieldsCount = countOccurrences(validationDetails, "Fields:");
-        int relationshipsCount = countOccurrences(validationDetails, "Relationships:");
+        // Ensure no repeated elements in entire message
+        int fieldsCount = countOccurrences(message, "Fields:");
+        int relationshipsCount = countOccurrences(message, "Relationships:");
+        int requiredCount = countOccurrences(message, "[REQUIRED]");
+        int patternCount = countOccurrences(message, "[PATTERN]");
+        int reqrelCount = countOccurrences(message, "[REQREL]");
         
-        assertEquals("Fields section should appear exactly once", 1, fieldsCount);
-        assertEquals("Relationships section should appear exactly once", 1, relationshipsCount);
+        assertEquals("Fields section should appear exactly once in entire message", 1, fieldsCount);
+        assertEquals("Relationships section should appear exactly once in entire message", 1, relationshipsCount);
+        assertEquals("REQUIRED section should appear exactly once in entire message", 1, requiredCount);
+        assertEquals("PATTERN section should appear exactly once in entire message", 1, patternCount);
+        assertEquals("REQREL section should appear exactly once in entire message", 1, reqrelCount);
+    }
+    
+    /**
+     * Test that getMessage handles cases where base message already contains validation details
+     */
+    @Test
+    public void testGetMessageWithPreExistingValidationDetails() {
+        Field titleField = createMockField("title", "Title", "text");
+        
+        // Create exception with base message that already contains field info
+        DotContentletValidationException exception1 = new DotContentletValidationException(
+                "Validation failed - Fields: [REQUIRED]: Title (title)");
+        exception1.addRequiredField(titleField);
+        
+        String message1 = exception1.getMessage();
+        
+        // Should not duplicate the Fields: section
+        int fieldsCount = countOccurrences(message1, "Fields:");
+        assertEquals("Fields section should appear exactly once when already in base message", 1, fieldsCount);
+        
+        // Test with relationship info in base message
+        DotContentletValidationException exception2 = new DotContentletValidationException(
+                "Validation failed - Relationships: [REQREL]: parent-child");
+        exception2.addRequiredRelationship(createMockRelationship("parent-child"), new ArrayList<>());
+        
+        String message2 = exception2.getMessage();
+        
+        // Should not duplicate the Relationships: section
+        int relationshipsCount = countOccurrences(message2, "Relationships:");
+        assertEquals("Relationships section should appear exactly once when already in base message", 1, relationshipsCount);
     }
 
     /**

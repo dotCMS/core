@@ -327,10 +327,17 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 
 	@Override
 	public String getMessage() {
-		final String toString = this.toString(false);
-		return UtilMethods.isSet(toString)
-				? super.getMessage() + " - " + toString
-				: super.getMessage();
+		final String baseMessage = super.getMessage();
+		final String validationDetails = this.toString(false);
+		
+		// If no validation details or base message already contains validation info, return base message
+		if (!UtilMethods.isSet(validationDetails) || 
+			(baseMessage.contains("Fields:") || baseMessage.contains("Relationships:"))) {
+			return baseMessage;
+		}
+		
+		// Otherwise, append validation details to base message
+		return baseMessage + " - " + validationDetails;
 	}
 
 	@Override
