@@ -9,8 +9,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.commons.lang.StringUtils;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Base class for all the integrity checkers implementation
@@ -68,15 +67,8 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         }
 
         final String endpointIdforDB = endpointId.replace("-", "");
-        String resultsTableName = type.name().toLowerCase() + "_temp"+suffixName.toLowerCase()+"_" + endpointIdforDB;
+      return type.name().toLowerCase() + "_temp" + suffixName.toLowerCase() + "_" + endpointIdforDB;
 
-        if (DbConnectionFactory.isOracle()) {
-            resultsTableName = resultsTableName.substring(0, 29);
-        } else if (DbConnectionFactory.isMsSql()) {
-            resultsTableName = "#" + resultsTableName;
-        }
-
-        return resultsTableName;
     }
 
     /**
