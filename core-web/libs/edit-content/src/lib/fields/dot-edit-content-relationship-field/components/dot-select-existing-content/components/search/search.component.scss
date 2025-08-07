@@ -3,3 +3,7 @@
 .search-icon {
     color: $color-palette-gray-600;
 }
+
+input.content-search__input[pInputText]:focus {
+    outline: none;
+}

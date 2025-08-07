@@ -2,6 +2,7 @@ import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectat
 import { of } from 'rxjs';
 
 import { Component, forwardRef } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import {
     ControlValueAccessor,
     FormControl,
@@ -22,7 +23,7 @@ import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
-import { SearchComponent } from './search.component';
+import { SearchComponent, DEBOUNCE_TIME } from './search.component';
 
 import { TreeNodeItem } from '../../../../../../models/dot-edit-content-host-folder-field.interface';
 import { DotEditContentService } from '../../../../../../services/dot-edit-content.service';
@@ -632,6 +633,49 @@ describe('SearchComponent', () => {
         });
     });
 
+    describe('Debounced Search', () => {
+        it('should trigger search automatically after debounce delay', fakeAsync(() => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            // Set query value
+            component.form.get('query')?.setValue('test search');
+
+            // Fast-forward time by less than debounce time - should not trigger search
+            tick(DEBOUNCE_TIME - 1);
+            expect(searchSpy).not.toHaveBeenCalled();
+
+            // Fast-forward remaining time - should trigger search
+            tick(1);
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test search',
+                systemSearchableFields: {}
+            });
+        }));
+
+        it('should include system search fields in debounced search', fakeAsync(() => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            // Set form values
+            component.form.patchValue({
+                query: 'test',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteOrFolderId: 'site:123'
+                }
+            });
+
+            tick(DEBOUNCE_TIME);
+
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: '123'
+                }
+            });
+        }));
+    });
+
     describe('Integration Tests', () => {
         it('should update form values when input changes', () => {
             const queryInput = spectator.query('input[formControlName="query"]');
@@ -639,6 +683,24 @@ describe('SearchComponent', () => {
 
             expect(component.form.get('query').value).toBe('test query');
         });
+
+        it('should trigger debounced search when typing in input', fakeAsync(() => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const queryInput = spectator.query('input[formControlName="query"]');
+
+            spectator.typeInElement('test search', queryInput);
+
+            // Should not trigger immediately
+            expect(searchSpy).not.toHaveBeenCalled();
+
+            // Wait for debounce
+            tick(DEBOUNCE_TIME);
+
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test search',
+                systemSearchableFields: {}
+            });
+        }));
 
         it('should trigger search when search button is clicked (site)', () => {
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
