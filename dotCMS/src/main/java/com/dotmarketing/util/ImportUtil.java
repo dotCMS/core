@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotDateFieldException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -4530,14 +4531,11 @@ public class ImportUtil {
                 try {
                     valueObj = parseExcelDate(value);
                 } catch (ParseException e) {
-                    throw ImportLineException.builder()
-                            .message(
-                                    "Value couldn't be parsed as any of the following supported formats: "
-                                            + printSupportedDateFormats()
-                            )
-                            .code(ImportLineValidationCodes.INVALID_DATE_FORMAT.name())
-                            .field(field.getVelocityVarName())
-                            .invalidValue(value)
+                    throw DotDateFieldException.conversionErrorBuilder(field.getVelocityVarName(), value)
+                            .fieldName(field.getFieldName())
+                            .fieldType(field.getFieldType())
+                            .acceptedFormats(IMP_DATE_FORMATS)
+                            .addContext("errorMessage", e.getMessage())
                             .build();
                 }
             } else {
