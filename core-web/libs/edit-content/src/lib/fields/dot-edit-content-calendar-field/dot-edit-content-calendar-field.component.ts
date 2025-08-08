@@ -66,10 +66,10 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
     $isDisabled = signal<boolean>(false);
 
     // Store last value to reprocess when timezone becomes available
-    private lastUtcValue: Date | number | string | null = null;
+    private lastUtcValue: Date | null = null;
 
     // ControlValueAccessor callbacks
-    private onChange = (_value: Date | number | string | null) => {
+    private onChange = (_value: Date | null) => {
         // Callback will be set by Angular Forms via registerOnChange
     };
     private onTouched = () => {
@@ -138,7 +138,7 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
     });
 
     // ControlValueAccessor implementation
-    writeValue(utcValue: Date | number | string | null): void {
+    writeValue(utcValue: Date | null): void {
         // Store the value for reprocessing when timezone is available
         this.lastUtcValue = utcValue;
 
@@ -170,7 +170,7 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
         }
     }
 
-    registerOnChange(fn: (value: Date | number | string | null) => void): void {
+    registerOnChange(fn: (value: Date | null) => void): void {
         this.onChange = fn;
     }
 
