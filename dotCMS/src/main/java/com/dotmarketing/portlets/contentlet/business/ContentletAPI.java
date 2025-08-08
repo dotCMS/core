@@ -2113,6 +2113,21 @@ public interface ContentletAPI {
     */
 	public int deleteOldContent(Date deleteFrom) throws DotDataException;
 	
+
+	/**
+	 * Delete old versions contents within a specific date range (bounded query)
+	 * Used by the Drop Old Assets Version Tool for optimized performance on large datasets.
+	 * This method processes only content within the specified date range, preventing
+	 * the exponential performance degradation that occurs with unbounded queries.
+	 * For regular deletion of contents, see {@link ContentletAPI#delete(Contentlet, User, boolean)}
+	 * 
+	 * @param deleteFrom The start date (inclusive) - content with mod_date >= deleteFrom will be considered
+	 * @param deleteTo The end date (exclusive) - content with mod_date < deleteTo will be considered
+	 * @return Integer value with amount of contents that were deleted
+	 * @throws DotDataException
+	 * @see com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory#deleteOldAssetVersions(Date)
+	 */
+	public int deleteOldContent(Date deleteFrom, Date deleteTo) throws DotDataException;
 	/**
 	 * Find all contents from a Content type (max value is 500)
 	 * where a given field's value is not null/empty.
