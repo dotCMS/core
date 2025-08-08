@@ -116,13 +116,15 @@ export class RelationshipFieldService {
     /**
      * Gets the columns and content for the relationship field
      * @param contentTypeId The content type ID
+     * @param showFields The fields to show in the relationship field
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
     getColumnsAndContent(
-        contentTypeId: string
+        contentTypeId: string,
+        showFields?: string[]
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
         return forkJoin([
-            this.getColumns(contentTypeId),
+            this.getColumns(contentTypeId, showFields),
             this.search({ contentTypeId }),
             this.#getLanguages()
         ]).pipe(
@@ -142,12 +144,13 @@ export class RelationshipFieldService {
     /**
      * Gets the columns for the relationship field
      * @param contentTypeId The content type ID
+     * @param showFields The fields to show in the relationship field
      * @returns Observable of Column array
      */
-    getColumns(contentTypeId: string): Observable<Column[]> {
+    getColumns(contentTypeId: string, showFields?: string[]): Observable<Column[]> {
         return this.#fieldService
             .getFields(contentTypeId, 'SHOW_IN_LIST')
-            .pipe(map((fields) => this.#buildColumns(fields)));
+            .pipe(map((fields) => this.#buildColumns(fields, showFields)));
     }
 
     /**
@@ -169,17 +172,12 @@ export class RelationshipFieldService {
     /**
      * Builds the columns for the relationship field
      * @param columns The columns to build
+     * @param showFields The fields to show in the relationship field
      * @returns Array of Column
      */
-    /**
-     * Builds the columns for the relationship field table
-     * Filters out the 'title' column as it's handled separately
-     * and ensures only valid columns with both variable and name are included
-     *
-     * @param columns The content type fields to convert to table columns
-     * @returns Array of Column objects for the data table
-     */
-    #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
+    #buildColumns(columns: DotCMSContentTypeField[], showFields?: string[]): Column[] {
+        const hasShowFields = showFields && showFields.length > 0;
+
         return columns
             .filter(
                 (column) =>
@@ -187,6 +185,13 @@ export class RelationshipFieldService {
                     column.name &&
                     !EXCLUDED_COLUMNS.includes(column.name.toLowerCase())
             )
+            .filter((column) => {
+                if (hasShowFields) {
+                    return showFields.includes(column.variable);
+                }
+
+                return true;
+            })
             .map((column) => ({
                 field: column.variable,
                 header: column.name

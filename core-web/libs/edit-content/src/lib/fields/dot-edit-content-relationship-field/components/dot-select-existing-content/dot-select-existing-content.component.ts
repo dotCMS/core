@@ -36,6 +36,7 @@ type DialogData = {
     contentTypeId: string;
     selectionMode: SelectionMode;
     currentItemsIds: string[];
+    showFields?: string[] | null;
 };
 
 const STATIC_COLUMNS = 6;
@@ -119,7 +120,8 @@ export class DotSelectExistingContentComponent implements OnInit {
         this.store.initLoad({
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
-            selectedItemsIds: data.currentItemsIds
+            selectedItemsIds: data.currentItemsIds,
+            showFields: data.showFields
         });
     }
 
