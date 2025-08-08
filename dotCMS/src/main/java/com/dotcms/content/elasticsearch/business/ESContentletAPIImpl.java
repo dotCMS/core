@@ -8640,12 +8640,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public int deleteOldContent(Date deleteFrom) throws DotDataException {
-        int results = 0;
         if (deleteFrom == null) {
             throw new DotDataException("Date to delete from must not be null");
         }
-        results = contentFactory.deleteOldContent(deleteFrom);
-        return results;
+        // Call the bounded version with an appropriate end date (current time)
+        // This ensures we process all content from the beginning of time up to deleteFrom
+        Date deleteTo = deleteFrom;
+        Date deleteFromStart = new Date(0); // Start from epoch
+        return deleteOldContent(deleteFromStart, deleteTo);
     }
 
     @WrapInTransaction
@@ -8661,6 +8663,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (deleteFrom.after(deleteTo)) {
             throw new DotDataException("Delete from date must be before delete to date");
         }
+        // Call the factory method with bounded parameters
+        // This will be updated to call the proper bounded factory method in task 2
         results = contentFactory.deleteOldContent(deleteFrom, deleteTo);
         return results;
     }
