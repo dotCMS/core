@@ -8648,6 +8648,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return results;
     }
 
+    @WrapInTransaction
+    @Override
+    public int deleteOldContent(Date deleteFrom, Date deleteTo) throws DotDataException {
+        int results = 0;
+        if (deleteFrom == null) {
+            throw new DotDataException("Date to delete from must not be null");
+        }
+        if (deleteTo == null) {
+            throw new DotDataException("Date to delete to must not be null");
+        }
+        if (deleteFrom.after(deleteTo)) {
+            throw new DotDataException("Delete from date must be before delete to date");
+        }
+        results = contentFactory.deleteOldContent(deleteFrom, deleteTo);
+        return results;
+    }
+
     @CloseDBIfOpened
     @Override
     public List<String> findFieldValues(String structureInode, Field field, User user,
