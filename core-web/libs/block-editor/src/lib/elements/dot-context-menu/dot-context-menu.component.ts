@@ -164,21 +164,25 @@ export class DotContextMenuComponent {
      */
     private async pasteCommand(): Promise<void> {
         try {
-            const htmlContent = await this.getHtmlContentFromClipboard();
+            const { html, text } = await this.getHtmlOrPlainFromClipboard();
 
-            if (htmlContent) {
-                this.editor().commands.insertContent(htmlContent);
+            if (html) {
+                this.editor().commands.insertContent(html);
                 this.focusEditor();
-
                 return;
             }
 
-            this.pasteWithoutFormatCommand();
+            if (text) {
+                this.editor().commands.insertContent(text, {
+                    parseOptions: { preserveWhitespace: 'full' }
+                });
+                this.focusEditor();
+                return;
+            }
         } catch {
             console.warn(
-                '[Block Editor] Try to paste with format failed, fallback to paste without format'
+                '[Block Editor] Paste failed using clipboard.read(); attempting plain text as fallback'
             );
-            this.pasteWithoutFormatCommand();
         }
     }
 
@@ -196,7 +200,10 @@ export class DotContextMenuComponent {
             });
             this.focusEditor();
         } catch (err) {
-            console.warn('Failed to paste plain text:', err);
+            console.warn(
+                '[Block Editor] Paste failed using clipboard.readText(); attempting plain text as fallback',
+                err
+            );
         }
     }
 
@@ -213,7 +220,10 @@ export class DotContextMenuComponent {
             this.editor().commands.insertContent(html);
             this.focusEditor();
         } catch (err) {
-            console.warn('Failed to paste markdown content:', err);
+            console.warn(
+                '[Block Editor] Paste failed using clipboard.readText(); attempting markdown as fallback',
+                err
+            );
         }
     }
 
@@ -274,5 +284,29 @@ export class DotContextMenuComponent {
         }
 
         return '';
+    }
+
+    /**
+     * Reads the clipboard once and returns either HTML (preferred) or plain text if available.
+     * This avoids triggering multiple browser confirmation prompts.
+     */
+    private async getHtmlOrPlainFromClipboard(): Promise<{ html?: string; text?: string }> {
+        const clipboardItems = await navigator.clipboard.read();
+        let fallbackText: string | undefined;
+
+        for (const clipboardItem of clipboardItems) {
+            if (clipboardItem.types.includes('text/html')) {
+                const htmlBlob = await clipboardItem.getType('text/html');
+                const html = await htmlBlob.text();
+                return { html };
+            }
+
+            if (clipboardItem.types.includes('text/plain') && fallbackText === undefined) {
+                const textBlob = await clipboardItem.getType('text/plain');
+                fallbackText = await textBlob.text();
+            }
+        }
+
+        return fallbackText ? { text: fallbackText } : {};
     }
 }
