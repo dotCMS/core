@@ -59,7 +59,6 @@ import {
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { DotCMSPlusButton } from '../../extensions/dot-plus-button/dot-plus-button.plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
     DotMarketingConfigService,
@@ -122,16 +121,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
+    readonly viewContainerRef = inject(ViewContainerRef);
+    readonly dotMarketingConfigService = inject(DotMarketingConfigService);
+    readonly dotAiService = inject(DotAiService);
+
     readonly dotDragHandleOptions = {
         duration: 250,
         zIndex: 5
     };
 
-    constructor(
-        private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService,
-        private readonly dotAiService: DotAiService
-    ) {
+    constructor() {
         this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
     }
 
@@ -142,7 +141,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     get showCharData() {
         try {
             return JSON.parse(this.displayCountBar as string);
-        } catch (e) {
+        } catch {
             return true;
         }
     }
@@ -505,7 +504,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                     return this.#dotMessageService.get('block-editor.placeholder.paragraph');
                 }
             }),
-            DotCMSPlusButton,
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef)
         ];
