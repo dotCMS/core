@@ -85,6 +85,52 @@ const categoryResolutionFn: FnResolutionValue<string[] | string> = (contentlet, 
 };
 
 /**
+ * Resolution function for date/time fields that preserves timestamps as numbers
+ * This allows the calendar field component to handle timezone conversion properly
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object
+ * @param {DotCMSContentTypeField} field - The field object
+ * @returns {Date | number | null} Date object, timestamp number, or null if no value
+ */
+const dateResolutionFn: FnResolutionValue<Date | number | null> = (contentlet, field) => {
+    if (!contentlet) {
+        // For new content, let the calendar component handle defaultValue processing
+        // The calendar component has proper logic for "now" and fixed dates with server timezone
+        return null;
+    }
+
+    const value = contentlet[field.variable];
+
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    // Handle timestamp (number) - pass it through as-is
+    // The calendar component will handle timezone conversion properly
+    if (typeof value === 'number') {
+        return value;
+    }
+
+    // Handle date string
+    if (typeof value === 'string') {
+        const parsedDate = new Date(value);
+        return isNaN(parsedDate.getTime()) ? null : parsedDate;
+    }
+
+    // Handle Date object
+    if (value instanceof Date) {
+        return value;
+    }
+
+    // Fallback: try to convert whatever value we have
+    try {
+        return new Date(value);
+    } catch {
+        return null;
+    }
+};
+
+/**
  * A function that provides a default resolution value for a contentlet field.
  *
  * @param {Object} contentlet - The contentlet object.
@@ -106,7 +152,10 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
  * This enables each field type to properly process its own data.
  *
  */
-export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue<string | string[] | Date>> = {
+export const resolutionValue: Record<
+    FIELD_TYPES,
+    FnResolutionValue<string | string[] | Date | number | null>
+> = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
@@ -114,9 +163,9 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue<string | str
     [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
-    [FIELD_TYPES.DATE]: defaultResolutionFn,
-    [FIELD_TYPES.DATE_AND_TIME]: defaultResolutionFn,
-    [FIELD_TYPES.TIME]: defaultResolutionFn,
+    [FIELD_TYPES.DATE]: dateResolutionFn,
+    [FIELD_TYPES.DATE_AND_TIME]: dateResolutionFn,
+    [FIELD_TYPES.TIME]: dateResolutionFn,
     [FIELD_TYPES.HIDDEN]: defaultResolutionFn,
     [FIELD_TYPES.HOST_FOLDER]: hostFolderResolutionFn,
     [FIELD_TYPES.JSON]: defaultResolutionFn,

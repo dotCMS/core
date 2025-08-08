@@ -1,5 +1,5 @@
+import { tz, TZDate } from '@date-fns/tz';
 import { differenceInCalendarDays, format, formatDistanceStrict, isValid, parse } from 'date-fns';
-import { format as formatTZ, utcToZonedTime } from 'date-fns-tz';
 
 import { inject, Injectable, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -48,8 +48,6 @@ export class DotFormatDateService {
     }
 
     /**
-     * @deprecated
-     * please do not use more date-fns use instead Intl.DateTimeFormat
      * @param languageId
      */
     async setLang(languageId: string) {
@@ -60,10 +58,10 @@ export class DotFormatDateService {
         countryCode = countryCode?.toLocaleUpperCase() || 'US';
 
         try {
-            localeLang = await import(`date-fns/locale/${langCode}-${countryCode}/index.js`);
+            localeLang = await import(`date-fns/locale/${langCode}-${countryCode}`);
         } catch {
             try {
-                localeLang = await import(`date-fns/locale/${langCode}/index.js`);
+                localeLang = await import(`date-fns/locale/${langCode}`);
             } catch {
                 localeLang = await import(`date-fns/locale/en-US`);
             }
@@ -140,7 +138,7 @@ export class DotFormatDateService {
     }
 
     /**
-     * Format a date based on a pattern and in the serverTime
+     * Format a date based on a pattern and in the serverTime using date-fns v4.0 TZDate
      *
      * @param {Date} date
      * @param {string} formatPattern
@@ -154,9 +152,17 @@ export class DotFormatDateService {
             return INVALID_DATE_MSG;
         }
 
-        const zonedDate = utcToZonedTime(date, systemTimeZone.id);
-
-        return formatTZ(zonedDate, formatPattern, { timeZone: systemTimeZone.id });
+        try {
+            // Using TZDate from @date-fns/tz with date-fns v4.0
+            const tzDate = new TZDate(date, systemTimeZone.id);
+            return format(tzDate, formatPattern, {
+                in: tz(systemTimeZone.id),
+                ...this.localeOptions
+            });
+        } catch (error) {
+            console.error('Error formatting date with timezone:', error);
+            return INVALID_DATE_MSG;
+        }
     }
 
     /**

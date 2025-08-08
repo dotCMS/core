@@ -732,4 +732,61 @@ describe('DotFormComponent', () => {
             });
         });
     });
+
+    describe('Form value processing', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeNewContent('TestMock');
+            spectator.detectChanges();
+        });
+
+        it('should convert Date objects to UTC timestamps for calendar fields', (done) => {
+            const testDate = new Date('2024-01-15T14:30:00.000Z');
+
+            // Set a date value in the form
+            component.form.patchValue({
+                date: testDate
+            });
+
+            // Listen for form changes
+            component.changeValue.subscribe((formValues) => {
+                // Check that the date field was converted to a timestamp
+                expect(typeof formValues.date).toBe('number');
+                expect(formValues.date).toBe(testDate.getTime());
+                done();
+            });
+
+            // Trigger form change
+            component.form.markAsDirty();
+            component.form.updateValueAndValidity();
+        });
+
+        it('should preserve non-date values unchanged', (done) => {
+            const testValues = {
+                text1: 'test string',
+                text2: 'another string'
+            };
+
+            component.form.patchValue(testValues);
+
+            component.changeValue.subscribe((formValues) => {
+                expect(formValues.text1).toBe('test string');
+                expect(formValues.text2).toBe('another string');
+                done();
+            });
+
+            component.form.markAsDirty();
+            component.form.updateValueAndValidity();
+        });
+    });
 });
