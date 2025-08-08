@@ -1,6 +1,6 @@
 import { TiptapFloatingMenuDirective } from 'ngx-tiptap';
 
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { Editor } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
@@ -10,20 +10,22 @@ import { PluginKey } from '@tiptap/pm/state';
     template: `
         <div
             tiptapFloatingMenu
-            [editor]="editor()"
+            [editor]="$editor()"
             [pluginKey]="pluginKey"
             [tippyOptions]="tippyOptions">
-            <button class="add-button" (click)="onClick()">
+            <button
+                class="add-button flex  align-items-center justify-content-center cursor-pointer"
+                (click)="onClick()">
                 <span class="pi pi-plus"></span>
             </button>
         </div>
     `,
     styleUrls: ['./dot-add-button.component.scss'],
-    standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [TiptapFloatingMenuDirective]
 })
 export class DotAddButtonComponent {
-    editor = input.required<Editor>();
+    $editor = input.required<Editor>({ alias: 'editor' });
     protected readonly pluginKey = new PluginKey('dotCMSPlusButton');
     protected readonly tippyOptions = {
         placement: 'left',
@@ -31,6 +33,6 @@ export class DotAddButtonComponent {
     };
 
     protected onClick(): void {
-        this.editor().chain().focus().insertContent('/').run();
+        this.$editor().chain().focus().insertContent('/').run();
     }
 }
