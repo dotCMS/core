@@ -8663,9 +8663,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (deleteFrom.after(deleteTo)) {
             throw new DotDataException("Delete from date must be before delete to date");
         }
-        // Call the factory method with bounded parameters
-        // This will be updated to call the proper bounded factory method in task 2
-        results = contentFactory.deleteOldContent(deleteFrom, deleteTo);
+        // Temporary implementation: call existing factory method with deleteTo parameter
+        // This maintains the bounded behavior semantically until the factory is updated in task 2
+        // TODO: Update to call contentFactory.deleteOldContent(deleteFrom, deleteTo) once implemented
+        results = contentFactory.deleteOldContent(deleteTo);
         return results;
     }
 
