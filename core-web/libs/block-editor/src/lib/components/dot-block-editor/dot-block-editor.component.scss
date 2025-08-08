@@ -1,6 +1,13 @@
 @use "variables" as *;
 @import "styles/prosemirror";
 
+::ng-deep {
+    div[data-tippy-root]:has(.tippy-box[data-reference-hidden]) {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
 :host {
     position: relative;
     font-family: $font-default;
@@ -20,7 +27,7 @@
     .editor-wrapper {
         display: block;
         border-radius: $border-radius-sm;
-        overflow: hidden;
+        overflow-y: hidden;
         position: relative;
         resize: vertical;
         outline: $color-palette-gray-500 solid 1px;

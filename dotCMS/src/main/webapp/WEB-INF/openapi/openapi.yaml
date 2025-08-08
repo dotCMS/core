@@ -103,8 +103,8 @@ tags:
   name: Content Report
 - description: Publishing environment management and configuration
   name: Environment
-- description: A/B testing and experimentation
-  name: Experiment
+- description: A/B testing and experimentation management
+  name: Experiments
 - description: File asset management and download operations
   name: File Assets
 - description: Language management and localization
@@ -117,22 +117,42 @@ tags:
   name: Notifications
 - description: OSGi plugin management and dynamic deployment
   name: OSGi Plugins
+- description: Content persona management and targeting
+  name: Personas
 - description: Content personalization and persona management
   name: Personalization
 - description: Portlet management and administration
   name: Portlets
 - description: Content publishing and deployment operations
   name: Publishing
+- description: Remote content publishing and synchronization
+  name: Push Publishing
 - description: Business rules and conditional logic management
   name: Rules Engine
 - description: SAML SSO authentication and integration
   name: SAML Authentication
 - description: Content search and query operations
   name: Search
+- description: System-level operations and Redis management
+  name: System
 - description: Storage providers and data replication management
   name: System Storage
+- description: Server log file monitoring and real-time viewing
+  name: TailLog
 - description: Temporary file upload and management operations
   name: Temporary Files
+- description: Testing utilities and development endpoints
+  name: Testing
+- description: Theme design and management
+  name: Themes
+- description: Administrative tool group management
+  name: Tool Groups
+- description: Version control and content archiving
+  name: Versionables
+- description: Velocity Template Language execution and rendering
+  name: VTL
+- description: Web asset management and operations
+  name: Web Assets
 - description: Widget development and rendering
   name: Widgets
 paths:
@@ -3801,6 +3821,23 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/caches/menucache:
+    delete:
+      description: Just deletes the menu cache by request
+      operationId: deleteMenuCache
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Action(s) returned successfully
+        "500":
+          description: General Error
+      summary: Deletes the menu cache
+      tags:
+      - Maintenance
+      - Cache Management
   /v1/caches/provider/{provider}/flush:
     delete:
       operationId: flushAll
@@ -5738,6 +5775,78 @@ paths:
           content:
             application/json;charset=UTF-8: {}
           description: default response
+      tags:
+      - Content
+  /v1/content/versions/id/{identifier}/history:
+    get:
+      description: "Returns the history of a contentlet with the minimum expected\
+        \ information, as seen in the History tab in the Content Edition page."
+      operationId: history
+      parameters:
+      - description: The Identifier of the Contentlet whose history will be retrieved
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: Specified whether the history must be grouped by language or
+          not
+        in: query
+        name: groupByLang
+        schema:
+          type: boolean
+          default: false
+      - description: Specified whether the history must include old versions or not
+        in: query
+        name: bringOldVersions
+        schema:
+          type: boolean
+          default: true
+      - description: "Sort direction: Choose between ascending or descending."
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: DESC
+          enum:
+          - ASC
+          - DESC
+      - description: "Maximum number or results being returned, for pagination purposes."
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - description: "Page number of the results being returned, for pagination purposes."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: History data retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: The identifier path parameter was not specified.
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required.
+        "404":
+          content:
+            application/json: {}
+          description: The specified identifier does not match any contentlet.
+        "500":
+          content:
+            application/json: {}
+          description: An internal dotCMS error has occurred.
+      summary: Contentlet History
       tags:
       - Content
   /v1/content/versions/{inode}:
@@ -22096,6 +22205,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/PageWorkflowActionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPaginatedDataView:
+      type: object
+      properties:
+        entity:
+          type: object
         errors:
           type: array
           items:

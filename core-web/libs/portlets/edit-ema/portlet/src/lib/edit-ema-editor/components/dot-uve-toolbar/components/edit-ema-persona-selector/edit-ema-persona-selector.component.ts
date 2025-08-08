@@ -26,6 +26,7 @@ import { PaginatorModule } from 'primeng/paginator';
 import { catchError } from 'rxjs/operators';
 
 import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
@@ -38,7 +39,6 @@ interface PersonaSelector {
 
 @Component({
     selector: 'dot-edit-ema-persona-selector',
-    standalone: true,
     imports: [
         NgClass,
         ButtonModule,
@@ -69,12 +69,14 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     });
 
     @Input() pageId: string;
-    @Input() value: DotPersona;
+    @Input() value: DotCMSViewAsPersona;
 
-    @Output() selected: EventEmitter<DotPersona & { pageId: string }> = new EventEmitter();
-    @Output() despersonalize: EventEmitter<DotPersona & { pageId: string; selected: boolean }> =
-        new EventEmitter();
+    @Output() selected: EventEmitter<DotCMSViewAsPersona & { pageId: string }> = new EventEmitter();
+    @Output() despersonalize: EventEmitter<
+        DotCMSViewAsPersona & { pageId: string; selected: boolean }
+    > = new EventEmitter();
 
+    protected photo = '';
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.pageId) {
             this.fetchPersonas();
@@ -84,6 +86,12 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         if (this.listbox) {
             this.resetValue();
         }
+
+        // We have a discrepancy between the type of the photo in the API and the type of the photo in GQL
+        this.photo =
+            typeof this.value?.photo == 'string'
+                ? this.value?.photo
+                : this.value?.photo?.versionPath;
     }
 
     ngAfterViewInit(): void {
@@ -93,10 +101,10 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     /**
      * Handle the change of the persona
      *
-     * @param {{ value: DotPersona }} { value }
+     * @param {{ value: DotCMSViewAsPersona }} { value }
      * @memberof EditEmaPersonaSelectorComponent
      */
-    onSelect({ value }: { value: DotPersona }) {
+    onSelect({ value }: { value: DotCMSViewAsPersona }) {
         if (value.identifier === this.value.identifier) {
             return;
         }
@@ -117,10 +125,10 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
      * Handle the remove of the persona
      *
      * @param {MouseEvent} event
-     * @param {DotPersona} persona
+     * @param {DotCMSViewAsPersona} persona
      * @memberof EditEmaPersonaSelectorComponent
      */
-    onRemove(event: MouseEvent, persona: DotPersona, selected: boolean) {
+    onRemove(event: MouseEvent, persona: DotCMSViewAsPersona, selected: boolean) {
         event.stopPropagation();
 
         this.despersonalize.emit({

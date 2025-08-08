@@ -9,16 +9,16 @@ import {
     AnalyticsApiResponse,
     DEFAULT_COUNT_LIMIT,
     DEFAULT_TIME_RANGE,
-    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
-    TimeRange,
+    TimeRangeInput,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../index';
 import { createCubeQuery } from '../utils/cube/cube-query-builder.util';
+import { determineGranularityForTimeRange } from '../utils/data/analytics-data.utils';
 
 @Injectable({
     providedIn: 'root'
@@ -30,12 +30,17 @@ export class DotAnalyticsService {
     /**
      * Total de pageviews en el período especificado
      */
-    totalPageViews(timeRange: TimeRange = DEFAULT_TIME_RANGE): Observable<TotalPageViewsEntity> {
-        const query = createCubeQuery()
+    totalPageViews(
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
+    ): Observable<TotalPageViewsEntity> {
+        const queryBuilder = createCubeQuery()
             .measures(['totalRequest'])
             .pageviews()
-            .timeRange('createdAt', timeRange)
-            .build();
+            .siteId(siteId)
+            .timeRange('createdAt', timeRange);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<TotalPageViewsEntity>>(this.#BASE_URL, query)
@@ -45,12 +50,17 @@ export class DotAnalyticsService {
     /**
      * Visitantes únicos (sesiones únicas) en el período especificado
      */
-    uniqueVisitors(timeRange: TimeRange = DEFAULT_TIME_RANGE): Observable<UniqueVisitorsEntity> {
-        const query = createCubeQuery()
-            .measures(['totalUser'])
+    uniqueVisitors(
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
+    ): Observable<UniqueVisitorsEntity> {
+        const queryBuilder = createCubeQuery()
+            .measures(['totalUsers'])
             .pageviews()
-            .timeRange('createdAt', timeRange)
-            .build();
+            .siteId(siteId)
+            .timeRange('createdAt', timeRange);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<UniqueVisitorsEntity>>(this.#BASE_URL, query)
@@ -61,16 +71,19 @@ export class DotAnalyticsService {
      * Top page performance metric (total requests from the most visited page)
      */
     topPagePerformance(
-        timeRange: TimeRange = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<TopPagePerformanceEntity> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .dimensions(['path', 'pageTitle'])
             .measures(['totalRequest'])
             .pageviews()
-            .orderBy('createdAt', 'desc')
+            .siteId(siteId)
+            .orderBy('totalRequest', 'desc')
             .timeRange('createdAt', timeRange)
-            .limit(1)
-            .build();
+            .limit(1);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<TopPagePerformanceEntity>>(this.#BASE_URL, query)
@@ -81,26 +94,21 @@ export class DotAnalyticsService {
      * Get page view timeline data
      */
     pageViewTimeLine(
-        timeRange: TimeRange = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<PageViewTimeLineEntity[]> {
-        // Determine granularity based on the number of days in timeRange
-        let granularity: Granularity = 'day';
+        // Determine granularity based on specific timeRange values
+        const granularity = Array.isArray(timeRange)
+            ? 'day' // For custom date ranges, default to day granularity
+            : determineGranularityForTimeRange(timeRange);
 
-        // Extract number of days from timeRange string (e.g., "from 7 days ago to now" -> 7)
-        const daysMatch = timeRange.match(/from (\d+) days ago to now/);
-        if (daysMatch) {
-            const numDays = parseInt(daysMatch[1], 10);
-            // Use weekly granularity for periods longer than 14 days
-            if (numDays > 14) {
-                granularity = 'week';
-            }
-        }
-
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .measures(['totalRequest'])
             .pageviews()
-            .timeRange('createdAt', timeRange, granularity)
-            .build();
+            .siteId(siteId)
+            .timeRange('createdAt', timeRange, granularity);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<PageViewTimeLineEntity>>(this.#BASE_URL, query)
@@ -111,16 +119,19 @@ export class DotAnalyticsService {
      * Pageviews by device/browser for distribution chart
      */
     pageViewDeviceBrowsers(
-        timeRange: TimeRange = DEFAULT_TIME_RANGE
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[]
     ): Observable<PageViewDeviceBrowsersEntity[]> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .dimensions(['userAgent'])
             .measures(['totalRequest'])
             .pageviews()
+            .siteId(siteId)
             .orderBy('totalRequest', 'desc')
             .timeRange('createdAt', timeRange)
-            .limit(DEFAULT_COUNT_LIMIT)
-            .build();
+            .limit(DEFAULT_COUNT_LIMIT);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<PageViewDeviceBrowsersEntity>>(this.#BASE_URL, query)
@@ -131,17 +142,20 @@ export class DotAnalyticsService {
      * Top pages table with title and pageviews
      */
     getTopPagePerformanceTable(
-        timeRange: TimeRange = DEFAULT_TIME_RANGE,
+        timeRange: TimeRangeInput = DEFAULT_TIME_RANGE,
+        siteId: string | string[],
         limit = DEFAULT_COUNT_LIMIT
     ): Observable<TopPerformaceTableEntity[]> {
-        const query = createCubeQuery()
+        const queryBuilder = createCubeQuery()
             .dimensions(['path', 'pageTitle'])
             .measures(['totalRequest'])
             .pageviews()
+            .siteId(siteId)
             .orderBy('totalRequest', 'desc')
             .timeRange('createdAt', timeRange)
-            .limit(limit)
-            .build();
+            .limit(limit);
+
+        const query = queryBuilder.build();
 
         return this.#http
             .post<AnalyticsApiResponse<TopPerformaceTableEntity>>(this.#BASE_URL, query)

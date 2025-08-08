@@ -16,8 +16,6 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -41,6 +39,8 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotWizardComponent } from './dot-wizard.component';
 
+import { DotParseHtmlService } from '../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
 import { PushPublishServiceMock } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
@@ -65,7 +65,8 @@ const wizardInput: DotWizardInput = {
 @Component({
     selector: 'dot-form-one',
     template:
-        '<form><span>name: </span><input class="formOneFirst" /><br><span>last Name:</span><input/></form>'
+        '<form><span>name: </span><input class="formOneFirst" /><br><span>last Name:</span><input/></form>',
+    standalone: false
 })
 class FormOneComponent {
     @Input() data: DotPushPublishDialogData;
@@ -75,7 +76,8 @@ class FormOneComponent {
 
 @Component({
     selector: 'dot-form-two',
-    template: '<form><input class="formTwoFirst"/></form>'
+    template: '<form><input class="formTwoFirst"/></form>',
+    standalone: false
 })
 class FormTwoComponent {
     @Input() data: DotPushPublishDialogData;

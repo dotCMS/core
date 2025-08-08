@@ -19,6 +19,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         group: 'block',
         inline: false,
         draggable: true,
+        selectable: true,
 
         addAttributes() {
             return {
@@ -43,6 +44,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
 
             return [
                 'div',
+                { 'data-dotCMS-contentlet': 'true' },
                 ['h3', data.title],
                 ['div', data.identifier],
                 img,

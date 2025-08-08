@@ -7,9 +7,12 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAIImageOrientation, DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
-import { DotClipboardUtil, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
+
+import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
+import { DotClipboardUtil } from '../../../../services/clipboard/ClipboardUtil';
+import { DotCopyButtonComponent } from '../../../dot-copy-button/dot-copy-button.component';
 
 const MOCK_FORM_VALUE = {
     text: 'Test',

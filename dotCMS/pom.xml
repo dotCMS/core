@@ -1324,6 +1324,14 @@
             <scope>test</scope>
         </dependency>
 
+
+        <!-- Jandex for test annotation scanning -->
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- explicitly add all the declared logging dependencies -->
         <!-- Logging framework support Log4j2 as base logger
             very specific artifacts are required to support other frameworks.
@@ -1433,11 +1441,6 @@
 
         <!-- Weld CDI -->
 
-        <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>jandex</artifactId>
-            <version>3.0.5</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina</artifactId>

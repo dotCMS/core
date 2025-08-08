@@ -228,7 +228,7 @@ export const isValidJson = (value: string): boolean => {
         const json = JSON.parse(value);
 
         return json !== null && typeof json === 'object' && !Array.isArray(json);
-    } catch (e) {
+    } catch {
         console.warn(`${value} is not a valid JSON`);
 
         return false;

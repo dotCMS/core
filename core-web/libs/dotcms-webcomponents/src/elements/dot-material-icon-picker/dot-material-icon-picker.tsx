@@ -148,7 +148,7 @@ export class DotMaterialIcon {
         }
     };
 
-    getSuggestionElement = (suggestion: string): JSX.Element => {
+    getSuggestionElement = (suggestion: string) => {
         const isSelected =
             this.selectedSuggestionIndex !== undefined &&
             suggestion === this.suggestionArr[this.selectedSuggestionIndex];
@@ -242,7 +242,7 @@ export class DotMaterialIcon {
         });
     }
 
-    private getColorPicker(show: string): JSX.Element {
+    private getColorPicker(show: string) {
         return show === 'true' ? (
             <div>
                 <label htmlFor="iconColor" class="dot-material-icon__color-label">
