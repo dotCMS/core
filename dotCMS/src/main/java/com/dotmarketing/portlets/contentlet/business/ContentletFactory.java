@@ -487,6 +487,19 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract int deleteOldContent(Date deleteFrom) throws DotDataException;
+
+	/**
+	 * Delete old versions contents within a specific date range (bounded query)
+	 * Used by the Drop Old Assets Version Tool for optimized performance on large datasets.
+	 * This method processes only content within the specified date range, preventing
+	 * the exponential performance degradation that occurs with unbounded queries.
+	 * 
+	 * @param deleteFrom The start date (inclusive) - content with mod_date >= deleteFrom will be considered
+	 * @param deleteTo The end date (exclusive) - content with mod_date < deleteTo will be considered
+	 * @return Integer value with amount of contents that were deleted
+	 * @throws DotDataException
+	 */
+	protected abstract int deleteOldContent(Date deleteFrom, Date deleteTo) throws DotDataException;
 	
 	/**
 	 * 
@@ -602,3 +615,4 @@ public abstract class ContentletFactory {
 		}
 	}
 }
+
