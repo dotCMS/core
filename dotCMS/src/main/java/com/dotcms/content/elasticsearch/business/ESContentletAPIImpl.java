@@ -7582,8 +7582,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 : "Unknown/New");
         if (!InodeUtils.isSet(contentTypeId)) {
             throw new DotContentletValidationException(
-                    "Contentlet [" + contentIdentifier + "] is not associated to " +
-                            "any Content Type.");
+                    "Contentlet [" + contentIdentifier + "] is not associated to any Content Type.");
         }
         if (languageId > 0 && !this.languageAPI.hasLanguage(languageId)) {
             throw new DotContentletValidationException(
@@ -7604,10 +7603,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.validateSite(contentlet);
         }
         boolean hasError = false;
-        final DotContentletValidationException cve = new DotContentletValidationException(
-                String.format("Contentlet with ID '%s' ['%s'] has invalid/missing field(s).",
-                        contentIdentifier, contentlet.getTitle())
-        );
+        final DotContentletValidationException.Builder<DotContentletValidationException> cveBuilder = 
+                DotContentletValidationException.builder(
+                        String.format("Contentlet with ID '%s' ['%s'] has invalid/missing field(s).",
+                                contentIdentifier, contentlet.getTitle()));
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
         final Map<String, Object> contentletMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
@@ -7630,59 +7629,52 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
 
                     if (!(fieldValue instanceof String)) {
-                        cve.addBadTypeField(field);
-                        Logger.warn(this, "Value of field [" + field.getVelocityVarName()
-                                + "] must be of type String");
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        Logger.warn(this, String.format("Value of field [%s] must be of type String", field.getVelocityVarName()));
                         hasError = true;
                         continue;
                     }
                 } else if (isFieldTypeDate(field)) {
                     if (!(fieldValue instanceof Date)) {
-                        cve.addBadTypeField(field);
-                        Logger.warn(this, "Value of field [" + field.getVelocityVarName()
-                                + "] must be of type Date");
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        Logger.warn(this, String.format("Value of field [%s] must be of type Date", field.getVelocityVarName()));
                         hasError = true;
                         continue;
                     }
                 } else if (isFieldTypeBoolean(field)) {
                     if (!(fieldValue instanceof Boolean)) {
-                        cve.addBadTypeField(field);
-                        Logger.warn(this, "Value of field [" + field.getVelocityVarName()
-                                + "] must be of type Boolean");
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        Logger.warn(this, String.format("Value of field [%s] must be of type Boolean", field.getVelocityVarName()));
                         hasError = true;
                         continue;
                     }
                 } else if (isFieldTypeFloat(field)) {
                     if (!(fieldValue instanceof Float)) {
-                        cve.addBadTypeField(field);
-                        Logger.warn(this, "Value of field [" + field.getVelocityVarName()
-                                + "] must be of type Float");
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        Logger.warn(this, String.format("Value of field [%s] must be of type Float", field.getVelocityVarName()));
                         hasError = true;
                         continue;
                     }
                 } else if (isFieldTypeLong(field)) {
                     if (!(fieldValue instanceof Long || fieldValue instanceof Integer)) {
-                        cve.addBadTypeField(field);
-                        Logger.warn(this, "Value of field [" + field.getVelocityVarName()
-                                + "] must be of type Long or Integer");
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        Logger.warn(this, String.format("Value of field [%s] must be of type Long or Integer", field.getVelocityVarName()));
                         hasError = true;
                         continue;
                     }
                     //  binary field validation
                 } else if (isFieldTypeBinary(field)) {
                     if (!(fieldValue instanceof java.io.File)) {
-                        cve.addBadTypeField(field);
-                        Logger.warn(this, "Value of field [" + field.getVelocityVarName()
-                                + "] must be of type File");
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        Logger.warn(this, String.format("Value of field [%s] must be of type File", field.getVelocityVarName()));
                         hasError = true;
                         continue;
                     }
                 } else if (newField instanceof JSONField) {
                     if (!(fieldValue instanceof String) || !(JsonUtil.isValidJSON(
                             fieldValue.toString()))) {
-                        cve.addBadTypeField(field);
-                        Logger.warn(this, "Value of field [" + field.getVelocityVarName()
-                                + "] must be of type JSON");
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        Logger.warn(this, String.format("Value of field [%s] must be of type JSON", field.getVelocityVarName()));
                         hasError = true;
                         continue;
                     }
@@ -7691,8 +7683,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     // Do not validate system or constant field values
                 } else {
                     Logger.warn(this, "Found an unknown field type : This should never happen!!!");
-                    throw new DotContentletStateException(
-                            "Field [" + field.getVelocityVarName() + "] has an unknown type");
+                    throw new DotContentletStateException("Field [" + field.getVelocityVarName() + "] has an unknown type");
                 }
             }
             // validate required
@@ -7700,12 +7691,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if (fieldValue instanceof Map) {
                     final Map map = (Map) fieldValue;
-                    if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())
-                            && map.isEmpty()) {
-                        cve.addRequiredField(field);
+                    if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()) && map.isEmpty()) {
+                        cveBuilder.addRequiredField(field, "");
                         hasError = true;
-                        Logger.warn(this,
-                                "String Field [" + field.getVelocityVarName() + "] is required");
+                        Logger.warn(this, String.format("String Field [%s] is required", field.getVelocityVarName()));
                         continue;
                     }
                 } else if (fieldValue instanceof String) {
@@ -7713,19 +7702,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (!UtilMethods.isSet(s1.trim())
                             || (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()))
                             && s1.equals("{}")) {
-                        cve.addRequiredField(field);
+                        cveBuilder.addRequiredField(field, s1);
                         hasError = true;
-                        Logger.warn(this,
-                                "String Field [" + field.getVelocityVarName() + "] is required");
+                        Logger.warn(this, String.format("String Field [%s] is required", field.getVelocityVarName()));
                         continue;
                     }
                 } else if (fieldValue instanceof java.io.File) {
                     String s1 = ((java.io.File) fieldValue).getPath();
                     if (!UtilMethods.isSet(s1.trim()) || s1.trim().contains("-removed-")) {
-                        cve.addRequiredField(field);
+                        cveBuilder.addRequiredField(field, s1);
                         hasError = true;
-                        Logger.warn(this,
-                                "File Field [" + field.getVelocityVarName() + "] is required");
+                        Logger.warn(this, String.format("File Field [%s] is required", field.getVelocityVarName()));
                         continue;
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -7735,27 +7722,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 if (NEVER_EXPIRE.equals(contentletMap.get(NEVER_EXPIRE))) {
                                     continue;
                                 } else {
-                                    cve.addRequiredField(field);
+                                    cveBuilder.addRequiredField(field, fieldValue != null ? fieldValue.toString() : "null");
                                     hasError = true;
-                                    Logger.warn(this,
-                                            "Date/Time in CT Field [" + field.getVelocityVarName()
-                                                    + "] is" +
-                                                    " required");
+                                    Logger.warn(this, String.format("Date/Time in CT Field [%s] is required", field.getVelocityVarName()));
                                     continue;
                                 }
                             } else {
-                                cve.addRequiredField(field);
+                                cveBuilder.addRequiredField(field, fieldValue != null ? fieldValue.toString() : "null");
                                 hasError = true;
-                                Logger.warn(this,
-                                        "Date/Time expire Field [" + field.getVelocityVarName()
-                                                + "] is required");
+                                Logger.warn(this, String.format("Date/Time expire Field [%s] is required", field.getVelocityVarName()));
                                 continue;
                             }
                         } else {
-                            cve.addRequiredField(field);
+                            cveBuilder.addRequiredField(field, fieldValue != null ? fieldValue.toString() : "null");
                             hasError = true;
-                            Logger.warn(this, "Date/Time Field [" + field.getVelocityVarName()
-                                    + "] is required");
+                            Logger.warn(this, String.format("Date/Time Field [%s] is required", field.getVelocityVarName()));
                             continue;
                         }
                     }
@@ -7763,10 +7744,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     continue;
                 } else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
                     if (UtilMethods.isNotSet(cats)) {
-                        cve.addRequiredField(field);
+                        cveBuilder.addRequiredField(field, "empty");
                         hasError = true;
-                        Logger.warn(this, "Category Field [" + field.getVelocityVarName()
-                                + "] is required (empty)");
+                        Logger.warn(this, String.format("Category Field [%s] is required (empty)", field.getVelocityVarName()));
                         continue;
                     }
                     try {
@@ -7785,34 +7765,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 }
                             }
                             if (!found) {
-                                cve.addRequiredField(field);
+                                cveBuilder.addRequiredField(field, "values not found");
                                 hasError = true;
-                                Logger.warn(this, "Category Field [" + field.getVelocityVarName()
-                                        + "] is required (values not found)");
+                                Logger.warn(this, String.format("Category Field [%s] is required (values not found)", field.getVelocityVarName()));
                                 continue;
                             }
                         }
                     } catch (final DotDataException | DotSecurityException e) {
-                        cve.addRequiredField(field);
+                        cveBuilder.addRequiredField(field, "validation error: " + ExceptionUtil.getErrorMessage(e));
                         hasError = true;
-                        Logger.warn(this,
-                                "Unable to validate category field [" + field.getVelocityVarName()
-                                        + "]: " + ExceptionUtil.getErrorMessage(e), e);
+                        Logger.warn(this, String.format("Unable to validate category field [%s]: %s", field.getVelocityVarName(), ExceptionUtil.getErrorMessage(e)), e);
                         continue;
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                    if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(
-                            contentlet.getFolder())) {
-                        cve.addRequiredField(field);
+                    if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(contentlet.getFolder())) {
+                        cveBuilder.addRequiredField(field, "host and folder both empty");
                         hasError = true;
-                        Logger.warn(this, "Site or Folder Field [" + field.getVelocityVarName()
-                                + "] is required");
+                        Logger.warn(this, String.format("Site or Folder Field [%s] is required", field.getVelocityVarName()));
                         continue;
                     }
                 } else if (!UtilMethods.isSet(fieldValue)) {
-                    cve.addRequiredField(field);
+                    cveBuilder.addRequiredField(field, fieldValue != null ? fieldValue.toString() : "null");
                     hasError = true;
-                    Logger.warn(this, "Field [" + field.getVelocityVarName() + "] is required");
+                    Logger.warn(this, String.format("Field [%s] is required", field.getVelocityVarName()));
                     continue;
                 }
                 if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
@@ -7820,21 +7795,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (fieldValue instanceof Number) {
                         Number n = (Number) fieldValue;
                         if (n.longValue() == 0) {
-                            cve.addRequiredField(field);
+                            cveBuilder.addRequiredField(field, n.toString());
                             hasError = true;
-                            Logger.warn(this,
-                                    "Image Field (as number) [" + field.getVelocityVarName()
-                                            + "] is required");
+                            Logger.warn(this, String.format("Image Field (as number) [%s] is required", field.getVelocityVarName()));
                             continue;
                         }
                     } else if (fieldValue instanceof String) {
                         String s = (String) fieldValue;
                         if (s.trim().equals("0")) {
-                            cve.addRequiredField(field);
+                            cveBuilder.addRequiredField(field, s);
                             hasError = true;
-                            Logger.warn(this,
-                                    "Image Field (as String) [" + field.getVelocityVarName()
-                                            + "] is required");
+                            Logger.warn(this, String.format("Image Field (as String) [%s] is required", field.getVelocityVarName()));
                             continue;
                         }
                     }
@@ -7843,10 +7814,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (fieldValue instanceof String) {
                         String s = (String) fieldValue;
                         if (s.trim().equalsIgnoreCase("<br>")) {
-                            cve.addRequiredField(field);
+                            cveBuilder.addRequiredField(field, s);
                             hasError = true;
-                            Logger.warn(this, "WYSIWYG Field [" + field.getVelocityVarName()
-                                    + "] is required");
+                            Logger.warn(this, String.format("WYSIWYG Field [%s] is required", field.getVelocityVarName()));
                             continue;
                         }
                     }
@@ -7868,16 +7838,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 LegacyFieldTransformer.from(field));
                     }
                 } catch (final UniqueFieldValueDuplicatedException e) {
-                    cve.addUniqueField(field);
+                    cveBuilder.addUniqueField(field, fieldValue != null ? fieldValue.toString() : "null");
                     hasError = true;
                     Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
                             UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown/New Contentlet"));
 
-                    throw cve;
+                    throw cveBuilder.build();
                 } catch (final DotDataException | DotSecurityException e) {
                     Logger.warn(this, String.format("Unable to validate unique field '%s' in Content Type '%s': %s",
                             field.getVelocityVarName(), contentlet.getContentType().name(), ExceptionUtil.getErrorMessage(e)), e);
-                    cve.addUniqueField(field);
+                    cveBuilder.addUniqueField(field, fieldValue != null ? fieldValue.toString() : "null");
                     hasError = true;
                 }
             }
@@ -7889,9 +7859,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try {
                     final String stringValue = (String) fieldValue;
                 } catch (final Exception e) {
-                    Logger.warn(this, "Unable to get string value from text field ["
-                            + field.getVelocityVarName() +
-                            "] in contentlet", e);
+                    Logger.warn(this, String.format("Unable to get string value from text field [%s] in contentlet", field.getVelocityVarName()), e);
                     continue;
                 }
             }
@@ -7906,11 +7874,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         boolean match = Pattern.matches(regext, s);
                         if (!match) {
                             hasError = true;
-                            cve.addPatternField(field);
-                            Logger.warn(this,
-                                    "Field with number regex [" + field.getVelocityVarName()
-                                            + "] does not " +
-                                            "match. Regex: " + regext);
+                            cveBuilder.addPatternField(field, s, regext);
+                            Logger.warn(this, String.format("Field with number regex [%s] does not match. Regex: %s", field.getVelocityVarName(), regext));
                             continue;
                         }
                     } else if (fieldValue instanceof String && UtilMethods.isSet(
@@ -7919,11 +7884,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         boolean match = Pattern.matches(regext, s);
                         if (!match) {
                             hasError = true;
-                            cve.addPatternField(field);
-                            Logger.warn(this,
-                                    "Field with string regex [" + field.getVelocityVarName()
-                                            + "] does not " +
-                                            "match. Regex: " + regext);
+                            cveBuilder.addPatternField(field, s, regext);
+                            Logger.warn(this, String.format("Field with string regex [%s] does not match. Regex: %s", field.getVelocityVarName(), regext));
                             continue;
                         }
                     }
@@ -7934,8 +7896,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 this.validateBinary((File) fieldValue, field.getVelocityVarName(), field, contentType);
             }
         }
-        if (hasError) {
-            throw cve;
+        if (hasError) {throw cveBuilder.build();
         }
     }
 
@@ -8007,12 +7968,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // if the extension of the file is not supported
                             if (!allowed) {
 
-                                final DotContentletValidationException cve = new DotContentletValidationException(
+                                final DotContentletValidationException cve = DotContentletValidationException.builder(
                                         Sneaky.sneak(() -> LanguageUtil.get(
-                                                "message.contentlet.binary.type.notallowed")));
-                                Logger.warn(this, "Name of Binary field [" + fieldName
-                                        + "] has an not allowed type: " + binaryMimeType);
-                                cve.addBadTypeField(legacyField);
+                                                "message.contentlet.binary.type.notallowed")))
+                                        .addBadTypeField(legacyField, binaryMimeType)
+                                        .build();
+                                Logger.warn(this, String.format("Name of Binary field [%s] has an not allowed type: %s", fieldName, binaryMimeType));
                                 throw cve;
                             }
                         }
@@ -8028,17 +7989,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if (-1 != maxLength && // if the user sets a valid value
                                 fileLength > maxLength) {
 
-                            final DotContentletValidationException cve =
-                                    new DotContentletValidationException(
+                            final DotContentletValidationException cve = DotContentletValidationException.builder(
                                             Sneaky.sneak(() -> LanguageUtil.get(
                                                     "message.contentlet.binary.file.exceeds.size",
                                                     binary.getName(),
-                                                    UtilMethods.prettyByteify(maxLength))));
-                            Logger.warn(this,
-                                    "Name of Binary field [" + fieldName + "] has a length: "
-                                            + fileLength
-                                            + " but the max length is: " + maxLength);
-                            cve.addBadTypeField(legacyField);
+                                                    UtilMethods.prettyByteify(maxLength))))
+                                    .addBadTypeField(legacyField, String.valueOf(fileLength))
+                                    .build();
+                            Logger.warn(this, String.format("Name of Binary field [%s] has a length: %d but the max length is: %d", 
+                                    fieldName, fileLength, maxLength));
                             throw cve;
                         }
                     }
@@ -8052,15 +8011,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (contentlet.getHost() != null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (
                 !UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder()
                         .equals(FolderAPI.SYSTEM_FOLDER))) {
-            final DotContentletValidationException cve = new FileAssetValidationException(
+            final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(
                     Sneaky.sneak(() -> LanguageUtil.get(
-                            "message.contentlet.fileasset.invalid.hostfolder")));
-            Logger.warn(this,
-                    "HTML Page [" + contentIdentifier + "] cannot be created directly under System "
-                            +
-                            "Host");
-            cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                    .HOST_FOLDER_FIELD)).asOldField());
+                            "message.contentlet.fileasset.invalid.hostfolder")))
+                    .addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                            .HOST_FOLDER_FIELD)).asOldField(), "System Host")
+                    .build();
+            Logger.warn(this, String.format("HTML Page [%s] cannot be created directly under System Host", contentIdentifier));
             throw cve;
         }
         try {
@@ -8102,12 +8059,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final String errorMsg =
                             "Page URL [" + path + "] already exists with content ID [" + htmlpage
                                     .getId() + "]";
-                    final DotContentletValidationException cve = new FileAssetValidationException(
-                            errorMsg);
+                    final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(errorMsg)
+                            .addBadTypeField(
+                                    new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
+                                            .URL_FIELD)).asOldField(), path)
+                            .build();
                     Logger.warn(this, errorMsg);
-                    cve.addBadTypeField(
-                            new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
-                                    .URL_FIELD)).asOldField());
                     throw cve;
                 }
                 UtilMethods.validateFileName(url);
@@ -8117,11 +8074,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String errorMsg =
                     "Contentlet [" + contentIdentifier + "] has an invalid URL: " + contentlet
                             .getStringProperty(HTMLPageAssetAPI.URL_FIELD);
-            final DotContentletValidationException cve = new FileAssetValidationException(errorMsg);
+            final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(errorMsg)
+                    .addBadTypeField(
+                            new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
+                                    .URL_FIELD)).asOldField(), contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD))
+                    .build();
             Logger.warn(this, errorMsg);
-            cve.addBadTypeField(
-                    new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
-                            .URL_FIELD)).asOldField());
             throw cve;
         }
     }
@@ -8132,14 +8090,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (contentlet.getHost() != null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (
                 !UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder()
                         .equals(FolderAPI.SYSTEM_FOLDER))) {
-            final DotContentletValidationException cve = new FileAssetValidationException(
+            final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(
                     Sneaky.sneak(() -> LanguageUtil.get(
-                            "message.contentlet.fileasset.invalid.hostfolder")));
+                            "message.contentlet.fileasset.invalid.hostfolder")))
+                    .addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                            .HOST_FOLDER_FIELD)).asOldField(), "System Host")
+                    .build();
             Logger.warn(this, "File Asset [" + contentIdentifier
                     + "] cannot be created directly under System " +
                     "Host");
-            cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                    .HOST_FOLDER_FIELD)).asOldField());
             throw cve;
         }
 
@@ -8164,15 +8123,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     fileNameExists = APILocator.getFileAssetAPI()
                             .fileNameExists(site, folder, fileName, contentlet.getIdentifier());
                     if (!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
-                        final DotContentletValidationException cve = new FileAssetValidationException(
+                        final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(
                                 Sneaky.sneak(() -> LanguageUtil.get(
-                                        "message.file_asset.error.filename.filters")));
+                                        "message.file_asset.error.filename.filters")))
+                                .addBadTypeField(
+                                        new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                                                .HOST_FOLDER_FIELD)).asOldField(), fileName)
+                                .build();
                         Logger.warn(this, "File Asset [" + contentIdentifier
                                 + "] does not match specified folder" +
                                 " file filters");
-                        cve.addBadTypeField(
-                                new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                                        .HOST_FOLDER_FIELD)).asOldField());
                         throw cve;
                     }
                 }
@@ -8188,13 +8148,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new FileAssetValidationException(errorMsg, e);
             }
             if (fileNameExists) {
-                final DotContentletValidationException cve = new FileAssetValidationException(
+                final FileAssetValidationException cve = DotContentletValidationException.fileAssetBuilder(
                         Sneaky.sneak(() -> LanguageUtil.get(
-                                "message.contentlet.fileasset.filename.already.exists")));
+                                "message.contentlet.fileasset.filename.already.exists")))
+                        .addBadTypeField(
+                                new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                                        .HOST_FOLDER_FIELD)).asOldField(), "filename already exists")
+                        .build();
                 Logger.warn(this, "Name of File Asset [" + contentIdentifier + "] already exists");
-                cve.addBadTypeField(
-                        new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                                .HOST_FOLDER_FIELD)).asOldField());
                 throw cve;
             }
         }
@@ -8360,10 +8321,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if (!foundInRelationships) {
                     hasError = true;
-                    Logger.error(this, "Required " +
-                            (checkParent ? "child" : "parent" )  +
-                            " relationship [" + rel.getRelationTypeValue() +
-                            "] is not present for contentlet [" + contentletId + "]");
+                    Logger.error(this, String.format("Required %s relationship [%s] is not present for contentlet [%s]", 
+                            (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));
                     cve.addRequiredRelationship(rel, new ArrayList<>());
                 }
             }
@@ -8394,8 +8353,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (APILocator.getRelationshipAPI().sameParentAndChild(relationship)) {
                     if (contentsInRelationship.stream().anyMatch(
                             con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
-                        Logger.error(this,
-                                "Cannot relate content [" + contentletId + "] to itself");
+                        Logger.error(this, String.format("Cannot relate content [%s] to itself", contentletId));
                         hasError = true;
                         cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                     }
@@ -8409,10 +8367,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         && isRelationshipParent) {
                     if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        Logger.error(this,
-                                "Error in Contentlet [" + contentletId + "]: Child relationship ["
-                                        + relationship
-                                        .getRelationTypeValue() + "] is required.");
+                        Logger.error(this, String.format("Error in Contentlet [%s]: Child relationship [%s] is required.", 
+                                contentletId, relationship.getRelationTypeValue()));
                         cve.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     for (final Contentlet contentInRelationship : contentsInRelationship) {
@@ -8433,12 +8389,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     && !relatedContents.get(0).getIdentifier()
                                     .equals(contentlet.getIdentifier())) {
                                 final StringBuilder error = new StringBuilder();
-                                error.append("ERROR! Parent content [").append(contentletId)
-                                        .append("] cannot be related to child content [")
-                                        .append(contentInRelationship.getIdentifier())
-                                        .append("] because it is already related to parent content [")
-                                        .append(relatedContents.get(0).getIdentifier()).append("]");
-                                Logger.error(this, error.toString());
+                                final String errorMessage = String.format("ERROR! Parent content [%s] cannot be related to child content [%s] because it is already related to parent content [%s]",
+                                        contentletId, contentInRelationship.getIdentifier(), relatedContents.get(0).getIdentifier());
+                                Logger.error(this, errorMessage);
                                 hasError = true;
                                 cve.addBadCardinalityRelationship(relationship,
                                         contentsInRelationship);
@@ -8447,29 +8400,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             if (!contentInRelationship.getContentTypeId()
                                     .equalsIgnoreCase(relationship.getChildStructureInode())) {
                                 hasError = true;
-                                Logger.error(this,
-                                        "Content Type of Contentlet [" + contentInRelationship
-                                                .getIdentifier()
-                                                + "] does not match the Content Type in child relationship ["
-                                                +
-                                                relationship.getRelationTypeValue() + "]");
+                                Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in child relationship [%s]",
+                                        contentInRelationship.getIdentifier(), relationship.getRelationTypeValue()));
                                 cve.addInvalidContentRelationship(relationship,
                                         contentsInRelationship);
                             }
                         } catch (final DotDataException e) {
-                            Logger.error(this,
-                                    "An error occurred when retrieving information from related Contentlet"
-                                            +
-                                            " [" + contentInRelationship.getIdentifier() + "]", e);
+                            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]", 
+                                    contentInRelationship.getIdentifier()), e);
                         }
                     }
                 } else if (APILocator.getRelationshipAPI().isChild(relationship, contentType)) {
                     if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        Logger.error(this,
-                                "Error in Contentlet [" + contentletId + "]: Parent relationship ["
-                                        + relationship
-                                        .getRelationTypeValue() + "] is required.");
+                        Logger.error(this, String.format("Error in Contentlet [%s]: Parent relationship [%s] is required.", 
+                                contentletId, relationship.getRelationTypeValue()));
                         cve.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     //grouping by id to avoid duplicate contents due to different languages
@@ -8488,13 +8433,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
                             && contentsInRelationshipSameLanguage.size() > 1) {
                         final StringBuilder error = new StringBuilder();
-                        error.append("ERROR! Child content [").append(contentletId)
-                                .append("] is already related to another parent content [");
-                        for (final Contentlet con : contentsInRelationship) {
-                            error.append(con.getIdentifier()).append(", ");
-                        }
-                        error.append("]");
-                        Logger.error(this, error.toString());
+                        final String parentIds = contentsInRelationship.stream()
+                                .map(Contentlet::getIdentifier)
+                                .collect(java.util.stream.Collectors.joining(", "));
+                        final String errorMessage = String.format("ERROR! Child content [%s] is already related to another parent content [%s]", 
+                                contentletId, parentIds);
+                        Logger.error(this, errorMessage);
                         hasError = true;
                         cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                     }
@@ -8502,9 +8446,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     for (final Contentlet contentInRelationship : contentsInRelationship) {
                         if (!UtilMethods.isSet(contentInRelationship.getContentTypeId())) {
                             hasError = true;
-                            Logger.error(this, "Contentlet with Identifier [" + contentletId
-                                    + "] has an empty " +
-                                    "Content Type Inode");
+                            Logger.error(this, String.format("Contentlet with Identifier [%s] has an empty Content Type Inode", contentletId));
                             cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                             continue;
                         }
@@ -8512,18 +8454,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 && !contentInRelationship.getContentTypeId().equalsIgnoreCase(
                                 relationship.getParentStructureInode())) {
                             hasError = true;
-                            Logger.error(this, "Content Type of Contentlet [" + contentletId
-                                    + "] does not match the " +
-                                    "Content Type in relationship ["
-                                    + relationship.getRelationTypeValue() + "]");
+                            Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in relationship [%s]", 
+                                    contentletId, relationship.getRelationTypeValue()));
                             cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                         }
                     }
                 } else {
                     hasError = true;
-                    Logger.error(this, "Relationship [" + relationship.getRelationTypeValue()
-                            + "] is neither parent nor child" +
-                            " of Contentlet [" + contentletId + "]");
+                    Logger.error(this, String.format("Relationship [%s] is neither parent nor child of Contentlet [%s]", 
+                            relationship.getRelationTypeValue(), contentletId));
                     cve.addBadRelationship(relationship, contentsInRelationship);
                 }
             }
@@ -8546,11 +8485,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         //Trying to relate more than one piece of content
         if (contentsInRelationship.size() > 1) {
-            Logger.error(this,
-                    "Error in Contentlet [" + contentlet.getIdentifier() + "]: Relationship ["
-                            + relationship
-                            .getRelationTypeValue()
-                            + "] has been defined as One to One");
+            Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One", 
+                    contentlet.getIdentifier(), relationship.getRelationTypeValue()));
             cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
             return false;
         }
@@ -8563,19 +8499,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             .getSystemUser(), true, 1, 0, null);
             if (relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
                     .equals(contentlet.getIdentifier())) {
-                Logger.error(this,
-                        "Error in related Contentlet [" + relatedContents.get(0)
-                                .getIdentifier
-                                        () + "]: Relationship [" + relationship
-                                .getRelationTypeValue() + "] has been defined " +
-                                "as One to One");
+                Logger.error(this, String.format("Error in related Contentlet [%s]: Relationship [%s] has been defined as One to One", 
+                        relatedContents.get(0).getIdentifier(), relationship.getRelationTypeValue()));
                 cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                 return false;
             }
         } catch (final DotDataException e) {
-            Logger.error(this,
-                    "An error occurred when retrieving information from related Contentlet" +
-                            " [" + contentsInRelationship.get(0).getIdentifier() + "]", e);
+            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]", 
+                    contentsInRelationship.get(0).getIdentifier()), e);
             cve.addInvalidContentRelationship(relationship, contentsInRelationship);
             return false;
         }
