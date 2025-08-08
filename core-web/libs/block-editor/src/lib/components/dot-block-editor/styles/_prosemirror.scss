@@ -41,6 +41,10 @@ tiptap-editor ::ng-deep .ProseMirror {
         pointer-events: none;
     }
 
+    pre.is-empty::before {
+        position: unset;
+    }
+
     .is-empty {
         position: relative;
         .add-button {
