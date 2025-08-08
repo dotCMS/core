@@ -102,6 +102,7 @@
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
+	
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -116,6 +117,11 @@
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
 		<async-supported>true</async-supported>
     </filter>
+	<filter>
+		<filter-name>ScssQueryParamFilter</filter-name>
+		<filter-class>com.dotcms.csspreproc.ScssQueryParamFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -131,6 +137,11 @@
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>ScssQueryParamFilter</filter-name>
+		<url-pattern>*.scss</url-pattern>
 	</filter-mapping>
 
 	<filter-mapping>
@@ -182,22 +193,27 @@
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-    <filter-mapping>
-        <filter-name>VisitorFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+
+	<filter-mapping>
+		<filter-name>VisitorFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
@@ -386,6 +402,7 @@
         <servlet-name>SassPreProcessServlet</servlet-name>
         <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
     </servlet>
+
     <!-- REST -->
   <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -441,10 +458,16 @@
       <servlet-name>SassPreProcessServlet</servlet-name>
       <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
+
     
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTSASS/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+      <servlet-name>CSSPreProcessServlet</servlet-name>
+      <url-pattern>*.scss</url-pattern>
     </servlet-mapping>
     
     <servlet-mapping>
