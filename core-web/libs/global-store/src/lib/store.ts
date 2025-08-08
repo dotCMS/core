@@ -17,6 +17,8 @@ import { switchMap } from 'rxjs/operators';
 import { DotSiteService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
 
+import { withSystem } from './with-system.feature';
+
 /**
  * Represents the global application state.
  *
@@ -25,14 +27,6 @@ import { SiteEntity } from '@dotcms/dotcms-models';
  * and can be extended to include other global state properties.
  */
 export interface GlobalState {
-    /**
-     * The currently authenticated user information.
-     *
-     * Contains the user's name and email address. Set to `null` when no user
-     * is authenticated.
-     */
-    user: { name: string; email: string } | null;
-
     /**
      * The currently selected site details.
      *
@@ -45,24 +39,24 @@ export interface GlobalState {
  * The initial state for the global store.
  *
  * This object represents the default state when the application starts,
- * with no user authenticated.
+ * with no site selected.
  */
 const initialState: GlobalState = {
-    user: null,
     siteDetails: null
 };
 
 /**
  * GlobalStore: Global application state using NgRx Signals.
  *
- * This store manages essential global state including user authentication
- * and current site information. It automatically loads the current site on initialization.
+ * This store manages essential global state including user authentication,
+ * current site information, and system configuration. It uses the custom
+ * `withSystem` feature for system configuration management.
  *
  * Current features:
  * - Auto-loads current site on store initialization
  * - Provides currentSiteId computed for any services that need site context
  * - Stores complete site entity from API endpoint
- * - Simple user authentication state
+ * - Includes withSystem feature for system configuration management
  *
  * Example usage:
  * ```typescript
@@ -81,37 +75,13 @@ const initialState: GlobalState = {
  * const site = this.globalStore.siteDetails();
  * console.log(site?.name, site?.hostname);
  *
- * // Check authentication
- * const isLoggedIn = this.globalStore.isLoggedIn();
- * ```
  */
 export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
+    withSystem(),
     withMethods((store, siteService = inject(DotSiteService)) => {
         return {
-            /**
-             * Authenticates a user and updates the global state.
-             *
-             * This method sets the user information in the global store,
-             * effectively logging the user into the application.
-             *
-             * @param user - The user information to authenticate
-             * @param user.name - The user's display name
-             * @param user.email - The user's email address
-             *
-             * @example
-             * ```typescript
-             * this.globalStore.login({
-             *   name: 'John Doe',
-             *   email: 'john@example.com'
-             * });
-             * ```
-             */
-            login(user: { name: string; email: string }) {
-                patchState(store, { user });
-            },
-
             /**
              * Loads the current site from DotCMS and updates the global store.
              *
@@ -153,7 +123,6 @@ export const GlobalStore = signalStore(
              *
              * @param site - The SiteEntity to set as the current site
              *
-             * @example
              */
             setCurrentSite: (site: SiteEntity) => {
                 patchState(store, {
@@ -162,23 +131,7 @@ export const GlobalStore = signalStore(
             }
         };
     }),
-    withComputed(({ user, siteDetails }) => ({
-        /**
-         * Computed signal indicating whether a user is currently authenticated.
-         *
-         * @returns `true` if user is not null, `false` otherwise
-         *
-         * @example
-         * ```typescript
-         * @if (globalStore.isLoggedIn()) {
-         *   <span>Welcome, {{ globalStore.user()?.name }}!</span>
-         * } @else {
-         *   <button>Login</button>
-         * }
-         * ```
-         */
-        isLoggedIn: computed(() => user() != null),
-
+    withComputed(({ siteDetails }) => ({
         /**
          * Computed signal that returns the current site identifier.
          *
@@ -202,11 +155,13 @@ export const GlobalStore = signalStore(
         /**
          * Automatically loads the current site when the store is initialized.
          *
-         * This ensures the currentSiteId is available immediately after
-         * injecting the store in any component.
+         * The system configuration is automatically loaded by the withSystem feature.
+         * This ensures the currentSiteId is available immediately after injecting
+         * the store in any component.
          */
         onInit(store) {
             // Load current site on store initialization
+            // System configuration is automatically loaded by withSystem feature
             store.loadCurrentSite();
         }
     })
