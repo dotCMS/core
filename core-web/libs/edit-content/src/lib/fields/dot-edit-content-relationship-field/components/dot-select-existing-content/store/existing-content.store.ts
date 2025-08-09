@@ -8,7 +8,7 @@ import { computed, inject } from '@angular/core';
 import { InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { TablePageEvent } from 'primeng/table';
 
-import { tap, switchMap, filter } from 'rxjs/operators';
+import { filter, switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -144,6 +144,7 @@ export const ExistingContentStore = signalStore(
                 contentTypeId: string;
                 selectionMode: SelectionMode;
                 selectedItemsIds: string[];
+                showFields?: string[] | null;
             }>(
                 pipe(
                     tap(({ selectionMode }) =>
@@ -163,16 +164,16 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId, selectedItemsIds }) =>
-                        relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
+                    switchMap(({ contentTypeId, selectedItemsIds, showFields }) =>
+                        relationshipFieldService.getColumnsAndContent(contentTypeId, showFields).pipe(
                             tapResponse({
                                 next: ([columns, searchResponse]) => {
                                     const data = searchResponse.contentlets;
                                     const selectionItems =
                                         selectedItemsIds.length > 0
                                             ? data.filter((item) =>
-                                                  selectedItemsIds.includes(item.inode)
-                                              )
+                                                selectedItemsIds.includes(item.inode)
+                                            )
                                             : [];
 
                                     patchState(store, {

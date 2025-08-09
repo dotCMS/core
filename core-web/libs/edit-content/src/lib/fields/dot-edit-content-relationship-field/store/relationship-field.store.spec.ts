@@ -91,33 +91,42 @@ describe('RelationshipFieldStore', () => {
     describe('State Management', () => {
         describe('initialize', () => {
             it('should set single selection mode for ONE_TO_ONE relationship', () => {
-                store.initialize({
-                    cardinality: 2,
-                    contentlet: mockContentlet,
+                const field = {
+                    ...mockField,
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 2 }
+                };
+                store.initialize({
+                    field,
+                    contentlet: mockContentlet
                 });
 
                 expect(store.selectionMode()).toBe('single');
             });
 
             it('should set multiple selection mode for other relationship types', () => {
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
+                const field = {
+                    ...mockField,
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 0 }
+                };
+                store.initialize({
+                    field,
+                    contentlet: mockContentlet
                 });
 
                 expect(store.selectionMode()).toBe('multiple');
             });
 
             it('should initialize data from contentlet', () => {
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
+                const field = {
+                    ...mockField,
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 0 }
+                };
+                store.initialize({
+                    field,
+                    contentlet: mockContentlet
                 });
 
                 expect(store.data()).toBeDefined();
@@ -198,11 +207,14 @@ describe('RelationshipFieldStore', () => {
 
         describe('isDisabledCreateNewContent', () => {
             beforeEach(() => {
-                store.initialize({
-                    cardinality: 2,
-                    contentlet: mockContentlet,
+                const field = {
+                    ...mockField,
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 2 }
+                };
+                store.initialize({
+                    field,
+                    contentlet: mockContentlet
                 });
             });
 
@@ -219,11 +231,14 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should not disable for multiple mode regardless of items', () => {
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
+                const field = {
+                    ...mockField,
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 0 }
+                };
+                store.initialize({
+                    field,
+                    contentlet: mockContentlet
                 });
                 store.setData(mockData);
 
@@ -322,60 +337,33 @@ describe('RelationshipFieldStore', () => {
                     inode: 'empty',
                     variable: 'relationship_field'
                 });
-
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: emptyContentlet,
+                const field = {
+                    ...mockField,
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 0 }
+                };
+                store.initialize({
+                    field,
+                    contentlet: emptyContentlet
                 });
 
                 expect(store.data()).toBeDefined();
                 expect(store.data().length).toBe(0);
             });
 
-            it('should handle extreme cardinality values', async () => {
-                const dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
-                const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
+            it('should handle extreme cardinality values', () => {
+                expect(() => {
+                    const field = {
+                        ...mockField,
+                        variable: 'relationship_field',
+                        relationships: { cardinality: 999 }
+                    };
+                    store.initialize({
+                        field,
+                        contentlet: mockContentlet
+                    });
+                }).toThrowError();
 
-                store.initialize({
-                    cardinality: 999,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
-                });
-
-                // Wait for async operation to complete
-                await new Promise((resolve) => setTimeout(resolve, 10));
-
-                expect(handleErrorSpy).toHaveBeenCalled();
-                expect(store.status()).toBe(ComponentStatus.ERROR);
-            });
-        });
-
-        describe('content type loading', () => {
-            it('should handle content type loading error', async () => {
-                const dotContentTypeService = spectator.inject(DotContentTypeService);
-                const dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
-
-                jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                    throwError(() => new Error('Content type not found'))
-                );
-
-                const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
-
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
-                });
-
-                // Wait for async operation to complete
-                await new Promise((resolve) => setTimeout(resolve, 10));
-
-                expect(handleErrorSpy).toHaveBeenCalled();
-                expect(store.status()).toBe(ComponentStatus.ERROR);
             });
         });
     });

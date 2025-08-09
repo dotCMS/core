@@ -9,11 +9,11 @@ import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import {
+    DotContentSearchParams,
     DotContentSearchService,
     DotFieldService,
     DotHttpErrorManagerService,
-    DotLanguagesService,
-    DotContentSearchParams
+    DotLanguagesService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
@@ -175,6 +175,132 @@ describe('RelationshipFieldService', () => {
                 );
                 expect(columns).toEqual(expectedColumns);
                 done();
+            });
+        });
+
+        it('should filter columns when showFields is provided', () => {
+            const mockFields = [
+                {
+                    variable: 'field1',
+                    name: 'Field 1'
+                },
+                {
+                    variable: 'field2',
+                    name: 'Field 2'
+                },
+                {
+                    variable: 'field3',
+                    name: 'Field 3'
+                }
+            ] as DotCMSContentTypeField[];
+
+            dotFieldService.getFields.mockReturnValue(of(mockFields));
+
+            const contentTypeId = '123';
+            const showFields = ['field1', 'field3'];
+
+            const expectedColumns = [
+                { field: 'field1', header: 'Field 1' },
+                { field: 'field3', header: 'Field 3' }
+            ];
+
+            spectator.service.getColumns(contentTypeId, showFields).subscribe((columns) => {
+                expect(dotFieldService.getFields).toHaveBeenCalledWith(
+                    contentTypeId,
+                    'SHOW_IN_LIST'
+                );
+                expect(columns).toEqual(expectedColumns);
+            });
+        });
+
+        it('should return all columns when showFields is null', () => {
+            const mockFields = [
+                {
+                    variable: 'field1',
+                    name: 'Field 1'
+                },
+                {
+                    variable: 'field2',
+                    name: 'Field 2'
+                }
+            ] as DotCMSContentTypeField[];
+
+            dotFieldService.getFields.mockReturnValue(of(mockFields));
+
+            const contentTypeId = '123';
+            const showFields = null;
+
+            const expectedColumns = [
+                { field: 'field1', header: 'Field 1' },
+                { field: 'field2', header: 'Field 2' }
+            ];
+
+            spectator.service.getColumns(contentTypeId, showFields).subscribe((columns) => {
+                expect(dotFieldService.getFields).toHaveBeenCalledWith(
+                    contentTypeId,
+                    'SHOW_IN_LIST'
+                );
+                expect(columns).toEqual(expectedColumns);
+            });
+        });
+
+        it('should return empty array when showFields is empty array', () => {
+            const mockFields = [
+                {
+                    variable: 'field1',
+                    name: 'Field 1'
+                },
+                {
+                    variable: 'field2',
+                    name: 'Field 2'
+                }
+            ] as DotCMSContentTypeField[];
+
+            dotFieldService.getFields.mockReturnValue(of(mockFields));
+
+            const contentTypeId = '123';
+            const showFields: string[] = [];
+
+            spectator.service.getColumns(contentTypeId, showFields).subscribe((columns) => {
+                expect(dotFieldService.getFields).toHaveBeenCalledWith(
+                    contentTypeId,
+                    'SHOW_IN_LIST'
+                );
+                expect(columns).toEqual([]);
+            });
+        });
+
+        it('should filter out non-matching fields when showFields is provided', () => {
+            const mockFields = [
+                {
+                    variable: 'field1',
+                    name: 'Field 1'
+                },
+                {
+                    variable: 'field2',
+                    name: 'Field 2'
+                },
+                {
+                    variable: 'field3',
+                    name: 'Field 3'
+                }
+            ] as DotCMSContentTypeField[];
+
+            dotFieldService.getFields.mockReturnValue(of(mockFields));
+
+            const contentTypeId = '123';
+            const showFields = ['field1', 'nonexistent'];
+
+            const expectedColumns = [
+                { field: 'field1', header: 'Field 1' }
+            ];
+
+            spectator.service.getColumns(contentTypeId, showFields).subscribe((columns) => {
+                expect(dotFieldService.getFields).toHaveBeenCalledWith(
+                    contentTypeId,
+                    'SHOW_IN_LIST'
+                );
+                expect(columns).toEqual(expectedColumns);
             });
         });
     });

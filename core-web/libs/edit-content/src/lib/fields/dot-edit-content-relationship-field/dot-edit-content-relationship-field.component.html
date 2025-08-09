@@ -1,3 +1,4 @@
+
 @let pagination = store.pagination();
 @let attributes = $attributes();
 @let showPagination = store.totalPages() > 1;
@@ -5,8 +6,10 @@
 @let hitText = attributes.hitText;
 @let isDisabled = $isDisabled();
 @let isEmpty = data.length === 0;
+@let columns = store.columns();
 
 <p-table
+    [columns]="columns"
     [value]="data"
     data-testid="relationship-field-table"
     styleClass="dotTable p-datatable-relationship"
@@ -16,33 +19,57 @@
     [scrollable]="true"
     [reorderableColumns]="false"
     (onRowReorder)="onRowReorder($event)">
-    <ng-template pTemplate="header" styleClass="relative">
+
+        <ng-template pTemplate="header" let-columns>
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
         <tr class="relationship-field__table_header">
-            <th scope="col" class="min-w-3rem"></th>
-            <th scope="col" [class.min-w-12rem]="!isEmpty">
-                {{ 'dot.file.relationship.field.table.title' | dm }}
-            </th>
-            <th scope="col" [class.min-w-8rem]="!isEmpty">
-                {{ 'dot.file.relationship.field.table.language' | dm }}
-            </th>
-            <th scope="col" [class.min-w-8rem]="!isEmpty">
-                {{ 'dot.file.relationship.field.table.status' | dm }}
-            </th>
-            <th scope="col" class="w-1rem" alignFrozen="right" pFrozenColumn [frozen]="true">
-                <p-button
-                    (onClick)="menu.toggle($event)"
-                    size="small"
-                    icon="pi pi-plus"
-                    [text]="true"
-                    [disabled]="isDisabled" />
-            </th>
+            @for (col of columns; track col.field) {
+                @switch (col.field) {
+                    @case ('reorder') {
+                        <th scope="col"
+                            [style.width]="col.width"
+                            [style.max-width]="col.width"
+                            data-testid="reorder-column-header">
+                            <!-- Empty header for reorder column -->
+                        </th>
+                    }
+                    @case ('actions') {
+                        <th scope="col"
+                            [style.width]="col.width"
+                            [style.max-width]="col.width"
+                            [style.overflow]="'hidden'"
+                            [attr.alignFrozen]="col.alignFrozen"
+                            pFrozenColumn
+                            [frozen]="col.frozen"
+                            data-testid="actions-column-header">
+                            <div class="flex justify-content-center" [style.width]="col.width">
+                                <p-button
+                                    (onClick)="menu.toggle($event)"
+                                    size="small"
+                                    icon="pi pi-plus"
+                                    [text]="true"
+                                    [disabled]="isDisabled" />
+                            </div>
+                        </th>
+                    }
+                    @default {
+                        <th scope="col"
+                            [style.min-width]="col.width"
+                            [class.min-w-12rem]="col.field === 'title' && !isEmpty"
+                            [class.min-w-8rem]="(col.field === 'language' || col.field === 'status') && !isEmpty"
+                            [attr.data-testid]="col.field + '-column-header'">
+                            {{ col.header }}
+                        </th>
+                    }
+                }
+            }
         </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+
+    <ng-template pTemplate="emptymessage" let-columns>
         <tr>
-            <td colspan="5">
+            <td [attr.colspan]="columns.length">
                 <div class="flex p-2 gap-2 justify-content-center">
                     <i class="pi pi-folder-open"></i>
                     <p class="text-500">{{ 'dot.file.relationship.field.empty.message' | dm }}</p>
@@ -50,41 +77,88 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-item let-index="rowIndex">
+
+            <ng-template pTemplate="body" let-rowData let-index="rowIndex" let-columns="columns">
         <tr
             [pReorderableRow]="index"
             [class.opacity-50]="isDisabled"
             [class.cursor-not-allowed]="isDisabled">
-            <td>
-                @if (!isDisabled) {
-                    <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
-                } @else {
-                    <span class="pi pi-bars text-gray-500 cursor-not-allowed"></span>
+
+            @for (col of columns; track col.field) {
+                @switch (col.field) {
+                    @case ('reorder') {
+                        <td [style.width]="col.width" [style.max-width]="col.width">
+                            <div class="flex justify-content-center" [style.width]="col.width">
+                                @if (!isDisabled) {
+                                    <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
+                                } @else {
+                                    <span class="pi pi-bars text-gray-500 cursor-not-allowed"></span>
+                                }
+                            </div>
+                        </td>
+                    }
+                    @case ('title') {
+                        <td [style.min-width]="col.width"
+                            [class.min-w-12rem]="!isEmpty"
+                            [class.cursor-not-allowed]="isDisabled">
+                            <p class="truncate-text">{{ rowData.title }}</p>
+                        </td>
+                    }
+                    @case ('language') {
+                        <td [style.min-width]="col.width"
+                            [class.min-w-8rem]="!isEmpty"
+                            [class.cursor-not-allowed]="isDisabled">
+                            {{ rowData.language | language }}
+                        </td>
+                    }
+                    @case ('status') {
+                        <td [style.min-width]="col.width"
+                            [class.min-w-8rem]="!isEmpty"
+                            [class.cursor-not-allowed]="isDisabled">
+                            @let status = rowData | contentletStatus;
+                            <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
+                        </td>
+                    }
+                    @case ('actions') {
+                        <td pFrozenColumn
+                            [style.width]="col.width"
+                            [style.max-width]="col.width"
+                            [style.overflow]="'hidden'"
+                            [attr.alignFrozen]="col.alignFrozen"
+                            [frozen]="col.frozen"
+                            [class.cursor-not-allowed]="isDisabled">
+                            <div class="flex justify-content-center" [style.width]="col.width">
+                                <p-button
+                                    size="small"
+                                    icon="pi pi-times"
+                                    severity="secondary"
+                                    [text]="true"
+                                    [disabled]="isDisabled"
+                                    (onClick)="deleteItem(rowData.inode)" />
+                            </div>
+                        </td>
+                    }
+                    @default {
+                        <td [style.min-width]="col.width"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [attr.data-testid]="col.field + '-column-data'">
+                            @if (col.type === 'image') {
+                                <div class="flex justify-content-center">
+                                    <img
+                                        [ngSrc]="rowData[col.field]"
+                                        [alt]="col.field"
+
+                                        width="40"
+                                        height="40"
+                                        style="object-fit: cover;" />
+                                </div>
+                            } @else {
+                                <p class="truncate-text">{{ rowData[col.field] }}</p>
+                            }
+                        </td>
+                    }
                 }
-            </td>
-            <td class="min-w-12rem" [class.cursor-not-allowed]="isDisabled">
-                <p class="truncate-text">{{ item.title }}</p>
-            </td>
-            <td class="min-w-8rem" [class.cursor-not-allowed]="isDisabled">
-                {{ item.language | language }}
-            </td>
-            <td class="min-w-8rem" [class.cursor-not-allowed]="isDisabled">
-                @let status = item | contentletStatus;
-                <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
-            </td>
-            <td
-                pFrozenColumn
-                alignFrozen="right"
-                [frozen]="true"
-                [class.cursor-not-allowed]="isDisabled">
-                <p-button
-                    size="small"
-                    icon="pi pi-times"
-                    severity="secondary"
-                    [text]="true"
-                    [disabled]="isDisabled"
-                    (onClick)="deleteItem(item.inode)" />
-            </td>
+            }
         </tr>
     </ng-template>
 
