@@ -1218,6 +1218,16 @@ public interface ContentletAPIPostHook {
     * @param returnValue - value returned by primary API Method */
 	public default void deleteOldContent(Date deleteFrom,int returnValue){}
 
+   /**
+    * Post-hook for bounded content deletion within a specific date range.
+    * This method is called after the bounded deletion operation completes.
+    * 
+    * @param deleteFrom The start date (inclusive) that was used for deletion.
+    * @param deleteTo The end date (exclusive) that was used for deletion.
+    * @param returnValue The number of records deleted by the primary API method.
+    */
+	public default void deleteOldContent(Date deleteFrom, Date deleteTo, int returnValue){}
+
     /**
      *
      * @param structureInode

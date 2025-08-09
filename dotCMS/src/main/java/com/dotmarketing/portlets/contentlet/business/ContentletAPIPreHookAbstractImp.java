@@ -10,4 +10,15 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 
 
     
+
+    @Override
+    public boolean deleteOldContent(Date deleteFrom) {
+        return true;
+    }
+
+    @Override
+    public boolean deleteOldContent(Date deleteFrom, Date deleteTo) {
+        return true;
+    }
+
 }
