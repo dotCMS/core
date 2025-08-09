@@ -14,12 +14,16 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.After;
 
 public class CMSMaintenanceFactoryTest {
 
@@ -75,3 +79,4 @@ public class CMSMaintenanceFactoryTest {
 
     }
 }
+
