@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     effect,
     forwardRef,
@@ -11,6 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { signalMethod } from '@ngrx/signals';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -59,7 +61,9 @@ import { LanguagePipe } from '../../pipes/language.pipe';
     ],
     templateUrl: './dot-edit-content-relationship-field.component.html',
     styleUrls: ['./dot-edit-content-relationship-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotEditContentRelationshipFieldComponent implements ControlValueAccessor {
     /**
@@ -142,6 +146,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
+    readonly updateValueField = signalMethod<string>((value) => {
+        if (this.onChange && this.onTouched) {
+            this.onChange(value);
+            this.onTouched();
+        }
+    });
+
     /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
      * It sets the cardinality of the relationship field based on the field's cardinality.
@@ -153,28 +164,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             const field = this.$field();
             const contentlet = this.$contentlet();
 
-            const cardinality = field?.relationships?.cardinality ?? null;
-            const contentTypeId = getContentTypeIdFromRelationship(field);
-
-            if (cardinality === null || !field?.variable || !contentTypeId) {
-                return;
-            }
-
             this.store.initialize({
-                cardinality,
-                contentlet,
-                variable: field?.variable,
-                contentTypeId
+                field,
+                contentlet
             });
         });
 
-        effect(() => {
-            if (this.onChange && this.onTouched) {
-                const value = this.store.formattedRelationship();
-                this.onChange(value);
-                this.onTouched();
-            }
-        });
+        this.updateValueField(this.store.formattedRelationship);
     }
 
     /**
@@ -189,6 +185,8 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             hitText: field?.hint || null
         };
     });
+
+    $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
 
     /**
      * Set the value of the field.

@@ -1,5 +1,5 @@
 <ul [class.dot-nav-sub__collapsed]="collapsed" #ul class="dot-nav-sub">
-    @for (subItem of data.menuItems; track subItem) {
+    @for (subItem of data.menuItems; track $index) {
         <li class="dot-nav-sub__item">
             <a
                 (click)="onItemClick($event, subItem)"

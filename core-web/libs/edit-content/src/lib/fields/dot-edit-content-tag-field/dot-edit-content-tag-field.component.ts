@@ -1,6 +1,5 @@
 import { BehaviorSubject, EMPTY } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -41,7 +40,7 @@ export const AUTO_COMPLETE_UNIQUE = true;
  */
 @Component({
     selector: 'dot-edit-content-tag-field',
-    imports: [CommonModule, AutoCompleteModule, FormsModule, ReactiveFormsModule],
+    imports: [AutoCompleteModule, FormsModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-tag-field.component.html',
     styleUrl: './dot-edit-content-tag-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,

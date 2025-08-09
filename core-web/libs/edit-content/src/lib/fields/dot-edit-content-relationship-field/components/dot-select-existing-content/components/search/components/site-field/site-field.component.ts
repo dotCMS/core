@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,13 +29,7 @@ import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pi
  */
 @Component({
     selector: 'dot-site-field',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        TreeSelectModule,
-        TruncatePathPipe,
-        DotMessagePipe
-    ],
+    imports: [ReactiveFormsModule, TreeSelectModule, TruncatePathPipe, DotMessagePipe],
     providers: [
         SiteFieldStore,
         {

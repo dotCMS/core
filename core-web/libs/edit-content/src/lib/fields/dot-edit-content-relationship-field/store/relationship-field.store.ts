@@ -1,28 +1,33 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotContentTypeService, DotFieldService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
+    DotCMSContentTypeField,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
-import { SelectionMode } from '../models/relationship.models';
-import { getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
+import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
+import { SelectionMode, TableColumn } from '../models/relationship.models';
+import { getColumns, getContentTypeIdFromRelationship, getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
+    field: DotCMSContentTypeField | null;
     selectionMode: SelectionMode | null;
     contentType: DotCMSContentType | null;
     isNewEditorEnabled: boolean;
+    staticColumns: number;
+    columns: TableColumn[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -33,9 +38,12 @@ export interface RelationshipFieldState {
 const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
+    field: null,
+    columns: [],
     selectionMode: null,
     contentType: null,
     isNewEditorEnabled: false,
+    staticColumns: STATIC_COLUMNS,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -79,13 +87,14 @@ export const RelationshipFieldStore = signalStore(
             const identifiers = data.map((item) => item.identifier).join(',');
 
             return `${identifiers}`;
-        })
+        }),
     })),
     withMethods(
         (
             store,
             dotContentTypeService = inject(DotContentTypeService),
-            dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
+            dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            dotFieldService = inject(DotFieldService)
         ) => ({
             /**
              * Sets the data in the state.
@@ -103,18 +112,22 @@ export const RelationshipFieldStore = signalStore(
              * @param {string} params.contentTypeId - The ID of the content type to load.
              */
             initialize: rxMethod<{
-                cardinality: number;
+                field: DotCMSContentTypeField;
                 contentlet: DotCMSContentlet;
-                variable: string;
-                contentTypeId: string;
-            }>((params$) =>
-                params$.pipe(
-                    switchMap((params) => {
-                        const { cardinality, contentlet, variable, contentTypeId } = params;
+            }>(
+                pipe(
+                    switchMap(({ field, contentlet }) => {
+                        const cardinality = field?.relationships?.cardinality ?? null;
+                        const contentTypeId = getContentTypeIdFromRelationship(field);
+
+                        if (cardinality === null || !field?.variable || !contentTypeId) {
+                            return EMPTY;
+                        }
 
                         // Validate and set initial data
-                        const data = getRelationshipFromContentlet({ contentlet, variable });
+                        const data = getRelationshipFromContentlet({ contentlet, variable: field.variable });
                         const selectionMode = getSelectionModeByCardinality(cardinality);
+                        const columns = getColumns(field, data);
 
                         // Reset state first
                         patchState(store, {
@@ -122,7 +135,9 @@ export const RelationshipFieldStore = signalStore(
                             contentType: null, // Reset contentType to prevent stale state
                             isNewEditorEnabled: false, // Reset isNewEditorEnabled to prevent stale state
                             selectionMode,
-                            data
+                            columns,
+                            data,
+                            field
                         });
 
                         // Continue with content type loading

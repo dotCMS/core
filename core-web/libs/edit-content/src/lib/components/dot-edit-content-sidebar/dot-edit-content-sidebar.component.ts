@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -36,7 +35,6 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     styleUrls: ['./dot-edit-content-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         DotMessagePipe,
         DotEditContentSidebarInformationComponent,
         DotEditContentSidebarWorkflowComponent,
