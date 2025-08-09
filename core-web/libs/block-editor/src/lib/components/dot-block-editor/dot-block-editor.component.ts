@@ -59,7 +59,6 @@ import {
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { DotCMSPlusButton } from '../../extensions/dot-plus-button/dot-plus-button.plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
     DotMarketingConfigService,
@@ -139,8 +138,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     get showCharData() {
         try {
             return JSON.parse(this.displayCountBar as string);
-        } catch (e) {
-            console.error(e);
+        } catch {
             return true;
         }
     }
@@ -504,7 +502,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                     return this.#dotMessageService.get('block-editor.placeholder.paragraph');
                 }
             }),
-            DotCMSPlusButton,
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef)
         ];
