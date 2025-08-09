@@ -2,6 +2,16 @@
 package com.dotmarketing.db;
 
 import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
+
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.JNDIUtil;
+import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -19,15 +29,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.JNDIUtil;
-import io.vavr.control.Try;
 
 public class DbConnectionFactory {
 
@@ -601,11 +602,6 @@ public class DbConnectionFactory {
     public static String getTempKeyword() {
         String tempKeyword = "temporary";
 
-        if (isMsSql()) {
-            tempKeyword = "";
-        } else if (isOracle()) {
-            tempKeyword = "global " + tempKeyword;
-        }
 
         return tempKeyword;
     }
