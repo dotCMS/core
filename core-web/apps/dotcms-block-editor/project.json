@@ -36,7 +36,7 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "allowedCommonJsDependencies": ["lodash.isequal"],
+                "allowedCommonJsDependencies": ["lodash.isequal", "date-fns"],
                 "vendorChunk": true,
                 "extractLicenses": false,
                 "buildOptimizer": false,
