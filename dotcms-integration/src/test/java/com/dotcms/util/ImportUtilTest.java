@@ -4808,14 +4808,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Test expected required field label is present",testCase.invalidValue, error.invalidValue().get());
 
         assertThat(error.message().trim(), allOf(
-                startsWith("Value couldn't be parsed"),
-                containsString("supported formats:"),
-                containsString("d-MMM-yy"),
-                containsString("MM/dd/yyyy"),
-                containsString("yyyy-MM-dd"),
-                containsString("["),
-                endsWith("]")
-        ));
+                startsWith("Unable to convert string "),
+                containsString(testCase.invalidValue),
+                containsString("to"),
+                containsString("field:"),
+                containsString(testCase.fieldVariable))
+        );
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_DATE_FORMAT.name(), error.code().get());
