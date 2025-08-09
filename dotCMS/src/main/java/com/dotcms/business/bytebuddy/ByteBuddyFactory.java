@@ -1,11 +1,24 @@
 package com.dotcms.business.bytebuddy;
 
+import static net.bytebuddy.matcher.ElementMatchers.declaresMethod;
+import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
+import static net.bytebuddy.matcher.ElementMatchers.isMethod;
+import static net.bytebuddy.matcher.ElementMatchers.isSynthetic;
+import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
+
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestCostAdvice;
 import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.LogTime;
+import java.lang.annotation.Annotation;
+import java.lang.instrument.Instrumentation;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -17,20 +30,8 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
-
-import java.lang.annotation.Annotation;
-import java.lang.instrument.Instrumentation;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static net.bytebuddy.matcher.ElementMatchers.declaresMethod;
-import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
-import static net.bytebuddy.matcher.ElementMatchers.isMethod;
-import static net.bytebuddy.matcher.ElementMatchers.isSynthetic;
-import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
 
 /**
  * Initializes ByteBuddy to handle transactional annotations. This replaces AspectJ functionality
@@ -51,7 +52,8 @@ public class ByteBuddyFactory {
             CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class,
             LogTime.class, LogTimeAdvice.class,
             EnterpriseFeature.class, EnterpriseFeatureAdvice.class,
-            ExternalTransaction.class, ExternalTransactionAdvice.class
+        ExternalTransaction.class, ExternalTransactionAdvice.class,
+        RequestCost.class, RequestCostAdvice.class
     );
 
 
