@@ -11,6 +11,11 @@ public class DotDateFieldException extends DotContentletStateException implement
 
     public static final String INVALID_DATE_CONVERSION_MESSAGE = "Unable to convert string to date %s, field: %s";
     public static final String INVALID_DATE_TYPE_MESSAGE = "Date fields must either be of type String or Date, field: %s";
+    
+    // Field-type-specific messages
+    public static final String INVALID_DATE_FIELD_CONVERSION_MESSAGE = "Unable to convert string '%s' to date, field: %s";
+    public static final String INVALID_DATETIME_FIELD_CONVERSION_MESSAGE = "Unable to convert string '%s' to date-time, field: %s";
+    public static final String INVALID_TIME_FIELD_CONVERSION_MESSAGE = "Unable to convert string '%s' to time, field: %s";
 
     private final String field;
     private final String value;
@@ -157,10 +162,31 @@ public class DotDateFieldException extends DotContentletStateException implement
             if (messageTemplate.equals(INVALID_DATE_TYPE_MESSAGE)) {
                 message = String.format(messageTemplate, field);
             } else {
-                message = String.format(messageTemplate, value, field);
+                // Use field type specific messages when available
+                String specificMessageTemplate = getFieldTypeSpecificMessage();
+                message = String.format(specificMessageTemplate, value, field);
             }
             return new DotDateFieldException(message, field, value, fieldName, fieldType, 
                                            expectedFormat, acceptedFormats, additionalContext);
+        }
+        
+        /**
+         * Get the appropriate error message template based on field type
+         */
+        private String getFieldTypeSpecificMessage() {
+            if (fieldType != null) {
+                switch (fieldType.toLowerCase()) {
+                    case "date":
+                        return INVALID_DATE_FIELD_CONVERSION_MESSAGE;
+                    case "datetime":
+                    case "date_time":
+                        return INVALID_DATETIME_FIELD_CONVERSION_MESSAGE;
+                    case "time":
+                        return INVALID_TIME_FIELD_CONVERSION_MESSAGE;
+                }
+            }
+            // Fallback to the default generic message
+            return messageTemplate;
         }
     }
 
