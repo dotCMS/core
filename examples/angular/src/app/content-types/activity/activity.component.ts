@@ -5,7 +5,6 @@ import { Activity } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-activity',
-    standalone: true,
     imports: [RouterLink, NgOptimizedImage],
     template: ` <article class="overflow-hidden p-4 bg-white rounded-sm shadow-lg my-2">
         @if (contentlet().inode; as inode) {

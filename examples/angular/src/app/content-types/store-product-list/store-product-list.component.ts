@@ -6,7 +6,6 @@ type ProductWithDiscount = Product & { hasDiscount?: boolean; discountPercentage
 
 @Component({
     selector: 'app-store-product-list',
-    standalone: true,
     imports: [NgOptimizedImage],
     templateUrl: './store-product-list.component.html'
 })

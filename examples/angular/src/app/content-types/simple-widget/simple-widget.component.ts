@@ -5,7 +5,6 @@ import { SimpleWidget } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-simple-widget',
-    standalone: true,
     imports: [DotCMSShowWhenDirective],
     template: `
         @if (isTravelBot()) {
@@ -22,13 +21,13 @@ import { SimpleWidget } from '../../shared/contentlet.model';
             </p>
         </div>
         } @else {
-        <ng-container [dotCMSShowWhen]="UVE_MODE.EDIT">
+        <ng-template [dotCMSShowWhen]="UVE_MODE.EDIT">
             <div
                 class="p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
                 role="alert">
                 <h4>Simple Widget: {{ contentlet().widgetTitle }}</h4>
             </div>
-        </ng-container>
+        </ng-template>
         }
     `
 })

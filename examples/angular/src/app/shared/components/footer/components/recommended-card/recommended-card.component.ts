@@ -15,7 +15,6 @@ import { Contentlet } from '../../../../contentlet.model';
  */
 @Component({
     selector: 'app-recommended-card',
-    standalone: true,
     imports: [NgOptimizedImage, DatePipe, EditContentletButtonComponent],
     template: `
         <div class="flex gap-7 min-h-16 relative">
