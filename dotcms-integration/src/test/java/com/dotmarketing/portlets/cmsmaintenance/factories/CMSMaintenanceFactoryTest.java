@@ -29,6 +29,7 @@ public class CMSMaintenanceFactoryTest {
 
     private static User adminUser;
     private static ContentletAPI contentletAPI;
+    private List<Contentlet> testContentlets = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -36,6 +37,19 @@ public class CMSMaintenanceFactoryTest {
         IntegrationTestInitService.getInstance().init();
         adminUser = TestUserUtils.getAdminUser();
         contentletAPI = APILocator.getContentletAPI();
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        // Clean up test contentlets to avoid interference between tests
+        for (Contentlet contentlet : testContentlets) {
+            try {
+                contentletAPI.destroy(contentlet, adminUser, false);
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+        }
+        testContentlets.clear();
     }
 
     /**
@@ -79,4 +93,5 @@ public class CMSMaintenanceFactoryTest {
 
     }
 }
+
 
