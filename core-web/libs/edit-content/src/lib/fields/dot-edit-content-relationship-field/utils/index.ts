@@ -1,7 +1,7 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
-import { RelationshipTypes } from '../models/relationship.models';
+import { DEFAULT_RELATIONSHIP_COLUMNS, RELATIONSHIP_OPTIONS, SHOW_FIELDS_VARIABLE_KEY, SPECIAL_FIELDS } from '../dot-edit-content-relationship-field.constants';
+import { RelationshipTypes, TableColumn } from '../models/relationship.models';
 
 /**
  * Get the selection mode by cardinality.
@@ -70,4 +70,66 @@ export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField):
     const [contentTypeId] = field.relationships.velocityVar.split('.');
 
     return contentTypeId || null;
+}
+
+export function extractShowFields(field: DotCMSContentTypeField | null): string[] | null {
+    if (!field?.fieldVariables) {
+        return null;
+    }
+
+    const showFieldsVar = field.fieldVariables.find(({ key }) => key === SHOW_FIELDS_VARIABLE_KEY);
+
+    if (!showFieldsVar?.value) {
+        return null;
+    }
+
+    return showFieldsVar.value
+        .split(',')
+        .map(field => field.trim())
+        .filter(field => field.length > 0);
+}
+
+
+export function getTypeField(fieldName: string, data: DotCMSContentlet[]): TableColumn['type'] {
+    const isSpecialField = SPECIAL_FIELDS[fieldName];
+
+    if (isSpecialField) {
+        return isSpecialField;
+    }
+
+    if (data.length > 0) {
+        return isImage(fieldName, data[0]) ? 'image' : 'text';
+    }
+
+    return 'text';
+}
+
+export function getFieldHeader(fieldName: string): string {
+    return fieldName.replace(/([A-Z])/g, ' $1').trim();
+}
+
+export function getColumns(field: DotCMSContentTypeField, data: DotCMSContentlet[]): TableColumn[] {
+    const showFields = extractShowFields(field);
+
+    // Dynamic columns
+    if (showFields?.length > 0) {
+        return showFields.map((fieldName) => ({
+            nameField: fieldName,
+            header: getFieldHeader(fieldName),
+            type: getTypeField(fieldName, data)
+        }));
+    } else {
+        return DEFAULT_RELATIONSHIP_COLUMNS;
+    }
+}
+
+
+export function isImage(fieldName: string, contentlet: DotCMSContentlet): boolean {
+    const metadata = contentlet[`${fieldName}MetaData`];
+
+    if (!metadata) {
+        return false;
+    }
+
+    return metadata?.isImage ? true : false;
 }

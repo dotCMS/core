@@ -121,7 +121,6 @@ export class DotSelectExistingContentComponent implements OnInit {
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
             selectedItemsIds: data.currentItemsIds,
-            showFields: data.showFields
         });
     }
 

@@ -121,10 +121,9 @@ export class RelationshipFieldService {
      */
     getColumnsAndContent(
         contentTypeId: string,
-        showFields?: string[]
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
         return forkJoin([
-            this.getColumns(contentTypeId, showFields),
+            this.getColumns(contentTypeId),
             this.search({ contentTypeId }),
             this.#getLanguages()
         ]).pipe(
@@ -147,10 +146,10 @@ export class RelationshipFieldService {
      * @param showFields The fields to show in the relationship field
      * @returns Observable of Column array
      */
-    getColumns(contentTypeId: string, showFields?: string[]): Observable<Column[]> {
+    getColumns(contentTypeId: string): Observable<Column[]> {
         return this.#fieldService
             .getFields(contentTypeId, 'SHOW_IN_LIST')
-            .pipe(map((fields) => this.#buildColumns(fields, showFields)));
+            .pipe(map((fields) => this.#buildColumns(fields)));
     }
 
     /**
@@ -175,9 +174,7 @@ export class RelationshipFieldService {
      * @param showFields The fields to show in the relationship field
      * @returns Array of Column
      */
-    #buildColumns(columns: DotCMSContentTypeField[], showFields?: string[]): Column[] {
-        const hasShowFields = showFields && showFields.length > 0;
-
+    #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
         return columns
             .filter(
                 (column) =>
@@ -185,13 +182,6 @@ export class RelationshipFieldService {
                     column.name &&
                     !EXCLUDED_COLUMNS.includes(column.name.toLowerCase())
             )
-            .filter((column) => {
-                if (hasShowFields) {
-                    return showFields.includes(column.variable);
-                }
-
-                return true;
-            })
             .map((column) => ({
                 field: column.variable,
                 header: column.name

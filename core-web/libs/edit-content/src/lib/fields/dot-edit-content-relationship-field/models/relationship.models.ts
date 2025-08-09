@@ -29,3 +29,16 @@ export const SelectionModes = {
  * Extracted from the SelectionModes constant to ensure type safety.
  */
 export type SelectionMode = (typeof SelectionModes)[keyof typeof SelectionModes];
+
+/**
+ * Interface representing a table column configuration for the relationship field table.
+ *
+ * @property nameField - The name of the field to display in the column.
+ * @property header - The display header for the column.
+ * @property type - The type of data in the column ('text', 'title', 'language', 'status', 'image').
+ */
+export interface TableColumn {
+    nameField: string;
+    header: string;
+    type: 'text' | 'title' | 'language' | 'status' | 'image';
+}
