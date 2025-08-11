@@ -1,6 +1,6 @@
 import { expect, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
@@ -363,7 +363,6 @@ describe('RelationshipFieldStore', () => {
                         contentlet: mockContentlet
                     });
                 }).toThrowError();
-
             });
         });
     });

@@ -1,16 +1,16 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
-    DotContentSearchParams,
     DotContentSearchService,
     DotFieldService,
     DotHttpErrorManagerService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotContentSearchParams
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 
@@ -116,10 +116,11 @@ export class ExistingContentService {
     /**
      * Gets the columns and content for the relationship field
      * @param contentTypeId The content type ID
+     * @param showFields The fields to show in the relationship field
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
     getColumnsAndContent(
-        contentTypeId: string,
+        contentTypeId: string
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),
@@ -142,6 +143,7 @@ export class ExistingContentService {
     /**
      * Gets the columns for the relationship field
      * @param contentTypeId The content type ID
+     * @param showFields The fields to show in the relationship field
      * @returns Observable of Column array
      */
     getColumns(contentTypeId: string): Observable<Column[]> {

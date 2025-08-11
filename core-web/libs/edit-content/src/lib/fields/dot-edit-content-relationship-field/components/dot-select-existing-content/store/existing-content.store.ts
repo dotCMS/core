@@ -170,8 +170,8 @@ export const ExistingContentStore = signalStore(
                                     const selectionItems =
                                         selectedItemsIds.length > 0
                                             ? data.filter((item) =>
-                                                selectedItemsIds.includes(item.inode)
-                                            )
+                                                  selectedItemsIds.includes(item.inode)
+                                              )
                                             : [];
 
                                     patchState(store, {

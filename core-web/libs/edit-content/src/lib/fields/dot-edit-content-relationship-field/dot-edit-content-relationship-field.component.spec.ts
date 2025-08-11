@@ -515,7 +515,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 },
                 variable: 'relationshipField',
                 fieldVariables: [
-                    { key: 'someOtherVariable', value: 'someValue', clazz: 'test', fieldId: 'test', id: 'test' }
+                    {
+                        key: 'someOtherVariable',
+                        value: 'someValue',
+                        clazz: 'test',
+                        fieldId: 'test',
+                        id: 'test'
+                    }
                 ]
             });
 
@@ -553,7 +559,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 },
                 variable: 'relationshipField',
                 fieldVariables: [
-                    { key: 'showFields', value: 'field1,field2,field3', clazz: 'test', fieldId: 'test', id: 'test' }
+                    {
+                        key: 'showFields',
+                        value: 'field1,field2,field3',
+                        clazz: 'test',
+                        fieldId: 'test',
+                        id: 'test'
+                    }
                 ]
             });
 
@@ -572,7 +584,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 },
                 variable: 'relationshipField',
                 fieldVariables: [
-                    { key: 'showFields', value: ' field1 , field2 , field3 ', clazz: 'test', fieldId: 'test', id: 'test' }
+                    {
+                        key: 'showFields',
+                        value: ' field1 , field2 , field3 ',
+                        clazz: 'test',
+                        fieldId: 'test',
+                        id: 'test'
+                    }
                 ]
             });
 
@@ -591,7 +609,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 },
                 variable: 'relationshipField',
                 fieldVariables: [
-                    { key: 'showFields', value: 'field1,,field2, ,field3', clazz: 'test', fieldId: 'test', id: 'test' }
+                    {
+                        key: 'showFields',
+                        value: 'field1,,field2, ,field3',
+                        clazz: 'test',
+                        fieldId: 'test',
+                        id: 'test'
+                    }
                 ]
             });
 
@@ -610,7 +634,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 },
                 variable: 'relationshipField',
                 fieldVariables: [
-                    { key: 'showFields', value: 'field1,field2', clazz: 'test', fieldId: 'test', id: 'test' }
+                    {
+                        key: 'showFields',
+                        value: 'field1,field2',
+                        clazz: 'test',
+                        fieldId: 'test',
+                        id: 'test'
+                    }
                 ]
             });
 

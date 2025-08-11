@@ -33,7 +33,6 @@ import { HeaderComponent } from './components/dot-select-existing-content/compon
 import { DotSelectExistingContentComponent } from './components/dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
-import { getContentTypeIdFromRelationship } from './utils';
 
 import { DotEditContentDialogComponent } from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
@@ -63,7 +62,6 @@ import { LanguagePipe } from '../../pipes/language.pipe';
     templateUrl: './dot-edit-content-relationship-field.component.html',
     styleUrls: ['./dot-edit-content-relationship-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotEditContentRelationshipFieldComponent implements ControlValueAccessor {
@@ -174,19 +172,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
         this.updateValueField(this.store.formattedRelationship);
     }
 
-    /**
-     * A computed signal that holds the attributes for the relationship field.
-     * This attributes are used to get the content type fields.
-     */
-    $attributes = computed(() => {
-        const field = this.$field();
-
-        return {
-            contentTypeId: getContentTypeIdFromRelationship(field),
-            hitText: field?.hint || null
-        };
-    });
-
     $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
 
     /**
@@ -263,11 +248,10 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             return;
         }
 
-        const attributes = this.$attributes();
-        const contentTypeId = attributes.contentTypeId;
+        const contentType = this.store.contentType();
 
         // Don't open dialog if contentTypeId is null (invalid field data)
-        if (!contentTypeId) {
+        if (!contentType.id) {
             return;
         }
 
@@ -284,7 +268,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
-                contentTypeId: contentTypeId,
+                contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
                 currentItemsIds: this.store.data().map((item) => item.inode)
             },

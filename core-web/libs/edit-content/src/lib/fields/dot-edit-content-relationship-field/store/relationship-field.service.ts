@@ -15,6 +15,7 @@ import {
 
 import { RelationshipFieldState } from './relationship-field.store';
 
+import { getRelationshipFromContentlet } from '../../../utils/relationshipFromContentlet';
 import {
     DEFAULT_RELATIONSHIP_COLUMNS,
     RELATIONSHIP_OPTIONS,
@@ -40,7 +41,7 @@ export class RelationshipFieldService {
             throw new Error('Invalid field');
         }
 
-        const data = this.#getRelationshipFromContentlet({ contentlet, variable: field.variable });
+        const data = getRelationshipFromContentlet({ contentlet, variable: field.variable });
         const selectionMode = this.#getSelectionModeByCardinality(cardinality);
 
         const showFields = this.#extractShowFields(field);
@@ -55,6 +56,7 @@ export class RelationshipFieldService {
                     isNewEditorEnabled,
                     selectionMode,
                     contentType,
+                    contentTypeId,
                     data
                 };
             }),
@@ -102,27 +104,6 @@ export class RelationshipFieldService {
         const [contentTypeId] = field.relationships.velocityVar.split('.');
 
         return contentTypeId || null;
-    }
-
-    #getRelationshipFromContentlet({
-        contentlet,
-        variable
-    }: {
-        contentlet: DotCMSContentlet;
-        variable: string;
-    }): DotCMSContentlet[] {
-        if (!contentlet || !variable || !contentlet[variable]) {
-            return [];
-        }
-
-        const relationship = contentlet[variable];
-        const isArray = Array.isArray(relationship);
-
-        if (!isArray && typeof relationship !== 'object') {
-            return [];
-        }
-
-        return isArray ? relationship : [relationship];
     }
 
     #getSelectionModeByCardinality(cardinality: number): RelationshipFieldState['selectionMode'] {

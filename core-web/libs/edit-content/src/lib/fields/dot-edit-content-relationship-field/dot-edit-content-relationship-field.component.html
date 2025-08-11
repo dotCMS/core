@@ -1,8 +1,7 @@
 @let pagination = store.pagination();
-@let attributes = $attributes();
 @let showPagination = store.totalPages() > 1;
 @let data = store.data();
-@let hitText = attributes.hitText;
+@let hitText = $field()?.hint || null;
 @let isDisabled = $isDisabled();
 @let isEmpty = data.length === 0;
 
