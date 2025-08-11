@@ -1,10 +1,10 @@
-import { EMPTY } from 'rxjs';
-import { NgOptimizedImage } from '@angular/common';
+import { signalMethod } from '@ngrx/signals';
 
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     effect,
     forwardRef,
@@ -20,7 +20,7 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
-import { TableModule, TableRowReorderEvent } from 'primeng/table';
+import { TableRowReorderEvent, TableModule } from 'primeng/table';
 
 import { filter } from 'rxjs/operators';
 
@@ -33,7 +33,7 @@ import { HeaderComponent } from './components/dot-select-existing-content/compon
 import { DotSelectExistingContentComponent } from './components/dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
-import { getContentTypeIdFromRelationship, isImageUrl } from './utils';
+import { getContentTypeIdFromRelationship } from './utils';
 
 import { DotEditContentDialogComponent } from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
@@ -50,9 +50,7 @@ import { LanguagePipe } from '../../pipes/language.pipe';
         ChipModule,
         ContentletStatusPipe,
         LanguagePipe,
-        PaginationComponent,
-        NgOptimizedImage,
-
+        PaginationComponent
     ],
     providers: [
         RelationshipFieldStore,
@@ -63,18 +61,21 @@ import { LanguagePipe } from '../../pipes/language.pipe';
         }
     ],
     templateUrl: './dot-edit-content-relationship-field.component.html',
-    styleUrl: './dot-edit-content-relationship-field.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-edit-content-relationship-field.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotEditContentRelationshipFieldComponent implements ControlValueAccessor {
     /**
-     * Relationship Field Store
+     * A readonly instance of the RelationshipFieldStore injected into the component.
+     * This store is used to manage the state and actions related to the relationship field.
      */
     readonly store = inject(RelationshipFieldStore);
 
     /**
-     * A readonly private field that holds a reference to the `DotMessageService` service.
-     * This service is injected into the component using Angular's dependency injection mechanism.
+     * A readonly private field that injects the DotMessageService.
+     * This service is used for handling message-related functionalities within the component.
      */
     readonly #dotMessageService = inject(DotMessageService);
 
@@ -146,7 +147,12 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
-
+    readonly updateValueField = signalMethod<string>((value) => {
+        if (this.onChange && this.onTouched) {
+            this.onChange(value);
+            this.onTouched();
+        }
+    });
 
     /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
@@ -155,30 +161,17 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @memberof DotEditContentRelationshipFieldComponent
      */
     constructor() {
-
-        effect(
-            () => {
-                const field = this.$field();
-                const contentlet = this.$contentlet();
-
-                if (field?.relationships?.cardinality == null || !field?.variable) {
-                    return;
-                }
-
-                this.store.initialize({
-                    field,
-                    contentlet
-                });
-            }
-        });
-
         effect(() => {
-            if (this.onChange && this.onTouched) {
-                const value = this.store.formattedRelationship();
-                this.onChange(value);
-                this.onTouched();
-            }
+            const field = this.$field();
+            const contentlet = this.$contentlet();
+
+            this.store.initialize({
+                field,
+                contentlet
+            });
         });
+
+        this.updateValueField(this.store.formattedRelationship);
     }
 
     /**
@@ -190,15 +183,11 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
 
         return {
             contentTypeId: getContentTypeIdFromRelationship(field),
-            hitText: field?.hint || null,
-            showFields: this.store.showFields()
+            hitText: field?.hint || null
         };
     });
 
-    /**
-     * Expose isImageUrl method for template usage
-     */
-    isImageUrl = isImageUrl;
+    $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
 
     /**
      * Set the value of the field.
@@ -297,8 +286,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             data: {
                 contentTypeId: contentTypeId,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode),
-                showFields: this.$attributes().showFields
+                currentItemsIds: this.store.data().map((item) => item.inode)
             },
             templates: {
                 header: HeaderComponent,

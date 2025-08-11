@@ -1,4 +1,3 @@
-
 import { RelationshipTypes, TableColumn } from './models/relationship.models';
 
 /**
@@ -25,68 +24,16 @@ export const RELATIONSHIP_OPTIONS = {
  */
 export const SHOW_FIELDS_VARIABLE_KEY = 'showFields';
 
-/**
- * Interface for table column configuration
- */
-
-
-/**
- * Fixed reorder column definition
- */
-export const REORDER_COLUMN: TableColumn = {
-    field: 'reorder',
-    header: '',
-    width: '2rem',
-    type: 'string'
-};
-
-/**
- * Fixed actions column definition
- */
-export const ACTION_COLUMN: TableColumn = {
-    field: 'actions',
-    header: '',
-    width: '3rem',
-    frozen: true,
-    alignFrozen: 'right',
-    type: 'string'
-};
-
-/**
- * Default relationship columns when no showFields is specified
- */
-export const DEFAULT_RELATIONSHIP_COLUMNS = {
-    TITLE: { field: 'title', header: 'Title', type: 'string' as const },
-    LANGUAGE: { field: 'language', header: 'Language', type: 'string' as const },
-    STATUS: { field: 'status', header: 'Status', type: 'string' as const }
-};
-
-/**
- * Default field widths for common relationship fields
- */
-export const FIELD_WIDTHS: Record<string, string> = {
-    'title': '12rem',
-    'language': '8rem',
-    'status': '8rem',
-    'firstName': '10rem',
-    'lastName': '10rem',
-    'profilePhoto': '6rem',
-    'email': '12rem',
-    'phone': '10rem',
-    'dateCreated': '10rem',
-    'dateModified': '10rem'
-};
-
-/**
- * Common image field name patterns
- */
-export const IMAGE_FIELD_PATTERNS = [
-    'profilePhoto', 'avatar', 'image', 'photo', 'picture', 'thumbnail',
-    'banner', 'logo', 'icon', 'cover', 'background'
+export const DEFAULT_RELATIONSHIP_COLUMNS: TableColumn[] = [
+    { nameField: 'title', header: 'Title', type: 'title' },
+    { nameField: 'language', header: 'Language', type: 'language' },
+    { nameField: 'status', header: 'Status', type: 'status' }
 ];
 
-/**
- * Common image file extensions
- */
-export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
+export const SPECIAL_FIELDS = {
+    title: 'title',
+    language: 'language',
+    status: 'status'
+};
 
+export const STATIC_COLUMNS = 2;

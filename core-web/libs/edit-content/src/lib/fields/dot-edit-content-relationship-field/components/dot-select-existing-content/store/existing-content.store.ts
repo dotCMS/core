@@ -12,18 +12,16 @@ import { filter, switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { RelationshipFieldQueryParams, ExistingContentService } from './existing-content.service';
+
 import { Column } from '../../../models/column.model';
 import { SelectionMode } from '../../../models/relationship.models';
 import { SearchParams } from '../../../models/search.model';
-import {
-    RelationshipFieldService,
-    RelationshipFieldQueryParams
-} from '../../../services/relationship-field.service';
 
 const ViewMode = {
     all: 'all',
     selected: 'selected'
-} as const satisfies Record<string, string>;
+} as const;
 
 type ViewMode = (typeof ViewMode)[keyof typeof ViewMode];
 
@@ -133,7 +131,7 @@ export const ExistingContentStore = signalStore(
         isSelectedView: computed(() => state.viewMode() === ViewMode.selected)
     })),
     withMethods((store) => {
-        const relationshipFieldService = inject(RelationshipFieldService);
+        const existingContentService = inject(ExistingContentService);
 
         return {
             /**
@@ -164,8 +162,8 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId, selectedItemsIds, showFields }) =>
-                        relationshipFieldService.getColumnsAndContent(contentTypeId, showFields).pipe(
+                    switchMap(({ contentTypeId, selectedItemsIds }) =>
+                        existingContentService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, searchResponse]) => {
                                     const data = searchResponse.contentlets;
@@ -301,7 +299,7 @@ export const ExistingContentStore = signalStore(
                             };
                         }
 
-                        return relationshipFieldService.search(queryParams).pipe(
+                        return existingContentService.search(queryParams).pipe(
                             tapResponse({
                                 next: (data) => {
                                     patchState(store, {

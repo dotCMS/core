@@ -14,7 +14,7 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 
-import { Column } from '../models/column.model';
+import { Column } from '../../../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
 
@@ -32,7 +32,7 @@ export interface RelationshipFieldSearchResponse {
 @Injectable({
     providedIn: 'root'
 })
-export class RelationshipFieldService {
+export class ExistingContentService {
     readonly #fieldService = inject(DotFieldService);
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
@@ -116,15 +116,13 @@ export class RelationshipFieldService {
     /**
      * Gets the columns and content for the relationship field
      * @param contentTypeId The content type ID
-     * @param showFields Optional array of field names to show. If provided, only these columns will be included.
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
     getColumnsAndContent(
         contentTypeId: string,
-        showFields?: string[] | null
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
         return forkJoin([
-            this.getColumns(contentTypeId, showFields),
+            this.getColumns(contentTypeId),
             this.search({ contentTypeId }),
             this.#getLanguages()
         ]).pipe(
@@ -144,13 +142,12 @@ export class RelationshipFieldService {
     /**
      * Gets the columns for the relationship field
      * @param contentTypeId The content type ID
-     * @param showFields Optional array of field names to show. If provided, only these columns will be included.
      * @returns Observable of Column array
      */
-    getColumns(contentTypeId: string, showFields?: string[] | null): Observable<Column[]> {
+    getColumns(contentTypeId: string): Observable<Column[]> {
         return this.#fieldService
             .getFields(contentTypeId, 'SHOW_IN_LIST')
-            .pipe(map((fields) => this.#buildColumns(fields, showFields)));
+            .pipe(map((fields) => this.#buildColumns(fields)));
     }
 
     /**
@@ -172,37 +169,21 @@ export class RelationshipFieldService {
     /**
      * Builds the columns for the relationship field
      * @param columns The columns to build
-     * @param showFields Optional array of field names to show. If provided, only these columns will be included.
+     * @param showFields The fields to show in the relationship field
      * @returns Array of Column
      */
-    /**
-     * Builds the columns for the relationship field table
-     * Filters out the 'title' column as it's handled separately
-     * and ensures only valid columns with both variable and name are included
-     *
-     * @param columns The content type fields to convert to table columns
-     * @param showFields Optional array of field names to show. If provided, only these columns will be included.
-     * @returns Array of Column objects for the data table
-     */
-    #buildColumns(columns: DotCMSContentTypeField[], showFields?: string[] | null): Column[] {
-        let filteredColumns = columns.filter(
-            (column) =>
-                column.variable &&
-                column.name &&
-                !EXCLUDED_COLUMNS.includes(column.name.toLowerCase())
-        );
-
-        // If showFields is provided, filter columns to only include those specified
-        if (showFields && showFields.length > 0) {
-            filteredColumns = filteredColumns.filter((column) =>
-                showFields.includes(column.variable)
-            );
-        }
-
-        return filteredColumns.map((column) => ({
-            field: column.variable,
-            header: column.name
-        }));
+    #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
+        return columns
+            .filter(
+                (column) =>
+                    column.variable &&
+                    column.name &&
+                    !EXCLUDED_COLUMNS.includes(column.name.toLowerCase())
+            )
+            .map((column) => ({
+                field: column.variable,
+                header: column.name
+            }));
     }
 
     /**

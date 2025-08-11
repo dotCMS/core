@@ -1,6 +1,11 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { FIELD_WIDTHS, IMAGE_EXTENSIONS, IMAGE_FIELD_PATTERNS, RELATIONSHIP_OPTIONS, SHOW_FIELDS_VARIABLE_KEY } from '../dot-edit-content-relationship-field.constants';
+import {
+    DEFAULT_RELATIONSHIP_COLUMNS,
+    RELATIONSHIP_OPTIONS,
+    SHOW_FIELDS_VARIABLE_KEY,
+    SPECIAL_FIELDS
+} from '../dot-edit-content-relationship-field.constants';
 import { RelationshipTypes, TableColumn } from '../models/relationship.models';
 
 /**
@@ -72,50 +77,6 @@ export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField):
     return contentTypeId || null;
 }
 
-
-/**
- * Get the header text for a dynamic field
- */
-export function getFieldHeader(fieldName: string): string {
-    // Use a readable version of the field name
-    return fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/([A-Z])/g, ' $1');
-}
-
-/**
- * Get the width for a dynamic field
- */
-export function getFieldWidth(fieldName: string): string {
-    return FIELD_WIDTHS[fieldName] || ''; // Default width for unknown fields
-}
-
-/**
- * Determine the column type based on field name
- */
-export function getFieldType(fieldName: string): 'string' | 'image' {
-    // Check if field name contains common image patterns
-    const isImageField = IMAGE_FIELD_PATTERNS.some(pattern =>
-        fieldName.toLowerCase().includes(pattern.toLowerCase())
-    );
-
-    return isImageField ? 'image' : 'string';
-}
-
-/**
- * Create a table column with automatic type detection
- */
-export function createColumn(field: string, header: string, width?: string, options: Partial<TableColumn> = {}): TableColumn {
-    return {
-        field,
-        header,
-        width,
-        type: getFieldType(field),
-        ...options
-    };
-}
-
-/**
- * Extract showFields from field configuration
- */
 export function extractShowFields(field: DotCMSContentTypeField | null): string[] | null {
     if (!field?.fieldVariables) {
         return null;
@@ -129,19 +90,49 @@ export function extractShowFields(field: DotCMSContentTypeField | null): string[
 
     return showFieldsVar.value
         .split(',')
-        .map(field => field.trim())
-        .filter(field => field.length > 0);
+        .map((field) => field.trim())
+        .filter((field) => field.length > 0);
 }
 
-/**
- * Check if a value is an image URL based on file extension
- */
-export function isImageUrl(value: string): boolean {
-    if (!value || typeof value !== 'string') {
+export function getTypeField(fieldName: string, data: DotCMSContentlet[]): TableColumn['type'] {
+    const isSpecialField = SPECIAL_FIELDS[fieldName];
+
+    if (isSpecialField) {
+        return isSpecialField;
+    }
+
+    if (data.length > 0) {
+        return isImage(fieldName, data[0]) ? 'image' : 'text';
+    }
+
+    return 'text';
+}
+
+export function getFieldHeader(fieldName: string): string {
+    return fieldName.replace(/([A-Z])/g, ' $1').trim();
+}
+
+export function getColumns(field: DotCMSContentTypeField, data: DotCMSContentlet[]): TableColumn[] {
+    const showFields = extractShowFields(field);
+
+    // Dynamic columns
+    if (showFields?.length > 0) {
+        return showFields.map((fieldName) => ({
+            nameField: fieldName,
+            header: getFieldHeader(fieldName),
+            type: getTypeField(fieldName, data)
+        }));
+    } else {
+        return DEFAULT_RELATIONSHIP_COLUMNS;
+    }
+}
+
+export function isImage(fieldName: string, contentlet: DotCMSContentlet): boolean {
+    const metadata = contentlet[`${fieldName}MetaData`];
+
+    if (!metadata) {
         return false;
     }
 
-    const lowercaseValue = value.toLowerCase();
-
-    return IMAGE_EXTENSIONS.some(ext => lowercaseValue.includes(ext));
+    return metadata?.isImage ? true : false;
 }
