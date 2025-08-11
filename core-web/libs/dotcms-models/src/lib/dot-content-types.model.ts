@@ -4,6 +4,7 @@ import { DotCMSWorkflow } from './dot-workflow.model';
 export const DotCMSClazzes = {
     // Types
     SIMPLE_CONTENT_TYPE: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    WIDGET_CONTENT_TYPE: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
     // Layout Fields
     ROW: 'com.dotcms.contenttype.model.field.ImmutableRowField',
     COLUMN: 'com.dotcms.contenttype.model.field.ImmutableColumnField',

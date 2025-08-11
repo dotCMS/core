@@ -38,7 +38,8 @@ import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '
 import {
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
-    FeaturedFlags
+    FeaturedFlags,
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
@@ -484,7 +485,7 @@ describe('ContentTypesFormComponent', () => {
 
         const base = {
             icon: null,
-            clazz: 'clazz',
+            clazz: DotCMSClazzes.TEXT,
             defaultType: false,
             description: 'description',
             expireDateVar: 'expireDateVar',

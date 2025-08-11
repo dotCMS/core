@@ -29,7 +29,8 @@ import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 import { DotDialogModule, DotIconModule } from '@dotcms/ui';
 import {
@@ -407,14 +408,14 @@ describe('DotContentTypesEditComponent', () => {
             ...dotcmsContentTypeFieldBasicMock,
             name: 'fieldName',
             id: '4',
-            clazz: 'fieldClass',
+            clazz: DotCMSClazzes.TEXT,
             sortOrder: 1
         },
         {
             ...dotcmsContentTypeFieldBasicMock,
             name: 'field 3',
             id: '3',
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            clazz: DotCMSClazzes.COLUMN,
             sortOrder: 3
         }
     ];
