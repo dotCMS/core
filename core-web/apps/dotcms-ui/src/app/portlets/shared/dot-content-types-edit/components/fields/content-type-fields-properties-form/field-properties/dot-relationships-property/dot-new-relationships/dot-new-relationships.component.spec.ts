@@ -16,7 +16,7 @@ import { ControlValueAccessor, FormGroupDirective, NG_VALUE_ACCESSOR } from '@an
 import { By } from '@angular/platform-browser';
 
 import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -42,7 +42,7 @@ const cardinalities = [
 
 const contentTypeMock: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,
-    clazz: 'clazz',
+    clazz: DotCMSClazzes.TEXT,
     defaultType: false,
     fixed: false,
     folder: 'folder',

@@ -8,7 +8,7 @@ import {
 import { Component, ViewContainerRef } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DynamicFieldPropertyDirective } from './dynamic-field-property.directive';
 
@@ -25,7 +25,7 @@ class CustomHostComponent {
     group = new UntypedFormGroup({});
     field: DotCMSContentTypeField = {
         name: 'FieldName',
-        clazz: 'testClazz',
+        clazz: DotCMSClazzes.TEXT,
         contentTypeId: '123',
         dataType: 'text',
         fieldType: 'text',

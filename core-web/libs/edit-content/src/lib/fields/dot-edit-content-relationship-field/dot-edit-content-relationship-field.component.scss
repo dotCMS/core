@@ -17,6 +17,11 @@
             .p-paginator {
                 display: none;
             }
+            .column-thumbnail {
+                width: 3rem;
+                max-width: 3rem;
+                min-width: 3rem;
+            }
             .p-datatable-footer {
                 border: 0;
                 padding-left: 0;

@@ -34,6 +34,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
@@ -318,7 +319,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
 
@@ -334,7 +335,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
         fieldRow.columns[0].fields = [field];
@@ -368,7 +369,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow1: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
         fieldRow1.columns[0].fields = [field];
@@ -428,7 +429,7 @@ class TestHostComponent {
 // Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
 // https://github.com/dotCMS/core-web/pull/1085
 
-const BLOCK_EDITOR_FIELD = {
+const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     id: '12',
@@ -617,7 +618,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                                clazz: DotCMSClazzes.TEXT,
                                 id: '5',
                                 name: 'field 5',
                                 sortOrder: 4,
@@ -659,7 +660,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                                clazz: DotCMSClazzes.TEXT,
                                 id: '9',
                                 name: 'field 9',
                                 sortOrder: 8,

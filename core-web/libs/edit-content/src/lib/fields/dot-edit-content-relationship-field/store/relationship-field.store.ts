@@ -1,28 +1,35 @@
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY } from 'rxjs';
+import { pipe } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
-import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    FeaturedFlags
+    DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
-import { SelectionMode } from '../models/relationship.models';
-import { getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
+import { RelationshipFieldService } from './relationship-field.service';
+
+import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
+import { SelectionMode, TableColumn } from '../models/relationship.models';
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
+    field: DotCMSContentTypeField | null;
     selectionMode: SelectionMode | null;
     contentType: DotCMSContentType | null;
     isNewEditorEnabled: boolean;
+    staticColumns: number;
+    columns: TableColumn[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -33,9 +40,12 @@ export interface RelationshipFieldState {
 const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
+    field: null,
+    columns: [],
     selectionMode: null,
     contentType: null,
     isNewEditorEnabled: false,
+    staticColumns: STATIC_COLUMNS,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -84,7 +94,7 @@ export const RelationshipFieldStore = signalStore(
     withMethods(
         (
             store,
-            dotContentTypeService = inject(DotContentTypeService),
+            relationshipFieldService = inject(RelationshipFieldService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
         ) => ({
             /**
@@ -103,52 +113,35 @@ export const RelationshipFieldStore = signalStore(
              * @param {string} params.contentTypeId - The ID of the content type to load.
              */
             initialize: rxMethod<{
-                cardinality: number;
+                field: DotCMSContentTypeField;
                 contentlet: DotCMSContentlet;
-                variable: string;
-                contentTypeId: string;
-            }>((params$) =>
-                params$.pipe(
-                    switchMap((params) => {
-                        const { cardinality, contentlet, variable, contentTypeId } = params;
-
-                        // Validate and set initial data
-                        const data = getRelationshipFromContentlet({ contentlet, variable });
-                        const selectionMode = getSelectionModeByCardinality(cardinality);
-
-                        // Reset state first
-                        patchState(store, {
-                            status: ComponentStatus.LOADING,
-                            contentType: null, // Reset contentType to prevent stale state
-                            isNewEditorEnabled: false, // Reset isNewEditorEnabled to prevent stale state
-                            selectionMode,
-                            data
-                        });
-
-                        // Continue with content type loading
-                        return dotContentTypeService.getContentType(contentTypeId).pipe(
-                            tap((contentType) => {
-                                const isNewEditorEnabled =
-                                    contentType.metadata?.[
-                                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
-                                    ] === true;
-
-                                patchState(store, {
-                                    contentType,
-                                    isNewEditorEnabled,
-                                    status: ComponentStatus.LOADED
-                                });
+            }>(
+                pipe(
+                    tap(() => patchState(store, initialState)),
+                    switchMap(({ field, contentlet }) => {
+                        return relationshipFieldService.prepareField({ field, contentlet }).pipe(
+                            tapResponse({
+                                next: (newState) => {
+                                    patchState(store, {
+                                        status: ComponentStatus.LOADED,
+                                        contentType: newState.contentType,
+                                        isNewEditorEnabled: newState.isNewEditorEnabled,
+                                        selectionMode: newState.selectionMode,
+                                        columns: newState.columns,
+                                        data: newState.data,
+                                        field
+                                    });
+                                },
+                                error: (error) => {
+                                    if (error instanceof HttpErrorResponse) {
+                                        dotHttpErrorManagerService.handle(error);
+                                    }
+                                    patchState(store, {
+                                        status: ComponentStatus.ERROR
+                                    });
+                                }
                             })
                         );
-                    }),
-                    catchError((error) => {
-                        // Handle all errors (validation and async) here
-                        dotHttpErrorManagerService.handle(error);
-                        patchState(store, {
-                            status: ComponentStatus.ERROR
-                        });
-
-                        return EMPTY;
                     })
                 )
             ),

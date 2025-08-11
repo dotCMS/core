@@ -5,7 +5,7 @@ import { COMMENT_TINYMCE } from '../dot-edit-content-wysiwyg-field.constant';
 export const WYSIWYG_VARIABLE_NAME = 'variable';
 
 export const WYSIWYG_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
     fieldType: 'WYSIWYG',

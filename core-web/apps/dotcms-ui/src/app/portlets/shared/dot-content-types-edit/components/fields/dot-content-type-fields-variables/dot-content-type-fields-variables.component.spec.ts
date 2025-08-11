@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 import {
     dotcmsContentTypeFieldBasicMock,
@@ -124,9 +124,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     describe('Block Editor Field', () => {
-        const BLOCK_EDITOR_FIELD = {
+        const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
             ...EMPTY_FIELD,
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+            clazz: DotCMSClazzes.BLOCK_EDITOR
         };
 
         beforeEach(() => {
