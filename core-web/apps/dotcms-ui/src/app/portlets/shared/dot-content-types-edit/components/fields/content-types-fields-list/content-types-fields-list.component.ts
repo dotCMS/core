@@ -2,7 +2,7 @@ import { Component, inject, Input, OnInit, signal } from '@angular/core';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
-import { DotCMSClazzes } from '@dotcms/dotcms-models';
+import { DotCMSClazz, DotCMSClazzes } from '@dotcms/dotcms-models';
 import { FieldUtil } from '@dotcms/utils-testing';
 
 import { FIELD_ICONS } from './content-types-fields-icon-map';
@@ -27,7 +27,7 @@ export class ContentTypesFieldsListComponent implements OnInit {
     $fieldTypes = signal<{ clazz: string; name: string }[]>([]);
     fieldIcons = FIELD_ICONS;
 
-    #dotFormFields: DotCMSClazzes[] = [
+    #dotFormFields: DotCMSClazz[] = [
         DotCMSClazzes.BINARY,
         DotCMSClazzes.CHECKBOX,
         DotCMSClazzes.DATE,
@@ -79,6 +79,6 @@ export class ContentTypesFieldsListComponent implements OnInit {
     }
 
     private isFormField(field: { clazz: string; name: string }): boolean {
-        return this.#dotFormFields.includes(field.clazz as DotCMSClazzes);
+        return this.#dotFormFields.includes(field.clazz as DotCMSClazz);
     }
 }

@@ -2,6 +2,8 @@ import { DotCMSSystemActionMappings } from './dot-workflow-action.model';
 import { DotCMSWorkflow } from './dot-workflow.model';
 
 export const DotCMSClazzes = {
+    // Types
+    SIMPLE_CONTENT_TYPE: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
     // Layout Fields
     ROW: 'com.dotcms.contenttype.model.field.ImmutableRowField',
     COLUMN: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
@@ -34,12 +36,12 @@ export const DotCMSClazzes = {
     WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
 } as const;
 
-export type DotCMSClazzes = (typeof DotCMSClazzes)[keyof typeof DotCMSClazzes];
+export type DotCMSClazz = (typeof DotCMSClazzes)[keyof typeof DotCMSClazzes];
 
 export interface DotCMSContentType {
     baseType: string;
     icon?: string;
-    clazz: DotCMSClazzes;
+    clazz: DotCMSClazz;
     defaultType: boolean;
     contentType?: string;
     description?: string;
@@ -70,7 +72,7 @@ export interface DotCMSContentType {
 
 export interface DotCMSContentTypeField {
     categories?: DotCMSContentTypeFieldCategories;
-    clazz: DotCMSClazzes;
+    clazz: DotCMSClazz;
     contentTypeId: string;
     dataType: string;
     defaultValue?: string;

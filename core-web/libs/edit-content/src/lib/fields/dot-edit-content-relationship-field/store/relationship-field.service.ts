@@ -67,40 +67,46 @@ export class RelationshipFieldService {
     prepareField(params: { field: DotCMSContentTypeField; contentlet: DotCMSContentlet }) {
         const { field, contentlet } = params;
 
-        const cardinality = field?.relationships?.cardinality ?? null;
-        const contentTypeId = getContentTypeIdFromRelationship(field);
+        return of({ field, contentlet }).pipe(
+            switchMap(({ field, contentlet }) => {
+                const cardinality = field?.relationships?.cardinality ?? null;
+                const contentTypeId = getContentTypeIdFromRelationship(field);
 
-        if (cardinality === null || !field?.variable || !contentTypeId) {
-            throw new Error('Invalid field');
-        }
-
-        const data = getRelationshipFromContentlet({ contentlet, variable: field.variable });
-        const selectionMode = getSelectionModeByCardinality(cardinality);
-
-        const showFields = extractShowFields(field);
-        const hasShowFields = showFields?.length > 0;
-
-        return this.#dotContentTypeService.getContentType(contentTypeId).pipe(
-            map((contentType) => {
-                return {
-                    field,
-                    isNewEditorEnabled: isNewEditorEnabled(contentType),
-                    selectionMode,
-                    contentType,
-                    contentTypeId,
-                    data
-                };
-            }),
-            switchMap((newState) => {
-                if (!hasShowFields) {
-                    return of({
-                        ...newState,
-                        columns: DEFAULT_RELATIONSHIP_COLUMNS
-                    });
+                if (cardinality === null || !field?.variable || !contentTypeId) {
+                    throw new Error('Invalid field');
                 }
-                return this.#buildDynamicColumns(contentTypeId, showFields).pipe(
-                    map((columns) => {
-                        return { ...newState, columns };
+
+                const data = getRelationshipFromContentlet({
+                    contentlet,
+                    variable: field.variable
+                });
+                const selectionMode = getSelectionModeByCardinality(cardinality);
+                const showFields = extractShowFields(field);
+
+                return of({ cardinality, contentTypeId, data, selectionMode, showFields });
+            }),
+            switchMap(({ contentTypeId, data, selectionMode, showFields }) => {
+                return this.#dotContentTypeService.getContentType(contentTypeId).pipe(
+                    map((contentType) => ({
+                        field,
+                        isNewEditorEnabled: isNewEditorEnabled(contentType),
+                        selectionMode,
+                        contentType,
+                        contentTypeId,
+                        data
+                    })),
+                    switchMap((newState) => {
+                        const hasShowFields = showFields?.length > 0;
+
+                        if (!hasShowFields) {
+                            return of({
+                                ...newState,
+                                columns: DEFAULT_RELATIONSHIP_COLUMNS
+                            });
+                        }
+                        return this.#buildDynamicColumns(contentTypeId, showFields).pipe(
+                            map((columns) => ({ ...newState, columns }))
+                        );
                     })
                 );
             })

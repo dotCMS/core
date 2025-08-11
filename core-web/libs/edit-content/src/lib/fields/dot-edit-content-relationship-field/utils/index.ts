@@ -1,7 +1,8 @@
 import {
-    DotCMSClazzes,
+    DotCMSClazz,
     DotCMSContentType,
     DotCMSContentTypeField,
+    DotCMSClazzes,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
@@ -115,7 +116,7 @@ export const getTypeField = (
  * @param clazz - The class of the field.
  * @returns True if the field is an image field, false otherwise.
  */
-export const isImageField = (clazz: DotCMSClazzes): boolean => {
+export const isImageField = (clazz: DotCMSClazz): boolean => {
     return (
         clazz === DotCMSClazzes.IMAGE ||
         clazz === DotCMSClazzes.FILE ||

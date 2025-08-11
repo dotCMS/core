@@ -75,7 +75,7 @@ export const TEXT_AREA_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'someTextArea'
 };
 
-export const SELECT_FIELD_TEXT_MOCK = {
+export const SELECT_FIELD_TEXT_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'TEXT',
@@ -101,7 +101,7 @@ export const SELECT_FIELD_TEXT_MOCK = {
     variable: 'selectNormal'
 };
 
-export const SELECT_FIELD_BOOLEAN_MOCK = {
+export const SELECT_FIELD_BOOLEAN_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'BOOL',
@@ -126,7 +126,7 @@ export const SELECT_FIELD_BOOLEAN_MOCK = {
     variable: 'selectBoolean'
 };
 
-export const SELECT_FIELD_FLOAT_MOCK = {
+export const SELECT_FIELD_FLOAT_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'FLOAT',
@@ -151,7 +151,7 @@ export const SELECT_FIELD_FLOAT_MOCK = {
     variable: 'selectDecimal'
 };
 
-export const SELECT_FIELD_INTEGER_MOCK = {
+export const SELECT_FIELD_INTEGER_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'INTEGER',
@@ -176,7 +176,7 @@ export const SELECT_FIELD_INTEGER_MOCK = {
     variable: 'selectWholeNumber'
 };
 
-export const RADIO_FIELD_TEXT_MOCK = {
+export const RADIO_FIELD_TEXT_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'TEXT',
@@ -201,7 +201,7 @@ export const RADIO_FIELD_TEXT_MOCK = {
     variable: 'radio'
 };
 
-export const RADIO_FIELD_BOOLEAN_MOCK = {
+export const RADIO_FIELD_BOOLEAN_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'BOOL',
@@ -226,7 +226,7 @@ export const RADIO_FIELD_BOOLEAN_MOCK = {
     variable: 'radioTrueFalse'
 };
 
-export const RADIO_FIELD_FLOAT_MOCK = {
+export const RADIO_FIELD_FLOAT_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'FLOAT',
@@ -252,7 +252,7 @@ export const RADIO_FIELD_FLOAT_MOCK = {
     variable: 'radioDecimal'
 };
 
-export const RADIO_FIELD_INTEGER_MOCK = {
+export const RADIO_FIELD_INTEGER_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
     dataType: 'INTEGER',
@@ -640,7 +640,7 @@ export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
     variable: 'KeyValue'
 };
 
-export const HOST_FOLDER_TEXT_MOCK = {
+export const HOST_FOLDER_TEXT_MOCK: DotCMSContentTypeField = {
     id: 'b7c41ffd6b6bc1250f2fc85a3637471b',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
@@ -666,7 +666,7 @@ export const HOST_FOLDER_TEXT_MOCK = {
 
 export const CATEGORY_MOCK: DotCMSContentTypeField = {
     id: '96909fa20a00497cd3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
     fieldType: 'Category',
