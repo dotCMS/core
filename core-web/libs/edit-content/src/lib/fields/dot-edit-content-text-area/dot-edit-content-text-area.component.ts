@@ -7,6 +7,7 @@ import {
     inject,
     input,
     model,
+    output,
     viewChild
 } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -14,16 +15,20 @@ import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/for
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 
 import {
     AvailableEditorTextArea,
     TextAreaEditorOptions
 } from './dot-edit-content-text-area.constants';
-import { detectEditorType } from './utils/content-type-detector.util';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import {
+    getCurrentEditorFromDisabled,
+    getDisabledWYSIWYGFromContentlet,
+    updateDisabledWYSIWYGOnEditorSwitch
+} from '../shared/utils/field-editor-preferences.util';
 
 /**
  * Text area component that provides plain text and code editing capabilities.
@@ -79,6 +84,19 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     });
 
     /**
+     * Input contentlet DotCMSContentlet
+     */
+    $contentlet = input<DotCMSContentlet | null>(null, {
+        alias: 'contentlet'
+    });
+
+    /**
+     * Event emitted when disabledWYSIWYG changes.
+     * Emits the updated disabledWYSIWYG array.
+     */
+    disabledWYSIWYGChange = output<string[]>();
+
+    /**
      * Computed property that returns the current value of the field.
      */
     $currentValue = computed(() => {
@@ -99,13 +117,25 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     $displayedEditor = model<AvailableEditorTextArea>(AvailableEditorTextArea.PlainText);
 
     /**
-     * Computed property that determines the default editor based on content analysis.
-     * Uses content-type-detector utility to determine if content needs Monaco editor.
+     * Computed property that determines the current editor based on disabledWYSIWYG settings
+     * with fallback to content analysis when no entry exists.
      */
     $contentEditorUsed = computed(() => {
-        const content = this.$currentValue();
+        const field = this.$field();
+        const contentlet = this.$contentlet();
 
-        return detectEditorType(content);
+        if (!field?.variable) {
+            return AvailableEditorTextArea.PlainText;
+        }
+
+        const disabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);
+
+        // Use disabledWYSIWYG setting
+        return getCurrentEditorFromDisabled(
+            field.variable,
+            disabledWYSIWYG,
+            true
+        ) as AvailableEditorTextArea;
     });
 
     readonly textAreaEditorOptions = TextAreaEditorOptions;
@@ -141,6 +171,31 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
      * @param newEditor - The new editor
      */
     onEditorChange(newEditor: AvailableEditorTextArea) {
+        const field = this.$field();
+        const contentlet = this.$contentlet();
+
+        if (!field?.variable || !contentlet) {
+            this.$displayedEditor.set(newEditor);
+            return;
+        }
+
+        // Update disabledWYSIWYG in the contentlet
+        const currentDisabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);
+        const updatedDisabledWYSIWYG = updateDisabledWYSIWYGOnEditorSwitch(
+            field.variable,
+            newEditor,
+            currentDisabledWYSIWYG,
+            true // isTextAreaField
+        );
+
+        // Update the contentlet's disabledWYSIWYG property
+        // Note: This modifies the contentlet reference directly
+        // The parent component should handle form submission with the updated contentlet
+        contentlet.disabledWYSIWYG = updatedDisabledWYSIWYG;
+
+        // Emit the change event
+        this.disabledWYSIWYGChange.emit(updatedDisabledWYSIWYG);
+
         this.$displayedEditor.set(newEditor);
     }
 

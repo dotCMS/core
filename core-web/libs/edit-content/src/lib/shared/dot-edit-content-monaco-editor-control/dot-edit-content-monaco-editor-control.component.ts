@@ -25,7 +25,6 @@ import { PaginatorModule } from 'primeng/paginator';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { dotVelocityLanguageDefinition } from '../../custom-languages/velocity-monaco-language';
-import { COMMENT_TINYMCE } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
 import {
     isHtml,
     isJavascript,
@@ -187,7 +186,7 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy, On
     onEditorInit($editorRef: monaco.editor.IStandaloneCodeEditor) {
         this.#editor = $editorRef;
 
-        this.processEditorContent();
+        this.detectLanguage();
         this.setupContentChangeListener();
     }
 
@@ -210,37 +209,9 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy, On
         }
     }
 
-    private processEditorContent() {
-        if (this.#editor) {
-            const currentContent = this.#editor.getValue();
-
-            const processedContent = this.removeWysiwygComment(currentContent);
-            if (currentContent !== processedContent) {
-                this.#editor.setValue(processedContent);
-
-                // Update the form control value, needed when switching between editor types
-                this.#formControl.setValue(processedContent, { emitEvent: true });
-            }
-
-            this.detectLanguage();
-        }
-    }
-
     private removeEditor() {
         this.#editor.dispose();
         this.#editor = null;
-    }
-
-    /**
-     * Removes the TinyMCE comment from the content.
-     *
-     * @param {string} content - The content to remove the comment from.
-     * @returns {string} The content with the TinyMCE comment removed.
-     */
-    private removeWysiwygComment(content: string): string {
-        const regex = new RegExp(`^\\s*${COMMENT_TINYMCE}\\s*`);
-
-        return content.replace(regex, '');
     }
 
     /**
@@ -249,7 +220,7 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy, On
     private setupContentChangeListener() {
         if (this.#editor) {
             this.#contentChangeDisposable = this.#editor.onDidChangeModelContent(() => {
-                this.processEditorContent();
+                this.detectLanguage();
             });
         }
     }
