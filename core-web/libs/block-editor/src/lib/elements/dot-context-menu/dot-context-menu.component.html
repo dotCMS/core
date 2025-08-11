@@ -5,7 +5,10 @@
     [appendTo]="'body'"
     (onShow)="onContextMenuShow()">
     <ng-template pTemplate="item" let-item>
-        <a pRipple class="flex align-items-center justify-content-between p-menuitem-link">
+        <a
+            pRipple
+            class="flex align-items-center justify-content-between p-menuitem-link"
+            (click)="onItemClick($event, item)">
             <span class="menu-item-label">{{ item.label | dm }}</span>
             <span *ngIf="item.shortcut" class="menu-item-shortcut">
                 {{ item.shortcut }}

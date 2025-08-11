@@ -2,9 +2,9 @@ import { marked } from 'marked';
 import { DOMSerializer } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, input, signal, ViewChild } from '@angular/core';
 
-import { ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { RippleModule } from 'primeng/ripple';
 
 import { Editor } from '@tiptap/core';
@@ -38,6 +38,8 @@ export class DotContextMenuComponent {
     protected readonly items = computed(() => this.buildMenuItems());
     private readonly hasSelection = signal(false);
 
+    @ViewChild('contextMenu') private contextMenu?: ContextMenu;
+
     private get platform(): Platform {
         return PLATFORM_PATTERNS.MAC.test(navigator.platform) ? 'mac' : 'pc';
     }
@@ -49,6 +51,31 @@ export class DotContextMenuComponent {
     protected onContextMenuShow(): void {
         const hasSelection = !this.editor().view.state.selection.empty;
         this.hasSelection.set(hasSelection);
+    }
+
+    /**
+     * Keep the context menu open while executing item commands (e.g., Firefox paste prompt).
+     * Manually hides the menu after the action completes.
+     */
+    protected async onItemClick(event: MouseEvent, item: ContextMenuItem): Promise<void> {
+        if (item.disabled || item.separator) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        this.stopImmediateIfSupported(event);
+
+        try {
+            await item.command?.();
+        } finally {
+            this.contextMenu?.hide();
+        }
+    }
+
+    private stopImmediateIfSupported(event: MouseEvent): void {
+        const extendedEvent = event as MouseEvent & { stopImmediatePropagation?: () => void };
+        extendedEvent.stopImmediatePropagation?.();
     }
 
     /**
