@@ -6,8 +6,9 @@ import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.portlets.contentlet.business.DotBinaryFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotDateFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotNumericFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -239,13 +240,23 @@ public class FieldHandlerStrategyFactory {
                     contentlet.setBinary(field.variable(),
                             tempFileOptional.get().file);
                 } else {
-                    throw new DotStateException("Invalid Temp File provided, for the field: " + field.variable());
+                    throw DotBinaryFieldException.invalidTempFileBuilder(field.variable(), value)
+                            .fieldName(field.name())
+                            .fieldType(field.typeName())
+                            .expectedFormat("Valid temporary file")
+                            .addContext("tempFileResource", value.toString())
+                            .build();
                 }
 
             }
         } catch (IOException e) {
-            throw new DotContentletStateException(
-                    "Unable to set binary file Object: " + e.getMessage(), e);
+            throw DotBinaryFieldException.ioErrorBuilder(field.variable(), value)
+                    .fieldName(field.name())
+                    .fieldType(field.typeName())
+                    .expectedFormat("File or temporary file resource")
+                    .addContext("providedType", value != null ? value.getClass().getSimpleName() : "null")
+                    .cause(e)
+                    .build();
         }
     }
 
@@ -289,16 +300,19 @@ public class FieldHandlerStrategyFactory {
         } else if (value instanceof Date) {
             contentlet.setDateProperty(field.variable(), (Date) value);
         } else if (value instanceof String) {
-            if (((String) value).trim().length() > 0) {
+            final String trimmedValue = ((String) value).trim();
+            if (!trimmedValue.isEmpty()) {
                 try {
-                    final String trimmedValue = ((String) value).trim();
                     contentlet.setDateProperty(field.variable(),
                             DateUtil.convertDate(trimmedValue, dateFormats));
                 } catch (Exception e) {
 
-                    throw new DotContentletStateException(
-                            "Unable to convert string to date " + value + ", field: " +
-                                    field.variable());
+                    throw DotDateFieldException.conversionErrorBuilder(field.variable(), value)
+                            .fieldName(field.name())
+                            .fieldType(field.typeName())
+                            .acceptedFormats(dateFormats)
+                            .addContext("errorMessage", e.getMessage())
+                            .build();
                 }
             } else {
 
@@ -306,9 +320,12 @@ public class FieldHandlerStrategyFactory {
             }
         } else if (field.required() && value == null) {
 
-            throw new DotContentletStateException(
-                    "Date fields must either be of type String or Date, field: " +
-                            field.variable());
+            throw DotDateFieldException.invalidTypeBuilder(field.variable(), value)
+                    .fieldName(field.name())
+                    .fieldType(field.typeName())
+                    .expectedFormat("String or Date")
+                    .addContext("providedType", value != null ? value.getClass().getSimpleName() : "null")
+                    .build();
         }
     }
 
@@ -350,7 +367,10 @@ public class FieldHandlerStrategyFactory {
                 if (!stringValue.isEmpty()) {
                     contentlet.getMap().put(field.variable(), stringValue);
                 }
-                throw DotNumericFieldException.newFloatFieldException(field.variable(), value);
+                throw DotNumericFieldException.floatFieldBuilder(field.variable(), value)
+                        .fieldName(field.name())
+                        .fieldType(field.typeName())
+                        .build();
             }
         }
     }
@@ -378,7 +398,10 @@ public class FieldHandlerStrategyFactory {
                         Long.parseLong((String)value));
             } catch (Exception e) {
                 //If we throw this exception here... the contentlet will never get to the validateContentlet Method
-                throw DotNumericFieldException.newLongFieldException(field.variable(), value);
+                throw DotNumericFieldException.longFieldBuilder(field.variable(), value)
+                        .fieldName(field.name())
+                        .fieldType(field.typeName())
+                        .build();
             }
         }
     }
