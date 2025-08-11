@@ -272,29 +272,6 @@ public class FileAsset extends Contentlet implements IFileAsset {
        return isDeleted();
 	}
 
-
-	/**
-	 * Returns the live.
-	 * @return boolean
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
-	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
-    return super.isLive();
-	}
-
-	/**
-	 * Returns the locked.
-	 * @return boolean
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
-	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-    return super.isLocked();
-   }
-
 	public String getType(){
 		return "file_asset";
 	}
