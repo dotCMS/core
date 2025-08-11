@@ -156,6 +156,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     }));
 
     /**
+     * Computed signal that holds the total number of columns.
+     *
+     * @memberof DotEditContentRelationshipFieldComponent
+     */
+    $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
+
+    /**
      * Updates the value of the field.
      *
      * @param value - The value to update.
@@ -201,8 +208,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     ngOnInit() {
         this.initialize(this.$inputs);
     }
-
-    $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
 
     /**
      * Set the value of the field.
