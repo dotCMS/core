@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 
 import {
+    DotCMSClazzes,
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -666,7 +667,7 @@ export const HOST_FOLDER_TEXT_MOCK: DotCMSContentTypeField = {
 
 export const CATEGORY_MOCK: DotCMSContentTypeField = {
     id: '96909fa20a00497cd3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+    clazz: DotCMSClazzes.CATEGORY,
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
     dataType: 'TEXT',
     fieldType: 'Category',

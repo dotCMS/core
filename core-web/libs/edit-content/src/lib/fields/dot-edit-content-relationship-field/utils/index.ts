@@ -59,7 +59,17 @@ export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField):
  * @returns The header for the field.
  */
 export const getFieldHeader = (fieldName: string): string => {
-    return fieldName.replace(/([A-Z])/g, ' $1').trim();
+    return (
+        fieldName
+            // Insert space before capital letters that are followed by lowercase letters (e.g., "APIResponse" -> "API Response")
+            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+            // Insert space between lowercase and uppercase (e.g., "fieldName" -> "field Name")
+            .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+            // Insert space between letters and numbers (e.g., "field1Name" -> "field 1 Name")
+            .replace(/([a-zA-Z])(\d)/g, '$1 $2')
+            .replace(/(\d)([a-zA-Z])/g, '$1 $2')
+            .trim()
+    );
 };
 
 /**
@@ -68,8 +78,8 @@ export const getFieldHeader = (fieldName: string): string => {
  * @param field - The field to extract the show fields from.
  * @returns The show fields.
  */
-export const extractShowFields = (field: DotCMSContentTypeField | null): string[] | null => {
-    if (!field?.fieldVariables) {
+export const extractShowFields = (field: DotCMSContentTypeField): string[] | null => {
+    if (field?.fieldVariables) {
         return null;
     }
 

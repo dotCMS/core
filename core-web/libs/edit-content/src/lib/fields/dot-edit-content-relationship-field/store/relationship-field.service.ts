@@ -72,8 +72,14 @@ export class RelationshipFieldService {
                 const cardinality = field?.relationships?.cardinality ?? null;
                 const contentTypeId = getContentTypeIdFromRelationship(field);
 
-                if (cardinality === null || !field?.variable || !contentTypeId) {
-                    throw new Error('Invalid field');
+                if (cardinality === null) {
+                    throw new Error('Invalid field: missing cardinality');
+                }
+                if (!field?.variable) {
+                    throw new Error('Invalid field: missing variable');
+                }
+                if (!contentTypeId) {
+                    throw new Error('Invalid field: missing contentTypeId');
                 }
 
                 const data = getRelationshipFromContentlet({
