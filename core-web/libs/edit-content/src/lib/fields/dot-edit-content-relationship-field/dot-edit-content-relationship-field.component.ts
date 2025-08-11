@@ -199,7 +199,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @memberof DotEditContentRelationshipFieldComponent
      */
     ngOnInit() {
-        this.initialize(this.$inputs());
+        this.initialize(this.$inputs);
     }
 
     $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
