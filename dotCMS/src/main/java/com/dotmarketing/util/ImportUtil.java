@@ -38,7 +38,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotDateFieldException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -2373,9 +2373,11 @@ public class ImportUtil {
         Pair<Host, Folder> siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
         if (siteAndFolder == null) {
             throw ImportLineException.builder()
-                    .message("Invalid Site or Folder reference: the provided inode/path does not exist or is not associated with a valid SiteFolder.")
+                    .message("The provided inode/path does not exist or is not associated with a valid Site or Folder.")
                     .code(ImportLineValidationCodes.INVALID_SITE_FOLDER_REF.name())
                     .field(field.getVelocityVarName())
+                    //Add context here
+                    .context(Map.of("errorHint", "The value must be a valid site-name folder path or their respective inodes."))
                     .invalidValue(value)
                     .build();
         }
@@ -2392,28 +2394,33 @@ public class ImportUtil {
      */
     private static Object validateBinaryField(final Field field, final String value) {
         if (UtilMethods.isNotSet(value)) {
-            // If the value is not set return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
+            // If the value is not set, return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
             return value;
         }
+        
         //Here we need to throw an exception if the value is not set and the value is required
         final boolean validURL = UtilMethods.isValidStrictURL(value);
         if(!validURL) {
+            
             // If the value is not a valid URL, we throw an exception
             throw ImportLineException.builder()
                     .message("The provided value is not a syntactically valid URL")
                     .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                     .field(field.getVelocityVarName())
                     .invalidValue(value)
+                    .context(Map.of("errorHint","The provided value must be a valid URL."))
                     .build();
         }
         if (UtilMethods.isSet(value)) {
             final boolean validUrl = Try.of(()->tempFileAPI.validUrl(value)).getOrElse(false);
             if (!validUrl) {
+                
                 throw ImportLineException.builder()
                         .message("URL is syntactically valid but returned a non-success HTTP response")
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
+                        .context(Map.of("errorHint","There's a problem accessing the content at the provided URL."))
                         .build();
             }
         }
@@ -2451,6 +2458,7 @@ public class ImportUtil {
                         .message("Unable to match the given path with a file stored in dotCMS")
                         .code(ImportLineValidationCodes.INVALID_FILE_PATH.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","The provided value must be a valid file /folder/file path in dotCMS or an external URL."))
                         .invalidValue(value)
                         .build();
             }
@@ -2462,6 +2470,7 @@ public class ImportUtil {
                         .message("The provided value is not a syntactically valid URL nor a valid dotCMS path")
                         .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","The provided value must be a valid URL or a valid dotCMS path."))
                         .invalidValue(value)
                         .build();
             }
@@ -2471,6 +2480,7 @@ public class ImportUtil {
                         .message("URL is syntactically valid but returned a non-success HTTP response")
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","There's a problem accessing the content at the provided URL."))
                         .invalidValue(value)
                         .build();
             }
@@ -3246,7 +3256,7 @@ public class ImportUtil {
             }
 
             // Validate the contentlet, it routes to the appropriate validation strategy weather or not it might have relationships
-            validateContentlet(lineNumber,
+            validateContentlet(
                     headers, categories, cont, csvRelationshipRecordsParentOnly,
                     csvRelationshipRecordsChildOnly, csvRelationshipRecords);
 
@@ -3300,7 +3310,6 @@ public class ImportUtil {
      * that includes relationship validation. Otherwise, a standard validation without
      * relationship checks is applied.
      *
-     * @param lineNumber The line number in the CSV file being processed
      * @param headers Map of column positions to their corresponding field definitions
      * @param categories Set of categories associated with this contentlet
      * @param cont The contentlet to validate
@@ -3309,7 +3318,7 @@ public class ImportUtil {
      * @param csvRelationshipRecords Map of bidirectional relationships
      * @throws DotDataException If validation fails or other data access issues occur
      */
-    private static void validateContentlet(final int lineNumber,
+    private static void validateContentlet(
             final Map<Integer, Field> headers,
             final Set<Category> categories,
             final Contentlet cont,
@@ -3322,7 +3331,6 @@ public class ImportUtil {
         final boolean hasRelationships = headers.values().stream()
                 .anyMatch((field -> field.getFieldType()
                         .equals(FieldType.RELATIONSHIP.toString())));
-        try {
             //if we have relationships, we need to validate them
             if (hasRelationships) {
                 ContentletRelationships contentletRelationships = loadRelationshipRecords(
@@ -3335,73 +3343,7 @@ public class ImportUtil {
                 //Otherwise, we call standard validation
                 conAPI.validateContentlet(cont, null, new ArrayList<>(categories), true);
             }
-        } catch (DotContentletValidationException ex) {
-            final String code = getErrorMappedCode(ex);
-            throw ImportLineException.builder()
-                    .message(ex.getMessage())
-                    .code(code)
-                    .lineNumber(lineNumber)
-                    .field(getOffendingFieldsAsString(ex))
-                    .build();
-        }
 
-    }
-
-    /**
-     * Extracts the error code from a DotContentletValidationException.
-     * @param ex The exception to extract the code from.
-     * @return The mapped error code as a string.
-     */
-    private static String getErrorMappedCode(final DotContentletValidationException ex) {
-        String code = ImportLineValidationCodes.UNKNOWN_ERROR.name();
-        if (null != ex.getNotValidRelationship() && !ex.getNotValidRelationship().isEmpty()) {
-            code = ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name();
-        } else if (null != ex.getNotValidFields()){
-            final Map<String, List<Field>> notValidFields = ex.getNotValidFields();
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_REQUIRED)) {
-                code = ImportLineValidationCodes.REQUIRED_FIELD_MISSING.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_PATTERN)) {
-                code = ImportLineValidationCodes.VALIDATION_FAILED_PATTERN.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_UNIQUE)) {
-                code = ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_BADTYPE)) {
-                code = ImportLineValidationCodes.INVALID_FIELD_TYPE.name();
-            }
-        }
-        return code;
-    }
-
-    /**
-     * Extracts the offending fields from a DotContentletValidationException.
-     * @param ex The exception to extract the fields from.
-     * @return A string representation of the offending fields.
-     */
-    private static String getOffendingFieldsAsString(final DotContentletValidationException ex) {
-        final StringBuilder sb = new StringBuilder();
-        final Map<String, List<Field>> errors = ex.getNotValidFields();
-        final Set<String> keys = errors.keySet();
-        for (String key : keys) {
-            sb.append(key).append(": ");
-            List<Field> fields = errors.get(key);
-            int count = 0;
-            for (Field field : fields) {
-                if (count > 0) {
-                    sb.append(", ");
-                }
-                sb.append(field.getVelocityVarName());
-                count++;
-            }
-            sb.append("\n");
-        }
-
-        String fields = null;
-        if (sb.length() > 0) {
-            fields = sb.toString();
-        }
-        return fields;
     }
 
     /**
@@ -4589,14 +4531,11 @@ public class ImportUtil {
                 try {
                     valueObj = parseExcelDate(value);
                 } catch (ParseException e) {
-                    throw ImportLineException.builder()
-                            .message(
-                                    "Value couldn't be parsed as any of the following supported formats: "
-                                            + printSupportedDateFormats()
-                            )
-                            .code(ImportLineValidationCodes.INVALID_DATE_FORMAT.name())
-                            .field(field.getVelocityVarName())
-                            .invalidValue(value)
+                    throw DotDateFieldException.conversionErrorBuilder(field.getVelocityVarName(), value)
+                            .fieldName(field.getFieldName())
+                            .fieldType(field.getFieldType())
+                            .acceptedFormats(IMP_DATE_FORMATS)
+                            .addContext("errorMessage", e.getMessage())
                             .build();
                 }
             } else {
