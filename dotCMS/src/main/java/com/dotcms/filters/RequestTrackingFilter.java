@@ -60,20 +60,14 @@ public class RequestTrackingFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) 
             throws IOException, ServletException {
         
-        // Only process HTTP requests
-        if (!(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
+        // Skip processing if request should not be evaluated
+        if (!shouldEvaluateRequest(request, response)) {
             chain.doFilter(request, response);
             return;
         }
         
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        
-        // Skip tracking if disabled
-        if (!trackingEnabled || requestTracker == null) {
-            chain.doFilter(request, response);
-            return;
-        }
         
         // Mark request start for tracking
         requestTracker.requestStarted(httpRequest);
@@ -91,6 +85,24 @@ public class RequestTrackingFilter implements Filter {
                 Logger.debug(this, "Error during request end tracking: " + e.getMessage());
             }
         }
+    }
+    
+    /**
+     * Determines if the request should be evaluated for tracking.
+     * Returns false if the request is not HTTP or if tracking is disabled.
+     * 
+     * @param request the servlet request
+     * @param response the servlet response
+     * @return true if the request should be tracked, false otherwise
+     */
+    private boolean shouldEvaluateRequest(ServletRequest request, ServletResponse response) {
+        // Only process HTTP requests
+        if (!(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
+            return false;
+        }
+        
+        // Skip tracking if disabled
+        return trackingEnabled && requestTracker != null;
     }
     
     @Override

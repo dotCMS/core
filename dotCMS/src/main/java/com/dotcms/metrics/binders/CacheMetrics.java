@@ -316,12 +316,10 @@ public class CacheMetrics implements MeterBinder {
                 // Handle GuavaCache format: direct NumberFormat output like "1,000"
                 return getStatDoubleValue(stats, CacheStats.REGION_CONFIGURED_SIZE);
             }
-            
-            return 0.0;
         } catch (Exception e) {
             Logger.debug(this, "Failed to parse configured size from value '" + stats.getStatValue(CacheStats.REGION_CONFIGURED_SIZE) + "': " + e.getMessage());
-            return 0.0;
         }
+        return 0.0;
     }
     
     /**

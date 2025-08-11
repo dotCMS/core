@@ -1,9 +1,16 @@
 package com.dotcms.metrics;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,8 +44,34 @@ public class RequestTracker {
     // Thread-local for request timing
     private final ThreadLocal<Long> requestStartTime = new ThreadLocal<>();
     
+    // Configurable endpoint patterns
+    private final List<String> trackedEndpointPatterns;
+    private final boolean endpointTrackingEnabled;
+    private final int maxEndpointPatterns;
+    
     private RequestTracker() {
-        // Private constructor for singleton
+        // Load configuration for endpoint tracking
+        this.endpointTrackingEnabled = Config.getBooleanProperty("metrics.endpoints.tracking.enabled", true);
+        this.maxEndpointPatterns = Config.getIntProperty("metrics.endpoints.tracking.max_patterns", 10);
+        
+        // Load tracked endpoint patterns from configuration
+        String patternsConfig = Config.getStringProperty("metrics.endpoints.tracking.patterns", 
+            "/api/,/contentAsset/,/dotAdmin/,/dotmgt/");
+        
+        if (UtilMethods.isSet(patternsConfig)) {
+            this.trackedEndpointPatterns = Arrays.asList(patternsConfig.split(","));
+            // Trim whitespace from patterns
+            this.trackedEndpointPatterns.replaceAll(String::trim);
+            
+            Logger.info(this, "RequestTracker endpoint tracking enabled with patterns: " + this.trackedEndpointPatterns);
+        } else {
+            this.trackedEndpointPatterns = Collections.emptyList();
+            Logger.info(this, "RequestTracker endpoint tracking disabled - no patterns configured");
+        }
+        
+        // Log configuration
+        Logger.info(this, String.format("RequestTracker initialized - endpoint tracking: %s, max patterns: %d, patterns: %s",
+            endpointTrackingEnabled, maxEndpointPatterns, trackedEndpointPatterns));
     }
     
     /**
@@ -123,8 +156,8 @@ public class RequestTracker {
      * @param statusCode the HTTP status code
      */
     public void incrementStatusCode(int statusCode) {
-        String range = getStatusCodeRange(statusCode);
-        statusCodeCounts.computeIfAbsent(range, k -> new AtomicLong(0)).incrementAndGet();
+        StatusCodeRange range = StatusCodeRange.fromStatusCode(statusCode);
+        statusCodeCounts.computeIfAbsent(range.getLabel(), k -> new AtomicLong(0)).incrementAndGet();
     }
     
     /**
@@ -208,13 +241,21 @@ public class RequestTracker {
      * @return error rate as percentage (0-100)
      */
     public double getErrorRate() {
-        long total2xx = getStatusCodeCount("2xx");
-        long total3xx = getStatusCodeCount("3xx");
-        long total4xx = getStatusCodeCount("4xx");
-        long total5xx = getStatusCodeCount("5xx");
+        long totalRequests = 0;
+        long errorRequests = 0;
         
-        long totalRequests = total2xx + total3xx + total4xx + total5xx;
-        long errorRequests = total4xx + total5xx;
+        for (StatusCodeRange range : StatusCodeRange.values()) {
+            if (range == StatusCodeRange.OTHER) {
+                continue; // Skip OTHER category for rate calculation
+            }
+            
+            long count = getStatusCodeCount(range.getLabel());
+            totalRequests += count;
+            
+            if (range.isError()) {
+                errorRequests += count;
+            }
+        }
         
         return totalRequests > 0 ? ((double) errorRequests / totalRequests) * 100 : 0.0;
     }
@@ -223,56 +264,86 @@ public class RequestTracker {
     // HELPER METHODS
     // ====================================================================
     
-    /**
-     * Get status code range category for a status code.
-     * 
-     * @param statusCode the HTTP status code
-     * @return status code range (2xx, 3xx, 4xx, 5xx, other)
-     */
-    private String getStatusCodeRange(int statusCode) {
-        if (statusCode >= 200 && statusCode < 300) return "2xx";
-        if (statusCode >= 300 && statusCode < 400) return "3xx";
-        if (statusCode >= 400 && statusCode < 500) return "4xx";
-        if (statusCode >= 500 && statusCode < 600) return "5xx";
-        return "other";
-    }
     
     /**
-     * Get endpoint pattern for a URI.
+     * Get endpoint pattern for a URI based on configured tracking patterns.
+     * This method checks if the URI matches any of the configured endpoint patterns
+     * and returns the matching pattern for metrics tracking.
      * 
      * @param uri the request URI
      * @return endpoint pattern or null if not a tracked pattern
      */
     private String getEndpointPattern(String uri) {
-        if (uri == null) return null;
+        if (uri == null || !endpointTrackingEnabled) {
+            return null;
+        }
         
-        if (uri.startsWith("/api/")) return "/api/";
-        if (uri.startsWith("/contentAsset/")) return "/contentAsset/";
-        if (uri.startsWith("/dotAdmin/")) return "/dotAdmin/";
-        if (uri.startsWith("/dotmgt/")) return "/dotmgt/";
+        // Check current endpoint count against maximum to prevent explosion
+        if (endpointCounts.size() >= maxEndpointPatterns) {
+            Logger.debug(this, () -> "Maximum endpoint patterns reached (" + maxEndpointPatterns + 
+                "). Not tracking new pattern for URI: " + uri);
+            return null;
+        }
         
-        return null; // Only track key endpoint patterns
+        // Find the first matching pattern
+        for (String pattern : trackedEndpointPatterns) {
+            if (UtilMethods.isSet(pattern) && uri.startsWith(pattern)) {
+                return pattern;
+            }
+        }
+        
+        return null; // No matching pattern found
     }
     
     /**
-     * Get all status code counts for debugging/monitoring.
+     * Get the list of currently configured endpoint patterns.
+     * This is useful for debugging and monitoring configuration.
      * 
-     * @return copy of status code counts map
+     * @return immutable list of configured endpoint patterns
      */
-    public ConcurrentHashMap<String, Long> getAllStatusCodeCounts() {
-        ConcurrentHashMap<String, Long> result = new ConcurrentHashMap<>();
+    public List<String> getConfiguredEndpointPatterns() {
+        return Collections.unmodifiableList(trackedEndpointPatterns);
+    }
+    
+    /**
+     * Check if endpoint tracking is enabled.
+     * 
+     * @return true if endpoint tracking is enabled, false otherwise
+     */
+    public boolean isEndpointTrackingEnabled() {
+        return endpointTrackingEnabled;
+    }
+    
+    /**
+     * Get the maximum number of endpoint patterns allowed.
+     * 
+     * @return maximum endpoint pattern limit
+     */
+    public int getMaxEndpointPatterns() {
+        return maxEndpointPatterns;
+    }
+    
+    /**
+     * Get all status code counts for metrics collection.
+     * Returns an immutable snapshot of current status code counts.
+     * 
+     * @return immutable copy of status code counts map
+     */
+    public Map<String, Long> getAllStatusCodeCounts() {
+        Map<String, Long> result = new HashMap<>();
         statusCodeCounts.forEach((key, value) -> result.put(key, value.get()));
-        return result;
+        return Collections.unmodifiableMap(result);
     }
     
     /**
-     * Get all endpoint counts for debugging/monitoring.
+     * Get all endpoint counts for metrics collection.
+     * Returns an immutable snapshot of current endpoint counts.
      * 
-     * @return copy of endpoint counts map
+     * @return immutable copy of endpoint counts map
      */
-    public ConcurrentHashMap<String, Long> getAllEndpointCounts() {
-        ConcurrentHashMap<String, Long> result = new ConcurrentHashMap<>();
+    public Map<String, Long> getAllEndpointCounts() {
+        Map<String, Long> result = new HashMap<>();
         endpointCounts.forEach((key, value) -> result.put(key, value.get()));
-        return result;
+        return Collections.unmodifiableMap(result);
     }
 }

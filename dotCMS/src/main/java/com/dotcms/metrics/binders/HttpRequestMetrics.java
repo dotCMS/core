@@ -1,6 +1,7 @@
 package com.dotcms.metrics.binders;
 
 import com.dotcms.metrics.RequestTracker;
+import com.dotcms.metrics.StatusCodeRange;
 import com.dotmarketing.util.Logger;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -11,6 +12,7 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -153,60 +155,105 @@ public class HttpRequestMetrics implements MeterBinder {
     
     /**
      * Register HTTP status code distribution metrics from RequestTracker.
+     * Uses dynamic registration based on actual status code ranges encountered.
      */
     private void registerRequestTrackerStatusCodeMetrics(MeterRegistry registry) {
-        // 2xx Success responses
-        Gauge.builder(METRIC_PREFIX + ".responses.2xx", requestTracker, 
-            tracker -> tracker.getStatusCodeCount("2xx"))
-            .description("Number of 2xx HTTP responses from RequestTracker")
-            .register(registry);
+        // Register metrics for all defined status code ranges
+        for (StatusCodeRange range : StatusCodeRange.values()) {
+            final String rangeLabel = range.getLabel();
+            
+            Gauge.builder(METRIC_PREFIX + ".responses." + rangeLabel, requestTracker,
+                tracker -> tracker.getStatusCodeCount(rangeLabel))
+                .description("Number of " + rangeLabel + " HTTP responses from RequestTracker")
+                .tag("status_range", rangeLabel)
+                .tag("is_error", String.valueOf(range.isError()))
+                .register(registry);
+        }
         
-        // 3xx Redirection responses
-        Gauge.builder(METRIC_PREFIX + ".responses.3xx", requestTracker,
-            tracker -> tracker.getStatusCodeCount("3xx"))
-            .description("Number of 3xx HTTP responses from RequestTracker")
-            .register(registry);
-        
-        // 4xx Client error responses
-        Gauge.builder(METRIC_PREFIX + ".responses.4xx", requestTracker,
-            tracker -> tracker.getStatusCodeCount("4xx"))
-            .description("Number of 4xx HTTP responses from RequestTracker")
-            .register(registry);
-        
-        // 5xx Server error responses
-        Gauge.builder(METRIC_PREFIX + ".responses.5xx", requestTracker,
-            tracker -> tracker.getStatusCodeCount("5xx"))
-            .description("Number of 5xx HTTP responses from RequestTracker")
-            .register(registry);
+        // Also register dynamic metrics for any status codes that might be tracked at runtime
+        // This catches any status codes that might be encountered but not in the enum
+        Map<String, Long> currentStatusCounts = requestTracker.getAllStatusCodeCounts();
+        for (String statusRange : currentStatusCounts.keySet()) {
+            // Skip if already registered by the enum loop above
+            boolean alreadyRegistered = false;
+            for (StatusCodeRange range : StatusCodeRange.values()) {
+                if (range.getLabel().equals(statusRange)) {
+                    alreadyRegistered = true;
+                    break;
+                }
+            }
+            
+            if (!alreadyRegistered) {
+                Gauge.builder(METRIC_PREFIX + ".responses." + statusRange, requestTracker,
+                    tracker -> tracker.getStatusCodeCount(statusRange))
+                    .description("Number of " + statusRange + " HTTP responses from RequestTracker (dynamic)")
+                    .tag("status_range", statusRange)
+                    .tag("is_error", "unknown")
+                    .register(registry);
+            }
+        }
     }
     
     /**
      * Register endpoint-specific metrics for key dotCMS endpoints from RequestTracker.
+     * Uses dynamic registration based on actual endpoints being tracked.
      */
     private void registerRequestTrackerEndpointMetrics(MeterRegistry registry) {
-        // API endpoint requests
-        Gauge.builder(METRIC_PREFIX + ".endpoints.api.requests", requestTracker,
-            tracker -> tracker.getEndpointCount("/api/"))
-            .description("Number of requests to /api/* endpoints from RequestTracker")
-            .register(registry);
+        // Get all currently tracked endpoints dynamically
+        Map<String, Long> currentEndpointCounts = requestTracker.getAllEndpointCounts();
         
-        // Content delivery requests
-        Gauge.builder(METRIC_PREFIX + ".endpoints.content.requests", requestTracker,
-            tracker -> tracker.getEndpointCount("/contentAsset/"))
-            .description("Number of content delivery requests from RequestTracker")
-            .register(registry);
+        for (String endpoint : currentEndpointCounts.keySet()) {
+            // Create a safe metric name from the endpoint pattern
+            String metricName = sanitizeEndpointForMetric(endpoint);
+            
+            Gauge.builder(METRIC_PREFIX + ".endpoints.requests", requestTracker,
+                tracker -> tracker.getEndpointCount(endpoint))
+                .description("Number of requests to " + endpoint + " endpoints from RequestTracker")
+                .tag("endpoint", endpoint)
+                .tag("endpoint_name", metricName)
+                .register(registry);
+        }
         
-        // Admin interface requests
-        Gauge.builder(METRIC_PREFIX + ".endpoints.admin.requests", requestTracker,
-            tracker -> tracker.getEndpointCount("/dotAdmin/"))
-            .description("Number of admin interface requests from RequestTracker")
-            .register(registry);
+        // Also register configured endpoint patterns even if no requests have been seen yet
+        // This ensures consistent metrics even during startup
+        for (String configuredEndpoint : requestTracker.getConfiguredEndpointPatterns()) {
+            if (!currentEndpointCounts.containsKey(configuredEndpoint)) {
+                String metricName = sanitizeEndpointForMetric(configuredEndpoint);
+                
+                Gauge.builder(METRIC_PREFIX + ".endpoints.requests", requestTracker,
+                    tracker -> tracker.getEndpointCount(configuredEndpoint))
+                    .description("Number of requests to " + configuredEndpoint + " endpoints from RequestTracker")
+                    .tag("endpoint", configuredEndpoint)
+                    .tag("endpoint_name", metricName)
+                    .register(registry);
+            }
+        }
+    }
+    
+    /**
+     * Convert endpoint pattern to a safe metric name.
+     * Removes slashes and special characters to create valid metric names.
+     * 
+     * @param endpoint the endpoint pattern (e.g., "/api/", "/contentAsset/")
+     * @return sanitized name for use in metric names (e.g., "api", "contentAsset")
+     */
+    private String sanitizeEndpointForMetric(String endpoint) {
+        if (endpoint == null) {
+            return "unknown";
+        }
         
-        // Management endpoint requests
-        Gauge.builder(METRIC_PREFIX + ".endpoints.management.requests", requestTracker,
-            tracker -> tracker.getEndpointCount("/dotmgt/"))
-            .description("Number of management endpoint requests from RequestTracker")
-            .register(registry);
+        // Remove leading/trailing slashes and convert to lowercase
+        String sanitized = endpoint.replaceAll("^/+|/+$", "").toLowerCase();
+        
+        // Replace remaining slashes with underscores
+        sanitized = sanitized.replaceAll("/", "_");
+        
+        // Handle empty string
+        if (sanitized.isEmpty()) {
+            return "root";
+        }
+        
+        return sanitized;
     }
     
     /**
