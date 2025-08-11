@@ -1,3 +1,5 @@
+import { signalMethod } from '@ngrx/signals';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,7 +14,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { signalMethod } from '@ngrx/signals';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';

@@ -14,7 +14,7 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 
-import { Column } from '../models/column.model';
+import { Column } from '../../../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
 
@@ -32,7 +32,7 @@ export interface RelationshipFieldSearchResponse {
 @Injectable({
     providedIn: 'root'
 })
-export class RelationshipFieldService {
+export class ExistingContentService {
     readonly #fieldService = inject(DotFieldService);
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
@@ -120,7 +120,7 @@ export class RelationshipFieldService {
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
     getColumnsAndContent(
-        contentTypeId: string,
+        contentTypeId: string
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),

@@ -1,10 +1,45 @@
 import { DotCMSSystemActionMappings } from './dot-workflow-action.model';
 import { DotCMSWorkflow } from './dot-workflow.model';
 
+export const DotCMSClazzes = {
+    // Layout Fields
+    ROW: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+    COLUMN: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+    TAB_DIVIDER: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+    LINE_DIVIDER: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+    COLUMN_BREAK: 'contenttype.column.break',
+    // Content Type Fields
+    BINARY: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+    BLOCK_EDITOR: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+    CATEGORY: 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
+    CHECKBOX: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
+    CONSTANT: 'com.dotcms.contenttype.model.field.ImmutableConstantField',
+    CUSTOM_FIELD: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+    DATE: 'com.dotcms.contenttype.model.field.ImmutableDateField',
+    DATE_AND_TIME: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+    FILE: 'com.dotcms.contenttype.model.field.ImmutableFileField',
+    HIDDEN: 'com.dotcms.contenttype.model.field.ImmutableHiddenField',
+    IMAGE: 'com.dotcms.contenttype.model.field.ImmutableImageField',
+    JSON: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
+    KEY_VALUE: 'com.dotcms.contenttype.model.field.ImmutableKeyValueField',
+    MULTI_SELECT: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+    RADIO: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+    RELATIONSHIP: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+    SELECT: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+    HOST_FOLDER: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
+    TAG: 'com.dotcms.contenttype.model.field.ImmutableTagField',
+    TEXT: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+    TEXTAREA: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
+    TIME: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
+    WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+} as const;
+
+export type DotCMSClazzes = (typeof DotCMSClazzes)[keyof typeof DotCMSClazzes];
+
 export interface DotCMSContentType {
     baseType: string;
     icon?: string;
-    clazz: string;
+    clazz: DotCMSClazzes;
     defaultType: boolean;
     contentType?: string;
     description?: string;
@@ -35,7 +70,7 @@ export interface DotCMSContentType {
 
 export interface DotCMSContentTypeField {
     categories?: DotCMSContentTypeFieldCategories;
-    clazz: string;
+    clazz: DotCMSClazzes;
     contentTypeId: string;
     dataType: string;
     defaultValue?: string;

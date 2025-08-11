@@ -18,16 +18,16 @@ import {
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
-import { RelationshipFieldService } from './relationship-field.service';
+import { ExistingContentService } from './existing-content.service';
 
-describe('RelationshipFieldService', () => {
-    let spectator: SpectatorService<RelationshipFieldService>;
+describe('ExistingContentService', () => {
+    let spectator: SpectatorService<ExistingContentService>;
     let dotFieldService: SpyObject<DotFieldService>;
     let dotContentSearchService: SpyObject<DotContentSearchService>;
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
 
     const createService = createServiceFactory({
-        service: RelationshipFieldService,
+        service: ExistingContentService,
         providers: [
             mockProvider(DotHttpErrorManagerService, {
                 handle: () => of(null)

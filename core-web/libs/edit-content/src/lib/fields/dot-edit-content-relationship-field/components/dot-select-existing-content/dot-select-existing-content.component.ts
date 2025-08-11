@@ -120,7 +120,7 @@ export class DotSelectExistingContentComponent implements OnInit {
         this.store.initLoad({
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
-            selectedItemsIds: data.currentItemsIds,
+            selectedItemsIds: data.currentItemsIds
         });
     }
 

@@ -98,12 +98,14 @@
                     @case ('status') {
                         <td class="min-w-8rem" [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
-                            <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
+                            <p-chip
+                                [styleClass]="'p-chip-sm ' + status.classes"
+                                [label]="status.label" />
                         </td>
                     }
                     @case ('image') {
                         <td class="column-thumbnail" [class.cursor-not-allowed]="isDisabled">
-                            <div class="container-thumbnail" >
+                            <div class="container-thumbnail">
                                 <dot-contentlet-thumbnail
                                     [iconSize]="'30px'"
                                     [contentlet]="item"

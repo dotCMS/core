@@ -1,23 +1,25 @@
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, pipe } from 'rxjs';
+import { pipe } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
-import { DotContentTypeService, DotFieldService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField,
-    FeaturedFlags
+    DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
+
+import { RelationshipFieldService } from './relationship-field.service';
 
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
 import { SelectionMode, TableColumn } from '../models/relationship.models';
-import { getColumns, getContentTypeIdFromRelationship, getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
@@ -87,14 +89,13 @@ export const RelationshipFieldStore = signalStore(
             const identifiers = data.map((item) => item.identifier).join(',');
 
             return `${identifiers}`;
-        }),
+        })
     })),
     withMethods(
         (
             store,
-            dotContentTypeService = inject(DotContentTypeService),
-            dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
-            dotFieldService = inject(DotFieldService)
+            relationshipFieldService = inject(RelationshipFieldService),
+            dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
         ) => ({
             /**
              * Sets the data in the state.
@@ -116,54 +117,31 @@ export const RelationshipFieldStore = signalStore(
                 contentlet: DotCMSContentlet;
             }>(
                 pipe(
+                    tap(() => patchState(store, initialState)),
                     switchMap(({ field, contentlet }) => {
-                        const cardinality = field?.relationships?.cardinality ?? null;
-                        const contentTypeId = getContentTypeIdFromRelationship(field);
-
-                        if (cardinality === null || !field?.variable || !contentTypeId) {
-                            return EMPTY;
-                        }
-
-                        // Validate and set initial data
-                        const data = getRelationshipFromContentlet({ contentlet, variable: field.variable });
-                        const selectionMode = getSelectionModeByCardinality(cardinality);
-                        const columns = getColumns(field, data);
-
-                        // Reset state first
-                        patchState(store, {
-                            status: ComponentStatus.LOADING,
-                            contentType: null, // Reset contentType to prevent stale state
-                            isNewEditorEnabled: false, // Reset isNewEditorEnabled to prevent stale state
-                            selectionMode,
-                            columns,
-                            data,
-                            field
-                        });
-
-                        // Continue with content type loading
-                        return dotContentTypeService.getContentType(contentTypeId).pipe(
-                            tap((contentType) => {
-                                const isNewEditorEnabled =
-                                    contentType.metadata?.[
-                                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
-                                    ] === true;
-
-                                patchState(store, {
-                                    contentType,
-                                    isNewEditorEnabled,
-                                    status: ComponentStatus.LOADED
-                                });
+                        return relationshipFieldService.prepareField({ field, contentlet }).pipe(
+                            tapResponse({
+                                next: (newState) => {
+                                    patchState(store, {
+                                        status: ComponentStatus.LOADED,
+                                        contentType: newState.contentType,
+                                        isNewEditorEnabled: newState.isNewEditorEnabled,
+                                        selectionMode: newState.selectionMode,
+                                        columns: newState.columns,
+                                        data: newState.data,
+                                        field
+                                    });
+                                },
+                                error: (error) => {
+                                    if (error instanceof HttpErrorResponse) {
+                                        dotHttpErrorManagerService.handle(error);
+                                    }
+                                    patchState(store, {
+                                        status: ComponentStatus.ERROR
+                                    });
+                                }
                             })
                         );
-                    }),
-                    catchError((error) => {
-                        // Handle all errors (validation and async) here
-                        dotHttpErrorManagerService.handle(error);
-                        patchState(store, {
-                            status: ComponentStatus.ERROR
-                        });
-
-                        return EMPTY;
                     })
                 )
             ),

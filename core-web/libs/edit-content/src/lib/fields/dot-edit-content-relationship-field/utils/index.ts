@@ -1,6 +1,11 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DEFAULT_RELATIONSHIP_COLUMNS, RELATIONSHIP_OPTIONS, SHOW_FIELDS_VARIABLE_KEY, SPECIAL_FIELDS } from '../dot-edit-content-relationship-field.constants';
+import {
+    DEFAULT_RELATIONSHIP_COLUMNS,
+    RELATIONSHIP_OPTIONS,
+    SHOW_FIELDS_VARIABLE_KEY,
+    SPECIAL_FIELDS
+} from '../dot-edit-content-relationship-field.constants';
 import { RelationshipTypes, TableColumn } from '../models/relationship.models';
 
 /**
@@ -85,10 +90,9 @@ export function extractShowFields(field: DotCMSContentTypeField | null): string[
 
     return showFieldsVar.value
         .split(',')
-        .map(field => field.trim())
-        .filter(field => field.length > 0);
+        .map((field) => field.trim())
+        .filter((field) => field.length > 0);
 }
-
 
 export function getTypeField(fieldName: string, data: DotCMSContentlet[]): TableColumn['type'] {
     const isSpecialField = SPECIAL_FIELDS[fieldName];
@@ -122,7 +126,6 @@ export function getColumns(field: DotCMSContentTypeField, data: DotCMSContentlet
         return DEFAULT_RELATIONSHIP_COLUMNS;
     }
 }
-
 
 export function isImage(fieldName: string, contentlet: DotCMSContentlet): boolean {
     const metadata = contentlet[`${fieldName}MetaData`];
