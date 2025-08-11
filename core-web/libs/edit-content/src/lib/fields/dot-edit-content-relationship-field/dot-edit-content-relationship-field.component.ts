@@ -6,11 +6,11 @@ import {
     computed,
     CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
-    effect,
     forwardRef,
     inject,
     input,
-    signal
+    signal,
+    OnInit
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -64,7 +64,7 @@ import { LanguagePipe } from '../../pipes/language.pipe';
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class DotEditContentRelationshipFieldComponent implements ControlValueAccessor {
+export class DotEditContentRelationshipFieldComponent implements ControlValueAccessor, OnInit {
     /**
      * A readonly instance of the RelationshipFieldStore injected into the component.
      * This store is used to manage the state and actions related to the relationship field.
@@ -145,6 +145,21 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
+    /**
+     * Computed signal that holds the field and contentlet.
+     *
+     * @memberof DotEditContentRelationshipFieldComponent
+     */
+    $inputs = computed(() => ({
+        field: this.$field(),
+        contentlet: this.$contentlet()
+    }));
+
+    /**
+     * Updates the value of the field.
+     *
+     * @param value - The value to update.
+     */
     readonly updateValueField = signalMethod<string>((value) => {
         if (this.onChange && this.onTouched) {
             this.onChange(value);
@@ -153,23 +168,38 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     });
 
     /**
+     * Initializes the store with the field and contentlet.
+     *
+     * @param field - The field to initialize the store with.
+     * @param contentlet - The contentlet to initialize the store with.
+     */
+    readonly initialize = signalMethod<{
+        field: DotCMSContentTypeField;
+        contentlet: DotCMSContentlet;
+    }>((params) => {
+        this.store.initialize({
+            field: params.field,
+            contentlet: params.contentlet
+        });
+    });
+
+    /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
-     * It sets the cardinality of the relationship field based on the field's cardinality.
+     * It sets the value of the field to the formatted relationship.
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
     constructor() {
-        effect(() => {
-            const field = this.$field();
-            const contentlet = this.$contentlet();
-
-            this.store.initialize({
-                field,
-                contentlet
-            });
-        });
-
         this.updateValueField(this.store.formattedRelationship);
+    }
+
+    /**
+     * Initializes the store with the field and contentlet.
+     *
+     * @memberof DotEditContentRelationshipFieldComponent
+     */
+    ngOnInit() {
+        this.initialize(this.$inputs());
     }
 
     $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
