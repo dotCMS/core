@@ -1,9 +1,12 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.cms.login.LoginServiceAPI;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityMapMapView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -65,10 +68,10 @@ import org.glassfish.jersey.server.JSONP;
  */
 
 
+@SwaggerCompliant(value = "Core authentication and authorization APIs", batch = 1)
 @SuppressWarnings("serial")
 @Path("/v1/authentication")
 @Tag(name = "Authentication",
-        description = "Endpoints that perform operations related to user authentication",
         externalDocs = @ExternalDocumentation(description = "Additional Authentication API information",
                                                 url = "https://www.dotcms.com/docs/latest/rest-api-authentication"))
 
@@ -107,9 +110,9 @@ public class AuthenticationResource implements Serializable {
     @POST
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "postAuthentication",
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "postAuthenticationV1",
                 summary = "Verifies user or application authentication",
                 description = "Takes a user's login ID and password and checks them against the user rolls.\n\n" +
                                 "If the user is found and authenticated, a session is created.\n\n" +
@@ -118,7 +121,7 @@ public class AuthenticationResource implements Serializable {
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User authentication successful",
                         content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityUserMapView.class))),
+                            schema = @Schema(implementation = ResponseEntityMapView.class))),
                     @ApiResponse(responseCode = "401", description = "User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden request"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
@@ -176,7 +179,7 @@ public class AuthenticationResource implements Serializable {
                 LoginMode.set(request,
                         authenticationForm.isBackEndLogin()? LoginMode.BE:LoginMode.FE);
 
-                res = Response.ok(new ResponseEntityView(userMap)).build(); // 200
+                res = Response.ok(new ResponseEntityMapView(userMap)).build(); // 200
                 request.getSession().setAttribute(Globals.LOCALE_KEY, locale);
             } else {
 
@@ -191,7 +194,7 @@ public class AuthenticationResource implements Serializable {
 
             try {
 
-                res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
+                res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView<>
                         (List.of(new ErrorEntity("your-account-is-not-active",
                                 LanguageUtil.format(locale,
                                         "your-account-is-not-active", new LanguageWrapper[]{
@@ -215,8 +218,8 @@ public class AuthenticationResource implements Serializable {
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "getLogInUser",
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getLogInUserV1",
                 summary = "Retrieves user data",
                 description = "Provides information about any users that are currently in a session.\n\n" +
                                 "This retrieved data will be formatted into a JSON response body.\n\n",
@@ -224,7 +227,7 @@ public class AuthenticationResource implements Serializable {
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User data successfully collected",
                                 content = @Content(
-                                    schema = @Schema(implementation = ResponseEntityUserView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapMapView.class)
                                 )),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized request"),
@@ -235,9 +238,9 @@ public class AuthenticationResource implements Serializable {
         Response res = null;
 
         try {
-            Map<String, Map> users = authenticationHelper.getUsers(request);
+            Map<String, Map<String,Object>> users = authenticationHelper.getUsers(request);
             // todo: add here the loggedInDate???
-            res = Response.ok(new ResponseEntityView(users)).build();
+            res = Response.ok(new ResponseEntityMapMapView(users)).build();
         } catch (Exception e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
