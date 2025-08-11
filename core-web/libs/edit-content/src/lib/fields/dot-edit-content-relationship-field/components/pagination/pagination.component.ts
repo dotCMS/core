@@ -5,8 +5,7 @@ import { ButtonModule } from 'primeng/button';
 @Component({
     selector: 'dot-pagination',
     imports: [ButtonModule],
-    templateUrl: './pagination.component.html',
-    standalone: true
+    templateUrl: './pagination.component.html'
 })
 export class PaginationComponent {
     /**
