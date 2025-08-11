@@ -79,16 +79,12 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input<DotCMSContentTypeField | null>(null, {
-        alias: 'field'
-    });
+    $field = input.required<DotCMSContentTypeField | null>({ alias: 'field' });
 
     /**
      * Input contentlet DotCMSContentlet
      */
-    $contentlet = input<DotCMSContentlet | null>(null, {
-        alias: 'contentlet'
-    });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
 
     /**
      * Event emitted when disabledWYSIWYG changes.
@@ -118,14 +114,13 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
 
     /**
      * Computed property that determines the current editor based on disabledWYSIWYG settings
-     * with fallback to content analysis when no entry exists.
      */
     $contentEditorUsed = computed(() => {
         const field = this.$field();
         const contentlet = this.$contentlet();
 
         if (!field?.variable) {
-            return AvailableEditorTextArea.PlainText;
+            return AvailableEditorTextArea.PlainText; // Default editor
         }
 
         const disabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);

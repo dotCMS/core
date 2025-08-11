@@ -38,8 +38,8 @@
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { AvailableEditor } from '../../dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
 import { AvailableEditorTextArea } from '../../dot-edit-content-text-area/dot-edit-content-text-area.constants';
+import { AvailableEditor } from '../../dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
 
 /**
  * Enum representing the different editor types that can be disabled via disabledWYSIWYG attribute
@@ -195,35 +195,6 @@ export const updateDisabledWYSIWYGOnEditorSwitch = (
 };
 
 /**
- * Migrates legacy PLAIN editor entries to current format
- * This should be called when saving contentlet to eventually remove legacy entries
- *
- * @param disabledWYSIWYG - Current disabledWYSIWYG array
- * @param fieldVariable - The field variable being processed
- * @returns Updated array with legacy entries handled
- */
-export const migrateLegacyPlainEditor = (
-    disabledWYSIWYG: string[] = [],
-    fieldVariable: string
-): string[] => {
-    const entry = disabledWYSIWYG
-        .map(parseDisabledEditorEntry)
-        .find(
-            (entry) =>
-                entry.fieldVariable === fieldVariable &&
-                entry.editorType === DisabledEditorType.PlainLegacy
-        );
-
-    if (entry) {
-        // Convert legacy PLAIN entry to Monaco format (just field name)
-        const filteredEntries = disabledWYSIWYG.filter((item) => item !== entry.fullEntry);
-        return [...filteredEntries, fieldVariable];
-    }
-
-    return disabledWYSIWYG;
-};
-
-/**
  * Gets the disabledWYSIWYG array from a contentlet, ensuring it's always an array
  *
  * @param contentlet - The DotCMS contentlet
@@ -235,13 +206,6 @@ export const getDisabledWYSIWYGFromContentlet = (
     if (!contentlet) {
         return [];
     }
-
-    const disabledWYSIWYG = contentlet.disabledWYSIWYG;
-
-    if (!disabledWYSIWYG) {
-        return [];
-    }
-
     // disabledWYSIWYG is always an array of strings
-    return disabledWYSIWYG;
+    return contentlet.disabledWYSIWYG || [];
 };

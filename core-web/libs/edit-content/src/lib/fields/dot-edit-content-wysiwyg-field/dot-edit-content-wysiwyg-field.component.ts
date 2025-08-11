@@ -32,7 +32,6 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
 import {
     getCurrentEditorFromDisabled,
     getDisabledWYSIWYGFromContentlet,
-    migrateLegacyPlainEditor,
     updateDisabledWYSIWYGOnEditorSwitch
 } from '../shared/utils/field-editor-preferences.util';
 
@@ -165,17 +164,8 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
                     false // isTextAreaField
                 );
 
-                // Migrate legacy PLAIN editor entries if switching to TinyMCE
-                const finalDisabledWYSIWYG =
-                    newEditor === AvailableEditor.TinyMCE
-                        ? migrateLegacyPlainEditor(updatedDisabledWYSIWYG, field.variable)
-                        : updatedDisabledWYSIWYG;
-
-                // Update the contentlet's disabledWYSIWYG property
-                contentlet.disabledWYSIWYG = finalDisabledWYSIWYG;
-
                 // Emit the change event
-                this.disabledWYSIWYGChange.emit(finalDisabledWYSIWYG);
+                this.disabledWYSIWYGChange.emit(updatedDisabledWYSIWYG);
             }
 
             this.$displayedEditor.set(newEditor);

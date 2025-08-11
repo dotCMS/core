@@ -4,7 +4,6 @@ import {
     DisabledEditorType,
     getCurrentEditorFromDisabled,
     getDisabledWYSIWYGFromContentlet,
-    migrateLegacyPlainEditor,
     parseDisabledEditorEntry,
     updateDisabledWYSIWYGOnEditorSwitch
 } from './field-editor-preferences.util';
@@ -183,25 +182,6 @@ describe('field-editor-preferences.util', () => {
         });
     });
 
-    describe('migrateLegacyPlainEditor', () => {
-        it('should convert legacy PLAIN entry to Monaco format for specified field', () => {
-            const disabledWYSIWYG = ['myField@PLAIN', 'otherField', 'anotherField@PLAIN'];
-            const result = migrateLegacyPlainEditor(disabledWYSIWYG, 'myField');
-            expect(result).toEqual(['otherField', 'anotherField@PLAIN', 'myField']);
-        });
-
-        it('should return unchanged array when no legacy PLAIN entry exists', () => {
-            const disabledWYSIWYG = ['myField', 'otherField@ToggleEditor'];
-            const result = migrateLegacyPlainEditor(disabledWYSIWYG, 'myField');
-            expect(result).toEqual(['myField', 'otherField@ToggleEditor']);
-        });
-
-        it('should handle empty array', () => {
-            const result = migrateLegacyPlainEditor([], 'myField');
-            expect(result).toEqual([]);
-        });
-    });
-
     describe('getDisabledWYSIWYGFromContentlet', () => {
         it('should return array when contentlet has disabledWYSIWYG array', () => {
             const contentlet: Partial<DotCMSContentlet> = {
@@ -293,10 +273,7 @@ describe('field-editor-preferences.util', () => {
                 false
             );
 
-            contentlet.disabledWYSIWYG = migrateLegacyPlainEditor(
-                contentlet.disabledWYSIWYG,
-                'myWysiwyg'
-            );
+            // Legacy entries are handled automatically by getCurrentEditorFromDisabled
 
             expect(contentlet.disabledWYSIWYG).toEqual([]);
             expect(
