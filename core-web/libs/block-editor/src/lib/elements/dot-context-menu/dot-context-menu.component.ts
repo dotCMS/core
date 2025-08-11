@@ -2,7 +2,7 @@ import { marked } from 'marked';
 import { DOMSerializer } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, signal, ViewChild } from '@angular/core';
+import { Component, computed, input, signal, viewChild } from '@angular/core';
 
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { RippleModule } from 'primeng/ripple';
@@ -33,12 +33,11 @@ import { htmlToMarkdown } from './markdown.utils';
 })
 export class DotContextMenuComponent {
     editor = input.required<Editor>();
+    contextMenu = viewChild(ContextMenu);
 
     protected readonly target = computed(() => this.editor().view.dom.parentElement);
     protected readonly items = computed(() => this.buildMenuItems());
     private readonly hasSelection = signal(false);
-
-    @ViewChild('contextMenu') private contextMenu?: ContextMenu;
 
     private get platform(): Platform {
         return PLATFORM_PATTERNS.MAC.test(navigator.platform) ? 'mac' : 'pc';
@@ -69,7 +68,7 @@ export class DotContextMenuComponent {
         try {
             await item.command?.();
         } finally {
-            this.contextMenu?.hide();
+            this.contextMenu()?.hide();
         }
     }
 
