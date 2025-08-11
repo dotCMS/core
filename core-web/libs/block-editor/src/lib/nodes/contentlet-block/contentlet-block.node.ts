@@ -39,17 +39,35 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         },
 
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            const { data } = HTMLAttributes;
-            const img = data.hasTitleImage ? ['img', { src: data.image }] : ['span', {}];
+            type ContentletData = {
+                title?: string;
+                identifier?: string;
+                language?: string | number;
+                languageId?: string | number;
+                hasTitleImage?: boolean;
+                image?: string;
+            };
 
-            return [
-                'div',
-                { 'data-dotCMS-contentlet': 'true' },
-                ['h3', data.title],
-                ['div', data.identifier],
-                img,
-                ['div', {}, data.language]
+            const rawData: ContentletData =
+                (HTMLAttributes as { data?: ContentletData })?.data ?? {};
+
+            const titleText = rawData.title ?? '';
+            const identifierText = rawData.identifier ?? '';
+            const languageText = rawData.language ?? rawData.languageId ?? '';
+            const hasImage = Boolean(rawData.hasTitleImage && rawData.image);
+
+            const children: DOMOutputSpec[] = [
+                ['h3', String(titleText)],
+                ['div', String(identifierText)],
+                ['div', {}, String(languageText)]
             ];
+
+            if (hasImage) {
+                // Insert image after identifier block
+                children.splice(2, 0, ['img', { src: String(rawData.image) }]);
+            }
+
+            return ['div', { 'data-dotCMS-contentlet': 'true' }, ...children];
         },
 
         addNodeView(): NodeViewRenderer {
