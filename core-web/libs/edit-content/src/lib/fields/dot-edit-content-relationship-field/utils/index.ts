@@ -79,7 +79,7 @@ export const getFieldHeader = (fieldName: string): string => {
  * @returns The show fields.
  */
 export const extractShowFields = (field: DotCMSContentTypeField): string[] | null => {
-    if (field?.fieldVariables) {
+    if (!field?.fieldVariables) {
         return null;
     }
 
