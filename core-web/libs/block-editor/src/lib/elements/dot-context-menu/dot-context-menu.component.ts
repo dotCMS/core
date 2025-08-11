@@ -32,10 +32,10 @@ import { htmlToMarkdown } from './markdown.utils';
     imports: [CommonModule, ContextMenuModule, RippleModule, DotMessagePipe]
 })
 export class DotContextMenuComponent {
-    editor = input.required<Editor>();
-    contextMenu = viewChild(ContextMenu);
+    $editor = input.required<Editor>({ alias: 'editor' });
+    $contextMenu = viewChild(ContextMenu);
 
-    protected readonly target = computed(() => this.editor().view.dom.parentElement);
+    protected readonly target = computed(() => this.$editor().view.dom.parentElement);
     protected readonly items = computed(() => this.buildMenuItems());
     private readonly hasSelection = signal(false);
 
@@ -48,7 +48,7 @@ export class DotContextMenuComponent {
      * Updates the selection state to enable/disable selection-dependent menu items
      */
     protected onContextMenuShow(): void {
-        const hasSelection = !this.editor().view.state.selection.empty;
+        const hasSelection = !this.$editor().view.state.selection.empty;
         this.hasSelection.set(hasSelection);
     }
 
@@ -68,7 +68,7 @@ export class DotContextMenuComponent {
         try {
             await item.command?.();
         } finally {
-            this.contextMenu()?.hide();
+            this.$contextMenu()?.hide();
         }
     }
 
@@ -193,13 +193,13 @@ export class DotContextMenuComponent {
             const { html, text } = await this.getHtmlOrPlainFromClipboard();
 
             if (html) {
-                this.editor().commands.insertContent(html);
+                this.$editor().commands.insertContent(html);
                 this.focusEditor();
                 return;
             }
 
             if (text) {
-                this.editor().commands.insertContent(text, {
+                this.$editor().commands.insertContent(text, {
                     parseOptions: { preserveWhitespace: 'full' }
                 });
                 this.focusEditor();
@@ -221,7 +221,7 @@ export class DotContextMenuComponent {
     private async pasteWithoutFormatCommand(): Promise<void> {
         try {
             const text = await navigator.clipboard.readText();
-            this.editor().commands.insertContent(text, {
+            this.$editor().commands.insertContent(text, {
                 parseOptions: { preserveWhitespace: 'full' }
             });
             this.focusEditor();
@@ -243,7 +243,7 @@ export class DotContextMenuComponent {
         try {
             const text = await navigator.clipboard.readText();
             const html = marked.parse(text);
-            this.editor().commands.insertContent(html);
+            this.$editor().commands.insertContent(html);
             this.focusEditor();
         } catch (err) {
             console.warn(
@@ -259,7 +259,7 @@ export class DotContextMenuComponent {
      * @returns HTML string of selected content, or empty string if no selection
      */
     private getSelectedHtml(): string {
-        const { view, state } = this.editor();
+        const { view, state } = this.$editor();
         const { from, to, empty } = view.state.selection;
 
         if (empty) {
@@ -267,7 +267,7 @@ export class DotContextMenuComponent {
         }
 
         const selectedDoc = state.doc.cut(from, to);
-        const serializer = DOMSerializer.fromSchema(this.editor().schema);
+        const serializer = DOMSerializer.fromSchema(this.$editor().schema);
         const fragment = serializer.serializeFragment(selectedDoc.content);
         const tempDiv = document.createElement('div');
         tempDiv.appendChild(fragment);
@@ -289,27 +289,7 @@ export class DotContextMenuComponent {
      * Used after clipboard operations to maintain editor focus
      */
     private focusEditor(): void {
-        this.editor().commands.focus();
-    }
-
-    /**
-     * Attempts to read HTML content from the system clipboard
-     * Iterates through clipboard items looking for HTML MIME type
-     * @returns Promise resolving to HTML string, or empty string if no HTML found
-     * @throws May throw if clipboard access is denied or fails
-     */
-    private async getHtmlContentFromClipboard(): Promise<string> {
-        const clipboardItems = await navigator.clipboard.read();
-        for (const clipboardItem of clipboardItems) {
-            if (clipboardItem.types.includes('text/html')) {
-                const htmlBlob = await clipboardItem.getType('text/html');
-                const html = await htmlBlob.text();
-
-                return html;
-            }
-        }
-
-        return '';
+        this.$editor().commands.focus();
     }
 
     /**

@@ -4,6 +4,8 @@ import { Injector } from '@angular/core';
 
 import { Node, NodeViewRenderer } from '@tiptap/core';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { ContentletBlockComponent } from './contentlet-block.component';
 
 import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
@@ -39,22 +41,18 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         },
 
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            type ContentletData = {
-                title?: string;
-                identifier?: string;
-                language?: string | number;
-                languageId?: string | number;
-                hasTitleImage?: boolean;
-                image?: string;
-            };
+            const { data } = HTMLAttributes;
+            const rawData: DotCMSContentlet = data;
 
-            const rawData: ContentletData =
-                (HTMLAttributes as { data?: ContentletData })?.data ?? {};
+            if (!rawData) {
+                return ['div', { 'data-dotCMS-contentlet': 'true' }];
+            }
 
             const titleText = rawData.title ?? '';
             const identifierText = rawData.identifier ?? '';
             const languageText = rawData.language ?? rawData.languageId ?? '';
-            const hasImage = Boolean(rawData.hasTitleImage && rawData.image);
+            const hasImage = Boolean(rawData.titleImage || rawData.image);
+            const image = `/dA/${rawData.inode}`;
 
             const children: DOMOutputSpec[] = [
                 ['h3', String(titleText)],
@@ -63,8 +61,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
             ];
 
             if (hasImage) {
-                // Insert image after identifier block
-                children.splice(2, 0, ['img', { src: String(rawData.image) }]);
+                children.splice(2, 0, ['img', { src: String(image) }]);
             }
 
             return ['div', { 'data-dotCMS-contentlet': 'true' }, ...children];
