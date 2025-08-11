@@ -170,6 +170,19 @@ if [ -z "$CATALINA_TMPDIR" ]; then
       CATALINA_TMPDIR="$CATALINA_HOME/temp"
 fi
 
+# Clean up temp directory before startup to prevent accumulation of old files
+# Can be disabled by setting DOTCMS_DISABLE_TEMP_CLEANUP=true
+# Age threshold can be configured via DOTCMS_TEMP_CLEANUP_AGE_MINUTES (default: 60 minutes)
+if [ "${DOTCMS_DISABLE_TEMP_CLEANUP}" != "true" ]; then
+  if [ -d "${CATALINA_TMPDIR}" ]; then
+    CLEANUP_AGE_MINUTES=${DOTCMS_TEMP_CLEANUP_AGE_MINUTES:-60}
+    echo "Cleaning up temp directory (${CATALINA_TMPDIR}) before dotCMS startup..."
+    echo "Removing files older than ${CLEANUP_AGE_MINUTES} minutes..."
+    find "${CATALINA_TMPDIR}" -type f -user $(id -u) -mmin +${CLEANUP_AGE_MINUTES} -delete 2>/dev/null || true
+    echo "Temp directory cleanup completed"
+  fi
+fi
+
 add_glowroot_agent() {
     if ! echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*glowroot\.jar'; then
         if [ "$GLOWROOT_ENABLED" = "true" ]; then
