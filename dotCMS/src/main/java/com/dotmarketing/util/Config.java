@@ -389,8 +389,9 @@ public class Config {
 
 	public static long getLongProperty (String name, final long defaultVal) {
 		_refreshProperties ();
-		if ( props == null ) {
-			return defaultVal;
+		Long value = Try.of(()->props.getLong(envKey(name))).getOrNull();
+		if ( value != null ) {
+			return value;
 		}
 		return props.getLong(name, defaultVal);
 	}
@@ -402,11 +403,13 @@ public class Config {
 	 * @return
 	 */
 	public static int getIntProperty (String name, int defaultVal) {
-	    _refreshProperties ();
-        if ( props == null ) {
-            return defaultVal;
-        }
-        return props.getInt(name, defaultVal);
+		_refreshProperties ();
+		Integer value = Try.of(()->props.getInt(envKey(name))).getOrNull();
+		if(value!=null) {
+			return value;
+		}
+
+		return props.getInt(name, defaultVal);
 	}
 
 	/**
@@ -415,8 +418,15 @@ public class Config {
 	 */
 	@Deprecated
 	public static float getFloatProperty (String name) {
-	    _refreshProperties ();
-	    return props.getFloat( name );
+		_refreshProperties ();
+
+		Float value = Try.of(()->props.getFloat(envKey(name))).getOrNull();
+		if(value!=null) {
+			return value;
+		}
+
+
+		return props.getFloat( name );
 	}
 
 	/**
@@ -426,11 +436,12 @@ public class Config {
 	 * @return
 	 */
 	public static float getFloatProperty (String name, float defaultVal) {
-	    _refreshProperties ();
-        if ( props == null ) {
-            return defaultVal;
-        }
-        return props.getFloat(name, defaultVal);
+		_refreshProperties ();
+		Float value = Try.of(()->props.getFloat(envKey(name))).getOrNull();
+		if(value!=null) {
+			return value;
+		}
+		return props.getFloat(name, defaultVal);
 	}
 
 	/**
@@ -439,8 +450,12 @@ public class Config {
 	 */
 	@Deprecated
 	public static boolean getBooleanProperty (String name) {
-	    _refreshProperties ();
-	    return props.getBoolean(name);
+		_refreshProperties ();
+		Boolean value = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
+		if(value!=null) {
+			return value;
+		}
+		return props.getBoolean(name);
 	}
 
 	/**
@@ -450,11 +465,12 @@ public class Config {
 	 * @return
 	 */
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
-	    _refreshProperties ();
-        if ( props == null ) {
-            return defaultVal;
-        }
-        return props.getBoolean(name, defaultVal);
+		_refreshProperties ();
+		Boolean value = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
+		if(value!=null) {
+			return value;
+		}
+		return props.getBoolean(name, defaultVal);
 	}
 
 	/**

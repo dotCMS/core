@@ -78,6 +78,7 @@ export DOT_ES_AUTH_BASIC_USER=${DOT_ES_AUTH_BASIC_USER:-"admin"}
 export DOT_ES_AUTH_BASIC_PASSWORD=${DOT_ES_AUTH_BASIC_PASSWORD:-"admin"}
 export DOT_ES_AUTH_JWT_TOKEN=${DOT_ES_AUTH_JWT_TOKEN:-""}
 export DOT_ES_ENDPOINTS=${DOT_ES_ENDPOINTS:-"https://es.dotcms.site:9200"}
+export DOT_ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS=${DOT_ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS:-"10000"}
 
 ## if you want to provide a custom starter for the initial data load, specify
 # a url here and dotCMS will download it before starting up
