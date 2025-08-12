@@ -42,6 +42,7 @@ export interface DotCMSContentlet {
     contentTypeIcon?: string;
     variant?: string;
     __icon__?: string;
+    disabledWYSIWYG?: string[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
