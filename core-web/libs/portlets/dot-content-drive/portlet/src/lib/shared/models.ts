@@ -1,5 +1,4 @@
-import { Site } from '@dotcms/dotcms-js';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 
 export enum DotContentDriveStatus {
     LOADING = 'loading',
@@ -23,7 +22,7 @@ export interface DotContentDriveSort {
 }
 
 export interface DotContentDriveState {
-    currentSite: Site;
+    currentSite: SiteEntity;
     path: string;
     filters: Record<string, string>;
     items: DotContentDriveItem[];
@@ -34,7 +33,7 @@ export interface DotContentDriveState {
 }
 
 export interface DotContentDriveInit {
-    currentSite: Site;
+    currentSite: SiteEntity;
     path: string;
     filters: Record<string, string>;
 }

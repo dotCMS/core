@@ -1,23 +1,18 @@
-import { EMPTY, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    effect,
-    inject,
-    OnInit,
-    untracked
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
+import { DotContentSearchService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { GlobalStore } from '@dotcms/store';
 
+import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -25,20 +20,18 @@ import { decodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent],
-    providers: [DotContentDriveStore, DotSiteService],
+    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
+    providers: [DotContentDriveStore],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveShellComponent implements OnInit {
+export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
-    readonly #siteService = inject(DotSiteService);
-
     readonly #contentSearchService = inject(DotContentSearchService);
-
     readonly #route = inject(ActivatedRoute);
+    readonly #globalStore = inject(GlobalStore);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -54,8 +47,7 @@ export class DotContentDriveShellComponent implements OnInit {
 
         // If the current site is the system host, we don't need to search for content
         // It initializes the store with the system host and the path
-
-        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+        if (currentSite?.identifier === SYSTEM_HOST.identifier || !currentSite) {
             return;
         }
 
@@ -81,28 +73,17 @@ export class DotContentDriveShellComponent implements OnInit {
             });
     });
 
-    ngOnInit(): void {
-        this.#siteService
-            .getCurrentSite()
-            .pipe(
-                take(1),
-                catchError(() => {
-                    return of(SYSTEM_HOST);
-                })
-            )
-            .subscribe((currentSite) => {
-                const queryParams = this.#route.snapshot.queryParams;
+    readonly initEffect = effect(() => {
+        const currentSite = this.#globalStore.siteDetails();
+        const path = this.#route.snapshot.queryParams['path'] ?? '';
+        const filters = decodeFilters(this.#route.snapshot.queryParams['filters']);
 
-                const path = queryParams['path'] || '';
-                const filters = decodeFilters(queryParams['filters'] || '');
-
-                this.#store.initContentDrive({
-                    currentSite,
-                    path,
-                    filters
-                });
-            });
-    }
+        this.#store.initContentDrive({
+            currentSite,
+            path,
+            filters
+        });
+    });
 
     onPaginate(event: LazyLoadEvent) {
         // Explicit check because it can potentially be 0

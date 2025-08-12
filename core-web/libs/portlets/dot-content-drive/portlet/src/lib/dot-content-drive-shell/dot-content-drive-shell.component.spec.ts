@@ -7,26 +7,26 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
-import { mockSites } from '@dotcms/dotcms-js';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
 import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
-import { mockItems, mockRoute, mockSearchResponse } from '../shared/mocks';
+import { mockItems, mockRoute, mockSearchResponse, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
     let contentSearchService: jest.Mocked<DotContentSearchService>;
-    let siteService: jest.Mocked<DotSiteService>;
     let activatedRoute: SpyObject<ActivatedRoute>;
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
         providers: [
+            GlobalStore,
             mockProvider(DotSiteService, {
                 getCurrentSite: jest.fn().mockReturnValue(of(mockSites[0]))
             }),
@@ -64,7 +64,6 @@ describe('DotContentDriveShellComponent', () => {
             ]
         });
         contentSearchService = spectator.inject(DotContentSearchService);
-        siteService = spectator.inject(DotSiteService);
         activatedRoute = spectator.inject(ActivatedRoute);
         store = spectator.inject(DotContentDriveStore, true);
     });
@@ -77,8 +76,6 @@ describe('DotContentDriveShellComponent', () => {
         it('should initialize the store with current site and route params', () => {
             spectator.detectChanges();
 
-            expect(siteService.getCurrentSite).toHaveBeenCalled();
-
             expect(store.initContentDrive).toHaveBeenCalledWith({
                 currentSite: mockSites[0],
                 path: '/test/path',
@@ -87,20 +84,6 @@ describe('DotContentDriveShellComponent', () => {
                     status: 'published'
                 }
             });
-        });
-
-        it('should use SYSTEM_HOST if getCurrentSite fails', () => {
-            siteService.getCurrentSite.mockReturnValue(
-                throwError(() => new Error('Failed to get site'))
-            );
-
-            spectator.detectChanges();
-
-            expect(store.initContentDrive).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    currentSite: SYSTEM_HOST
-                })
-            );
         });
 
         it('should use empty string for path if not provided in query params', () => {
@@ -145,6 +128,10 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     describe('Content Loading Effect', () => {
+        beforeEach(() => {
+            jest.restoreAllMocks();
+        });
+
         it('should fetch content when store has a non-SYSTEM_HOST site', () => {
             // Setup store mock to simulate the effect running
             store.currentSite.mockReturnValue(mockSites[0]);
@@ -188,6 +175,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should handle sorting', () => {
+            // Setup store mock
+            store.currentSite.mockReturnValue(mockSites[1]);
             store.sort.mockReturnValue({ field: 'baseType', order: DotContentDriveSortOrder.DESC });
             store.$query.mockReturnValue('+testField:testValue');
             spectator.detectChanges();
@@ -201,6 +190,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should handle pagination', () => {
+            // Setup store mock
+            store.currentSite.mockReturnValue(mockSites[0]);
             store.pagination.mockReturnValue({ limit: 10, offset: 0 });
             store.$query.mockReturnValue('+testField:testValue');
             spectator.detectChanges();

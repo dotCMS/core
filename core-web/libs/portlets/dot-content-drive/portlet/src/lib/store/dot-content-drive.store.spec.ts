@@ -1,14 +1,13 @@
 import { describe } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { mockSites } from '@dotcms/dotcms-js';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import { SYSTEM_HOST } from '../shared/constants';
-import { mockItems } from '../shared/mocks';
+import { mockItems, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
@@ -71,7 +70,7 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site in query when provided', () => {
-                const customSite = mockSites[0];
+                const customSite = mockSites[0] as SiteEntity;
 
                 store.initContentDrive({
                     currentSite: customSite,

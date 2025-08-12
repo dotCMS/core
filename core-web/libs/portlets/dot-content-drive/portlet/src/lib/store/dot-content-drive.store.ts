@@ -69,7 +69,7 @@ export const DotContentDriveStore = signalStore(
         return {
             initContentDrive({ currentSite, path, filters }: DotContentDriveInit) {
                 patchState(store, {
-                    currentSite,
+                    currentSite: currentSite ?? SYSTEM_HOST,
                     path,
                     filters,
                     status: DotContentDriveStatus.LOADING
