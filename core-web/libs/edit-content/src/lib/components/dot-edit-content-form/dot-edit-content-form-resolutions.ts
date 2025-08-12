@@ -1,7 +1,7 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { getRelationshipFromContentlet } from '../../fields/dot-edit-content-relationship-field/utils/index';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
  * A function that provides a default resolution value for a contentlet field.

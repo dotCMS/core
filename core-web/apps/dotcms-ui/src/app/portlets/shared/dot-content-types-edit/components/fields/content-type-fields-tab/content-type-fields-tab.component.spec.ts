@@ -6,7 +6,11 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -16,7 +20,7 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 
 const tabField: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'tab',
+    clazz: DotCMSClazzes.TAB_DIVIDER,
     name: 'fieldTab-1'
 };
 const mockFieldTab: DotCMSContentTypeLayoutRow = {

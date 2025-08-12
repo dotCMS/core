@@ -1405,7 +1405,6 @@ public class ContentTypeResource implements Serializable {
 	@GET
 	@JSONP
 	@NoCache
-	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	@Operation(
 			operationId = "getContentType",

@@ -423,7 +423,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (token.equals(StringPool.BLANK)) {
                 continue;
             }
-            sqlQuery.append(" LOWER(c.title) like ?");
+
+
+            // I am not sure if this is faster of if we should just hand it off to ES in the case of a user trying to filter
+            // I can see this grinding in large directories.
+            sqlQuery.append(" contentlet_as_json::text ILIKE ? ");
             parameters.add("%" + token + "%");
             if (indx + 1 < splitter.length) {
                 sqlQuery.append(" and");
@@ -433,9 +437,19 @@ public class BrowserAPIImpl implements BrowserAPI {
         sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
         sqlQuery.append(" OR ");
         sqlQuery.append(getBinaryAssetNameColumn(ASSET_NAME_LIKE.toString()));
+        sqlQuery.append(" OR ");
+        sqlQuery.append(" working_inode in( select inode from tag, tag_inode where tag.tag_id=tag_inode.tag_id and tagname ILIKE ? ) ");
+
         sqlQuery.append(" ) ");
+
+
+
+
         parameters.add("%" + filterText + "%");
         parameters.add("%" + filterText + "%");
+        parameters.add("%" + filterText + "%");
+
+
     }
 
     /**

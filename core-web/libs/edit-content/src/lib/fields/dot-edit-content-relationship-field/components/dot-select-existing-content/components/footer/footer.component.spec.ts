@@ -18,8 +18,8 @@ import { FooterComponent } from './footer.component';
 import { Column } from '../../../../models/column.model';
 import {
     RelationshipFieldSearchResponse,
-    RelationshipFieldService
-} from '../../../../services/relationship-field.service';
+    ExistingContentService
+} from '../../store/existing-content.service';
 import { ExistingContentStore } from '../../store/existing-content.store';
 
 const mockColumns: Column[] = [
@@ -70,7 +70,7 @@ describe('FooterComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(messages)
             },
-            mockProvider(RelationshipFieldService, {
+            mockProvider(ExistingContentService, {
                 getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DynamicDialogRef, useValue: { close: jest.fn() } }

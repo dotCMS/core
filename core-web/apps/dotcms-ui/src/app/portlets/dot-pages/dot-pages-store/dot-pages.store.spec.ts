@@ -447,7 +447,7 @@ describe('DotPageStore', () => {
         dotPageStore.getPageTypes();
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pageTypes).toEqual(expectedInputArray);
+            expect(data.pageTypes).toEqual(expectedInputArray as unknown as DotCMSContentType[]);
         });
         expect(dotPageTypesService.getPages).toHaveBeenCalledTimes(1);
         expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
