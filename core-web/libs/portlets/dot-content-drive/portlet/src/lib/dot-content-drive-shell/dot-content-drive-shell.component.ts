@@ -103,13 +103,12 @@ export class DotContentDriveShellComponent {
         const filters = decodeFilters(this.#route.snapshot.queryParams['filters']);
         const queryTreeExpanded =
             this.#route.snapshot.queryParams['treeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
-        const treeExpanded = queryTreeExpanded == 'true';
 
         this.#store.initContentDrive({
-            currentSite,
             path,
             filters,
-            treeExpanded
+            currentSite,
+            treeExpanded: queryTreeExpanded == 'true'
         });
     });
 
