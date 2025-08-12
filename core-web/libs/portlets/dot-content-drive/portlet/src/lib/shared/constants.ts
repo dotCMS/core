@@ -59,3 +59,7 @@ export const SORT_ORDER = {
     1: DotContentDriveSortOrder.ASC,
     '-1': DotContentDriveSortOrder.DESC
 };
+
+export const DEFAULT_TREE_EXPANDED = true;
+
+export const DEFAULT_PATH = '/';

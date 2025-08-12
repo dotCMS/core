@@ -1,7 +1,8 @@
 import { EMPTY } from 'rxjs';
 
+import { NgClass, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 
@@ -13,14 +14,14 @@ import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
-import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
+import { DEFAULT_PATH, DEFAULT_TREE_EXPANDED, SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { decodeFilters } from '../utils/functions';
+import { decodeFilters, encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
+    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, NgClass],
     providers: [DotContentDriveStore],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
@@ -32,10 +33,13 @@ export class DotContentDriveShellComponent {
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #route = inject(ActivatedRoute);
     readonly #globalStore = inject(GlobalStore);
+    readonly #router = inject(Router);
+    readonly #location = inject(Location);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
+    readonly $treeExpanded = this.#store.treeExpanded;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
@@ -73,15 +77,39 @@ export class DotContentDriveShellComponent {
             });
     });
 
+    readonly updateQueryParamsEffect = effect(() => {
+        const treeExpanded = this.#store.treeExpanded();
+        const path = this.#store.path();
+        const filters = this.#store.filters();
+
+        const queryParams: Record<string, string> = {};
+
+        queryParams['treeExpanded'] = treeExpanded.toString();
+
+        if (path && path.length) {
+            queryParams['path'] = path;
+        }
+        if (filters && Object.keys(filters).length) {
+            queryParams['filters'] = encodeFilters(filters);
+        }
+
+        const urlTree = this.#router.createUrlTree([], { queryParams });
+        this.#location.go(urlTree.toString());
+    });
+
     readonly initEffect = effect(() => {
         const currentSite = this.#globalStore.siteDetails();
-        const path = this.#route.snapshot.queryParams['path'] ?? '';
+        const path = this.#route.snapshot.queryParams['path'] ?? DEFAULT_PATH;
         const filters = decodeFilters(this.#route.snapshot.queryParams['filters']);
+        const queryTreeExpanded =
+            this.#route.snapshot.queryParams['treeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
+        const treeExpanded = queryTreeExpanded == 'true';
 
         this.#store.initContentDrive({
             currentSite,
             path,
-            filters
+            filters,
+            treeExpanded
         });
     });
 

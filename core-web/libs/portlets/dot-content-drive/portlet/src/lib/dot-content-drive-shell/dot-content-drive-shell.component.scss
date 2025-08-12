@@ -6,6 +6,9 @@
 
     /* This is the height according to figma for the first row */
     grid-template-rows: 4.375rem 1fr;
+    grid-template-areas:
+        "tree toolbar detail"
+        "tree list    detail";
     height: 100%;
 }
 
@@ -22,31 +25,30 @@
 }
 
 dot-content-drive-toolbar {
-    grid-column: 1 / -1;
-    grid-row: 1/1;
+    grid-area: toolbar;
 }
 
 .tree-selector {
     background-color: lightblue;
+    grid-area: tree;
 
-    grid-column: 1 / 2;
-    grid-row-start: 2;
-
-    /* This is the width according to figma */
-    // width: 16.5rem;
     width: 0;
+
+    transition: width 0.3s ease-in-out;
+
+    &.expanded {
+        /* This is the width according to figma */
+        width: 16.5rem;
+    }
 }
 
 dot-folder-list-view {
-    grid-column: 2 / 3;
-    grid-row-start: 2;
+    grid-area: list;
 }
 
 .detail-view {
     background-color: lightcoral;
-
-    grid-column: 3 / 4;
-    grid-row-start: 2;
+    grid-area: detail;
 
     /* This is the width according to figma */
     // width: 21.875rem;

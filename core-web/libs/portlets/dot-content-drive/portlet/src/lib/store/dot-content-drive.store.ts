@@ -5,7 +5,13 @@ import { computed } from '@angular/core';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 
-import { BASE_QUERY, DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
+import {
+    BASE_QUERY,
+    DEFAULT_PAGINATION,
+    DEFAULT_PATH,
+    DEFAULT_TREE_EXPANDED,
+    SYSTEM_HOST
+} from '../shared/constants';
 import {
     DotContentDriveInit,
     DotContentDrivePagination,
@@ -17,7 +23,7 @@ import {
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,
-    path: '',
+    path: DEFAULT_PATH,
     filters: {},
     items: [],
     status: DotContentDriveStatus.LOADING,
@@ -26,7 +32,8 @@ const initialState: DotContentDriveState = {
     sort: {
         field: 'modDate',
         order: DotContentDriveSortOrder.ASC
-    }
+    },
+    treeExpanded: DEFAULT_TREE_EXPANDED
 };
 
 export const DotContentDriveStore = signalStore(
@@ -55,9 +62,17 @@ export const DotContentDriveStore = signalStore(
                     .equals(SYSTEM_HOST.identifier);
 
                 if (filtersValue) {
-                    // We gotta handle the multiselector (,) but this is enough to pave the path for now
                     Object.entries(filtersValue).forEach(([key, value]) => {
-                        modifiedQuery = modifiedQuery.field(key).equals(value);
+                        // Handle multiselectors
+                        if (Array.isArray(value)) {
+                            const orChain = value.join(' OR ');
+
+                            const orQuery = `+${key}: (${orChain})`;
+
+                            modifiedQuery = modifiedQuery.raw(orQuery);
+                        } else {
+                            modifiedQuery = modifiedQuery.field(key).equals(value);
+                        }
                     });
                 }
 
@@ -67,12 +82,13 @@ export const DotContentDriveStore = signalStore(
     }),
     withMethods((store) => {
         return {
-            initContentDrive({ currentSite, path, filters }: DotContentDriveInit) {
+            initContentDrive({ currentSite, path, filters, treeExpanded }: DotContentDriveInit) {
                 patchState(store, {
                     currentSite: currentSite ?? SYSTEM_HOST,
                     path,
                     filters,
-                    status: DotContentDriveStatus.LOADING
+                    status: DotContentDriveStatus.LOADING,
+                    treeExpanded
                 });
             },
             setItems(items: DotContentDriveItem[], totalItems: number) {
@@ -89,6 +105,9 @@ export const DotContentDriveStore = signalStore(
             },
             setSort(sort: DotContentDriveSort) {
                 patchState(store, { sort });
+            },
+            setTreeExpanded(treeExpanded: boolean) {
+                patchState(store, { treeExpanded });
             }
         };
     })

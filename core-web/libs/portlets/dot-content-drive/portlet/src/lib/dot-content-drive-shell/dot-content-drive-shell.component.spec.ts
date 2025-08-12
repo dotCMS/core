@@ -12,7 +12,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
+import { DEFAULT_PAGINATION, DEFAULT_PATH, SYSTEM_HOST } from '../shared/constants';
 import { mockItems, mockRoute, mockSearchResponse, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -46,9 +46,12 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
                     currentSite: jest.fn(),
+                    treeExpanded: jest.fn().mockReturnValue(true),
                     $query: jest.fn(),
                     items: jest.fn().mockReturnValue(mockItems),
                     pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
+                    setTreeExpanded: jest.fn(),
+                    path: jest.fn().mockReturnValue('/test/path'),
                     filters: jest.fn().mockReturnValue({}),
                     status: jest.fn().mockReturnValue(DotContentDriveStatus.LOADING),
                     sort: jest
@@ -82,15 +85,17 @@ describe('DotContentDriveShellComponent', () => {
                 filters: {
                     contentType: 'Blog',
                     status: 'published'
-                }
+                },
+                treeExpanded: true
             });
         });
 
-        it('should use empty string for path if not provided in query params', () => {
+        it('should use default path if not provided in query params', () => {
             Object.defineProperty(activatedRoute, 'snapshot', {
                 get: jest.fn().mockReturnValue({
                     queryParams: {
-                        filters: 'contentType:Blog'
+                        filters: 'contentType:Blog',
+                        treeExpanded: 'false'
                     }
                 })
             });
@@ -99,10 +104,12 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(store.initContentDrive).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    path: '',
+                    currentSite: mockSites[0],
+                    path: DEFAULT_PATH,
                     filters: {
                         contentType: 'Blog'
-                    }
+                    },
+                    treeExpanded: false
                 })
             );
         });
@@ -121,7 +128,8 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.initContentDrive).toHaveBeenCalledWith(
                 expect.objectContaining({
                     filters: {},
-                    path: '/test/path/'
+                    path: '/test/path/',
+                    treeExpanded: true
                 })
             );
         });

@@ -1,8 +1,12 @@
-<!-- Just placeholders for now. -->
+<dot-content-drive-toolbar data-testid="toolbar" />
 
-<dot-content-drive-toolbar />
-
-<div class="tree-selector center-content">Tree selector works</div>
+<!-- Just placeholders for now.-->
+<div
+    class="tree-selector center-content"
+    [ngClass]="{ expanded: $treeExpanded() }"
+    data-testid="tree-selector">
+    Tree selector works
+</div>
 <dot-folder-list-view
     [items]="$items()"
     [totalItems]="$totalItems()"
@@ -10,4 +14,5 @@
     (paginate)="onPaginate($event)"
     (sort)="onSort($event)" />
 
+<!-- Just placeholders for now. -->
 <div class="detail-view center-content">Detail view works</div>

@@ -21,10 +21,13 @@ export interface DotContentDriveSort {
     order: DotContentDriveSortOrder;
 }
 
-export interface DotContentDriveState {
+export interface DotContentDriveInit {
     currentSite: SiteEntity;
     path: string;
-    filters: Record<string, string>;
+    filters: DotContentDriveFilters;
+    treeExpanded: boolean;
+}
+export interface DotContentDriveState extends DotContentDriveInit {
     items: DotContentDriveItem[];
     status: DotContentDriveStatus;
     totalItems: number;
@@ -32,8 +35,4 @@ export interface DotContentDriveState {
     sort: DotContentDriveSort;
 }
 
-export interface DotContentDriveInit {
-    currentSite: SiteEntity;
-    path: string;
-    filters: Record<string, string>;
-}
+export type DotContentDriveFilters = Record<string, string | string[]>;
