@@ -333,7 +333,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should process existing value when writeValue is called', () => {
-            const existingValue = new Date('2024-01-10T14:20:00Z');
+            const existingValue = new Date('2024-01-10T14:20:00Z').getTime(); // Convert to timestamp
             const mockProcessedValue = new Date('2024-01-10T09:20:00Z');
 
             jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
@@ -357,7 +357,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should handle timezone reprocessing when timezone becomes available', () => {
-            const existingValue = new Date('2024-01-10T14:20:00Z');
+            const existingValue = new Date('2024-01-10T14:20:00Z').getTime(); // Convert to timestamp
             const mockProcessedValue = new Date('2024-01-10T09:20:00Z');
 
             jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);

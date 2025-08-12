@@ -1,4 +1,4 @@
-import { fromZonedTime, toZonedTime } from 'date-fns-tz';
+import { TZDate } from '@date-fns/tz';
 
 import { DotCMSContentTypeField, DotSystemTimezone } from '@dotcms/dotcms-models';
 
@@ -48,6 +48,11 @@ export const convertUtcToServerTime = (
         return utcDate;
     }
 
+    // If the server timezone is UTC, no conversion is needed
+    if (systemTimezone.id === 'UTC') {
+        return utcDate;
+    }
+
     // Validate input date
     if (isNaN(utcDate.getTime())) {
         console.error('Invalid UTC date provided to convertUtcToServerTime:', utcDate);
@@ -55,8 +60,22 @@ export const convertUtcToServerTime = (
     }
 
     try {
-        // Convert UTC time to server timezone using date-fns-tz
-        const converted = toZonedTime(utcDate, systemTimezone.id);
+        // Convert UTC time to server timezone using @date-fns/tz
+        // TZDate constructor creates a date in the specified timezone
+        // To mimic toZonedTime behavior, we need to create a local date with the UTC components
+        // shifted to appear as if they were in the target timezone
+        const tzDate = new TZDate(utcDate, systemTimezone.id);
+
+        // Extract the timezone-aware components and create a local date
+        const converted = new Date(
+            tzDate.getFullYear(),
+            tzDate.getMonth(),
+            tzDate.getDate(),
+            tzDate.getHours(),
+            tzDate.getMinutes(),
+            tzDate.getSeconds(),
+            tzDate.getMilliseconds()
+        );
 
         // Validate the result
         if (!converted || isNaN(converted.getTime())) {
@@ -135,16 +154,21 @@ export const createServerTimezoneDate = (
     }
 
     try {
-        // Create a date string representing the time in the server timezone
-        const isoString = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        // Create a TZDate representing the date components in the server timezone
+        // This correctly interprets the components as being in the specified timezone
+        const tzDate = new TZDate(year, month, date, hours, minutes, seconds, 0, systemTimezone.id);
 
-        // This interprets the date as if it were in the server timezone
-        // and returns a JavaScript Date that represents that exact moment in time
-        const serverMoment = fromZonedTime(isoString, systemTimezone.id);
+        // TZDate IS a Date object representing the same UTC moment
+        const serverMoment = tzDate;
 
         if (isNaN(serverMoment.getTime())) {
             console.error('Failed to create server timezone date, resulting in invalid date:', {
-                isoString,
+                year,
+                month,
+                date,
+                hours,
+                minutes,
+                seconds,
                 timezoneId: systemTimezone.id
             });
         }
@@ -170,22 +194,66 @@ export const createServerTimezoneDate = (
 };
 
 /**
+ * Safely converts various timestamp formats to a Date object
+ * @param timestamp - Timestamp in various formats (Date, number, string)
+ * @returns Valid Date object or Date(NaN) if conversion fails
+ */
+const safeTimestampToDate = (timestamp: Date | number | string): Date => {
+    if (timestamp instanceof Date) {
+        return timestamp;
+    }
+
+    if (typeof timestamp === 'string') {
+        // Handle empty strings
+        if (!timestamp || timestamp.trim() === '') {
+            console.warn('Empty string timestamp provided to safeTimestampToDate');
+            return new Date(NaN);
+        }
+
+        // Try to parse as number first (for timestamp strings like "1755110657000")
+        const numericValue = Number(timestamp);
+        if (!isNaN(numericValue)) {
+            const result = new Date(numericValue);
+            if (isNaN(result.getTime())) {
+                console.error('Failed to create date from numeric string:', {
+                    timestamp,
+                    numericValue
+                });
+            }
+            return result;
+        }
+
+        // If not numeric, try direct Date parsing for ISO strings
+        console.warn('Non-numeric string timestamp, attempting ISO parsing:', timestamp);
+        const result = new Date(timestamp);
+        if (isNaN(result.getTime())) {
+            console.error('Failed to parse string timestamp:', timestamp);
+        }
+        return result;
+    }
+
+    // Handle number timestamps
+    if (typeof timestamp === 'number') {
+        const result = new Date(timestamp);
+        if (isNaN(result.getTime())) {
+            console.error('Failed to create date from number timestamp:', timestamp);
+        }
+        return result;
+    }
+
+    console.error('Unexpected timestamp type:', typeof timestamp, timestamp);
+    return new Date(NaN);
+};
+
+/**
  * Converts UTC timestamp to display value for date-only fields
  * Ensures date shows correctly regardless of user's timezone
  * @param utcTimestamp - UTC timestamp from backend (Date object or number)
  * @returns Local date with UTC components for correct display
  */
 export const convertUtcTimestampToDateDisplay = (utcTimestamp: Date | number | string): Date => {
-    // Ensure we have a Date object - handle string timestamps
-    let utcDate: Date;
-    if (utcTimestamp instanceof Date) {
-        utcDate = utcTimestamp;
-    } else if (typeof utcTimestamp === 'string') {
-        // Convert string timestamp to number first
-        utcDate = new Date(Number(utcTimestamp));
-    } else {
-        utcDate = new Date(utcTimestamp);
-    }
+    // Ensure we have a Date object - handle string timestamps safely
+    const utcDate = safeTimestampToDate(utcTimestamp);
 
     // Validate the date before proceeding
     if (isNaN(utcDate.getTime())) {
@@ -243,15 +311,26 @@ export const createUtcDateAtMidnight = (year: number, month: number, date: numbe
 };
 
 /**
- * Gets the current time in server timezone for default calendar navigation
+ * Gets the current time in server timezone for default calendar navigation (when user clicks)
+ * This shows the current time as it appears on the server
  * @param systemTimezone - Server timezone configuration
- * @returns Current date/time in server timezone
+ * @returns Current date/time in server timezone for calendar display
  */
 export const getCurrentServerTime = (systemTimezone: DotSystemTimezone | null): Date => {
     const now = new Date();
 
-    if (!systemTimezone?.id) {
-        return now;
+    // For UTC server or no timezone, show UTC time components as local time
+    if (!systemTimezone?.id || systemTimezone.id === 'UTC') {
+        // Create a date showing UTC components as if they were local
+        // This shows 18:26 UTC as 18:26 in the calendar
+        return new Date(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            now.getUTCHours(),
+            now.getUTCMinutes(),
+            now.getUTCSeconds()
+        );
     }
 
     try {
@@ -273,11 +352,39 @@ export const getCurrentServerTime = (systemTimezone: DotSystemTimezone | null): 
 };
 
 /**
+ * Gets the current time for field defaults with "now"
+ * This represents the current moment as it should be stored/displayed (UTC for server)
+ * @param systemTimezone - Server timezone configuration
+ * @returns Current time in server timezone context
+ */
+export const getCurrentFieldDefaultTime = (systemTimezone: DotSystemTimezone | null): Date => {
+    const now = new Date();
+
+    // If server is configured as UTC or no timezone, return current UTC time
+    if (!systemTimezone?.id || systemTimezone.id === 'UTC') {
+        // For UTC server, return the current UTC time
+        return now;
+    }
+
+    // For non-UTC server timezones, convert current local time to server time
+    try {
+        // Get current time in server timezone for display
+        return convertUtcToServerTime(now, systemTimezone);
+    } catch (error) {
+        console.error('Error getting field default time:', error);
+        return now;
+    }
+};
+
+/**
  * Parses the field's defaultValue and returns the appropriate Date or null
+ * This handles field-level defaults which are considered to be in server timezone context:
+ * - "now": current server time
+ * - fixed dates: interpreted as server timezone values, converted to UTC for storage
  * @param defaultValue - The defaultValue from the field configuration
  * @param systemTimezone - Server timezone configuration
  * @param fieldType - The field type to handle TIME fields with "now" specially
- * @returns Date object for default value or null if no default
+ * @returns Date object in UTC for storage, or null if no default
  */
 export const parseFieldDefaultValue = (
     defaultValue: string | undefined,
@@ -288,16 +395,16 @@ export const parseFieldDefaultValue = (
         return null;
     }
 
-    // Handle "now" - current server time
+    // Handle "now" - current time for field defaults (already in server timezone context)
     if (defaultValue.toLowerCase() === 'now') {
-        const currentTime = getCurrentServerTime(systemTimezone);
+        const currentTime = getCurrentFieldDefaultTime(systemTimezone);
         // Validate that we got a valid date
         if (!currentTime || isNaN(currentTime.getTime())) {
-            console.error('Failed to get current server time');
+            console.error('Failed to get current field default time');
             return null;
         }
 
-        // For TIME fields with "now", return the current server time directly
+        // For TIME fields with "now", return the current time directly
         // The caller will handle proper display/form value separation
         if (fieldType === FIELD_TYPES.TIME) {
             return currentTime;
@@ -309,8 +416,57 @@ export const parseFieldDefaultValue = (
     // Handle fixed date - assume format: "year-month-day hour:minute:second"
     // or other ISO-like formats that can be parsed by Date constructor
     try {
-        // Parse the default value as if it's in server timezone
-        const parsedDate = new Date(defaultValue);
+        // For fixed dates in defaultValue, interpret them as server timezone values
+        // that need to be converted to UTC for storage
+        // Example: "2025-08-08 15:30:00" in Dubai timezone = "2025-08-08 11:30:00" UTC
+
+        let parsedDate: Date;
+
+        // If the defaultValue doesn't include timezone info, treat it as server timezone value
+        if (
+            !defaultValue.includes('T') ||
+            (!defaultValue.includes('Z') && !defaultValue.includes('+'))
+        ) {
+            // Extract the literal components from the input string
+            const dateMatch = defaultValue.match(
+                /(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/
+            );
+
+            if (dateMatch) {
+                const [, year, month, day, hours = '0', minutes = '0', seconds = '0'] = dateMatch;
+
+                // Create date representing these components
+                if (systemTimezone?.id && systemTimezone.id !== 'UTC') {
+                    // For non-UTC server timezones: interpret components as server timezone, convert to UTC for storage
+                    parsedDate = createServerTimezoneDate(
+                        parseInt(year),
+                        parseInt(month) - 1, // month is 0-based
+                        parseInt(day),
+                        parseInt(hours),
+                        parseInt(minutes),
+                        parseInt(seconds),
+                        systemTimezone
+                    );
+                } else {
+                    // For UTC server: create as literal local time (will be displayed as-is)
+                    // This means "2025-08-08 15:30:00" displays as "15:30" exactly
+                    parsedDate = new Date(
+                        parseInt(year),
+                        parseInt(month) - 1,
+                        parseInt(day),
+                        parseInt(hours),
+                        parseInt(minutes),
+                        parseInt(seconds)
+                    );
+                }
+            } else {
+                // Fallback if regex doesn't match
+                parsedDate = new Date(defaultValue);
+            }
+        } else {
+            // For ISO dates with timezone info, use direct parsing
+            parsedDate = new Date(defaultValue);
+        }
 
         // Check if the date is valid
         if (isNaN(parsedDate.getTime())) {
@@ -318,26 +474,6 @@ export const parseFieldDefaultValue = (
             return null;
         }
 
-        // For fixed dates in defaultValue, we need to interpret the components
-        // as if they were in server timezone, not local timezone
-        if (systemTimezone?.id) {
-            // Extract the components from the parsed date (which was interpreted in local time)
-            const { year, month, date, hours, minutes, seconds } =
-                extractDateComponents(parsedDate);
-
-            // Create a date that represents these components as if they were in server timezone
-            return createServerTimezoneDate(
-                year,
-                month,
-                date,
-                hours,
-                minutes,
-                seconds,
-                systemTimezone
-            );
-        }
-
-        // If no timezone info, return as-is
         return parsedDate;
     } catch (error) {
         console.error(`Error parsing defaultValue: ${defaultValue}`, error);
@@ -363,15 +499,8 @@ export const processExistingValue = (
         return isNaN(displayValue.getTime()) ? null : displayValue;
     }
 
-    // Parse UTC value to Date object
-    let utcDate: Date;
-    if (utcValue instanceof Date) {
-        utcDate = utcValue;
-    } else if (typeof utcValue === 'string') {
-        utcDate = new Date(Number(utcValue));
-    } else {
-        utcDate = new Date(utcValue);
-    }
+    // Parse UTC value to Date object using safe conversion
+    const utcDate = safeTimestampToDate(utcValue);
 
     // Validate the parsed date
     if (isNaN(utcDate.getTime())) {
@@ -402,19 +531,40 @@ export const processExistingValue = (
         );
 
         // Convert to server timezone for display
-        const displayValue = systemTimezone?.id
-            ? convertUtcToServerTime(timeOnlyUtc, systemTimezone)
-            : timeOnlyUtc;
-
-        return displayValue;
+        if (!systemTimezone?.id || systemTimezone.id === 'UTC') {
+            // For UTC server, show UTC time components as local time for correct display
+            return new Date(
+                timeOnlyUtc.getUTCFullYear(),
+                timeOnlyUtc.getUTCMonth(),
+                timeOnlyUtc.getUTCDate(),
+                timeOnlyUtc.getUTCHours(),
+                timeOnlyUtc.getUTCMinutes(),
+                timeOnlyUtc.getUTCSeconds()
+            );
+        } else {
+            // For non-UTC servers, convert UTC to server timezone
+            const displayValue = convertUtcToServerTime(timeOnlyUtc, systemTimezone);
+            return displayValue;
+        }
     }
 
     // For datetime fields, convert UTC timestamp to server timezone for display
-    const displayValue = systemTimezone?.id
-        ? convertUtcToServerTime(utcDate, systemTimezone)
-        : utcDate;
-
-    return displayValue;
+    if (!systemTimezone?.id || systemTimezone.id === 'UTC') {
+        // For UTC server, show UTC components as local time for correct display
+        // This shows 15:30 UTC as 15:30 in the calendar (not converted to local timezone)
+        return new Date(
+            utcDate.getUTCFullYear(),
+            utcDate.getUTCMonth(),
+            utcDate.getUTCDate(),
+            utcDate.getUTCHours(),
+            utcDate.getUTCMinutes(),
+            utcDate.getUTCSeconds()
+        );
+    } else {
+        // For non-UTC servers, convert UTC to server timezone
+        const displayValue = convertUtcToServerTime(utcDate, systemTimezone);
+        return displayValue;
+    }
 };
 
 /**
@@ -499,11 +649,25 @@ export const processFieldDefaultValue = (
     let formValue: Date;
 
     if (fieldType === 'Time' && field.defaultValue.toLowerCase() === 'now') {
-        // For TIME fields with "now": show current server time directly to user
-        displayValue = defaultValue;
+        // For TIME fields with "now": show current server time (UTC components for UTC server)
+        if (!systemTimezone?.id || systemTimezone.id === 'UTC') {
+            // For UTC server, create time showing UTC components
+            const utcNow = new Date();
+            displayValue = new Date(
+                utcNow.getUTCFullYear(),
+                utcNow.getUTCMonth(),
+                utcNow.getUTCDate(),
+                utcNow.getUTCHours(),
+                utcNow.getUTCMinutes(),
+                utcNow.getUTCSeconds()
+            );
+        } else {
+            // For non-UTC servers, show the server time
+            displayValue = defaultValue;
+        }
 
         // For form storage: extract time components and apply to today's date, then convert to UTC
-        const timeComponents = extractDateComponents(defaultValue);
+        const timeComponents = extractDateComponents(displayValue);
         const today = new Date();
         const timeForForm = new Date(
             today.getFullYear(),
@@ -525,16 +689,9 @@ export const processFieldDefaultValue = (
             dateComponents.month,
             dateComponents.date
         );
-    } else if (
-        fieldType !== 'Time' &&
-        field.defaultValue.toLowerCase() !== 'now' &&
-        systemTimezone?.id
-    ) {
-        // For datetime/date fields with fixed default values (not "now")
-        displayValue = convertUtcToServerTime(defaultValue, systemTimezone);
-        formValue = defaultValue; // Already in UTC from parseFieldDefaultValue
     } else {
-        // For all other cases (datetime with "now", etc.)
+        // For all other cases (fixed datetime/date values, datetime with "now", etc.)
+        // Use the parsed value directly without timezone conversion for fixed values
         displayValue = defaultValue;
         formValue = defaultValue;
     }

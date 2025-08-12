@@ -86,7 +86,10 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
     $isDisabled = signal<boolean>(false);
 
     // Store last value to reprocess when timezone becomes available
-    private lastUtcValue: Date | null = null;
+    private lastUtcValue: number | null = null;
+
+    // Pending default value to apply when onChange is ready
+    private pendingDefaultValue: Date | null = null;
 
     // ControlValueAccessor callbacks
     private onChange = (_value: Date | null) => {
@@ -139,12 +142,21 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
     });
 
     // ControlValueAccessor implementation
-    writeValue(utcValue: Date | null): void {
+    writeValue(utcValue: number | null): void {
         // Store the value for reprocessing when timezone is available
         this.lastUtcValue = utcValue;
 
-        if (utcValue) {
-            // Process existing value
+        if (utcValue !== null && utcValue !== undefined) {
+            // Debug logging for unexpected value types
+            if (typeof utcValue !== 'number') {
+                console.warn('Calendar field received non-number value:', {
+                    value: utcValue,
+                    type: typeof utcValue,
+                    fieldVariable: this.$field().variable
+                });
+            }
+
+            // Process existing value from form/backend (numeric timestamp)
             const displayValue = processExistingValue(
                 utcValue,
                 this.$field().fieldType as FieldType,
@@ -153,13 +165,15 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
 
             this.$internalValue.set(displayValue);
         } else {
-            // Process default value for new/empty field
+            // Process default value for new/empty field (this is NOT a UTC value, it's literal)
             const defaultResult = processFieldDefaultValue(this.$field(), this.$systemTimezone());
 
             if (defaultResult) {
+                // Use displayValue directly - no conversion needed for default values
                 this.$internalValue.set(defaultResult.displayValue);
 
-                this.onChange(defaultResult.formValue);
+                // Store pending default value to apply when onChange is registered
+                this.pendingDefaultValue = defaultResult.formValue;
             } else {
                 this.$internalValue.set(null);
             }
@@ -168,6 +182,17 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
 
     registerOnChange(fn: (value: Date | null) => void): void {
         this.onChange = fn;
+
+        // Apply pending default value if it exists
+        if (this.pendingDefaultValue !== null) {
+            const pendingValue = this.pendingDefaultValue;
+            setTimeout(() => {
+                // Ensure we send a simple Date object, not a TZDate with complex internal structure
+                const simpleDateForForm = new Date(pendingValue.getTime());
+                this.onChange(simpleDateForForm);
+                this.pendingDefaultValue = null;
+            }, 0);
+        }
     }
 
     registerOnTouched(fn: () => void): void {

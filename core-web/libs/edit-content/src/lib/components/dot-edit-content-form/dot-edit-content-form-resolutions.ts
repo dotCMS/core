@@ -85,14 +85,14 @@ const categoryResolutionFn: FnResolutionValue<string[] | string> = (contentlet, 
 };
 
 /**
- * Resolution function for date/time fields that preserves timestamps as numbers
- * This allows the calendar field component to handle timezone conversion properly
+ * Resolution function for date/time fields
+ * Backend always returns numeric timestamps when value exists, or the field is not included
  *
  * @param {DotCMSContentlet} contentlet - The contentlet object
  * @param {DotCMSContentTypeField} field - The field object
- * @returns {Date | number | null} Date object, timestamp number, or null if no value
+ * @returns {number | null} Numeric timestamp or null if no value
  */
-const dateResolutionFn: FnResolutionValue<Date | number | null> = (contentlet, field) => {
+const dateResolutionFn: FnResolutionValue<number | null> = (contentlet, field) => {
     if (!contentlet) {
         // For new content, let the calendar component handle defaultValue processing
         // The calendar component has proper logic for "now" and fixed dates with server timezone
@@ -101,33 +101,54 @@ const dateResolutionFn: FnResolutionValue<Date | number | null> = (contentlet, f
 
     const value = contentlet[field.variable];
 
+    // If field doesn't exist in contentlet or is explicitly null/undefined/empty
     if (value === null || value === undefined || value === '') {
         return null;
     }
 
-    // Handle timestamp (number) - pass it through as-is
-    // The calendar component will handle timezone conversion properly
+    // Backend should always return number timestamps
     if (typeof value === 'number') {
-        return value;
+        // Validate it's a reasonable timestamp (not NaN or invalid)
+        return isNaN(value) || !isFinite(value) ? null : value;
     }
 
-    // Handle date string
+    // Handle edge cases where backend might return string timestamps
     if (typeof value === 'string') {
-        const parsedDate = new Date(value);
-        return isNaN(parsedDate.getTime()) ? null : parsedDate;
-    }
+        const numericValue = Number(value);
+        if (!isNaN(numericValue) && isFinite(numericValue)) {
+            return numericValue;
+        }
 
-    // Handle Date object
-    if (value instanceof Date) {
-        return value;
-    }
-
-    // Fallback: try to convert whatever value we have
-    try {
-        return new Date(value);
-    } catch {
+        console.warn(`Calendar field received unexpected string value from backend:`, {
+            fieldVariable: field.variable,
+            value: value,
+            type: typeof value
+        });
         return null;
     }
+
+    // Handle unexpected Date objects (shouldn't happen from backend)
+    if (value instanceof Date) {
+        const timestamp = value.getTime();
+        if (!isNaN(timestamp)) {
+            console.warn(`Calendar field received Date object instead of timestamp from backend:`, {
+                fieldVariable: field.variable,
+                value: value,
+                convertedTimestamp: timestamp
+            });
+            return timestamp;
+        }
+        return null;
+    }
+
+    // Log unexpected value types
+    console.error(`Calendar field received unexpected value type from backend:`, {
+        fieldVariable: field.variable,
+        value: value,
+        type: typeof value
+    });
+
+    return null;
 };
 
 /**

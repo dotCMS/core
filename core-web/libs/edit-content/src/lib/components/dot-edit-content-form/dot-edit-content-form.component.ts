@@ -45,11 +45,7 @@ import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
-import {
-    CALENDAR_FIELD_TYPES,
-    CONTENT_SEARCH_ROUTE,
-    FLATTENED_FIELD_TYPES
-} from '../../models/dot-edit-content-field.constant';
+import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
@@ -57,7 +53,8 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     generatePreviewUrl,
     getFinalCastedValue,
-    isFilteredType
+    isFilteredType,
+    processFieldValue
 } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
@@ -354,7 +351,7 @@ export class DotEditContentFormComponent implements OnInit {
      * - Null/undefined values: Converts to empty string
      *
      * @private
-     * @param {Record<string, string | string[] | Date | number | null | undefined>} value - The raw form value
+     * @param {Record<string, any>} value - The raw form value
      * @returns {FormValues} The processed form value ready for submission
      */
     private processFormValue(
@@ -373,20 +370,8 @@ export class DotEditContentFormComponent implements OnInit {
                     return [key, fieldValue];
                 }
 
-                if (
-                    Array.isArray(fieldValue) &&
-                    FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-                ) {
-                    fieldValue = fieldValue.join(',');
-                } else if (
-                    fieldValue instanceof Date &&
-                    CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-                ) {
-                    // Convert date to timestamp - date represents server timezone moment
-                    fieldValue = fieldValue.getTime();
-                }
-
-                return [key, fieldValue ?? ''];
+                const processedValue = processFieldValue(fieldValue, field);
+                return [key, processedValue ?? ''];
             })
         );
     }

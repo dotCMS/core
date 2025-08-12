@@ -715,15 +715,10 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
         });
 
         it('should handle TIME field without timezone information', () => {
-            // Given: Time field without timezone
+            // Given: Time field without timezone - create UTC time representing 14:45 UTC
             const today = new Date();
             const timeSelection = new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate(),
-                14,
-                45,
-                0
+                Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 14, 45, 0)
             );
 
             // When: Save and load cycle without timezone
