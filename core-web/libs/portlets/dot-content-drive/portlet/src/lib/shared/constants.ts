@@ -2,6 +2,7 @@ import { SiteEntity } from '@dotcms/dotcms-models';
 
 import { DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
+// We only need the host from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: SiteEntity = {
     aliases: '',
     archived: false,

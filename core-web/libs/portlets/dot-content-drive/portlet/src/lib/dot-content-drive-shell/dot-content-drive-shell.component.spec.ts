@@ -2,9 +2,10 @@ import { it, describe, expect, beforeEach } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
@@ -22,6 +23,8 @@ describe('DotContentDriveShellComponent', () => {
     let contentSearchService: jest.Mocked<DotContentSearchService>;
     let activatedRoute: SpyObject<ActivatedRoute>;
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let router: SpyObject<Router>;
+    let location: SpyObject<Location>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -63,12 +66,25 @@ describe('DotContentDriveShellComponent', () => {
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
                     setFilters: jest.fn()
+                }),
+                mockProvider(Router, {
+                    createUrlTree: jest.fn(
+                        (_commands: unknown[], opts: { queryParams?: Record<string, string> }) => ({
+                            toString: () =>
+                                '?' + new URLSearchParams(opts?.queryParams ?? {}).toString()
+                        })
+                    )
+                }),
+                mockProvider(Location, {
+                    go: jest.fn()
                 })
             ]
         });
         contentSearchService = spectator.inject(DotContentSearchService);
         activatedRoute = spectator.inject(ActivatedRoute);
         store = spectator.inject(DotContentDriveStore, true);
+        router = spectator.inject(Router);
+        location = spectator.inject(Location);
     });
 
     afterEach(() => {
@@ -213,6 +229,31 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('Query Params Update Effect', () => {
+        it('should update query params when store changes', () => {
+            // Arrange store values for this run
+            store.treeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/another/path');
+            store.filters.mockReturnValue({ contentType: 'Blog', baseType: ['1', '2', '3'] });
+            spectator.detectChanges();
+
+            expect(router.createUrlTree).toHaveBeenCalledWith([], {
+                queryParams: {
+                    treeExpanded: 'false',
+                    path: '/another/path',
+                    filters: 'contentType:Blog;baseType:1,2,3'
+                }
+            });
+
+            // And Location.go called with the serialized query string
+            expect(location.go).toHaveBeenCalled();
+            const calledWith = location.go.mock.calls[0][0] as string;
+            expect(calledWith).toContain('treeExpanded=false');
+            expect(calledWith).toContain('path=%2Fanother%2Fpath');
+            expect(calledWith).toContain('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3');
+        });
+    });
+
     describe('DOM', () => {
         it('should have a dot-folder-list-view with items from store', () => {
             spectator.detectChanges();
@@ -221,6 +262,32 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(folderListView).toBeTruthy();
             expect(folderListView?.$items()).toEqual(mockItems);
+        });
+
+        it('should have a dot-content-drive-toolbar with tree toggler', () => {
+            spectator.detectChanges();
+
+            const toolbar = spectator.query('[data-testid="toolbar"]');
+
+            expect(toolbar).toBeTruthy();
+            expect(toolbar?.querySelector('[data-testid="tree-toggler"]')).toBeTruthy();
+        });
+
+        it('should show the tree selector by default', () => {
+            spectator.detectChanges();
+
+            const treeSelector = spectator.query('[data-testid="tree-selector"]');
+
+            expect(treeSelector).toBeTruthy();
+        });
+
+        it('should hide the tree selector when tree is collapsed', () => {
+            store.treeExpanded.mockReturnValue(false);
+            spectator.detectChanges();
+
+            const treeSelector = spectator.query('[data-testid="tree-selector"]');
+
+            expect(treeSelector).toBeTruthy();
         });
     });
 
