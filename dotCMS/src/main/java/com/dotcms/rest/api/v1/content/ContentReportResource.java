@@ -111,10 +111,10 @@ public class ContentReportResource {
     public Response getSiteContentReport(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
                                          @Parameter(description = "Site ID or key to generate the report for", required = true) @PathParam(ContentReportPaginator.SITE_PARAM) final String site,
-                                         @QueryParam(PaginationUtil.PAGE) final int page,
-                                         @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                         @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-                                         @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction) {
+                                         @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+                                         @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                         @Parameter(description = "Field to order results by") @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+                                         @Parameter(description = "Sort direction (ASC or DESC)") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction) {
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
@@ -174,11 +174,11 @@ public class ContentReportResource {
     public Response getFolderContentReport(@Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse httpServletResponse,
                                            @Parameter(description = "Folder ID or path to generate the report for", required = true) @PathParam(ContentReportPaginator.FOLDER_PARAM) final String folder,
-                                           @QueryParam(ContentReportPaginator.SITE_PARAM) final String site,
-                                           @QueryParam(PaginationUtil.PAGE) final int page,
-                                           @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                           @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-                                           @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction) {
+                                           @Parameter(description = "Site ID or key (required when using folder path)") @QueryParam(ContentReportPaginator.SITE_PARAM) final String site,
+                                           @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+                                           @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                           @Parameter(description = "Field to order results by") @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+                                           @Parameter(description = "Sort direction (ASC or DESC)") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction) {
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)

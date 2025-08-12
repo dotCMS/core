@@ -4487,7 +4487,6 @@ paths:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
         description: Multipart form data containing file and import parameters
-        required: true
       responses:
         "200":
           content:
@@ -5367,7 +5366,8 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: Language ID for content localization
+        in: query
         name: language
         schema:
           type: string
@@ -6002,7 +6002,8 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: Language ID for content localization
+        in: query
         name: language
         schema:
           type: string
@@ -6039,7 +6040,8 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: Language ID for content localization
+        in: query
         name: language
         schema:
           type: string
@@ -6597,26 +6599,31 @@ paths:
         schema:
           type: string
           pattern: .*
-      - in: query
+      - description: Site ID or key (required when using folder path)
+        in: query
         name: site
         schema:
           type: string
-      - in: query
+      - description: Page number for pagination
+        in: query
         name: page
         schema:
           type: integer
           format: int32
-      - in: query
+      - description: Number of items per page
+        in: query
         name: per_page
         schema:
           type: integer
           format: int32
-      - in: query
+      - description: Field to order results by
+        in: query
         name: orderby
         schema:
           type: string
           default: upper(name)
-      - in: query
+      - description: Sort direction (ASC or DESC)
+        in: query
         name: direction
         schema:
           type: string
@@ -6645,22 +6652,26 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: Page number for pagination
+        in: query
         name: page
         schema:
           type: integer
           format: int32
-      - in: query
+      - description: Number of items per page
+        in: query
         name: per_page
         schema:
           type: integer
           format: int32
-      - in: query
+      - description: Field to order results by
+        in: query
         name: orderby
         schema:
           type: string
           default: upper(name)
-      - in: query
+      - description: Sort direction (ASC or DESC)
+        in: query
         name: direction
         schema:
           type: string

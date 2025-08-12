@@ -903,8 +903,8 @@ public class CategoriesResource {
     public Response importCategories(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             @Parameter(description = "CSV file containing categories to import") @FormDataParam("file") final File uploadedFile,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Multipart form data containing file and import parameters", required = true) FormDataMultiPart multiPart,
-            @FormDataParam("file") FormDataContentDisposition fileDetail,
+            @Parameter(description = "Multipart form data containing file and import parameters") FormDataMultiPart multiPart,
+            @Parameter(description = "File metadata and disposition information") @FormDataParam("file") FormDataContentDisposition fileDetail,
             @Parameter(description = "Filter pattern for categories") @FormDataParam("filter") String filter,
             @Parameter(description = "Import type: 'replace' or 'append'") @FormDataParam("exportType") String exportType,
             @Parameter(description = "Context category inode to import into") @FormDataParam("contextInode") String contextInode) throws IOException {

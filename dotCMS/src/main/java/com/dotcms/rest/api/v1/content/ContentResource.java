@@ -528,7 +528,7 @@ public class ContentResource {
     public ResponseEntityView<Map<String, Object>> canLockContent(@Context HttpServletRequest request,
                                                                   @Context final HttpServletResponse response,
                                                                    @Parameter(description = "Contentlet inode or identifier", required = true) @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
-                                                                   @DefaultValue("-1") @QueryParam("language") final String language)
+                                                                   @Parameter(description = "Language ID for content localization") @DefaultValue("-1") @QueryParam("language") final String language)
             throws DotDataException, DotSecurityException {
 
         final User user =
@@ -604,7 +604,7 @@ public class ContentResource {
     public ResponseEntityMapView unlockContent(@Context HttpServletRequest request,
                                   @Context final HttpServletResponse response,
                                   @Parameter(description = "Contentlet inode or identifier", required = true) @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
-                                  @DefaultValue("-1") @QueryParam("language") final String language)
+                                  @Parameter(description = "Language ID for content localization") @DefaultValue("-1") @QueryParam("language") final String language)
             throws DotDataException, DotSecurityException {
 
         final User user =
@@ -662,7 +662,7 @@ public class ContentResource {
     public ResponseEntityMapView lockContent(@Context HttpServletRequest request,
                                              @Context HttpServletResponse response,
                                              @Parameter(description = "Contentlet inode or identifier", required = true) @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
-                                             @DefaultValue("-1") @QueryParam("language") final String language)
+                                             @Parameter(description = "Language ID for content localization") @DefaultValue("-1") @QueryParam("language") final String language)
             throws DotDataException, DotSecurityException {
 
         final User user =
