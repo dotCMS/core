@@ -161,6 +161,12 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("runningExperimentId", new TypeFetcher(
                 GraphQLString, new RunningExperimentFetcher())
         );
+        
+        // Expose the page as its underlying contentlet type to enable inline fragments
+        // for accessing content-type-specific fields like SEO metadata
+        pageFields.put("page", new TypeFetcher(
+                GraphQLTypeReference.typeRef(DOT_CONTENTLET),
+                PropertyDataFetcher.fetching((Contentlet contentlet) -> contentlet)));
 
         typesMap.put(DOT_PAGE, TypeUtil.createObjectType(DOT_PAGE, pageFields));
 
