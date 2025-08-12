@@ -163,11 +163,12 @@ jobs:
           echo "Installing CLI from: $CLI_URL"
           
           install_cli "$CLI_URL" "${{env.DOT_FORCE_DOWNLOAD}}"
+          
+          # Run the CLI push and capture exit code
           run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ env.DOT_CLI_OPTS }}"
-          echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
+          
+          # If we reach here, the command succeeded
+          echo "exit-code=0" >> "$GITHUB_OUTPUT"
           print_log
-          if [ $exit_code -ne 0 ]; then
-            echo "Error running dotCMS CLI"
-            exit 1
-          fi
+          echo "dotCMS CLI push completed successfully"
         shell: bash
