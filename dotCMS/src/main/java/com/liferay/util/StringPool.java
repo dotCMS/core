@@ -93,5 +93,5 @@ public class StringPool {
 
 	public static final String UNKNOWN = "UNKNOWN";
 
-
+	public static final String NA = "N/A";
 }

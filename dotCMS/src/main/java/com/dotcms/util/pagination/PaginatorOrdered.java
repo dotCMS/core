@@ -3,6 +3,7 @@ package com.dotcms.util.pagination;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -102,7 +103,7 @@ public interface PaginatorOrdered<T> extends Paginator<T> {
      * @return A {@link PaginatedArrayList} of items matching the specified search criteria.
      */
     default PaginatedArrayList<T> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy, final OrderDirection direction) {
-        return getItems(user, filter,  limit,  offset, orderBy, direction, null);
+        return getItems(user, filter,  limit,  offset, orderBy, direction, Collections.emptyMap());
     }
 
 }
