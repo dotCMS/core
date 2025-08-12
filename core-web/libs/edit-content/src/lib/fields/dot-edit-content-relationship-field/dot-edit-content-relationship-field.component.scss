@@ -7,7 +7,7 @@
                 background-color: $color-palette-gray-100;
             }
             .p-datatable-footer {
-                padding: 0;
+                padding: $spacing-1 0 0 0;
             }
             .p-datatable-wrapper {
                 border: 1px solid $color-palette-gray-300;
@@ -15,11 +15,6 @@
             }
             .p-paginator {
                 display: none;
-            }
-            .column-thumbnail {
-                width: 3rem;
-                max-width: 3rem;
-                min-width: 3rem;
             }
             .p-datatable-footer {
                 border: 0;
