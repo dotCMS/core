@@ -1,6 +1,7 @@
 import { DotCMSResponse } from './dot-request-response.model';
+import { DotMenu } from './navigation';
 
-export interface DotUiColors {
+export interface DotUIColors {
     primary: string;
     secondary: string;
     background: string;
@@ -49,7 +50,7 @@ export interface DotCluster {
  */
 export interface DotSystemConfig {
     logos: DotLogos;
-    colors: DotUiColors;
+    colors: DotUIColors;
     releaseInfo: DotReleaseInfo;
     systemTimezone: DotSystemTimezone;
     languages: DotSystemLanguage[];
@@ -63,7 +64,7 @@ export interface DotSystemConfig {
 export interface SystemConfigEntity {
     config: {
         logos: DotLogos;
-        colors: DotUiColors;
+        colors: DotUIColors;
         releaseInfo: DotReleaseInfo;
         systemTimezone: DotSystemTimezone;
         languages: DotSystemLanguage[];
@@ -72,7 +73,7 @@ export interface SystemConfigEntity {
         // Other config properties we don't need for the system config
         [key: string]: unknown;
     };
-    menu?: unknown; // Menu data from the endpoint
+    menu?: DotMenu; // Menu data from the endpoint
 }
 
 /**

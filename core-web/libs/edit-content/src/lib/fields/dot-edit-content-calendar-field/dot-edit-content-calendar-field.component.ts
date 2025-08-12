@@ -159,12 +159,7 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
             if (defaultResult) {
                 this.$internalValue.set(defaultResult.displayValue);
 
-                // Use setTimeout to ensure onChange callback is fully initialized by Angular Forms
-                // This is necessary because writeValue can be called before registerOnChange
-                // which is a known timing issue with ControlValueAccessor initialization
-                setTimeout(() => {
-                    this.onChange(defaultResult.formValue);
-                }, 0);
+                this.onChange(defaultResult.formValue);
             } else {
                 this.$internalValue.set(null);
             }
