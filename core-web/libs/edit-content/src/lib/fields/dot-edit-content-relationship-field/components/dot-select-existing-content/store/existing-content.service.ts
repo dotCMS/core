@@ -14,7 +14,7 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 
-import { Column } from '../models/column.model';
+import { Column } from '../../../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
 
@@ -32,7 +32,7 @@ export interface RelationshipFieldSearchResponse {
 @Injectable({
     providedIn: 'root'
 })
-export class RelationshipFieldService {
+export class ExistingContentService {
     readonly #fieldService = inject(DotFieldService);
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
@@ -116,6 +116,7 @@ export class RelationshipFieldService {
     /**
      * Gets the columns and content for the relationship field
      * @param contentTypeId The content type ID
+     * @param showFields The fields to show in the relationship field
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
     getColumnsAndContent(
@@ -142,6 +143,7 @@ export class RelationshipFieldService {
     /**
      * Gets the columns for the relationship field
      * @param contentTypeId The content type ID
+     * @param showFields The fields to show in the relationship field
      * @returns Observable of Column array
      */
     getColumns(contentTypeId: string): Observable<Column[]> {
@@ -169,15 +171,8 @@ export class RelationshipFieldService {
     /**
      * Builds the columns for the relationship field
      * @param columns The columns to build
+     * @param showFields The fields to show in the relationship field
      * @returns Array of Column
-     */
-    /**
-     * Builds the columns for the relationship field table
-     * Filters out the 'title' column as it's handled separately
-     * and ensures only valid columns with both variable and name are included
-     *
-     * @param columns The content type fields to convert to table columns
-     * @returns Array of Column objects for the data table
      */
     #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
         return columns

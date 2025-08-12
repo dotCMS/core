@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -40,7 +39,6 @@ const COMMENT_MAX_LENGTH = 500;
 @Component({
     selector: 'dot-edit-content-sidebar-activities',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         AvatarModule,
         ButtonModule,

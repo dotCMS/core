@@ -1,11 +1,11 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
-import { getRelationshipFromContentlet } from '../../fields/dot-edit-content-relationship-field/utils/index';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
-jest.mock('@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils', () => ({
+jest.mock('../../utils/relationshipFromContentlet', () => ({
     getRelationshipFromContentlet: jest.fn()
 }));
 
@@ -13,7 +13,7 @@ describe('DotEditContentFormResolutions', () => {
     const mockField: DotCMSContentTypeField = {
         variable: 'testField',
         defaultValue: 'default value',
-        clazz: 'test-class',
+        clazz: DotCMSClazzes.TEXT,
         contentTypeId: 'test-content-type',
         dataType: 'text',
         fieldType: 'text',

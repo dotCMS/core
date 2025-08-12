@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import { DotContentAnalyticsProvider } from './DotContentAnalyticsProvider';
 
 import { initializeContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
-import { DotContentAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import * as RouterTrackerHook from '../hook/useRouterTracker';
 
 // Mock dependencies
@@ -12,7 +12,7 @@ jest.mock('../../dotAnalytics/dot-content-analytics');
 jest.mock('../hook/useRouterTracker');
 
 describe('DotContentAnalyticsProvider', () => {
-    const mockConfig: DotContentAnalyticsConfig = {
+    const mockConfig: DotCMSAnalyticsConfig = {
         siteKey: 'test-key',
         server: 'test-server',
         debug: false

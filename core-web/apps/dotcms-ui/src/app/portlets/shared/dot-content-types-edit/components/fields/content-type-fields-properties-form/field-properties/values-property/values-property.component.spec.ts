@@ -11,6 +11,7 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSClazzes } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -136,7 +137,7 @@ describe('ValuesPropertyComponent', () => {
     });
 
     it('should hide dot-helper except for required', () => {
-        comp.property.field.clazz = 'random';
+        comp.property.field.clazz = DotCMSClazzes.TEXT;
         fixture.detectChanges();
         const fieldHelper: DebugElement = fixture.debugElement.query(By.css('dot-field-helper'));
 

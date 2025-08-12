@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -36,7 +35,7 @@ const MAX_LOCALES = 9;
  */
 @Component({
     selector: 'dot-edit-content-sidebar-locales',
-    imports: [CommonModule, ChipModule, SkeletonModule, DotIsoCodePipe],
+    imports: [ChipModule, SkeletonModule, DotIsoCodePipe],
     templateUrl: './dot-edit-content-sidebar-locales.component.html',
     styleUrl: './dot-edit-content-sidebar-locales.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

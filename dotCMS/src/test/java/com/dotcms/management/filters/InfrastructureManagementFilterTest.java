@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +25,7 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
     private static FilterChain chain;
     private static PrintWriter writer;
     private static FilterConfig filterConfig;
+    private static RequestDispatcher requestDispatcher;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -33,6 +35,7 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
         chain = mock(FilterChain.class);
         writer = mock(PrintWriter.class);
         filterConfig = mock(FilterConfig.class);
+        requestDispatcher = mock(RequestDispatcher.class);
         
         when(response.getWriter()).thenReturn(writer);
         
@@ -44,20 +47,22 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
     @Test
     public void testManagementEndpointOnCorrectPort() throws IOException, ServletException {
         // Reset mocks for this test
-        reset(request, response, chain, writer);
+        reset(request, response, chain, writer, requestDispatcher);
         when(response.getWriter()).thenReturn(writer);
         
         // Setup - management endpoint on correct port
         String requestURI = HealthEndpointConstants.Endpoints.LIVENESS;
         when(request.getRequestURI()).thenReturn(requestURI);
         when(request.getServerPort()).thenReturn(InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT);
+        when(request.getRequestDispatcher(requestURI)).thenReturn(requestDispatcher);
 
         // Execute
         filter.doFilter(request, response, chain);
 
-        // Verify request continues to servlet mapping (chain continues)
-        verify(chain).doFilter(request, response);
-        verify(response, never()).setStatus(HttpServletResponse.SC_NOT_FOUND);
+        // Verify request is forwarded directly to servlet (bypassing chain)
+        verify(requestDispatcher).forward(request, response);
+        verify(chain, never()).doFilter(request, response);
+        verify(response, never()).sendError(anyInt());
     }
 
     @Test
@@ -83,7 +88,7 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
     @Test
     public void testManagementEndpointWithProxyHeaders() throws IOException, ServletException {
         // Reset mocks for this test
-        reset(request, response, chain, writer);
+        reset(request, response, chain, writer, requestDispatcher);
         when(response.getWriter()).thenReturn(writer);
         
         // Setup - management endpoint with proxy headers indicating management port
@@ -91,13 +96,15 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
         when(request.getRequestURI()).thenReturn(requestURI);
         when(request.getServerPort()).thenReturn(InfrastructureConstants.Ports.DEFAULT_APPLICATION_PORT); // Application port
         when(request.getHeader(InfrastructureConstants.Headers.X_FORWARDED_PORT)).thenReturn("8090"); // Proxy indicates management port
+        when(request.getRequestDispatcher(requestURI)).thenReturn(requestDispatcher);
 
         // Execute
         filter.doFilter(request, response, chain);
 
-        // Verify request continues to servlet mapping
-        verify(chain).doFilter(request, response);
-        verify(response, never()).setStatus(HttpServletResponse.SC_NOT_FOUND);
+        // Verify request is forwarded directly to servlet
+        verify(requestDispatcher).forward(request, response);
+        verify(chain, never()).doFilter(request, response);
+        verify(response, never()).sendError(anyInt());
     }
 
     @Test
@@ -123,19 +130,21 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
         // Test all health endpoints (health service is aware of infrastructure)
         for (String endpoint : HealthEndpointConstants.getAllHealthEndpoints()) {
             // Reset mocks for each test
-            reset(request, response, chain, writer);
+            reset(request, response, chain, writer, requestDispatcher);
             when(response.getWriter()).thenReturn(writer);
             
             // Setup - management endpoint on correct port
             when(request.getRequestURI()).thenReturn(endpoint);
             when(request.getServerPort()).thenReturn(InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT);
+            when(request.getRequestDispatcher(endpoint)).thenReturn(requestDispatcher);
 
             // Execute
             filter.doFilter(request, response, chain);
 
-            // Verify request continues to servlet mapping
-            verify(chain).doFilter(request, response);
-            verify(response, never()).setStatus(HttpServletResponse.SC_NOT_FOUND);
+            // Verify request is forwarded directly to servlet
+            verify(requestDispatcher).forward(request, response);
+            verify(chain, never()).doFilter(request, response);
+            verify(response, never()).sendError(anyInt());
         }
     }
 } 

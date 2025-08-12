@@ -8,7 +8,11 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentTypeFieldBasicMock,
@@ -26,12 +30,12 @@ const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
 mockFieldRow.columns[0].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
+        clazz: DotCMSClazzes.TEXT,
         name: 'field-1'
     },
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'image',
+        clazz: DotCMSClazzes.IMAGE,
         name: 'field-1'
     }
 ];
@@ -39,7 +43,7 @@ mockFieldRow.columns[0].fields = [
 mockFieldRow.columns[1].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
+        clazz: DotCMSClazzes.TEXT,
         name: 'field-1'
     }
 ];
@@ -143,7 +147,7 @@ describe('ContentTypeFieldsRowComponent', () => {
 
             const field = {
                 ...dotcmsContentTypeFieldBasicMock,
-                clazz: 'text',
+                clazz: DotCMSClazzes.TEXT,
                 name: 'field-1'
             };
 

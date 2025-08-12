@@ -8,7 +8,7 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -96,7 +96,7 @@ class MockRelationshipService {
 describe('DotEditRelationshipsComponent', () => {
     const contentTypeMock: DotCMSContentType = {
         ...dotcmsContentTypeBasicMock,
-        clazz: 'clazz',
+        clazz: DotCMSClazzes.TEXT,
         defaultType: false,
         fixed: false,
         folder: 'folder',

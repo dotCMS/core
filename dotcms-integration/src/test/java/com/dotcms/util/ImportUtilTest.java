@@ -4662,7 +4662,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
 
-        // Always add tracking field
+        // Always add a tracking field
         fields.add(
                 FieldBuilder.builder(TextField.class)
                         .name("trackingInfo")
@@ -4725,7 +4725,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "required: requiredTextField\n",error.field().get());
+        assertEquals("Test expected required field label is present", "requiredTextField",error.field().get());
 
         assertRequiredField(testCase, error);
 
@@ -4736,7 +4736,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_TEXT_AREA_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "required: textAreaField\n",error.field().get());
+        assertEquals("Test expected required field label is present", "textAreaField",error.field().get());
 
         assertRequiredField(testCase, error);
 
@@ -4747,7 +4747,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_WYSIWYG_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "required: wysiwygField\n",error.field().get());
+        assertEquals("Test expected required field label is present", "wysiwygField",error.field().get());
 
         assertRequiredField(testCase, error);
 
@@ -4758,21 +4758,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public static final AssertionsStrategy REQUIRED_STORY_BLOCK_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "required: storyBlockField\n",error.field().get());
+        assertEquals("Test expected required field label is present", "storyBlockField",error.field().get());
 
         assertRequiredField(testCase, error);
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
-    };
-
-    public static final AssertionsStrategy INVALID_JSON_STORY_BLOCK_ASSERTION = (result, testCase, contentType) -> {
-        final ValidationMessage error = result.error().get(0);
-        assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "InvalidStoryBlockField",error.field().get());
-
-        assertTrue(error.code().isPresent());
-        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
     };
 
     public static final AssertionsStrategy INVALID_SELECT_NUMBER_ASSERTION = (result, testCase, contentType) -> {
@@ -4785,15 +4776,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_NUMBER_FORMAT.name(), error.code().get());
-    };
-
-    public static final AssertionsStrategy BOOLEAN_FIELD_VALIDATION = (result, testCase, contentType) -> {
-        final ValidationMessage error = result.error().get(0);
-        assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "InvalidStoryBlockField",error.field().get());
-
-        assertTrue(error.code().isPresent());
-        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
     };
 
     public static final AssertionsStrategy UNIQUE_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
@@ -4826,14 +4808,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Test expected required field label is present",testCase.invalidValue, error.invalidValue().get());
 
         assertThat(error.message().trim(), allOf(
-                startsWith("Value couldn't be parsed"),
-                containsString("supported formats:"),
-                containsString("d-MMM-yy"),
-                containsString("MM/dd/yyyy"),
-                containsString("yyyy-MM-dd"),
-                containsString("["),
-                endsWith("]")
-        ));
+                startsWith("Unable to convert string "),
+                containsString(testCase.invalidValue),
+                containsString("to"),
+                containsString("field:"),
+                containsString(testCase.fieldVariable))
+        );
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_DATE_FORMAT.name(), error.code().get());
@@ -4903,7 +4883,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
         assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
 
-        assertEquals("Test expected error is for the url","Invalid Site or Folder reference: the provided inode/path does not exist or is not associated with a valid SiteFolder.", error.message());
+        assertEquals("Test expected error is for the url","The provided inode/path does not exist or is not associated with a valid Site or Folder.", error.message());
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_SITE_FOLDER_REF.name(), error.code().get());
     };
@@ -4945,12 +4925,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertTrue(error.code().isPresent());
         assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
-    };
-
-    public static final AssertionsStrategy TAG_FIELD_VALIDATION = (result, testCase, contentType) -> {
-        final ValidationMessage error = result.error().get(0);
-        assertTrue(error.field().isPresent());
-        assertTrue(error.invalidValue().isPresent());
     };
 
     public static final AssertionsStrategy RELATIONSHIP_FIELD_VALIDATION = (result, testCase, contentType) -> {
