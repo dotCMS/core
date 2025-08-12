@@ -22,7 +22,7 @@ import {
     sortLocalesTranslatedFirst,
     stringToJson
 } from './functions.util';
-import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
+import { JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
@@ -494,32 +494,62 @@ describe('Utils Functions', () => {
     });
 
     describe('getFinalCastedValue', () => {
-        describe.each([...CALENDAR_FIELD_TYPES])('Calendar Fields', (fieldType) => {
-            describe(fieldType, () => {
-                it('should parse the date if the value is a valid date', () => {
+        describe('DATE_AND_TIME and TIME fields', () => {
+            it.each(['Date-and-Time', 'Time'])(
+                'should return the original value for %s field',
+                (fieldType) => {
                     const value = '2021-09-01T18:00:00.000Z';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date(value).toDateString()
-                    );
-                });
+                    // DATE_AND_TIME and TIME fields return the original value without conversion
+                    expect(getFinalCastedValue(value, field)).toEqual(value);
+                }
+            );
 
-                it("should return Date.now if the value is 'now'", () => {
+            it.each(['Date-and-Time', 'Time'])(
+                "should return 'now' string as-is for %s field",
+                (fieldType) => {
                     const value = 'now';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date().toDateString()
-                    );
-                });
+                    // DATE_AND_TIME and TIME fields return the original value
+                    expect(getFinalCastedValue(value, field)).toEqual(value);
+                }
+            );
 
-                it('should return undefined if the value is undefined', () => {
+            it.each(['Date-and-Time', 'Time'])(
+                'should return undefined for %s field when value is undefined',
+                (fieldType) => {
                     const value = undefined;
                     const field = { fieldType } as DotCMSContentTypeField;
 
                     expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                });
+                }
+            );
+        });
+
+        describe('DATE field', () => {
+            it('should convert value to string for DATE field', () => {
+                const value = '2021-09-01T18:00:00.000Z';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                // DATE field goes through castSingleSelectableValue which returns String(value)
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it("should convert 'now' to string for DATE field", () => {
+                const value = 'now';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                // DATE field goes through castSingleSelectableValue which returns String(value)
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it('should return undefined for DATE field when value is undefined', () => {
+                const value = undefined;
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(undefined);
             });
         });
 

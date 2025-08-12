@@ -59,6 +59,26 @@ import { FieldType } from '../../models/dot-edit-content-field.type';
     ]
 })
 export class DotEditContentCalendarFieldComponent implements ControlValueAccessor {
+    /**
+     * The field configuration (required).
+     * Determines the type of calendar field (date, time, datetime).
+     */
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+
+    /**
+     * The system timezone (optional).
+     * Used to display server timezone information to the user.
+     * Alias: utcTimezone
+     */
+    $systemTimezone = input<DotSystemTimezone | null>(null, { alias: 'utcTimezone' });
+
+    /**
+     * The content type (optional).
+     * Used to determine if the field is a date or time field.
+     * Alias: contentType
+     */
+    $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
+
     // Internal state for calendar display (always in server timezone)
     $internalValue = signal<Date | null>(null);
 
@@ -80,38 +100,19 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
         // Reprocess existing values when timezone becomes available
         effect(() => {
             const systemTimezone = this.$systemTimezone();
+            const fieldType = this.$field().fieldType as FieldType;
 
             // If timezone is now available and we have a stored value, reprocess it
             if (systemTimezone && this.lastUtcValue !== null) {
                 const displayValue = processExistingValue(
                     this.lastUtcValue,
-                    this.$field().fieldType as FieldType,
+                    fieldType as FieldType,
                     systemTimezone
                 );
                 this.$internalValue.set(displayValue);
             }
         });
     }
-
-    /**
-     * The field configuration (required).
-     * Determines the type of calendar field (date, time, datetime).
-     */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
-    /**
-     * The system timezone (optional).
-     * Used to display server timezone information to the user.
-     * Alias: utcTimezone
-     */
-    $systemTimezone = input<DotSystemTimezone | null>(null, { alias: 'utcTimezone' });
-
-    /**
-     * The content type (optional).
-     * Used to determine if the field is a date or time field.
-     * Alias: contentType
-     */
-    $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
 
     /**
      * The configuration for the field type.
@@ -127,7 +128,7 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
      * Only shown for fields that include time.
      */
     $showTimezoneInfo = computed(() => {
-        const fieldType = this.$field().fieldType as FieldType;
+        const fieldType = this.$field().fieldType as FIELD_TYPES; // TODO: Fix fieldType on DotCMSContentTypeField to FieldType instead of string
         return CALENDAR_FIELD_TYPES_WITH_TIME.includes(fieldType);
     });
 

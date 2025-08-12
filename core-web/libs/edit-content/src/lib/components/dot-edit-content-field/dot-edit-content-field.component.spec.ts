@@ -19,6 +19,7 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotSystemConfigService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -253,6 +254,37 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             provideHttpClientTesting(),
             ...(fieldTestBed?.providers || []),
             mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        logos: { loginScreen: '/assets/logo.png', navBar: 'NA' },
+                        colors: { primary: '#000000', secondary: '#FFFFFF', background: '#F5F5F5' },
+                        releaseInfo: { buildDate: 'Jan 01, 2025', version: 'test' },
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        },
+                        languages: [
+                            {
+                                country: 'United States',
+                                countryCode: 'US',
+                                id: 1,
+                                isoCode: 'en-us',
+                                language: 'English',
+                                languageCode: 'en'
+                            }
+                        ],
+                        license: {
+                            displayServerId: 'serverId',
+                            isCommunity: true,
+                            level: 100,
+                            levelName: 'COMMUNITY'
+                        },
+                        cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
+                    })
+                )
+            }),
             mockProvider(CoreWebService)
         ]
     });

@@ -1,5 +1,12 @@
 import { tz, TZDate } from '@date-fns/tz';
-import { differenceInCalendarDays, format, formatDistanceStrict, isValid, parse } from 'date-fns';
+import {
+    differenceInCalendarDays,
+    format,
+    formatDistanceStrict,
+    isValid,
+    Locale,
+    parse
+} from 'date-fns';
 
 import { inject, Injectable, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -52,22 +59,48 @@ export class DotFormatDateService {
      */
     async setLang(languageId: string) {
         let [langCode, countryCode] = languageId.replace('_', '-').split('-');
-        let localeLang;
 
         langCode = langCode?.toLowerCase() || 'en';
-        countryCode = countryCode?.toLocaleUpperCase() || 'US';
+        countryCode = countryCode?.toUpperCase() || 'US';
+
+        // Convert locale format from 'en-US' to 'enUS' for date-fns
+        const formatLocaleCode = (lang: string, country?: string) => {
+            if (country) {
+                return lang + country;
+            }
+            return lang;
+        };
 
         try {
-            localeLang = await import(`date-fns/locale/${langCode}-${countryCode}`);
-        } catch {
-            try {
-                localeLang = await import(`date-fns/locale/${langCode}`);
-            } catch {
-                localeLang = await import(`date-fns/locale/en-US`);
-            }
-        }
+            // Try with full locale code (e.g., 'enUS')
+            const fullLocaleCode = formatLocaleCode(langCode, countryCode);
+            const localeModule = (await import('date-fns/locale')) as unknown as Record<
+                string,
+                Locale
+            >;
 
-        this.localeOptions = { locale: localeLang.default };
+            if (fullLocaleCode in localeModule) {
+                this.localeOptions = { locale: localeModule[fullLocaleCode] };
+                return;
+            }
+
+            // Try with just language code (e.g., 'en')
+            if (langCode in localeModule) {
+                this.localeOptions = { locale: localeModule[langCode] };
+                return;
+            }
+
+            // Fallback to enUS
+            this.localeOptions = { locale: localeModule['enUS'] };
+        } catch (error) {
+            console.warn('Failed to load date locale, falling back to enUS:', error);
+            // Final fallback
+            const localeModule = (await import('date-fns/locale')) as unknown as Record<
+                string,
+                Locale
+            >;
+            this.localeOptions = { locale: localeModule['enUS'] };
+        }
     }
 
     /**

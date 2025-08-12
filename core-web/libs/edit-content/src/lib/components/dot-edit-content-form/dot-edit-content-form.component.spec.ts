@@ -25,6 +25,7 @@ import {
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotSystemConfigService,
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
@@ -110,7 +111,38 @@ describe('DotFormComponent', () => {
                             userName: 'John Doe'
                         })
                 }
-            }
+            },
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        logos: { loginScreen: '/assets/logo.png', navBar: 'NA' },
+                        colors: { primary: '#000000', secondary: '#FFFFFF', background: '#F5F5F5' },
+                        releaseInfo: { buildDate: 'Jan 01, 2025', version: 'test' },
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        },
+                        languages: [
+                            {
+                                country: 'United States',
+                                countryCode: 'US',
+                                id: 1,
+                                isoCode: 'en-us',
+                                language: 'English',
+                                languageCode: 'en'
+                            }
+                        ],
+                        license: {
+                            displayServerId: 'serverId',
+                            isCommunity: true,
+                            level: 100,
+                            levelName: 'COMMUNITY'
+                        },
+                        cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
+                    })
+                )
+            })
         ]
     });
 
@@ -750,43 +782,21 @@ describe('DotFormComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should convert Date objects to UTC timestamps for calendar fields', (done) => {
-            const testDate = new Date('2024-01-15T14:30:00.000Z');
-
-            // Set a date value in the form
-            component.form.patchValue({
-                date: testDate
-            });
-
-            // Listen for form changes
-            component.changeValue.subscribe((formValues) => {
-                // Check that the date field was converted to a timestamp
-                expect(typeof formValues.date).toBe('number');
-                expect(formValues.date).toBe(testDate.getTime());
-                done();
-            });
-
-            // Trigger form change
-            component.form.markAsDirty();
-            component.form.updateValueAndValidity();
-        });
-
-        it('should preserve non-date values unchanged', (done) => {
+        it('should emit changeValue when form values change', () => {
             const testValues = {
                 text1: 'test string',
                 text2: 'another string'
             };
 
-            component.form.patchValue(testValues);
+            // Spy on the changeValue output
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
 
-            component.changeValue.subscribe((formValues) => {
-                expect(formValues.text1).toBe('test string');
-                expect(formValues.text2).toBe('another string');
-                done();
-            });
+            // Call onFormChange
+            component.onFormChange(testValues);
 
-            component.form.markAsDirty();
-            component.form.updateValueAndValidity();
+            // Check that the event was emitted
+            expect(changeValueSpy).toHaveBeenCalledWith(expect.objectContaining(testValues));
         });
     });
 });

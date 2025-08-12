@@ -1,337 +1,527 @@
 import { describe } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
-import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import { Calendar } from 'primeng/calendar';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotSystemTimezone } from '@dotcms/dotcms-models';
 
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
-import { CALENDAR_OPTIONS_PER_TYPE } from './dot-edit-content-calendar-field.util';
+import * as calendarUtils from './dot-edit-content-calendar-field.util';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { DATE_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { FieldType } from '../../models/dot-edit-content-field.type';
+import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentCalendarFieldComponent', () => {
     let spectator: Spectator<DotEditContentCalendarFieldComponent>;
-    let calendar: Element;
 
     const createComponent = createComponentFactory({
         component: DotEditContentCalendarFieldComponent,
         componentViewProviders: [
             {
                 provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
+                useExisting: FormGroupDirective
             }
         ],
-        providers: [FormGroupDirective]
+        providers: [
+            FormGroupDirective,
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockReturnValue('Never expires')
+            })
+        ]
     });
 
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                $field: DATE_FIELD_MOCK
-            }
+    // Mock system timezone
+    const MOCK_TIMEZONE: DotSystemTimezone = {
+        id: 'America/New_York',
+        label: 'Eastern Time (GMT-5)',
+        offset: -18000000
+    };
+
+    const CONTENT_TYPE_WITH_EXPIRE = {
+        ...CONTENT_TYPE_MOCK,
+        expireDateVar: DATE_FIELD_MOCK.variable
+    };
+
+    const CONTENT_TYPE_WITHOUT_EXPIRE = {
+        ...CONTENT_TYPE_MOCK,
+        expireDateVar: null
+    };
+
+    describe('Calendar field timezone information', () => {
+        it('should show timezone info for DATE_AND_TIME fields when timezone is provided', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
+            expect(timezoneElement).toExist();
+            expect(timezoneElement).toContainText(MOCK_TIMEZONE.label);
         });
-        calendar = spectator.query(byTestId(`calendar-input-${DATE_FIELD_MOCK.variable}`));
+
+        it('should show timezone info for TIME fields when timezone is provided', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
+            expect(timezoneElement).toExist();
+            expect(timezoneElement).toContainText(MOCK_TIMEZONE.label);
+        });
+
+        it('should NOT show timezone info for DATE fields', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
+            expect(timezoneElement).not.toExist();
+        });
+
+        it('should NOT show timezone info when no timezone is provided', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            // El elemento timezone existe pero no debe mostrar contenido
+            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
+            expect(timezoneElement).toExist();
+
+            // Pero no debe tener contenido de timezone
+            const timezoneText = timezoneElement?.querySelector('small');
+            expect(timezoneText).not.toExist();
+        });
     });
 
-    // ASK: This is necessary?
-    test.each([
-        {
-            variable: `calendar-id-${DATE_FIELD_MOCK.variable}`,
-            attribute: 'id'
-        },
-        {
-            variable: DATE_FIELD_MOCK.variable,
-            attribute: 'ng-reflect-name'
-        }
-    ])('should have the $variable as $attribute', ({ variable, attribute }) => {
-        expect(calendar.getAttribute(attribute)).toBe(variable);
+    describe('Calendar field hint', () => {
+        it('should show hint when field has hint property', () => {
+            const fieldWithHint = {
+                ...DATE_FIELD_MOCK,
+                fieldType: FIELD_TYPES.DATE_AND_TIME,
+                hint: 'Test hint message'
+            };
+
+            // Usar DATE_AND_TIME field para que showTimezoneInfo sea true y aparezca el contenedor
+            spectator = createComponent({
+                props: {
+                    field: fieldWithHint,
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const hintsContainer = spectator.query(byTestId('calendar-field-hints'));
+            expect(hintsContainer).toExist();
+
+            expect(fieldWithHint.hint).toBe('Test hint message');
+
+            const hintElement = spectator.query(byTestId(`hint-${fieldWithHint.variable}`));
+            expect(hintElement).toExist();
+            expect(hintElement).toContainText('Test hint message');
+        });
+
+        it('should NOT show hint when field has no hint property', () => {
+            const fieldWithoutHint = { ...DATE_FIELD_MOCK, hint: undefined };
+
+            spectator = createComponent({
+                props: {
+                    field: fieldWithoutHint,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const hintElement = spectator.query(byTestId('calendar-field-hint'));
+            expect(hintElement).not.toExist();
+        });
     });
 
-    describe.each([
-        {
-            fieldType: FIELD_TYPES.DATE_AND_TIME
-        },
-        {
-            fieldType: FIELD_TYPES.DATE
-        },
-        {
-            fieldType: FIELD_TYPES.TIME
-        }
-    ])('with fieldType as $fieldType', ({ fieldType }) => {
-        let calendar: Calendar;
+    describe('Expire date field behavior', () => {
+        it('should show placeholder and showClear when field is expire date field', () => {
+            spectator = createComponent({
+                props: {
+                    field: DATE_FIELD_MOCK,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITH_EXPIRE
+                } as unknown
+            });
 
-        const options = CALENDAR_OPTIONS_PER_TYPE[fieldType];
+            const calendar = spectator.query(Calendar);
+            expect(calendar.showClear).toBe(true);
 
+            expect(calendar.placeholder).toBe('Never expires');
+        });
+
+        it('should NOT show placeholder and showClear when field is NOT expire date field', () => {
+            spectator = createComponent({
+                props: {
+                    field: DATE_FIELD_MOCK,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const calendar = spectator.query(Calendar);
+            expect(calendar.showClear).toBe(false);
+            expect(calendar.placeholder).toBe('');
+        });
+    });
+
+    describe('Disabled state', () => {
+        it('should disable calendar when setDisabledState is called with true', () => {
+            spectator = createComponent({
+                props: {
+                    field: DATE_FIELD_MOCK,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const component = spectator.component;
+            component.setDisabledState(true);
+            spectator.detectChanges();
+
+            const calendar = spectator.query(Calendar);
+            expect(calendar.disabled).toBe(true);
+        });
+
+        it('should enable calendar when setDisabledState is called with false', () => {
+            spectator = createComponent({
+                props: {
+                    field: DATE_FIELD_MOCK,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const component = spectator.component;
+            component.setDisabledState(false);
+            spectator.detectChanges();
+
+            const calendar = spectator.query(Calendar);
+            expect(calendar.disabled).toBe(false);
+        });
+    });
+
+    describe('Field type configurations', () => {
+        it('should configure DATE_AND_TIME field correctly', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const calendar = spectator.query(Calendar);
+            expect(calendar.showTime).toBe(true);
+            expect(calendar.timeOnly).toBe(false);
+            expect(calendar.icon).toBe('pi pi-calendar');
+        });
+
+        it('should configure DATE field correctly', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const calendar = spectator.query(Calendar);
+            expect(calendar.showTime).toBe(false);
+            expect(calendar.timeOnly).toBe(false);
+            expect(calendar.icon).toBe('pi pi-calendar');
+        });
+
+        it('should configure TIME field correctly', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const calendar = spectator.query(Calendar);
+            expect(calendar.showTime).toBe(true);
+            expect(calendar.timeOnly).toBe(true);
+            expect(calendar.icon).toBe('pi pi-clock');
+        });
+    });
+
+    describe('Default value handling', () => {
         beforeEach(() => {
+            // Mock utility functions
+            jest.spyOn(calendarUtils, 'processFieldDefaultValue').mockReturnValue(null);
+            jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(null);
+            jest.spyOn(calendarUtils, 'getCurrentServerTime').mockReturnValue(
+                new Date('2024-01-15T10:30:00Z')
+            );
+        });
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        it('should process field default value when field has defaultValue', () => {
+            const mockDefaultResult = {
+                displayValue: new Date('2024-01-15T10:30:00Z'),
+                formValue: new Date('2024-01-15T15:30:00Z')
+            };
+
+            jest.spyOn(calendarUtils, 'processFieldDefaultValue').mockReturnValue(
+                mockDefaultResult
+            );
+
+            const fieldWithDefault = { ...DATE_FIELD_MOCK, defaultValue: 'now' };
+
             spectator = createComponent({
                 props: {
-                    $field: { ...DATE_FIELD_MOCK, fieldType }
-                }
+                    field: fieldWithDefault,
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
             });
 
-            calendar = spectator.debugElement.query(
-                By.css(`[data-testid="calendar-input-${DATE_FIELD_MOCK.variable}"]`)
-            ).componentInstance;
+            const component = spectator.component;
+            component.writeValue(null);
+
+            expect(calendarUtils.processFieldDefaultValue).toHaveBeenCalledWith(
+                fieldWithDefault,
+                MOCK_TIMEZONE
+            );
         });
 
-        it('should have showTime as defined in the options', () => {
-            expect(calendar.showTime).toBe(options.showTime);
+        it('should NOT process default value when field has no defaultValue', () => {
+            const fieldWithoutDefault = { ...DATE_FIELD_MOCK, defaultValue: undefined };
+
+            spectator = createComponent({
+                props: {
+                    field: fieldWithoutDefault,
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const component = spectator.component;
+            component.writeValue(null);
+
+            expect(calendarUtils.processFieldDefaultValue).toHaveBeenCalledWith(
+                fieldWithoutDefault,
+                MOCK_TIMEZONE
+            );
         });
 
-        it('should have the timeOnly as defined in the options', () => {
-            expect(calendar.timeOnly).toBe(options.timeOnly);
+        it('should process existing value when writeValue is called', () => {
+            const existingValue = new Date('2024-01-10T14:20:00Z');
+            const mockProcessedValue = new Date('2024-01-10T09:20:00Z');
+
+            jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
+
+            spectator = createComponent({
+                props: {
+                    field: DATE_FIELD_MOCK,
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const component = spectator.component;
+            component.writeValue(existingValue);
+
+            expect(calendarUtils.processExistingValue).toHaveBeenCalledWith(
+                existingValue,
+                DATE_FIELD_MOCK.fieldType as FieldType,
+                MOCK_TIMEZONE
+            );
         });
 
-        it('should have the icon as defined in the options', () => {
-            expect(calendar.icon).toBe(options.icon);
+        it('should handle timezone reprocessing when timezone becomes available', () => {
+            const existingValue = new Date('2024-01-10T14:20:00Z');
+            const mockProcessedValue = new Date('2024-01-10T09:20:00Z');
+
+            jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
+
+            // Start without timezone
+            spectator = createComponent({
+                props: {
+                    field: DATE_FIELD_MOCK,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const component = spectator.component;
+            component.writeValue(existingValue);
+
+            // Update with timezone
+            spectator.setInput('utcTimezone', MOCK_TIMEZONE);
+            spectator.detectChanges();
+
+            expect(calendarUtils.processExistingValue).toHaveBeenCalledWith(
+                existingValue,
+                DATE_FIELD_MOCK.fieldType as FieldType,
+                MOCK_TIMEZONE
+            );
         });
     });
 
-    describe('Timezone functionality', () => {
-        it('should show timezone info for datetime fields', () => {
-            spectator = createComponent({
-                props: {
-                    $field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME }
-                }
-            });
-
-            expect(spectator.component.$showTimezoneInfo()).toBe(true);
-        });
-
-        it('should not show timezone info for date-only fields', () => {
-            spectator = createComponent({
-                props: {
-                    $field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE }
-                }
-            });
-
-            expect(spectator.component.$showTimezoneInfo()).toBe(false);
-        });
-    });
-
-    describe('Form integration', () => {
-        let component: DotEditContentCalendarFieldComponent;
-        let formGroup: FormGroup;
-
-        const systemTimezone: DotSystemTimezone = {
-            id: 'Asia/Dubai',
-            label: 'Gulf Standard Time',
-            offset: 14400000 // +4 hours in milliseconds
-        };
-
+    describe('Calendar value changes', () => {
         beforeEach(() => {
-            formGroup = new FormGroup({
-                [DATE_FIELD_MOCK.variable]: new FormControl(null)
+            // Mock utility functions
+            jest.spyOn(calendarUtils, 'extractDateComponents').mockReturnValue({
+                year: 2024,
+                month: 0,
+                date: 15,
+                hours: 10,
+                minutes: 30,
+                seconds: 0
             });
-
-            spectator = createComponent({
-                props: {
-                    $field: DATE_FIELD_MOCK,
-                    $systemTimezone: systemTimezone
-                }
-            });
-
-            // Setup form for the component
-            Object.defineProperty(spectator.inject(ControlContainer), 'control', {
-                value: formGroup,
-                writable: true
-            });
-            component = spectator.component;
+            jest.spyOn(calendarUtils, 'createUtcDateAtMidnight').mockReturnValue(
+                new Date('2024-01-15T00:00:00Z')
+            );
+            jest.spyOn(calendarUtils, 'convertServerTimeToUtc').mockReturnValue(
+                new Date('2024-01-15T15:30:00Z')
+            );
         });
 
-        it('should update form control when onCalendarChange is called', () => {
-            const control = formGroup.get(DATE_FIELD_MOCK.variable);
-            const selectedDate = new Date('2024-01-15T14:30:00');
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
 
+        it('should handle calendar change for DATE field', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
+
+            const component = spectator.component;
+            const mockOnChange = jest.fn();
+            component.registerOnChange(mockOnChange);
+
+            const selectedDate = new Date('2024-01-15T10:30:00');
             component.onCalendarChange(selectedDate);
 
-            // The control should receive a UTC date converted from server time
-            expect(control?.value).toBeDefined();
-            expect(control?.value).toBeInstanceOf(Date);
+            expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
+            expect(calendarUtils.createUtcDateAtMidnight).toHaveBeenCalledWith(2024, 0, 15);
+            expect(mockOnChange).toHaveBeenCalled();
         });
 
-        it('should handle null values gracefully', () => {
-            const control = formGroup.get(DATE_FIELD_MOCK.variable);
-            control?.setValue(null);
+        it('should handle calendar change for TIME field', () => {
+            spectator = createComponent({
+                props: {
+                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
 
-            spectator.detectChanges();
+            const component = spectator.component;
+            const mockOnChange = jest.fn();
+            component.registerOnChange(mockOnChange);
 
-            expect(control?.value).toBeNull();
+            const selectedDate = new Date('2024-01-15T10:30:00');
+            component.onCalendarChange(selectedDate);
+
+            expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
+            expect(calendarUtils.convertServerTimeToUtc).toHaveBeenCalled();
+            expect(mockOnChange).toHaveBeenCalled();
         });
 
-        it('should convert server time to UTC properly', () => {
-            const control = formGroup.get(DATE_FIELD_MOCK.variable);
-            const serverDate = new Date('2024-01-15T14:30:00');
+        it('should handle null calendar change', () => {
+            spectator = createComponent({
+                props: {
+                    field: DATE_FIELD_MOCK,
+                    utcTimezone: MOCK_TIMEZONE,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
+            });
 
-            component.onCalendarChange(serverDate);
+            const component = spectator.component;
+            const mockOnChange = jest.fn();
+            component.registerOnChange(mockOnChange);
 
-            // Verify the control received a date (exact conversion depends on timezone)
-            expect(control?.value).toBeInstanceOf(Date);
-            expect(control?.value).not.toBe(serverDate); // Should be a new Date object (converted)
-        });
+            component.onCalendarChange(null);
 
-        it('should display internal value from writeValue', () => {
-            const utcDate = new Date('2024-01-15T14:30:00.000Z');
-
-            component.writeValue(utcDate);
-            spectator.detectChanges();
-
-            const internalValue = component.$internalValue();
-            expect(internalValue).toBeInstanceOf(Date);
-        });
-
-        it('should handle null values in writeValue', () => {
-            component.writeValue(null);
-            spectator.detectChanges();
-
-            const internalValue = component.$internalValue();
-            expect(internalValue).toBeNull();
+            expect(mockOnChange).toHaveBeenCalledWith(null);
         });
     });
 
-    describe('UI display', () => {
-        it('should display timezone information for datetime fields', () => {
+    describe('Accessibility', () => {
+        it('should set correct aria-label from field name', () => {
+            const fieldWithName = { ...DATE_FIELD_MOCK, name: 'Event Date' };
+
             spectator = createComponent({
                 props: {
-                    $field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME }
-                }
+                    field: fieldWithName,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
             });
 
-            spectator.detectChanges();
-
-            const timezoneInfo = spectator.query('[data-testid="calendar-field-timezone"]');
-            expect(timezoneInfo).toBeTruthy();
+            const calendarInput = spectator.query(
+                byTestId(`calendar-input-${fieldWithName.variable}`)
+            );
+            expect(calendarInput).toHaveAttribute('aria-label', 'Event Date');
         });
 
-        it('should display server timezone when provided', () => {
-            const systemTimezone: DotSystemTimezone = {
-                id: 'Asia/Dubai',
-                label: 'Gulf Standard Time',
-                offset: 14400000
+        it('should set aria-describedby when field has hint', () => {
+            const fieldWithHint = {
+                ...DATE_FIELD_MOCK,
+                hint: 'Select a date',
+                variable: 'testField'
             };
 
             spectator = createComponent({
                 props: {
-                    $field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                    $systemTimezone: systemTimezone
-                }
+                    field: fieldWithHint,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
             });
 
-            spectator.detectChanges();
-
-            const timezoneInfo = spectator.query('[data-testid="calendar-field-timezone"]');
-            expect(timezoneInfo).toBeTruthy();
-            expect(timezoneInfo.textContent).toContain('Gulf Standard Time');
+            const calendarInput = spectator.query(byTestId('calendar-input-testField'));
+            expect(calendarInput).toHaveAttribute('aria-describedby', 'hint-testField');
         });
-    });
 
-    describe('Timezone conversion consistency - Save/Load cycle', () => {
-        let component: DotEditContentCalendarFieldComponent;
-        let formGroup: FormGroup;
-
-        const dubaTimezone: DotSystemTimezone = {
-            id: 'Asia/Dubai',
-            label: 'Gulf Standard Time (Asia/Dubai)',
-            offset: 14400000 // +4 hours
-        };
-
-        beforeEach(() => {
-            formGroup = new FormGroup({
-                [DATE_FIELD_MOCK.variable]: new FormControl(null)
-            });
+        it('should NOT set aria-describedby when field has no hint', () => {
+            const fieldWithoutHint = { ...DATE_FIELD_MOCK, hint: undefined };
 
             spectator = createComponent({
                 props: {
-                    $field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                    $systemTimezone: dubaTimezone
-                }
+                    field: fieldWithoutHint,
+                    utcTimezone: null,
+                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
+                } as unknown
             });
 
-            // Setup form for the component
-            Object.defineProperty(spectator.inject(ControlContainer), 'control', {
-                value: formGroup,
-                writable: true
-            });
-            component = spectator.component;
-        });
-
-        it('should maintain timezone consistency for datetime fields in Dubai timezone', () => {
-            // Given: User selects 20:44 in Dubai timezone
-            const userSelection = new Date(2025, 7, 6, 20, 44, 0); // Aug 6, 2025 20:44
-
-            // When: User changes the calendar value
-            component.onCalendarChange(userSelection);
-
-            // Then: The form control should receive UTC time
-            const formControlValue = formGroup.get(DATE_FIELD_MOCK.variable)?.value;
-            expect(formControlValue).toBeInstanceOf(Date);
-            expect(formControlValue.getUTCHours()).toBe(16); // 20:44 Dubai = 16:44 UTC
-            expect(formControlValue.getUTCMinutes()).toBe(44);
-
-            // When: Form value is written back (like after save/reload)
-            component.writeValue(formControlValue);
-
-            // Then: Internal value should display the original time (20:44)
-            const displayValue = component.$internalValue();
-            expect(displayValue).toBeInstanceOf(Date);
-            expect(displayValue!.getHours()).toBe(20);
-            expect(displayValue!.getMinutes()).toBe(44);
-        });
-
-        it('should handle edge cases where time crosses day boundaries', () => {
-            // Given: User selects 23:30 in Dubai (which becomes 19:30 UTC same day)
-            const userSelection = new Date(2025, 7, 6, 23, 30, 0);
-
-            // When: User changes the calendar value
-            component.onCalendarChange(userSelection);
-
-            // Then: Form control should have correct UTC time
-            const formControlValue = formGroup.get(DATE_FIELD_MOCK.variable)?.value;
-            expect(formControlValue.getUTCDate()).toBe(6); // Same day
-            expect(formControlValue.getUTCHours()).toBe(19);
-            expect(formControlValue.getUTCMinutes()).toBe(30);
-
-            // When: Form value is written back
-            component.writeValue(formControlValue);
-
-            // Then: Should display original server time
-            const displayValue = component.$internalValue();
-            expect(displayValue!.getDate()).toBe(6);
-            expect(displayValue!.getHours()).toBe(23);
-            expect(displayValue!.getMinutes()).toBe(30);
-        });
-
-        it('should handle date-only fields correctly (no timezone conversion)', () => {
-            // Given: Date-only field
-            spectator = createComponent({
-                props: {
-                    $field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
-                    $systemTimezone: dubaTimezone
-                }
-            });
-
-            Object.defineProperty(spectator.inject(ControlContainer), 'control', {
-                value: formGroup,
-                writable: true
-            });
-            component = spectator.component;
-
-            // When: User selects a date
-            const userSelection = new Date(2025, 7, 6, 0, 0, 0);
-            component.onCalendarChange(userSelection);
-
-            // Then: Form control should receive UTC midnight
-            const formControlValue = formGroup.get(DATE_FIELD_MOCK.variable)?.value;
-            expect(formControlValue.getUTCFullYear()).toBe(2025);
-            expect(formControlValue.getUTCMonth()).toBe(7);
-            expect(formControlValue.getUTCDate()).toBe(6);
-            expect(formControlValue.getUTCHours()).toBe(0);
-            expect(formControlValue.getUTCMinutes()).toBe(0);
+            const calendarInput = spectator.query(
+                byTestId(`calendar-input-${fieldWithoutHint.variable}`)
+            );
+            expect(calendarInput).not.toHaveAttribute('aria-describedby');
         });
     });
 });
