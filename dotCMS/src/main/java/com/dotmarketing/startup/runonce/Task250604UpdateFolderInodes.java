@@ -1,16 +1,10 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.startup.StartupTask;
-import com.dotmarketing.util.Logger;
-import java.sql.Connection;
 
 /**
  * Upgrade task that sets the system_folder identifier to SYSTEM_FOLDER and updates all folders to use the identifier as
@@ -38,11 +32,12 @@ public class Task250604UpdateFolderInodes implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
+        //Running Update Assets Inconsistencies before fixing folder IDs
+        FixTasksExecutor fixtask = FixTasksExecutor.getInstance();
+        fixtask.execute(null);
+
+        //Updating folder IDs
         APILocator.getFolderAPI().fixFolderIds();
 
-
-
     }
-
-
 }
