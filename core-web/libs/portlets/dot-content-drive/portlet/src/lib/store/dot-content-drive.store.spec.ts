@@ -31,7 +31,7 @@ describe('DotContentDriveStore', () => {
             expect(store.filters()).toEqual({});
             expect(store.items()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
-            expect(store.treeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
+            expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
         });
     });
 
@@ -57,7 +57,7 @@ describe('DotContentDriveStore', () => {
                     currentSite: SYSTEM_HOST,
                     path: testPath,
                     filters: {},
-                    treeExpanded: false
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
@@ -80,7 +80,7 @@ describe('DotContentDriveStore', () => {
                     currentSite: customSite,
                     path: DEFAULT_PATH,
                     filters: {},
-                    treeExpanded: false
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
@@ -106,7 +106,7 @@ describe('DotContentDriveStore', () => {
                     currentSite: SYSTEM_HOST,
                     path: DEFAULT_PATH,
                     filters,
-                    treeExpanded: false
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
@@ -139,14 +139,14 @@ describe('DotContentDriveStore', () => {
                     currentSite: testSite,
                     path: testPath,
                     filters: testFilters,
-                    treeExpanded: true
+                    isTreeExpanded: true
                 });
 
                 expect(store.currentSite()).toEqual(testSite);
                 expect(store.path()).toBe(testPath);
                 expect(store.filters()).toEqual(testFilters);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADING);
-                expect(store.treeExpanded()).toBe(true);
+                expect(store.isTreeExpanded()).toBe(true);
             });
         });
 

@@ -29,6 +29,11 @@ describe('Utility Functions', () => {
             expect(result).toEqual({ contentType: 'Blog', status: 'published' });
         });
 
+        it('should handle filters with spaces in the value correctly', () => {
+            const result = decodeFilters('title: Some Random Title;status:published');
+            expect(result).toEqual({ title: 'Some Random Title', status: 'published' });
+        });
+
         it('should ignore empty filter parts - edge case', () => {
             const result = decodeFilters('contentType:Blog;;status:published;');
             expect(result).toEqual({ contentType: 'Blog', status: 'published' });
@@ -104,6 +109,11 @@ describe('Utility Functions', () => {
         it('should ignore filters with empty string values', () => {
             const result = encodeFilters({ contentType: 'Blog', status: '' });
             expect(result).toBe('contentType:Blog');
+        });
+
+        it('should handle filters with spaces in the value correctly', () => {
+            const result = encodeFilters({ title: 'Some Random Title', status: 'published' });
+            expect(result).toBe('title:Some Random Title;status:published');
         });
 
         it('should encode multiselector values correctly', () => {

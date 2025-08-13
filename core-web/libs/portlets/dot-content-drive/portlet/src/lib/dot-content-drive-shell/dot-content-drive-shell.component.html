@@ -3,7 +3,7 @@
 <!-- Just placeholders for now.-->
 <div
     class="tree-selector center-content"
-    [ngClass]="{ expanded: $treeExpanded() }"
+    [class.expanded]="$treeExpanded()"
     data-testid="tree-selector">
     Tree selector works
 </div>

@@ -33,7 +33,7 @@ const initialState: DotContentDriveState = {
         field: 'modDate',
         order: DotContentDriveSortOrder.ASC
     },
-    treeExpanded: DEFAULT_TREE_EXPANDED
+    isTreeExpanded: DEFAULT_TREE_EXPANDED
 };
 
 export const DotContentDriveStore = signalStore(
@@ -87,13 +87,18 @@ export const DotContentDriveStore = signalStore(
     }),
     withMethods((store) => {
         return {
-            initContentDrive({ currentSite, path, filters, treeExpanded }: DotContentDriveInit) {
+            initContentDrive({
+                currentSite,
+                path,
+                filters,
+                isTreeExpanded: treeExpanded
+            }: DotContentDriveInit) {
                 patchState(store, {
                     currentSite: currentSite ?? SYSTEM_HOST,
                     path,
                     filters,
                     status: DotContentDriveStatus.LOADING,
-                    treeExpanded
+                    isTreeExpanded: treeExpanded
                 });
             },
             setItems(items: DotContentDriveItem[], totalItems: number) {
@@ -111,8 +116,8 @@ export const DotContentDriveStore = signalStore(
             setSort(sort: DotContentDriveSort) {
                 patchState(store, { sort });
             },
-            setTreeExpanded(treeExpanded: boolean) {
-                patchState(store, { treeExpanded });
+            setIsTreeExpanded(isTreeExpanded: boolean) {
+                patchState(store, { isTreeExpanded });
             }
         };
     })

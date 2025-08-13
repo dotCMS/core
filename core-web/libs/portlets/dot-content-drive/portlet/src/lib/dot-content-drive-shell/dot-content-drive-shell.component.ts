@@ -1,6 +1,6 @@
 import { EMPTY } from 'rxjs';
 
-import { NgClass, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -21,7 +21,7 @@ import { decodeFilters, encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, NgClass],
+    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
     providers: [DotContentDriveStore],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
@@ -39,7 +39,7 @@ export class DotContentDriveShellComponent {
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
-    readonly $treeExpanded = this.#store.treeExpanded;
+    readonly $treeExpanded = this.#store.isTreeExpanded;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
@@ -78,13 +78,13 @@ export class DotContentDriveShellComponent {
     });
 
     readonly updateQueryParamsEffect = effect(() => {
-        const treeExpanded = this.#store.treeExpanded();
+        const isTreeExpanded = this.#store.isTreeExpanded();
         const path = this.#store.path();
         const filters = this.#store.filters();
 
         const queryParams: Record<string, string> = {};
 
-        queryParams['treeExpanded'] = treeExpanded.toString();
+        queryParams['isTreeExpanded'] = isTreeExpanded.toString();
 
         if (path && path.length) {
             queryParams['path'] = path;
@@ -102,13 +102,13 @@ export class DotContentDriveShellComponent {
         const path = this.#route.snapshot.queryParams['path'] ?? DEFAULT_PATH;
         const filters = decodeFilters(this.#route.snapshot.queryParams['filters']);
         const queryTreeExpanded =
-            this.#route.snapshot.queryParams['treeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
+            this.#route.snapshot.queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 
         this.#store.initContentDrive({
             path,
             filters,
             currentSite,
-            treeExpanded: queryTreeExpanded == 'true'
+            isTreeExpanded: queryTreeExpanded == 'true'
         });
     });
 

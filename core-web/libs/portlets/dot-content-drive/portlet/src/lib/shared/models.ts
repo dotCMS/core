@@ -25,7 +25,7 @@ export interface DotContentDriveInit {
     currentSite: SiteEntity;
     path: string;
     filters: DotContentDriveFilters;
-    treeExpanded: boolean;
+    isTreeExpanded: boolean;
 }
 export interface DotContentDriveState extends DotContentDriveInit {
     items: DotContentDriveItem[];

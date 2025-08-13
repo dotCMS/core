@@ -49,11 +49,11 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
                     currentSite: jest.fn(),
-                    treeExpanded: jest.fn().mockReturnValue(true),
+                    isTreeExpanded: jest.fn().mockReturnValue(true),
                     $query: jest.fn(),
                     items: jest.fn().mockReturnValue(mockItems),
                     pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
-                    setTreeExpanded: jest.fn(),
+                    setIsTreeExpanded: jest.fn(),
                     path: jest.fn().mockReturnValue('/test/path'),
                     filters: jest.fn().mockReturnValue({}),
                     status: jest.fn().mockReturnValue(DotContentDriveStatus.LOADING),
@@ -102,7 +102,7 @@ describe('DotContentDriveShellComponent', () => {
                     contentType: 'Blog',
                     status: 'published'
                 },
-                treeExpanded: true
+                isTreeExpanded: true
             });
         });
 
@@ -111,7 +111,7 @@ describe('DotContentDriveShellComponent', () => {
                 get: jest.fn().mockReturnValue({
                     queryParams: {
                         filters: 'contentType:Blog',
-                        treeExpanded: 'false'
+                        isTreeExpanded: 'false'
                     }
                 })
             });
@@ -125,7 +125,7 @@ describe('DotContentDriveShellComponent', () => {
                     filters: {
                         contentType: 'Blog'
                     },
-                    treeExpanded: false
+                    isTreeExpanded: false
                 })
             );
         });
@@ -145,7 +145,7 @@ describe('DotContentDriveShellComponent', () => {
                 expect.objectContaining({
                     filters: {},
                     path: '/test/path/',
-                    treeExpanded: true
+                    isTreeExpanded: true
                 })
             );
         });
@@ -232,14 +232,14 @@ describe('DotContentDriveShellComponent', () => {
     describe('Query Params Update Effect', () => {
         it('should update query params when store changes', () => {
             // Arrange store values for this run
-            store.treeExpanded.mockReturnValue(false);
+            store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/another/path');
             store.filters.mockReturnValue({ contentType: 'Blog', baseType: ['1', '2', '3'] });
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
-                    treeExpanded: 'false',
+                    isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3'
                 }
@@ -248,7 +248,7 @@ describe('DotContentDriveShellComponent', () => {
             // And Location.go called with the serialized query string
             expect(location.go).toHaveBeenCalled();
             const calledWith = location.go.mock.calls[0][0] as string;
-            expect(calledWith).toContain('treeExpanded=false');
+            expect(calledWith).toContain('isTreeExpanded=false');
             expect(calledWith).toContain('path=%2Fanother%2Fpath');
             expect(calledWith).toContain('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3');
         });
@@ -282,7 +282,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should hide the tree selector when tree is collapsed', () => {
-            store.treeExpanded.mockReturnValue(false);
+            store.isTreeExpanded.mockReturnValue(false);
             spectator.detectChanges();
 
             const treeSelector = spectator.query('[data-testid="tree-selector"]');

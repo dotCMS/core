@@ -13,8 +13,8 @@ describe('DotContentDriveTreeTogglerComponent', () => {
         component: DotContentDriveTreeTogglerComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                treeExpanded: jest.fn().mockReturnValue(true),
-                setTreeExpanded: jest.fn()
+                isTreeExpanded: jest.fn().mockReturnValue(true),
+                setIsTreeExpanded: jest.fn()
             })
         ],
         detectChanges: false
@@ -36,32 +36,32 @@ describe('DotContentDriveTreeTogglerComponent', () => {
     });
 
     it('should have active class when tree is expanded', () => {
-        store.treeExpanded.mockReturnValue(true);
+        store.isTreeExpanded.mockReturnValue(true);
         spectator.detectChanges();
         expect(spectator.element.classList.contains('active')).toBe(true);
     });
 
     it('should not have active class when tree is collapsed', () => {
-        store.treeExpanded.mockReturnValue(false);
+        store.isTreeExpanded.mockReturnValue(false);
         spectator.detectChanges();
         expect(spectator.element.classList.contains('active')).toBe(false);
     });
 
     it('should collapse the tree when clicked and currently expanded', () => {
-        store.treeExpanded.mockReturnValue(true);
+        store.isTreeExpanded.mockReturnValue(true);
         spectator.detectChanges();
 
         spectator.click(spectator.element);
 
-        expect(store.setTreeExpanded).toHaveBeenCalledWith(false);
+        expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
     });
 
     it('should expand the tree when clicked and currently collapsed', () => {
-        store.treeExpanded.mockReturnValue(false);
+        store.isTreeExpanded.mockReturnValue(false);
         spectator.detectChanges();
 
         spectator.click(spectator.element);
 
-        expect(store.setTreeExpanded).toHaveBeenCalledWith(true);
+        expect(store.setIsTreeExpanded).toHaveBeenCalledWith(true);
     });
 });

@@ -19,11 +19,11 @@ export class DotContentDriveTreeTogglerComponent {
 
     @HostListener('click')
     toggleTree(): void {
-        this.#store.setTreeExpanded(!this.#store.treeExpanded());
+        this.#store.setIsTreeExpanded(!this.#store.isTreeExpanded());
     }
 
     @HostBinding('class.active')
     get isActive(): boolean {
-        return this.#store.treeExpanded();
+        return this.#store.isTreeExpanded();
     }
 }
