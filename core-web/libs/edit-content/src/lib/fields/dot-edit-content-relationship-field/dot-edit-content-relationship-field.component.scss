@@ -57,10 +57,6 @@
 .image-column {
     width: 6rem;
     min-width: 6rem;
-    &:has(+ .actions-column) {
-        width: 6rem;
-        min-width: 6rem;
-    }
 }
 
 .actions-column {
