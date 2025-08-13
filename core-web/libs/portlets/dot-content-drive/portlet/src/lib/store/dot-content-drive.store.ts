@@ -51,6 +51,7 @@ export const DotContentDriveStore = signalStore(
                 const currentSiteValue = currentSite();
                 const filtersValue = filters();
 
+                // Add the path to the query, the default is "/"
                 if (pathValue) {
                     modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
                 }
@@ -65,12 +66,16 @@ export const DotContentDriveStore = signalStore(
                     Object.entries(filtersValue).forEach(([key, value]) => {
                         // Handle multiselectors
                         if (Array.isArray(value)) {
+                            // Chain with OR
                             const orChain = value.join(' OR ');
 
+                            // Build the query
                             const orQuery = `+${key}: (${orChain})`;
 
+                            // Add the query to the modified query
                             modifiedQuery = modifiedQuery.raw(orQuery);
                         } else {
+                            // Single value
                             modifiedQuery = modifiedQuery.field(key).equals(value);
                         }
                     });

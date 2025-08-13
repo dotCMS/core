@@ -13,7 +13,7 @@ import { DotContentDriveFilters } from '../shared/models';
  *
  * @export
  * @param {string} filters
- * @return {*}  {Record<string, string>}
+ * @return {*}  {DotContentDriveFilters}
  */
 export function decodeFilters(filters: string): DotContentDriveFilters {
     if (!filters) {
@@ -35,7 +35,7 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
-        // We have to handle the multiselector (,) but this is enough to pave the path for now
+        // Handle the multiselector (,)
         if (value.includes(',')) {
             acc[key] = value
                 .split(',')
@@ -61,14 +61,15 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
  * ```
  *
  * @export
- * @param {string} filters
- * @return {*}  {Record<string, string>}
+ * @param {DotContentDriveFilters} filters
+ * @return {*}  {string}
  */
 export function encodeFilters(filters: DotContentDriveFilters): string {
     if (!filters) {
         return '';
     }
 
+    // Filter out empty values
     const filtersArray = Object.entries(filters).filter(([_key, value]) => value !== '');
 
     if (filtersArray.length === 0) {
@@ -80,6 +81,7 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
         .reduce((acc, filter) => {
             const [key, value] = filter;
 
+            // Handle the multiselector (,)
             if (Array.isArray(value)) {
                 acc.push(`${key}:${value.join(',')}`);
             } else {
@@ -87,6 +89,6 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
             }
 
             return acc;
-        }, [] as string[])
+        }, [])
         .join(';');
 }
