@@ -24,7 +24,7 @@ public class Task250603UpdateIdentifierParentPathCheckTrigger implements Startup
 
             //Creates a composite index to improve performance in queries filtering by LOWER(parent_path) and LOWER(asset_name)
             //Helpful for queries in FixTask00090RecreateMissingFoldersInParentPath
-            dotConnect.executeStatement("CREATE INDEX idx_identifier_composite_lower ON identifier \n"
+            dotConnect.executeStatement("CREATE INDEX IF NOT EXISTS idx_identifier_composite_lower ON identifier \n"
                     + "(host_inode, asset_type, LOWER(parent_path), LOWER(asset_name))");
 
             //Updates function trigger to support case-insensitive folder lookup
