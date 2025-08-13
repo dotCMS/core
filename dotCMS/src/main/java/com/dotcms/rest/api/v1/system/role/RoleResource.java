@@ -5,6 +5,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -25,6 +26,7 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -803,6 +805,82 @@ public class RoleResource implements Serializable {
 		}
 
 		return Response.ok(new LayoutMapResponseEntityView(layoutsMap)).build();
+	}
+
+	/**
+	 * Given an id (user id or email), if the user exist will retrieve the user roles assigned
+	 * This endpoint is only available for Admin Clients or CLients with User|Roles Layout
+	 *
+	 * @param id String could be the user id or email
+	 * @return list of {@link RoleView}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Operation(
+			operationId = "loadUserRoles",
+			summary = "Load user roles",
+			description = "Loads the user roles"
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+					description = "User roles retrieved successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(implementation = ResponseEntityRoleViewListView.class))),
+			@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "403",
+					description = "Forbidden - backend user required",
+					content = @Content(mediaType = "application/json"))
+	})
+	@GET
+	@Path("/users/{userIdOrEmail}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleViewListView loadUserRoles(@Context final HttpServletRequest request,
+								  @Context final HttpServletResponse response,
+								  @Parameter(description = "User id or email", required = true)
+								  @DefaultValue("true") @PathParam("userIdOrEmail") final String userIdOrEmail)
+			throws DotDataException {
+
+		final User modUser = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init().getUser();
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				(
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+				);
+
+		Logger.debug(this, ()-> "Loading the user roles for: " + modUser);
+
+		if (isRoleAdministrator) {
+
+			User userRecover = Try.of(()->this.userAPI.loadUserById(userIdOrEmail)).getOrNull();
+			if (userRecover == null) {
+				userRecover = Try.of(()->this.userAPI.loadUserById(userIdOrEmail)).getOrNull();
+			}
+
+			if (userRecover == null) {
+				userRecover = Try.of(()->this.userAPI.loadByUserByEmail(userIdOrEmail, modUser, false)).getOrNull();
+			}
+
+			if (userRecover == null) {
+				throw new com.dotmarketing.business.NoSuchUserException("No user found with id: " + userIdOrEmail);
+			}
+
+			final List<RoleView> userRolesView = new ArrayList<>();
+			final List<Role> userRoles = this.roleAPI.loadRolesForUser(userRecover.getUserId());
+
+			userRoles.stream()
+					.forEach(role -> userRolesView.add(new RoleView(role, new ArrayList<>())));
+
+			return new ResponseEntityRoleViewListView(userRolesView);
+		}
+
+		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";
+		Logger.error(this, forbiddenMessage);
+		throw new ForbiddenException(forbiddenMessage);
 	}
 
 	private List<String> getPorletTitlesFromLayout (final Layout layout,
