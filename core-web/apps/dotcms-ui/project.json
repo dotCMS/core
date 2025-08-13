@@ -42,6 +42,11 @@
                         "glob": "**/*",
                         "input": "./libs/portlets/edit-ema/portlet/src/lib/assets",
                         "output": "./assets/edit-ema"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/portlets/dot-content-drive/portlet/src/lib/assets",
+                        "output": "./assets/dot-content-drive"
                     }
                 ],
                 "styles": [

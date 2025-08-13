@@ -1,14 +1,13 @@
 import { describe } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { mockSites } from '@dotcms/dotcms-js';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
-import { SYSTEM_HOST } from '../shared/constants';
-import { mockItems } from '../shared/mocks';
+import { DEFAULT_PATH, DEFAULT_TREE_EXPANDED, SYSTEM_HOST } from '../shared/constants';
+import { mockItems, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
@@ -28,10 +27,11 @@ describe('DotContentDriveStore', () => {
     describe('Initial State', () => {
         it('should have the correct initial state', () => {
             expect(store.currentSite()).toEqual(SYSTEM_HOST);
-            expect(store.path()).toBe('');
+            expect(store.path()).toBe(DEFAULT_PATH);
             expect(store.filters()).toEqual({});
             expect(store.items()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+            expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
         });
     });
 
@@ -40,6 +40,8 @@ describe('DotContentDriveStore', () => {
             it('should build base query when no path or filters are provided', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(SYSTEM_HOST.identifier)
                     .or()
@@ -54,7 +56,8 @@ describe('DotContentDriveStore', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
                     path: testPath,
-                    filters: {}
+                    filters: {},
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
@@ -71,16 +74,19 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site in query when provided', () => {
-                const customSite = mockSites[0];
+                const customSite = mockSites[0] as SiteEntity;
 
                 store.initContentDrive({
                     currentSite: customSite,
-                    path: '',
-                    filters: {}
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(customSite.identifier)
                     .or()
@@ -98,12 +104,15 @@ describe('DotContentDriveStore', () => {
 
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: '',
-                    filters
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(SYSTEM_HOST.identifier)
                     .or()
@@ -129,13 +138,15 @@ describe('DotContentDriveStore', () => {
                 store.initContentDrive({
                     currentSite: testSite,
                     path: testPath,
-                    filters: testFilters
+                    filters: testFilters,
+                    isTreeExpanded: true
                 });
 
                 expect(store.currentSite()).toEqual(testSite);
                 expect(store.path()).toBe(testPath);
                 expect(store.filters()).toEqual(testFilters);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+                expect(store.isTreeExpanded()).toBe(true);
             });
         });
 
