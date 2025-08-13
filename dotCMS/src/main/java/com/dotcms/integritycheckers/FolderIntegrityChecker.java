@@ -161,8 +161,6 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             	return false;
             }
 
-            final String hostNameColumnName = dc.setSQL("select f.field_contentlet from field f join structure s on s.inode = f.structure_inode "
-                    + "where s.velocity_var_name='Host' and f.velocity_var_name='hostName' ").getString("field_contentlet");
 
             // compare the data from the CSV to the local db data and see if we
             // have conflicts
@@ -172,22 +170,16 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     + " ft on iden.full_path_lc = ft.full_path_lc "
                     + "join contentlet c on iden.host_inode = c.identifier and ft.host_identifier = iden.host_inode "
                     + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
-                    + "where asset_type = 'folder' and f.inode <> ft.inode order by c."+hostNameColumnName+", iden.asset_name");
+                + "where asset_type = 'folder' and f.inode <> ft.inode order by c.contentlet_as_json-> 'fields' ->'hostName'->>'value', iden.asset_name");
 
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
                 //By default we assume we're on postgres
-                String fullFolder = " (COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c."+hostNameColumnName+" ) || iden.parent_path || iden.asset_name) ";
+              String fullFolder = " (c.contentlet_as_json-> 'fields' ->'hostName'->>'value'  || iden.parent_path || iden.asset_name) ";
 
-                if (DbConnectionFactory.isMySql()) {
-                    //At this point we do not support json on mySQL se we only validate against the dynamic column
-                    fullFolder = " concat(c."+hostNameColumnName+",iden.parent_path,iden.asset_name) ";
-                } else if (DbConnectionFactory.isMsSql()) {
-                    //For msSQL we do support both json and dynamic columns so we need to test against both
-                    fullFolder = " (COALESCE(JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value'),c."+hostNameColumnName+" ) + iden.parent_path + iden.asset_name) ";
-                }
+
 
                 final String INSERT_INTO_RESULTS_TABLE = "insert into "
                         + getIntegrityType().getResultsTableName() 
@@ -204,7 +196,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         + " ft on iden.full_path_lc = ft.full_path_lc "
                         + "join contentlet c on iden.host_inode = c.identifier and ft.host_identifier = iden.host_inode "
                         + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
-                        + "where asset_type = 'folder' and f.inode <> ft.inode order by c."+hostNameColumnName+", iden.asset_name";
+                    + "where asset_type = 'folder' and f.inode <> ft.inode order by order by c.contentlet_as_json-> 'fields' ->'hostName'->>'value', iden.asset_name";
 
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
 
