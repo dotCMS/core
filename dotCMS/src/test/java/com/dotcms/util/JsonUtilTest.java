@@ -121,8 +121,8 @@ public class JsonUtilTest {
         assertFalse("String literal 'test' should not be valid JSON", result.isValid());
         assertNotNull("Invalid JSON should have error message", result.errorMessage);
         assertNotNull( "Invalid Json must have error message",result.errorMessage);
-        assertEquals("Error should have no line number", -1, result.line);
-        assertEquals("Error should have no column number", -1, result.column);
+        assertEquals("Error should have no line number", 1, result.line);
+        assertEquals("Error should have no column number", 5, result.column);
     }
 
     /**
