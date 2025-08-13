@@ -76,7 +76,8 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
             final String siteId = CubeJSQuery.extractSiteId(cubeJsQueryJson)
                     .orElse( WebAPILocator.getHostWebAPI().getCurrentHost().getIdentifier());
 
-            final CubeJSClient cubeClient = cubeJSClientFactory.create(user, siteId);
+            final CubeJSClient cubeClient = siteId != null ? cubeJSClientFactory.create(user, siteId)
+                    : cubeJSClientFactory.create(user);
             return toReportResponse(cubeClient.send(cubeJsQueryJson));
         } catch (DotDataException| DotSecurityException e) {
 
