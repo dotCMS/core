@@ -191,5 +191,7 @@
     }
 }
 @if (field.hint && field.fieldType !== fieldTypes.RELATIONSHIP) {
-    <small [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
+    <small class="text-gray-700" [attr.data-testId]="'hint-' + field.variable">
+        {{ field.hint }}
+    </small>
 }
