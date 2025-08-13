@@ -2,31 +2,34 @@ import { it, describe, expect, beforeEach } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
-import { mockSites } from '@dotcms/dotcms-js';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
-import { mockItems, mockRoute, mockSearchResponse } from '../shared/mocks';
+import { DEFAULT_PAGINATION, DEFAULT_PATH, SYSTEM_HOST } from '../shared/constants';
+import { mockItems, mockRoute, mockSearchResponse, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
     let contentSearchService: jest.Mocked<DotContentSearchService>;
-    let siteService: jest.Mocked<DotSiteService>;
     let activatedRoute: SpyObject<ActivatedRoute>;
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let router: SpyObject<Router>;
+    let location: SpyObject<Location>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
         providers: [
+            GlobalStore,
             mockProvider(DotSiteService, {
                 getCurrentSite: jest.fn().mockReturnValue(of(mockSites[0]))
             }),
@@ -46,9 +49,12 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
                     currentSite: jest.fn(),
+                    isTreeExpanded: jest.fn().mockReturnValue(true),
                     $query: jest.fn(),
                     items: jest.fn().mockReturnValue(mockItems),
                     pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
+                    setIsTreeExpanded: jest.fn(),
+                    path: jest.fn().mockReturnValue('/test/path'),
                     filters: jest.fn().mockReturnValue({}),
                     status: jest.fn().mockReturnValue(DotContentDriveStatus.LOADING),
                     sort: jest
@@ -60,13 +66,25 @@ describe('DotContentDriveShellComponent', () => {
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
                     setFilters: jest.fn()
+                }),
+                mockProvider(Router, {
+                    createUrlTree: jest.fn(
+                        (_commands: unknown[], opts: { queryParams?: Record<string, string> }) => ({
+                            toString: () =>
+                                '?' + new URLSearchParams(opts?.queryParams ?? {}).toString()
+                        })
+                    )
+                }),
+                mockProvider(Location, {
+                    go: jest.fn()
                 })
             ]
         });
         contentSearchService = spectator.inject(DotContentSearchService);
-        siteService = spectator.inject(DotSiteService);
         activatedRoute = spectator.inject(ActivatedRoute);
         store = spectator.inject(DotContentDriveStore, true);
+        router = spectator.inject(Router);
+        location = spectator.inject(Location);
     });
 
     afterEach(() => {
@@ -77,37 +95,23 @@ describe('DotContentDriveShellComponent', () => {
         it('should initialize the store with current site and route params', () => {
             spectator.detectChanges();
 
-            expect(siteService.getCurrentSite).toHaveBeenCalled();
-
             expect(store.initContentDrive).toHaveBeenCalledWith({
                 currentSite: mockSites[0],
                 path: '/test/path',
                 filters: {
                     contentType: 'Blog',
                     status: 'published'
-                }
+                },
+                isTreeExpanded: true
             });
         });
 
-        it('should use SYSTEM_HOST if getCurrentSite fails', () => {
-            siteService.getCurrentSite.mockReturnValue(
-                throwError(() => new Error('Failed to get site'))
-            );
-
-            spectator.detectChanges();
-
-            expect(store.initContentDrive).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    currentSite: SYSTEM_HOST
-                })
-            );
-        });
-
-        it('should use empty string for path if not provided in query params', () => {
+        it('should use default path if not provided in query params', () => {
             Object.defineProperty(activatedRoute, 'snapshot', {
                 get: jest.fn().mockReturnValue({
                     queryParams: {
-                        filters: 'contentType:Blog'
+                        filters: 'contentType:Blog',
+                        isTreeExpanded: 'false'
                     }
                 })
             });
@@ -116,10 +120,12 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(store.initContentDrive).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    path: '',
+                    currentSite: mockSites[0],
+                    path: DEFAULT_PATH,
                     filters: {
                         contentType: 'Blog'
-                    }
+                    },
+                    isTreeExpanded: false
                 })
             );
         });
@@ -138,13 +144,18 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.initContentDrive).toHaveBeenCalledWith(
                 expect.objectContaining({
                     filters: {},
-                    path: '/test/path/'
+                    path: '/test/path/',
+                    isTreeExpanded: true
                 })
             );
         });
     });
 
     describe('Content Loading Effect', () => {
+        beforeEach(() => {
+            jest.restoreAllMocks();
+        });
+
         it('should fetch content when store has a non-SYSTEM_HOST site', () => {
             // Setup store mock to simulate the effect running
             store.currentSite.mockReturnValue(mockSites[0]);
@@ -188,6 +199,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should handle sorting', () => {
+            // Setup store mock
+            store.currentSite.mockReturnValue(mockSites[1]);
             store.sort.mockReturnValue({ field: 'baseType', order: DotContentDriveSortOrder.DESC });
             store.$query.mockReturnValue('+testField:testValue');
             spectator.detectChanges();
@@ -201,6 +214,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should handle pagination', () => {
+            // Setup store mock
+            store.currentSite.mockReturnValue(mockSites[0]);
             store.pagination.mockReturnValue({ limit: 10, offset: 0 });
             store.$query.mockReturnValue('+testField:testValue');
             spectator.detectChanges();
@@ -214,6 +229,31 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('Query Params Update Effect', () => {
+        it('should update query params when store changes', () => {
+            // Arrange store values for this run
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/another/path');
+            store.filters.mockReturnValue({ contentType: 'Blog', baseType: ['1', '2', '3'] });
+            spectator.detectChanges();
+
+            expect(router.createUrlTree).toHaveBeenCalledWith([], {
+                queryParams: {
+                    isTreeExpanded: 'false',
+                    path: '/another/path',
+                    filters: 'contentType:Blog;baseType:1,2,3'
+                }
+            });
+
+            // And Location.go called with the serialized query string
+            expect(location.go).toHaveBeenCalled();
+            const calledWith = location.go.mock.calls[0][0] as string;
+            expect(calledWith).toContain('isTreeExpanded=false');
+            expect(calledWith).toContain('path=%2Fanother%2Fpath');
+            expect(calledWith).toContain('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3');
+        });
+    });
+
     describe('DOM', () => {
         it('should have a dot-folder-list-view with items from store', () => {
             spectator.detectChanges();
@@ -222,6 +262,32 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(folderListView).toBeTruthy();
             expect(folderListView?.$items()).toEqual(mockItems);
+        });
+
+        it('should have a dot-content-drive-toolbar with tree toggler', () => {
+            spectator.detectChanges();
+
+            const toolbar = spectator.query('[data-testid="toolbar"]');
+
+            expect(toolbar).toBeTruthy();
+            expect(toolbar?.querySelector('[data-testid="tree-toggler"]')).toBeTruthy();
+        });
+
+        it('should show the tree selector by default', () => {
+            spectator.detectChanges();
+
+            const treeSelector = spectator.query('[data-testid="tree-selector"]');
+
+            expect(treeSelector).toBeTruthy();
+        });
+
+        it('should hide the tree selector when tree is collapsed', () => {
+            store.isTreeExpanded.mockReturnValue(false);
+            spectator.detectChanges();
+
+            const treeSelector = spectator.query('[data-testid="tree-selector"]');
+
+            expect(treeSelector).toBeTruthy();
         });
     });
 
