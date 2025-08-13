@@ -26,27 +26,27 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <th scope="col" class="title-column">
+                        <th scope="col" [class.title-column]="!isEmpty">
                             {{ 'dot.file.relationship.field.table.title' | dm }}
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" class="dynamic-column">
+                        <th scope="col" [class.dynamic-column]="!isEmpty">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" class="dynamic-column">
+                        <th scope="col" [class.dynamic-column]="!isEmpty">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
                     @case ('image') {
-                        <th scope="col" class="image-column">
+                        <th scope="col" [class.image-column]="!isEmpty">
                             <p class="truncate-text capitalize">{{ column.header }}</p>
                         </th>
                     }
                     @default {
-                        <th scope="col" class="dynamic-column">
+                        <th scope="col" [class.dynamic-column]="!isEmpty">
                             <span class="capitalize">{{ column.header }}</span>
                         </th>
                     }
@@ -87,6 +87,7 @@
             [class.opacity-50]="isDisabled"
             [class.cursor-not-allowed]="isDisabled">
             <!-- Drag handle column - fixed width -->
+
             <td class="drag-handle-column">
                 @if (!isDisabled) {
                     <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
@@ -98,17 +99,21 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <td class="title-column" [class.cursor-not-allowed]="isDisabled">
+                        <td [class.title-column]="!isEmpty" [class.cursor-not-allowed]="isDisabled">
                             <p class="truncate-text">{{ item.title }}</p>
                         </td>
                     }
                     @case ('language') {
-                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
+                        <td
+                            [class.dynamic-column]="!isEmpty"
+                            [class.cursor-not-allowed]="isDisabled">
                             {{ item.language | language }}
                         </td>
                     }
                     @case ('status') {
-                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
+                        <td
+                            [class.dynamic-column]="!isEmpty"
+                            [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
                             <p-chip
                                 [styleClass]="'p-chip-sm ' + status.classes"
@@ -116,7 +121,7 @@
                         </td>
                     }
                     @case ('image') {
-                        <td class="image-column" [class.cursor-not-allowed]="isDisabled">
+                        <td [class.image-column]="!isEmpty" [class.cursor-not-allowed]="isDisabled">
                             <div class="container-thumbnail">
                                 <dot-contentlet-thumbnail
                                     [iconSize]="'30px'"
@@ -127,7 +132,7 @@
                         </td>
                     }
                     @default {
-                        <td class="dynamic-column">
+                        <td [class.dynamic-column]="!isEmpty">
                             <p class="truncate-text">{{ item[column.nameField] }}</p>
                         </td>
                     }
