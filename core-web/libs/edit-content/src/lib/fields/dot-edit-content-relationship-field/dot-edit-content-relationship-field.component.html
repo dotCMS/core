@@ -99,21 +99,17 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <td [class.title-column]="!isEmpty" [class.cursor-not-allowed]="isDisabled">
+                        <td class="title-column" [class.cursor-not-allowed]="isDisabled">
                             <p class="truncate-text">{{ item.title }}</p>
                         </td>
                     }
                     @case ('language') {
-                        <td
-                            [class.dynamic-column]="!isEmpty"
-                            [class.cursor-not-allowed]="isDisabled">
+                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
                             {{ item.language | language }}
                         </td>
                     }
                     @case ('status') {
-                        <td
-                            [class.dynamic-column]="!isEmpty"
-                            [class.cursor-not-allowed]="isDisabled">
+                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
                             <p-chip
                                 [styleClass]="'p-chip-sm ' + status.classes"
@@ -121,7 +117,7 @@
                         </td>
                     }
                     @case ('image') {
-                        <td [class.image-column]="!isEmpty" [class.cursor-not-allowed]="isDisabled">
+                        <td class="image-column" [class.cursor-not-allowed]="isDisabled">
                             <div class="container-thumbnail">
                                 <dot-contentlet-thumbnail
                                     [iconSize]="'30px'"
@@ -132,7 +128,7 @@
                         </td>
                     }
                     @default {
-                        <td [class.dynamic-column]="!isEmpty">
+                        <td class="dynamic-column">
                             <p class="truncate-text">{{ item[column.nameField] }}</p>
                         </td>
                     }
