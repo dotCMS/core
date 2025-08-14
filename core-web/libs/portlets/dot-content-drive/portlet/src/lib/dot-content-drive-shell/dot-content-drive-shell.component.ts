@@ -1,112 +1,116 @@
-import { EMPTY, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    effect,
-    inject,
-    OnInit,
-    untracked
-} from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
+import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
+import { DotContentSearchService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { GlobalStore } from '@dotcms/store';
 
-import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
+import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
+import { DEFAULT_PATH, DEFAULT_TREE_EXPANDED, SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { decodeFilters } from '../utils/functions';
+import { decodeFilters, encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    standalone: true,
-    imports: [DotFolderListViewComponent],
-    providers: [DotContentDriveStore, DotSiteService],
+    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
+    providers: [DotContentDriveStore],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveShellComponent implements OnInit {
+export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
-    readonly #siteService = inject(DotSiteService);
-
     readonly #contentSearchService = inject(DotContentSearchService);
-
     readonly #route = inject(ActivatedRoute);
+    readonly #globalStore = inject(GlobalStore);
+    readonly #router = inject(Router);
+    readonly #location = inject(Location);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
+    readonly $treeExpanded = this.#store.isTreeExpanded;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
-    readonly itemsEffect = effect(
-        () => {
-            const currentSite = untracked(() => this.#store.currentSite());
-            const query = this.#store.$query();
-            const { limit, offset } = this.#store.pagination();
-            const { field, order } = this.#store.sort();
+    readonly itemsEffect = effect(() => {
+        const currentSite = untracked(() => this.#store.currentSite());
+        const query = this.#store.$query();
+        const { limit, offset } = this.#store.pagination();
+        const { field, order } = this.#store.sort();
 
-            // If the current site is the system host, we don't need to search for content
-            // It initializes the store with the system host and the path
+        // If the current site is the system host, we don't need to search for content
+        // It initializes the store with the system host and the path
+        if (currentSite?.identifier === SYSTEM_HOST.identifier || !currentSite) {
+            return;
+        }
 
-            if (currentSite?.identifier === SYSTEM_HOST.identifier) {
-                return;
-            }
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
 
-            this.#store.setStatus(DotContentDriveStatus.LOADING);
-
-            this.#contentSearchService
-                .get<ESContent>({
-                    query,
-                    limit,
-                    offset,
-                    sort: `score,${field} ${order}`
-                })
-                .pipe(
-                    take(1),
-                    catchError(() => {
-                        this.#store.setStatus(DotContentDriveStatus.ERROR);
-
-                        return EMPTY;
-                    })
-                )
-                .subscribe((response) => {
-                    this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
-                });
-        },
-        { allowSignalWrites: true }
-    );
-
-    ngOnInit(): void {
-        this.#siteService
-            .getCurrentSite()
+        this.#contentSearchService
+            .get<ESContent>({
+                query,
+                limit,
+                offset,
+                sort: `score,${field} ${order}`
+            })
             .pipe(
                 take(1),
                 catchError(() => {
-                    return of(SYSTEM_HOST);
+                    this.#store.setStatus(DotContentDriveStatus.ERROR);
+
+                    return EMPTY;
                 })
             )
-            .subscribe((currentSite) => {
-                const queryParams = this.#route.snapshot.queryParams;
-
-                const path = queryParams['path'] || '';
-                const filters = decodeFilters(queryParams['filters'] || '');
-
-                this.#store.initContentDrive({
-                    currentSite,
-                    path,
-                    filters
-                });
+            .subscribe((response) => {
+                this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
             });
-    }
+    });
+
+    readonly updateQueryParamsEffect = effect(() => {
+        const isTreeExpanded = this.#store.isTreeExpanded();
+        const path = this.#store.path();
+        const filters = this.#store.filters();
+
+        const queryParams: Record<string, string> = {};
+
+        queryParams['isTreeExpanded'] = isTreeExpanded.toString();
+
+        if (path && path.length) {
+            queryParams['path'] = path;
+        }
+        if (filters && Object.keys(filters).length) {
+            queryParams['filters'] = encodeFilters(filters);
+        }
+
+        const urlTree = this.#router.createUrlTree([], { queryParams });
+        this.#location.go(urlTree.toString());
+    });
+
+    readonly initEffect = effect(() => {
+        const currentSite = this.#globalStore.siteDetails();
+        const path = this.#route.snapshot.queryParams['path'] ?? DEFAULT_PATH;
+        const filters = decodeFilters(this.#route.snapshot.queryParams['filters']);
+        const queryTreeExpanded =
+            this.#route.snapshot.queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
+
+        this.#store.initContentDrive({
+            path,
+            filters,
+            currentSite,
+            isTreeExpanded: queryTreeExpanded == 'true'
+        });
+    });
 
     onPaginate(event: LazyLoadEvent) {
         // Explicit check because it can potentially be 0

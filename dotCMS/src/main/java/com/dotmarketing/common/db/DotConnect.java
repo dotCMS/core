@@ -16,6 +16,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.control.Try;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.postgresql.util.PGobject;
@@ -76,6 +78,11 @@ public class DotConnect {
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
+    }
+
+    public DotConnect(String sql) {
+        this();
+        setSQL(sql);
     }
 
     public void setForceQuery(boolean force) {
@@ -147,6 +154,25 @@ public class DotConnect {
             throw new DotDataException(e.toString(), e);
         }
     }
+
+    /**
+     * Loads a list of strings from a specified column name by mapping the results
+     * obtained from an object list.
+     *
+     * @param columnName the name of the column from which the strings will be loaded
+     * @return a list of strings representing the values of the specified column
+     * @throws DotDataException if an error occurs while loading or processing the data
+     */
+    public List<String> loadStringArray(String columnName) throws DotDataException {
+
+        try {
+            return loadObjectResults().stream().map(o -> (String) o.get(columnName)).collect(Collectors.toList());
+        } catch (final Exception e) {
+            Logger.debug(this, "loadStringArray: " + e);
+            throw new DotDataException(e.toString(), e);
+        }
+    }
+
 
     public DotConnect setMaxRows(int x) {
         maxRows = x;
@@ -1358,5 +1384,35 @@ public class DotConnect {
             }
         }
     }
+
+    /**
+     * This is a conviencence method for debugging long running transactions
+     * @return
+     * @throws DotDataException
+     */
+    public Optional<String> getTransactionId() throws DotDataException{
+        return getTransactionId(DbConnectionFactory.getConnection());
+    }
+
+    public Optional<String> getTransactionId(final Connection connection) throws DotDataException {
+        // Check if currently in a transaction
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT txid_current_if_assigned()")) {
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                Object txid = rs.getObject(1);
+                return Optional.ofNullable(txid).map(Object::toString);
+
+            }
+        }
+        catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+        }
+        return Optional.empty();
+
+    }
+
+
+
+
 
 }

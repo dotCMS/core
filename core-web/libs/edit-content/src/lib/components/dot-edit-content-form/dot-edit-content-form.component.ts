@@ -84,7 +84,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  */
 @Component({
     selector: 'dot-edit-content-form',
-    standalone: true,
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
@@ -184,18 +183,15 @@ export class DotEditContentFormComponent implements OnInit {
         /**
          * Effect that enables or disables the form based on the loading state.
          */
-        effect(
-            () => {
-                const isLoading = this.$store.isLoading();
+        effect(() => {
+            const isLoading = this.$store.isLoading();
 
-                if (isLoading) {
-                    this.form.disable();
-                } else {
-                    this.form.enable();
-                }
-            },
-            { allowSignalWrites: true }
-        );
+            if (isLoading) {
+                this.form.disable();
+            } else {
+                this.form.enable();
+            }
+        });
 
         /**
          * Effect that initializes the form and form listener when copying locale.
@@ -344,6 +340,7 @@ export class DotEditContentFormComponent implements OnInit {
      * Processes the form value, applying specific transformations for different field types.
      *
      * Handles special cases:
+     * - disabledWYSIWYG: Preserves array format for WYSIWYG editor preferences
      * - Flattened fields: Joins array values with commas
      * - Calendar fields: Formats dates to the required string format
      * - Null/undefined values: Converts to empty string
@@ -357,6 +354,11 @@ export class DotEditContentFormComponent implements OnInit {
     ): FormValues {
         return Object.fromEntries(
             Object.entries(value).map(([key, fieldValue]) => {
+                // Handle disabledWYSIWYG as a special case - preserve array format
+                if (key === 'disabledWYSIWYG') {
+                    return [key, fieldValue || []];
+                }
+
                 const field = this.$formFields().find((f) => f.variable === key);
 
                 if (!field) {
@@ -388,7 +390,8 @@ export class DotEditContentFormComponent implements OnInit {
      * This method:
      * 1. Filters out non-form fields
      * 2. Creates form controls with appropriate initial values and validators
-     * 3. Combines all controls into a FormGroup
+     * 3. Adds disabledWYSIWYG as a form control to track WYSIWYG editor preferences
+     * 4. Combines all controls into a FormGroup
      *
      * @private
      */
@@ -400,6 +403,12 @@ export class DotEditContentFormComponent implements OnInit {
             }),
             {}
         );
+
+        // Add disabledWYSIWYG as a form control to track WYSIWYG editor preferences
+        const contentlet = this.$store.contentlet();
+        const disabledWYSIWYG = contentlet?.disabledWYSIWYG || [];
+
+        controls['disabledWYSIWYG'] = this.#fb.control(disabledWYSIWYG);
 
         this.form = this.#fb.group(controls);
     }
@@ -548,5 +557,24 @@ export class DotEditContentFormComponent implements OnInit {
      */
     onContentLockChange(event: InputSwitchChangeEvent) {
         event.checked ? this.$store.lockContent() : this.$store.unlockContent();
+    }
+
+    /**
+     * Handles changes to the disabledWYSIWYG attribute from field components.
+     *
+     * This method is triggered when any field component (WYSIWYG or textarea) changes
+     * the disabledWYSIWYG configuration. It updates the form control to keep the form
+     * data synchronized with the latest WYSIWYG editor preferences.
+     *
+     * Note: The contentlet in the store is already updated by the field components,
+     * this method only ensures the form control reflects those changes.
+     *
+     * @param {string[]} disabledWYSIWYG - The updated disabledWYSIWYG array
+     * @memberof DotEditContentFormComponent
+     */
+    onDisabledWYSIWYGChange(disabledWYSIWYG: string[]) {
+        if (this.form && this.form.get('disabledWYSIWYG')) {
+            this.form.get('disabledWYSIWYG')?.setValue(disabledWYSIWYG, { emitEvent: true });
+        }
     }
 }

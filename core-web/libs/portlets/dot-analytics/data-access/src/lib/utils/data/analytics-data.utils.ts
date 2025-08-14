@@ -1,8 +1,10 @@
 import {
     ChartData,
+    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
+    TimeRange,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
@@ -15,6 +17,52 @@ import { parseUserAgent } from '../browser/userAgentParser';
  */
 
 /**
+ * Determines the appropriate granularity for analytics queries based on the time range.
+ *
+ * This utility centralizes the logic for selecting granularity levels to ensure
+ * optimal data visualization and performance across different time periods.
+ *
+ * @param timeRange - The time range for the analytics query
+ * @returns The appropriate granularity level for the given time range
+ */
+export function determineGranularityForTimeRange(timeRange: TimeRange): Granularity {
+    switch (timeRange) {
+        case 'today':
+
+        // falls through
+        case 'yesterday':
+            // For today/yesterday, use hourly granularity for detailed intraday analysis
+            return 'hour';
+
+        case 'from 7 days ago to now':
+            // For last 7 days, use daily granularity
+            return 'day';
+
+        case 'from 30 days ago to now':
+            // For last 30 days, use daily granularity
+            return 'day';
+
+        default: {
+            // For custom ranges or other periods, extract days and decide
+            const daysMatch = timeRange.match(/from (\d+) days ago to now/);
+            if (daysMatch) {
+                const numDays = parseInt(daysMatch[1], 10);
+                if (numDays > 90) {
+                    return 'month';
+                } else if (numDays > 30) {
+                    return 'week';
+                } else {
+                    return 'day';
+                }
+            } else {
+                // For custom date ranges, default to day
+                return 'day';
+            }
+        }
+    }
+}
+
+/**
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
@@ -24,7 +72,7 @@ export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
  * Extracts unique sessions from UniqueVisitorsEntity
  */
 export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['request.totalUser']) : 0;
+    data ? Number(data['request.totalUsers']) : 0;
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
@@ -56,6 +104,14 @@ export const transformTopPagesTableData = (
 };
 
 /**
+ * Normalizes a date string to ensure it's treated as UTC
+ * Adds 'Z' suffix if not present to force UTC interpretation
+ */
+const normalizeUtcDateString = (dateString: string): string => {
+    return dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+};
+
+/**
  * Transforms PageViewTimeLineEntity array to Chart.js compatible format
  */
 export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | null): ChartData => {
@@ -77,19 +133,45 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     }
 
     // Sort by date to ensure correct order
-    const sortedData = [...data].sort(
-        (a, b) =>
-            new Date(a['request.createdAt']).getTime() - new Date(b['request.createdAt']).getTime()
-    );
+    const sortedData = [...data].sort((a, b) => {
+        const dateA = normalizeUtcDateString(a['request.createdAt']);
+        const dateB = normalizeUtcDateString(b['request.createdAt']);
+        return new Date(dateA).getTime() - new Date(dateB).getTime();
+    });
+
+    // Check if all data points are from the same day (in user's local timezone)
+    const allDatesAreSameDay = sortedData.every((item, index, arr) => {
+        if (index === 0) return true;
+        // Convert UTC dates to local timezone for comparison
+        const currentDate = new Date(normalizeUtcDateString(item['request.createdAt']));
+        const firstDate = new Date(normalizeUtcDateString(arr[0]['request.createdAt']));
+
+        return (
+            currentDate.getFullYear() === firstDate.getFullYear() &&
+            currentDate.getMonth() === firstDate.getMonth() &&
+            currentDate.getDate() === firstDate.getDate()
+        );
+    });
 
     const labels = sortedData.map((item) => {
-        const date = new Date(item['request.createdAt']);
+        // Parse UTC date and ensure it's correctly converted to local time
+        const date = new Date(normalizeUtcDateString(item['request.createdAt']));
 
-        // Format as short weekday + date (e.g., "Mon 21", "Tue 22")
-        return date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            day: 'numeric'
-        });
+        if (allDatesAreSameDay) {
+            // Format as hours when all data is from the same day (e.g., "10 AM", "11 AM", "12 PM")
+            // Use user's locale and timezone for accurate local time display
+            return date.toLocaleTimeString(undefined, {
+                hour: 'numeric',
+                hour12: true
+            });
+        } else {
+            // Format as short weekday + date when data spans multiple days (e.g., "Mon 21", "Tue 22")
+            // Use user's locale and timezone for accurate local date display
+            return date.toLocaleDateString(undefined, {
+                weekday: 'short',
+                day: 'numeric'
+            });
+        }
     });
 
     const chartData = sortedData.map((item) => Number(item['request.totalRequest']) || 0);
@@ -104,7 +186,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 2,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                cubicInterpolationMode: 'monotone'
             }
         ]
     };

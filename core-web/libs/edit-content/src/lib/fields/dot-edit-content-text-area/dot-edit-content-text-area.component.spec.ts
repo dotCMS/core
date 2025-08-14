@@ -6,6 +6,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import { DotLanguagesService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 
 import { DotEditContentTextAreaComponent } from './dot-edit-content-text-area.component';
@@ -45,9 +46,15 @@ describe('DotEditContentTextAreaComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
+            props: {
+                field: TEXT_AREA_FIELD_MOCK,
+                contentlet: {
+                    [TEXT_AREA_FIELD_MOCK.variable]: '',
+                    disabledWYSIWYG: []
+                } as DotCMSContentlet
+            } as unknown,
             detectChanges: false
         });
-        spectator.setInput('field', TEXT_AREA_FIELD_MOCK);
         spectator.detectChanges();
 
         component = spectator.component;
@@ -167,5 +174,193 @@ describe('DotEditContentTextAreaComponent', () => {
 
         // Assert: Private method called with correct parameter
         expect(insertLanguageVariableInMonacoMock).toHaveBeenCalledWith(testVariable);
+    });
+
+    describe('disabledWYSIWYGChange', () => {
+        it('should emit disabledWYSIWYGChange when switching from PlainText to Monaco editor', () => {
+            // Arrange: Create a contentlet with empty content and no disabled settings
+            const contentletMock = {
+                [TEXT_AREA_FIELD_MOCK.variable]: '',
+                disabledWYSIWYG: []
+            } as DotCMSContentlet;
+
+            const switchSpectator = createComponent({
+                props: {
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: contentletMock
+                } as unknown
+            });
+            switchSpectator.detectChanges();
+
+            // Spy on the output event
+            const disabledWYSIWYGChangeSpy = jest.fn();
+            switchSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+
+            // Act: Switch to Monaco editor
+            switchSpectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+
+            // Assert: disabledWYSIWYGChange should be emitted with field variable + @ToggleEditor
+            expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
+                `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+            ]);
+            expect(switchSpectator.component.$displayedEditor()).toBe(
+                AvailableEditorTextArea.Monaco
+            );
+        });
+
+        it('should emit disabledWYSIWYGChange when switching from Monaco back to PlainText editor', () => {
+            // Arrange: Create a contentlet with Monaco editor already enabled
+            const contentletMock = {
+                [TEXT_AREA_FIELD_MOCK.variable]: '',
+                disabledWYSIWYG: [`${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`]
+            } as DotCMSContentlet;
+
+            const switchBackSpectator = createComponent({
+                props: {
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: contentletMock
+                } as unknown
+            });
+            switchBackSpectator.detectChanges();
+
+            // Spy on the output event
+            const disabledWYSIWYGChangeSpy = jest.fn();
+            switchBackSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+
+            // Act: Switch to PlainText editor
+            switchBackSpectator.component.onEditorChange(AvailableEditorTextArea.PlainText);
+
+            // Assert: disabledWYSIWYG should be cleared for PlainText
+            expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([]);
+            expect(switchBackSpectator.component.$displayedEditor()).toBe(
+                AvailableEditorTextArea.PlainText
+            );
+        });
+
+        it('should correctly initialize with Monaco editor when contentlet has preference set', () => {
+            // Arrange: Contentlet with Monaco editor preference already set
+            const contentletWithMonaco = {
+                [TEXT_AREA_FIELD_MOCK.variable]: '',
+                disabledWYSIWYG: [`${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`]
+            } as DotCMSContentlet;
+
+            const initSpectator = createComponent({
+                props: {
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: contentletWithMonaco
+                } as unknown
+            });
+            initSpectator.detectChanges();
+
+            // Assert: Should initialize with Monaco editor
+            expect(initSpectator.component.$contentEditorUsed()).toBe(
+                AvailableEditorTextArea.Monaco
+            );
+            expect(initSpectator.component.$displayedEditor()).toBe(AvailableEditorTextArea.Monaco);
+            expect(initSpectator.component.$selectedEditorDropdown()).toBe(
+                AvailableEditorTextArea.Monaco
+            );
+        });
+
+        it('should preserve other field entries when updating current field editor preference', () => {
+            // Arrange: Contentlet with existing entries for other fields
+            const contentletMock = {
+                [TEXT_AREA_FIELD_MOCK.variable]: '',
+                disabledWYSIWYG: ['otherField', 'wysiwygField']
+            } as DotCMSContentlet;
+
+            const preserveSpectator = createComponent({
+                props: {
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: contentletMock
+                } as unknown
+            });
+            preserveSpectator.detectChanges();
+
+            // Spy on the output event
+            const disabledWYSIWYGChangeSpy = jest.fn();
+            preserveSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+
+            // Act: Switch to Monaco editor for current field
+            preserveSpectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+
+            // Assert: Should preserve other entries and add current field with @ToggleEditor suffix
+            expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
+                'otherField',
+                'wysiwygField',
+                `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+            ]);
+        });
+
+        it('should handle smooth editor switching workflow without conflicts', () => {
+            // Arrange: Start with clean contentlet
+            const contentletEmpty = {
+                [TEXT_AREA_FIELD_MOCK.variable]: '',
+                disabledWYSIWYG: []
+            } as DotCMSContentlet;
+
+            const workflowSpectator = createComponent({
+                props: {
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: contentletEmpty
+                } as unknown
+            });
+            workflowSpectator.detectChanges();
+
+            const disabledWYSIWYGChangeSpy = jest.fn();
+            workflowSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+
+            // Act 1: Switch to Monaco
+            workflowSpectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+
+            // Assert 1: Monaco active
+            expect(workflowSpectator.component.$displayedEditor()).toBe(
+                AvailableEditorTextArea.Monaco
+            );
+            expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
+                `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+            ]);
+
+            // Act 2: Switch back to PlainText
+            workflowSpectator.component.onEditorChange(AvailableEditorTextArea.PlainText);
+
+            // Assert 2: PlainText active and preferences cleared
+            expect(workflowSpectator.component.$displayedEditor()).toBe(
+                AvailableEditorTextArea.PlainText
+            );
+            expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([]);
+        });
+
+        it('should handle contentlet without disabledWYSIWYG property', () => {
+            // Arrange: Create a contentlet without disabledWYSIWYG property
+            const contentletMock = {
+                [TEXT_AREA_FIELD_MOCK.variable]: ''
+            } as DotCMSContentlet;
+            // Explicitly remove the property to simulate real scenarios
+            delete contentletMock.disabledWYSIWYG;
+
+            const noPropertySpectator = createComponent({
+                props: {
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: contentletMock
+                } as unknown
+            });
+            noPropertySpectator.detectChanges();
+
+            // Spy on the output event
+            const disabledWYSIWYGChangeSpy = jest.fn();
+            noPropertySpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+
+            // Act: Switch to Monaco editor
+            noPropertySpectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+
+            // Assert: disabledWYSIWYGChange should be emitted with new entry
+            expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
+                `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+            ]);
+            expect(noPropertySpectator.component.$displayedEditor()).toBe(
+                AvailableEditorTextArea.Monaco
+            );
+        });
     });
 });

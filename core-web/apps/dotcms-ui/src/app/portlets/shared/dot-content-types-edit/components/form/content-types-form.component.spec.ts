@@ -25,11 +25,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
-import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
-import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import {
     DotAlertConfirmService,
     DotContentTypesInfoService,
@@ -43,7 +38,8 @@ import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '
 import {
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
-    FeaturedFlags
+    FeaturedFlags,
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
@@ -58,9 +54,15 @@ import {
     mockWorkflowsActions,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
+
+import { DotDirectivesModule } from '../../../../../shared/dot-directives.module';
+import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
+import { DotPageSelectorModule } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.module';
+import { DotWorkflowsActionsSelectorFieldModule } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
+import { DotWorkflowsSelectorFieldModule } from '../../../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotFieldHelperModule } from '../../../../../view/components/dot-field-helper/dot-field-helper.module';
 
 @Component({
     selector: 'dot-site-selector-field',
@@ -71,7 +73,8 @@ import { ContentTypesFormComponent } from './content-types-form.component';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotSiteSelectorComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 class DotSiteSelectorComponent implements ControlValueAccessor {
     @Input() system;
@@ -482,7 +485,7 @@ describe('ContentTypesFormComponent', () => {
 
         const base = {
             icon: null,
-            clazz: 'clazz',
+            clazz: DotCMSClazzes.TEXT,
             defaultType: false,
             description: 'description',
             expireDateVar: 'expireDateVar',

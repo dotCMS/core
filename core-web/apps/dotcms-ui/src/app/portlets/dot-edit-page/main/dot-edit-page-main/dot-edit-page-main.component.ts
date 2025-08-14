@@ -6,8 +6,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import {
     DotPageStateService,
     DotRouterService,
@@ -15,10 +13,14 @@ import {
 } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 
+import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+
 @Component({
     selector: 'dot-edit-page-main',
     templateUrl: './dot-edit-page-main.component.html',
-    styleUrls: ['./dot-edit-page-main.component.scss']
+    styleUrls: ['./dot-edit-page-main.component.scss'],
+    standalone: false
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

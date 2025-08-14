@@ -22,7 +22,6 @@ export enum DotRenderMode {
     NEW = 'NEW',
     EDITING = 'EDITING'
 }
-
 @Injectable()
 export class DotWorkflowsActionsService {
     private readonly BASE_URL = '/api/v1/workflow';

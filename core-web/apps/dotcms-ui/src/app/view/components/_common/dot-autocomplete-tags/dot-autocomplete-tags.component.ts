@@ -24,7 +24,8 @@ import { DotTag } from '@dotcms/dotcms-models';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotAutocompleteTagsComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccessor {
     private dotTagsService = inject(DotTagsService);

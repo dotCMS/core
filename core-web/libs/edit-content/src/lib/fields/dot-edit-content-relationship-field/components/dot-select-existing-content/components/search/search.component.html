@@ -1,10 +1,17 @@
 <form [formGroup]="form" #formElement>
-    <p-inputGroup>
+    <p-inputGroup styleClass="flex align-items-center">
+        <i class="pi pi-search ml-1 mr-1 search-icon"></i>
+        @for (filter of $activeFilters(); track filter.value) {
+            <p-chip
+                [label]="filter.label"
+                [removable]="true"
+                (onRemove)="removeFilter(filter.type)"
+                [styleClass]="'mr-2 p-chip-sm flex align-items-center'" />
+        }
         <input
             pInputText
             type="text"
-            class="w-26rem h-auto"
-            (keydown.enter)="doSearch()"
+            class="content-search__input w-22rem h-auto"
             [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
             formControlName="query" />
         <p-button

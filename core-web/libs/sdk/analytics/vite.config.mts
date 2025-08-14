@@ -44,7 +44,14 @@ export default defineConfig({
             formats: ['es']
         },
         rollupOptions: {
-            external: ['react', 'react-dom', 'react/jsx-runtime', 'analytics'],
+            external: [
+                'react',
+                'react-dom',
+                'react/jsx-runtime',
+                'analytics',
+                '@analytics/core',
+                '@analytics/storage-utils'
+            ],
             output: {
                 exports: 'named',
                 preserveModules: true,

@@ -12,8 +12,7 @@ import {
     FILE_STATUS,
     UIMessage,
     UploadedFile
-} from '@dotcms/edit-content/models/dot-edit-content-file.model';
-
+} from '../../../models/dot-edit-content-file.model';
 import { INPUT_CONFIG } from '../dot-edit-content-file-field.const';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';

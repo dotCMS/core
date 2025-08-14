@@ -247,4 +247,29 @@ describe('GraphQL Parser', () => {
             expectedResult.containers['//test/container/'].contentlets['test-uuid'][0]
         );
     });
+
+    it('should merge urlContentMap keys into _map', () => {
+        const graphqlResponse = {
+            ...GRAPHQL_RESPONSE_MOCK,
+            page: {
+                ...GRAPHQL_RESPONSE_MOCK.page,
+                urlContentMap: {
+                    _map: {
+                        customField: 'custom value',
+                        someOtherField: 'empty'
+                    },
+                    someOtherField: 'some other value by relationship'
+                }
+            }
+        };
+
+        const pageEntity = graphqlToPageEntity(
+            graphqlResponse as unknown as DotCMSGraphQLPageResponse
+        );
+
+        expect(pageEntity?.urlContentMap).toEqual({
+            customField: 'custom value',
+            someOtherField: 'some other value by relationship'
+        });
+    });
 });

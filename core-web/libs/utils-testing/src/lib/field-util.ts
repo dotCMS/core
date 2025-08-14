@@ -3,7 +3,8 @@ import { faker } from '@faker-js/faker';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutColumn
+    DotCMSContentTypeLayoutColumn,
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 
 export const EMPTY_FIELD: DotCMSContentTypeField = {
@@ -34,21 +35,21 @@ export const EMPTY_FIELD: DotCMSContentTypeField = {
 
 const COLUMN_FIELD = {
     ...EMPTY_FIELD,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
+    clazz: DotCMSClazzes.COLUMN
 };
 
 const ROW_FIELD = {
     ...EMPTY_FIELD,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
+    clazz: DotCMSClazzes.ROW
 };
 
 const TAB_FIELD = {
     ...EMPTY_FIELD,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField'
+    clazz: DotCMSClazzes.TAB_DIVIDER
 };
 
 const COLUMN_BREAK_FIELD = {
-    clazz: 'contenttype.column.break',
+    clazz: DotCMSClazzes.COLUMN_BREAK,
     name: 'Column'
 };
 

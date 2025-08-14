@@ -33,7 +33,6 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
             .of(NULL_PROPERTIES,
                 DISABLE_WORKFLOW,
                 DONT_VALIDATE_ME,
-                DISABLED_WYSIWYG_KEY,
                 DOT_NAME_KEY,
                 WORKFLOW_IN_PROGRESS,
                 WORKFLOW_ASSIGN_KEY,

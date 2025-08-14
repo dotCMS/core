@@ -19,17 +19,17 @@ const routes: Routes = [
     {
         path: 'new',
         loadChildren: () =>
-            import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-new/dot-template-new.module'
-            ).then((m) => m.DotTemplateNewModule)
+            import('./dot-template-create-edit/dot-template-new/dot-template-new.module').then(
+                (m) => m.DotTemplateNewModule
+            )
     },
     {
         path: 'edit/:id',
 
         loadChildren: () =>
-            import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module'
-            ).then((m) => m.DotTemplateCreateEditModule),
+            import('./dot-template-create-edit/dot-template-create-edit.module').then(
+                (m) => m.DotTemplateCreateEditModule
+            ),
         resolve: {
             template: DotTemplateCreateEditResolver
         }
@@ -37,9 +37,9 @@ const routes: Routes = [
     {
         path: 'edit/:id/inode/:inode',
         loadChildren: () =>
-            import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module'
-            ).then((m) => m.DotTemplateCreateEditModule),
+            import('./dot-template-create-edit/dot-template-create-edit.module').then(
+                (m) => m.DotTemplateCreateEditModule
+            ),
         data: {
             reuseRoute: false
         },

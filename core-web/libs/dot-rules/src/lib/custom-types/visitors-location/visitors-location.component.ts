@@ -78,7 +78,8 @@ const UNITS = {
             [headerText]="'Select an area'"
             [hidden]="!showingMap"
             [circle]="circle"></cw-area-picker-dialog-component>
-    `
+    `,
+    standalone: false
 })
 export class VisitorsLocationComponent {
     decimalPipe = inject(DecimalPipe);

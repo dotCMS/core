@@ -1,5 +1,4 @@
-import { Site } from '@dotcms/dotcms-js';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 
 export enum DotContentDriveStatus {
     LOADING = 'loading',
@@ -22,10 +21,13 @@ export interface DotContentDriveSort {
     order: DotContentDriveSortOrder;
 }
 
-export interface DotContentDriveState {
-    currentSite: Site;
+export interface DotContentDriveInit {
+    currentSite: SiteEntity;
     path: string;
-    filters: Record<string, string>;
+    filters: DotContentDriveFilters;
+    isTreeExpanded: boolean;
+}
+export interface DotContentDriveState extends DotContentDriveInit {
     items: DotContentDriveItem[];
     status: DotContentDriveStatus;
     totalItems: number;
@@ -33,8 +35,4 @@ export interface DotContentDriveState {
     sort: DotContentDriveSort;
 }
 
-export interface DotContentDriveInit {
-    currentSite: Site;
-    path: string;
-    filters: Record<string, string>;
-}
+export type DotContentDriveFilters = Record<string, string | string[]>;

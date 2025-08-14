@@ -7,6 +7,7 @@ import {
     inject,
     input,
     model,
+    output,
     viewChild
 } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -14,16 +15,20 @@ import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/for
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 
 import {
     AvailableEditorTextArea,
     TextAreaEditorOptions
 } from './dot-edit-content-text-area.constants';
-import { detectEditorType } from './utils/content-type-detector.util';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import {
+    getCurrentEditorFromDisabled,
+    getDisabledWYSIWYGFromContentlet,
+    updateDisabledWYSIWYGOnEditorSwitch
+} from '../shared/utils/field-editor-preferences.util';
 
 /**
  * Text area component that provides plain text and code editing capabilities.
@@ -38,7 +43,6 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
     selector: 'dot-edit-content-text-area',
     templateUrl: './dot-edit-content-text-area.component.html',
     styleUrls: ['./dot-edit-content-text-area.component.scss'],
-    standalone: true,
     imports: [
         InputTextareaModule,
         ReactiveFormsModule,
@@ -75,9 +79,18 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input<DotCMSContentTypeField | null>(null, {
-        alias: 'field'
-    });
+    $field = input.required<DotCMSContentTypeField | null>({ alias: 'field' });
+
+    /**
+     * Input contentlet DotCMSContentlet
+     */
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
+
+    /**
+     * Event emitted when disabledWYSIWYG changes.
+     * Emits the updated disabledWYSIWYG array.
+     */
+    disabledWYSIWYGChange = output<string[]>();
 
     /**
      * Computed property that returns the current value of the field.
@@ -100,13 +113,24 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     $displayedEditor = model<AvailableEditorTextArea>(AvailableEditorTextArea.PlainText);
 
     /**
-     * Computed property that determines the default editor based on content analysis.
-     * Uses content-type-detector utility to determine if content needs Monaco editor.
+     * Computed property that determines the current editor based on disabledWYSIWYG settings
      */
     $contentEditorUsed = computed(() => {
-        const content = this.$currentValue();
+        const field = this.$field();
+        const contentlet = this.$contentlet();
 
-        return detectEditorType(content);
+        if (!field?.variable) {
+            return AvailableEditorTextArea.PlainText; // Default editor
+        }
+
+        const disabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);
+
+        // Use disabledWYSIWYG setting
+        return getCurrentEditorFromDisabled(
+            field.variable,
+            disabledWYSIWYG,
+            true
+        ) as AvailableEditorTextArea;
     });
 
     readonly textAreaEditorOptions = TextAreaEditorOptions;
@@ -142,6 +166,31 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
      * @param newEditor - The new editor
      */
     onEditorChange(newEditor: AvailableEditorTextArea) {
+        const field = this.$field();
+        const contentlet = this.$contentlet();
+
+        if (!field?.variable || !contentlet) {
+            this.$displayedEditor.set(newEditor);
+            return;
+        }
+
+        // Update disabledWYSIWYG in the contentlet
+        const currentDisabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);
+        const updatedDisabledWYSIWYG = updateDisabledWYSIWYGOnEditorSwitch(
+            field.variable,
+            newEditor,
+            currentDisabledWYSIWYG,
+            true // isTextAreaField
+        );
+
+        // Update the contentlet's disabledWYSIWYG property
+        // Note: This modifies the contentlet reference directly
+        // The parent component should handle form submission with the updated contentlet
+        contentlet.disabledWYSIWYG = updatedDisabledWYSIWYG;
+
+        // Emit the change event
+        this.disabledWYSIWYGChange.emit(updatedDisabledWYSIWYG);
+
         this.$displayedEditor.set(newEditor);
     }
 
