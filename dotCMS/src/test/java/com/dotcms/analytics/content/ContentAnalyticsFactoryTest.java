@@ -6,6 +6,7 @@ import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.analytics.query.AnalyticsQuery;
 import com.dotcms.analytics.query.AnalyticsQueryParser;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
@@ -17,11 +18,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.util.List;
@@ -30,6 +33,8 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the {@link ContentAnalyticsFactory} class.
@@ -116,7 +121,7 @@ public class ContentAnalyticsFactoryTest {
                     getAccessToken());
 
             final User systemUser = new User();
-            CubeJSClientFactory mockCubeJsClientFactory = Mockito.mock(CubeJSClientFactory.class);
+            CubeJSClientFactory mockCubeJsClientFactory = mock(CubeJSClientFactory.class);
             Mockito.when(mockCubeJsClientFactory.create(systemUser)).thenReturn(cubeClient);
             final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);
             final ReportResponse report = contentAnalyticsFactory.getReport(analyticsQuery, systemUser);
@@ -186,8 +191,6 @@ public class ContentAnalyticsFactoryTest {
         // ╔══════════════════╗
         // ║  Initialization  ║
         // ╚══════════════════╝
-        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-
         final String cubeServerIp = "127.0.0.1";
         final int cubeJsServerPort = 5000;
         final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
@@ -227,8 +230,17 @@ public class ContentAnalyticsFactoryTest {
                     getAccessToken());
 
             final User systemUser = new User();
-            CubeJSClientFactory mockCubeJsClientFactory = Mockito.mock(CubeJSClientFactory.class);
-            Mockito.when(mockCubeJsClientFactory.create(systemUser, defaultHost.getIdentifier())).thenReturn(cubeClient);
+
+            final String hostId = String.valueOf(System.currentTimeMillis());
+            final Host host = mock(Host.class);
+            when(host.getIdentifier()).thenReturn(hostId);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getAttribute(WebKeys.CURRENT_HOST));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            CubeJSClientFactory mockCubeJsClientFactory = mock(CubeJSClientFactory.class);
+            Mockito.when(mockCubeJsClientFactory.create(systemUser, hostId)).thenReturn(cubeClient);
             final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);
             final ReportResponse report = contentAnalyticsFactory.getRawReport(analyticsQuery, systemUser);
 
