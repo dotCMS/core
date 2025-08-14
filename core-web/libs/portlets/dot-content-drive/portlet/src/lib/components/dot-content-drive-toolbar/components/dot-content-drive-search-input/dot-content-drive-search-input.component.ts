@@ -25,6 +25,12 @@ export class DotContentDriveSearchInputComponent implements OnInit, OnDestroy {
     searchControl = new FormControl('');
 
     ngOnInit(): void {
+        const searchValue = this.#store.getFilterValue('title');
+
+        if (searchValue) {
+            this.searchControl.setValue(searchValue as string);
+        }
+
         this.searchControl.valueChanges
             .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.#destroy$))
             .subscribe((value) => {

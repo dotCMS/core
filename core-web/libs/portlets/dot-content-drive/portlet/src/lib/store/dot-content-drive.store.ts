@@ -85,7 +85,6 @@ export const DotContentDriveStore = signalStore(
                             // Add the query to the modified query
                             modifiedQuery = modifiedQuery.raw(orQuery);
                         } else {
-                            // Single value
                             modifiedQuery = modifiedQuery.field(key).equals(value);
                         }
                     });
@@ -134,6 +133,9 @@ export const DotContentDriveStore = signalStore(
                 if (removedFilter) {
                     patchState(store, { filters: restFilters });
                 }
+            },
+            getFilterValue(filter: string) {
+                return store.filters()[filter];
             }
         };
     }),
