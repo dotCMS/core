@@ -250,7 +250,7 @@ public class ContentAnalyticsFactoryTest {
             when(mockCubeJsClientFactory.create(systemUser, hostId)).thenReturn(cubeClient);
 
             final HostWebAPI hostWebAPI = mock(HostWebAPI.class);
-            when(hostWebAPI.getCurrentHost(request)).thenReturn(host);
+            when(hostWebAPI.getCurrentHost()).thenReturn(host);
 
             final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(
                     new AnalyticsQueryParser(), mockCubeJsClientFactory, hostWebAPI);
