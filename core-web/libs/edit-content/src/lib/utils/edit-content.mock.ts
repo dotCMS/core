@@ -454,7 +454,14 @@ export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
     title: '2978bb3b66e372b1ffffa9376f33c37b',
     titleImage: 'TITLE_IMAGE_NOT_FOUND',
     url: '/content.7af6259d-51b0-4c49-9e08-67cbc74100d6',
-    working: true
+    working: true,
+    disabledWYSIWYG: ['wysiwygField1', 'wysiwygField2'] // WYSIWYG fields disabled for code editor
+};
+
+// Mock contentlet without disabledWYSIWYG for testing new content scenarios
+export const MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG: DotCMSContentlet = {
+    ...MOCK_CONTENTLET_1_TAB,
+    disabledWYSIWYG: undefined
 };
 
 // ContentType with 2 tabs

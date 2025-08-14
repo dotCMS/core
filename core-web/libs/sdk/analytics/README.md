@@ -11,9 +11,9 @@ Lightweight JavaScript SDK for tracking content-aware events in dotCMS. Works in
 ```html
 <script
     src="ca.min.js"
-    data-analytics-server="https://demo.dotcms.com"
-    data-analytics-key="SITE_KEY"
-    data-analytics-auto-page-view></script>
+    data-server="https://demo.dotcms.com"
+    data-site-key="SITE_KEY"
+    data-auto-page-view></script>
 ```
 
 **npm (ES Module)**

@@ -1,4 +1,4 @@
-import { COMMENT_TINYMCE, MD_SYNTAX } from './dot-edit-content-wysiwyg-field.constant';
+import { MD_SYNTAX } from './dot-edit-content-wysiwyg-field.constant';
 import {
     CountOccurrences,
     isHtml,
@@ -53,10 +53,6 @@ describe('WYSIWYG Field Utils', () => {
 
         it('should return true for string with only whitespace', () => {
             expect(shouldUseDefaultEditor('   ')).toBe(true);
-        });
-
-        it('should return true for COMMENT_TINYMCE', () => {
-            expect(shouldUseDefaultEditor(COMMENT_TINYMCE)).toBe(true);
         });
 
         it('should return false for non-empty strings', () => {
