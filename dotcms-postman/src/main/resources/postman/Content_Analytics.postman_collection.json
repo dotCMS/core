@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f80d1781-014b-4596-ad93-9e6a2a67c8d1",
+		"_postman_id": "0d48c92c-ab64-4999-9dc9-673e6106fadd",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -481,7 +481,7 @@
 									"response": []
 								},
 								{
-									"name": "Add App Config for Site Copy",
+									"name": "Add App Config for Site",
 									"event": [
 										{
 											"listen": "prerequest",
@@ -738,8 +738,8 @@
 											"    pm.expect(responseBody.errors[0]).to.not.have.property(\"eventIndex\");",
 											"",
 											"    pm.expect(responseBody.errors[0].code).to.be.eq(\"REQUIRED_FIELD_MISSING\");",
-											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.site_key\");",
-											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.site_key\");",
+											"    pm.expect(responseBody.errors[0].field).to.be.eq(\"context.site_auth\");",
+											"    pm.expect(responseBody.errors[0].message).to.be.eq(\"Required field is missing: context.site_auth\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -1758,6 +1758,24 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testSiteAuth",
+			"value": ""
+		},
+		{
+			"key": "appKey",
+			"value": ""
+		},
+		{
+			"key": "testSiteName",
+			"value": ""
+		},
+		{
+			"key": "testSiteId",
+			"value": ""
 		}
 	]
 }
