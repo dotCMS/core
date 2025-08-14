@@ -89,13 +89,13 @@
 					"response": []
 				},
 				{
-					"name": "UserRoles404",
+					"name": "UserRoles400",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status 404 OK\", () => pm.response.to.have.status(404));",
+									"pm.test(\"Status 400 OK\", () => pm.response.to.have.status(400));",
 									""
 								],
 								"type": "text/javascript",
