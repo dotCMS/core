@@ -5,7 +5,8 @@ import {
     computed,
     HostBinding,
     inject,
-    input
+    input,
+    output
 } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
@@ -89,6 +90,12 @@ export class DotEditContentFieldComponent {
      * The content type.
      */
     $contentType = input<string>(null, { alias: 'contentType' });
+
+    /**
+     * Event emitted when disabledWYSIWYG changes in any field component.
+     * Emits the updated disabledWYSIWYG array.
+     */
+    disabledWYSIWYGChange = output<string[]>();
 
     readonly fieldTypes = FIELD_TYPES;
     readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
