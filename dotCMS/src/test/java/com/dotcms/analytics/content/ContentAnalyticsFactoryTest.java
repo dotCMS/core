@@ -13,6 +13,8 @@ import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
@@ -184,6 +186,8 @@ public class ContentAnalyticsFactoryTest {
         // ╔══════════════════╗
         // ║  Initialization  ║
         // ╚══════════════════╝
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
         final String cubeServerIp = "127.0.0.1";
         final int cubeJsServerPort = 5000;
         final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
@@ -224,7 +228,7 @@ public class ContentAnalyticsFactoryTest {
 
             final User systemUser = new User();
             CubeJSClientFactory mockCubeJsClientFactory = Mockito.mock(CubeJSClientFactory.class);
-            Mockito.when(mockCubeJsClientFactory.create(systemUser)).thenReturn(cubeClient);
+            Mockito.when(mockCubeJsClientFactory.create(systemUser, defaultHost.getIdentifier())).thenReturn(cubeClient);
             final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);
             final ReportResponse report = contentAnalyticsFactory.getRawReport(analyticsQuery, systemUser);
 
