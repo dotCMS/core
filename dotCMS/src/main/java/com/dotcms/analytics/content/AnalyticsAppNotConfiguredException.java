@@ -1,5 +1,7 @@
 package com.dotcms.analytics.content;
 
+import com.dotmarketing.business.DotStateException;
+
 /**
  * Exception thrown when an Analytics App is not properly configured.
  * This exception is typically thrown when attempting to use analytics functionality
@@ -8,14 +10,7 @@ package com.dotcms.analytics.content;
  * @author dotCMS
  * @since 24.05
  */
-public class AnalyticsAppNotConfiguredException extends IllegalStateException {
-
-    /**
-     * Constructs a new AnalyticsAppNotConfiguredException with no detail message.
-     */
-    public AnalyticsAppNotConfiguredException() {
-        super();
-    }
+public class AnalyticsAppNotConfiguredException extends DotStateException {
 
     /**
      * Constructs a new AnalyticsAppNotConfiguredException with the specified detail message.
