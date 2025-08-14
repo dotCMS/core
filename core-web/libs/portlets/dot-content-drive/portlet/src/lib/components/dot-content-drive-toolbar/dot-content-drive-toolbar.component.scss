@@ -1,0 +1,49 @@
+@use "variables" as *;
+
+::ng-deep {
+    .dot-content-drive-toolbar {
+        height: 100%;
+        background-color: $color-palette-gray-100;
+        border: none;
+        border-bottom: 1px solid $color-palette-gray-400;
+        gap: $spacing-1;
+    }
+}
+
+.p-toolbar-group-start {
+    flex-grow: 1;
+}
+
+.p-toolbar-group-start,
+.p-toolbar-group-end,
+.p-toolbar-group-center {
+    gap: $spacing-1;
+}
+
+// PLACEHOLDERS CLASSES - WILL BE REMOVED
+.placeholder {
+    width: 100%;
+    min-width: 73px;
+    max-width: 220px;
+    height: 32px;
+    border: 1px solid gray;
+    display: flex;
+    align-items: center;
+    padding: $spacing-1;
+
+    &.big {
+        min-width: 100px;
+        max-width: 300px;
+    }
+    &.base-type {
+        background-color: lightblue;
+    }
+
+    &.content-type {
+        background-color: lightcoral;
+    }
+
+    &.search {
+        background-color: lightgreen;
+    }
+}
