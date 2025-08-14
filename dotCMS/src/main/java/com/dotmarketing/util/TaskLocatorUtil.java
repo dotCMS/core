@@ -253,6 +253,7 @@ import com.dotmarketing.startup.runonce.Task241014AddTemplateValueOnContentletIn
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortlet;
 import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayout;
 import com.dotmarketing.startup.runonce.Task250107RemoveEsReadOnlyMonitorJob;
+import com.dotmarketing.startup.runonce.Task250603UpdateIdentifierParentPathCheckTrigger;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodes;
 import com.google.common.collect.ImmutableList;
 
@@ -580,6 +581,7 @@ public class TaskLocatorUtil {
     	.add(Task241016AddCustomLanguageVariablesPortletToLayout.class)
 		.add(Task250107RemoveEsReadOnlyMonitorJob.class)
         .add(Task250113CreatePostgresJobQueueTables.class)
+		.add(Task250603UpdateIdentifierParentPathCheckTrigger.class)
 		.add(Task250604UpdateFolderInodes.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
