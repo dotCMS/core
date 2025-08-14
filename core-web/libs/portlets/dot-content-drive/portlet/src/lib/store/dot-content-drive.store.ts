@@ -1,9 +1,18 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
+import { GlobalStore } from '@dotcms/store';
 
 import {
     BASE_QUERY,
@@ -20,6 +29,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
+import { decodeFilters } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,
@@ -118,6 +128,28 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
+            }
+        };
+    }),
+    withHooks((store) => {
+        const route = inject(ActivatedRoute);
+        const globalStore = inject(GlobalStore);
+
+        return {
+            onInit() {
+                const queryParams = route.snapshot.queryParams;
+                const currentSite = globalStore.siteDetails();
+                const path = queryParams['path'] || DEFAULT_PATH;
+                const filters = decodeFilters(queryParams['filters'] || '');
+                const queryTreeExpanded =
+                    queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
+
+                store.initContentDrive({
+                    currentSite,
+                    path,
+                    filters,
+                    isTreeExpanded: queryTreeExpanded == 'true'
+                });
             }
         };
     })
