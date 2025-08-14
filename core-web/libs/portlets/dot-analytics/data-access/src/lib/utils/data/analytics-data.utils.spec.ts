@@ -38,11 +38,11 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(0);
             });
 
-            it('should return NaN when totalRequest is missing', () => {
+            it('should return 0 when totalRequest is missing', () => {
                 const mockData: Partial<TotalPageViewsEntity> = {};
 
                 const result = extractPageViews(mockData as TotalPageViewsEntity);
-                expect(result).toBeNaN();
+                expect(result).toBe(0);
             });
 
             it('should handle string numbers correctly', () => {
@@ -240,6 +240,7 @@ describe('Analytics Data Utils', () => {
                     'analytics.charts.pageviews-timeline.dataset-label'
                 );
                 expect(result.datasets[0].borderColor).toBe('#3B82F6');
+                expect(result.datasets[0].cubicInterpolationMode).toBe('monotone');
             });
 
             it('should return empty chart data when data is null', () => {
@@ -328,12 +329,12 @@ describe('Analytics Data Utils', () => {
 
                     const result = transformPageViewTimeLineData(mockData);
 
-                    // Should format as hours (AM/PM format) when all data is from same day
+                    // Should format as hours (HH:mm format) when all data is from same day
                     expect(result.labels).toHaveLength(3);
-                    // Check that labels contain time format with AM/PM
+                    // Check that labels contain time format with HH:mm (24-hour format)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
                     });
                 });
 
@@ -358,12 +359,12 @@ describe('Analytics Data Utils', () => {
 
                     const result = transformPageViewTimeLineData(mockData);
 
-                    // Should format as day + weekday when data spans multiple days
+                    // Should format as day + month when data spans multiple days
                     expect(result.labels).toHaveLength(3);
-                    // Check that labels contain date format (day number + weekday)
+                    // Check that labels contain date format (MMM dd)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/);
+                        expect(label as string).toMatch(/^[A-Za-z]{3}\s+\d{1,2}$/);
                     });
                 });
 
@@ -393,7 +394,7 @@ describe('Analytics Data Utils', () => {
                     expect(result.labels).toHaveLength(2);
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
                     });
                 });
 
@@ -418,8 +419,8 @@ describe('Analytics Data Utils', () => {
                     expect(result.labels).toHaveLength(2);
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        // Should use date format (can be "Fri 1" or "1 Fri" depending on locale)
-                        expect(label as string).toMatch(/(\d{1,2}\s*\w{3})|(\w{3}\s*\d{1,2})/);
+                        // Should use date format (MMM dd)
+                        expect(label as string).toMatch(/^[A-Za-z]{3}\s+\d{1,2}$/);
                     });
                 });
 
@@ -455,10 +456,10 @@ describe('Analytics Data Utils', () => {
                     expect(result.datasets[0].data).toEqual([100, 200, 150]);
                     expect(result.labels).toHaveLength(3);
 
-                    // Verify hour format is used
+                    // Verify hour format is used (HH:mm)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
                     });
                 });
 
@@ -486,10 +487,10 @@ describe('Analytics Data Utils', () => {
                     expect(result.labels).toHaveLength(2);
                     expect(result.datasets[0].data).toEqual([100, 150]);
 
-                    // Check that labels are formatted as local time (AM/PM format)
+                    // Check that labels are formatted as local time (HH:mm format)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
                     });
                 });
 
@@ -515,9 +516,9 @@ describe('Analytics Data Utils', () => {
                     // Should have date format since they're different days in local time
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        // Either time format or date format depending on timezone
+                        // Either time format (HH:mm) or date format (MMM dd) depending on timezone
                         expect(label as string).toMatch(
-                            /(\d{1,2}\s*(AM|PM))|(\d{1,2}\s*\w{3})|(\w{3}\s*\d{1,2})/
+                            /^(\d{1,2}:\d{2})|([A-Za-z]{3}\s+\d{1,2})$/
                         );
                     });
                 });
@@ -543,10 +544,10 @@ describe('Analytics Data Utils', () => {
                     expect(result.labels).toHaveLength(2);
                     expect(result.datasets[0].data).toEqual([100, 150]);
 
-                    // Should format as time (same day)
+                    // Should format as time (same day) - HH:mm format
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
                     });
                 });
 
@@ -571,10 +572,10 @@ describe('Analytics Data Utils', () => {
                     expect(result.labels).toHaveLength(2);
                     expect(result.datasets[0].data).toEqual([100, 150]);
 
-                    // Both should format as time (same day)
+                    // Both should format as time (same day) - HH:mm format
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
                     });
                 });
             });

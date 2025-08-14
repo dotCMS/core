@@ -77,7 +77,7 @@ export function determineGranularityForTimeRange(timeRange: TimeRange): Granular
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['request.totalRequest']) : 0;
+    data ? Number(data['request.totalRequest'] ?? 0) : 0;
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
