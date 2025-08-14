@@ -46,7 +46,6 @@ type ChartRawData =
 @Component({
     selector: 'dot-analytics-dashboard-chart',
     imports: [CardModule, ChartModule, SkeletonModule, DotAnalyticsStateMessageComponent],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-chart.component.html',
     styleUrl: './dot-analytics-dashboard-chart.component.scss'
