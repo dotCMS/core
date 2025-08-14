@@ -16,9 +16,12 @@ import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.junit.Test;
@@ -123,7 +126,11 @@ public class ContentAnalyticsFactoryTest {
             final User systemUser = new User();
             CubeJSClientFactory mockCubeJsClientFactory = mock(CubeJSClientFactory.class);
             Mockito.when(mockCubeJsClientFactory.create(systemUser)).thenReturn(cubeClient);
-            final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);
+
+            final HostWebAPI hostWebAPI =mock(HostWebAPI.class);
+
+            final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(
+                    new AnalyticsQueryParser(), mockCubeJsClientFactory, hostWebAPI);
             final ReportResponse report = contentAnalyticsFactory.getReport(analyticsQuery, systemUser);
 
             // ╔══════════════╗
@@ -163,7 +170,7 @@ public class ContentAnalyticsFactoryTest {
      * @throws DotSecurityException Failed to create the CubeJS Client.
      */
     @Test
-    public void getContentAnalyticsReportRaw() throws DotDataException, DotSecurityException {
+    public void getContentAnalyticsReportRaw() throws DotDataException, DotSecurityException, SystemException, PortalException {
         // ╔════════════════════════╗
         // ║  Generating Test Data  ║
         // ╚════════════════════════╝
@@ -241,7 +248,13 @@ public class ContentAnalyticsFactoryTest {
 
             CubeJSClientFactory mockCubeJsClientFactory = mock(CubeJSClientFactory.class);
             when(mockCubeJsClientFactory.create(systemUser, hostId)).thenReturn(cubeClient);
-            final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);
+
+            final HostWebAPI hostWebAPI = mock(HostWebAPI.class);
+            when(hostWebAPI.getCurrentHost(request)).thenReturn(host);
+
+            final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(
+                    new AnalyticsQueryParser(), mockCubeJsClientFactory, hostWebAPI);
+
             final ReportResponse report = contentAnalyticsFactory.getRawReport(analyticsQuery, systemUser);
 
             // ╔══════════════╗

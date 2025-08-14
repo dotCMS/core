@@ -6,6 +6,7 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -30,11 +31,15 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
 
     private final AnalyticsQueryParser queryParser;
     private final CubeJSClientFactory cubeJSClientFactory;
+    private final HostWebAPI hostWebAPI;
 
     @Inject
-    public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser, final CubeJSClientFactory cubeJSClientFactory) {
+    public ContentAnalyticsFactoryImpl(final AnalyticsQueryParser queryParser,
+                                       final CubeJSClientFactory cubeJSClientFactory,
+                                       final HostWebAPI hostWebAPI) {
         this.queryParser = queryParser;
         this.cubeJSClientFactory = cubeJSClientFactory;
+        this.hostWebAPI = hostWebAPI;
     }
 
     @Override
@@ -74,7 +79,7 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
             Logger.debug(this, ()-> "Getting the report for the raw query: " + cubeJsQueryJson);
 
             final String siteId = CubeJSQuery.extractSiteId(cubeJsQueryJson)
-                    .orElse( WebAPILocator.getHostWebAPI().getCurrentHost().getIdentifier());
+                    .orElse( hostWebAPI.getCurrentHost().getIdentifier());
 
             final CubeJSClient cubeClient = cubeJSClientFactory.create(user, siteId);
 
