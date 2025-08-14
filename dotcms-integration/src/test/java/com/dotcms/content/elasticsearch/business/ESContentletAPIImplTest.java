@@ -79,6 +79,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -139,6 +140,7 @@ import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -4812,6 +4814,98 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             ContentTypeDataGen.remove(childContentType);
         }
 
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given Scenario: Update a contentlet that has existing required relationships without providing relationship data
+     * Expected Result: Should NOT throw validation exception because existing relationships are preserved
+     */
+    @Test
+    public void testValidationNoExceptionForExistingRequiredRelationshipOnUpdate() throws Exception {
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+
+        try {
+            // Create a child content type
+            childContentType = new ContentTypeDataGen()
+                    .name("Child Type - Existing Relationship")
+                    .nextPersisted();
+
+            // Create a required relationship field
+            final Field relationshipField = new FieldDataGen()
+                    .type(RelationshipField.class)
+                    .values(String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()))
+                    .relationType(childContentType.variable())
+                    .required(true)
+                    .next();
+
+            // Create a parent content type with a required relationship
+            parentContentType = new ContentTypeDataGen()
+                    .name("Parent Type - Existing Relationship")
+                    .field(relationshipField)
+                    .nextPersisted();
+
+            // Create child contentlet first
+            final Contentlet childContentlet = new ContentletDataGen(childContentType)
+                    .nextPersisted();
+
+            // Create parent contentlet WITH the required relationship initially
+            final Contentlet parentContentlet = new ContentletDataGen(parentContentType)
+                    .next(); // Don't persist yet
+            parentContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+            // Set up relationship data for initial creation
+            final List<Relationship> relationships = relationshipAPI.byContentType(parentContentType);
+            assertFalse(relationships.isEmpty());
+            final Relationship relationship = relationships.get(0);
+
+            final ContentletRelationships contentletRelationships =
+                    new ContentletRelationships(parentContentlet);
+            final ContentletRelationships.ContentletRelationshipRecords records =
+                    contentletRelationships.new ContentletRelationshipRecords(
+                        relationship, true);
+            records.setRecords(List.of(childContentlet));
+            contentletRelationships.getRelationshipsRecords().add(records);
+
+            // First checkin - this should succeed with the relationship
+            final Contentlet savedParentContentlet = contentletAPI.checkin(
+                    parentContentlet, contentletRelationships, null, null,
+                    user, false);
+            assertNotNull(savedParentContentlet);
+
+            // Verify the relationship was created
+            final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(
+                    savedParentContentlet, relationship, user, false);
+            assertEquals(1, relatedContent.size());
+            assertEquals(childContentlet.getIdentifier(), relatedContent.get(0).getIdentifier());
+
+            // Now update the parent contentlet WITHOUT providing relationship data
+            // This should NOT throw validation exception because the relationship already exists
+            final Contentlet checkedOutParentContentlet = ContentletDataGen.checkout(savedParentContentlet);
+            checkedOutParentContentlet.setStringProperty("title", "Updated Title");
+            checkedOutParentContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+            // This should succeed - no validation exception should be thrown
+            final Contentlet updatedContentlet = contentletAPI.checkin(
+                    checkedOutParentContentlet, user, false);
+            
+            assertNotNull(updatedContentlet);
+            assertEquals("Updated Title", updatedContentlet.getStringProperty("title"));
+
+            // Verify the relationship still exists after the update
+            final List<Contentlet> stillRelatedContent = contentletAPI.getRelatedContent(
+                    updatedContentlet, relationship, user, false);
+            assertEquals(1, stillRelatedContent.size());
+            assertEquals(childContentlet.getIdentifier(), stillRelatedContent.get(0).getIdentifier());
+
+        } finally {
+            // Clean up
+            ContentTypeDataGen.remove(parentContentType);
+            ContentTypeDataGen.remove(childContentType);
+        }
     }
 
     /**
