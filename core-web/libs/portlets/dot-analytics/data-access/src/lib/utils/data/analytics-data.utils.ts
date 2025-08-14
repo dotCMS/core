@@ -117,8 +117,8 @@ export const transformTopPagesTableData = (
 /**
  * Parses a date string to UTC date
  */
-const parseToUtcDate = (dateString: string): Date => {
-    return new UTCDate(dateString);
+const parseToUtcDate = (dateString: string): string => {
+    return new UTCDate(dateString).toISOString();
 };
 
 /**
@@ -147,7 +147,7 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
             date: parseToUtcDate(item['request.createdAt']),
             value: extractPageViews(item)
         }))
-        .sort((a, b) => a.date.getTime() - b.date.getTime());
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // Check if all data points are from the same day (in user's local timezone)
     const allDatesAreSameDay = transformedData.every((item, _, arr) => {

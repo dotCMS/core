@@ -1,3 +1,6 @@
+import { UTCDate } from '@date-fns/utc';
+import { startOfDay, endOfDay, addHours } from 'date-fns';
+
 import {
     determineGranularityForTimeRange,
     extractPageTitle,
@@ -371,18 +374,15 @@ describe('Analytics Data Utils', () => {
                 it('should handle same day detection correctly for edge cases', () => {
                     // Test data with same date but different times - use local time
                     const baseDate = new Date('2023-12-01T12:00:00');
+
                     const sameDayData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': new Date(
-                                baseDate.getTime() - 12 * 60 * 60 * 1000
-                            ).toISOString(), // Midnight
+                            'request.createdAt': new UTCDate(startOfDay(baseDate)).toISOString(), // startOfDay
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '50'
                         },
                         {
-                            'request.createdAt': new Date(
-                                baseDate.getTime() + 11 * 60 * 60 * 1000
-                            ).toISOString(), // 11 PM
+                            'request.createdAt': new UTCDate(endOfDay(baseDate)).toISOString(), // endOfDay
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '75'
                         }
@@ -425,26 +425,20 @@ describe('Analytics Data Utils', () => {
                 });
 
                 it('should maintain chronological order when formatting hours', () => {
-                    const baseDate = new Date('2023-12-01T12:00:00');
+                    const baseDate = startOfDay(new Date('2023-12-01T12:00:00'));
                     const unorderedSameDayData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': new Date(
-                                baseDate.getTime() + 3 * 60 * 60 * 1000
-                            ).toISOString(), // 3 PM
+                            'request.createdAt': addHours(new UTCDate(baseDate), 7).toISOString(), // 7am
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '200'
                         },
                         {
-                            'request.createdAt': new Date(
-                                baseDate.getTime() - 3 * 60 * 60 * 1000
-                            ).toISOString(), // 9 AM
+                            'request.createdAt': addHours(new UTCDate(baseDate), 1).toISOString(), // 1am
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '100'
                         },
                         {
-                            'request.createdAt': new Date(
-                                baseDate.getTime() + 9 * 60 * 60 * 1000
-                            ).toISOString(), // 9 PM
+                            'request.createdAt': addHours(new UTCDate(baseDate), 13).toISOString(), // 3pm
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '150'
                         }
@@ -452,7 +446,7 @@ describe('Analytics Data Utils', () => {
 
                     const result = transformPageViewTimeLineData(unorderedSameDayData);
 
-                    // Should be sorted chronologically: 9 AM, 3 PM, 9 PM
+                    // Should be sorted chronologically: 1am, 7am, 3pm
                     expect(result.datasets[0].data).toEqual([100, 200, 150]);
                     expect(result.labels).toHaveLength(3);
 
@@ -532,7 +526,7 @@ describe('Analytics Data Utils', () => {
                             'request.totalRequest': '100'
                         },
                         {
-                            'request.createdAt': '2025-08-05T20:00:00.000', // Endpoint format (no Z)
+                            'request.createdAt': '2025-08-05T17:00:00.000', // Endpoint format (no Z)
                             'request.createdAt.day': '2025-08-05',
                             'request.totalRequest': '150'
                         }
@@ -560,7 +554,7 @@ describe('Analytics Data Utils', () => {
                             'request.totalRequest': '100'
                         },
                         {
-                            'request.createdAt': '2025-08-05T20:00:00.000Z', // Standard UTC format (with Z)
+                            'request.createdAt': '2025-08-05T17:00:00.000Z', // Standard UTC format (with Z)
                             'request.createdAt.day': '2025-08-05',
                             'request.totalRequest': '150'
                         }
@@ -570,7 +564,7 @@ describe('Analytics Data Utils', () => {
 
                     // Should handle both formats correctly
                     expect(result.labels).toHaveLength(2);
-                    expect(result.datasets[0].data).toEqual([100, 150]);
+                    expect(result.datasets[0].data).toEqual([150, 100]);
 
                     // Both should format as time (same day) - HH:mm format
                     result.labels?.forEach((label) => {

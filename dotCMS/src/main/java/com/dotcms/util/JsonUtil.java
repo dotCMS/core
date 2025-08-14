@@ -136,10 +136,18 @@ public class JsonUtil {
      * @return
      */
     public static JSONValidationResult validateJSON(final String fieldValue) {
+        if (fieldValue == null || fieldValue.isEmpty()) {
+            return new JSONValidationResult("Json is empty", -1, -1);
+        }
         try {
             JsonNode node = JSON_MAPPER.readTree(fieldValue);
             if (node != null && !node.isMissingNode()) {
-                return new JSONValidationResult(node);
+                // Only accept objects {} or arrays []
+                if (node.isObject() || node.isArray()) {
+                    return new JSONValidationResult(node);
+                } else {
+                    return new JSONValidationResult("JSON must be an object or array, not a primitive value", -1, -1);
+                }
             } else {
                 return new JSONValidationResult("Json Node is null or missing", -1, -1);
             }
