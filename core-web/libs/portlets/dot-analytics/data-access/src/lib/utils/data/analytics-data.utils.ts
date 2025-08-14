@@ -145,7 +145,7 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     const transformedData = data
         .map((item) => ({
             date: parseToUtcDate(item['request.createdAt']),
-            value: Number(item['request.totalRequest'] ?? 0)
+            value: extractPageViews(item)
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
