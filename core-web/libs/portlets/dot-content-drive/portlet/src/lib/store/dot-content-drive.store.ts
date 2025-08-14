@@ -13,6 +13,7 @@ import {
     SYSTEM_HOST
 } from '../shared/constants';
 import {
+    DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
     DotContentDriveSort,
@@ -69,8 +70,9 @@ export const DotContentDriveStore = signalStore(
                             // Chain with OR
                             const orChain = value.join(' OR ');
 
-                            // Build the query
-                            const orQuery = `+${key}: (${orChain})`;
+                            // Build the query, if the value is a single value, we don't need to wrap it in parentheses
+                            const orQuery =
+                                value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
 
                             // Add the query to the modified query
                             modifiedQuery = modifiedQuery.raw(orQuery);
@@ -107,7 +109,7 @@ export const DotContentDriveStore = signalStore(
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
             },
-            setFilters(filters: Record<string, string>) {
+            setFilters(filters: DotContentDriveFilters) {
                 patchState(store, { filters: { ...store.filters(), ...filters } });
             },
             setPagination(pagination: DotContentDrivePagination) {

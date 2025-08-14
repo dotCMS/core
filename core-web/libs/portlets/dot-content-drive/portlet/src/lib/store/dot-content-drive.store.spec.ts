@@ -98,7 +98,7 @@ describe('DotContentDriveStore', () => {
 
             it('should include filters in query when provided', () => {
                 const filters = {
-                    contentType: 'Blog',
+                    contentType: ['Blog'],
                     status: 'published'
                 };
 
@@ -133,7 +133,7 @@ describe('DotContentDriveStore', () => {
             it('should update state with provided values and set status to LOADING', () => {
                 const testSite = mockSites[0];
                 const testPath = '/some/path';
-                const testFilters = { contentType: 'Blog' };
+                const testFilters = { contentType: ['Blog'] };
 
                 store.initContentDrive({
                     currentSite: testSite,
@@ -191,8 +191,8 @@ describe('DotContentDriveStore', () => {
 
         describe('setFilters', () => {
             it('should update filters with provided values', () => {
-                store.setFilters({ contentType: 'Blog' });
-                expect(store.filters()).toEqual({ contentType: 'Blog' });
+                store.setFilters({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
             });
         });
 

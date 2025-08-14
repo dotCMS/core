@@ -104,7 +104,7 @@ describe('DotContentDriveShellComponent', () => {
                 currentSite: mockSites[0],
                 path: '/test/path',
                 filters: {
-                    contentType: 'Blog',
+                    contentType: ['Blog'],
                     status: 'published'
                 },
                 isTreeExpanded: true
@@ -128,7 +128,7 @@ describe('DotContentDriveShellComponent', () => {
                     currentSite: mockSites[0],
                     path: DEFAULT_PATH,
                     filters: {
-                        contentType: 'Blog'
+                        contentType: ['Blog']
                     },
                     isTreeExpanded: false
                 })
@@ -239,7 +239,7 @@ describe('DotContentDriveShellComponent', () => {
             // Arrange store values for this run
             store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/another/path');
-            store.filters.mockReturnValue({ contentType: 'Blog', baseType: ['1', '2', '3'] });
+            store.filters.mockReturnValue({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
