@@ -1,3 +1,6 @@
+import { UTCDate } from '@date-fns/utc';
+import { format, isSameDay } from 'date-fns';
+
 import {
     ChartData,
     Granularity,
@@ -104,11 +107,10 @@ export const transformTopPagesTableData = (
 };
 
 /**
- * Normalizes a date string to ensure it's treated as UTC
- * Adds 'Z' suffix if not present to force UTC interpretation
+ * Parses a date string to UTC date
  */
-const normalizeUtcDateString = (dateString: string): string => {
-    return dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+const parseToUtcDate = (dateString: string): Date => {
+    return new UTCDate(dateString);
 };
 
 /**
@@ -132,49 +134,27 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
         };
     }
 
-    // Sort by date to ensure correct order
-    const sortedData = [...data].sort((a, b) => {
-        const dateA = normalizeUtcDateString(a['request.createdAt']);
-        const dateB = normalizeUtcDateString(b['request.createdAt']);
-        return new Date(dateA).getTime() - new Date(dateB).getTime();
-    });
+    const transformedData = data
+        .map((item) => ({
+            date: parseToUtcDate(item['request.createdAt']),
+            value: Number(item['request.totalRequest'] ?? 0)
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     // Check if all data points are from the same day (in user's local timezone)
-    const allDatesAreSameDay = sortedData.every((item, index, arr) => {
-        if (index === 0) return true;
-        // Convert UTC dates to local timezone for comparison
-        const currentDate = new Date(normalizeUtcDateString(item['request.createdAt']));
-        const firstDate = new Date(normalizeUtcDateString(arr[0]['request.createdAt']));
+    const allDatesAreSameDay = transformedData.every((item, _, arr) => {
+        if (arr.length < 2) return true;
+        const currentDate = item.date;
+        const firstDate = arr[0].date;
 
-        return (
-            currentDate.getFullYear() === firstDate.getFullYear() &&
-            currentDate.getMonth() === firstDate.getMonth() &&
-            currentDate.getDate() === firstDate.getDate()
-        );
+        return isSameDay(firstDate, currentDate);
     });
 
-    const labels = sortedData.map((item) => {
-        // Parse UTC date and ensure it's correctly converted to local time
-        const date = new Date(normalizeUtcDateString(item['request.createdAt']));
+    const labels = transformedData.map((item) =>
+        allDatesAreSameDay ? format(item.date, 'HH:mm') : format(item.date, 'MMM dd')
+    );
 
-        if (allDatesAreSameDay) {
-            // Format as hours when all data is from the same day (e.g., "10 AM", "11 AM", "12 PM")
-            // Use user's locale and timezone for accurate local time display
-            return date.toLocaleTimeString(undefined, {
-                hour: 'numeric',
-                hour12: true
-            });
-        } else {
-            // Format as short weekday + date when data spans multiple days (e.g., "Mon 21", "Tue 22")
-            // Use user's locale and timezone for accurate local date display
-            return date.toLocaleDateString(undefined, {
-                weekday: 'short',
-                day: 'numeric'
-            });
-        }
-    });
-
-    const chartData = sortedData.map((item) => Number(item['request.totalRequest']) || 0);
+    const chartData = transformedData.map((item) => item.value);
 
     return {
         labels,
