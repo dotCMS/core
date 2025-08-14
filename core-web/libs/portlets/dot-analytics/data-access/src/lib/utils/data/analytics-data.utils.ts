@@ -159,9 +159,7 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     });
 
     const labels = transformedData.map((item) =>
-        allDatesAreSameDay
-            ? format(item.date, TIME_FORMATS.hour)
-            : format(item.date, TIME_FORMATS.day)
+        format(item.date, allDatesAreSameDay ? TIME_FORMATS.hour : TIME_FORMATS.day)
     );
 
     const chartData = transformedData.map((item) => item.value);
