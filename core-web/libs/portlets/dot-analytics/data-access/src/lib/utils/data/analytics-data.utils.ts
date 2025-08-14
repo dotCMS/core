@@ -16,6 +16,14 @@ import {
 import { parseUserAgent } from '../browser/userAgentParser';
 
 /**
+ * Time formats for different chart types
+ */
+const TIME_FORMATS = {
+    hour: 'HH:mm',
+    day: 'MMM dd'
+};
+
+/**
  * Helper functions to extract numeric values from analytics entities
  */
 
@@ -151,7 +159,9 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     });
 
     const labels = transformedData.map((item) =>
-        allDatesAreSameDay ? format(item.date, 'HH:mm') : format(item.date, 'MMM dd')
+        allDatesAreSameDay
+            ? format(item.date, TIME_FORMATS.hour)
+            : format(item.date, TIME_FORMATS.day)
     );
 
     const chartData = transformedData.map((item) => item.value);

@@ -60,7 +60,7 @@ export class DotAnalyticsDashboardChartComponent {
         .pipe(map((result) => result.matches));
 
     /** Signal to track if we're on mobile/small screen */
-    protected readonly $isMobile = toSignal(this.isMobile$, { requireSync: true });
+    protected readonly $isMobile = toSignal(this.isMobile$, { initialValue: false });
 
     // Required inputs
     /** Chart type (line, pie, doughnut, bar, etc.) */
