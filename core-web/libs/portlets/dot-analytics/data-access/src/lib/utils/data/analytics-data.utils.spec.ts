@@ -330,10 +330,10 @@ describe('Analytics Data Utils', () => {
 
                     // Should format as hours (AM/PM format) when all data is from same day
                     expect(result.labels).toHaveLength(3);
-                    // Check that labels contain time format with AM/PM
+                    // Check that labels contain time format (AM/PM or a.m./p.m. depending on locale)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM|a\.m\.|p\.m\.)/i);
                     });
                 });
 
@@ -360,10 +360,11 @@ describe('Analytics Data Utils', () => {
 
                     // Should format as day + weekday when data spans multiple days
                     expect(result.labels).toHaveLength(3);
-                    // Check that labels contain date format (day number + weekday)
+                    // Check that labels contain date format (day number + weekday, can vary by locale)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/);
+                        // More flexible pattern to handle different locales and formats
+                        expect(label as string).toMatch(/(\d{1,2}\s*\w{3})|(\w{3}\s*\d{1,2})/);
                     });
                 });
 
@@ -393,7 +394,7 @@ describe('Analytics Data Utils', () => {
                     expect(result.labels).toHaveLength(2);
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM|a\.m\.|p\.m\.)/i);
                     });
                 });
 
@@ -458,7 +459,7 @@ describe('Analytics Data Utils', () => {
                     // Verify hour format is used
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM|a\.m\.|p\.m\.)/i);
                     });
                 });
 
@@ -486,10 +487,10 @@ describe('Analytics Data Utils', () => {
                     expect(result.labels).toHaveLength(2);
                     expect(result.datasets[0].data).toEqual([100, 150]);
 
-                    // Check that labels are formatted as local time (AM/PM format)
+                    // Check that labels are formatted as local time
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM|a\.m\.|p\.m\.)/i);
                     });
                 });
 
@@ -517,7 +518,7 @@ describe('Analytics Data Utils', () => {
                         expect(typeof label).toBe('string');
                         // Either time format or date format depending on timezone
                         expect(label as string).toMatch(
-                            /(\d{1,2}\s*(AM|PM))|(\d{1,2}\s*\w{3})|(\w{3}\s*\d{1,2})/
+                            /(\d{1,2}\s*(AM|PM|a\.m\.|p\.m\.))|(\d{1,2}\s*\w{3})|(\w{3}\s*\d{1,2})/i
                         );
                     });
                 });
@@ -546,7 +547,7 @@ describe('Analytics Data Utils', () => {
                     // Should format as time (same day)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM|a\.m\.|p\.m\.)/i);
                     });
                 });
 
@@ -574,7 +575,7 @@ describe('Analytics Data Utils', () => {
                     // Both should format as time (same day)
                     result.labels?.forEach((label) => {
                         expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM)/);
+                        expect(label as string).toMatch(/\d{1,2}\s*(AM|PM|a\.m\.|p\.m\.)/i);
                     });
                 });
             });

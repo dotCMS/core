@@ -10903,6 +10903,36 @@ paths:
       summary: Save role layouts
       tags:
       - Roles
+  /v1/roles/users/{userIdOrEmail}:
+    get:
+      description: Loads the user roles
+      operationId: loadUserRoles
+      parameters:
+      - description: User id or email
+        in: path
+        name: userIdOrEmail
+        required: true
+        schema:
+          type: string
+          default: "true"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleViewListView"
+          description: User roles retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user required
+      summary: Load user roles
+      tags:
+      - Roles
   /v1/roles/{roleId}/layouts:
     get:
       description: Returns a collection of layouts associated to a role

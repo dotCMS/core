@@ -2,6 +2,7 @@
 @let contentlet = $contentlet();
 @let contentType = $contentType();
 @let showLabel = $showLabel();
+@let contentTypeVariable = contentType?.variable;
 
 <ng-template #labelTemplate>
     @if (showLabel) {
@@ -74,6 +75,9 @@
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-calendar-field
+                [formControlName]="field.variable"
+                [contentType]="contentType"
+                [utcTimezone]="$systemTimezone()"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
         }
@@ -111,7 +115,7 @@
             <dot-edit-content-custom-field
                 [field]="field"
                 [inode]="contentlet?.inode"
-                [contentType]="contentType"
+                [contentType]="contentTypeVariable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
@@ -190,7 +194,11 @@
         }
     }
 }
-@if (field.hint && field.fieldType !== fieldTypes.RELATIONSHIP) {
+@if (
+    field.hint &&
+    field.fieldType !== fieldTypes.RELATIONSHIP &&
+    !calendarTypes.includes(field.fieldType)
+) {
     <small class="text-gray-700" [attr.data-testId]="'hint-' + field.variable">
         {{ field.hint }}
     </small>
