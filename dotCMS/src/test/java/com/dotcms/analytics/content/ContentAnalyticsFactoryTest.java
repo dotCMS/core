@@ -236,11 +236,11 @@ public class ContentAnalyticsFactoryTest {
             when(host.getIdentifier()).thenReturn(hostId);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
-            when(request.getAttribute(WebKeys.CURRENT_HOST));
+            when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
             CubeJSClientFactory mockCubeJsClientFactory = mock(CubeJSClientFactory.class);
-            Mockito.when(mockCubeJsClientFactory.create(systemUser, hostId)).thenReturn(cubeClient);
+            when(mockCubeJsClientFactory.create(systemUser, hostId)).thenReturn(cubeClient);
             final ContentAnalyticsFactory contentAnalyticsFactory = new ContentAnalyticsFactoryImpl(new AnalyticsQueryParser(), mockCubeJsClientFactory);
             final ReportResponse report = contentAnalyticsFactory.getRawReport(analyticsQuery, systemUser);
 
