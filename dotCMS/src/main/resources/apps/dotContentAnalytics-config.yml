@@ -4,7 +4,7 @@ allowExtraParameters: false
 description: "Content Analytics allow developers and/or marketers to track user interactions across specified Sites in dotCMS."
 
 params:
-  siteKey:
+  siteAuth:
     value: ""
     hidden: false
     type: "GENERATED_STRING"
