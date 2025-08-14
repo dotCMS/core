@@ -79,8 +79,11 @@ export class DotContentDriveShellComponent {
         if (path && path.length) {
             queryParams['path'] = path;
         }
+
         if (filters && Object.keys(filters).length) {
             queryParams['filters'] = encodeFilters(filters);
+        } else {
+            delete queryParams['filters'];
         }
 
         const urlTree = this.#router.createUrlTree([], { queryParams });

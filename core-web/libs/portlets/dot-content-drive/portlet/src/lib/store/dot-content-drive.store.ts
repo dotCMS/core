@@ -128,6 +128,12 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
+            },
+            removeFilter(filter: string) {
+                const { [filter]: removedFilter, ...restFilters } = store.filters();
+                if (removedFilter) {
+                    patchState(store, { filters: restFilters });
+                }
             }
         };
     }),
