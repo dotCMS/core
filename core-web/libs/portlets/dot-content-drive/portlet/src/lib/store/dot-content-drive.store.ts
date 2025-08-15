@@ -85,7 +85,7 @@ export const DotContentDriveStore = signalStore(
                             // Add the query to the modified query
                             modifiedQuery = modifiedQuery.raw(orQuery);
                         } else {
-                            modifiedQuery = modifiedQuery.field(key).equals(value);
+                            modifiedQuery = modifiedQuery.field(key).equals(`${value}*`);
                         }
                     });
                 }
