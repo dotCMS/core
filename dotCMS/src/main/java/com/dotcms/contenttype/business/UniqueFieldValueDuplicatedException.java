@@ -102,7 +102,7 @@ public class UniqueFieldValueDuplicatedException extends Exception implements Im
             this.value = value;
             this.contentType = contentType;
         }
-        
+
         /**
          * Set the type of the field (e.g., "text", "textarea", etc.)
          */
