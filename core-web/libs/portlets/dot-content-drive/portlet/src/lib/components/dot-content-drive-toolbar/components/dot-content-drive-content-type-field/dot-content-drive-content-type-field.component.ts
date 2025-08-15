@@ -73,6 +73,12 @@ export class DotContentDriveContentTypeFieldComponent {
                         (item) => item.baseType !== BASE_TYPES.form && !item.system
                     )
                 });
+
+                const contentTypeFilters = this.#store.getFilterValue('contentType');
+
+                this.$selectedContentTypes.set(
+                    contentTypes.filter((item) => contentTypeFilters?.includes(item.variable))
+                );
             });
     });
 

@@ -20,8 +20,10 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 export class DotContentDriveSearchInputComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #destroyRef = inject(DestroyRef);
+
     readonly searchControl = new FormControl('');
 
+    // We need to use ngOnInit to retrieve the filter value from the store
     ngOnInit() {
         const searchValue = this.#store.getFilterValue('title');
 
@@ -30,7 +32,7 @@ export class DotContentDriveSearchInputComponent {
         }
 
         this.searchControl.valueChanges
-            .pipe(takeUntilDestroyed(this.#destroyRef), debounceTime(500), distinctUntilChanged())
+            .pipe(debounceTime(500), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
                 if (searchValue) {

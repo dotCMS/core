@@ -1,5 +1,8 @@
 import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
+
+import { DotContentTypeService } from '@dotcms/data-access';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
@@ -13,7 +16,12 @@ describe('DotContentDriveToolbarComponent', () => {
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: jest.fn().mockReturnValue(true),
-                setIsTreeExpanded: jest.fn()
+                setIsTreeExpanded: jest.fn(),
+                getFilterValue: jest.fn().mockReturnValue(undefined),
+                filters: jest.fn().mockReturnValue({})
+            }),
+            mockProvider(DotContentTypeService, {
+                getContentTypes: jest.fn().mockReturnValue(of())
             })
         ],
         detectChanges: false
@@ -55,5 +63,11 @@ describe('DotContentDriveToolbarComponent', () => {
         spectator.detectChanges();
         const field = spectator.query('[data-testid="content-type-field"]');
         expect(field).toBeTruthy();
+    });
+
+    it('should render the search input', () => {
+        spectator.detectChanges();
+        const input = spectator.query('[data-testid="search-input"]');
+        expect(input).toBeTruthy();
     });
 });

@@ -60,9 +60,11 @@ export const DotContentDriveStore = signalStore(
                 const filtersValue = filters();
                 const filtersEntries = Object.entries(filtersValue ?? {});
 
+                if (pathValue) {
+                    modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
+                }
+
                 modifiedQuery = modifiedQuery
-                    .field('parentPath')
-                    .equals(pathValue ?? DEFAULT_PATH) // Add the path to the query, the default is "/"
                     .field('conhost')
                     .equals(currentSiteValue?.identifier)
                     .or()
@@ -88,8 +90,20 @@ export const DotContentDriveStore = signalStore(
 
                         // Handle raw search for title
                         if (key === 'title') {
-                            // This is a indexed field, so we need to search for the title_dotraw
-                            modifiedQuery = modifiedQuery.raw(`+title_dotraw:*${value}*^15`);
+                            // This is a indexed field, so we need to search by boosting terms https://dev.dotcms.com/docs/content-search-syntax#Boost
+                            // We search by catchall, title_dotraw boosting 5 and title boosting 15
+                            modifiedQuery = modifiedQuery.raw(
+                                `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
+                            );
+
+                            // If the value has multiple words, we need to search for each word and boost them by 5
+                            value
+                                .split(' ')
+                                .filter((word) => word.trim().length > 0)
+                                .forEach((word) => {
+                                    modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
+                                });
+
                             return;
                         }
 

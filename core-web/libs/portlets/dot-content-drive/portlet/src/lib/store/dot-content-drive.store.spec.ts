@@ -60,8 +60,6 @@ describe('DotContentDriveStore', () => {
             it('should build base query when no path or filters are provided', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(SYSTEM_HOST.identifier)
                     .or()
@@ -105,8 +103,6 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(customSite.identifier)
                     .or()
@@ -131,8 +127,6 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(SYSTEM_HOST.identifier)
                     .or()
@@ -160,14 +154,37 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(SYSTEM_HOST.identifier)
                     .or()
                     .equals(SYSTEM_HOST.identifier)
-                    .field('title_dotraw')
-                    .equals('*Blog*')
+                    .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
+                    .build();
+
+                expect(store.$query()).toEqual(expectedQuery);
+            });
+
+            it('should include title filter in query when provided with multiple words', () => {
+                const filters = {
+                    title: 'Blog Post'
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const expectedQuery = new QueryBuilder()
+                    .raw(BASE_QUERY)
+                    .field('conhost')
+                    .equals(SYSTEM_HOST.identifier)
+                    .or()
+                    .equals(SYSTEM_HOST.identifier)
+                    .raw(
+                        `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
+                    )
                     .build();
 
                 expect(store.$query()).toEqual(expectedQuery);
@@ -269,7 +286,6 @@ describe('DotContentDriveStore', () => {
         });
     });
 });
-
 describe('DotContentDriveStore - onInit', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
@@ -298,11 +314,11 @@ describe('DotContentDriveStore - onInit', () => {
     });
 
     it('should use default path if not provided in query params', () => {
-        expect(store.path()).toBe('/initial/test/path');
+        expect(store.path()).toBe(DEFAULT_PATH);
         expect(store.filters()).toEqual({
-            contentType: 'InitialTestContentType'
+            contentType: ['InitialTestContentType']
         });
         expect(store.isTreeExpanded()).toBe(true);
-        expect(store.currentSite()).toEqual(mockSites[2]);
+        expect(store.currentSite()).toBe(mockSites[2]);
     });
 });

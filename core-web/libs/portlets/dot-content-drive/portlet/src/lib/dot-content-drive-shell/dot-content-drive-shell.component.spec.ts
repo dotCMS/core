@@ -10,6 +10,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import {
     DotContentSearchService,
+    DotContentTypeService,
     DotSiteService,
     DotSystemConfigService
 } from '@dotcms/data-access';
@@ -87,6 +88,9 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(Location, {
                     go: jest.fn()
+                }),
+                mockProvider(DotContentTypeService, {
+                    getContentTypes: jest.fn().mockReturnValue(of())
                 })
             ]
         });
@@ -182,7 +186,7 @@ describe('DotContentDriveShellComponent', () => {
             // Arrange store values for this run
             store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/another/path');
-            store.filters.mockReturnValue({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
+            filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {

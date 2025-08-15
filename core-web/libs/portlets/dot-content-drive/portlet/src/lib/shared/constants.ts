@@ -71,8 +71,8 @@ export const SORT_ORDER = {
 // Default tree expanded
 export const DEFAULT_TREE_EXPANDED = true;
 
-// Default path
-export const DEFAULT_PATH = '/';
+// Default path, it needs to be undefined to show the root folder
+export const DEFAULT_PATH = undefined;
 
 // Map numbers to base types, ticket: https://github.com/dotCMS/core/issues/32991
 export const MAP_NUMBERS_TO_BASE_TYPES = {
