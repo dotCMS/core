@@ -12,6 +12,9 @@
 
 .p-toolbar-group-start {
     flex-grow: 1;
+    display: grid;
+    grid-template-columns: min-content repeat(3, minmax(4.5rem, 14rem));
+    align-items: center;
 }
 
 .p-toolbar-group-start,
@@ -23,8 +26,6 @@
 // PLACEHOLDERS CLASSES - WILL BE REMOVED
 .placeholder {
     width: 100%;
-    min-width: 73px;
-    max-width: 220px;
     height: 32px;
     border: 1px solid gray;
     display: flex;
