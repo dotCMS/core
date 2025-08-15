@@ -61,27 +61,20 @@ export const DotContentDriveStore = signalStore(
                 const pathValue = path();
                 const currentSiteValue = currentSite();
                 const filtersValue = filters();
-
-                // Add the path to the query, the default is "/"
-                if (pathValue) {
-                    modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
-                }
+                const filtersEntries = Object.entries(filtersValue ?? {});
 
                 modifiedQuery = modifiedQuery
+                    .field('parentPath')
+                    .equals(pathValue ?? DEFAULT_PATH) // Add the path to the query, the default is "/"
                     .field('conhost')
                     .equals(currentSiteValue?.identifier)
                     .or()
                     .equals(SYSTEM_HOST.identifier);
 
-                if (filtersValue) {
-                    Object.entries(filtersValue).forEach(([key, value]) => {
-                        if (key === 'title') {
-                            // This is a indexed field, so we need to search for the title_dotraw
-                            modifiedQuery = modifiedQuery
-                                .field('title_dotraw')
-                                .equals(`*${value}*`);
-                            return;
-                        }
+                filtersEntries
+                    // Remove filters that are undefined
+                    .filter(([_key, value]) => value !== undefined)
+                    .forEach(([key, value]) => {
                         // Handle multiselectors
                         if (Array.isArray(value)) {
                             // Chain with OR
@@ -95,9 +88,18 @@ export const DotContentDriveStore = signalStore(
                             modifiedQuery = modifiedQuery.raw(orQuery);
                             return;
                         }
+
+                        // Handle raw search for title
+                        if (key === 'title') {
+                            // This is a indexed field, so we need to search for the title_dotraw
+                            modifiedQuery = modifiedQuery
+                                .field('title_dotraw')
+                                .equals(`*${value}*`);
+                            return;
+                        }
+
                         modifiedQuery = modifiedQuery.field(key).equals(value);
                     });
-                }
 
                 return modifiedQuery.build();
             })
@@ -120,8 +122,14 @@ export const DotContentDriveStore = signalStore(
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
             },
-            setFilters(filters: DotContentDriveFilters) {
+            patchFilters(filters: DotContentDriveFilters) {
                 patchState(store, { filters: { ...store.filters(), ...filters } });
+            },
+            removeFilter(filter: string) {
+                const { [filter]: removedFilter, ...restFilters } = store.filters();
+                if (removedFilter) {
+                    patchState(store, { filters: restFilters });
+                }
             },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
@@ -131,12 +139,6 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
-            },
-            removeFilter(filter: string) {
-                const { [filter]: removedFilter, ...restFilters } = store.filters();
-                if (removedFilter) {
-                    patchState(store, { filters: restFilters });
-                }
             },
             getFilterValue(filter: string) {
                 return store.filters()[filter];

@@ -50,4 +50,10 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(spectator.query('.p-toolbar-group-start')).toBeTruthy();
         expect(spectator.query('.p-toolbar-group-end')).toBeTruthy();
     });
+
+    it('should render the content type field', () => {
+        spectator.detectChanges();
+        const field = spectator.query('[data-testid="content-type-field"]');
+        expect(field).toBeTruthy();
+    });
 });

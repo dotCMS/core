@@ -229,10 +229,18 @@ describe('DotContentDriveStore', () => {
             });
         });
 
-        describe('setFilters', () => {
+        describe('patchFilters', () => {
             it('should update filters with provided values', () => {
-                store.setFilters({ contentType: ['Blog'] });
+                store.patchFilters({ contentType: ['Blog'] });
                 expect(store.filters()).toEqual({ contentType: ['Blog'] });
+            });
+
+            it('should remove filter if value is undefined', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+
+                store.patchFilters({ contentType: undefined });
+                expect(store.filters()).toEqual({});
             });
         });
 

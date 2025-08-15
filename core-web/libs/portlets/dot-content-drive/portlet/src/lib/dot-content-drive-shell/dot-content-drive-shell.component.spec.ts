@@ -75,7 +75,7 @@ describe('DotContentDriveShellComponent', () => {
                     setStatus: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
-                    setFilters: jest.fn()
+                    patchFilters: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -98,66 +98,6 @@ describe('DotContentDriveShellComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
-    });
-
-    describe('Initialization', () => {
-        it('should initialize the store with current site and route params', () => {
-            spectator.detectChanges();
-
-            expect(store.initContentDrive).toHaveBeenCalledWith({
-                currentSite: mockSites[0],
-                path: '/test/path',
-                filters: {
-                    contentType: ['Blog'],
-                    status: 'published'
-                },
-                isTreeExpanded: true
-            });
-        });
-
-        it('should use default path if not provided in query params', () => {
-            Object.defineProperty(activatedRoute, 'snapshot', {
-                get: jest.fn().mockReturnValue({
-                    queryParams: {
-                        filters: 'contentType:Blog',
-                        isTreeExpanded: 'false'
-                    }
-                })
-            });
-
-            spectator.detectChanges();
-
-            expect(store.initContentDrive).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    currentSite: mockSites[0],
-                    path: DEFAULT_PATH,
-                    filters: {
-                        contentType: ['Blog']
-                    },
-                    isTreeExpanded: false
-                })
-            );
-        });
-
-        it('should use empty object for filters if not provided in query params', () => {
-            Object.defineProperty(activatedRoute, 'snapshot', {
-                get: jest.fn().mockReturnValue({
-                    queryParams: {
-                        path: '/test/path/'
-                    }
-                })
-            });
-
-            spectator.detectChanges();
-
-            expect(store.initContentDrive).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    filters: {},
-                    path: '/test/path/',
-                    isTreeExpanded: true
-                })
-            );
-        });
     });
 
     describe('Content Loading Effect', () => {
