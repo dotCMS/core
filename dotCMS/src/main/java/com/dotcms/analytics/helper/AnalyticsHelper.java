@@ -456,16 +456,27 @@ public class AnalyticsHelper implements EventSubscriber<SystemTableUpdatedKeyEve
      */
     public AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        try {
-            return appFromHost(currentHost);
+        return resolveAnalyticsApp(user, currentHost);
+    }
+
+    public AnalyticsApp resolveAnalyticsApp(final User user, final String siteId)
+            throws DotDataException, DotSecurityException {
+        final Host host = APILocator.getHostAPI().find(siteId, user, false);
+        return resolveAnalyticsApp(user, host);
+    }
+
+    public AnalyticsApp resolveAnalyticsApp(final User user, final Host site)
+            throws DotDataException, DotSecurityException {
+         try {
+            return appFromHost(site);
         } catch (final IllegalStateException e) {
             throw new DotDataException(
-                Try.of(() ->
-                        LanguageUtil.get(
-                            user,
-                            "analytics.app.not.configured",
-                            AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
-                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
+                    Try.of(() ->
+                                    LanguageUtil.get(
+                                            user,
+                                            "analytics.app.not.configured",
+                                            AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
+                            .getOrElse(String.format("Analytics App not found for host: %s", site.getHostname())));
         }
     }
 
