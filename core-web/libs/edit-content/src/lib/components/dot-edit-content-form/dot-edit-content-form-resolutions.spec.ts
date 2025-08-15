@@ -214,9 +214,6 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.CHECKBOX,
                 FIELD_TYPES.CONSTANT,
                 FIELD_TYPES.CUSTOM_FIELD,
-                FIELD_TYPES.DATE,
-                FIELD_TYPES.DATE_AND_TIME,
-                FIELD_TYPES.TIME,
                 FIELD_TYPES.HIDDEN,
                 FIELD_TYPES.JSON,
                 FIELD_TYPES.KEY_VALUE,
@@ -230,6 +227,14 @@ describe('DotEditContentFormResolutions', () => {
 
             defaultFieldTypes.forEach((fieldType) => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.TEXTAREA]);
+            });
+        });
+
+        it('should use dateResolutionFn for date field types', () => {
+            const dateFieldTypes = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
+
+            dateFieldTypes.forEach((fieldType) => {
+                expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.DATE]);
             });
         });
     });

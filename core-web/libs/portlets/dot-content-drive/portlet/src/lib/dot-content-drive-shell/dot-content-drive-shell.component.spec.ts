@@ -1,4 +1,4 @@
-import { it, describe, expect, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -8,7 +8,11 @@ import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
+import {
+    DotContentSearchService,
+    DotSiteService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -38,6 +42,7 @@ describe('DotContentDriveShellComponent', () => {
                 get: jest.fn().mockReturnValue(of(mockSearchResponse))
             }),
             mockProvider(ActivatedRoute, mockRoute),
+            mockProvider(DotSystemConfigService),
             provideHttpClient()
         ],
         componentProviders: [DotContentDriveStore],
