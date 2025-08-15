@@ -19,10 +19,10 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     imports: [IconFieldModule, InputIconModule, InputTextModule, ReactiveFormsModule]
 })
 export class DotContentDriveSearchInputComponent implements OnInit, OnDestroy {
-    #store = inject(DotContentDriveStore);
-    #destroy$ = new Subject<void>();
+    readonly #store = inject(DotContentDriveStore);
+    readonly #destroy$ = new Subject<void>();
 
-    searchControl = new FormControl('');
+    readonly searchControl = new FormControl('');
 
     ngOnInit(): void {
         const searchValue = this.#store.getFilterValue('title');
