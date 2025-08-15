@@ -1,0 +1,23 @@
+<p-multiSelect
+    [filter]="true"
+    [options]="$state.contentTypes()"
+    [(ngModel)]="$selectedContentTypes"
+    optionLabel="name"
+    display="chip"
+    showClear="true"
+    [lazy]="true"
+    [loading]="$state.loading()"
+    (onChange)="onChange()"
+    (onClear)="onChange()"
+    (onFilter)="onFilter($event)">
+    <ng-template pTemplate="empty">
+        @if ($state.loading()) {
+            <p-skeleton
+                height="32px"
+                width="100%"
+                data-testid="content-type-field-skeleton"></p-skeleton>
+        } @else {
+            {{ 'content-drive.content-type-field.empty-state' | dm }}
+        }
+    </ng-template>
+</p-multiSelect>
