@@ -1,6 +1,7 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { IconFieldModule } from 'primeng/iconfield';
@@ -18,13 +19,13 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [IconFieldModule, InputIconModule, InputTextModule, ReactiveFormsModule]
 })
-export class DotContentDriveSearchInputComponent implements OnInit, OnDestroy {
+export class DotContentDriveSearchInputComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #destroy$ = new Subject<void>();
 
     readonly searchControl = new FormControl('');
 
-    ngOnInit(): void {
+    constructor() {
         const searchValue = this.#store.getFilterValue('title');
 
         if (searchValue) {
@@ -32,7 +33,12 @@ export class DotContentDriveSearchInputComponent implements OnInit, OnDestroy {
         }
 
         this.searchControl.valueChanges
-            .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.#destroy$))
+            .pipe(
+                takeUntilDestroyed(),
+                debounceTime(500),
+                distinctUntilChanged(),
+                takeUntil(this.#destroy$)
+            )
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
                 if (searchValue) {
@@ -41,10 +47,5 @@ export class DotContentDriveSearchInputComponent implements OnInit, OnDestroy {
                     this.#store.removeFilter('title');
                 }
             });
-    }
-
-    ngOnDestroy(): void {
-        this.#destroy$.next();
-        this.#destroy$.complete();
     }
 }

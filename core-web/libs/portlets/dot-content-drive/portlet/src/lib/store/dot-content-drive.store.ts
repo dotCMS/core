@@ -77,11 +77,8 @@ export const DotContentDriveStore = signalStore(
                         if (key === 'title') {
                             // This is a indexed field, so we need to search in the title and the title_dotraw
                             modifiedQuery = modifiedQuery
-                                .field('title')
-                                .equals(`${value}*`)
-                                .or()
                                 .field('title_dotraw')
-                                .equals(`${value}*`);
+                                .equals(`*${value}*`);
                             return;
                         }
                         // Handle multiselectors
