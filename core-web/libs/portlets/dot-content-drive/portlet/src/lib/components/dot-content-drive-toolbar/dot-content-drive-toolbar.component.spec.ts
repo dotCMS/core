@@ -6,6 +6,7 @@ import { DotContentTypeService } from '@dotcms/data-access';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
+import { mockContentTypes } from '../../shared/mocks';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
@@ -21,7 +22,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 filters: jest.fn().mockReturnValue({})
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of())
+                getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes))
             })
         ],
         detectChanges: false

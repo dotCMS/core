@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -9,14 +9,17 @@ import {
     inject,
     signal
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
+import { SkeletonModule } from 'primeng/skeleton';
 
-import { catchError, debounceTime, distinctUntilChanged, map, take } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
 import { BASE_TYPES } from '../../../../shared/models';
@@ -25,11 +28,12 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 type DotContentDriveContentTypeFieldState = {
     contentTypes: DotCMSContentType[];
     filterByKeyword: string;
+    loading: boolean;
 };
 
 @Component({
     selector: 'dot-content-drive-content-type-field',
-    imports: [MultiSelectModule, FormsModule],
+    imports: [MultiSelectModule, FormsModule, SkeletonModule, DotMessagePipe],
     templateUrl: './dot-content-drive-content-type-field.component.html',
     styleUrl: './dot-content-drive-content-type-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -41,12 +45,16 @@ export class DotContentDriveContentTypeFieldComponent {
 
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         contentTypes: [],
-        filterByKeyword: ''
+        filterByKeyword: '',
+        loading: false
     });
 
     readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
 
+    #apiRequestSubject = new Subject<{ type?: string; filter: string }>();
+
     // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
+    // This prevents the effect from being triggered when the base types are the same or filters changes
     private readonly $mappedBaseTypes = computed(
         () => this.#store.filters().baseType?.map((item) => MAP_NUMBERS_TO_BASE_TYPES[item]) ?? [],
         {
@@ -55,61 +63,68 @@ export class DotContentDriveContentTypeFieldComponent {
         }
     );
 
-    readonly getContentTypesEffect = effect(() => {
-        // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
-        // After that remove the `&& undefined`
-        const type = this.$mappedBaseTypes().join(',') && undefined;
-        const filter = this.$state.filterByKeyword();
-
-        this.#contentTypesService
-            .getContentTypes({ type, filter })
+    constructor() {
+        // Set up debounced API request stream with switchMap
+        this.#apiRequestSubject
             .pipe(
-                take(1),
-                catchError(() => of([]))
+                tap(() => patchState(this.$state, { loading: true, contentTypes: [] })),
+                debounceTime(DEBOUNCE_TIME),
+                distinctUntilChanged(
+                    (prev, curr) => prev.type === curr.type && prev.filter === curr.filter
+                ),
+                switchMap(({ type, filter }) =>
+                    this.#contentTypesService
+                        .getContentTypes({ type, filter })
+                        .pipe(catchError(() => of([])))
+                ),
+                takeUntilDestroyed()
             )
             .subscribe((contentTypes: DotCMSContentType[]) => {
+                const contentTypeFallback = contentTypes ?? [];
+
                 patchState(this.$state, {
-                    contentTypes: contentTypes.filter(
+                    contentTypes: contentTypeFallback?.filter(
                         (item) => item.baseType !== BASE_TYPES.form && !item.system
-                    )
+                    ),
+                    loading: false
                 });
 
                 const contentTypeFilters = this.#store.getFilterValue('contentType');
 
                 this.$selectedContentTypes.set(
-                    contentTypes.filter((item) => contentTypeFilters?.includes(item.variable))
+                    contentTypeFallback.filter((item) =>
+                        contentTypeFilters?.includes(item.variable)
+                    )
                 );
-            });
-    });
-
-    onFilter(event: MultiSelectFilterEvent) {
-        // We need to debounce the filter to avoid too many requests
-        of(event.filter)
-            .pipe(debounceTime(DEBOUNCE_TIME), distinctUntilChanged())
-            .subscribe((value) => {
-                patchState(this.$state, {
-                    filterByKeyword: value
-                });
             });
     }
 
+    readonly getContentTypesEffect = effect(() => {
+        // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
+        // After that remove the uncommented code and
+        // const type = this.$mappedBaseTypes().join(',')
+        const type = undefined;
+        const filter = this.$state.filterByKeyword();
+
+        // Push the request parameters to the debounced stream
+        this.#apiRequestSubject.next({ type, filter });
+    });
+
+    onFilter(event: MultiSelectFilterEvent) {
+        patchState(this.$state, {
+            filterByKeyword: event.filter
+        });
+    }
+
     onChange() {
-        of(this.$selectedContentTypes() ?? [])
-            .pipe(
-                debounceTime(DEBOUNCE_TIME), // Debounce to avoid spamming the server
-                distinctUntilChanged(),
-                map((value) => {
-                    return value.map((item) => item.variable);
-                })
-            )
-            .subscribe((value) => {
-                if (value.length > 0) {
-                    this.#store.patchFilters({
-                        contentType: value
-                    });
-                } else {
-                    this.#store.removeFilter('contentType');
-                }
+        const value = this.$selectedContentTypes() ?? [];
+
+        if (value.length > 0) {
+            this.#store.patchFilters({
+                contentType: value.map((item) => item.variable)
             });
+        } else {
+            this.#store.removeFilter('contentType');
+        }
     }
 }

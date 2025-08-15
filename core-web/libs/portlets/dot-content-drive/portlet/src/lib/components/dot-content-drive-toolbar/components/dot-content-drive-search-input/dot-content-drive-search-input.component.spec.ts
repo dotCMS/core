@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -13,24 +13,17 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 
 describe('DotContentDriveSearchInputComponent', () => {
     let spectator: Spectator<DotContentDriveSearchInputComponent>;
-    let mockStore: {
-        patchFilters: jest.Mock;
-        removeFilter: jest.Mock;
-        getFilterValue: jest.Mock;
-    };
+    let mockStore: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveSearchInputComponent,
         imports: [ReactiveFormsModule, IconFieldModule, InputIconModule, InputTextModule],
         providers: [
-            {
-                provide: DotContentDriveStore,
-                useFactory: () => ({
-                    patchFilters: jest.fn(),
-                    removeFilter: jest.fn(),
-                    getFilterValue: jest.fn()
-                })
-            }
+            mockProvider(DotContentDriveStore, {
+                patchFilters: jest.fn(),
+                removeFilter: jest.fn(),
+                getFilterValue: jest.fn()
+            })
         ],
         detectChanges: false
     });
