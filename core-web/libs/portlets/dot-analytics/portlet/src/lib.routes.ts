@@ -3,6 +3,7 @@ import { Route } from '@angular/router';
 import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { analyticsHealthGuard } from './lib/guards/analytics-health.guard';
+import { queryParamDefaultGuard } from './lib/guards/query-param-default.guard';
 
 export const DotAnalyticsRoutes: Route[] = [
     {

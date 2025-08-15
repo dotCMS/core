@@ -1,4 +1,4 @@
-import { TimeRange, TimeRangeOptions } from '@dotcms/portlets/dot-analytics/data-access';
+import { TimeRangeOptions } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { FilterOption } from '../types';
 
@@ -34,7 +34,7 @@ export const TIME_PERIOD_OPTIONS: FilterOption[] = [
 ];
 
 /** Default time period selection (1 week) */
-export const DEFAULT_TIME_PERIOD: TimeRange = TimeRangeOptions.LAST_7_DAYS;
+export const DEFAULT_TIME_PERIOD = TimeRangeOptions.LAST_7_DAYS;
 
 /** Analytics entity field keys */
 export const ANALYTICS_KEYS = {
