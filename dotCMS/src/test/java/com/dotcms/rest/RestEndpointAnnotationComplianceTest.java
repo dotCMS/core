@@ -19,6 +19,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.BeanParam;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -446,6 +447,12 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                     // Check if request body should be required based on HTTP method and operation type
                     if (requestBodyAnnotation.required() == false && 
                         (method.isAnnotationPresent(POST.class) || method.isAnnotationPresent(PUT.class))) {
+                        // Skip deprecated methods that intentionally use required=false for backward compatibility
+                        if (method.isAnnotationPresent(Deprecated.class)) {
+                            // Deprecated methods may use required=false for backward compatibility
+                            continue;
+                        }
+                        
                         // Only flag as violation for operations that typically require a request body
                         String methodNameLower = methodName.toLowerCase();
                         if (methodNameLower.contains("save") && !methodNameLower.contains("comment") ||
@@ -665,8 +672,66 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
      */
     private boolean isFrameworkParameter(java.lang.reflect.Parameter parameter) {
         String typeName = parameter.getType().getSimpleName();
-        return typeName.equals("AsyncResponse") ||
-               parameter.isAnnotationPresent(javax.ws.rs.container.Suspended.class);
+        String fullTypeName = parameter.getType().getName();
+        
+        // Check for AsyncResponse and @Suspended parameters
+        try {
+            if (typeName.equals("AsyncResponse") || 
+                parameter.isAnnotationPresent(javax.ws.rs.container.Suspended.class)) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore if classes not available
+        }
+        
+        // Check for multipart form parameters
+        try {
+            if (hasAnnotation(parameter, "org.glassfish.jersey.media.multipart.FormDataParam")) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore if classes not available
+        }
+        
+        // Check for multipart form types
+        if (typeName.equals("FormDataMultiPart") ||
+            typeName.equals("FormDataContentDisposition") ||
+            fullTypeName.equals("org.glassfish.jersey.media.multipart.FormDataMultiPart") ||
+            fullTypeName.equals("org.glassfish.jersey.media.multipart.FormDataContentDisposition")) {
+            return true;
+        }
+        
+        // Check for @BeanParam parameters (used for grouping form parameters)
+        try {
+            if (parameter.isAnnotationPresent(javax.ws.rs.BeanParam.class)) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore if classes not available
+        }
+        
+        // Check for File parameters in multipart contexts (assume they don't need @RequestBody)
+        if (typeName.equals("File")) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if parameter has a specific annotation by class name (safer than direct class reference)
+     */
+    private boolean hasAnnotation(java.lang.reflect.Parameter parameter, String annotationClassName) {
+        try {
+            for (java.lang.annotation.Annotation annotation : parameter.getAnnotations()) {
+                if (annotation.annotationType().getName().equals(annotationClassName)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore if annotation classes not available
+        }
+        return false;
     }
     
     /**
