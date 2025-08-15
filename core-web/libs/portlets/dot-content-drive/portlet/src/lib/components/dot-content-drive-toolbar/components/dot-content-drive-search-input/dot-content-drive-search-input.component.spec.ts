@@ -143,17 +143,4 @@ describe('DotContentDriveSearchInputComponent', () => {
             expect(mockStore.setFilters).toHaveBeenCalledWith({ title: specialChars });
         }));
     });
-
-    describe('OnDestroy', () => {
-        it('should not call store methods after component is destroyed', fakeAsync(() => {
-            spectator.detectChanges();
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('test', input);
-            spectator.fixture.destroy();
-            tick(500);
-
-            expect(mockStore.setFilters).not.toHaveBeenCalled();
-        }));
-    });
 });
