@@ -49,6 +49,11 @@ public class CubeJSClientFactoryImpl implements CubeJSClientFactory {
         return create(analyticsHelper.resolveAnalyticsApp(user));
     }
 
+    @Override
+    public CubeJSClient create(final User user, final String siteId) throws DotDataException, DotSecurityException {
+        return create(analyticsHelper.resolveAnalyticsApp(user, siteId));
+    }
+
     @VisibleForTesting
     public static void setAnalyticsHelper(final AnalyticsHelper analyticsHelper) {
         CubeJSClientFactoryImpl.analyticsHelper = analyticsHelper;
