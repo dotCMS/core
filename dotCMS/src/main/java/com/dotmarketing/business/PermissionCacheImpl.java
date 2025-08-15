@@ -6,6 +6,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.cache.Expirable;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -78,6 +79,7 @@ public class PermissionCacheImpl extends PermissionCache {
 			final EmptyPermissionsCacheEntry entry = (EmptyPermissionsCacheEntry) cachedObject;
 			if (entry.isExpired()) {
 				cache.remove(cacheKey, primaryGroup);
+				return null;
 			}
 
 			return Collections.emptyList();
@@ -195,7 +197,7 @@ public class PermissionCacheImpl extends PermissionCache {
 	 * Cache entry for empty permissions with TTL expiration.
 	 * Implements the 404 strategy - cache empty results for a limited time to avoid repeated lookups.
 	 */
-	private static class EmptyPermissionsCacheEntry implements Serializable {
+	private static class EmptyPermissionsCacheEntry implements Serializable, Expirable {
 		private static final long serialVersionUID = 1L;
 
 		private final long ttl;
