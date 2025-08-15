@@ -1,9 +1,18 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
+import { GlobalStore } from '@dotcms/store';
 
 import {
     BASE_QUERY,
@@ -21,6 +30,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
+import { decodeFilters } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,
@@ -65,6 +75,13 @@ export const DotContentDriveStore = signalStore(
 
                 if (filtersValue) {
                     Object.entries(filtersValue).forEach(([key, value]) => {
+                        if (key === 'title') {
+                            // This is a indexed field, so we need to search for the title_dotraw
+                            modifiedQuery = modifiedQuery
+                                .field('title_dotraw')
+                                .equals(`*${value}*`);
+                            return;
+                        }
                         // Handle multiselectors
                         if (Array.isArray(value)) {
                             // Chain with OR
@@ -76,10 +93,9 @@ export const DotContentDriveStore = signalStore(
 
                             // Add the query to the modified query
                             modifiedQuery = modifiedQuery.raw(orQuery);
-                        } else {
-                            // Single value
-                            modifiedQuery = modifiedQuery.field(key).equals(value);
+                            return;
                         }
+                        modifiedQuery = modifiedQuery.field(key).equals(value);
                     });
                 }
 
@@ -89,18 +105,13 @@ export const DotContentDriveStore = signalStore(
     }),
     withMethods((store) => {
         return {
-            initContentDrive({
-                currentSite,
-                path,
-                filters,
-                isTreeExpanded: treeExpanded
-            }: DotContentDriveInit) {
+            initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
                     currentSite: currentSite ?? SYSTEM_HOST,
                     path,
                     filters,
                     status: DotContentDriveStatus.LOADING,
-                    isTreeExpanded: treeExpanded
+                    isTreeExpanded
                 });
             },
             setItems(items: DotContentDriveItem[], totalItems: number) {
@@ -120,6 +131,37 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
+            },
+            removeFilter(filter: string) {
+                const { [filter]: removedFilter, ...restFilters } = store.filters();
+                if (removedFilter) {
+                    patchState(store, { filters: restFilters });
+                }
+            },
+            getFilterValue(filter: string) {
+                return store.filters()[filter];
+            }
+        };
+    }),
+    withHooks((store) => {
+        const route = inject(ActivatedRoute);
+        const globalStore = inject(GlobalStore);
+
+        return {
+            onInit() {
+                const queryParams = route.snapshot.queryParams;
+                const currentSite = globalStore.siteDetails();
+                const path = queryParams['path'] || DEFAULT_PATH;
+                const filters = decodeFilters(queryParams['filters'] || '');
+                const queryTreeExpanded =
+                    queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
+
+                store.initContentDrive({
+                    currentSite,
+                    path,
+                    filters,
+                    isTreeExpanded: queryTreeExpanded == 'true'
+                });
             }
         };
     })

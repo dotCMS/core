@@ -1,0 +1,14 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+    // TODO: Remove this and add grid layout to the parent component
+    min-width: 73px;
+    max-width: 220px;
+
+    &::ng-deep {
+        .p-inputtext {
+            width: 100%;
+        }
+    }
+}
