@@ -712,13 +712,51 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     @Override
     protected int deleteOldContent(final Date deleteFrom) throws DotDataException {
-        final Calendar calendar = Calendar.getInstance();
-        calendar.setTime(deleteFrom);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        final Date date = calendar.getTime();
+        // Call the bounded version with epoch as start date to maintain backward compatibility
+        return deleteOldContent(new Date(0), deleteFrom);
+    }
+
+    /**
+     * Deletes all the Contentlet versions that fall within the specified date range.
+     * This method provides bounded query performance optimization by processing only
+     * content within the specified date range rather than scanning all historical data.
+     *
+     * @param deleteFrom The start date (inclusive) - content modified on or after this date will be considered.
+     * @param deleteTo The end date (exclusive) - content modified before this date will be considered.
+     *
+     * @return The number of records deleted by this operation.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @Override
+    protected int deleteOldContent(final Date deleteFrom, final Date deleteTo) throws DotDataException {
+        if (deleteFrom == null) {
+            throw new DotDataException("Delete from date cannot be null");
+        }
+        if (deleteTo == null) {
+            throw new DotDataException("Delete to date cannot be null");
+        }
+        if (deleteFrom.after(deleteTo)) {
+            throw new DotDataException("Delete from date must be before delete to date");
+        }
+
+        // Normalize dates to start of day for consistent behavior
+        final Calendar calendarFrom = Calendar.getInstance();
+        calendarFrom.setTime(deleteFrom);
+        calendarFrom.set(Calendar.HOUR_OF_DAY, 0);
+        calendarFrom.set(Calendar.MINUTE, 0);
+        calendarFrom.set(Calendar.SECOND, 0);
+        calendarFrom.set(Calendar.MILLISECOND, 0);
+        final Date normalizedDeleteFrom = calendarFrom.getTime();
+
+        final Calendar calendarTo = Calendar.getInstance();
+        calendarTo.setTime(deleteTo);
+        calendarTo.set(Calendar.HOUR_OF_DAY, 0);
+        calendarTo.set(Calendar.MINUTE, 0);
+        calendarTo.set(Calendar.SECOND, 0);
+        calendarTo.set(Calendar.MILLISECOND, 0);
+        final Date normalizedDeleteTo = calendarTo.getTime();
+
         DotConnect dc = new DotConnect();
         final String countSQL = "select count(*) as count from contentlet";
         dc.setSQL(countSQL);
@@ -729,7 +767,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         int batchExecutionCount = 0;
         int oldInodesCount;
         do {
-            oldInodesCount = deleteContentBatch(date, batchSize);
+            oldInodesCount = deleteContentBatch(normalizedDeleteFrom, normalizedDeleteTo, batchSize);
             // Pause if needed to avoid overloading the system
             if (oldInodesCount > 0) {
                 batchExecutionCount++;
@@ -758,14 +796,32 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     @ExternalTransaction
     private int deleteContentBatch(final Date date, final int batchSize) throws DotDataException {
+        // Call the bounded version with epoch as start date for backward compatibility
+        return deleteContentBatch(new Date(0), date, batchSize);
+    }
+
+    /**
+     * Deletes a batch of Contentlets that fall within the specified date range. The batch size is
+     * determined by the {@code batchSize} parameter. This method provides performance optimization
+     * by using bounded queries instead of scanning all historical data.
+     * 
+     * @param deleteFrom The start date (inclusive) - content modified on or after this date will be considered.
+     * @param deleteTo The end date (exclusive) - content modified before this date will be considered.
+     * @param batchSize The number of Contentlets to delete in each batch.
+     * @return The number of Contentlets deleted by this operation.
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @ExternalTransaction
+    private int deleteContentBatch(final Date deleteFrom, final Date deleteTo, final int batchSize) throws DotDataException {
         final String query = "SELECT c.inode FROM contentlet c"
-                + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date < ?"
+                + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date >= ? AND c.mod_date < ?"
                 + " AND NOT EXISTS (SELECT 1 FROM contentlet_version_info vi"
                 + " WHERE vi.working_inode = c.inode OR vi.live_inode = c.inode)"
                 + " LIMIT ?";
         final DotConnect dc = new DotConnect();
         dc.setSQL(query);
-        dc.addParam(date);
+        dc.addParam(deleteFrom);
+        dc.addParam(deleteTo);
         dc.addParam(batchSize);
         final List<Map<String, String>> results = dc.loadResults();
         final int resultCount = results.size();
