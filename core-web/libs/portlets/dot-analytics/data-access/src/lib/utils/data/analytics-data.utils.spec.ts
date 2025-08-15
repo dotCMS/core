@@ -1,4 +1,3 @@
-import { UTCDate } from '@date-fns/utc';
 import { startOfDay, endOfDay, addHours } from 'date-fns';
 
 import {
@@ -377,12 +376,12 @@ describe('Analytics Data Utils', () => {
 
                     const sameDayData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': new UTCDate(startOfDay(baseDate)).toISOString(), // startOfDay
+                            'request.createdAt': startOfDay(baseDate).toISOString(), // startOfDay
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '50'
                         },
                         {
-                            'request.createdAt': new UTCDate(endOfDay(baseDate)).toISOString(), // endOfDay
+                            'request.createdAt': endOfDay(baseDate).toISOString(), // endOfDay
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '75'
                         }
@@ -428,17 +427,17 @@ describe('Analytics Data Utils', () => {
                     const baseDate = startOfDay(new Date('2023-12-01T12:00:00'));
                     const unorderedSameDayData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': addHours(new UTCDate(baseDate), 7).toISOString(), // 7am
+                            'request.createdAt': addHours(baseDate, 7).toISOString(), // 7am
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '200'
                         },
                         {
-                            'request.createdAt': addHours(new UTCDate(baseDate), 1).toISOString(), // 1am
+                            'request.createdAt': addHours(baseDate, 1).toISOString(), // 1am
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '100'
                         },
                         {
-                            'request.createdAt': addHours(new UTCDate(baseDate), 13).toISOString(), // 3pm
+                            'request.createdAt': addHours(baseDate, 13).toISOString(), // 3pm
                             'request.createdAt.day': '2023-12-01',
                             'request.totalRequest': '150'
                         }

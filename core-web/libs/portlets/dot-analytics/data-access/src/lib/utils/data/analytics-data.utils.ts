@@ -1,4 +1,3 @@
-import { UTCDate } from '@date-fns/utc';
 import { format, isSameDay } from 'date-fns';
 
 import {
@@ -115,13 +114,6 @@ export const transformTopPagesTableData = (
 };
 
 /**
- * Parses a date string to UTC date
- */
-const parseToUtcDate = (dateString: string): string => {
-    return new UTCDate(dateString).toISOString();
-};
-
-/**
  * Transforms PageViewTimeLineEntity array to Chart.js compatible format
  */
 export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | null): ChartData => {
@@ -144,10 +136,10 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
 
     const transformedData = data
         .map((item) => ({
-            date: parseToUtcDate(item['request.createdAt']),
+            date: new Date(item['request.createdAt']),
             value: extractPageViews(item)
         }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     // Check if all data points are from the same day (in user's local timezone)
     const allDatesAreSameDay = transformedData.every((item, _, arr) => {

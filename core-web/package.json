@@ -58,7 +58,6 @@
         "@angular/platform-browser-dynamic": "19.2.9",
         "@angular/router": "19.2.9",
         "@ctrl/tinycolor": "^3.1.7",
-        "@date-fns/utc": "^2.1.1",
         "@date-fns/tz": "^1.4.0",
         "@jitsu/sdk-js": "^3.1.5",
         "@material/mwc-button": "^0.20.0",
