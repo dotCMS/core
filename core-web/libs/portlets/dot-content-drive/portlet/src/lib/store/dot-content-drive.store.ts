@@ -91,7 +91,7 @@ export const DotContentDriveStore = signalStore(
                         // Handle raw search for title
                         if (key === 'title') {
                             // This is a indexed field, so we need to search by boosting terms https://dev.dotcms.com/docs/content-search-syntax#Boost
-                            // We search by catchall, title_dotraw boosting 5 and title boosting 15
+                            // We search by catchall, title_dotraw boosting 5 and title boosting 15, giving more weight to the title
                             modifiedQuery = modifiedQuery.raw(
                                 `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
                             );

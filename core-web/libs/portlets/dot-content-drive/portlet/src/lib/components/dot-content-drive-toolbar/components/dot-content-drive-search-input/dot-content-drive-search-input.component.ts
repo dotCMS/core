@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 @Component({
@@ -17,7 +18,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [IconFieldModule, InputIconModule, InputTextModule, ReactiveFormsModule]
 })
-export class DotContentDriveSearchInputComponent {
+export class DotContentDriveSearchInputComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -32,7 +33,11 @@ export class DotContentDriveSearchInputComponent {
         }
 
         this.searchControl.valueChanges
-            .pipe(debounceTime(500), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                debounceTime(DEBOUNCE_TIME),
+                distinctUntilChanged(),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
                 if (searchValue) {
