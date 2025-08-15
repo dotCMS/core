@@ -75,7 +75,7 @@ export const DotContentDriveStore = signalStore(
                 if (filtersValue) {
                     Object.entries(filtersValue).forEach(([key, value]) => {
                         if (key === 'title') {
-                            // This is a indexed field, so we need to search in the title and the title_dotraw
+                            // This is a indexed field, so we need to search for the title_dotraw
                             modifiedQuery = modifiedQuery
                                 .field('title_dotraw')
                                 .equals(`*${value}*`);

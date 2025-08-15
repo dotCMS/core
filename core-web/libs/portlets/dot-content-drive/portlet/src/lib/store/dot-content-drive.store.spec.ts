@@ -138,6 +138,33 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.$query()).toEqual(expectedQuery);
             });
+
+            it('should include title filter in query when provided', () => {
+                const filters = {
+                    title: 'Blog'
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const expectedQuery = new QueryBuilder()
+                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
+                    .field('conhost')
+                    .equals(SYSTEM_HOST.identifier)
+                    .or()
+                    .equals(SYSTEM_HOST.identifier)
+                    .field('title_dotraw')
+                    .equals('*Blog*')
+                    .build();
+
+                expect(store.$query()).toEqual(expectedQuery);
+            });
         });
     });
 
