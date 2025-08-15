@@ -8319,7 +8319,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     checkParent == records.isHasParent() &&
                                     records.getRelationship().getInode().equals(rel.getInode()));
 
-                if (!foundInRelationships) {
+                boolean hasExistingRelatedContent = false;
+                if (!foundInRelationships && UtilMethods.isSet(contentlet.getIdentifier())) {
+                    // Check if there are existing related content records for this relationship
+                    try {
+                        final List<Contentlet> existingRelatedContent = getRelatedContent(contentlet, rel,
+                                checkParent, APILocator.systemUser(), false);
+                        hasExistingRelatedContent = existingRelatedContent != null && !existingRelatedContent.isEmpty();
+                        if (hasExistingRelatedContent) {
+                            Logger.debug(this, String.format("Required %s relationship [%s] not present in contentRelationships but found existing related content for contentlet [%s]",
+                                    (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));
+                        }
+                    } catch (final DotDataException | DotSecurityException e) {
+                        Logger.error(this, String.format("Could not check existing related content for relationship [%s] and contentlet [%s]",
+                                rel.getRelationTypeValue(), contentletId), e);
+                    }
+                }
+
+                if (!foundInRelationships && !hasExistingRelatedContent) {
                     hasError = true;
                     Logger.error(this, String.format("Required %s relationship [%s] is not present for contentlet [%s]", 
                             (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));

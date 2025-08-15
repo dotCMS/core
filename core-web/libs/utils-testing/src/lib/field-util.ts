@@ -8,10 +8,10 @@ import {
 } from '@dotcms/dotcms-models';
 
 export const EMPTY_FIELD: DotCMSContentTypeField = {
-    contentTypeId: null,
-    dataType: null,
-    fieldType: null,
-    fieldTypeLabel: null,
+    contentTypeId: '',
+    dataType: '',
+    fieldType: '',
+    fieldTypeLabel: '',
     fieldVariables: [],
     fixed: null,
     iDate: null,
