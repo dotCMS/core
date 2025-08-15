@@ -151,7 +151,7 @@ export class DotAnalyticsDashboardChartComponent {
                           x: {
                               ticks: {
                                   maxTicksLimit: isMobile ? 6 : 10,
-                                  autoSkip: isMobile ? true : false,
+                                  autoSkip: isMobile,
                                   maxRotation: 45,
                                   minRotation: 0
                               }
