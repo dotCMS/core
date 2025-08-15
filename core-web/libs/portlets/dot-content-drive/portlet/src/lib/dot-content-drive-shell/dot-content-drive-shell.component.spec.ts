@@ -22,7 +22,6 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
     let contentSearchService: jest.Mocked<DotContentSearchService>;
-    // let activatedRoute: SpyObject<ActivatedRoute>;
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
@@ -87,7 +86,6 @@ describe('DotContentDriveShellComponent', () => {
             ]
         });
         contentSearchService = spectator.inject(DotContentSearchService);
-        // activatedRoute = spectator.inject(ActivatedRoute);
         store = spectator.inject(DotContentDriveStore, true);
         router = spectator.inject(Router);
         location = spectator.inject(Location);

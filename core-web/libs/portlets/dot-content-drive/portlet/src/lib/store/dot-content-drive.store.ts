@@ -74,6 +74,16 @@ export const DotContentDriveStore = signalStore(
 
                 if (filtersValue) {
                     Object.entries(filtersValue).forEach(([key, value]) => {
+                        if (key === 'title') {
+                            // This is a indexed field, so we need to search in the title and the title_dotraw
+                            modifiedQuery = modifiedQuery
+                                .field('title')
+                                .equals(`${value}*`)
+                                .or()
+                                .field('title_dotraw')
+                                .equals(`${value}*`);
+                            return;
+                        }
                         // Handle multiselectors
                         if (Array.isArray(value)) {
                             // Chain with OR
@@ -84,9 +94,9 @@ export const DotContentDriveStore = signalStore(
 
                             // Add the query to the modified query
                             modifiedQuery = modifiedQuery.raw(orQuery);
-                        } else {
-                            modifiedQuery = modifiedQuery.field(key).equals(`${value}*`);
+                            return;
                         }
+                        modifiedQuery = modifiedQuery.field(key).equals(value);
                     });
                 }
 
@@ -96,18 +106,13 @@ export const DotContentDriveStore = signalStore(
     }),
     withMethods((store) => {
         return {
-            initContentDrive({
-                currentSite,
-                path,
-                filters,
-                isTreeExpanded: treeExpanded
-            }: DotContentDriveInit) {
+            initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
                     currentSite: currentSite ?? SYSTEM_HOST,
                     path,
                     filters,
                     status: DotContentDriveStatus.LOADING,
-                    isTreeExpanded: treeExpanded
+                    isTreeExpanded
                 });
             },
             setItems(items: DotContentDriveItem[], totalItems: number) {
