@@ -18,7 +18,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DEFAULT_PAGINATION } from '../shared/constants';
+import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
 import { mockItems, mockRoute, mockSearchResponse, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -103,6 +103,14 @@ describe('DotContentDriveShellComponent', () => {
     describe('Content Loading Effect', () => {
         beforeEach(() => {
             jest.restoreAllMocks();
+        });
+
+        it('should not fetch content when store has a SYSTEM_HOST site', () => {
+            store.currentSite.mockReturnValue(SYSTEM_HOST);
+            spectator.detectChanges();
+
+            expect(contentSearchService.get).not.toHaveBeenCalled();
+            expect(store.setItems).not.toHaveBeenCalled();
         });
 
         it('should fetch content when store has a non-SYSTEM_HOST site', () => {

@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, inject } from '@angular/core';
+import { computed, effect, EffectRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
@@ -18,6 +18,7 @@ import {
     BASE_QUERY,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
+    DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     SYSTEM_HOST
 } from '../shared/constants';
@@ -26,7 +27,6 @@ import {
     DotContentDriveInit,
     DotContentDrivePagination,
     DotContentDriveSort,
-    DotContentDriveSortOrder,
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
@@ -40,10 +40,7 @@ const initialState: DotContentDriveState = {
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
-    sort: {
-        field: 'modDate',
-        order: DotContentDriveSortOrder.ASC
-    },
+    sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED
 };
 
@@ -92,9 +89,7 @@ export const DotContentDriveStore = signalStore(
                         // Handle raw search for title
                         if (key === 'title') {
                             // This is a indexed field, so we need to search for the title_dotraw
-                            modifiedQuery = modifiedQuery
-                                .field('title_dotraw')
-                                .equals(`*${value}*`);
+                            modifiedQuery = modifiedQuery.raw(`+title_dotraw:*${value}*^15`);
                             return;
                         }
 
@@ -148,22 +143,28 @@ export const DotContentDriveStore = signalStore(
     withHooks((store) => {
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
+        let initEffect: EffectRef;
 
         return {
             onInit() {
-                const queryParams = route.snapshot.queryParams;
-                const currentSite = globalStore.siteDetails();
-                const path = queryParams['path'] || DEFAULT_PATH;
-                const filters = decodeFilters(queryParams['filters'] || '');
-                const queryTreeExpanded =
-                    queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
+                initEffect = effect(() => {
+                    const queryParams = route.snapshot.queryParams;
+                    const currentSite = globalStore.siteDetails();
+                    const path = queryParams['path'] || DEFAULT_PATH;
+                    const filters = decodeFilters(queryParams['filters'] || '');
+                    const queryTreeExpanded =
+                        queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 
-                store.initContentDrive({
-                    currentSite,
-                    path,
-                    filters,
-                    isTreeExpanded: queryTreeExpanded == 'true'
+                    store.initContentDrive({
+                        currentSite,
+                        path,
+                        filters,
+                        isTreeExpanded: queryTreeExpanded == 'true'
+                    });
                 });
+            },
+            onDestroy() {
+                initEffect?.destroy();
             }
         };
     })

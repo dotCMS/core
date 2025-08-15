@@ -57,6 +57,11 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     offset: 0
 };
 
+export const DEFAULT_SORT = {
+    field: 'modDate',
+    order: DotContentDriveSortOrder.DESC
+};
+
 // Sort order from PrimeNG to dotCMS
 export const SORT_ORDER = {
     1: DotContentDriveSortOrder.ASC,

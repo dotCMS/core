@@ -10,7 +10,13 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
-import { DEFAULT_PATH, DEFAULT_TREE_EXPANDED, SYSTEM_HOST } from '../shared/constants';
+import {
+    BASE_QUERY,
+    DEFAULT_PATH,
+    DEFAULT_SORT,
+    DEFAULT_TREE_EXPANDED,
+    SYSTEM_HOST
+} from '../shared/constants';
 import { mockItems, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
@@ -45,6 +51,7 @@ describe('DotContentDriveStore', () => {
             expect(store.items()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
+            expect(store.sort()).toEqual(DEFAULT_SORT);
         });
     });
 
@@ -74,7 +81,7 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .raw(BASE_QUERY)
                     .field('parentPath')
                     .equals(testPath)
                     .field('conhost')
@@ -97,7 +104,7 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .raw(BASE_QUERY)
                     .field('parentPath')
                     .equals(DEFAULT_PATH)
                     .field('conhost')
@@ -123,7 +130,7 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .raw(BASE_QUERY)
                     .field('parentPath')
                     .equals(DEFAULT_PATH)
                     .field('conhost')
@@ -152,7 +159,7 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .raw(BASE_QUERY)
                     .field('parentPath')
                     .equals(DEFAULT_PATH)
                     .field('conhost')

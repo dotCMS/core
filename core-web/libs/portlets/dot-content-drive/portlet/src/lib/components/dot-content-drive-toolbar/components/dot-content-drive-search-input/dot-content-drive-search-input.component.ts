@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -19,10 +19,10 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 })
 export class DotContentDriveSearchInputComponent {
     readonly #store = inject(DotContentDriveStore);
-
+    readonly #destroyRef = inject(DestroyRef);
     readonly searchControl = new FormControl('');
 
-    constructor() {
+    ngOnInit() {
         const searchValue = this.#store.getFilterValue('title');
 
         if (searchValue) {
@@ -30,11 +30,11 @@ export class DotContentDriveSearchInputComponent {
         }
 
         this.searchControl.valueChanges
-            .pipe(takeUntilDestroyed(), debounceTime(500), distinctUntilChanged())
+            .pipe(takeUntilDestroyed(this.#destroyRef), debounceTime(500), distinctUntilChanged())
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
                 if (searchValue) {
-                    this.#store.setFilters({ title: searchValue });
+                    this.#store.patchFilters({ title: searchValue });
                 } else {
                     this.#store.removeFilter('title');
                 }
