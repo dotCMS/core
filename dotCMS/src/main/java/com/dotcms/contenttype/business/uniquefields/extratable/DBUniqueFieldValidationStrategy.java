@@ -21,6 +21,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang3.BooleanUtils;
 import org.postgresql.util.PGobject;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -324,7 +325,14 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 uniqueFieldCriteria.contentType().variable());
 
         Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
-        throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
+        
+        throw UniqueFieldValueDuplicatedException.builder(
+                duplicatedValueMessage,
+                uniqueFieldCriteria.field().variable(), 
+                uniqueFieldCriteria.value(), 
+                uniqueFieldCriteria.contentType().variable())
+                .fieldType(uniqueFieldCriteria.field().dataType().toString())
+                .build();
     }
 
     @WrapInTransaction
@@ -344,7 +352,14 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                         "'%s': %s", field.variable(), field.contentTypeId(), ExceptionUtil.getErrorMessage(e));
                 Logger.error(this, errorMsg, e);
             }
-            throw new UniqueFieldValueDuplicatedException(errorMsg);
+            throw UniqueFieldValueDuplicatedException.builder(
+                    errorMsg,
+                    field.variable(), 
+                    "N/A",
+                    field.contentTypeId())
+                    .fieldType(field.dataType().toString())
+                    .addContext("uniquePerSite", BooleanUtils.toStringYesNo(uniquePerSite))
+                    .build();
         }
     }
 

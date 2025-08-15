@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business.uniquefields;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import  com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -84,7 +85,9 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                                     "unique content Inode '%s' was not found. ES Index might need to be reindexed.",
                             uniqueField.variable(), contentletSearch.getInode());
                     Logger.warn(this, errorMsg);
-                    throw new DotContentletValidationException(errorMsg);
+                    throw DotContentletValidationException.builder(errorMsg)
+                            .addUniqueField(new LegacyFieldTransformer(uniqueField).asOldField(),
+                                    null != fieldValue ? fieldValue.toString() : "N/A").build();
                 }
 
                 final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
@@ -110,16 +113,37 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                             final String duplicatedValueMessage = String.format("The value %s for the field %s in the Content type %s is duplicated",
                                     fieldValue, uniqueField.variable(), contentType.variable());
 
-                            throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage,
-                                    contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()));
+                            throw UniqueFieldValueDuplicatedException.builder(
+                                    duplicatedValueMessage,
+                                    uniqueField.variable(), 
+                                    fieldValue, 
+                                    contentType.variable())
+                                    .fieldType(uniqueField.dataType().toString())
+                                    .contentletIds(contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()))
+                                    .addContext("site", contentlet.getHost())
+                                    .addContext("language", String.valueOf(contentlet.getLanguageId()))
+                                    .addContext("variant", contentlet.getVariantId())
+                                    .addContext("validationType", "elasticsearch")
+                                    .build();
                         }
                     }
                 } else {
                     final String duplicatedValueMessage = String.format("The value %s for the field %s in the Content type %s is duplicated",
                             fieldValue, uniqueField.variable(), contentType.variable());
 
-                    throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage,
-                            contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()));
+                    throw UniqueFieldValueDuplicatedException.builder(
+                            duplicatedValueMessage,
+                            uniqueField.variable(), 
+                            fieldValue, 
+                            contentType.variable())
+                            .fieldType(uniqueField.dataType().toString())
+                            .contentletIds(contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()))
+                            .addContext("site", contentlet.getHost())
+                            .addContext("language", String.valueOf(contentlet.getLanguageId()))
+                            .addContext("variant", contentlet.getVariantId())
+                            .addContext("validationType", "elasticsearch")
+                            .addContext("contentletType", "new")
+                            .build();
                 }
             }
         }
@@ -168,6 +192,7 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                     "Unique field [" + uniqueField.variable() + "] with value '" +
                             fieldValue + "' could not be validated: " + e.getMessage();
             Logger.warn(this, errorMsg, e);
+            //Here too
             throw new DotContentletValidationException(errorMsg, e);
         }
         return contentlets;
@@ -175,6 +200,6 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
     private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
         return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
-                .map(value -> Boolean.valueOf(value)).orElse(false);
+                .map(Boolean::valueOf).orElse(false);
     }
 }

@@ -8267,8 +8267,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw ve;
         }
 
-        if (Try.of(() -> !contentlet.getBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION))
-                .getOrElse(true)) {
+        if (Boolean.TRUE.equals(Try.of(() -> !contentlet.getBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION))
+                .getOrElse(true))) {
             validateRelationships(contentlet, contentRelationships);
         }
     }

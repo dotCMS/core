@@ -33,7 +33,6 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
 
     private final String field;
     private final String value;
-    private final String fieldName;
     private final String fieldType;
     private final ErrorType errorType;
     private final String expectedFormat;
@@ -43,7 +42,6 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
         super(message);
         this.field = field;
         this.value = value == null ? "" : value.toString();
-        this.fieldName = null;
         this.fieldType = null;
         this.errorType = ErrorType.INVALID_BINARY_DATA;
         this.expectedFormat = null;
@@ -53,13 +51,12 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
     /**
      * Enhanced constructor for Builder pattern
      */
-    private DotBinaryFieldException(String message, String field, Object value, String fieldName, 
+    private DotBinaryFieldException(String message, String field, Object value, 
                                    String fieldType, ErrorType errorType, String expectedFormat,
                                    Map<String, String> additionalContext, Exception cause) {
         super(message, cause);
         this.field = field;
         this.value = value == null ? "" : value.toString();
-        this.fieldName = fieldName;
         this.fieldType = fieldType;
         this.errorType = errorType;
         this.expectedFormat = expectedFormat;
@@ -91,9 +88,6 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
     @Override
     public Optional<Map<String, ?>> getContext() {
         Map<String, String> context = new HashMap<>(additionalContext);
-        if (fieldName != null) {
-            context.put("fieldName", fieldName);
-        }
         if (fieldType != null) {
             context.put("fieldType", fieldType);
         }
@@ -102,9 +96,6 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
         }
         if (expectedFormat != null) {
             context.put("expectedFormat", expectedFormat);
-        }
-        if (field != null) {
-            context.put("velocityVarName", field);
         }
         return context.isEmpty() ? Optional.empty() : Optional.of(context);
     }
@@ -116,7 +107,6 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
         private final String field;
         private final Object value;
         private final ErrorType errorType;
-        private String fieldName;
         private String fieldType;
         private String expectedFormat;
         private final Map<String, String> additionalContext = new HashMap<>();
@@ -130,13 +120,6 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
             this.messageTemplate = messageTemplate;
         }
 
-        /**
-         * Set the display name of the field
-         */
-        public Builder fieldName(String fieldName) {
-            this.fieldName = fieldName;
-            return this;
-        }
 
         /**
          * Set the type of the field (e.g., "binary", "file", etc.)
@@ -181,7 +164,7 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
                 message = String.format(messageTemplate, 
                     cause != null ? cause.getMessage() : "Unknown error");
             }
-            return new DotBinaryFieldException(message, field, value, fieldName, fieldType, 
+            return new DotBinaryFieldException(message, field, value, fieldType, 
                                              errorType, expectedFormat, additionalContext, cause);
         }
     }
