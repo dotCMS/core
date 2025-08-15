@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.BooleanUtils;
 
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.SPACE;
@@ -381,9 +382,9 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	 */
 	public static class Builder<T extends DotContentletValidationException> {
 		protected final T exception;
-		private Field firstErrorField = null;
-		private String firstErrorValue = null;
-		private String firstErrorCode = null;
+        private String firstErrorCode = ImportLineValidationCodes.UNKNOWN_ERROR.name();
+        private Field firstErrorField = null;
+        private String firstErrorValue = null;
 		private String firstErrorPattern = null;
 
 		public Builder(T exception) {
@@ -495,9 +496,10 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 					@Override
 					public Optional<Map<String, ?>> getContext() {
 						final Map<String, String> ctx = new HashMap<>();
-						ctx.put("fieldName", firstErrorField.getFieldName());
-						ctx.put("velocityVarName", firstErrorField.getVelocityVarName());
 						ctx.put("fieldType", firstErrorField.getFieldType());
+                        ctx.put("indexed", BooleanUtils.toStringYesNo(firstErrorField.isIndexed()));
+                        ctx.put("required", BooleanUtils.toStringYesNo(firstErrorField.isRequired()));
+                        ctx.put("unique", BooleanUtils.toStringYesNo(firstErrorField.isUnique()));
 						if (UtilMethods.isSet(firstErrorPattern)) {
 							ctx.put("expectedPattern", firstErrorPattern);
 						}

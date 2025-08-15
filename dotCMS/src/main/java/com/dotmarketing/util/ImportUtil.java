@@ -4532,7 +4532,6 @@ public class ImportUtil {
                     valueObj = parseExcelDate(value);
                 } catch (ParseException e) {
                     throw DotDateFieldException.conversionErrorBuilder(field.getVelocityVarName(), value)
-                            .fieldName(field.getFieldName())
                             .fieldType(field.getFieldType())
                             .acceptedFormats(IMP_DATE_FORMATS)
                             .addContext("errorMessage", e.getMessage())
