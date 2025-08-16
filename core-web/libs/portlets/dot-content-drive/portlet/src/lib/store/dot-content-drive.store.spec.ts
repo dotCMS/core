@@ -1,6 +1,5 @@
 import { describe } from '@jest/globals';
-import { mockProvider } from '@ngneat/spectator';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -313,8 +312,10 @@ describe('DotContentDriveStore - onInit', () => {
         store = spectator.service;
     });
 
-    it('should use default path if not provided in query params', () => {
-        expect(store.path()).toBe(DEFAULT_PATH);
+    it('should initialize with provided values', () => {
+        spectator.flushEffects();
+
+        expect(store.path()).toBe('/initial/test/path');
         expect(store.filters()).toEqual({
             contentType: ['InitialTestContentType']
         });
