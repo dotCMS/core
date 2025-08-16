@@ -2,6 +2,10 @@
  * Centralized utilities for analytics dashboard
  */
 
+import { isAfter, isDate } from 'date-fns';
+
+import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+
 import {
     DEFAULT_TIME_PERIOD,
     TIME_PERIOD_OPTIONS,
@@ -25,12 +29,12 @@ export const isValidCustomDateRange = (fromDate: string, toDate: string): boolea
     const toDateObj = new Date(toDate);
 
     // Check if dates are valid
-    if (isNaN(fromDateObj.getTime()) || isNaN(toDateObj.getTime())) {
+    if (!isDate(fromDateObj) || !isDate(toDateObj)) {
         return false;
     }
 
     // Check if from date is before to date
-    if (fromDateObj >= toDateObj) {
+    if (isAfter(fromDateObj, toDateObj)) {
         return false;
     }
 
@@ -61,21 +65,8 @@ export const toUrlFriendly = (internalValue: string): string => {
 /**
  * Convert URL-friendly value to internal time range value
  */
-export const fromUrlFriendly = (urlValue: string): string => {
-    return TIME_RANGE_URL_MAPPING[urlValue as keyof typeof TIME_RANGE_URL_MAPPING] || urlValue;
-};
-
-// ============================================================================
-// VALIDATION UTILITIES
-// ============================================================================
-
-/**
- * Check if a value is a valid date string or Date object
- */
-export const isValidDate = (date: string | Date): boolean => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-
-    return dateObj instanceof Date && !isNaN(dateObj.getTime());
+export const fromUrlFriendly = (urlValue: string): TimeRange | null => {
+    return TIME_RANGE_URL_MAPPING[urlValue as keyof typeof TIME_RANGE_URL_MAPPING] || null;
 };
 
 /**
@@ -107,7 +98,7 @@ export const parseDateFromUrl = (dateString: string): Date | null => {
 
     const date = new Date(dateString);
 
-    return isValidDate(date) ? date : null;
+    return isDate(date) ? date : null;
 };
 
 // ============================================================================

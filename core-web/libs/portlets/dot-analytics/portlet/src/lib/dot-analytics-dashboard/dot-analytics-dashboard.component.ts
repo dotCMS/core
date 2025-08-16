@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -28,6 +28,8 @@ import {
     isValidCustomDateRange,
     isValidTimeRange
 } from './utils/dot-analytics.utils';
+import { getProperQueryParamsFromUrl } from './utils/state-from-url';
+
 
 /**
  * Main analytics dashboard component for DotCMS.
@@ -55,10 +57,12 @@ import {
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard.component.html',
-    styleUrl: './dot-analytics-dashboard.component.scss'
+    styleUrl: './dot-analytics-dashboard.component.scss',
+    standalone: true
 })
 export default class DotAnalyticsDashboardComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
     private readonly store = inject(DotAnalyticsDashboardStore);
     private readonly destroyRef = inject(DestroyRef);
 
@@ -104,6 +108,12 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
         }
     ]);
 
+    constructor() {
+        effect(() => {
+            console.log(this.store.timeRange());
+        });
+    }
+
     /**
      * Refresh dashboard data
      */
@@ -114,35 +124,24 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
         if (currentSiteId && timeRange) {
             this.store.loadAllDashboardData(timeRange, currentSiteId);
         }
+
+
     }
 
     ngOnInit(): void {
-        // Listen to query param changes and sync with store
-        this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-            const urlTimeRange = params['time_range'];
-            const fromDate = params['from'];
-            const toDate = params['to'];
 
-            if (urlTimeRange) {
-                // Convert URL-friendly value to internal value
-                const internalTimeRange = fromUrlFriendly(urlTimeRange);
+        const queryParams = getProperQueryParamsFromUrl(this.route.snapshot.queryParamMap);
 
-                // Handle custom date range
-                if (internalTimeRange === CUSTOM_TIME_RANGE) {
-                    // Only set if we have valid from and to dates
-                    if (fromDate && toDate && isValidCustomDateRange(fromDate, toDate)) {
-                        const customDateRange: DateRange = [fromDate, toDate];
-                        this.store.setTimeRange(customDateRange);
-                    }
-                }
-                // Handle predefined time range (excluding CUSTOM_TIME_RANGE)
-                else if (
-                    internalTimeRange !== CUSTOM_TIME_RANGE &&
-                    isValidTimeRange(internalTimeRange)
-                ) {
-                    this.store.setTimeRange(internalTimeRange as TimeRangeInput);
-                }
-            }
-        });
+        if (queryParams) {
+            this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams,
+                queryParamsHandling: 'replace',
+                replaceUrl: true
+            });
+        }
+
+        this.store.init(this.route.snapshot.queryParamMap);
+
     }
 }

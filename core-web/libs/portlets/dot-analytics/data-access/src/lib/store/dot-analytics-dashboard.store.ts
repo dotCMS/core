@@ -5,6 +5,7 @@ import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { effect, inject } from '@angular/core';
+import { ParamMap } from '@angular/router';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -23,6 +24,9 @@ import {
     UniqueVisitorsEntity
 } from '../../index';
 import { DotAnalyticsService } from '../services/dot-analytics.service';
+import { TimeRangeOptions } from '../types';
+import { getTimeRangeFromUrl } from '../utils/data/state-from-url';
+
 
 /**
  * Main dashboard store state
@@ -43,7 +47,7 @@ export interface DotAnalyticsDashboardState {
  * Initial store state
  */
 const initialState: DotAnalyticsDashboardState = {
-    timeRange: 'from 7 days ago to now',
+    timeRange: TimeRangeOptions.LAST_7_DAYS,
     totalPageViews: { status: ComponentStatus.INIT, data: null, error: null },
     uniqueVisitors: { status: ComponentStatus.INIT, data: null, error: null },
     topPagePerformance: { status: ComponentStatus.INIT, data: null, error: null },
@@ -359,6 +363,10 @@ export const DotAnalyticsDashboardStore = signalStore(
             store.loadPageViewTimeLine({ timeRange, currentSiteId });
             store.loadPageViewDeviceBrowsers({ timeRange, currentSiteId });
             store.loadTopPagesTable({ timeRange, currentSiteId });
+        },
+        init: (queryParamMap: ParamMap) => {
+            const timeRange = getTimeRangeFromUrl(queryParamMap);
+            patchState(store, { timeRange });
         }
     })),
 
