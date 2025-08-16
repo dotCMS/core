@@ -13,7 +13,9 @@ describe('DotContentDriveToolbarComponent', () => {
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: jest.fn().mockReturnValue(true),
-                setIsTreeExpanded: jest.fn()
+                setIsTreeExpanded: jest.fn(),
+                getFilterValue: jest.fn(),
+                setFilters: jest.fn()
             })
         ],
         detectChanges: false
