@@ -3,7 +3,8 @@
 set -e
 
 umask 007
-
+export JAVA_HOME=/usr/lib/jvm/java
+export PATH=$PATH:/usr/lib/jvm/java/bin
 source /srv/00-config-defaults.sh
 source /srv/20-copy-overriden-files.sh
 source /srv/40-custom-starter-zip.sh

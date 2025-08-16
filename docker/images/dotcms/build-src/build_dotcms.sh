@@ -34,7 +34,8 @@ build_by_commit() {
     echo "Checking out commit/tag/branch: $1"
     git checkout $1
 
-    cd dotCMS && ./gradlew createDistPrep
+    export GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx4096m  -XX:+HeapDumpOnOutOfMemoryError"
+    cd dotCMS && ./gradlew --no-daemon createDistPrep
     find ../dist/  -name "*.sh" -exec chmod 500 {} \;
     mv ../dist/* "${build_target_dir}"
 }

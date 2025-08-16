@@ -46,6 +46,10 @@ images before building in order to purge your image cache and get a clean build.
 docker build --pull --no-cache --build-arg BUILD_FROM=COMMIT --build-arg BUILD_ID=origin/master -t dotcms-test .
 
 docker run -it -p 8080:8080  --rm dotcms-test
+
+docker buildx build --pull --platform linux/amd64,linux/arm64 --no-cache --progress=plain   --build-arg BUILD_FROM=COMMIT --build-arg BUILD_ID=origin/5.1.6.k -t dotcms-test .
+
+
 ```
 
 
@@ -58,7 +62,7 @@ docker run -it -p 8080:8080  --rm dotcms-test
 
 ### TAG Example 
 ```
-docker build --pull --no-cache --build-arg BUILD_FROM=TAG --build-arg BUILD_ID=4.2.3-beta -t dotcms-test .
+docker build --pull --no-cache --build-arg BUILD_FROM=TAG --build-arg BUILD_ID=origin/ -t dotcms-test .
 
 docker run -it -p 8080:8080  --rm dotcms-test
 ```

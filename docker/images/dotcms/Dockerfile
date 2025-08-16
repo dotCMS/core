@@ -2,7 +2,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:5.2.8.5 as build-cms
+FROM dotcms/dotcms-seed:5.1.6ks as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -21,12 +21,13 @@ WORKDIR /srv
 # Set gradle options
 ENV GRADLE_USER_HOME=/build/src/core/dotCMS/.gradle
 ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
-
+ENV JAVA_HOME="/usr/lib/jvm/java"
 
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
 
-RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
+RUN echo "building: ${BUILD_FROM} ${BUILD_ID}"
+RUN chmod a+x /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
 
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
@@ -40,21 +41,13 @@ RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:8.0.352-amzn as container-base
+FROM dotcms/fedora-java-base:8-shenandoah as container-base
 
 WORKDIR /srv
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Installing basic packages 
-RUN apt update && \
-    apt upgrade -y
 
-# Cleanup
-RUN apt purge --allow-remove-essential -y  && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
 
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
@@ -104,8 +97,8 @@ RUN find /srv -name "*log4j-core-*.jar" -exec zip -q -d {} org/apache/logging/lo
 
 # Switching to non-root user to install SDKMAN! 
 USER $USER_UID:$USER_GID
-ENV JAVA_HOME="/java"
-ENV PATH=$PATH:/java/bin
+ENV JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk/jre/"
+ENV PATH=$PATH:/usr/lib/jvm/java-1.8.0-openjdk/jre/
 
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
