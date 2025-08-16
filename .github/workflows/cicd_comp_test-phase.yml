@@ -68,8 +68,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
         
       - name: Parse test configuration
         id: parse-config
