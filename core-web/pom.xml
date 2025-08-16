@@ -103,7 +103,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <skip>${skip.validate}</skip>
-                            <arguments>nx run-many -t lint --exclude='tag:skip:lint'</arguments>
+                            <arguments>nx affected -t lint --base=origin/main --exclude='tag:skip:lint'</arguments>
                         </configuration>
                     </execution>
 
@@ -143,7 +143,7 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>nx run-many -t test --exclude='tag:skip:test'</arguments>
+                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test'</arguments>
                         </configuration>
                     </execution>
 

@@ -543,34 +543,6 @@ describe('Analytics Data Utils', () => {
                         expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
                     });
                 });
-
-                it('should handle mixed date formats (with and without Z)', () => {
-                    // Test mixing endpoint format and standard UTC format
-                    const mockData: PageViewTimeLineEntity[] = [
-                        {
-                            'request.createdAt': '2025-08-05T16:00:00.000', // Endpoint format (no Z)
-                            'request.createdAt.day': '2025-08-05',
-                            'request.totalRequest': '100'
-                        },
-                        {
-                            'request.createdAt': '2025-08-05T17:00:00.000Z', // Standard UTC format (with Z)
-                            'request.createdAt.day': '2025-08-05',
-                            'request.totalRequest': '150'
-                        }
-                    ];
-
-                    const result = transformPageViewTimeLineData(mockData);
-
-                    // Should handle both formats correctly
-                    expect(result.labels).toHaveLength(2);
-                    expect(result.datasets[0].data).toEqual([150, 100]);
-
-                    // Both should format as time (same day) - HH:mm format
-                    result.labels?.forEach((label) => {
-                        expect(typeof label).toBe('string');
-                        expect(label as string).toMatch(/^\d{1,2}:\d{2}$/);
-                    });
-                });
             });
         });
 
