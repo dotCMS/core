@@ -184,9 +184,27 @@
 							"",
 							"pm.test(\"Check that the updated Tag is being returned correctly\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData.entity);",
-							"    const tag = jsonData.entity['non-global-tag-v2-changed'];    ",
-							"    pm.expect(tag).not.eql(undefined);",
+							"    pm.expect(jsonData.entity).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.label).to.eql('non-global-tag-v2-changed');",
+							"    pm.expect(jsonData.entity.siteId).to.eql('8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"    pm.expect(jsonData.entity.id).to.eql(pm.collectionVariables.get('tagForUpdateId'));",
+							"});",
+							"",
+							"// Verify via GET request",
+							"pm.test(\"Verify tag update via GET request\", function () {",
+							"    const tagId = pm.collectionVariables.get('tagForUpdateId');",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"        method: 'GET',",
+							"        header: {",
+							"            'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"        }",
+							"    }, function (err, response) {",
+							"        pm.expect(response.code).to.eql(200);",
+							"        const tag = response.json().entity;",
+							"        pm.expect(tag.label).to.eql('non-global-tag-v2-changed');",
+							"        pm.expect(tag.siteId).to.eql('8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"    });",
 							"});",
 							""
 						],
@@ -230,10 +248,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-v2-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
+					"raw": "{\n   \"name\":\"non-global-tag-v2-changed\",\n   \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/",
+					"raw": "{{serverURL}}/api/v2/tags/{{tagForUpdateId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -241,7 +259,7 @@
 						"api",
 						"v2",
 						"tags",
-						""
+						"{{tagForUpdateId}}"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -1177,14 +1195,28 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 204 No Content\", function () {",
+							"    pm.response.to.have.status(204);",
 							"});",
 							"",
-							"pm.test(\"There must be no generated errors\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    let errors = jsonData.errors.length;",
-							"    pm.expect(errors).to.be.eq(0);",
+							"pm.test(\"Response body should be empty\", function () {",
+							"    pm.expect(pm.response.text()).to.be.empty;",
+							"});",
+							"",
+							"// Verify deletion via GET request",
+							"pm.test(\"Verify tag deletion via GET request\", function () {",
+							"    const tagId = pm.collectionVariables.get('deleteTagCandidateId');",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"        method: 'GET',",
+							"        header: {",
+							"            'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"        }",
+							"    }, function (err, response) {",
+							"        pm.expect(response.code).to.eql(404);",
+							"        const jsonData = response.json();",
+							"        pm.expect(jsonData.errors[0].errorCode).to.eql('dotcms.api.error.not_found');",
+							"    });",
 							"});",
 							""
 						],
@@ -1268,8 +1300,9 @@
 							"",
 							"pm.test(\"The error message must be present\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    let errorMsg = jsonData.message;",
-							"    pm.expect(errorMsg).to.not.eql(undefined);",
+							"    pm.expect(jsonData.errors).to.be.an('array');",
+							"    pm.expect(jsonData.errors.length).to.be.greaterThan(0);",
+							"    pm.expect(jsonData.errors[0].message).to.not.be.undefined;",
 							"});",
 							""
 						],

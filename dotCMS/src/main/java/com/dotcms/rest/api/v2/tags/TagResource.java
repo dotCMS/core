@@ -22,6 +22,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.rest.ErrorEntity;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
@@ -399,55 +400,212 @@ public class TagResource {
     }
 
     /**
-     * Updates the information belonging to a specific Tag.
+     * Updates a tag's name and/or site assignment.
+     * You can identify the tag by its UUID or by its name.
+     * When using a tag name, you must specify which site's tag you want to update via the siteId query parameter.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagForm  The {@link UpdateTagForm} containing the Tag information to update.
+     * @param idOrName The UUID or name of the tag to update.
+     * @param siteId   Required when idOrName is a tag name (for identification).
+     * @param tagForm  The {@link UpdateTagForm} containing the updated tag data.
      *
-     * @return The {@link ResponseEntityTagMapView} containing the updated Tag information.
+     * @return The {@link ResponseEntityRestTagView} containing the updated tag.
      */
+    @Operation(
+            summary = "Update tag",
+            description = "Updates a tag's name and site assignment. You can identify the tag by its UUID or by its name. When using a tag name, you must specify which site's tag you want to update via the siteId query parameter."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tag updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityRestTagView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad Request - Invalid input data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "Tag not found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409",
+                    description = "Conflict - Tag name already exists on target site",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - User does not have access to Tags portlet",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal Server Error - Database or system error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
+    @Path("/{idOrName}")
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView updateTag(
+    public Response updateTag(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final UpdateTagForm tagForm) throws DotDataException {
+            @Parameter(description = "Tag UUID or tag name", required = true)
+            @PathParam("idOrName") final String idOrName,
+            @Parameter(description = "Site ID for name-based lookups. Required when idOrName is a tag name")
+            @QueryParam("siteId") final String siteId,
+            @RequestBody(description = "Updated tag data",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = UpdateTagForm.class)))
+            final UpdateTagForm tagForm) {
 
-        final InitDataObject initDataObject = getInitDataObject(request, response);
+        try {
+            final InitDataObject initDataObject = getInitDataObject(request, response);
+            final User user = initDataObject.getUser();
 
-        final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is updating Tag %s", user.getUserId(), tagForm));
+            Logger.debug(TagResource.class, () -> String.format(
+                    "User '%s' is updating tag '%s' with data %s",
+                    user.getUserId(), idOrName, tagForm));
 
-        if (UtilMethods.isNotSet(tagForm.tagId) || UtilMethods.isNotSet(tagForm.siteId)
-                || UtilMethods.isNotSet(tagForm.tagName)) {
+            // Validate form
+            final List<ErrorEntity> validationErrors = validateUpdateTag(tagForm, idOrName, siteId);
+            if (!validationErrors.isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>(validationErrors))
+                        .build();
+            }
 
+            // Find the tag to update
+            Tag existingTag = null;
+            if (isUUID(idOrName)) {
+                // Update by UUID
+                existingTag = Try.of(() -> tagAPI.getTagByTagId(idOrName)).getOrNull();
+            } else {
+                // Update by name - require siteId query parameter
+                if (!UtilMethods.isSet(siteId)) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ResponseEntityView<>(List.of(
+                                    new ErrorEntity("tag.validation.error",
+                                            "siteId query parameter is required when updating tag by name", "siteId")
+                            )))
+                            .build();
+                }
+                final String resolvedSiteId = helper.getValidateSite(siteId, user, request);
+                existingTag = Try.of(() -> tagAPI.getTagByNameAndHost(idOrName, resolvedSiteId)).getOrNull();
+            }
+
+            if (existingTag == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(new ResponseEntityView<>(List.of(
+                                new ErrorEntity("dotcms.api.error.not_found",
+                                        String.format("Tag with id %s was not found", idOrName), null)
+                        )))
+                        .build();
+            }
+
+            // Validate target site exists - no fallback for PUT operations
+            final String targetSiteId;
+            try {
+                final Host targetHost = APILocator.getHostAPI().find(tagForm.getSiteId(), user, false);
+                if (targetHost == null || UtilMethods.isNotSet(targetHost.getIdentifier())) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ResponseEntityView<>(List.of(
+                                    new ErrorEntity("tag.validation.error",
+                                            String.format("Site with ID '%s' does not exist", tagForm.getSiteId()),
+                                            "siteId")
+                            )))
+                            .build();
+                }
+                targetSiteId = targetHost.getIdentifier();
+            } catch (DotDataException | DotSecurityException e) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>(List.of(
+                                new ErrorEntity("tag.validation.error",
+                                        String.format("Invalid site ID '%s': %s", tagForm.getSiteId(), e.getMessage()),
+                                        "siteId")
+                        )))
+                        .build();
+            }
+
+            // Check for duplicate if name or site is changing
+            if (!existingTag.getTagName().equals(tagForm.getName()) ||
+                    !existingTag.getHostId().equals(targetSiteId)) {
+
+                final Tag duplicateCheck = Try.of(() ->
+                        tagAPI.getTagByNameAndHost(tagForm.getName(), targetSiteId)).getOrNull();
+
+                if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
+                    return Response.status(Response.Status.CONFLICT)
+                            .entity(new ResponseEntityView<>(null, List.of(
+                                    new ErrorEntity("tag.duplicate.conflict",
+                                            String.format("Tag '%s' already exists for site '%s'",
+                                                    tagForm.getName(), targetSiteId),
+                                            "name")
+                            )))
+                            .build();
+                }
+            }
+
+            // Update the tag
+            tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, targetSiteId);
+
+            // Get updated tag and convert to RestTag
+            final Tag updatedTag = tagAPI.getTagByTagId(existingTag.getTagId());
+            final RestTag restTag = TagsResourceHelper.toRestTag(updatedTag);
+
+            return Response.ok(new ResponseEntityRestTagView(restTag)).build();
+
+        } catch (DotDataException e) {
             Logger.error(TagResource.class,
-                    String.format("Data for Tag `%s` is invalid or incomplete", tagForm.tagId));
-            final String errorMessage = Try
-                    .of(() -> LanguageUtil.get(user.getLocale(), "tag.save.error.default", tagForm.tagId))
-                    .getOrElse(String.format("Data for Tag `%s` is invalid or incomplete",
-                            tagForm.tagId)); //fallback message
-            throw new BadRequestException(errorMessage);
+                    "Database error updating tag: " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("dotcms.api.error.db",
+                                    "There was an error updating the tag", null)
+                    )))
+                    .build();
+
+        } catch (Exception e) {
+            Logger.error(TagResource.class,
+                    "Unexpected error updating tag: " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("dotcms.api.error.internal",
+                                    "An unexpected error occurred", null)
+                    )))
+                    .build();
+        }
+    }
+
+    /**
+     * Validates the update tag form and parameters.
+     */
+    private List<ErrorEntity> validateUpdateTag(final UpdateTagForm form, final String idOrName, final String siteId) {
+        final List<ErrorEntity> errors = new ArrayList<>();
+
+        if (!UtilMethods.isSet(form.getName())) {
+            errors.add(new ErrorEntity("tag.validation.error",
+                    "Tag name cannot be empty", "name"));
+        } else {
+            if (form.getName().contains(",")) {
+                errors.add(new ErrorEntity("tag.validation.error",
+                        "Tag name cannot contain commas", "name"));
+            }
+            if (form.getName().trim().isEmpty()) {
+                errors.add(new ErrorEntity("tag.validation.error",
+                        "Tag name cannot be blank", "name"));
+            }
+            if (form.getName().length() > 255) {
+                errors.add(new ErrorEntity("tag.validation.error",
+                        "Tag name cannot exceed 255 characters", "name"));
+            }
         }
 
-        //We can assign tags to any user as long as we are admin.
-        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
-        if (null == tag) {
-
-            final String errorMessage = Try.of(() -> LanguageUtil
-                    .get(user.getLocale(), "tag.id.not.found", tagForm.tagId))
-                    .getOrElse(String.format("Tag with id %s wasn't found.",
-                            tagForm.tagId)); //fallback message
-            Logger.error(TagResource.class, errorMessage);
-            throw new DoesNotExistException(errorMessage);
+        if (!UtilMethods.isSet(form.getSiteId())) {
+            errors.add(new ErrorEntity("tag.validation.error",
+                    "Site ID is required", "siteId"));
         }
 
-        tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
-
-        return new ResponseEntityTagMapView(toRestTagMap(tagAPI.getTagByTagId(tagForm.tagId)));
+        return errors;
     }
 
     /**
@@ -584,39 +742,89 @@ public class TagResource {
 
 
     /**
-     * Deletes a Tag based on its ID.
+     * Deletes a single tag by its ID. This removes the tag and all its associations permanently.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagId    The ID of the Tag to delete.
+     * @param tagId    The UUID of the tag to delete.
      *
-     * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
+     * @return 204 No Content on successful deletion.
      */
+    @Operation(
+            summary = "Delete tag",
+            description = "Deletes a single tag by its ID. This removes the tag and all its associations permanently."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204",
+                    description = "Tag successfully deleted"),
+            @ApiResponse(responseCode = "404",
+                    description = "Tag not found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - User does not have access to Tags portlet",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal Server Error - Database or system error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @Path("/{tagId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityBooleanView delete(@Context final HttpServletRequest request,
-                                            @Context final HttpServletResponse response,
-                                            @PathParam("tagId") final String tagId) throws DotDataException {
+    public Response deleteTag(@Context final HttpServletRequest request,
+                             @Context final HttpServletResponse response,
+                             @Parameter(description = "Tag UUID to delete", required = true)
+                             @PathParam("tagId") final String tagId) {
 
-        final InitDataObject initDataObject = getInitDataObject(request, response);
-        final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is deleting tags by ID '%s'",user.getUserId(), tagId));
-        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
-        if (null == tag) {
+        try {
+            final InitDataObject initDataObject = getInitDataObject(request, response);
+            final User user = initDataObject.getUser();
+            
+            Logger.debug(TagResource.class, () -> String.format(
+                    "User '%s' is deleting tag by ID '%s'", user.getUserId(), tagId));
+            
+            final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
+            if (tag == null) {
+                Logger.warn(TagResource.class, String.format(
+                        "Tag with ID '%s' not found for deletion", tagId));
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(new ResponseEntityView<>(List.of(
+                                new ErrorEntity("dotcms.api.error.not_found",
+                                        String.format("Tag with id %s was not found", tagId), null)
+                        )))
+                        .build();
+            }
 
-            final String errorMessage = Try.of(() -> LanguageUtil
-                    .get(user.getLocale(), "tag.id.not.found", tagId))
-                    .getOrElse(String.format("Tag with id %s wasn't found.",
-                            tagId)); //fallback message
-            Logger.error(TagResource.class, errorMessage);
-            throw new DoesNotExistException(errorMessage);
+            tagAPI.deleteTag(tag);
+            Logger.debug(TagResource.class, () -> String.format(
+                    "Tag '%s' with ID '%s' deleted successfully", tag.getTagName(), tagId));
+            
+            return Response.noContent().build();
+            
+        } catch (DotDataException e) {
+            Logger.error(TagResource.class,
+                    "Database error deleting tag: " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("dotcms.api.error.db",
+                                    "There was an error deleting the tag", null)
+                    )))
+                    .build();
+                    
+        } catch (Exception e) {
+            Logger.error(TagResource.class,
+                    "Unexpected error deleting tag: " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("dotcms.api.error.internal",
+                                    "An unexpected error occurred", null)
+                    )))
+                    .build();
         }
-
-        tagAPI.deleteTag(tag);
-        return new ResponseEntityBooleanView(true);
     }
 
     /**
