@@ -81,14 +81,14 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
-        // Handle the multiselector (,)
-        if (value.includes(',')) {
-            acc[key] = value
-                .split(',')
-                .map((v) => v.trim())
-                .filter((v) => v !== '');
+        const decodeFunction = decodeByFilterKey[key];
+
+        if (decodeFunction) {
+            // Use decode function for known keys
+            acc[key] = decodeFunction(value);
         } else {
-            acc[key] = value;
+            // Use default functions for unknown keys
+            acc[key] = value.includes(',') ? multiSelector(value) : singleSelector(value);
         }
 
         return acc;

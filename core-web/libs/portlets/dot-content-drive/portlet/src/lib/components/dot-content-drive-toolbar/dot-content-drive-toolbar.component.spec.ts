@@ -1,8 +1,12 @@
 import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
+
+import { DotContentTypeService } from '@dotcms/data-access';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
+import { mockContentTypes } from '../../shared/mocks';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
@@ -13,7 +17,14 @@ describe('DotContentDriveToolbarComponent', () => {
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: jest.fn().mockReturnValue(true),
-                setIsTreeExpanded: jest.fn()
+                setIsTreeExpanded: jest.fn(),
+                getFilterValue: jest.fn().mockReturnValue(undefined),
+                patchFilters: jest.fn(),
+                removeFilter: jest.fn(),
+                filters: jest.fn().mockReturnValue({})
+            }),
+            mockProvider(DotContentTypeService, {
+                getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes))
             })
         ],
         detectChanges: false
@@ -49,5 +60,17 @@ describe('DotContentDriveToolbarComponent', () => {
         spectator.detectChanges();
         expect(spectator.query('.p-toolbar-group-start')).toBeTruthy();
         expect(spectator.query('.p-toolbar-group-end')).toBeTruthy();
+    });
+
+    it('should render the content type field', () => {
+        spectator.detectChanges();
+        const field = spectator.query('[data-testid="content-type-field"]');
+        expect(field).toBeTruthy();
+    });
+
+    it('should render the search input', () => {
+        spectator.detectChanges();
+        const input = spectator.query('[data-testid="search-input"]');
+        expect(input).toBeTruthy();
     });
 });

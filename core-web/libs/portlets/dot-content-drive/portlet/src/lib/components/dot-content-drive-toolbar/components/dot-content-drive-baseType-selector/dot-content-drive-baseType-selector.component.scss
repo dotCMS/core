@@ -6,4 +6,8 @@
     .p-multiselect-label {
         display: flex;
     }
+
+    .p-multiselect-item[data-p-highlight="true"] {
+        background-color: var(--color-palette-primary-100);
+    }
 }

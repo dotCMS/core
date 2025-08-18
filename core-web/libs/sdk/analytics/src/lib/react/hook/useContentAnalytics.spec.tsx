@@ -1,25 +1,22 @@
-import { jest } from '@jest/globals';
-import { renderHook } from '@testing-library/react-hooks';
-import { ReactNode } from 'react';
-
-import { UVE_MODE } from '@dotcms/types';
-import { getUVEState } from '@dotcms/uve';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { renderHook } from '@testing-library/react';
 
 import { useContentAnalytics } from './useContentAnalytics';
 
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
+import { isInsideUVE } from '../internal';
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+jest.mock('../internal', () => ({
+    isInsideUVE: jest.fn()
 }));
 
-const mockGetUVEState = jest.mocked(getUVEState);
+const mockIsInsideUVE = jest.mocked(isInsideUVE);
 
 const mockTrack = jest.fn();
 const mockPageView = jest.fn();
 
 interface WrapperProps {
-    children: ReactNode;
+    children: React.ReactNode;
 }
 
 const wrapper = ({ children }: WrapperProps) => (
@@ -47,7 +44,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('should track with timestamp when outside editor', () => {
-        mockGetUVEState.mockReturnValue(undefined);
+        mockIsInsideUVE.mockReturnValue(false);
 
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
@@ -62,7 +59,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('should handle undefined payload', () => {
-        mockGetUVEState.mockReturnValue(undefined);
+        mockIsInsideUVE.mockReturnValue(false);
 
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
@@ -76,15 +73,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('should not track when inside editor', () => {
-        mockGetUVEState.mockReturnValue({
-            mode: UVE_MODE.EDIT,
-            persona: null,
-            variantName: null,
-            experimentId: null,
-            publishDate: null,
-            languageId: null,
-            dotCMSHost: null
-        });
+        mockIsInsideUVE.mockReturnValue(true);
 
         const { result } = renderHook(() => useContentAnalytics(), { wrapper });
         result.current.track('test-event', { data: 'test' });
