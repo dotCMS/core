@@ -1,9 +1,9 @@
 <p-table
     [value]="$items()"
     [tableStyle]="{ width: '100%' }"
-    [paginator]="true"
-    [rows]="20"
-    [rowsPerPageOptions]="[20, 40, 60]"
+    [paginator]="showPagination()"
+    [rows]="MIN_ROWS_PER_PAGE"
+    [rowsPerPageOptions]="rowsPerPageOptions"
     [totalRecords]="$totalItems()"
     [lazy]="true"
     [scrollable]="true"
