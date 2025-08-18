@@ -29,7 +29,7 @@ import { parseUserAgent } from '../browser/userAgentParser';
  */
 export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
     if (Array.isArray(timeRange)) {
-        const [fromDate, toDate] = timeRange;
+        const [fromDate, toDate] = timeRange.map((date) => new Date(date));
 
         if (isSameDay(fromDate, toDate)) {
             return 'hour';
