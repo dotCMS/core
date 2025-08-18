@@ -1,12 +1,13 @@
 <p-table
     [value]="$items()"
     [tableStyle]="{ width: '100%' }"
-    [paginator]="showPagination()"
+    [paginator]="$showPagination()"
     [rows]="MIN_ROWS_PER_PAGE"
     [rowsPerPageOptions]="rowsPerPageOptions"
     [totalRecords]="$totalItems()"
     [lazy]="true"
     [scrollable]="true"
+    [styleClass]="$styleClass()"
     [(selection)]="selectedItems"
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
@@ -14,7 +15,6 @@
     dataKey="identifier"
     sortMode="single"
     selectionMode="multiple"
-    styleClass="dotTable"
     sortField="modDate"
     data-testId="table"
     scrollHeight="flex">
@@ -79,18 +79,16 @@
         }
     </ng-template>
     <ng-template pTemplate="emptymessage">
-        <tr>
+        <tr class="no-highlight">
             <td colspan="7" class="empty-state">
                 <div class="empty-state-content">
                     <div class="empty-state-icon">
-                        <i
-                            class="pi pi-folder-open"
-                            style="font-size: 4rem; color: var(--surface-400)"></i>
+                        <i class="pi pi-folder-open"></i>
                     </div>
                     <div class="empty-state-message">
                         <h3 class="empty-state-title">No content found</h3>
                         <p class="empty-state-description">
-                            This folder appears to be empty. Start by adding some content or check
+                            The folder appears to be empty. Start by adding some content or check
                             your search filters.
                         </p>
                     </div>

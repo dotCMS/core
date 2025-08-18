@@ -14,6 +14,14 @@
                 }
             }
         }
+
+        p-table {
+            .p-datatable.empty-table {
+                table {
+                    height: 100%;
+                }
+            }
+        }
     }
 }
 
@@ -46,28 +54,30 @@
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        background-color: var(--surface-50);
-        border: 2px solid var(--surface-200);
+
+        i {
+            color: $color-palette-surface-500;
+            font-size: 5.75rem;
+        }
     }
 
     .empty-state-message {
         display: flex;
         flex-direction: column;
-        gap: $spacing-2;
     }
 
     .empty-state-title {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: $font-size-lmd;
         font-weight: 600;
         text-align: center;
-        color: var(--text-color);
+        color: $color-palette-gray-800;
     }
 
     .empty-state-description {
         margin: 0;
-        font-size: 0.875rem;
-        color: var(--text-color-secondary);
+        color: $black;
+        font-size: $font-size-md;
         line-height: 1.5;
     }
 }
