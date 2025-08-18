@@ -1939,7 +1939,7 @@ CREATE OR REPLACE FUNCTION identifier_parent_path_check() RETURNS trigger AS '
       IF(NEW.parent_path=''/'') OR (NEW.parent_path=''/System folder'') THEN
         RETURN NEW;
      ELSE
-      select id into folderId from identifier where asset_type=''folder'' and host_inode = NEW.host_inode and parent_path||asset_name||''/'' = NEW.parent_path and id <> NEW.id;
+      select id into folderId from identifier where asset_type=''folder'' and host_inode = NEW.host_inode and lower(parent_path||asset_name||''/'') = lower(NEW.parent_path) and id <> NEW.id;
       IF FOUND THEN
         RETURN NEW;
       ELSE

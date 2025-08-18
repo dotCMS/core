@@ -52,7 +52,7 @@
                             <div class="dot-edit-content-form__layout-column" data-testId="column">
                                 @for (field of column.fields; track field) {
                                     <dot-edit-content-field
-                                        [contentType]="contentType.variable"
+                                        [contentType]="contentType"
                                         [contentlet]="contentlet"
                                         [field]="field"
                                         (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
