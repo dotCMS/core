@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-import { getUVEState } from '@dotcms/uve';
-
 import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { isInsideUVE } from '../internal';
 
 /**
  * Internal custom hook that handles analytics page view tracking.
@@ -19,7 +18,7 @@ export function useRouterTracker(analytics: DotCMSAnalytics | null) {
 
         function handleRouteChange() {
             const currentPath = window.location.pathname;
-            const uveState = getUVEState();
+            const uveState = isInsideUVE();
 
             if (currentPath !== lastPathRef.current && !uveState && analytics) {
                 lastPathRef.current = currentPath;

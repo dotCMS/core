@@ -203,8 +203,10 @@ public class ContentAnalyticsResource {
         final User user = initDataObject.getUser();
         checkNotNull(cubeJsQueryJson, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
         Logger.debug(this,  ()->"Querying content analytics data with the cube query json: " + cubeJsQueryJson);
+
         final ReportResponse reportResponse =
                 this.contentAnalyticsAPI.runRawReport(cubeJsQueryJson, user);
+
         return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
     }
 
