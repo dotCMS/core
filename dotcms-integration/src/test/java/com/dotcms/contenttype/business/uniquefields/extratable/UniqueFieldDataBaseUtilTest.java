@@ -1233,9 +1233,8 @@ public class UniqueFieldDataBaseUtilTest {
                 .unique(true)
                 .build();
         APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
-
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
         try {
-            final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
             dotDatabaseMetaData.dropTable(connection, "unique_fields");
             uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
@@ -1274,6 +1273,8 @@ public class UniqueFieldDataBaseUtilTest {
                     0, recordCountWithSameHash.size());
         } finally {
             dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+            uniqueFieldDataBaseUtil.addPrimaryKeyConstraintsBack();
         }
     }
 
