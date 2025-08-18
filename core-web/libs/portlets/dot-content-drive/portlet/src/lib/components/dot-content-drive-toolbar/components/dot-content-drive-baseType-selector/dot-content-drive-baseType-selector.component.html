@@ -1,30 +1,9 @@
 <p-multiSelect
     [(ngModel)]="$selectedBaseTypes"
-    [options]="$state.baseTypes()" 
+    [options]="$state.baseTypes()"
     optionLabel="label"
-    display="chip" 
+    display="chip"
     optionValue="name"
-    placeholder="Base Type" 
+    [placeholder]="'content-drive.base-type.placeholder' | dm"
     [showToggleAll]="true"
-    [filter]="false"
-    (onChange)="onChange()"
-    #baseTypeSelector
->
-
-<ng-template let-filter pTemplate="filter" >
-    <p-checkbox 
-        label="All" 
-        [binary]="true" 
-        [(ngModel)]="$selectedAll" 
-        [readonly]="$selectedBaseTypes().length === 0" 
-        (onChange)="toggleAll()"
-    />
-</ng-template>
-
-<!-- <ng-template pTemplate="headercheckboxicon">
-    <p-checkbox id="cb-all" label="All" />
-</ng-template> -->
-
-</p-multiSelect>
-
-<!-- selectedAll: {{ $selectedAll() }} -->
+    (onChange)="onChange()" />

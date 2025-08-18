@@ -1,6 +1,10 @@
 @use "variables" as *;
 
 ::ng-deep {
+    .p-toolbar {
+        padding: 0.5rem 1rem !important;
+    }
+
     .dot-content-drive-toolbar {
         height: 100%;
         background-color: $color-palette-gray-100;

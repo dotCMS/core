@@ -2,11 +2,13 @@ import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+
 import { DotContentTypeService } from '@dotcms/data-access';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
-import { mockContentTypes } from '../../shared/mocks';
+import { MOCK_BASE_TYPES, mockContentTypes } from '../../shared/mocks';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
@@ -24,8 +26,10 @@ describe('DotContentDriveToolbarComponent', () => {
                 filters: jest.fn().mockReturnValue({})
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes))
-            })
+                getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes)),
+                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
+            provideHttpClient()
         ],
         detectChanges: false
     });

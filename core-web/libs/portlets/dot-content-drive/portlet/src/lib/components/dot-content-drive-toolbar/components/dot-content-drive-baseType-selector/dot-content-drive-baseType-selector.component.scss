@@ -1,13 +1,28 @@
 :host ::ng-deep {
+    width: 15em;
+
     p-checkbox.p-element {
-        gap: .1em;
+        gap: 0.1em;
     }
 
-    .p-multiselect-label {
-        display: flex;
-    }
+    // .p-multiselect {
+    //     min-width: 14rem !important;
+    //     height: 2.5em !important;
+    // }
 
-    .p-multiselect-item[data-p-highlight="true"] {
-        background-color: var(--color-palette-primary-100);
-    }
+    // .p-multiselect-item[data-p-highlight="true"] {
+    //     background-color: var(--color-palette-primary-100);
+    // }
+
+    // .p-multiselect-token{
+    //     display: inline-flex !important;
+    //     margin-right: .25rem;
+    // }
+
+    // .p-multiselect-label {
+    //     display: block;
+    //     cursor: pointer;
+    //     overflow: hidden !important;
+    //     max-width: 10.70em;
+    // }
 }

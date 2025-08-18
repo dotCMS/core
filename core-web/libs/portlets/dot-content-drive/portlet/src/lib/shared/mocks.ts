@@ -1,4 +1,9 @@
-import { DotCMSContentType, DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotContentDriveItem,
+    SiteEntity,
+    StructureTypeView
+} from '@dotcms/dotcms-models';
 
 import { BASE_TYPES } from './models';
 
@@ -231,4 +236,11 @@ export const mockContentTypes: DotCMSContentType[] = [
         baseType: BASE_TYPES.content,
         system: true
     } as DotCMSContentType
+];
+
+export const MOCK_BASE_TYPES: StructureTypeView[] = [
+    { name: 'Content', label: 'Content', types: null },
+    { name: 'Widget', label: 'Widget', types: null },
+    { name: 'FORM', label: 'FORM', types: null },
+    { name: 'FileAsset', label: 'FileAsset', types: null }
 ];
