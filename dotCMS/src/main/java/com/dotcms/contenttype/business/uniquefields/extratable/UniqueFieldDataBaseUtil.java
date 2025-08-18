@@ -398,7 +398,7 @@ public class UniqueFieldDataBaseUtil {
         new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
                     "unique_key_val VARCHAR(64)," +
                     "supporting_values JSONB)").loadObjectResults();
-        new DotConnect().setSQL("CREATE INDEX temp_idx_unique_key_val ON unique_fields(unique_key_val);")
+        new DotConnect().setSQL("CREATE INDEX IF NOT EXISTS idx_unique_key_val ON unique_fields(unique_key_val)")
                 .loadObjectResults();
     }
 
