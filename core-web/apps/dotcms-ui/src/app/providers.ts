@@ -17,6 +17,7 @@ import {
     DotMessageService,
     DotRouterService,
     DotSessionStorageService,
+    DotSystemConfigService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     EmaAppConfigurationService,
@@ -88,7 +89,8 @@ const PROVIDERS: Provider[] = [
         provide: TitleStrategy,
         useClass: DotTitleStrategy
     },
-    GlobalStore
+    GlobalStore,
+    DotSystemConfigService
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

@@ -18,15 +18,16 @@ import { TooltipModule } from 'primeng/tooltip';
 import {
     DotAlertConfirmService,
     DotEventsService,
-    DotMessageService,
-    PaginatorService,
-    DotSessionStorageService,
-    DotRouterService,
     DotHttpErrorManagerService,
-    DotMessageDisplayService
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotSystemConfigService,
+    PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -103,6 +104,44 @@ describe('DotPersonaSelectorComponent', () => {
 
     const siteServiceMock = new SiteServiceMock();
 
+    const mockSystemConfig: DotSystemConfig = {
+        logos: {
+            loginScreen: '',
+            navBar: ''
+        },
+        colors: {
+            primary: '#54428e',
+            secondary: '#3a3847',
+            background: '#BB30E1'
+        },
+        releaseInfo: {
+            buildDate: 'June 24, 2019',
+            version: '5.0.0'
+        },
+        systemTimezone: {
+            id: 'America/Costa_Rica',
+            label: 'Costa Rica',
+            offset: 360
+        },
+        languages: [],
+        license: {
+            level: 100,
+            displayServerId: '19fc0e44',
+            levelName: 'COMMUNITY EDITION',
+            isCommunity: true
+        },
+        cluster: {
+            clusterId: 'test-cluster',
+            companyKeyDigest: 'test-digest'
+        }
+    };
+
+    class MockDotSystemConfigService {
+        getSystemConfig() {
+            return of(mockSystemConfig);
+        }
+    }
+
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [DotPersonaSelectorComponent, HostTestComponent],
@@ -136,6 +175,7 @@ describe('DotPersonaSelectorComponent', () => {
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 DotHttpErrorManagerService,
                 ConfirmationService,
                 DotAlertConfirmService,
