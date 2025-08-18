@@ -11,8 +11,6 @@
     (onClear)="onChange()"
     (onFilter)="onFilter($event)"
     [placeholder]="'Content-Type' | dm"
-    [selectAll]="$selectedContentTypes().length == 0"
-    (onSelectAllChange)="onSelectAll()"
     [showClear]="false">
     <ng-template pTemplate="empty">
         @if ($state.loading()) {
