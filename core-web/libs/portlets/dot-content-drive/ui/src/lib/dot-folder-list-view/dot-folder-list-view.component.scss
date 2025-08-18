@@ -36,7 +36,7 @@
 .empty-state {
     padding: $spacing-6 $spacing-4;
     text-align: center;
-    border: none !important;
+    border: none;
 
     .empty-state-content {
         display: flex;
@@ -51,8 +51,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 80px;
-        height: 80px;
+        width: 5rem;
+        height: 5rem;
         border-radius: 50%;
 
         i {
@@ -69,7 +69,7 @@
     .empty-state-title {
         margin: 0;
         font-size: $font-size-lmd;
-        font-weight: 600;
+        font-weight: $font-weight-medium-bold;
         text-align: center;
         color: $color-palette-gray-800;
     }
