@@ -9,12 +9,11 @@
 
 <p-card
     class="h-full chart-card"
-    [ngClass]="{
-        'chart-card--loading': isLoading,
-        'chart-card--empty': isEmpty,
-        'chart-card--error': isError,
-        'flex w-full': shouldUsePieLayout
-    }"
+    [class.chart-card--loading]="isLoading"
+    [class.chart-card--empty]="isEmpty"
+    [class.chart-card--error]="isError"
+    [class.flex]="shouldUsePieLayout"
+    [class.w-full]="shouldUsePieLayout"
     data-testid="analytics-chart">
     @if (title) {
         <ng-template pTemplate="header">
