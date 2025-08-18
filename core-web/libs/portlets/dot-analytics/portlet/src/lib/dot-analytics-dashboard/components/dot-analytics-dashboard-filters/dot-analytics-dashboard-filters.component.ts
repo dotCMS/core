@@ -1,3 +1,5 @@
+import { signalMethod } from '@ngrx/signals';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -62,6 +64,40 @@ export class DotAnalyticsDashboardFiltersComponent {
     /** Check if custom time range is selected */
     readonly $showCustomTimeRange = computed(() => this.$selectedTimeRange() === CUSTOM_TIME_RANGE);
 
+    readonly #handleChangeCustomDateRange = signalMethod<Date[] | null>((dateRange) => {
+        if (!dateRange || dateRange.length !== 2 || !dateRange[0] || !dateRange[1]) {
+            return;
+        }
+        const customRange: DateRange = [
+            dateRange[0].toISOString().split('T')[0],
+            dateRange[1].toISOString().split('T')[0]
+        ];
+
+        const queryParams = this.route.snapshot.queryParamMap;
+
+        // Read current URL params without creating dependency
+        const currentUrlParams = {
+            timeRange: queryParams.get('time_range'),
+            from: queryParams.get('from'),
+            to: queryParams.get('to')
+        };
+
+        // Convert URL time_range to internal for comparison
+        const currentInternalTimeRange = currentUrlParams.timeRange
+            ? fromUrlFriendly(currentUrlParams.timeRange)
+            : null;
+
+        // Only update URL if different from current values
+        if (
+            currentInternalTimeRange !== CUSTOM_TIME_RANGE ||
+            currentUrlParams.from !== customRange[0] ||
+            currentUrlParams.to !== customRange[1]
+        ) {
+            // Update URL with custom date range query params
+            this.updateCustomDateRangeParams(customRange);
+        }
+    });
+
     constructor() {
         // Initialize from URL params
         this.initFromUrl();
@@ -100,43 +136,7 @@ export class DotAnalyticsDashboardFiltersComponent {
             }
         });
 
-        // Handle custom date range changes and emit formatted dates
-        effect(() => {
-            const dateRange = this.$customDateRange();
-
-            if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
-                const customRange: DateRange = [
-                    dateRange[0].toISOString().split('T')[0],
-                    dateRange[1].toISOString().split('T')[0]
-                ];
-
-                // Read current URL params without creating dependency
-                const currentUrlParams = untracked(() => {
-                    const params = this.route.snapshot.queryParams;
-
-                    return {
-                        timeRange: params['time_range'],
-                        from: params['from'],
-                        to: params['to']
-                    };
-                });
-
-                // Convert URL time_range to internal for comparison
-                const currentInternalTimeRange = currentUrlParams.timeRange
-                    ? fromUrlFriendly(currentUrlParams.timeRange)
-                    : null;
-
-                // Only update URL if different from current values
-                if (
-                    currentInternalTimeRange !== CUSTOM_TIME_RANGE ||
-                    currentUrlParams.from !== customRange[0] ||
-                    currentUrlParams.to !== customRange[1]
-                ) {
-                    // Update URL with custom date range query params
-                    this.updateCustomDateRangeParams(customRange);
-                }
-            }
-        });
+        this.#handleChangeCustomDateRange(this.$customDateRange);
     }
 
     /** Translated time period options for display */
