@@ -3,12 +3,14 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { DotContentDriveBaseTypeSelectorComponent } from './components/dot-content-drive-baseType-selector/dot-content-drive-baseType-selector.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 
 @Component({
     selector: 'dot-content-drive-toolbar',
-    imports: [ToolbarModule, ButtonModule, DotContentDriveTreeTogglerComponent],
+    imports: [ToolbarModule, ButtonModule, DotContentDriveTreeTogglerComponent, DotContentDriveBaseTypeSelectorComponent],
     providers: [],
+    standalone: true,
     templateUrl: './dot-content-drive-toolbar.component.html',
     styleUrl: './dot-content-drive-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -13,6 +13,7 @@ import {
     SYSTEM_HOST
 } from '../shared/constants';
 import {
+    DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
     DotContentDriveSort,
@@ -33,7 +34,7 @@ const initialState: DotContentDriveState = {
         field: 'modDate',
         order: DotContentDriveSortOrder.ASC
     },
-    isTreeExpanded: DEFAULT_TREE_EXPANDED
+    isTreeExpanded: DEFAULT_TREE_EXPANDED,
 };
 
 export const DotContentDriveStore = signalStore(
@@ -110,6 +111,15 @@ export const DotContentDriveStore = signalStore(
             setFilters(filters: Record<string, string>) {
                 patchState(store, { filters: { ...store.filters(), ...filters } });
             },
+            patchFilters(filters: DotContentDriveFilters) {
+                patchState(store, { filters: { ...store.filters(), ...filters } });
+            },
+            removeFilter(filter: string) {
+                const { [filter]: removedFilter, ...restFilters } = store.filters();
+                if (removedFilter) {
+                    patchState(store, { filters: restFilters });
+                }
+            },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
             },
@@ -118,6 +128,9 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
+            },
+            getFilterValue(filter: string) {
+                return store.filters()[filter];
             }
         };
     })

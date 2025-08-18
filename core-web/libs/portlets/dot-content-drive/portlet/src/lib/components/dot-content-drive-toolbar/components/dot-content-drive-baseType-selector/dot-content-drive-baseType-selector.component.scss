@@ -1,0 +1,9 @@
+:host ::ng-deep {
+    p-checkbox.p-element {
+        gap: .1em;
+    }
+
+    .p-multiselect-label {
+        display: flex;
+    }
+}
