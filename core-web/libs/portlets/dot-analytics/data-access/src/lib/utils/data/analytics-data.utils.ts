@@ -1,10 +1,12 @@
+import { isSameDay, isSameMonth } from 'date-fns';
+
 import {
     ChartData,
     Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
-    TimeRange,
+    TimeRangeInput,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
@@ -25,7 +27,19 @@ import { parseUserAgent } from '../browser/userAgentParser';
  * @param timeRange - The time range for the analytics query
  * @returns The appropriate granularity level for the given time range
  */
-export function determineGranularityForTimeRange(timeRange: TimeRange): Granularity {
+export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
+    if (Array.isArray(timeRange)) {
+        const [fromDate, toDate] = timeRange;
+
+        if (isSameDay(fromDate, toDate)) {
+            return 'hour';
+        } else if (isSameMonth(fromDate, toDate)) {
+            return 'day';
+        } else {
+            return 'month';
+        }
+    }
+
     switch (timeRange) {
         case 'today':
 

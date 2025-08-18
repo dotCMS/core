@@ -757,5 +757,22 @@ describe('Analytics Data Utils', () => {
                 });
             });
         });
+
+        describe('custom date range', () => {
+            it('should return day granularity for custom date range on the same month', () => {
+                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-31']);
+                expect(result).toBe('day');
+            });
+
+            it('should return hour granularity for custom date range on the same day', () => {
+                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-01']);
+                expect(result).toBe('hour');
+            });
+
+            it('should return month granularity for custom date range', () => {
+                const result = determineGranularityForTimeRange(['2024-01-01', '2024-04-31']);
+                expect(result).toBe('month');
+            });
+        });
     });
 });

@@ -118,7 +118,7 @@ export class DotAnalyticsDashboardFiltersComponent {
 
             // Read current URL param without creating dependency
             const currentUrlTimeRange = untracked(() => {
-                return this.route.snapshot.queryParams['time_range'];
+                return this.route.snapshot.queryParamMap.get('time_range');
             });
 
             // Convert current URL value to internal for comparison
@@ -161,10 +161,10 @@ export class DotAnalyticsDashboardFiltersComponent {
      * Initialize filter state from URL parameters
      */
     private initFromUrl(): void {
-        const params = this.route.snapshot.queryParams;
-        const urlTimeRange = params['time_range'];
-        const fromDate = params['from'];
-        const toDate = params['to'];
+        const params = this.route.snapshot.queryParamMap;
+        const urlTimeRange = params.get('time_range');
+        const fromDate = params.get('from');
+        const toDate = params.get('to');
 
         if (urlTimeRange) {
             // Convert URL-friendly value to internal value
