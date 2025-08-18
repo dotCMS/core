@@ -127,4 +127,8 @@ export class DotContentDriveContentTypeFieldComponent {
             this.#store.removeFilter('contentType');
         }
     }
+
+    onSelectAll() {
+        this.$selectedContentTypes.set([]);
+    }
 }
