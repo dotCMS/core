@@ -3,7 +3,7 @@
 :host {
     width: 100%;
     max-height: 100%;
-    overflow-y: auto;
+    min-height: 0;
 
     ::ng-deep {
         p-table {
@@ -23,4 +23,51 @@
     align-items: center;
     gap: $spacing-3;
     width: 100%;
+}
+
+.empty-state {
+    padding: $spacing-6 $spacing-4;
+    text-align: center;
+    border: none !important;
+
+    .empty-state-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: $spacing-4;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .empty-state-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: var(--surface-50);
+        border: 2px solid var(--surface-200);
+    }
+
+    .empty-state-message {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-2;
+    }
+
+    .empty-state-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        text-align: center;
+        color: var(--text-color);
+    }
+
+    .empty-state-description {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--text-color-secondary);
+        line-height: 1.5;
+    }
 }

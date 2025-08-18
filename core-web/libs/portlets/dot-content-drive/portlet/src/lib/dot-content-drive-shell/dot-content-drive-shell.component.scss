@@ -31,7 +31,7 @@ dot-content-drive-toolbar {
 .tree-selector {
     background-color: lightblue;
     grid-area: tree;
-
+    overflow: hidden;
     border-right: 1px solid $color-palette-gray-400;
     width: 0;
 
