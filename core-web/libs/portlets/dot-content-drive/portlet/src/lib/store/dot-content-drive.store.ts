@@ -119,7 +119,13 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { status });
             },
             setFilters(filters: Record<string, string>) {
-                patchState(store, { filters: { ...store.filters(), ...filters } });
+                patchState(store, {
+                    filters: { ...store.filters(), ...filters },
+                    pagination: {
+                        ...store.pagination(),
+                        offset: 0
+                    }
+                });
             },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
