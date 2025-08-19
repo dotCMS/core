@@ -7,9 +7,12 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentTypeFieldBasicMock,
@@ -19,6 +22,7 @@ import {
 
 import { ContentTypeFieldsRowComponent } from '.';
 
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { FieldDragDropService } from '../service';
 
 const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
@@ -26,12 +30,12 @@ const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
 mockFieldRow.columns[0].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
+        clazz: DotCMSClazzes.TEXT,
         name: 'field-1'
     },
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'image',
+        clazz: DotCMSClazzes.IMAGE,
         name: 'field-1'
     }
 ];
@@ -39,14 +43,15 @@ mockFieldRow.columns[0].fields = [
 mockFieldRow.columns[1].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
+        clazz: DotCMSClazzes.TEXT,
         name: 'field-1'
     }
 ];
 
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldDraggableItemComponent {
     @Input()
@@ -59,7 +64,8 @@ class TestContentTypeFieldDraggableItemComponent {
 
 @Component({
     selector: 'dot-test-host',
-    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>'
+    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>',
+    standalone: false
 })
 class DotTestHostComponent {
     data: DotCMSContentTypeLayoutRow;
@@ -141,7 +147,7 @@ describe('ContentTypeFieldsRowComponent', () => {
 
             const field = {
                 ...dotcmsContentTypeFieldBasicMock,
-                clazz: 'text',
+                clazz: DotCMSClazzes.TEXT,
                 name: 'field-1'
             };
 

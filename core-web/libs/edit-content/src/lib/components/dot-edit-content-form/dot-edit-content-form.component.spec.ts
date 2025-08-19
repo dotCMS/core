@@ -25,6 +25,7 @@ import {
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotSystemConfigService,
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
@@ -50,6 +51,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
+    MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG,
     MOCK_CONTENTTYPE_1_TAB,
     MOCK_CONTENTTYPE_2_TABS,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
@@ -109,7 +111,38 @@ describe('DotFormComponent', () => {
                             userName: 'John Doe'
                         })
                 }
-            }
+            },
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        logos: { loginScreen: '/assets/logo.png', navBar: 'NA' },
+                        colors: { primary: '#000000', secondary: '#FFFFFF', background: '#F5F5F5' },
+                        releaseInfo: { buildDate: 'Jan 01, 2025', version: 'test' },
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        },
+                        languages: [
+                            {
+                                country: 'United States',
+                                countryCode: 'US',
+                                id: 1,
+                                isoCode: 'en-us',
+                                language: 'English',
+                                languageCode: 'en'
+                            }
+                        ],
+                        license: {
+                            displayServerId: 'serverId',
+                            isCommunity: true,
+                            level: 100,
+                            levelName: 'COMMUNITY'
+                        },
+                        cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
+                    })
+                )
+            })
         ]
     });
 
@@ -175,6 +208,12 @@ describe('DotFormComponent', () => {
             expect(component.form.get('modUserName')).toBeFalsy();
             expect(component.form.get('publishDate')).toBeFalsy();
         });
+
+        it('should create disabledWYSIWYG form control with existing contentlet values', () => {
+            const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+            expect(disabledWYSIWYGControl).toBeTruthy();
+            expect(disabledWYSIWYGControl?.value).toEqual(['wysiwygField1', 'wysiwygField2']);
+        });
     });
 
     describe('New Content', () => {
@@ -210,6 +249,12 @@ describe('DotFormComponent', () => {
             expect(component.form.get('text1').hasValidator(Validators.required)).toBe(true);
             expect(component.form.get('text2').hasValidator(Validators.required)).toBe(false);
             expect(component.form.get('text3').hasValidator(Validators.required)).toBe(false);
+        });
+
+        it('should create disabledWYSIWYG form control with empty array for new content', () => {
+            const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+            expect(disabledWYSIWYGControl).toBeTruthy();
+            expect(disabledWYSIWYGControl?.value).toEqual([]);
         });
 
         it('should render the correct number of rows, columns and fields', fakeAsync(() => {
@@ -396,7 +441,8 @@ describe('DotFormComponent', () => {
                             text3: 'default value modified',
                             multiselect: 'A,B,C',
                             languageId: '',
-                            identifier: null
+                            identifier: null,
+                            disabledWYSIWYG: ['wysiwygField1', 'wysiwygField2']
                         }
                     }
                 });
@@ -590,6 +636,167 @@ describe('DotFormComponent', () => {
                 const lockSwitch = spectator.query(InputSwitch);
                 expect(lockSwitch).toBe(null);
             });
+        });
+    });
+
+    describe('disabledWYSIWYG functionality', () => {
+        describe('onDisabledWYSIWYGChange', () => {
+            beforeEach(() => {
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(MOCK_CONTENTLET_1_OR_2_TABS)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+            });
+
+            it('should update disabledWYSIWYG form control when onDisabledWYSIWYGChange is called', () => {
+                const newDisabledWYSIWYG = ['newField1', 'newField2'];
+                const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+
+                // Verify initial value
+                expect(disabledWYSIWYGControl?.value).toEqual(['wysiwygField1', 'wysiwygField2']);
+
+                // Call the method
+                component.onDisabledWYSIWYGChange(newDisabledWYSIWYG);
+
+                // Verify the control was updated
+                expect(disabledWYSIWYGControl?.value).toEqual(newDisabledWYSIWYG);
+            });
+
+            it('should not throw error when onDisabledWYSIWYGChange is called and form does not exist', () => {
+                // Set form to null to simulate case where form doesn't exist
+                component.form = null;
+
+                expect(() => {
+                    component.onDisabledWYSIWYGChange(['test']);
+                }).not.toThrow();
+            });
+
+            it('should not throw error when onDisabledWYSIWYGChange is called and disabledWYSIWYG control does not exist', () => {
+                // Remove the disabledWYSIWYG control
+                component.form.removeControl('disabledWYSIWYG');
+
+                expect(() => {
+                    component.onDisabledWYSIWYGChange(['test']);
+                }).not.toThrow();
+            });
+
+            it('should emit event when disabledWYSIWYG form control value changes', () => {
+                const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+                const spy = jest.spyOn(disabledWYSIWYGControl, 'setValue');
+
+                component.onDisabledWYSIWYGChange(['newField']);
+
+                expect(spy).toHaveBeenCalledWith(['newField'], { emitEvent: true });
+            });
+        });
+
+        describe('with different contentlet scenarios', () => {
+            it('should handle contentlet without disabledWYSIWYG property', () => {
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+                expect(disabledWYSIWYGControl).toBeTruthy();
+                expect(disabledWYSIWYGControl?.value).toEqual([]);
+            });
+
+            it('should include disabledWYSIWYG in form values when form is processed', () => {
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(MOCK_CONTENTLET_1_OR_2_TABS)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                const formValues = component.form.value;
+                expect(formValues.disabledWYSIWYG).toEqual(['wysiwygField1', 'wysiwygField2']);
+            });
+        });
+    });
+
+    describe('Form value processing', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeNewContent('TestMock');
+            spectator.detectChanges();
+        });
+
+        it('should emit changeValue when form values change', () => {
+            const testValues = {
+                text1: 'test string',
+                text2: 'another string'
+            };
+
+            // Spy on the changeValue output
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            // Call onFormChange
+            component.onFormChange(testValues);
+
+            // Check that the event was emitted
+            expect(changeValueSpy).toHaveBeenCalledWith(expect.objectContaining(testValues));
         });
     });
 });

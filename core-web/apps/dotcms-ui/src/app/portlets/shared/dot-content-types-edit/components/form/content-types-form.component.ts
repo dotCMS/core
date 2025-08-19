@@ -8,7 +8,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import {
     UntypedFormBuilder,
@@ -47,9 +48,16 @@ import { FieldUtil } from '@dotcms/utils-testing';
     providers: [],
     selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
-    templateUrl: 'content-types-form.component.html'
+    templateUrl: 'content-types-form.component.html',
+    standalone: false
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {
+    private fb = inject(UntypedFormBuilder);
+    private dotWorkflowService = inject(DotWorkflowService);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotMessageService = inject(DotMessageService);
+    private readonly route = inject(ActivatedRoute);
+
     @ViewChild('name', { static: true }) name: ElementRef;
 
     @Input() data: DotCMSContentType;
@@ -69,14 +77,6 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private originalValue: DotCMSContentType;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        private dotWorkflowService: DotWorkflowService,
-        private dotLicenseService: DotLicenseService,
-        private dotMessageService: DotMessageService,
-        private readonly route: ActivatedRoute
-    ) {}
 
     ngOnInit(): void {
         this.initFormGroup();

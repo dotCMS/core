@@ -1142,6 +1142,7 @@ public class IntegrityResource {
                     try {
                         IntegrityUtil.completeDiscardConflicts(endpoint.getId());
                         conflictPresent = IntegrityUtil.completeCheckIntegrity(endpoint.getId());
+                        Logger.debug(IntegrityResource.class, "================ Integrity check completed ================");
                     } catch (Exception e) {
                         Logger.error(IntegrityResource.class, "Error checking integrity", e);
 
@@ -1158,18 +1159,27 @@ public class IntegrityResource {
                         }
                     }
 
+                    Logger.debug(IntegrityResource.class, "is Conflict Present? " + conflictPresent);
+
                     if (conflictPresent) {
                         //Setting the process status
+                        Logger.debug(IntegrityResource.class, "Setting status to finished");
                         setStatus(session, endpoint.getId(), ProcessStatus.FINISHED, null);
                     } else {
                         String noConflictMessage;
                         try {
+                            Logger.debug(IntegrityResource.class, "Getting no conflicts message");
                             noConflictMessage = LanguageUtil.get(
                                     loggedUser.getLocale(),
                                     "push_publish_integrity_conflicts_not_found");
                         } catch (LanguageException e) {
                             noConflictMessage = "No Integrity Conflicts found";
+                        } catch (Exception e) {
+                            Logger.error(IntegrityResource.class, "Error while getting no conflicts message", e);
+                            noConflictMessage = "No Integrity Conflicts found";
                         }
+
+                        Logger.debug(IntegrityResource.class, "Setting status to no conflicts");
                         //Setting the process status
                         setStatus(session, endpoint.getId(), ProcessStatus.NO_CONFLICTS, noConflictMessage);
                     }

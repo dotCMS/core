@@ -7,9 +7,9 @@ import { map, pluck, take } from 'rxjs/operators';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCurrentUser,
-    UserPermissions,
+    DotPermissionsType,
     PermissionsType,
-    DotPermissionsType
+    UserPermissions
 } from '@dotcms/dotcms-models';
 import { formatMessage } from '@dotcms/utils';
 @Injectable()

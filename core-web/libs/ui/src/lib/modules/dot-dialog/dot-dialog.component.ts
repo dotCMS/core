@@ -9,7 +9,8 @@ import {
     OnChanges,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { filter } from 'rxjs/operators';
@@ -19,9 +20,12 @@ import { DialogButton, DotDialogActions } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-dialog',
     templateUrl: './dot-dialog.component.html',
-    styleUrls: ['./dot-dialog.component.scss']
+    styleUrls: ['./dot-dialog.component.scss'],
+    standalone: false
 })
 export class DotDialogComponent implements OnChanges {
+    private el = inject(ElementRef);
+
     @ViewChild('dialog') dialog: ElementRef;
 
     @Input()
@@ -71,8 +75,6 @@ export class DotDialogComponent implements OnChanges {
     isContentScrolled: boolean;
 
     private subscription: Subscription[] = [];
-
-    constructor(private el: ElementRef) {}
 
     ngOnChanges(changes: SimpleChanges) {
         if (this.isVisible(changes)) {

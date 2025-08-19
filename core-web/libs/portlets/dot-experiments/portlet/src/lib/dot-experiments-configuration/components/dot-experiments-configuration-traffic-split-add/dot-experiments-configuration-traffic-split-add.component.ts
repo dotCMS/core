@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import {
     AbstractControl,
     FormArray,
@@ -32,7 +32,6 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-traffic-split-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -51,6 +50,9 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private fb = inject(FormBuilder);
+
     form: FormGroup;
     stepStatus = ComponentStatus;
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
@@ -58,11 +60,6 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
 
     vm$: Observable<ConfigurationTrafficStepViewModel> =
         this.dotExperimentsConfigurationStore.trafficStepVm$;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private fb: FormBuilder
-    ) {}
 
     get variants(): FormArray {
         return this.form.get('variants') as FormArray;

@@ -1,5 +1,6 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
+import tippy from 'tippy.js';
 
 import {
     ChangeDetectorRef,
@@ -58,7 +59,6 @@ import {
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { DotCMSPlusButton } from '../../extensions/dot-plus-button/dot-plus-button.plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
     DotMarketingConfigService,
@@ -80,7 +80,8 @@ import {
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
@@ -120,17 +121,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly dotDragHandleOptions = {
-        duration: 250
-    };
+    readonly viewContainerRef = inject(ViewContainerRef);
+    readonly dotMarketingConfigService = inject(DotMarketingConfigService);
+    readonly dotAiService = inject(DotAiService);
 
-    constructor(
-        private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService,
-        private readonly dotAiService: DotAiService
-    ) {
-        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
-    }
+    readonly dotDragHandleOptions = {
+        duration: 250,
+        zIndex: 5,
+        placement: 'left'
+    };
 
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
@@ -139,7 +138,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     get showCharData() {
         try {
             return JSON.parse(this.displayCountBar as string);
-        } catch (e) {
+        } catch {
             return true;
         }
     }
@@ -175,6 +174,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
+        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
+        tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),
@@ -494,13 +495,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
+                    if (node.type.name === 'table') {
+                        return '';
+                    }
+
                     return this.#dotMessageService.get('block-editor.placeholder.paragraph');
                 }
-            }),
-            DotCMSPlusButton.configure({
-                showOnlyWhenEditable: true,
-                showOnlyCurrent: true,
-                includeChildren: false
             }),
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef)

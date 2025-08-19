@@ -58,7 +58,7 @@ const EXPERIMENT_MOCK = {
     actionsItemsMenu: [...MOCK_MENU_ITEMS]
 };
 
-@Pipe({ name: 'date' })
+@Pipe({ name: 'date', standalone: false })
 class MockDatePipe implements PipeTransform {
     transform(value: string): string {
         return (value as unknown as Date).toLocaleDateString();

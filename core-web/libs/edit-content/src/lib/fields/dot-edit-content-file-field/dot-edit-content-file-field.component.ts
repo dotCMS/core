@@ -23,11 +23,6 @@ import { filter, map } from 'rxjs/operators';
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import {
-    INPUT_TYPE,
-    INPUT_TYPES,
-    UploadedFile
-} from '@dotcms/edit-content/models/dot-edit-content-file.model';
-import {
     DotDropZoneComponent,
     DotMessagePipe,
     DotAIImagePromptComponent,
@@ -45,9 +40,10 @@ import { DotFileFieldUploadService } from './services/upload-file/upload-file.se
 import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
 
+import { INPUT_TYPE, INPUT_TYPES, UploadedFile } from '../../models/dot-edit-content-file.model';
+
 @Component({
     selector: 'dot-edit-content-file-field',
-    standalone: true,
     imports: [
         ButtonModule,
         DotMessagePipe,

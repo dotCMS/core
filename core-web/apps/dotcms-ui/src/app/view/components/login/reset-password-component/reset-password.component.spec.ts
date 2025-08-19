@@ -11,9 +11,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
-import { ResetPasswordComponent } from '@components/login/reset-password-component/reset-password.component';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotFieldValidationMessageComponent } from '@dotcms/ui';
@@ -22,6 +19,11 @@ import {
     MockDotMessageService,
     MockDotRouterService
 } from '@dotcms/utils-testing';
+
+import { ResetPasswordComponent } from './reset-password.component';
+
+import { MockDotLoginPageStateService } from '../dot-login-page-resolver.service.spec';
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 const messageServiceMock = new MockDotMessageService({
     required: 'Required'

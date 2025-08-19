@@ -5,7 +5,8 @@ import { DotPersona } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-persona-selected-item',
     templateUrl: './dot-persona-selected-item.component.html',
-    styleUrls: ['./dot-persona-selected-item.component.scss']
+    styleUrls: ['./dot-persona-selected-item.component.scss'],
+    standalone: false
 })
 export class DotPersonaSelectedItemComponent {
     @Input() persona: DotPersona;

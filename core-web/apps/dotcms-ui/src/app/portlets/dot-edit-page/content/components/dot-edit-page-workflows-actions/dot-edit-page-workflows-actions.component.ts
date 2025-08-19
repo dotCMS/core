@@ -7,7 +7,8 @@ import {
     Input,
     OnChanges,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -35,25 +36,24 @@ import {
     selector: 'dot-edit-page-workflows-actions',
     templateUrl: './dot-edit-page-workflows-actions.component.html',
     styleUrls: ['./dot-edit-page-workflows-actions.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotEditPageWorkflowsActionsComponent implements OnChanges {
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
+    private dotMessageService = inject(DotMessageService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotWizardService = inject(DotWizardService);
+    private dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
+
     @Input() page: DotPage;
 
     @Output() fired: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
     actionsAvailable: boolean;
     actions: Observable<MenuItem[]>;
-
-    constructor(
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotWorkflowsActionsService: DotWorkflowsActionsService,
-        private dotMessageService: DotMessageService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotWizardService: DotWizardService,
-        private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.page) {

@@ -1,5 +1,6 @@
-import { Extension } from '@tiptap/core';
 import { AllSelection, TextSelection, Transaction } from 'prosemirror-state';
+
+import { Extension } from '@tiptap/core';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -42,9 +43,11 @@ function clamp(val: number, min: number, max: number): number {
     if (val < min) {
         return min;
     }
+
     if (val > max) {
         return max;
     }
+
     return val;
 }
 
@@ -94,6 +97,7 @@ function updateIndentLevel(tr: Transaction, delta: number): Transaction {
             nodeType.name === 'blockquote'
         ) {
             tr = setNodeIndentMarkup(tr, pos, delta);
+
             return false;
         }
 
@@ -126,6 +130,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
                             if (!attributes.indent || attributes.indent <= 0) {
                                 return {};
                             }
+
                             return {
                                 style: `margin-left: ${attributes.indent}px;`
                             };
@@ -135,6 +140,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
                             if (!marginLeft) return 0;
 
                             const value = parseInt(marginLeft, 10);
+
                             return value
                                 ? Math.round(value / this.options.indentSize) *
                                       this.options.indentSize
@@ -158,6 +164,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
 
                     if (updatedTr.docChanged && dispatch) {
                         dispatch(updatedTr);
+
                         return true;
                     }
 
@@ -174,6 +181,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
 
                     if (updatedTr.docChanged && dispatch) {
                         dispatch(updatedTr);
+
                         return true;
                     }
 
@@ -189,6 +197,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
                 if (this.editor.isActive('bulletList') || this.editor.isActive('orderedList')) {
                     return false;
                 }
+
                 return this.editor.commands.indent();
             },
             'Shift-Tab': () => {
@@ -196,6 +205,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
                 if (this.editor.isActive('bulletList') || this.editor.isActive('orderedList')) {
                     return false;
                 }
+
                 return this.editor.commands.outdent();
             },
             Backspace: () => {

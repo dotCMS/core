@@ -1,9 +1,8 @@
 import { useCallback, useContext, useRef } from 'react';
 
-import { getUVEState } from '@dotcms/uve';
-
 import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
+import { isInsideUVE } from '../internal';
 
 /**
  * Custom hook that handles analytics tracking for anonymous users.
@@ -66,8 +65,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
 
     const track = useCallback(
         (eventName: string, payload: Record<string, unknown> = {}) => {
-            const uveState = getUVEState();
-            if (!uveState) {
+            if (!isInsideUVE()) {
                 instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()
@@ -78,8 +76,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
     );
 
     const pageView = useCallback(() => {
-        const uveState = getUVEState();
-        if (!uveState) {
+        if (!isInsideUVE()) {
             const currentPath = window.location.pathname;
             if (currentPath !== lastPathRef.current) {
                 lastPathRef.current = currentPath;

@@ -121,7 +121,6 @@ public class TemplateResource {
     @GET
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response list(@Context final HttpServletRequest httpRequest,
                                         @Context final HttpServletResponse httpResponse,
@@ -174,7 +173,6 @@ public class TemplateResource {
     @Path("/{templateId}/live")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
                                @Context final HttpServletResponse httpResponse,
@@ -210,7 +208,6 @@ public class TemplateResource {
     @Path("/{templateId}/working")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
                                          @Context final HttpServletResponse httpResponse,

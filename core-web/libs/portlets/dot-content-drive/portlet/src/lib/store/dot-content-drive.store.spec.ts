@@ -1,14 +1,17 @@
 import { describe } from '@jest/globals';
+import { mockProvider } from '@ngneat/spectator';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { mockSites } from '@dotcms/dotcms-js';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { ActivatedRoute } from '@angular/router';
+
+import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
-import { SYSTEM_HOST } from '../shared/constants';
-import { mockItems } from '../shared/mocks';
+import { DEFAULT_PATH, DEFAULT_TREE_EXPANDED, SYSTEM_HOST } from '../shared/constants';
+import { mockItems, mockSites } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
@@ -17,7 +20,16 @@ describe('DotContentDriveStore', () => {
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
-        providers: []
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {}
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
+            })
+        ]
     });
 
     beforeEach(() => {
@@ -28,10 +40,11 @@ describe('DotContentDriveStore', () => {
     describe('Initial State', () => {
         it('should have the correct initial state', () => {
             expect(store.currentSite()).toEqual(SYSTEM_HOST);
-            expect(store.path()).toBe('');
+            expect(store.path()).toBe(DEFAULT_PATH);
             expect(store.filters()).toEqual({});
             expect(store.items()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+            expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
         });
     });
 
@@ -40,6 +53,8 @@ describe('DotContentDriveStore', () => {
             it('should build base query when no path or filters are provided', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(SYSTEM_HOST.identifier)
                     .or()
@@ -54,7 +69,8 @@ describe('DotContentDriveStore', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
                     path: testPath,
-                    filters: {}
+                    filters: {},
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
@@ -71,16 +87,19 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site in query when provided', () => {
-                const customSite = mockSites[0];
+                const customSite = mockSites[0] as SiteEntity;
 
                 store.initContentDrive({
                     currentSite: customSite,
-                    path: '',
-                    filters: {}
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(customSite.identifier)
                     .or()
@@ -98,12 +117,15 @@ describe('DotContentDriveStore', () => {
 
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: '',
-                    filters
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
                 });
 
                 const expectedQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
                     .field('conhost')
                     .equals(SYSTEM_HOST.identifier)
                     .or()
@@ -112,6 +134,33 @@ describe('DotContentDriveStore', () => {
                     .equals('Blog')
                     .field('status')
                     .equals('published')
+                    .build();
+
+                expect(store.$query()).toEqual(expectedQuery);
+            });
+
+            it('should include title filter in query when provided', () => {
+                const filters = {
+                    title: 'Blog'
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const expectedQuery = new QueryBuilder()
+                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .field('parentPath')
+                    .equals(DEFAULT_PATH)
+                    .field('conhost')
+                    .equals(SYSTEM_HOST.identifier)
+                    .or()
+                    .equals(SYSTEM_HOST.identifier)
+                    .field('title_dotraw')
+                    .equals('*Blog*')
                     .build();
 
                 expect(store.$query()).toEqual(expectedQuery);
@@ -129,13 +178,15 @@ describe('DotContentDriveStore', () => {
                 store.initContentDrive({
                     currentSite: testSite,
                     path: testPath,
-                    filters: testFilters
+                    filters: testFilters,
+                    isTreeExpanded: true
                 });
 
                 expect(store.currentSite()).toEqual(testSite);
                 expect(store.path()).toBe(testPath);
                 expect(store.filters()).toEqual(testFilters);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+                expect(store.isTreeExpanded()).toBe(true);
             });
         });
 
@@ -201,5 +252,42 @@ describe('DotContentDriveStore', () => {
                 });
             });
         });
+    });
+});
+
+describe('DotContentDriveStore - onInit', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {
+                        path: '/initial/test/path',
+                        filters: 'contentType:InitialTestContentType',
+                        isTreeExpanded: 'true'
+                    }
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(mockSites[2])
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+    });
+
+    it('should use default path if not provided in query params', () => {
+        expect(store.path()).toBe('/initial/test/path');
+        expect(store.filters()).toEqual({
+            contentType: 'InitialTestContentType'
+        });
+        expect(store.isTreeExpanded()).toBe(true);
+        expect(store.currentSite()).toEqual(mockSites[2]);
     });
 });

@@ -1,7 +1,7 @@
 import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 
 import { trigger, transition, style, animate } from '@angular/animations';
-import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
@@ -28,9 +28,13 @@ interface DotContainerContent extends DotCMSContentType {
     ],
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
-    styleUrls: ['./dot-container-code.component.scss']
+    styleUrls: ['./dot-container-code.component.scss'],
+    standalone: false
 })
 export class DotContentEditorComponent implements OnInit, OnChanges {
+    private dialogService = inject(DialogService);
+    private dotMessageService = inject(DotMessageService);
+
     @Input() fg: FormGroup;
     @Input() contentTypes: DotCMSContentType[];
 
@@ -38,11 +42,6 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     activeTabIndex = 0;
     monacoEditors: Record<string, MonacoStandaloneCodeEditor> = {};
     contentTypeNamesById = {};
-
-    constructor(
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit() {
         this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {

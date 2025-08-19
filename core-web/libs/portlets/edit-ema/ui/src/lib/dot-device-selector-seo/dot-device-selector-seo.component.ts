@@ -5,11 +5,11 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    Inject,
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -34,7 +34,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
 @Component({
-    standalone: true,
     imports: [
         CommonModule,
         DropdownModule,
@@ -60,6 +59,11 @@ import { WINDOW } from '@dotcms/utils';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDeviceSelectorSeoComponent implements OnInit {
+    private dotDevicesService = inject(DotDevicesService);
+    private dotMessageService = inject(DotMessageService);
+    private dotCurrentUser = inject(DotCurrentUserService);
+    private window = inject<Window>(WINDOW);
+
     @Input() value: DotDevice;
     @Input() hideSocialMedia = false;
     @Output() selected = new EventEmitter<DotDevice>();
@@ -127,13 +131,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: 'tablet-landscape-id'
         }
     ];
-
-    constructor(
-        private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService,
-        private dotCurrentUser: DotCurrentUserService,
-        @Inject(WINDOW) private window: Window
-    ) {}
 
     ngOnInit() {
         this.options$ = this.getOptions();

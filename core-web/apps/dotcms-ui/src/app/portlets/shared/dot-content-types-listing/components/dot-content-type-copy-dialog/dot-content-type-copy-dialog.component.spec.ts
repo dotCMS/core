@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
@@ -7,10 +7,9 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotMdIconSelectorModule } from '@components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     DotDialogModule,
     DotFieldValidationMessageComponent,
@@ -18,15 +17,19 @@ import {
     DotSafeHtmlPipe
 } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, SiteServiceMock } from '@dotcms/utils-testing';
-import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
+
+import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
+import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 @Component({
     selector: 'dot-test-host-component',
     template: `
         <dot-content-type-copy-dialog [isSaving$]="isSaving$"></dot-content-type-copy-dialog>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     isSaving$ = of(false);
@@ -39,6 +42,27 @@ const formValues = {
     host: '',
     icon: ''
 };
+
+const mockSystemConfig: DotSystemConfig = {
+    logos: { loginScreen: '', navBar: '' },
+    colors: { primary: '#54428e', secondary: '#3a3847', background: '#BB30E1' },
+    releaseInfo: { buildDate: 'June 24, 2019', version: '5.0.0' },
+    systemTimezone: { id: 'America/Costa_Rica', label: 'Costa Rica', offset: 360 },
+    languages: [],
+    license: {
+        level: 100,
+        displayServerId: '19fc0e44',
+        levelName: 'COMMUNITY EDITION',
+        isCommunity: true
+    },
+    cluster: { clusterId: 'test-cluster', companyKeyDigest: 'test-digest' }
+};
+
+class MockDotSystemConfigService {
+    getSystemConfig(): Observable<DotSystemConfig> {
+        return of(mockSystemConfig);
+    }
+}
 
 describe('DotContentTypeCloneDialogComponent', () => {
     const siteServiceMock = new SiteServiceMock();
@@ -70,6 +94,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 {
                     provide: DotEventsService,
                     useValue: {

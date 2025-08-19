@@ -2,11 +2,10 @@ import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 
 import { DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ElementRef, Inject, Injectable, NgZone } from '@angular/core';
+import { ElementRef, Injectable, NgZone, inject } from '@angular/core';
 
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
     DotCopyContentService,
@@ -52,6 +51,7 @@ import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
+import { INLINE_TINYMCE_SCRIPTS } from '../html/libraries/inline-edit-mode.js';
 
 export enum DotContentletAction {
     EDIT,
@@ -71,6 +71,25 @@ export const MATERIAL_ICONS_PATH = '/dotAdmin/assets/material-icons.css';
 
 @Injectable()
 export class DotEditContentHtmlService {
+    private dotEditPageService = inject(DotEditPageService);
+    private dotContainerContentletService = inject(DotContainerContentletService);
+    private dotDragDropAPIHtmlService = inject(DotDragDropAPIHtmlService);
+    private dotEditContentToolbarHtmlService = inject(DotEditContentToolbarHtmlService);
+    private dotDOMHtmlUtilService = inject(DotDOMHtmlUtilService);
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotMessageService = inject(DotMessageService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private ngZone = inject(NgZone);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotCopyContentModalService = inject(DotCopyContentModalService);
+    private dotCopyContentService = inject(DotCopyContentService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
+    private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
+    private document = inject<Document>(DOCUMENT);
+
     contentletEvents$: Subject<
         | DotContentletEventDragAndDropDotAsset
         | DotContentletEventRelocate
@@ -110,26 +129,7 @@ export class DotEditContentHtmlService {
         return `dot:${this.currentPersona.contentType}:${this.currentPersona.keyTag}`;
     }
 
-    constructor(
-        private dotEditPageService: DotEditPageService,
-        private dotContainerContentletService: DotContainerContentletService,
-        private dotDragDropAPIHtmlService: DotDragDropAPIHtmlService,
-        private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
-        private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
-        private dotDialogService: DotAlertConfirmService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotMessageService: DotMessageService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private ngZone: NgZone,
-        private dotLicenseService: DotLicenseService,
-        private dotCopyContentModalService: DotCopyContentModalService,
-        private dotCopyContentService: DotCopyContentService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotSeoMetaTagsService: DotSeoMetaTagsService,
-        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService,
-        @Inject(DOCUMENT) private document: Document
-    ) {
+    constructor() {
         this.contentletEvents$.subscribe(
             (
                 contentletEvent:

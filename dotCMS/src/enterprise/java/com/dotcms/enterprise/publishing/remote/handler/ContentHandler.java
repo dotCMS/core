@@ -9,6 +9,11 @@
 
 package com.dotcms.enterprise.publishing.remote.handler;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -89,8 +94,6 @@ import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -104,11 +107,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
-import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
-import static com.liferay.util.StringPool.BLANK;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * This handler deals with Contentlet-related information inside a bundle and
@@ -319,6 +318,12 @@ public class ContentHandler implements IHandler {
 						}
 					}
 				}
+
+				content.setIdentifier(this.findLocalIdentifier(content));
+
+
+
+
                 try{
 					final boolean isPushedContentArchived = wrapper.getInfo().isDeleted();
 					final String contentId = content.getIdentifier();
@@ -542,6 +547,11 @@ public class ContentHandler implements IHandler {
 					final ContentletVersionInfo versionInfoToSave = info;
 					Logger.debug(this, () -> "*********************** Saving content info: " + versionInfoToSave
 							+ ", language: " + versionInfoToSave.getLang());
+
+					String localIdentifier = findLocalIdentifier(content);
+
+
+					info.setIdentifier(localIdentifier);
                     APILocator.getVersionableAPI().saveContentletVersionInfo(info);
 
 	                if(isHost) {
@@ -581,6 +591,38 @@ public class ContentHandler implements IHandler {
 			throw new DotPublishingException(errorMsg, e);
 		}
     }
+
+	private String findLocalIdentifier(final Contentlet content) throws DotDataException {
+
+		String localIdentifier = Try.of(()->APILocator.getIdentifierAPI().find(content.getIdentifier()).getId()).getOrNull();
+
+		if(UtilMethods.isSet(localIdentifier)){
+			return localIdentifier;
+		}
+
+
+		if(content.isHTMLPage() || content.isFileAsset()){
+			Host host = Try.of(()->APILocator.getHostAPI().find(content.getHost(), APILocator.systemUser(), false)).getOrNull();
+
+			String uri = Try.of(()->content.isHTMLPage() ? APILocator.getHTMLPageAssetAPI().fromContentlet(content).getURI() : APILocator.getFileAssetAPI().fromContentlet(content).getURI()).getOrNull();
+
+			if(!UtilMethods.isSet(uri) || !UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())){
+				return content.getIdentifier();
+			}
+
+			Identifier identifier = identifierAPI.find(host,uri);
+			if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getId())){
+				return identifier.getId();
+			}
+
+		}
+		return content.getIdentifier();
+
+	}
+
+
+
+
 	
 	private void addRelatedContentsToInfoToRemove(Contentlet content, ContentletVersionInfo info) {
 		try {
@@ -767,24 +809,19 @@ public class ContentHandler implements IHandler {
 			holdDefaultHostConfiguration(content, userToUse);
 		}
 
-		//Verify if this contentlet is a FileAsset
-        if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())) {
-            // Wiping out the thumbnails and resized versions
-            APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
-        }
+      // Wiping out the thumbnails and resized versions (if a fileAsset)
+      APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
 
-        //Verify if this contentlet is a HTMLPage
-        if (BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())) {
-            //Adding to the page a listener in order to invalidate the page after being save
-            final IHTMLPage hp = HandlerUtil.fromContentlet( content, false );
-            HibernateUtil.addCommitListener( new FlushCacheRunnable() {
-                public void run () {
-
-                        new PageLoader().invalidate(hp);
-
-                }
-            } );
-        }
+      //Verify if this contentlet is a HTMLPage
+      if (BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())) {
+        //Adding to the page a listener in order to invalidate the page after being save
+        final IHTMLPage hp = HandlerUtil.fromContentlet(content, false);
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+          public void run() {
+            new PageLoader().invalidate(hp);
+          }
+        });
+      }
 
         //Saving the content
         if (content.isArchived()){

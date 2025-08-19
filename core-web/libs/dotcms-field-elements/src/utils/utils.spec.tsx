@@ -150,7 +150,7 @@ describe('getStringFromDotKeyArray', () => {
 describe('getTagError', () => {
     it('should return error tag', () => {
         const message = 'Error Msg';
-        const jsxTag: JSX.Element = getTagError(true, message);
+        const jsxTag = getTagError(true, message);
         expect(jsxTag['$attrs$']).toEqual({ class: 'dot-field__error-message' });
         expect(jsxTag['$children$'][0]['$text$']).toEqual(message);
     });

@@ -9,13 +9,13 @@ import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcm
 
 import { SearchComponent } from './components/search/search.component';
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
+import {
+    RelationshipFieldSearchResponse,
+    ExistingContentService
+} from './store/existing-content.service';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { Column } from '../../models/column.model';
-import {
-    RelationshipFieldSearchResponse,
-    RelationshipFieldService
-} from '../../services/relationship-field.service';
 
 const mockColumns: Column[] = [
     { field: 'title', header: 'Title' },
@@ -68,7 +68,7 @@ describe('DotSelectExistingContentComponent', () => {
         component: DotSelectExistingContentComponent,
         providers: [
             ExistingContentStore,
-            mockProvider(RelationshipFieldService, {
+            mockProvider(ExistingContentService, {
                 getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
@@ -114,7 +114,7 @@ describe('DotSelectExistingContentComponent', () => {
             const mockItems = [createFakeContentlet({ inode: '1' })];
 
             spectator.component.$selectionItems.set(mockItems);
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.selectionItems()).toEqual(mockItems);
         });
@@ -163,7 +163,7 @@ describe('DotSelectExistingContentComponent when selectionMode is missing', () =
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
         providers: [
-            mockProvider(RelationshipFieldService, {
+            mockProvider(ExistingContentService, {
                 getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
@@ -194,7 +194,7 @@ describe('DotSelectExistingContentComponent when contentTypeId is missing', () =
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
         providers: [
-            mockProvider(RelationshipFieldService, {
+            mockProvider(ExistingContentService, {
                 getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },

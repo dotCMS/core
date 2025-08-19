@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    Host,
-    Input,
-    Optional,
-    TemplateRef
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, TemplateRef, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { Sidebar } from 'primeng/sidebar';
@@ -21,13 +14,14 @@ import { Sidebar } from 'primeng/sidebar';
  */
 @Component({
     selector: 'dot-sidebar-header',
-    standalone: true,
     imports: [CommonModule, ButtonModule],
     templateUrl: './dot-sidebar-header.component.html',
     styleUrls: ['./dot-sidebar-header.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSidebarHeaderComponent {
+    private readonly sidebarComponent = inject(Sidebar, { optional: true, host: true });
+
     /**
      * Title of the sidebar
      */
@@ -41,8 +35,8 @@ export class DotSidebarHeaderComponent {
     @Input()
     actionButtonTpl?: TemplateRef<void>;
 
-    constructor(@Optional() @Host() private readonly sidebarComponent: Sidebar) {
-        if (!sidebarComponent) {
+    constructor() {
+        if (!this.sidebarComponent) {
             console.warn('DotSidebarHeaderComponent is for use inside of a PrimeNg Sidebar');
         }
     }

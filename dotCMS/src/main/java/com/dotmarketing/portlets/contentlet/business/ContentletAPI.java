@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -31,6 +32,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -1895,6 +1897,21 @@ public interface ContentletAPI {
 
 	public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
 
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param searchCriteria The {@link SearchCriteria} object that allows you to filter the data
+     *                       being pulled.
+     *
+     * @return The list of contentlet versions matching the specified criteria.
+     *
+     * @throws DotSecurityException The specified user does not have permission to retrieve the
+     *                              versions.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
+    List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
 	 * @param identifier
@@ -1976,6 +1993,15 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
 	 */
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException;
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
+	 */
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException;
 	
 	/**
 	 * Use to validate your contentlet.

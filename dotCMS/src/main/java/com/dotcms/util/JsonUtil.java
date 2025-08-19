@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
@@ -12,7 +13,8 @@ import java.net.URL;
 import java.util.Map;
 
 /**
- * Util class to handle JSON
+ * This utility class exposes different methods that allow you to transform JSON Strings into Java
+ * Objects and vice versa, as well as methods to validate JSON.
  *
  * @author Freddy Rodriguez
  * @since Jun 8th, 2022
@@ -21,10 +23,12 @@ public class JsonUtil {
 
     public final static ObjectMapper JSON_MAPPER = new ObjectMapper();
 
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> getJsonFileContent(final String path) throws IOException {
         return JSON_MAPPER.readValue(getJsonFileContentAsString(path), Map.class);
     }
 
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> getJsonFromString(final String json) throws IOException {
         return JSON_MAPPER.readValue(json, Map.class);
     }
@@ -78,4 +82,99 @@ public class JsonUtil {
 
         return json;
     }
+
+    /**
+     * Transforms the specified object into a prettified JSON String.
+     *
+     * @param object The object to be transformed.
+     *
+     * @return The prettified JSON String.
+     */
+    public static String getPrettyJsonStringFromObject(final Object object) {
+        return Try.of(() ->
+                JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(object))
+                .getOrElse(StringPool.BLANK);
+    }
+
+    /**
+     * DTO for the Json Validation Error to travel and make it to the surface
+     */
+    public static class JSONValidationResult {
+        public final String errorMessage;
+        public final int line;
+        public final int column;
+        public final JsonNode node;
+
+        /**
+         * Constructor
+         * @param errorMessage
+         * @param line
+         * @param column
+         * @param node
+         */
+        public JSONValidationResult(String errorMessage, int line, int column, JsonNode node) {
+            this.errorMessage = errorMessage;
+            this.line = line;
+            this.column = column;
+            this.node = node;
+        }
+
+        /**
+         * Constructor
+         * @param errorMessage
+         * @param line
+         * @param column
+         */
+        public JSONValidationResult(String errorMessage, int line, int column) {
+            this(errorMessage, line, column, null);
+        }
+
+        /**
+         * Constructor
+         * @param node
+         */
+        public JSONValidationResult(JsonNode node) {
+            this(null, -1, -1, node);
+        }
+
+        /**
+         * Quick way to know if the json is valid
+         * @return
+         */
+        public boolean isValid() {
+            return node != null && !node.isMissingNode();
+        }
+    }
+
+    /**
+     * This validation method provides more info and tells you right out of the box if the json is valid or not
+     * @param fieldValue
+     * @return
+     */
+    public static JSONValidationResult validateJSON(final String fieldValue) {
+        if (fieldValue == null || fieldValue.isEmpty()) {
+            return new JSONValidationResult("Json is empty", -1, -1);
+        }
+        try {
+            JsonNode node = JSON_MAPPER.readTree(fieldValue);
+            if (node != null && !node.isMissingNode()) {
+                // Only accept objects {} or arrays []
+                if (node.isObject() || node.isArray()) {
+                    return new JSONValidationResult(node);
+                } else {
+                    return new JSONValidationResult("JSON must be an object or array, not a primitive value", -1, -1);
+                }
+            } else {
+                return new JSONValidationResult("Json Node is null or missing", -1, -1);
+            }
+        } catch (final JacksonException e) {
+            JsonLocation location = e.getLocation();
+            return new JSONValidationResult(
+                    e.getMessage(),
+                    location != null ? location.getLineNr() : -1,
+                    location != null ? location.getColumnNr() : -1
+            );
+        }
+    }
+
 }

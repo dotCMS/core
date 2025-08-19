@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -13,7 +13,6 @@ import { filter, map, startWith, takeUntil } from 'rxjs/operators';
 import { DotTempFileUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
-    DotAutofocusDirective,
     DotFormDialogComponent,
     DotFieldValidationMessageComponent,
     DotPagesFavoritePageEmptySkeletonComponent,
@@ -45,11 +44,9 @@ export interface DotFavoritePageFormData {
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
     styleUrls: ['./dot-favorite-page.component.scss'],
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,
-        DotAutofocusDirective,
         DotFormDialogComponent,
         DotFieldValidationMessageComponent,
         DotPagesFavoritePageEmptySkeletonComponent,
@@ -62,6 +59,11 @@ export interface DotFavoritePageFormData {
     providers: [DotFavoritePageStore, DotTempFileUploadService, DotWorkflowActionsFireService]
 })
 export class DotFavoritePageComponent implements OnInit, OnDestroy {
+    private ref = inject(DynamicDialogRef);
+    private config = inject(DynamicDialogConfig);
+    private fb = inject(UntypedFormBuilder);
+    private store = inject(DotFavoritePageStore);
+
     form: FormGroup;
     isFormValid$: Observable<boolean>;
     timeStamp: string;
@@ -70,12 +72,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private ref: DynamicDialogRef,
-        private config: DynamicDialogConfig,
-        private fb: UntypedFormBuilder,
-        private store: DotFavoritePageStore
-    ) {
+    constructor() {
         this.store.setInitialStateData({
             favoritePageUrl: this.config.data.page.favoritePageUrl,
             favoritePage: this.config.data.page.favoritePage

@@ -1,0 +1,177 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+      POSTGRES_USER: 'dotcmsdbuser'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - db_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:1
+    environment:
+      cluster.name: "elastic-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - opensearch-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
+  dotcms:
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    environment:
+      CMS_JAVA_OPTS: '-Xmx1g'
+      LANG: 'C.UTF-8'
+      TZ: 'UTC'
+      DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+      DB_USERNAME: 'dotcmsdbuser'
+      DB_PASSWORD: 'password'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+      DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+      DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+      DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
+      
+      # Metrics Configuration
+      DOT_METRICS_ENABLED: 'true'
+      DOT_METRICS_PROMETHEUS_ENABLED: 'true'
+      DOT_METRICS_JMX_ENABLED: 'true'
+      DOT_METRICS_JVM_ENABLED: 'true'
+      DOT_METRICS_SYSTEM_ENABLED: 'true'
+      DOT_METRICS_APPLICATION_ENABLED: 'true'
+      DOT_METRICS_DATABASE_ENABLED: 'true'
+      DOT_METRICS_CACHE_ENABLED: 'true'
+      DOT_METRICS_TOMCAT_ENABLED: 'true'
+      DOT_METRICS_SEARCH_ENABLED: 'true'
+      DOT_METRICS_HTTP_ENABLED: 'true'
+      DOT_METRICS_USER_SESSION_ENABLED: 'true'
+      DOT_METRICS_FILE_ASSET_ENABLED: 'true'
+      
+      # Kubernetes Tags for Demo
+      DOT_K8S_TAGS_ENABLED: 'true'
+      DOT_METRICS_TAG_APP: 'dotcms'
+      DOT_METRICS_TAG_ENV: 'demo'
+      DOT_METRICS_TAG_CUSTOMER: 'demo-customer'
+      DOT_METRICS_TAG_DEPLOYMENT: 'single-node-demo'
+      DOT_METRICS_TAG_NAMESPACE: 'dotcms-monitoring'
+      DOT_METRICS_TAG_POD_UID: '550e8400-e29b-41d4-a716-446655440000'
+      DOT_METRICS_TAG_NODE_NAME: 'dotcms-2'
+
+    depends_on:
+      db:
+        condition: service_healthy
+      opensearch:
+        condition: service_started
+    volumes:
+      - cms-shared:/data/shared
+    networks:
+      - db_net
+      - opensearch-net
+      - monitoring-net
+    ports:
+      - "8082:8082"   # Main application port
+      - "8443:8443"   # HTTPS port
+      - "8090:8090"   # Management port for metrics
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/dotmgt/livez"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring-net
+    depends_on:
+      dotcms:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin@dotcms.com
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring-net
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  db_net:
+    driver: bridge
+  opensearch-net:
+    driver: bridge
+  monitoring-net:
+    driver: bridge
+
+volumes:
+  cms-shared:
+  dbdata:
+  opensearch-data:
+  prometheus-data:
+  grafana-data: 

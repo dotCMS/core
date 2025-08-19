@@ -22,7 +22,8 @@ import { Content, Editor, JSONContent } from '@tiptap/core';
             useExisting: forwardRef(() => EditorDirective),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy {
     @Input() editor!: Editor;

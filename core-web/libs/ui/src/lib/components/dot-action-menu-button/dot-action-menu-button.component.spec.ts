@@ -6,8 +6,11 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionMenuItem } from '@dotcms/dotcms-models';
-import { DotActionMenuButtonComponent, DotMenuComponent } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+
+import { DotActionMenuButtonComponent } from './dot-action-menu-button.component';
+
+import { DotMenuComponent } from '../dot-menu/dot-menu.component';
 
 describe('ActionMenuButtonComponent', () => {
     let spectator: Spectator<DotActionMenuButtonComponent>;

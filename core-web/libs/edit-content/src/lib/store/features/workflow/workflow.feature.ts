@@ -28,8 +28,8 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSWorkflow, DotContentletDepths } from '@dotcms/dotcms-models';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
 

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, forwardRef, OnInit } from '@angular/core';
+import { Component, forwardRef, OnInit, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotWorkflowService } from '@dotcms/data-access';
@@ -16,14 +16,15 @@ import { DotCMSWorkflow } from '@dotcms/dotcms-models';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotWorkflowsSelectorFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
+    private dotWorkflowService = inject(DotWorkflowService);
+
     options$: Observable<DotCMSWorkflow[]>;
     value: DotCMSWorkflow[] = [];
     disabled = false;
-
-    constructor(private dotWorkflowService: DotWorkflowService) {}
 
     propagateChange = (_: unknown) => {
         /**/
