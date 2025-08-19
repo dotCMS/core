@@ -86,6 +86,10 @@ export class DotAnalyticsDashboardFiltersComponent {
     });
 
     onChangeTimeRange(event: DropdownChangeEvent): void {
+        if (event.value === TIME_RANGE_OPTIONS.custom) {
+            return;
+        }
+
         this.router.navigate([], {
             relativeTo: this.route,
             queryParams: {
