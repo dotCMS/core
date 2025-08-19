@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.util.FieldNameUtils.convertFieldClassName;
+
+import com.dotmarketing.util.FieldNameUtils;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.HashMap;
@@ -89,7 +92,7 @@ public class DotBinaryFieldException extends DotContentletStateException impleme
     public Optional<Map<String, ?>> getContext() {
         Map<String, String> context = new HashMap<>(additionalContext);
         if (fieldType != null) {
-            context.put("fieldType", fieldType);
+            context.put("fieldType", convertFieldClassName(fieldType));
         }
         if (errorType != null) {
             context.put("errorType", errorType.getCode());

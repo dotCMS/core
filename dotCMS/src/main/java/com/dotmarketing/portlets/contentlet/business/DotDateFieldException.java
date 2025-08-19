@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.util.FieldNameUtils.convertFieldClassName;
+
+import com.dotmarketing.util.FieldNameUtils;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.HashMap;
@@ -68,7 +71,7 @@ public class DotDateFieldException extends DotContentletStateException implement
     public Optional<Map<String, ?>> getContext() {
         Map<String, String> context = new HashMap<>(additionalContext);
         if (fieldType != null) {
-            context.put("fieldType", fieldType);
+            context.put("fieldType", convertFieldClassName(fieldType));
         }
         if (expectedFormat != null) {
             context.put("expectedFormat", expectedFormat);

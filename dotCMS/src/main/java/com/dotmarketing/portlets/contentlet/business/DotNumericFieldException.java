@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.util.FieldNameUtils.convertFieldClassName;
+
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.HashMap;
@@ -58,7 +60,7 @@ public class DotNumericFieldException extends DotContentletStateException implem
     public Optional<Map<String, ?>> getContext() {
         Map<String, String> context = new HashMap<>(additionalContext);
         if (fieldType != null) {
-            context.put("fieldType", fieldType);
+            context.put("fieldType", convertFieldClassName(fieldType));
         }
         if (expectedNumericType != null) {
             context.put("expectedNumericType", expectedNumericType);
