@@ -7,6 +7,8 @@ import {
     computed,
     effect,
     inject,
+    DestroyRef,
+    OnInit,
     signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,7 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -38,15 +40,16 @@ type DotContentDriveContentTypeFieldState = {
     styleUrl: './dot-content-drive-content-type-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveContentTypeFieldComponent {
+export class DotContentDriveContentTypeFieldComponent implements OnInit {
     #store = inject(DotContentDriveStore);
 
     #contentTypesService = inject(DotContentTypeService);
+    #destroyRef = inject(DestroyRef);
 
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         contentTypes: [],
         filterByKeyword: '',
-        loading: false
+        loading: true
     });
 
     readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
@@ -63,27 +66,26 @@ export class DotContentDriveContentTypeFieldComponent {
         }
     );
 
-    constructor() {
+    ngOnInit() {
         // Set up debounced API request stream with switchMap
+
         this.#apiRequestSubject
             .pipe(
                 tap(() => patchState(this.$state, { loading: true, contentTypes: [] })),
                 debounceTime(DEBOUNCE_TIME),
-                distinctUntilChanged(
-                    (prev, curr) => prev.type === curr.type && prev.filter === curr.filter
-                ),
+                takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ type, filter }) =>
                     this.#contentTypesService
                         .getContentTypes({ type, filter })
                         .pipe(catchError(() => of([])))
-                ),
-                takeUntilDestroyed()
+                )
             )
             .subscribe((contentTypes: DotCMSContentType[]) => {
                 const contentTypeFallback = contentTypes ?? [];
 
                 patchState(this.$state, {
                     contentTypes: contentTypeFallback?.filter(
+                        // We want to filter out forms and system types
                         (item) => item.baseType !== BASE_TYPES.form && !item.system
                     ),
                     loading: false
@@ -101,7 +103,7 @@ export class DotContentDriveContentTypeFieldComponent {
 
     readonly getContentTypesEffect = effect(() => {
         // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
-        // After that remove the uncommented code and
+        // After that remove the uncommented code and add the line below
         // const type = this.$mappedBaseTypes().join(',')
         const type = undefined;
         const filter = this.$state.filterByKeyword();
@@ -110,16 +112,27 @@ export class DotContentDriveContentTypeFieldComponent {
         this.#apiRequestSubject.next({ type, filter });
     });
 
+    /**
+     * This function is used to filter the content types by keyword
+     *
+     * @param {MultiSelectFilterEvent} event
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
     onFilter(event: MultiSelectFilterEvent) {
         patchState(this.$state, {
             filterByKeyword: event.filter
         });
     }
 
+    /**
+     * This function is used to handle the change event of the multiselect
+     *
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
     onChange() {
         const value = this.$selectedContentTypes() ?? [];
 
-        if (value.length > 0) {
+        if (value.length) {
             this.#store.patchFilters({
                 contentType: value.map((item) => item.variable)
             });
