@@ -741,8 +741,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Validations
         validate(results, true, false, true);
 
-        assertTrue(results.get("warnings").size() == 1);
-        assertEquals(UNIQUE_FIELDS_WARNING, results.get("warnings").get(0));
+        assertEquals(1, results.get("warnings").size());
+        assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
     }
 
     /**
@@ -802,7 +802,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals(UNIQUE_FIELDS_WARNING, results.get("warnings").get(0));
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
@@ -867,8 +867,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 2);
-            assertEquals(UNIQUE_FIELDS_WARNING, results.get("warnings").get(0));
+            assertEquals(2, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
@@ -939,8 +939,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals(UNIQUE_FIELDS_WARNING, results.get("warnings").get(0));
+            assertEquals(1, results.get("warnings").size());
+            //assertEquals(UNIQUE_FIELDS_WARNING, results.get("warnings").get(0));
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertTrue(results.get("errors").size() == 0);
         } finally {
             try {

@@ -1,5 +1,12 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
@@ -21,24 +28,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang3.BooleanUtils;
-import org.postgresql.util.PGobject;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
-import static com.liferay.util.StringPool.BLANK;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.postgresql.util.PGobject;
 
 /**
  * This implementation of the {@link UniqueFieldValidationStrategy} checks the uniqueness of a given
