@@ -42,15 +42,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -76,8 +77,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.FormDataParam;
+import javax.ws.rs.BeanParam;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -869,24 +869,25 @@ public class CategoriesResource {
     }
 
     /**
-     * Exports a list of categories.
+     * Imports categories from a CSV file.
      *
-     * @param httpRequest
-     * @param httpResponse
-     * @param uploadedFile
-     * @param multiPart
-     * @param fileDetail
-     * @param filter
-     * @param exportType
-     * @param contextInode
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param httpRequest HTTP request context
+     * @param httpResponse HTTP response context
+     * @param uploadedFile CSV file containing categories to import
+     * @param fileDetail File metadata and disposition information
+     * @param filter Filter pattern for categories
+     * @param exportType Import type: 'replace' or 'append'
+     * @param contextInode Context category inode to import into
+     * @return Response indicating success/failure
+     * @throws IOException if file reading fails
      */
     @Operation(
         summary = "Import categories from CSV file",
         description = "Imports categories from an uploaded CSV file. Supports 'replace' mode to replace existing categories or 'append' mode to add to existing categories. Can specify a context category and filter options."
     )
+    @RequestBody(required = true,
+            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA,
+                    schema = @Schema(implementation = CategoryImportData.class)))
     @ApiResponse(responseCode = "200", description = "Categories imported successfully",
                 content = @Content(mediaType = "application/json",
                                   schema = @Schema(implementation = ResponseEntityCategoryView.class)))
@@ -902,35 +903,20 @@ public class CategoriesResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA})
     public Response importCategories(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @Parameter(description = "CSV file containing categories to import") @FormDataParam("file") final File uploadedFile,
-            @Parameter(description = "Multipart form data containing file and import parameters") FormDataMultiPart multiPart,
-            @Parameter(description = "File metadata and disposition information") @FormDataParam("file") FormDataContentDisposition fileDetail,
-            @Parameter(description = "Filter pattern for categories") @FormDataParam("filter") String filter,
-            @Parameter(description = "Import type: 'replace' or 'append'") @FormDataParam("exportType") String exportType,
-            @Parameter(description = "Context category inode to import into") @FormDataParam("contextInode") String contextInode) throws IOException {
+            @Parameter(hidden = true) @BeanParam final CategoryImportData form) throws IOException {
 
-        return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter,
-                exportType, contextInode);
+        return processImport(httpRequest, httpResponse,
+                form.getFileInputStream(), form.getFileDetail(),
+                form.getFilter(), form.getExportType(), form.getContextInode());
 
     }
 
-    private String getContentFromFile(String path) throws IOException {
-
-        String content = StringPool.BLANK;
-
-        try (InputStream file = java.nio.file.Files.newInputStream(java.nio.file.Path.of(path))) {
-            byte[] uploadedFileBytes = file.readAllBytes();
-
-            content = new String(uploadedFileBytes);
-        }
-        return content;
-    }
+    
 
     @WrapInTransaction
     private Response processImport(final HttpServletRequest httpRequest,
             final HttpServletResponse httpResponse,
-            final File uploadedFile,
-            final FormDataMultiPart multiPart,
+            final InputStream fileInputStream,
             final FormDataContentDisposition fileDetail,
             final String filter,
             final String exportType,
@@ -939,7 +925,6 @@ public class CategoriesResource {
         List<Category> unableToDeleteCats = null;
         final List<FailedResultView> failedToDelete = new ArrayList<>();
 
-        StringReader stringReader = null;
         BufferedReader bufferedReader = null;
 
         try {
@@ -954,10 +939,7 @@ public class CategoriesResource {
                     contextInode,
                     filter, exportType));
 
-            String content = getContentFromFile(uploadedFile.getPath());
-
-            stringReader = new StringReader(content);
-            bufferedReader = new BufferedReader(stringReader);
+            bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
 
             if (exportType.equals("replace")) {
                 Logger.debug(this, () -> "Replacing categories");
@@ -989,7 +971,7 @@ public class CategoriesResource {
         } catch (Exception e) {
             Logger.error(this, "Error importing categories", e);
         } finally {
-            CloseUtils.closeQuietly(stringReader, bufferedReader);
+            CloseUtils.closeQuietly(bufferedReader);
         }
 
         return Response.ok(new ResponseEntityBulkResultView(

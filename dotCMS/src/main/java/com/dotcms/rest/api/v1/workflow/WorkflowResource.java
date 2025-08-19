@@ -2554,13 +2554,14 @@ public class WorkflowResource {
                                                             description = "Language version of target content.",
                                                             schema = @Schema(type = "string")
                                                     ) final String language,
-                                                    @RequestBody(
-                                                            description = "Multipart form. More details to follow.",
-                                                         required = true,
-                                                         content = @Content(
-                                                                 schema = @Schema(implementation = FormDataMultiPart.class)
-                                                         )
-                                                 ) final FormDataMultiPart multipart) {
+                                                     @RequestBody(
+                                                             description = "Multipart form containing a JSON 'contentlet' body and optional binary field parts.",
+                                                          required = true,
+                                                          content = @Content(
+                                                                  mediaType = MediaType.MULTIPART_FORM_DATA,
+                                                                  schema = @Schema(implementation = com.dotcms.rest.api.v1.workflow.WorkflowActionMultipartSchema.class)
+                                                          )
+                                                  ) final FormDataMultiPart multipart) {
         return fireActionByNameMultipart(request, response, inode, identifier, indexPolicy, language, multipart);
     }
 
@@ -3953,12 +3954,13 @@ public class WorkflowResource {
                     schema = @Schema(type = "string")
             ) final String language,
             @RequestBody(
-                    description = "Multipart form. More details to follow.",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = FormDataMultiPart.class)
-                    )
-            ) final FormDataMultiPart multipart) {
+                    description = "Multipart form containing a JSON 'contentlet' body and optional binary field parts.",
+                 required = true,
+                 content = @Content(
+                         mediaType = MediaType.MULTIPART_FORM_DATA,
+                         schema = @Schema(implementation = com.dotcms.rest.api.v1.workflow.WorkflowActionMultipartSchema.class)
+                 )
+         ) final FormDataMultiPart multipart) {
         return fireActionMultipart(request, response, actionId, inode, identifier, indexPolicy,
                 language, multipart);
     }
@@ -4107,9 +4109,12 @@ public class WorkflowResource {
                     description = "Default system action."
             ) final WorkflowAPI.SystemAction systemAction,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Multipart form data for workflow action execution including content, files, and workflow parameters",
+                    description = "Multipart form containing a JSON 'contentlet' body and optional binary field parts.",
                     required = true,
-                    content = @Content(schema = @Schema(implementation = FormDataMultiPart.class))
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(implementation = com.dotcms.rest.api.v1.workflow.WorkflowActionMultipartSchema.class)
+                    )
             ) final FormDataMultiPart multipart) {
         return fireActionDefaultMultipart(request, response, inode, identifier, indexPolicy, language,
                 systemAction, multipart);

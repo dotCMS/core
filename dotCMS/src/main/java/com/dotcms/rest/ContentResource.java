@@ -1443,9 +1443,11 @@ public class ContentResource {
 
             if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
                 try {
-                    processJSON(contentlet, part.getEntityAs(InputStream.class));
+                    // Read and parse JSON once to avoid "Stream closed" error
+                    final Map<String, Object> jsonMap = WebResource.processJSON(part.getEntityAs(InputStream.class));
+                    processMap(contentlet, jsonMap);
                     try {
-                        binaryFieldsInput = WebResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields").toString();
+                        binaryFieldsInput = jsonMap.get("binary_fields").toString();
                     } catch (NullPointerException npe) {
                       //empty on purpose
                     }

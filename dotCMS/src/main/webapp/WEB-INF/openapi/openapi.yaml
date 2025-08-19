@@ -4485,8 +4485,8 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/FormDataMultiPart"
-        description: Multipart form data containing file and import parameters
+              $ref: "#/components/schemas/CategoryImportFormSchema"
+        required: true
       responses:
         "200":
           content:
@@ -14853,9 +14853,9 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/FormDataMultiPart"
-        description: "Multipart form data for workflow action execution including\
-          \ content, files, and workflow parameters"
+              $ref: "#/components/schemas/WorkflowActionMultipartSchema"
+        description: Multipart form containing a JSON 'contentlet' body and optional
+          binary field parts.
         required: true
       responses:
         "200":
@@ -15023,8 +15023,9 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/FormDataMultiPart"
-        description: Multipart form. More details to follow.
+              $ref: "#/components/schemas/WorkflowActionMultipartSchema"
+        description: Multipart form containing a JSON 'contentlet' body and optional
+          binary field parts.
         required: true
       responses:
         "200":
@@ -15550,8 +15551,9 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/FormDataMultiPart"
-        description: Multipart form. More details to follow.
+              $ref: "#/components/schemas/WorkflowActionMultipartSchema"
+        description: Multipart form containing a JSON 'contentlet' body and optional
+          binary field parts.
         required: true
       responses:
         "200":
@@ -19330,6 +19332,26 @@ components:
           format: int32
       required:
       - categoryName
+    CategoryImportFormSchema:
+      type: object
+      description: Category import form data with CSV file and processing parameters
+      properties:
+        contextInode:
+          type: string
+          description: Context category inode to import into
+        exportType:
+          type: string
+          description: Import behavior
+          enum:
+          - replace
+          - merge
+        file:
+          type: string
+          format: binary
+          description: CSV file containing categories to import
+        filter:
+          type: string
+          description: Filter pattern for categories
     CategoryKeysForm:
       type: object
       properties:
@@ -27658,6 +27680,35 @@ components:
       - actionRoleHierarchyForAssign
       - schemeId
       - showOn
+    WorkflowActionMultipartSchema:
+      type: object
+      description: Multipart form for workflow actions. Include a JSON 'contentlet'
+        and one or more 'file' parts that map to binary field variables.
+      properties:
+        binaryFields:
+          type: array
+          description: List of binary field variables. The uploaded files in 'file'
+            should correspond by index to these field variables.
+          example:
+          - binaryImage
+          - binaryDocument
+          items:
+            type: string
+            description: List of binary field variables. The uploaded files in 'file'
+              should correspond by index to these field variables.
+            example: "[\"binaryImage\",\"binaryDocument\"]"
+        contentlet:
+          type: string
+          description: JSON object describing the contentlet values.
+          example: "{\\n  \"contentType\": \"News\",\\n  \"title\": \"My News\"\\\
+            n}"
+        file:
+          type: array
+          description: Files to upload. Repeat the 'file' part for multiple files;
+            order should match 'binaryFields'.
+          items:
+            type: string
+            format: binary
     WorkflowActionSeparatorForm:
       type: object
       properties:
