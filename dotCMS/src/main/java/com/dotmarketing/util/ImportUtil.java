@@ -1570,7 +1570,7 @@ public class ImportUtil {
                         .code(HeaderValidationCodes.UNIQUE_FIELD.name())
                         .field(fieldNames) // Comma-separated list of unique fields
                         .lineNumber(1)
-                        .message("Please note that there are unique fields in this Content Type. Duplicate values will be rejected during import.")
+                        .message("There are unique fields in this Content Type. Duplicate values are rejected during import.")
                         .build()
         );
     }

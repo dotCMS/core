@@ -331,7 +331,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 uniqueFieldCriteria.field().variable(), 
                 uniqueFieldCriteria.value(), 
                 uniqueFieldCriteria.contentType().variable())
-                .fieldType(uniqueFieldCriteria.field().dataType().toString())
+                .fieldType(uniqueFieldCriteria.field().typeName())
                 .build();
     }
 
@@ -357,8 +357,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                     field.variable(), 
                     "N/A",
                     field.contentTypeId())
-                    .fieldType(field.dataType().toString())
-                    .addContext("uniquePerSite", BooleanUtils.toStringYesNo(uniquePerSite))
+                    .fieldType(field.typeName())
                     .build();
         }
     }

@@ -838,7 +838,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
 	    if (fieldVarName!= null && isRelationshipField(fieldVarName)){
-	        setRelated(fieldVarName, (List<Contentlet>) objValue);
+            if(objValue instanceof List){
+                setRelated(fieldVarName, (List<Contentlet>) objValue);
+            } else {
+                //When invoked from a copyContentlet action the relationship field value is a String representation of the identifier or a query
+                if (objValue instanceof String) {
+                    //here we might have a query or an identifier, but this method can handle both cases
+                    setRelatedByQuery(fieldVarName,objValue.toString(),null, APILocator.systemUser(),false);
+                }
+            }
         } else{
             map.put(fieldVarName, objValue);
 			addRemoveNullProperty(fieldVarName, objValue);
