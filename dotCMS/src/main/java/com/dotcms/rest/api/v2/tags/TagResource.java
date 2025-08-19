@@ -208,15 +208,11 @@ public class TagResource {
      */
     @Operation(
             summary = "Create single tag",
-            description = "Creates a single tag or returns existing tag if it already exists"
+            description = "Creates a single tag. This operation is idempotent - if the tag already exists, it will return the existing tag."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201",
-                    description = "Tag created successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityRestTagView.class))),
-            @ApiResponse(responseCode = "200",
-                    description = "Existing tag returned",
+                    description = "Tag created or retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityRestTagView.class))),
             @ApiResponse(responseCode = "400",
@@ -264,16 +260,8 @@ public class TagResource {
                         .build();
             }
 
-            // Determine if this is a new tag or existing
-            final String siteId = helper.getValidateSite(tagForm.getSiteId(), user, request);
-            Tag existingTag = null;
-            try {
-                existingTag = tagAPI.getTagByNameAndHost(tagForm.getName(), siteId);
-            } catch (Exception e) {
-                // Tag doesn't exist, will be created
-            }
-
             // Create or get the tag
+            final String siteId = helper.getValidateSite(tagForm.getSiteId(), user, request);
             final Tag tag = tagAPI.getTagAndCreate(
                     tagForm.getName(),
                     tagForm.getOwnerId(),
@@ -291,12 +279,8 @@ public class TagResource {
             // Convert to RestTag
             final RestTag restTag = TagsResourceHelper.toRestTag(tag);
 
-            // Return 201 for new tag, 200 for existing
-            final Response.Status status = (existingTag == null)
-                    ? Response.Status.CREATED
-                    : Response.Status.OK;
-
-            return Response.status(status)
+            // Always return 201 (idempotent operation)
+            return Response.status(Response.Status.CREATED)
                     .entity(new ResponseEntityRestTagView(restTag))
                     .build();
 

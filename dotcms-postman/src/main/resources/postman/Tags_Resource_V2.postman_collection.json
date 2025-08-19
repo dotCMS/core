@@ -1816,8 +1816,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200 OK for existing tag\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 201 Created (idempotent operation)\", function () {",
+							"    pm.response.to.have.status(201);",
 							"});",
 							"",
 							"pm.test(\"Returns existing tag data\", function () {",
@@ -1867,7 +1867,7 @@
 						"tags"
 					]
 				},
-				"description": "Attempts to create same tag again, should return existing tag with 200 status"
+				"description": "Attempts to create same tag again, idempotent operation returns 201 with existing tag"
 			},
 			"response": []
 		},
