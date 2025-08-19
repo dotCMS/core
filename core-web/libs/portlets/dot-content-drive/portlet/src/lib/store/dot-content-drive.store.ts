@@ -132,7 +132,13 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { status });
             },
             patchFilters(filters: DotContentDriveFilters) {
-                patchState(store, { filters: { ...store.filters(), ...filters } });
+                patchState(store, {
+                    filters: { ...store.filters(), ...filters },
+                    pagination: {
+                        ...store.pagination(),
+                        offset: 0
+                    }
+                });
             },
             removeFilter(filter: string) {
                 const { [filter]: removedFilter, ...restFilters } = store.filters();
