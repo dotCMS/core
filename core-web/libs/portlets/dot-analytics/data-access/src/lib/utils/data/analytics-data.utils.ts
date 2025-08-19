@@ -332,6 +332,11 @@ export const fillMissingDates = (
     return filledData;
 };
 
+/**
+ * Get the date range for the given time range
+ * @param timeRange - The time range to get the date range for
+ * @returns The date range
+ */
 export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
     const today = new Date();
 
