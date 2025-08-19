@@ -108,8 +108,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
 
                 const contentTypeFilters = this.#store.getFilterValue('contentType');
 
+                // Set the selected content types
                 this.$selectedContentTypes.set(
+                    // Filter all the valid content types from this request
                     cleanedContentTypes.filter((item) =>
+                        // By the filters we have active in the store
                         contentTypeFilters?.includes(item.variable)
                     )
                 );
