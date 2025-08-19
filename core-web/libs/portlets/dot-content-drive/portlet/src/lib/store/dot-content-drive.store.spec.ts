@@ -270,9 +270,9 @@ describe('DotContentDriveStore', () => {
                 store.setPagination({ limit: 10, offset: 10 });
                 expect(store.pagination()).toEqual({ limit: 10, offset: 10 });
 
-                store.setFilters({ contentType: 'Blog' });
+                store.patchFilters({ contentType: ['Blog'] });
                 expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
-                expect(store.filters()).toEqual({ contentType: 'Blog' });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
             });
         });
 

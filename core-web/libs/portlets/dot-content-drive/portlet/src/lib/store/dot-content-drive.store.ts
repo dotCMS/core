@@ -131,7 +131,7 @@ export const DotContentDriveStore = signalStore(
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
             },
-            setFilters(filters: Record<string, string>) {
+            patchFilters(filters: DotContentDriveFilters) {
                 patchState(store, {
                     filters: { ...store.filters(), ...filters },
                     pagination: {
