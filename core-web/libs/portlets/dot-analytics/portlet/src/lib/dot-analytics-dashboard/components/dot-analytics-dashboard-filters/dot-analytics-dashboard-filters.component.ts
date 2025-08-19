@@ -1,5 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -109,7 +109,7 @@ export class DotAnalyticsDashboardFiltersComponent {
     readonly #handleChangeInputTimeRange = signalMethod<TimeRangeInput>((timeRange) => {
         if (Array.isArray(timeRange)) {
             this.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
-            const [from, to] = timeRange.map((date) => new Date(`${date}T00:00:00.000`));
+            const [from, to] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
             this.$customDateRange.set([from, to]);
         } else {
             this.$selectedTimeRange.set(timeRange);

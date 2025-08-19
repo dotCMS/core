@@ -1,4 +1,4 @@
-import { isBefore, isDate, isSameDay } from 'date-fns';
+import { isBefore, isDate, isSameDay, parse } from 'date-fns';
 
 import { TimeRange, TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
 
@@ -9,8 +9,8 @@ import { TimeRange, TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/da
  * @returns true if the date range is valid
  */
 export const isValidCustomDateRange = (fromDate: string, toDate: string): boolean => {
-    const fromDateObj = new Date(`${fromDate}T00:00:00.000`);
-    const toDateObj = new Date(`${toDate}T00:00:00.000`);
+    const fromDateObj = parse(fromDate, 'yyyy-MM-dd', new Date());
+    const toDateObj = parse(toDate, 'yyyy-MM-dd', new Date());
 
     // Ensure dates are valid Date objects
     if (!isDate(fromDateObj) || !isDate(toDateObj)) {

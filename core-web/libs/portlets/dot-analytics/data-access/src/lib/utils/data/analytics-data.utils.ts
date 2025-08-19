@@ -1,4 +1,4 @@
-import { format, isSameDay, isSameMonth } from 'date-fns';
+import { format, isSameDay, isSameMonth, parse } from 'date-fns';
 
 import { TIME_RANGE_OPTIONS } from '../../constants';
 import {
@@ -38,7 +38,7 @@ const TIME_FORMATS = {
  */
 export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
     if (Array.isArray(timeRange)) {
-        const [fromDate, toDate] = timeRange.map((date) => new Date(`${date}T00:00:00.000`));
+        const [fromDate, toDate] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
 
         if (isSameDay(fromDate, toDate)) {
             return 'hour';
