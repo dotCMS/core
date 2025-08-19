@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { Component, computed, inject, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -12,7 +11,7 @@ import {
     extractSessions,
     extractTopPageValue,
     MetricData,
-    TimeRangeInput
+    TIME_RANGE_OPTIONS
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -21,13 +20,7 @@ import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
 import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
 import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
-import { CUSTOM_TIME_RANGE } from './constants';
-import { DateRange } from './types';
-import {
-    fromUrlFriendly,
-    isValidCustomDateRange,
-    isValidTimeRange
-} from './utils/dot-analytics.utils';
+import { getProperQueryParamsFromUrl } from './utils/state-from-url';
 
 /**
  * Main analytics dashboard component for DotCMS.
@@ -55,18 +48,17 @@ import {
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard.component.html',
-    styleUrl: './dot-analytics-dashboard.component.scss'
+    styleUrl: './dot-analytics-dashboard.component.scss',
+    standalone: true
 })
 export default class DotAnalyticsDashboardComponent implements OnInit {
+    store = inject(DotAnalyticsDashboardStore);
+
     private readonly route = inject(ActivatedRoute);
-    private readonly store = inject(DotAnalyticsDashboardStore);
-    private readonly destroyRef = inject(DestroyRef);
+    private readonly router = inject(Router);
 
     // Current site ID
     private readonly $currentSiteId = inject(GlobalStore).currentSiteId;
-
-    // Current time range
-    protected readonly $currentTimeRange = this.store.timeRange;
 
     // Metrics signals
     protected readonly $totalPageViews = this.store.totalPageViews;
@@ -108,7 +100,7 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
      * Refresh dashboard data
      */
     onRefresh(): void {
-        const timeRange = this.$currentTimeRange();
+        const timeRange = this.store.timeRange();
         const currentSiteId = this.$currentSiteId();
 
         if (currentSiteId && timeRange) {
@@ -117,32 +109,19 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        // Listen to query param changes and sync with store
-        this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-            const urlTimeRange = params['time_range'];
-            const fromDate = params['from'];
-            const toDate = params['to'];
+        const queryParams = getProperQueryParamsFromUrl(this.route.snapshot.queryParamMap);
 
-            if (urlTimeRange) {
-                // Convert URL-friendly value to internal value
-                const internalTimeRange = fromUrlFriendly(urlTimeRange);
-
-                // Handle custom date range
-                if (internalTimeRange === CUSTOM_TIME_RANGE) {
-                    // Only set if we have valid from and to dates
-                    if (fromDate && toDate && isValidCustomDateRange(fromDate, toDate)) {
-                        const customDateRange: DateRange = [fromDate, toDate];
-                        this.store.setTimeRange(customDateRange);
-                    }
-                }
-                // Handle predefined time range (excluding CUSTOM_TIME_RANGE)
-                else if (
-                    internalTimeRange !== CUSTOM_TIME_RANGE &&
-                    isValidTimeRange(internalTimeRange)
-                ) {
-                    this.store.setTimeRange(internalTimeRange as TimeRangeInput);
-                }
-            }
-        });
+        if (queryParams.type === 'params') {
+            this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: queryParams.params,
+                queryParamsHandling: 'replace',
+                replaceUrl: true
+            });
+        } else if (queryParams.type === 'timeRange') {
+            this.store.setTimeRange(queryParams.timeRange);
+        } else {
+            this.store.setTimeRange(TIME_RANGE_OPTIONS.last7days);
+        }
     }
 }

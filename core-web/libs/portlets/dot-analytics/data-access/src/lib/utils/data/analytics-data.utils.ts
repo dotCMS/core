@@ -1,5 +1,6 @@
 import { isSameDay, isSameMonth } from 'date-fns';
 
+import { TIME_RANGE_OPTIONS } from '../../constants';
 import {
     ChartData,
     Granularity,
@@ -41,18 +42,18 @@ export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Gra
     }
 
     switch (timeRange) {
-        case 'today':
+        case TIME_RANGE_OPTIONS.today:
 
         // falls through
-        case 'yesterday':
+        case TIME_RANGE_OPTIONS.yesterday:
             // For today/yesterday, use hourly granularity for detailed intraday analysis
             return 'hour';
 
-        case 'from 7 days ago to now':
+        case TIME_RANGE_OPTIONS.last7days:
             // For last 7 days, use daily granularity
             return 'day';
 
-        case 'from 30 days ago to now':
+        case TIME_RANGE_OPTIONS.last30days:
             // For last 30 days, use daily granularity
             return 'day';
 

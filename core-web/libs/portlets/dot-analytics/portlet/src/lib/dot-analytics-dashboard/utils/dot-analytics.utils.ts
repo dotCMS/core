@@ -1,23 +1,7 @@
-/**
- * Centralized utilities for analytics dashboard
- */
-
 import { isBefore, isDate, isSameDay } from 'date-fns';
 
-import {
-    DEFAULT_TIME_PERIOD,
-    TIME_PERIOD_OPTIONS,
-    TIME_RANGE_INTERNAL_MAPPING,
-    TIME_RANGE_URL_MAPPING
-} from '../constants';
+import { TimeRange, TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
 
-// ============================================================================
-// DATE VALIDATION UTILITIES
-// ============================================================================
-
-/**
- * Validate that a custom date range has valid dates and proper order
- */
 export const isValidCustomDateRange = (fromDate: string, toDate: string): boolean => {
     if (!fromDate || !toDate) {
         return false;
@@ -34,44 +18,6 @@ export const isValidCustomDateRange = (fromDate: string, toDate: string): boolea
     return isBefore(fromDateObj, toDateObj) || isSameDay(fromDateObj, toDateObj);
 };
 
-/**
- * Validate if the time range from URL is valid
- */
-export const isValidTimeRange = (timeRange: string): boolean => {
-    return TIME_PERIOD_OPTIONS.some((option) => option.value === timeRange);
+export const getValidTimeRangeUrl = (urlValue: string): TimeRange | null => {
+    return Object.keys(TIME_RANGE_OPTIONS).includes(urlValue) ? (urlValue as TimeRange) : null;
 };
-
-// ============================================================================
-// URL MAPPING UTILITIES
-// ============================================================================
-
-/**
- * Convert internal time range value to URL-friendly value
- */
-export const toUrlFriendly = (internalValue: string): string => {
-    return (
-        TIME_RANGE_INTERNAL_MAPPING[internalValue as keyof typeof TIME_RANGE_INTERNAL_MAPPING] ||
-        internalValue
-    );
-};
-
-/**
- * Convert URL-friendly value to internal time range value
- */
-export const fromUrlFriendly = (urlValue: string): string => {
-    return TIME_RANGE_URL_MAPPING[urlValue as keyof typeof TIME_RANGE_URL_MAPPING] || urlValue;
-};
-
-// ============================================================================
-// CONSTANTS UTILITIES
-// ============================================================================
-
-/**
- * Get default time period from constants
- */
-export const getDefaultTimePeriod = (): string => DEFAULT_TIME_PERIOD;
-
-/**
- * Get available time period options
- */
-export const getTimePeriodOptions = () => TIME_PERIOD_OPTIONS;
