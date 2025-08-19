@@ -1647,7 +1647,7 @@ public class ImportUtil {
             validationBuilder.addMessages(
                     ValidationMessage.builder()
                             .type(ValidationMessageType.INFO)
-                            .message(count + " Relationship field" + (count > 1 ? "(s) were" : "was") + " found and will be imported!" )
+                            .message(count + " Relationship field" + (count > 1 ? "(s) were" : "was") + " found and will be used for import." )
                             .field(relationships.toString())
                             .build()
             );

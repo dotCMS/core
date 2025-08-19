@@ -120,10 +120,6 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                                     contentType.variable())
                                     .fieldType(uniqueField.dataType().toString())
                                     .contentletIds(contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()))
-                                    .addContext("site", contentlet.getHost())
-                                    .addContext("language", String.valueOf(contentlet.getLanguageId()))
-                                    .addContext("variant", contentlet.getVariantId())
-                                    .addContext("validationType", "elasticsearch")
                                     .build();
                         }
                     }
@@ -138,11 +134,6 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                             contentType.variable())
                             .fieldType(uniqueField.dataType().toString())
                             .contentletIds(contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()))
-                            .addContext("site", contentlet.getHost())
-                            .addContext("language", String.valueOf(contentlet.getLanguageId()))
-                            .addContext("variant", contentlet.getVariantId())
-                            .addContext("validationType", "elasticsearch")
-                            .addContext("contentletType", "new")
                             .build();
                 }
             }
@@ -178,7 +169,6 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 .append(ESUtils.sha256(contentlet.getContentType().variable()
                                 + StringPool.PERIOD + uniqueField.variable(), fieldValue,
                         contentlet.getLanguageId()));
-
         final List<ContentletSearch> contentlets = new ArrayList<>();
         try {
             contentlets.addAll(
@@ -192,7 +182,6 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                     "Unique field [" + uniqueField.variable() + "] with value '" +
                             fieldValue + "' could not be validated: " + e.getMessage();
             Logger.warn(this, errorMsg, e);
-            //Here too
             throw new DotContentletValidationException(errorMsg, e);
         }
         return contentlets;
