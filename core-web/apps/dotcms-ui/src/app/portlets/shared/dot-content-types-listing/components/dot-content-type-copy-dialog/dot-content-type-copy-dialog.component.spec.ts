@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
@@ -7,8 +7,9 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     DotDialogModule,
     DotFieldValidationMessageComponent,
@@ -42,6 +43,27 @@ const formValues = {
     icon: ''
 };
 
+const mockSystemConfig: DotSystemConfig = {
+    logos: { loginScreen: '', navBar: '' },
+    colors: { primary: '#54428e', secondary: '#3a3847', background: '#BB30E1' },
+    releaseInfo: { buildDate: 'June 24, 2019', version: '5.0.0' },
+    systemTimezone: { id: 'America/Costa_Rica', label: 'Costa Rica', offset: 360 },
+    languages: [],
+    license: {
+        level: 100,
+        displayServerId: '19fc0e44',
+        levelName: 'COMMUNITY EDITION',
+        isCommunity: true
+    },
+    cluster: { clusterId: 'test-cluster', companyKeyDigest: 'test-digest' }
+};
+
+class MockDotSystemConfigService {
+    getSystemConfig(): Observable<DotSystemConfig> {
+        return of(mockSystemConfig);
+    }
+}
+
 describe('DotContentTypeCloneDialogComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotContentTypeCopyDialogComponent;
@@ -72,6 +94,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 {
                     provide: DotEventsService,
                     useValue: {

@@ -6421,6 +6421,7 @@ paths:
               filter:
                 query: ""
                 types: "Blog,Activity"
+                sites: "demo.dotcms.com,SYSTEM_HOST"
               page: 1
               perPage: 10
               orderBy: name
@@ -6432,7 +6433,7 @@ paths:
 
           | Property |  Type  | Description |
           |----------|--------|-------------|
-          | `filter`   | JSON Object | Contains two properties: <table><tr><td>`query`</td><td>A simple query returning full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list of specific content type variables.</td></tr></table> |
+          | `filter`   | JSON Object | Contains three properties: <table><tr><td>`query`</td><td>A simple query returning full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list of specific content type variables.</td></tr><tr><td>`sites`</td><td>A comma-separated list of site identifiers or keys.</td></tr></table> |
           | `page` | Integer | Which page of results to show. Defaults to `1`. |
           | `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |
           | `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |
@@ -11019,6 +11020,36 @@ paths:
             application/json: {}
           description: Forbidden - admin permissions required
       summary: Save role layouts
+      tags:
+      - Roles
+  /v1/roles/users/{userIdOrEmail}:
+    get:
+      description: Loads the user roles
+      operationId: loadUserRoles
+      parameters:
+      - description: User id or email
+        in: path
+        name: userIdOrEmail
+        required: true
+        schema:
+          type: string
+          default: "true"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleViewListView"
+          description: User roles retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user required
+      summary: Load user roles
       tags:
       - Roles
   /v1/roles/{roleId}/layouts:

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BehaviorSubject, of, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -16,12 +16,14 @@ import {
     DotCrudService,
     DotEventsService,
     DotMessageService,
+    DotSystemConfigService,
     DotTempFileUploadService,
     DotThemesService,
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
 import { DotFormDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
@@ -88,6 +90,27 @@ const messageServiceMock = new MockDotMessageService({
 
 interface TemplateStoreValueType {
     [key: string]: jasmine.Spy;
+}
+
+const mockSystemConfig: DotSystemConfig = {
+    logos: { loginScreen: '', navBar: '' },
+    colors: { primary: '#54428e', secondary: '#3a3847', background: '#BB30E1' },
+    releaseInfo: { buildDate: 'June 24, 2019', version: '5.0.0' },
+    systemTimezone: { id: 'America/Costa_Rica', label: 'Costa Rica', offset: 360 },
+    languages: [],
+    license: {
+        level: 100,
+        displayServerId: '19fc0e44',
+        levelName: 'COMMUNITY EDITION',
+        isCommunity: true
+    },
+    cluster: { clusterId: 'test-cluster', companyKeyDigest: 'test-digest' }
+};
+
+class MockDotSystemConfigService {
+    getSystemConfig(): Observable<DotSystemConfig> {
+        return of(mockSystemConfig);
+    }
 }
 
 async function makeFormValid(fixture) {
@@ -247,7 +270,8 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: {
                         get: jasmine.createSpy().and.returnValue(of(mockDotThemes[1]))
                     }
-                }
+                },
+                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService }
             ]
         });
 

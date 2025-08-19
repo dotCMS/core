@@ -4,7 +4,9 @@
         "outDir": "../../dist/out-tsc",
         "module": "commonjs",
         "types": ["jest", "node"],
-        "target": "es2016"
+        "target": "es2022",
+        "strict": false,
+        "noPropertyAccessFromIndexSignature": false
     },
     "files": ["src/test-setup.ts"],
     "include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]

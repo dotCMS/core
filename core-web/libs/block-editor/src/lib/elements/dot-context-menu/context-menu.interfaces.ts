@@ -3,7 +3,7 @@
  */
 export interface ContextMenuItem {
     label?: string;
-    command?: () => void;
+    command?: () => void | Promise<void>;
     shortcut?: string;
     disabled?: boolean;
     separator?: boolean;
