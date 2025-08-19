@@ -68,10 +68,13 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
 
     ngOnInit() {
         // Set up debounced API request stream with switchMap
-
         this.#apiRequestSubject
             .pipe(
-                tap(() => patchState(this.$state, { loading: true, contentTypes: [] })),
+                tap(() =>
+                    patchState(this.$state, {
+                        loading: true
+                    })
+                ),
                 debounceTime(DEBOUNCE_TIME),
                 takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ type, filter }) =>
@@ -81,7 +84,17 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 )
             )
             .subscribe((contentTypes: DotCMSContentType[]) => {
-                const contentTypeFallback = contentTypes ?? [];
+                const selectedContentTypes = this.$selectedContentTypes();
+
+                const allContentTypes = [...selectedContentTypes, ...(contentTypes ?? [])];
+
+                const contentTypeFallback = allContentTypes.reduce((acc, current) => {
+                    const exists = acc.find((item) => item.id === current.id);
+                    if (!exists) {
+                        acc.push(current);
+                    }
+                    return acc;
+                }, [] as DotCMSContentType[]);
 
                 patchState(this.$state, {
                     contentTypes: contentTypeFallback?.filter(

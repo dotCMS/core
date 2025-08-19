@@ -2,19 +2,19 @@ import { DotCMSContentType, DotContentDriveItem, SiteEntity } from '@dotcms/dotc
 
 import { BASE_TYPES } from './models';
 
-export const mockItems: DotContentDriveItem[] = [
+export const MOCK_ITEMS: DotContentDriveItem[] = [
     { identifier: '123', title: 'Test Content 1' } as DotContentDriveItem,
     { identifier: '456', title: 'Test Content 2' } as DotContentDriveItem
 ];
 
-export const mockSearchResponse = {
+export const MOCK_SEARCH_RESPONSE = {
     jsonObjectView: {
-        contentlets: mockItems
+        contentlets: MOCK_ITEMS
     },
     resultsSize: 2
 };
 
-export const mockRoute = {
+export const MOCK_ROUTE = {
     snapshot: {
         queryParams: {
             path: '/test/path',
@@ -23,7 +23,7 @@ export const mockRoute = {
     }
 };
 
-export const mockSites: SiteEntity[] = [
+export const MOCK_SITES: SiteEntity[] = [
     {
         aliases: 'demo.com,www.demo.com',
         archived: false,
@@ -202,7 +202,7 @@ export const mockSites: SiteEntity[] = [
     }
 ];
 
-export const mockContentTypes: DotCMSContentType[] = [
+export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
     {
         id: '1',
         name: 'Blog',

@@ -6,13 +6,27 @@
     display="chip"
     showClear="true"
     [lazy]="true"
-    [loading]="$state.loading()"
     (onChange)="onChange()"
     (onClear)="onChange()"
+    [resetFilterOnHide]="true"
     (onFilter)="onFilter($event)"
     [placeholder]="'Content-Type' | dm"
     [showClear]="false"
     data-testid="content-type-field">
+    <ng-template pTemplate="item" let-item>
+        <div class="flex items-center gap-2 w-full">
+            @if ($state.loading()) {
+                <p-skeleton
+                    [style]="{
+                        height: '2rem',
+                        width: '8.5rem'
+                    }"
+                    data-testid="content-type-field-skeleton"></p-skeleton>
+            } @else {
+                {{ item.name }}
+            }
+        </div>
+    </ng-template>
     <ng-template pTemplate="empty">
         @if ($state.loading()) {
             <p-skeleton

@@ -13,7 +13,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveContentTypeFieldComponent } from './dot-content-drive-content-type-field.component';
 
-import { mockContentTypes } from '../../../../shared/mocks';
+import { MOCK_CONTENT_TYPES } from '../../../../shared/mocks';
 import { BASE_TYPES } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
@@ -32,7 +32,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
                 removeFilter: jest.fn()
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes))
+                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
             }),
             mockProvider(
                 DotMessageService,
@@ -89,7 +89,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             spectator.detectChanges();
             jest.advanceTimersByTime(500);
 
-            const expectedContentTypes = mockContentTypes.filter(
+            const expectedContentTypes = MOCK_CONTENT_TYPES.filter(
                 (ct) => ct.baseType !== BASE_TYPES.form && !ct.system
             );
 
@@ -103,7 +103,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             spectator.detectChanges();
             jest.advanceTimersByTime(500);
 
-            const expectedSelected = mockContentTypes.filter((ct) =>
+            const expectedSelected = MOCK_CONTENT_TYPES.filter((ct) =>
                 ['blog', 'news'].includes(ct.variable)
             );
 
@@ -339,8 +339,8 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         beforeEach(() => {
             // Set up component with valid content types
             spectator.component.$selectedContentTypes.set([
-                mockContentTypes[0], // blog
-                mockContentTypes[1] // news
+                MOCK_CONTENT_TYPES[0], // blog
+                MOCK_CONTENT_TYPES[1] // news
             ]);
         });
 
@@ -398,15 +398,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         it('should render p-multiSelect component', () => {
             const multiSelect = spectator.query('[data-testid="content-type-field"]');
             expect(multiSelect).toBeTruthy();
-        });
-
-        it('should show loading state in multiselect', () => {
-            // Trigger a filter operation to set loading state naturally
-            spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
-            spectator.detectChanges();
-
-            const multiSelect = spectator.query('[data-testid="content-type-field"]');
-            expect(multiSelect.getAttribute('ng-reflect-loading')).toBe('true');
         });
 
         it('should show empty state message when not loading and no results', () => {

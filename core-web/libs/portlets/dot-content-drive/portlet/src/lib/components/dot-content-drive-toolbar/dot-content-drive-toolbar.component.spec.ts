@@ -9,7 +9,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
-import { mockContentTypes } from '../../shared/mocks';
+import { MOCK_CONTENT_TYPES } from '../../shared/mocks';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
@@ -27,7 +27,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 filters: jest.fn().mockReturnValue({})
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes))
+                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
             }),
             mockProvider(DotMessageService, new MockDotMessageService({})),
             provideHttpClient()
