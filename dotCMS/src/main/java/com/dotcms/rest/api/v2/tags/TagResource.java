@@ -243,16 +243,11 @@ public class TagResource {
             final SingleTagForm tagForm) {
 
         try {
-            // Validate form explicitly
             tagForm.checkValid();
 
             // Initialize and check permissions
             final InitDataObject initDataObject = getInitDataObject(request, response);
             final User user = initDataObject.getUser();
-
-            Logger.debug(TagResource.class,
-                    () -> String.format("User '%s' is creating single tag: %s",
-                            user.getUserId(), tagForm.getName()));
 
             // Create or get the tag
             final String siteId = helper.getValidateSite(tagForm.getSiteId(), user, request);
@@ -279,7 +274,6 @@ public class TagResource {
                     .build();
 
         } catch (ValidationException e) {
-            @SuppressWarnings("unchecked")
             List<ErrorEntity> errors = (List<ErrorEntity>) e.getResponse().getEntity();
             
             return Response.status(Response.Status.BAD_REQUEST)
@@ -324,8 +318,6 @@ public class TagResource {
                     .build();
         }
     }
-
-
 
 
     /**
