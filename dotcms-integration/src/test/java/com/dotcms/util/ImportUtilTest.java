@@ -1004,9 +1004,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(1, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
