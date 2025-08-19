@@ -86,28 +86,30 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
             .subscribe((contentTypes: DotCMSContentType[]) => {
                 const selectedContentTypes = this.$selectedContentTypes();
 
+                // Preserve the selected content types
                 const allContentTypes = [...selectedContentTypes, ...(contentTypes ?? [])];
 
-                const contentTypeFallback = allContentTypes.reduce((acc, current) => {
+                // Remove duplicates
+                const cleanedContentTypes = allContentTypes.reduce((acc, current) => {
                     const exists = acc.find((item) => item.id === current.id);
-                    if (!exists) {
+
+                    // We want to filter out forms and system types and also remove duplicates
+                    if (!exists && !current.system && current.baseType !== BASE_TYPES.form) {
                         acc.push(current);
                     }
+
                     return acc;
                 }, [] as DotCMSContentType[]);
 
                 patchState(this.$state, {
-                    contentTypes: contentTypeFallback?.filter(
-                        // We want to filter out forms and system types
-                        (item) => item.baseType !== BASE_TYPES.form && !item.system
-                    ),
+                    contentTypes: cleanedContentTypes,
                     loading: false
                 });
 
                 const contentTypeFilters = this.#store.getFilterValue('contentType');
 
                 this.$selectedContentTypes.set(
-                    contentTypeFallback.filter((item) =>
+                    cleanedContentTypes.filter((item) =>
                         contentTypeFilters?.includes(item.variable)
                     )
                 );

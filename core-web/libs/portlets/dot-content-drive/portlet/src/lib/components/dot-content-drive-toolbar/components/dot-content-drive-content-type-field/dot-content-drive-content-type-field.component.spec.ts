@@ -282,6 +282,42 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(spectator.component.$state().contentTypes).toEqual([]);
             expect(spectator.component.$state().loading).toBe(false);
         });
+
+        it('should preserve selected content types', () => {
+            mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[1]]));
+            spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES[0]]);
+            spectator.detectChanges();
+
+            spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
+
+            spectator.detectChanges();
+            jest.advanceTimersByTime(500);
+
+            expect(spectator.component.$state().contentTypes).toEqual([
+                MOCK_CONTENT_TYPES[0],
+                MOCK_CONTENT_TYPES[1]
+            ]);
+        });
+
+        it('should preserve selected content types and remove duplicates', () => {
+            spectator.component.$selectedContentTypes.set([
+                MOCK_CONTENT_TYPES[0],
+                MOCK_CONTENT_TYPES[1]
+            ]);
+            spectator.detectChanges();
+
+            spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
+
+            mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[0]]));
+
+            spectator.detectChanges();
+            jest.advanceTimersByTime(500);
+
+            expect(spectator.component.$state().contentTypes).toEqual([
+                MOCK_CONTENT_TYPES[0],
+                MOCK_CONTENT_TYPES[1]
+            ]);
+        });
     });
 
     describe('onFilter Method', () => {
