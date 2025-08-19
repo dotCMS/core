@@ -940,9 +940,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertEquals(1, results.get("warnings").size());
-            //assertEquals(UNIQUE_FIELDS_WARNING, results.get("warnings").get(0));
             assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
