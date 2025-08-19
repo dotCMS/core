@@ -250,16 +250,6 @@ public class TagResource {
                     () -> String.format("User '%s' is creating single tag: %s",
                             user.getUserId(), tagForm.getName()));
 
-            // Validate tag name
-            Logger.debug(TagResource.class, "Validating tag form: " + tagForm.getName());
-            final List<ErrorEntity> validationErrors = validateSingleTag(tagForm);
-            Logger.debug(TagResource.class, "Validation errors found: " + validationErrors.size());
-            if (!validationErrors.isEmpty()) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(validationErrors))
-                        .build();
-            }
-
             // Create or get the tag
             final String siteId = helper.getValidateSite(tagForm.getSiteId(), user, request);
             final Tag tag = tagAPI.getTagAndCreate(
@@ -316,35 +306,6 @@ public class TagResource {
         }
     }
 
-    /**
-     * Validates a single tag form.
-     */
-    private List<ErrorEntity> validateSingleTag(final SingleTagForm form) {
-        final List<ErrorEntity> errors = new ArrayList<>();
-
-        if (!UtilMethods.isSet(form.getName())) {
-            errors.add(new ErrorEntity("tag.validation.error",
-                    "Tag name is required", "name"));
-        } else {
-            // Check for commas
-            if (form.getName().contains(",")) {
-                errors.add(new ErrorEntity("tag.validation.error",
-                        "Tag name cannot contain commas", "name"));
-            }
-            // Check length
-            if (form.getName().length() > 255) {
-                errors.add(new ErrorEntity("tag.validation.error",
-                        "Tag name cannot exceed 255 characters", "name"));
-            }
-            // Check for blank/whitespace only
-            if (form.getName().trim().isEmpty()) {
-                errors.add(new ErrorEntity("tag.validation.error",
-                        "Tag name cannot be blank", "name"));
-            }
-        }
-
-        return errors;
-    }
 
 
 

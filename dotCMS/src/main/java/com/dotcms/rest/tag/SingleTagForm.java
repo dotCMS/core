@@ -44,4 +44,23 @@ public class SingleTagForm extends Validated {
     public String getOwnerId() {
         return ownerId;
     }
+    
+    @Override
+    public void checkValid() {
+        // First run Bean Validation
+        super.checkValid();
+        
+        // Then add custom business rules
+        if (name != null) {
+            // Check for commas
+            if (name.contains(",")) {
+                throw new com.dotcms.rest.exception.BadRequestException("Tag name cannot contain commas");
+            }
+            
+            // Check for blank/whitespace only
+            if (name.trim().isEmpty()) {
+                throw new com.dotcms.rest.exception.BadRequestException("Tag name cannot be blank");
+            }
+        }
+    }
 }
