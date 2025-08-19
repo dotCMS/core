@@ -98,9 +98,7 @@ export class DotAnalyticsService {
         siteId: string | string[]
     ): Observable<PageViewTimeLineEntity[]> {
         // Determine granularity based on specific timeRange values
-        const granularity = Array.isArray(timeRange)
-            ? 'day' // For custom date ranges, default to day granularity
-            : determineGranularityForTimeRange(timeRange);
+        const granularity = determineGranularityForTimeRange(timeRange);
 
         const queryBuilder = createCubeQuery()
             .measures(['totalRequest'])

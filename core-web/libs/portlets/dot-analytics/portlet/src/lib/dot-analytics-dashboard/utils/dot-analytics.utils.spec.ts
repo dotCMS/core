@@ -1,13 +1,9 @@
 import {
-    formatDateForUrl,
     fromUrlFriendly,
     getDefaultTimePeriod,
     getTimePeriodOptions,
     isValidCustomDateRange,
-    isValidDate,
-    isValidDateOrder,
     isValidTimeRange,
-    parseDateFromUrl,
     toUrlFriendly
 } from './dot-analytics.utils';
 
@@ -35,8 +31,8 @@ describe('Analytics Utils', () => {
             expect(isValidCustomDateRange('2024-12-31', '2024-01-01')).toBe(false);
         });
 
-        it('should return false for same dates', () => {
-            expect(isValidCustomDateRange('2024-01-01', '2024-01-01')).toBe(false);
+        it('should return true for same dates', () => {
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-01')).toBe(true);
         });
 
         it('should return false for empty or null dates', () => {
@@ -60,47 +56,6 @@ describe('Analytics Utils', () => {
             expect(isValidTimeRange('from 100 days ago')).toBe(false);
             expect(isValidTimeRange('')).toBe(false);
             expect(isValidTimeRange('random-string')).toBe(false);
-        });
-    });
-
-    describe('isValidDate', () => {
-        it('should return true for valid Date objects', () => {
-            expect(isValidDate(new Date('2024-01-01'))).toBe(true);
-            expect(isValidDate(new Date())).toBe(true);
-        });
-
-        it('should return true for valid date strings', () => {
-            expect(isValidDate('2024-01-01')).toBe(true);
-            expect(isValidDate('2023-12-31')).toBe(true);
-            expect(isValidDate('January 1, 2024')).toBe(true);
-        });
-
-        it('should return false for invalid Date objects', () => {
-            expect(isValidDate(new Date('invalid-date'))).toBe(false);
-        });
-
-        it('should return false for invalid date strings', () => {
-            expect(isValidDate('invalid-date')).toBe(false);
-            expect(isValidDate('not-a-date')).toBe(false);
-            expect(isValidDate('')).toBe(false);
-        });
-    });
-
-    describe('isValidDateOrder', () => {
-        it('should return true when from date is before to date', () => {
-            expect(isValidDateOrder('2024-01-01', '2024-01-31')).toBe(true);
-            expect(isValidDateOrder(new Date('2024-01-01'), new Date('2024-01-31'))).toBe(true);
-            expect(isValidDateOrder('2023-12-01', new Date('2024-01-01'))).toBe(true);
-        });
-
-        it('should return false when from date is after to date', () => {
-            expect(isValidDateOrder('2024-01-31', '2024-01-01')).toBe(false);
-            expect(isValidDateOrder(new Date('2024-01-31'), new Date('2024-01-01'))).toBe(false);
-        });
-
-        it('should return false when dates are equal', () => {
-            expect(isValidDateOrder('2024-01-01', '2024-01-01')).toBe(false);
-            expect(isValidDateOrder(new Date('2024-01-01'), new Date('2024-01-01'))).toBe(false);
         });
     });
 
@@ -149,54 +104,6 @@ describe('Analytics Utils', () => {
             expect(fromUrlFriendly('unknown-url-value')).toBe('unknown-url-value');
             expect(fromUrlFriendly('random-string')).toBe('random-string');
             expect(fromUrlFriendly('')).toBe('');
-        });
-    });
-
-    // ============================================================================
-    // DATE FORMATTING UTILITIES
-    // ============================================================================
-
-    describe('formatDateForUrl', () => {
-        it('should format dates to YYYY-MM-DD format', () => {
-            const date1 = new Date('2024-01-01T10:30:00Z');
-            expect(formatDateForUrl(date1)).toBe('2024-01-01');
-
-            const date2 = new Date('2023-12-31T23:59:59Z');
-            expect(formatDateForUrl(date2)).toBe('2023-12-31');
-        });
-
-        it('should handle different date inputs consistently', () => {
-            const date = new Date(2024, 0, 15); // January 15, 2024
-            expect(formatDateForUrl(date)).toBe('2024-01-15');
-        });
-    });
-
-    describe('parseDateFromUrl', () => {
-        it('should parse valid date strings', () => {
-            const result1 = parseDateFromUrl('2024-01-01');
-            expect(result1).toBeInstanceOf(Date);
-            expect(result1).not.toBeNull();
-
-            const result2 = parseDateFromUrl('2023-12-31');
-            expect(result2).toBeInstanceOf(Date);
-            expect(result2).not.toBeNull();
-
-            // Test that parsing and formatting work together
-            const testDate = new Date('2024-06-15T12:00:00Z');
-            const formatted = formatDateForUrl(testDate);
-            const parsed = parseDateFromUrl(formatted);
-            expect(parsed).toBeInstanceOf(Date);
-            expect(parsed).not.toBeNull();
-        });
-
-        it('should return null for invalid date strings', () => {
-            expect(parseDateFromUrl('invalid-date')).toBeNull();
-            expect(parseDateFromUrl('not-a-date')).toBeNull();
-            expect(parseDateFromUrl('2024-13-01')).toBeNull(); // Invalid month
-        });
-
-        it('should return null for empty strings', () => {
-            expect(parseDateFromUrl('')).toBeNull();
         });
     });
 
@@ -260,48 +167,6 @@ describe('Analytics Utils', () => {
                 const backToInternal = fromUrlFriendly(urlFriendly);
                 expect(backToInternal).toBe(internal);
             });
-        });
-
-        it('should handle date parsing and formatting round-trip', () => {
-            const testDates = [
-                new Date('2024-01-01'),
-                new Date('2023-12-31'),
-                new Date('2024-06-15')
-            ];
-
-            testDates.forEach((originalDate) => {
-                const formatted = formatDateForUrl(originalDate);
-                const parsed = parseDateFromUrl(formatted);
-
-                expect(parsed).not.toBeNull();
-                expect(parsed?.getFullYear()).toBe(originalDate.getFullYear());
-                expect(parsed?.getMonth()).toBe(originalDate.getMonth());
-                expect(parsed?.getDate()).toBe(originalDate.getDate());
-            });
-        });
-
-        it('should validate complete custom date range workflow', () => {
-            const validFrom = '2024-01-01';
-            const validTo = '2024-01-31';
-            const invalidFrom = 'invalid-date';
-            const reversedTo = '2023-12-01';
-
-            // Valid case
-            expect(isValidCustomDateRange(validFrom, validTo)).toBe(true);
-
-            // Invalid date case
-            expect(isValidCustomDateRange(invalidFrom, validTo)).toBe(false);
-
-            // Reversed order case
-            expect(isValidCustomDateRange(validTo, reversedTo)).toBe(false);
-
-            // Individual date validation
-            expect(isValidDate(validFrom)).toBe(true);
-            expect(isValidDate(invalidFrom)).toBe(false);
-
-            // Date order validation
-            expect(isValidDateOrder(validFrom, validTo)).toBe(true);
-            expect(isValidDateOrder(validTo, reversedTo)).toBe(false);
         });
     });
 });

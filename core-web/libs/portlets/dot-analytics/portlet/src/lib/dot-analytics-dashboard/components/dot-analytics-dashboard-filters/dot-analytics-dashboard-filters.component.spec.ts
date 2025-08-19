@@ -15,7 +15,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
 
     const mockActivatedRoute = {
         snapshot: {
-            queryParams: {}
+            queryParamMap: new Map()
         }
     };
 
@@ -224,9 +224,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
 
     describe('URL Initialization', () => {
         it('should initialize from URL with predefined time range', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'last7days'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([['time_range', 'last7days']]);
 
             spectator = createComponent();
 
@@ -234,11 +232,11 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should initialize from URL with custom date range', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
-                from: '2024-01-01',
-                to: '2024-01-31'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([
+                ['time_range', 'custom'],
+                ['from', '2024-01-01'],
+                ['to', '2024-01-31']
+            ]);
 
             spectator = createComponent();
 
@@ -250,9 +248,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should not initialize from invalid URL params', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'invalid-range'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([['time_range', 'invalid-range']]);
 
             spectator = createComponent();
 
@@ -269,9 +265,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should not initialize custom range without from/to params', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([['time_range', 'custom']]);
 
             spectator = createComponent();
 
@@ -280,11 +274,11 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should fall back to default when custom dates are invalid', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
-                from: 'invalid-date',
-                to: '2024-01-31'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([
+                ['time_range', 'custom'],
+                ['from', 'invalid-date'],
+                ['to', '2024-01-31']
+            ]);
 
             spectator = createComponent();
 
@@ -302,11 +296,11 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should fall back to default when from date is after to date', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
-                from: '2024-01-31', // After to date
-                to: '2024-01-01'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([
+                ['time_range', 'custom'],
+                ['from', '2024-01-31'], // After to date
+                ['to', '2024-01-01']
+            ]);
 
             spectator = createComponent();
 
@@ -324,11 +318,11 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should fall back to default when both dates are invalid', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
-                from: 'not-a-date',
-                to: 'also-not-a-date'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([
+                ['time_range', 'custom'],
+                ['from', 'not-a-date'],
+                ['to', 'also-not-a-date']
+            ]);
 
             spectator = createComponent();
 
@@ -337,9 +331,9 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should fall back to default when time_range is invalid predefined value', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'invalid-time-range'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([
+                ['time_range', 'invalid-time-range']
+            ]);
 
             spectator = createComponent();
 
@@ -376,9 +370,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
 
         it('should avoid infinite loops with URL synchronization', async () => {
             // Set up URL state that matches what we're about to set
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'last7days'
-            };
+            mockActivatedRoute.snapshot.queryParamMap = new Map([['time_range', 'last7days']]);
 
             // This should not trigger URL update since it matches
             spectator.component.$selectedTimeRange.set('from 7 days ago to now');
