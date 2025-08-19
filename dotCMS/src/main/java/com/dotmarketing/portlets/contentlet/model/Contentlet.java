@@ -836,25 +836,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param objValue
 	 * @throws DotRuntimeException
 	 */
-	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
-	    if (fieldVarName!= null && isRelationshipField(fieldVarName)){
-            if(objValue instanceof List){
+    public void setProperty(String fieldVarName, Object objValue) throws DotRuntimeException {
+        if (fieldVarName != null && isRelationshipField(fieldVarName)) {
+            if (objValue instanceof List) {
                 setRelated(fieldVarName, (List<Contentlet>) objValue);
-            } else {
-                //When invoked from a copyContentlet action the relationship field value is a String representation of the identifier or a query
-                if (objValue instanceof String) {
-                    //here we might have a query or an identifier, but this method can handle both cases
-                    setRelatedByQuery(fieldVarName,objValue.toString(),null, APILocator.systemUser(),false);
-                }
+                return;
             }
-        } else{
-            map.put(fieldVarName, objValue);
-			addRemoveNullProperty(fieldVarName, objValue);
-		}
-	}
+            //When invoked from a copyContentlet action the relationship field value is a String representation of the identifier or a query
+            if (objValue instanceof String) {
+                //here we might have a query or an identifier, but this method can handle both cases
+                setRelatedByQuery(fieldVarName, objValue.toString(), null, APILocator.systemUser(),
+                        false);
+                return;
+            }
+        }
+        map.put(fieldVarName, objValue);
+        addRemoveNullProperty(fieldVarName, objValue);
+    }
 
 	private void addRemoveNullProperty(String fieldVarName, Object objValue) {
-		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property itself.
 			if (null == objValue) {
 				addNullProperty(fieldVarName);
 			} else {
