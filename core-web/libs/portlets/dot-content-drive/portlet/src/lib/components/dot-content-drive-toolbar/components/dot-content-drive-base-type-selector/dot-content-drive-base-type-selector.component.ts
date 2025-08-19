@@ -17,8 +17,8 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 
 @Component({
     selector: 'dot-content-drive-base-type-selector',
-    templateUrl: './dot-content-drive-baseType-selector.component.html',
-    styleUrl: './dot-content-drive-baseType-selector.component.scss',
+    templateUrl: './dot-content-drive-base-type-selector.component.html',
+    styleUrl: './dot-content-drive-base-type-selector.component.scss',
     imports: [MultiSelectModule, FormsModule, CheckboxModule, DotMessagePipe],
     standalone: true
 })

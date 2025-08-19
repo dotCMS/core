@@ -77,4 +77,10 @@ describe('DotContentDriveToolbarComponent', () => {
         const input = spectator.query('[data-testid="search-input"]');
         expect(input).toBeTruthy();
     });
+
+    it('should render the base type selector', () => {
+        spectator.detectChanges();
+        const selector = spectator.query('[data-testid="base-type-selector"]');
+        expect(selector).toBeTruthy();
+    });
 });

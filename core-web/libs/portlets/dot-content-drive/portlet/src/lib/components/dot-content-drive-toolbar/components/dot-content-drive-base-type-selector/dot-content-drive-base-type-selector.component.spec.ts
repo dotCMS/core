@@ -7,7 +7,7 @@ import { MultiSelect, MultiSelectChangeEvent } from 'primeng/multiselect';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 
-import { DotContentDriveBaseTypeSelectorComponent } from './dot-content-drive-baseType-selector.component';
+import { DotContentDriveBaseTypeSelectorComponent } from './dot-content-drive-base-type-selector.component';
 
 import { MOCK_BASE_TYPES } from '../../../../shared/mocks';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
