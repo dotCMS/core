@@ -234,6 +234,15 @@ describe('DotContentDriveStore', () => {
                 store.setFilters({ contentType: 'Blog' });
                 expect(store.filters()).toEqual({ contentType: 'Blog' });
             });
+
+            it('should update filters and reset pagination offset', () => {
+                store.setPagination({ limit: 10, offset: 10 });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 10 });
+
+                store.setFilters({ contentType: 'Blog' });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+                expect(store.filters()).toEqual({ contentType: 'Blog' });
+            });
         });
 
         describe('setPagination', () => {
