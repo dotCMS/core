@@ -1,4 +1,14 @@
-import { format, isSameDay, isSameMonth, parse } from 'date-fns';
+import {
+    addDays,
+    addHours,
+    endOfDay,
+    format,
+    isSameDay,
+    isSameMonth,
+    parse,
+    startOfDay,
+    subDays
+} from 'date-fns';
 
 import { TIME_RANGE_OPTIONS } from '../../constants';
 import {
@@ -278,4 +288,82 @@ export const transformDeviceBrowsersData = (
             }
         ]
     };
+};
+
+/**
+ * Fills missing dates in the data array based on the granularity
+ * @param data - The data array to fill missing dates
+ * @param granularity - The granularity of the data
+ * @returns The data array with missing dates filled
+ */
+export const fillMissingDates = (
+    data: PageViewTimeLineEntity[],
+    timeRange: TimeRangeInput,
+    granularity: Granularity
+): PageViewTimeLineEntity[] => {
+    if (!data || !Array.isArray(data)) {
+        return [];
+    }
+
+    const [startDate, endDate] = getDateRange(timeRange);
+
+    const dataMap = new Map();
+    data.forEach((item) => {
+        const dateKey = new Date(item['request.createdAt']).toISOString();
+        dataMap.set(dateKey, item);
+    });
+
+    const filledData = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+        const currentDateKey = currentDate.toISOString();
+
+        if (dataMap.has(currentDateKey)) {
+            filledData.push(dataMap.get(currentDateKey));
+        } else {
+            filledData.push({
+                'request.createdAt': currentDateKey,
+                'request.totalRequest': '0'
+            });
+        }
+        currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
+    }
+
+    return filledData;
+};
+
+export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
+    const today = new Date();
+
+    if (Array.isArray(timeRange)) {
+        const startDate = startOfDay(parse(timeRange[0], 'yyyy-MM-dd', today));
+        const endDate = endOfDay(parse(timeRange[1], 'yyyy-MM-dd', today));
+
+        return [startDate, endDate];
+    }
+
+    switch (timeRange) {
+        case TIME_RANGE_OPTIONS.today:
+            return [startOfDay(today), endOfDay(today)];
+        case TIME_RANGE_OPTIONS.yesterday: {
+            const yesterday = subDays(today, 1);
+
+            return [startOfDay(yesterday), endOfDay(yesterday)];
+        }
+
+        case TIME_RANGE_OPTIONS.last7days: {
+            const sevenDaysAgo = subDays(today, 6);
+
+            return [startOfDay(sevenDaysAgo), endOfDay(today)];
+        }
+
+        case TIME_RANGE_OPTIONS.last30days: {
+            const thirtyDaysAgo = subDays(today, 29);
+
+            return [startOfDay(thirtyDaysAgo), endOfDay(today)];
+        }
+
+        default:
+            return [startOfDay(today), endOfDay(today)];
+    }
 };
