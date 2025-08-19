@@ -1,4 +1,11 @@
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotContentDriveItem,
+    SiteEntity,
+    StructureTypeView
+} from '@dotcms/dotcms-models';
+
+import { BASE_TYPES } from './models';
 
 export const mockItems: DotContentDriveItem[] = [
     { identifier: '123', title: 'Test Content 1' } as DotContentDriveItem,
@@ -198,4 +205,42 @@ export const mockSites: SiteEntity[] = [
         versionId: '',
         working: true
     }
+];
+
+export const mockContentTypes: DotCMSContentType[] = [
+    {
+        id: '1',
+        name: 'Blog',
+        variable: 'blog',
+        baseType: BASE_TYPES.content,
+        system: false
+    } as DotCMSContentType,
+    {
+        id: '2',
+        name: 'News',
+        variable: 'news',
+        baseType: BASE_TYPES.content,
+        system: false
+    } as DotCMSContentType,
+    {
+        id: '3',
+        name: 'Contact Form',
+        variable: 'contactForm',
+        baseType: BASE_TYPES.form,
+        system: false
+    } as DotCMSContentType,
+    {
+        id: '4',
+        name: 'System Content',
+        variable: 'systemContent',
+        baseType: BASE_TYPES.content,
+        system: true
+    } as DotCMSContentType
+];
+
+export const MOCK_BASE_TYPES: StructureTypeView[] = [
+    { name: 'Content', label: 'Content', types: null },
+    { name: 'Widget', label: 'Widget', types: null },
+    { name: 'FORM', label: 'FORM', types: null },
+    { name: 'FileAsset', label: 'FileAsset', types: null }
 ];

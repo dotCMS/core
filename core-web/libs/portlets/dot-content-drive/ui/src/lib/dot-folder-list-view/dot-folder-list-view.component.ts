@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     CUSTOM_ELEMENTS_SCHEMA,
     input,
     output
@@ -40,8 +41,16 @@ export class DotFolderListViewComponent {
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
 
-    readonly HEADER_COLUMNS = HEADER_COLUMNS;
-    readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
+    readonly MIN_ROWS_PER_PAGE = 20;
+    protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
+    protected readonly HEADER_COLUMNS = HEADER_COLUMNS;
+    protected readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
+    protected readonly $showPagination = computed(
+        () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
+    );
+    protected readonly $styleClass = computed(() =>
+        this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
+    );
 
     // Model for the table selection
     selectedItems: DotContentDriveItem[] = [];

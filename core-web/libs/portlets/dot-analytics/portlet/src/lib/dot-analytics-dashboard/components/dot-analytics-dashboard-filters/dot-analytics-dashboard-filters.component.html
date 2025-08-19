@@ -14,7 +14,8 @@
         optionValue="value"
         [placeholder]="timePeriodPlaceholder"
         [style]="{ minWidth: '250px' }"
-        data-testid="period-dropdown"></p-dropdown>
+        (onChange)="onChangeTimeRange($event)"
+        data-testid="period-dropdown" />
 
     <!-- Custom Date Range Calendar -->
     @if (showCustomDatePicker) {
@@ -27,6 +28,7 @@
             dateFormat="mm/dd/yy"
             [showButtonBar]="true"
             [style]="{ minWidth: '250px' }"
-            data-testid="custom-date-range-calendar"></p-calendar>
+            (onSelect)="onChangeCustomDateRange()"
+            data-testid="custom-date-range-calendar" />
     }
 </div>

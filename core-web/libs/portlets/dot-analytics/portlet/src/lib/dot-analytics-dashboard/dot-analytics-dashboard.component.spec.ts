@@ -1,13 +1,22 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createRoutingFactory,
+    mockProvider,
+    SpectatorRouting,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { BehaviorSubject, of } from 'rxjs';
 
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    DotAnalyticsDashboardStore,
+    DotAnalyticsService,
+    TIME_RANGE_OPTIONS
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { GlobalStore } from '@dotcms/store';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
@@ -15,14 +24,18 @@ import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytic
 import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 import DotAnalyticsDashboardComponent from './dot-analytics-dashboard.component';
 
-describe('DotAnalyticsDashboardComponent', () => {
-    let spectator: Spectator<DotAnalyticsDashboardComponent>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let mockStore: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let mockGlobalStore: any;
+const messageServiceMock = new MockDotMessageService({
+    'analytics.metrics.total-pageviews': 'Total Pageviews',
+    'analytics.metrics.unique-visitors': 'Unique Visitors',
+    'analytics.metrics.top-page-performance': 'Top Page Performance'
+});
 
-    const createComponent = createComponentFactory({
+describe('DotAnalyticsDashboardComponent', () => {
+    let spectator: SpectatorRouting<DotAnalyticsDashboardComponent>;
+    let store: InstanceType<typeof DotAnalyticsDashboardStore>;
+    let router: SpyObject<Router>;
+
+    const createComponent = createRoutingFactory({
         component: DotAnalyticsDashboardComponent,
         declarations: [
             MockComponent(DotAnalyticsDashboardChartComponent),
@@ -30,76 +43,27 @@ describe('DotAnalyticsDashboardComponent', () => {
             MockComponent(DotAnalyticsDashboardMetricsComponent),
             MockComponent(DotAnalyticsDashboardTableComponent)
         ],
-        mocks: [DotMessageService]
-    });
-
-    beforeEach(() => {
-        jest.clearAllMocks();
-
-        // Simple store mock with basic signals
-        mockStore = {
-            timeRange: jest.fn().mockReturnValue('from 7 days ago to now'),
-            totalPageViews: jest.fn().mockReturnValue({
-                status: ComponentStatus.LOADED,
-                data: { 'request.totalRequest': '1250' },
-                error: null
+        providers: [
+            DotAnalyticsDashboardStore,
+            mockProvider(DotMessageService),
+            mockProvider(DotAnalyticsService),
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+            mockProvider(GlobalStore, {
+                currentSiteId: jest.fn().mockReturnValue('test-site-123')
             }),
-            uniqueVisitors: jest.fn().mockReturnValue({
-                status: ComponentStatus.LOADED,
-                data: { 'request.totalUsers': '342' },
-                error: null
-            }),
-            topPagePerformance: jest.fn().mockReturnValue({
-                status: ComponentStatus.LOADED,
-                data: { 'request.totalRequest': '89', 'request.pageTitle': 'Home' },
-                error: null
-            }),
-            pageViewTimeLine: jest.fn().mockReturnValue({
-                status: ComponentStatus.LOADED,
-                data: [],
-                error: null
-            }),
-            pageViewDeviceBrowsers: jest.fn().mockReturnValue({
-                status: ComponentStatus.LOADED,
-                data: [],
-                error: null
-            }),
-            topPagesTable: jest.fn().mockReturnValue({
-                status: ComponentStatus.LOADED,
-                data: [],
-                error: null
-            }),
-            setTimeRange: jest.fn(),
-            loadAllDashboardData: jest.fn()
-        };
-
-        // Simple GlobalStore mock
-        mockGlobalStore = {
-            currentSiteId: jest.fn().mockReturnValue('test-site-123')
-        };
-
-        spectator = createComponent({
-            providers: [
-                {
-                    provide: DotAnalyticsDashboardStore,
-                    useValue: mockStore
-                },
-                {
-                    provide: GlobalStore,
-                    useValue: mockGlobalStore
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        queryParams: of({}),
-                        snapshot: { queryParams: {} }
-                    }
-                }
-            ]
-        });
+            mockProvider(Router)
+        ]
     });
 
     describe('Component Rendering', () => {
+        beforeEach(() => {
+            spectator = createComponent();
+            store = spectator.inject(DotAnalyticsDashboardStore);
+        });
+
         it('should create component successfully', () => {
             expect(spectator.component).toBeTruthy();
         });
@@ -133,110 +97,112 @@ describe('DotAnalyticsDashboardComponent', () => {
             const refreshButton = spectator.query(byTestId('refresh-button'));
             expect(refreshButton).toExist();
         });
-    });
 
-    describe('User Interactions', () => {
-        it('should call onRefresh when refresh button is clicked', () => {
-            const spy = jest.spyOn(spectator.component, 'onRefresh');
+        describe('User Interactions', () => {
+            it('should call onRefresh when refresh button is clicked', () => {
+                const spy = jest.spyOn(store, 'loadAllDashboardData');
 
-            const refreshButton = spectator.query(byTestId('refresh-button'));
-            expect(refreshButton).toExist();
+                const refreshButton = spectator.query(byTestId('refresh-button'));
+                expect(refreshButton).toExist();
 
-            spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', null);
+                spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', null);
 
-            expect(spy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should call store loadAllDashboardData when onRefresh is executed', () => {
-            spectator.component.onRefresh();
-
-            expect(mockStore.loadAllDashboardData).toHaveBeenCalledWith(
-                'from 7 days ago to now',
-                'test-site-123'
-            );
+                expect(spy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.last7days, 'test-site-123');
+            });
         });
     });
 
-    describe('OnInit Query Params Logic', () => {
-        it('should call setTimeRange when valid predefined time range in query params', () => {
-            // Mock the route.queryParams to emit new values
-            const mockRoute = spectator.inject(ActivatedRoute);
-            const queryParamsSubject = new BehaviorSubject({ time_range: 'last7days' });
+    describe('Query Params Logic', () => {
+        it('should timeRange be last7days when empty query params', () => {
+            spectator = createComponent();
+            store = spectator.inject(DotAnalyticsDashboardStore);
 
-            // Replace the observable
-            Object.defineProperty(mockRoute, 'queryParams', {
-                value: queryParamsSubject.asObservable()
-            });
-
-            // Clear previous calls and call ngOnInit
-            jest.clearAllMocks();
-            spectator.component.ngOnInit();
-
-            expect(mockStore.setTimeRange).toHaveBeenCalledWith('from 7 days ago to now');
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
-        it('should call setTimeRange when valid custom date range in query params', () => {
-            const mockRoute = spectator.inject(ActivatedRoute);
-            const queryParamsSubject = new BehaviorSubject({
-                time_range: 'custom',
-                from: '2024-01-01',
-                to: '2024-01-31'
+        it('should timeRange be last7days when valid predefined time range in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'last7days'
+                }
             });
+            store = spectator.inject(DotAnalyticsDashboardStore);
 
-            Object.defineProperty(mockRoute, 'queryParams', {
-                value: queryParamsSubject.asObservable()
-            });
-
-            jest.clearAllMocks();
-            spectator.component.ngOnInit();
-
-            expect(mockStore.setTimeRange).toHaveBeenCalledWith(['2024-01-01', '2024-01-31']);
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
-        it('should not call setTimeRange when invalid query params', () => {
-            const mockRoute = spectator.inject(ActivatedRoute);
-            const queryParamsSubject = new BehaviorSubject({ time_range: 'invalid-range' });
-
-            Object.defineProperty(mockRoute, 'queryParams', {
-                value: queryParamsSubject.asObservable()
+        it('should timeRange be custom date range when valid custom date range in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'custom',
+                    from: '2024-01-01',
+                    to: '2024-01-31'
+                }
             });
+            store = spectator.inject(DotAnalyticsDashboardStore);
 
-            jest.clearAllMocks();
-            spectator.component.ngOnInit();
-
-            expect(mockStore.setTimeRange).not.toHaveBeenCalled();
+            expect(store.timeRange()).toEqual(['2024-01-01', '2024-01-31']);
         });
 
-        it('should not call setTimeRange when custom range has incomplete dates', () => {
-            const mockRoute = spectator.inject(ActivatedRoute);
-            const queryParamsSubject = new BehaviorSubject({
-                time_range: 'custom',
-                from: '2024-01-01'
-                // missing 'to' date
+        it('should call router.navigate with invalid query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'invalid-range'
+                }
             });
+            router = spectator.inject(Router);
+            const route = spectator.inject(ActivatedRoute);
 
-            Object.defineProperty(mockRoute, 'queryParams', {
-                value: queryParamsSubject.asObservable()
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                relativeTo: route,
+                queryParams: {
+                    time_range: 'last7days'
+                },
+                queryParamsHandling: 'replace',
+                replaceUrl: true
             });
-
-            jest.clearAllMocks();
-            spectator.component.ngOnInit();
-
-            expect(mockStore.setTimeRange).not.toHaveBeenCalled();
         });
 
-        it('should not call setTimeRange when no query params provided', () => {
-            const mockRoute = spectator.inject(ActivatedRoute);
-            const queryParamsSubject = new BehaviorSubject({});
-
-            Object.defineProperty(mockRoute, 'queryParams', {
-                value: queryParamsSubject.asObservable()
+        it('should call router.navigate with custom range has incomplete dates', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'custom',
+                    from: '2024-01-01'
+                    // to: '2024-01-31'
+                }
             });
+            router = spectator.inject(Router);
+            const route = spectator.inject(ActivatedRoute);
 
-            jest.clearAllMocks();
-            spectator.component.ngOnInit();
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                relativeTo: route,
+                queryParams: {
+                    time_range: 'last7days'
+                },
+                queryParamsHandling: 'replace',
+                replaceUrl: true
+            });
+        });
 
-            expect(mockStore.setTimeRange).not.toHaveBeenCalled();
+        it('should call router.navigate with invalid custom range ', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'custom',
+                    from: '2024-01-01',
+                    to: '1993-01-31'
+                }
+            });
+            router = spectator.inject(Router);
+            const route = spectator.inject(ActivatedRoute);
+
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                relativeTo: route,
+                queryParams: {
+                    time_range: 'last7days'
+                },
+                queryParamsHandling: 'replace',
+                replaceUrl: true
+            });
         });
     });
 });

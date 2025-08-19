@@ -1,125 +1,35 @@
-/**
- * Centralized utilities for analytics dashboard
- */
+import { isBefore, isDate, isSameDay, parse } from 'date-fns';
 
-import {
-    DEFAULT_TIME_PERIOD,
-    TIME_PERIOD_OPTIONS,
-    TIME_RANGE_INTERNAL_MAPPING,
-    TIME_RANGE_URL_MAPPING
-} from '../constants';
-
-// ============================================================================
-// DATE VALIDATION UTILITIES
-// ============================================================================
+import { TimeRange, TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
 
 /**
- * Validate that a custom date range has valid dates and proper order
+ * Validates custom date range parameters
+ * @param fromDate - Start date string (ISO format)
+ * @param toDate - End date string (ISO format)
+ * @returns true if the date range is valid
  */
 export const isValidCustomDateRange = (fromDate: string, toDate: string): boolean => {
-    if (!fromDate || !toDate) {
+    const fromDateObj = parse(fromDate, 'yyyy-MM-dd', new Date());
+    const toDateObj = parse(toDate, 'yyyy-MM-dd', new Date());
+
+    // Ensure dates are valid Date objects
+    if (!isDate(fromDateObj) || !isDate(toDateObj)) {
         return false;
     }
 
-    const fromDateObj = new Date(fromDate);
-    const toDateObj = new Date(toDate);
+    // Check if from date is before or equal to to date
+    return isBefore(fromDateObj, toDateObj) || isSameDay(fromDateObj, toDateObj);
+};
 
-    // Check if dates are valid
-    if (isNaN(fromDateObj.getTime()) || isNaN(toDateObj.getTime())) {
-        return false;
+/**
+ * Validates and returns a valid time range from URL value
+ * @param urlValue - URL parameter value for time range
+ * @returns Valid TimeRange or null if invalid
+ */
+export const getValidTimeRangeUrl = (urlValue: string): TimeRange | null => {
+    if (!urlValue || typeof urlValue !== 'string') {
+        return null;
     }
 
-    // Check if from date is before to date
-    if (fromDateObj >= toDateObj) {
-        return false;
-    }
-
-    return true;
+    return Object.keys(TIME_RANGE_OPTIONS).includes(urlValue) ? (urlValue as TimeRange) : null;
 };
-
-/**
- * Validate if the time range from URL is valid
- */
-export const isValidTimeRange = (timeRange: string): boolean => {
-    return TIME_PERIOD_OPTIONS.some((option) => option.value === timeRange);
-};
-
-// ============================================================================
-// URL MAPPING UTILITIES
-// ============================================================================
-
-/**
- * Convert internal time range value to URL-friendly value
- */
-export const toUrlFriendly = (internalValue: string): string => {
-    return (
-        TIME_RANGE_INTERNAL_MAPPING[internalValue as keyof typeof TIME_RANGE_INTERNAL_MAPPING] ||
-        internalValue
-    );
-};
-
-/**
- * Convert URL-friendly value to internal time range value
- */
-export const fromUrlFriendly = (urlValue: string): string => {
-    return TIME_RANGE_URL_MAPPING[urlValue as keyof typeof TIME_RANGE_URL_MAPPING] || urlValue;
-};
-
-// ============================================================================
-// VALIDATION UTILITIES
-// ============================================================================
-
-/**
- * Check if a value is a valid date string or Date object
- */
-export const isValidDate = (date: string | Date): boolean => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-
-    return dateObj instanceof Date && !isNaN(dateObj.getTime());
-};
-
-/**
- * Check if a date range has proper order (from < to)
- */
-export const isValidDateOrder = (fromDate: string | Date, toDate: string | Date): boolean => {
-    const from = typeof fromDate === 'string' ? new Date(fromDate) : fromDate;
-    const to = typeof toDate === 'string' ? new Date(toDate) : toDate;
-
-    return from < to;
-};
-
-// ============================================================================
-// DATE FORMATTING UTILITIES
-// ============================================================================
-
-/**
- * Format date to ISO string for URL parameters
- */
-export const formatDateForUrl = (date: Date): string => {
-    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
-};
-
-/**
- * Parse date from URL parameter string
- */
-export const parseDateFromUrl = (dateString: string): Date | null => {
-    if (!dateString) return null;
-
-    const date = new Date(dateString);
-
-    return isValidDate(date) ? date : null;
-};
-
-// ============================================================================
-// CONSTANTS UTILITIES
-// ============================================================================
-
-/**
- * Get default time period from constants
- */
-export const getDefaultTimePeriod = (): string => DEFAULT_TIME_PERIOD;
-
-/**
- * Get available time period options
- */
-export const getTimePeriodOptions = () => TIME_PERIOD_OPTIONS;
