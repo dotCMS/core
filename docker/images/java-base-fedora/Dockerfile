@@ -13,7 +13,7 @@ RUN sudo dnf update -y && \
 
 
 # Cleanup
-RUN sudo dnf clean all
+RUN dnf clean all
 
 # ----------------------------------------------
 # Stage 2:  Flatten everything to 1 layer
