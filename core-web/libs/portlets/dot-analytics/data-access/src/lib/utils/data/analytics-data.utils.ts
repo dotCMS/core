@@ -1,16 +1,27 @@
+import { format, isSameDay, isSameMonth, parse } from 'date-fns';
+
+import { TIME_RANGE_OPTIONS } from '../../constants';
 import {
     ChartData,
     Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
-    TimeRange,
+    TimeRangeInput,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
 import { parseUserAgent } from '../browser/userAgentParser';
+
+/**
+ * Time formats for different chart types
+ */
+const TIME_FORMATS = {
+    hour: 'HH:mm',
+    day: 'MMM dd'
+};
 
 /**
  * Helper functions to extract numeric values from analytics entities
@@ -25,20 +36,32 @@ import { parseUserAgent } from '../browser/userAgentParser';
  * @param timeRange - The time range for the analytics query
  * @returns The appropriate granularity level for the given time range
  */
-export function determineGranularityForTimeRange(timeRange: TimeRange): Granularity {
+export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
+    if (Array.isArray(timeRange)) {
+        const [fromDate, toDate] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
+
+        if (isSameDay(fromDate, toDate)) {
+            return 'hour';
+        } else if (isSameMonth(fromDate, toDate)) {
+            return 'day';
+        } else {
+            return 'month';
+        }
+    }
+
     switch (timeRange) {
-        case 'today':
+        case TIME_RANGE_OPTIONS.today:
 
         // falls through
-        case 'yesterday':
+        case TIME_RANGE_OPTIONS.yesterday:
             // For today/yesterday, use hourly granularity for detailed intraday analysis
             return 'hour';
 
-        case 'from 7 days ago to now':
+        case TIME_RANGE_OPTIONS.last7days:
             // For last 7 days, use daily granularity
             return 'day';
 
-        case 'from 30 days ago to now':
+        case TIME_RANGE_OPTIONS.last30days:
             // For last 30 days, use daily granularity
             return 'day';
 
@@ -66,7 +89,7 @@ export function determineGranularityForTimeRange(timeRange: TimeRange): Granular
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['request.totalRequest']) : 0;
+    data ? Number(data['request.totalRequest'] ?? 0) : 0;
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
@@ -104,14 +127,6 @@ export const transformTopPagesTableData = (
 };
 
 /**
- * Normalizes a date string to ensure it's treated as UTC
- * Adds 'Z' suffix if not present to force UTC interpretation
- */
-const normalizeUtcDateString = (dateString: string): string => {
-    return dateString.endsWith('Z') ? dateString : `${dateString}Z`;
-};
-
-/**
  * Transforms PageViewTimeLineEntity array to Chart.js compatible format
  */
 export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | null): ChartData => {
@@ -132,49 +147,27 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
         };
     }
 
-    // Sort by date to ensure correct order
-    const sortedData = [...data].sort((a, b) => {
-        const dateA = normalizeUtcDateString(a['request.createdAt']);
-        const dateB = normalizeUtcDateString(b['request.createdAt']);
-        return new Date(dateA).getTime() - new Date(dateB).getTime();
-    });
+    const transformedData = data
+        .map((item) => ({
+            date: new Date(item['request.createdAt']),
+            value: extractPageViews(item)
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     // Check if all data points are from the same day (in user's local timezone)
-    const allDatesAreSameDay = sortedData.every((item, index, arr) => {
-        if (index === 0) return true;
-        // Convert UTC dates to local timezone for comparison
-        const currentDate = new Date(normalizeUtcDateString(item['request.createdAt']));
-        const firstDate = new Date(normalizeUtcDateString(arr[0]['request.createdAt']));
+    const allDatesAreSameDay = transformedData.every((item, _, arr) => {
+        if (arr.length < 2) return true;
+        const currentDate = item.date;
+        const firstDate = arr[0].date;
 
-        return (
-            currentDate.getFullYear() === firstDate.getFullYear() &&
-            currentDate.getMonth() === firstDate.getMonth() &&
-            currentDate.getDate() === firstDate.getDate()
-        );
+        return isSameDay(firstDate, currentDate);
     });
 
-    const labels = sortedData.map((item) => {
-        // Parse UTC date and ensure it's correctly converted to local time
-        const date = new Date(normalizeUtcDateString(item['request.createdAt']));
+    const labels = transformedData.map((item) =>
+        format(item.date, allDatesAreSameDay ? TIME_FORMATS.hour : TIME_FORMATS.day)
+    );
 
-        if (allDatesAreSameDay) {
-            // Format as hours when all data is from the same day (e.g., "10 AM", "11 AM", "12 PM")
-            // Use user's locale and timezone for accurate local time display
-            return date.toLocaleTimeString(undefined, {
-                hour: 'numeric',
-                hour12: true
-            });
-        } else {
-            // Format as short weekday + date when data spans multiple days (e.g., "Mon 21", "Tue 22")
-            // Use user's locale and timezone for accurate local date display
-            return date.toLocaleDateString(undefined, {
-                weekday: 'short',
-                day: 'numeric'
-            });
-        }
-    });
-
-    const chartData = sortedData.map((item) => Number(item['request.totalRequest']) || 0);
+    const chartData = transformedData.map((item) => item.value);
 
     return {
         labels,
