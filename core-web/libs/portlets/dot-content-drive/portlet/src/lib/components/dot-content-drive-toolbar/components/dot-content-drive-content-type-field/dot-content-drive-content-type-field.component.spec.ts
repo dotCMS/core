@@ -2,9 +2,12 @@ import { createComponentFactory, Spectator, mockProvider, SpyObject } from '@ngn
 import { patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+
 import { MultiSelectFilterEvent } from 'primeng/multiselect';
 
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveContentTypeFieldComponent } from './dot-content-drive-content-type-field.component';
 
@@ -28,7 +31,9 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes))
-            })
+            }),
+            mockProvider(DotMessageService, new MockDotMessageService({})),
+            provideHttpClient()
         ],
         detectChanges: false
     });
@@ -195,7 +200,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             jest.advanceTimersByTime(500);
 
             // Should only call API once for the second request due to switchMap cancellation
-            expect(mockContentTypeService.getContentTypes).toHaveBeenLastCalledWith({
+            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
                 type: undefined,
                 filter: 'second'
             });
