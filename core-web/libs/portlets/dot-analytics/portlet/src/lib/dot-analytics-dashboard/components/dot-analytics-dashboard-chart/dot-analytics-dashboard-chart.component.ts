@@ -155,6 +155,9 @@ export class DotAnalyticsDashboardChartComponent {
                                   maxRotation: 45,
                                   minRotation: 0
                               }
+                          },
+                          y: {
+                              beginAtZero: true
                           }
                       }
                     : undefined
