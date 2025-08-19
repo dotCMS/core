@@ -50,9 +50,11 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           NEEDS_DATA: ${{ inputs.needsData }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "NEEDS_DATA=${NEEDS_DATA}"
-          # Check for 'cancelled' and 'failure' results
+          
+          # Check for 'cancelled' and 'failure' results from direct dependencies
           cancelled=false
           failure=false
           
@@ -63,9 +65,68 @@ jobs:
             failure=true
           fi
 
-          # Output the results
-          echo "Cancelled: $cancelled"
-          echo "Failure: $failure"
+          echo "Direct dependencies - Cancelled: $cancelled, Failure: $failure"
+          
+          # Enhanced detection: Check ALL jobs in the current workflow run via GitHub API
+          echo "Checking all workflow jobs via GitHub API..."
+          
+          # Fetch workflow jobs with error handling
+          if workflow_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" 2>/dev/null); then
+            
+            # Parse job information safely using jq to avoid colon parsing issues
+            if [[ -n "$workflow_response" ]]; then
+              echo "All workflow jobs:"
+              echo "$workflow_response" | jq -r '.jobs[]? | "Name: \(.name // "unknown"), Status: \(.status // "unknown"), Conclusion: \(.conclusion // "null")"' 2>/dev/null
+              
+              # Check for any cancelled or failed jobs in the entire workflow
+              # Use temporary file for broader shell compatibility
+              temp_jobs_file=$(mktemp)
+              echo "$workflow_response" | jq -c '.jobs[]?' 2>/dev/null > "$temp_jobs_file"
+              
+              while read -r job_data; do
+                if [[ -z "$job_data" ]]; then continue; fi
+                
+                job_name=$(echo "$job_data" | jq -r '.name // "unknown"')
+                job_status=$(echo "$job_data" | jq -r '.status // "unknown"')
+                job_conclusion=$(echo "$job_data" | jq -r '.conclusion // "null"')
+                
+                # Skip the finalize job itself and related jobs to avoid self-reference
+                if [[ "$job_name" =~ ^(Finalize|Final Status|.*[Ff]inalize.*)$ ]]; then
+                  continue
+                fi
+                
+                echo "Checking job: $job_name (status: $job_status, conclusion: $job_conclusion)"
+                
+                # Only check conclusion for completed jobs (status API is reliable)
+                if [[ "$job_status" == "completed" ]]; then
+                  # Detect cancelled jobs (only conclusion can be "cancelled")
+                  if [[ "$job_conclusion" == "cancelled" ]]; then
+                    echo "Found cancelled job: $job_name"
+                    cancelled=true
+                  fi
+                  
+                  # Detect failed jobs (conclusion: failure)
+                  if [[ "$job_conclusion" == "failure" ]]; then
+                    echo "Found failed job: $job_name"
+                    failure=true
+                  fi
+                elif [[ "$job_status" == "in_progress" || "$job_status" == "queued" ]]; then
+                  echo "Job $job_name is still running (status: $job_status), will rely on dependency data"
+                fi
+              done < "$temp_jobs_file"
+              
+              # Clean up temporary file
+              rm -f "$temp_jobs_file"
+            else
+              echo "Warning: No job data returned from API, using dependency data only"
+            fi
+          else
+            echo "Warning: Failed to fetch workflow jobs from API, using dependency data only"
+          fi
+
+          # Output the final results
+          echo "Final status - Cancelled: $cancelled, Failure: $failure"
           
           AGGREGATE_STATUS="SUCCESS"
           FIRST_FAIL_STEP=""
