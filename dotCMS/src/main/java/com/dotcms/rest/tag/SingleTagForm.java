@@ -30,7 +30,6 @@ public class SingleTagForm extends Validated {
         this.name = name;
         this.siteId = siteId;
         this.ownerId = ownerId;
-        checkValid();
     }
 
     public String getName() {

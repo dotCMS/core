@@ -6,6 +6,7 @@ import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.rest.tag.*;
 import com.dotcms.rest.tag.TagsResourceHelper;
 import com.dotcms.rest.api.v2.tags.ResponseEntityRestTagView;
@@ -242,6 +243,9 @@ public class TagResource {
             final SingleTagForm tagForm) {
 
         try {
+            // Validate form explicitly
+            tagForm.checkValid();
+
             // Initialize and check permissions
             final InitDataObject initDataObject = getInitDataObject(request, response);
             final User user = initDataObject.getUser();
@@ -274,12 +278,27 @@ public class TagResource {
                     .entity(new ResponseEntityRestTagView(restTag))
                     .build();
 
+        } catch (ValidationException e) {
+            @SuppressWarnings("unchecked")
+            List<ErrorEntity> errors = (List<ErrorEntity>) e.getResponse().getEntity();
+            
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(errors))
+                    .build();
+
+        } catch (BadRequestException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("tag.validation.error", e.getMessage())
+                    )))
+                    .build();
+
         } catch (DotSecurityException e) {
             Logger.warn(TagResource.class,
                     "User lacks permission to create tags: " + e.getMessage());
             return Response.status(Response.Status.FORBIDDEN)
                     .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.forbidden",
+                            new ErrorEntity("tag.permission.denied",
                                     "User does not have access to Tags portlet")
                     )))
                     .build();
@@ -289,7 +308,7 @@ public class TagResource {
                     "Database error creating tag: " + e.getMessage(), e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.db",
+                            new ErrorEntity("tag.data.error",
                                     "There was an error saving the tag")
                     )))
                     .build();
@@ -299,7 +318,7 @@ public class TagResource {
                     "Unexpected error creating tag: " + e.getMessage(), e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.internal",
+                            new ErrorEntity("tag.internal.error",
                                     "An unexpected error occurred")
                     )))
                     .build();
