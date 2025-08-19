@@ -1,6 +1,9 @@
+import { signalMethod } from '@ngrx/signals';
+
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, ParamMap, Params } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -22,20 +25,6 @@ import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytic
 import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 import { getProperQueryParamsFromUrl } from './utils/state-from-url';
 
-/**
- * Main analytics dashboard component for DotCMS.
- * Displays comprehensive analytics including metrics, charts, and tables.
- *
- * Features:
- * - Key metric cards (pageviews, visitors, performance)
- * - Time-based line chart for pageview trends
- * - Device/browser breakdown pie chart
- * - Top performing pages table
- * - Time period filtering with URL persistence
- * - Loading states with skeletons
- * - Error handling
- *
- */
 @Component({
     selector: 'lib-dot-analytics-dashboard',
     imports: [
@@ -49,13 +38,18 @@ import { getProperQueryParamsFromUrl } from './utils/state-from-url';
     ],
     templateUrl: './dot-analytics-dashboard.component.html',
     styleUrl: './dot-analytics-dashboard.component.scss',
-    standalone: true
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export default class DotAnalyticsDashboardComponent implements OnInit {
+export default class DotAnalyticsDashboardComponent {
     store = inject(DotAnalyticsDashboardStore);
 
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
+
+    /** Query params */
+    $queryParams = toSignal(this.route.queryParamMap, {
+        requireSync: true
+    });
 
     // Current site ID
     private readonly $currentSiteId = inject(GlobalStore).currentSiteId;
@@ -96,6 +90,10 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
         }
     ]);
 
+    constructor() {
+        this.#handleQueryParamsChanges(this.$queryParams);
+    }
+
     /**
      * Refresh dashboard data
      */
@@ -108,20 +106,23 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
         }
     }
 
-    ngOnInit(): void {
-        const queryParams = getProperQueryParamsFromUrl(this.route.snapshot.queryParamMap);
+    /** Handle query params changes */
+    readonly #handleQueryParamsChanges = signalMethod<ParamMap>((queryParamMap) => {
+        const queryParams = getProperQueryParamsFromUrl(queryParamMap);
 
         if (queryParams.type === 'params') {
-            this.router.navigate([], {
-                relativeTo: this.route,
-                queryParams: queryParams.params,
-                queryParamsHandling: 'replace',
-                replaceUrl: true
-            });
-        } else if (queryParams.type === 'timeRange') {
-            this.store.setTimeRange(queryParams.timeRange);
+            this.refreshQueryParams(queryParams.params);
         } else {
-            this.store.setTimeRange(TIME_RANGE_OPTIONS.last7days);
+            this.store.setTimeRange(queryParams.timeRange ?? TIME_RANGE_OPTIONS.last7days);
         }
+    });
+
+    refreshQueryParams(queryParams: Params): void {
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: queryParams,
+            queryParamsHandling: 'replace',
+            replaceUrl: true
+        });
     }
 }
