@@ -18,6 +18,8 @@ export const isValidCustomDateRange = (fromDate: string, toDate: string): boolea
     return isBefore(fromDateObj, toDateObj) || isSameDay(fromDateObj, toDateObj);
 };
 
+
 export const getValidTimeRangeUrl = (urlValue: string): TimeRange | null => {
     return Object.keys(TIME_RANGE_OPTIONS).includes(urlValue) ? (urlValue as TimeRange) : null;
 };
+

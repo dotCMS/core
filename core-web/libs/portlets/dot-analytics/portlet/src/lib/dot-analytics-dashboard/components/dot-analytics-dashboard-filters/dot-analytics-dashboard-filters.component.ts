@@ -1,5 +1,7 @@
 import { signalMethod } from '@ngrx/signals';
+
 import { format } from 'date-fns';
+
 
 import { CommonModule } from '@angular/common';
 import {
@@ -70,6 +72,40 @@ export class DotAnalyticsDashboardFiltersComponent {
         } else {
             this.$selectedTimeRange.set(timeRange);
             this.$customDateRange.set(null);
+        }
+    });
+
+    readonly #handleChangeCustomDateRange = signalMethod<Date[] | null>((dateRange) => {
+        if (!dateRange || dateRange.length !== 2 || !dateRange[0] || !dateRange[1]) {
+            return;
+        }
+        const customRange: DateRange = [
+            dateRange[0].toISOString().split('T')[0],
+            dateRange[1].toISOString().split('T')[0]
+        ];
+
+        const queryParams = this.route.snapshot.queryParamMap;
+
+        // Read current URL params without creating dependency
+        const currentUrlParams = {
+            timeRange: queryParams.get('time_range'),
+            from: queryParams.get('from'),
+            to: queryParams.get('to')
+        };
+
+        // Convert URL time_range to internal for comparison
+        const currentInternalTimeRange = currentUrlParams.timeRange
+            ? fromUrlFriendly(currentUrlParams.timeRange)
+            : null;
+
+        // Only update URL if different from current values
+        if (
+            currentInternalTimeRange !== CUSTOM_TIME_RANGE ||
+            currentUrlParams.from !== customRange[0] ||
+            currentUrlParams.to !== customRange[1]
+        ) {
+            // Update URL with custom date range query params
+            this.updateCustomDateRangeParams(customRange);
         }
     });
 

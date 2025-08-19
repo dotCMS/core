@@ -3,10 +3,13 @@ package com.dotcms.contenttype.business.uniquefields;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtil;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
@@ -21,7 +24,8 @@ import java.sql.SQLException;
  *     <li>If it does not exist and the Database validation is enabled, then it creates it and
  *     populates it.</li>
  *     <li>If it exists and the Database validation is enabled, do nothing.</li>
- *     <li>If it does not exist  and the Database validation is disabled, do nothing.</li>
+ *     <li>If it does not exist and the Database validation is disabled, do nothing.</li>
+ *     <li>If any error occurred, drop the table nd fail to start.</li>
  * </ul>
  *
  * @author Freddy Rodriguez
@@ -43,7 +47,6 @@ public class UniqueFieldsValidationInitializer  implements DotInitializer {
     public void init() {
         final boolean featureFlagDbUniqueFieldValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
         final boolean uniqueFieldsTableExists = uniqueFieldsTableExists();
-
         try {
             if (featureFlagDbUniqueFieldValidation && !uniqueFieldsTableExists) {
                 Logger.info(this, "Creating and populating the Unique Fields table");
@@ -53,7 +56,16 @@ public class UniqueFieldsValidationInitializer  implements DotInitializer {
                 this.uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
             }
         } catch (final DotDataException e) {
-            Logger.error(UniqueFieldsValidationInitializer.class, e);
+            try {
+                // Drop the table so that the process can run again the next restart
+                this.uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
+            } catch (final DotDataException ex) {
+                // Failed to drop the unique_fields table, or doesn't exist yet
+            };
+            final String errorMsg = String.format("Failed to create and populate the Unique Fields table: " +
+                    "%s", ExceptionUtil.getErrorMessage(e));
+            Logger.warnAndDebug(this.getClass(), errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
     }
 
