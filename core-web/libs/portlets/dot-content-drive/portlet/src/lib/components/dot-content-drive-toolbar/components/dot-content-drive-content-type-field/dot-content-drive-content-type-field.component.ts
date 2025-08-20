@@ -24,11 +24,11 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
-import { BASE_TYPES } from '../../../../shared/models';
+import { BASE_TYPES, DotContentDriveContentType } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
-    contentTypes: DotCMSContentType[];
+    contentTypes: DotContentDriveContentType[];
     filterByKeyword: string;
     loading: boolean;
 };
@@ -52,7 +52,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         loading: true
     });
 
-    readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
+    readonly $selectedContentTypes = signal<DotContentDriveContentType[]>([]);
 
     #apiRequestSubject = new Subject<{ type?: string; filter: string }>();
 
@@ -84,38 +84,43 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 )
             )
             .subscribe((contentTypes: DotCMSContentType[]) => {
-                const selectedContentTypes = this.$selectedContentTypes();
+                const selectedContentTypes = this.$selectedContentTypes() ?? [];
+                const contentTypeFilters = this.#store.getFilterValue('contentType');
 
                 // Preserve the selected content types
                 const allContentTypes = [...selectedContentTypes, ...(contentTypes ?? [])];
 
                 // Remove duplicates
-                const cleanedContentTypes = allContentTypes.reduce((acc, current) => {
-                    const exists = acc.find((item) => item.id === current.id);
+                const cleanedContentTypes = allContentTypes.reduce<DotContentDriveContentType[]>(
+                    (acc, current) => {
+                        const exists = acc.find((item) => item.id === current.id);
 
-                    // We want to filter out forms and system types and also remove duplicates
-                    if (!exists && !current.system && current.baseType !== BASE_TYPES.form) {
-                        acc.push(current);
-                    }
+                        // We want to filter out forms and system types and also remove duplicates
+                        if (!exists && !current.system && current.baseType !== BASE_TYPES.form) {
+                            // If the item is selected in the multiselect
+                            // or is in the filters we have it in the store
+                            // we want to set the selected property to true
+                            const isSelected =
+                                selectedContentTypes.some((item) => item.id === current.id) ||
+                                contentTypeFilters?.includes(current.variable);
 
-                    return acc;
-                }, [] as DotCMSContentType[]);
+                            acc.push({
+                                ...current,
+                                selected: !!isSelected
+                            });
+                        }
+
+                        return acc;
+                    },
+                    []
+                );
 
                 patchState(this.$state, {
                     contentTypes: cleanedContentTypes,
                     loading: false
                 });
 
-                const contentTypeFilters = this.#store.getFilterValue('contentType');
-
-                // Set the selected content types
-                this.$selectedContentTypes.set(
-                    // Filter all the valid content types from this request
-                    cleanedContentTypes.filter((item) =>
-                        // By the filters we have active in the store
-                        contentTypeFilters?.includes(item.variable)
-                    )
-                );
+                this.$selectedContentTypes.set(cleanedContentTypes.filter((item) => item.selected));
             });
     }
 

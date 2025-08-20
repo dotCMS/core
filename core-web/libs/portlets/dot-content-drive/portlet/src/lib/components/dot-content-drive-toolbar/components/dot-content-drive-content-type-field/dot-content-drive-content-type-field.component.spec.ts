@@ -8,13 +8,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { MultiSelectFilterEvent } from 'primeng/multiselect';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveContentTypeFieldComponent } from './dot-content-drive-content-type-field.component';
 
-import { MOCK_CONTENT_TYPES } from '../../../../shared/mocks';
-import { BASE_TYPES } from '../../../../shared/models';
+import { MOCK_CONTENT_TYPES, MOCK_CONTENT_TYPES_WITH_SELECTED } from '../../../../shared/mocks';
+import { BASE_TYPES, DotContentDriveContentType } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 describe('DotContentDriveContentTypeFieldComponent', () => {
@@ -89,7 +88,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             spectator.detectChanges();
             jest.advanceTimersByTime(500);
 
-            const expectedContentTypes = MOCK_CONTENT_TYPES.filter(
+            const expectedContentTypes = MOCK_CONTENT_TYPES_WITH_SELECTED.filter(
                 (ct) => ct.baseType !== BASE_TYPES.form && !ct.system
             );
 
@@ -103,9 +102,9 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             spectator.detectChanges();
             jest.advanceTimersByTime(500);
 
-            const expectedSelected = MOCK_CONTENT_TYPES.filter((ct) =>
+            const expectedSelected = MOCK_CONTENT_TYPES_WITH_SELECTED.filter((ct) =>
                 ['blog', 'news'].includes(ct.variable)
-            );
+            ).map((ct) => ({ ...ct, selected: true }));
 
             expect(spectator.component.$selectedContentTypes()).toEqual(expectedSelected);
         });
@@ -285,7 +284,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
         it('should preserve selected content types', () => {
             mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[1]]));
-            spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES[0]]);
+            spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES_WITH_SELECTED[0]]);
             spectator.detectChanges();
 
             spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
@@ -294,15 +293,15 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             jest.advanceTimersByTime(500);
 
             expect(spectator.component.$state().contentTypes).toEqual([
-                MOCK_CONTENT_TYPES[0],
-                MOCK_CONTENT_TYPES[1]
+                { ...MOCK_CONTENT_TYPES_WITH_SELECTED[0], selected: true },
+                MOCK_CONTENT_TYPES_WITH_SELECTED[1]
             ]);
         });
 
         it('should preserve selected content types and remove duplicates', () => {
             spectator.component.$selectedContentTypes.set([
-                MOCK_CONTENT_TYPES[0],
-                MOCK_CONTENT_TYPES[1]
+                MOCK_CONTENT_TYPES_WITH_SELECTED[0],
+                MOCK_CONTENT_TYPES_WITH_SELECTED[1]
             ]);
             spectator.detectChanges();
 
@@ -314,8 +313,8 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             jest.advanceTimersByTime(500);
 
             expect(spectator.component.$state().contentTypes).toEqual([
-                MOCK_CONTENT_TYPES[0],
-                MOCK_CONTENT_TYPES[1]
+                { ...MOCK_CONTENT_TYPES_WITH_SELECTED[0], selected: true },
+                { ...MOCK_CONTENT_TYPES_WITH_SELECTED[1], selected: true }
             ]);
         });
     });
@@ -375,8 +374,8 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         beforeEach(() => {
             // Set up component with valid content types
             spectator.component.$selectedContentTypes.set([
-                MOCK_CONTENT_TYPES[0], // blog
-                MOCK_CONTENT_TYPES[1] // news
+                MOCK_CONTENT_TYPES_WITH_SELECTED[0], // blog
+                MOCK_CONTENT_TYPES_WITH_SELECTED[1] // news
             ]);
         });
 
@@ -397,7 +396,9 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         });
 
         it('should handle null selected content types', () => {
-            spectator.component.$selectedContentTypes.set(null as unknown as DotCMSContentType[]);
+            spectator.component.$selectedContentTypes.set(
+                null as unknown as DotContentDriveContentType[]
+            );
 
             spectator.component.onChange();
 
@@ -406,7 +407,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
         it('should handle undefined selected content types', () => {
             spectator.component.$selectedContentTypes.set(
-                undefined as unknown as DotCMSContentType[]
+                undefined as unknown as DotContentDriveContentType[]
             );
 
             spectator.component.onChange();
@@ -416,9 +417,9 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
         it('should extract variable names correctly from selected content types', () => {
             const customContentTypes = [
-                { variable: 'custom1' } as DotCMSContentType,
-                { variable: 'custom2' } as DotCMSContentType,
-                { variable: 'custom3' } as DotCMSContentType
+                { variable: 'custom1' } as DotContentDriveContentType,
+                { variable: 'custom2' } as DotContentDriveContentType,
+                { variable: 'custom3' } as DotContentDriveContentType
             ];
 
             spectator.component.$selectedContentTypes.set(customContentTypes);

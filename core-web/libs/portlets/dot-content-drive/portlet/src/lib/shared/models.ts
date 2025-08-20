@@ -1,4 +1,4 @@
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 
 /**
  * The status of the content drive.
@@ -119,3 +119,13 @@ export const BASE_TYPES = {
     form: 'FORM',
     persona: 'PERSONA'
 } as const;
+
+/**
+ * The contentType of the content drive, with the selected property.
+ *
+ * @export
+ * @interface DotContentDriveContentType
+ */
+export type DotContentDriveContentType = DotCMSContentType & {
+    selected: boolean;
+};
