@@ -4,31 +4,27 @@
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-/**
- * Options for predefined time ranges in analytics
- * These correspond to common analytics reporting periods
- */
-export const TimeRangeOptions = {
-    TODAY: 'today',
-    YESTERDAY: 'yesterday',
-    LAST_7_DAYS: 'from 7 days ago to now',
-    LAST_30_DAYS: 'from 30 days ago to now',
-    CUSTOM_TIME_RANGE: 'CUSTOM_TIME_RANGE'
-} as const;
-
-/**
- * Default time range for analytics queries (7 days)
- */
-export const DEFAULT_TIME_RANGE: TimeRange = TimeRangeOptions.LAST_7_DAYS;
+import {
+    TIME_RANGE_CUBEJS_MAPPING,
+    TIME_RANGE_OPTIONS
+} from '../constants/dot-analytics.constants';
 
 /**
  * Union type representing all possible time range values
  * Includes predefined ranges and custom time expressions
  */
-export type TimeRange = (typeof TimeRangeOptions)[keyof typeof TimeRangeOptions];
+export type TimeRange = (typeof TIME_RANGE_OPTIONS)[keyof typeof TIME_RANGE_OPTIONS];
 
 /** Date range for custom time period selection as ISO date strings */
 export type DateRange = [string, string];
+
+/**
+ * Union type representing all possible time range values for Cube.js
+ * Includes predefined ranges and custom time expressions
+ */
+export type TimeRangeCubeJS =
+    | (typeof TIME_RANGE_CUBEJS_MAPPING)[keyof typeof TIME_RANGE_CUBEJS_MAPPING]
+    | DateRange;
 
 /** Union type for time range inputs - supports both predefined ranges and custom date arrays */
 export type TimeRangeInput = TimeRange | DateRange;
