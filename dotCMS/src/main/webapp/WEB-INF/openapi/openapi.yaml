@@ -990,16 +990,11 @@ paths:
           pattern: .*
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-          application/xml:
-            schema:
-              type: string
+          application/json: {}
+          application/x-www-form-urlencoded: {}
+          application/xml: {}
         description: "Content data in JSON, XML, or form format"
+        required: true
       responses:
         "200":
           content:
@@ -1032,16 +1027,11 @@ paths:
           pattern: .*
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-          application/xml:
-            schema:
-              type: string
+          application/json: {}
+          application/x-www-form-urlencoded: {}
+          application/xml: {}
         description: "Content data in JSON, XML, or form format"
+        required: true
       responses:
         "200":
           content:

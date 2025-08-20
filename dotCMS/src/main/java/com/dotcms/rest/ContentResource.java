@@ -1605,7 +1605,16 @@ public class ContentResource {
     @Operation(
         summary = "Update content with JSON/XML/form data (deprecated)",
         description = "Legacy endpoint for updating content using JSON, XML, or form-encoded data. This endpoint is deprecated and will be removed in future versions. Use the WorkflowResource#fireActionDefault instead.",
-        deprecated = true
+        deprecated = true,
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Content data in JSON, XML, or form format",
+            required = true,
+            content = {
+                @Content(mediaType = "application/json"),
+                @Content(mediaType = "application/xml"), 
+                @Content(mediaType = "application/x-www-form-urlencoded")
+            }
+        )
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
@@ -1627,12 +1636,7 @@ public class ContentResource {
     public Response singlePUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response, 
             @Parameter(description = "URL parameters for content update", required = true)
-            @PathParam("params") String params,
-            @RequestBody(description = "Content data in JSON, XML, or form format", required = false,
-                        content = {@Content(mediaType = "application/json"), 
-                                  @Content(mediaType = "application/xml"),
-                                  @Content(mediaType = "application/x-www-form-urlencoded")})
-            String requestBody)
+            @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "PUT");
     }
@@ -1658,7 +1662,16 @@ public class ContentResource {
     @Operation(
         summary = "Create content with JSON/XML/form data (deprecated)",
         description = "Legacy endpoint for creating content using JSON, XML, or form-encoded data. This endpoint is deprecated and will be removed in future versions. Use the WorkflowResource#fireActionDefault instead.",
-        deprecated = true
+        deprecated = true,
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Content data in JSON, XML, or form format",
+            required = true,
+            content = {
+                @Content(mediaType = "application/json"),
+                @Content(mediaType = "application/xml"), 
+                @Content(mediaType = "application/x-www-form-urlencoded")
+            }
+        )
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
@@ -1680,12 +1693,7 @@ public class ContentResource {
     public Response singlePOST(@Context HttpServletRequest request,
             @Context HttpServletResponse response, 
             @Parameter(description = "URL parameters for content creation", required = true)
-            @PathParam("params") String params,
-            @RequestBody(description = "Content data in JSON, XML, or form format", required = false,
-                        content = {@Content(mediaType = "application/json"), 
-                                  @Content(mediaType = "application/xml"),
-                                  @Content(mediaType = "application/x-www-form-urlencoded")})
-            String requestBody)
+            @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "POST");
     }
