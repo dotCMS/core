@@ -4806,7 +4806,7 @@ public class ImportUtil {
      * @throws ParseException
      */
     private static Date parseExcelDate ( String date ) throws ParseException {
-        return DateUtil.convertDate( date, IMP_DATE_FORMATS );
+        return DateUtil.convertDate( date, false, IMP_DATE_FORMATS );
     }
 
     /**

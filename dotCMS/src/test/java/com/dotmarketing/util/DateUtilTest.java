@@ -580,4 +580,256 @@ public class DateUtilTest extends UnitTestBase {
         Assert.assertEquals("2023-12-05", dateString2);
 
     }
+
+    /**
+     * Method to test: {@link DateUtil#convertDate(String, TimeZone, boolean, String...)}
+     * Given Scenario: Test lenient vs strict date parsing with ImportUtil supported formats
+     * Expected Result: Lenient mode allows invalid dates, strict mode rejects them
+     * Focus: Test all IMP_DATE_FORMATS including US (M/d/y) and European (d/M/y) style formats
+     */
+    @Test
+    public void test_convert_date_with_lenient_parameter() throws ParseException {
+
+        final TimeZone defaultTimeZone = TimeZone.getDefault();
+
+        // Import date formats from ImportUtil (mirrored here to avoid direct dependency)
+        final String[] dateFormatPatterns = new String[] {
+            "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
+            "MM/dd/yy hh:mm aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm", "MM/dd/yyyy HH:mm", 
+            "MMMM dd, yyyy", "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy", 
+            "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa", "yyyy-MM-dd"
+        };
+
+        // Additional European formats to test
+        final String[] europeanDateFormats = new String[] {
+            "d/M/y", "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy"
+        };
+
+        // Combine all formats for comprehensive testing
+        final String[] allFormats = new String[dateFormatPatterns.length + europeanDateFormats.length];
+        System.arraycopy(dateFormatPatterns, 0, allFormats, 0, dateFormatPatterns.length);
+        System.arraycopy(europeanDateFormats, 0, allFormats, dateFormatPatterns.length, europeanDateFormats.length);
+
+        // === Test 1: Valid dates should work in both lenient and strict modes ===
+
+        // US format: M/d/y (12/25/2024 = December 25, 2024)
+        Date lenientUSDate = DateUtil.convertDate("12/25/2024", defaultTimeZone, true, "M/d/y", "MM/dd/yyyy");
+        assertNotNull("Valid US date should parse in lenient mode", lenientUSDate);
+        
+        // Validate the US date matches the input intention: 12/25/2024 = December 25, 2024
+        assertEquals("US format: Month should be December (11)", Calendar.DECEMBER, lenientUSDate.getMonth());
+        assertEquals("US format: Day should be 25", 25, lenientUSDate.getDate());
+        assertEquals("US format: Year should be 2024", 2024, lenientUSDate.getYear() + 1900); // Date.getYear() returns year - 1900
+
+        Date strictUSDate = DateUtil.convertDate("12/25/2024", defaultTimeZone, false, "M/d/y", "MM/dd/yyyy");
+        assertNotNull("Valid US date should parse in strict mode", strictUSDate);
+        
+        // Validate strict mode produces the same result
+        assertEquals("US format strict: Month should be December", Calendar.DECEMBER, strictUSDate.getMonth());
+        assertEquals("US format strict: Day should be 25", 25, strictUSDate.getDate());
+        assertEquals("US format strict: Year should be 2024", 2024, strictUSDate.getYear() + 1900);
+
+        // European format: d/M/y (25/12/2024 = December 25, 2024)
+        Date lenientEUDate = DateUtil.convertDate("25/12/2024", defaultTimeZone, true, "d/M/y", "dd/MM/yyyy");
+        assertNotNull("Valid European date should parse in lenient mode", lenientEUDate);
+        
+        // Validate the European date matches the input intention: 25/12/2024 = December 25, 2024
+        assertEquals("EU format: Month should be December (11)", Calendar.DECEMBER, lenientEUDate.getMonth());
+        assertEquals("EU format: Day should be 25", 25, lenientEUDate.getDate());
+        assertEquals("EU format: Year should be 2024", 2024, lenientEUDate.getYear() + 1900);
+
+        Date strictEUDate = DateUtil.convertDate("25/12/2024", defaultTimeZone, false, "d/M/y", "dd/MM/yyyy");
+        assertNotNull("Valid European date should parse in strict mode", strictEUDate);
+        
+        // Validate strict mode produces the same result
+        assertEquals("EU format strict: Month should be December", Calendar.DECEMBER, strictEUDate.getMonth());
+        assertEquals("EU format strict: Day should be 25", 25, strictEUDate.getDate());
+        assertEquals("EU format strict: Year should be 2024", 2024, strictEUDate.getYear() + 1900);
+
+        // Verify both formats produce the same date (December 25, 2024)
+        assertEquals("US and European formats should produce same year", 
+            lenientUSDate.getYear(), lenientEUDate.getYear());
+        assertEquals("US and European formats should produce same month", 
+            lenientUSDate.getMonth(), lenientEUDate.getMonth());
+        assertEquals("US and European formats should produce same day", 
+            lenientUSDate.getDate(), lenientEUDate.getDate());
+
+        // === Test 2: More valid dates with various IMP_DATE_FORMATS ===
+
+        // ISO format: 2024-12-25 = December 25, 2024
+        Date isoDate = DateUtil.convertDate("2024-12-25", defaultTimeZone, false, "yyyy-MM-dd");
+        assertNotNull("ISO date should parse in strict mode", isoDate);
+        
+        // Validate ISO date matches input intention: 2024-12-25 = December 25, 2024
+        assertEquals("ISO format: Year should be 2024", 2024, isoDate.getYear() + 1900);
+        assertEquals("ISO format: Month should be December", Calendar.DECEMBER, isoDate.getMonth());
+        assertEquals("ISO format: Day should be 25", 25, isoDate.getDate());
+
+        // Long format: December 25, 2024 = December 25, 2024
+        Date longDate = DateUtil.convertDate("December 25, 2024", defaultTimeZone, false, "MMMM dd, yyyy");
+        assertNotNull("Long date format should parse in strict mode", longDate);
+        
+        // Validate long format date matches input intention
+        assertEquals("Long format: Year should be 2024", 2024, longDate.getYear() + 1900);
+        assertEquals("Long format: Month should be December", Calendar.DECEMBER, longDate.getMonth());
+        assertEquals("Long format: Day should be 25", 25, longDate.getDate());
+
+        // Short month format: 25-Dec-24 = December 25, 2024
+        Date shortMonthDate = DateUtil.convertDate("25-Dec-24", defaultTimeZone, false, "d-MMM-yy", "dd-MMM-yy");
+        assertNotNull("Short month format should parse in strict mode", shortMonthDate);
+        
+        // Validate short month format (note: 2-digit year 24 should be interpreted as 2024)
+        assertEquals("Short month format: Year should be 2024", 2024, shortMonthDate.getYear() + 1900);
+        assertEquals("Short month format: Month should be December", Calendar.DECEMBER, shortMonthDate.getMonth());
+        assertEquals("Short month format: Day should be 25", 25, shortMonthDate.getDate());
+        
+        // Verify all date formats produce the same date (December 25, 2024)
+        assertEquals("All formats should produce same year", lenientUSDate.getYear(), isoDate.getYear());
+        assertEquals("All formats should produce same month", lenientUSDate.getMonth(), longDate.getMonth());
+        assertEquals("All formats should produce same day", lenientUSDate.getDate(), shortMonthDate.getDate());
+
+        // === Test 3: Invalid dates in lenient mode (should auto-correct) ===
+
+        // US format with invalid date (13/32/2024 - month 13, day 32)
+        Date lenientInvalidUS = DateUtil.convertDate("13/32/2024", defaultTimeZone, true, allFormats);
+        assertNotNull("Invalid US date should be auto-corrected in lenient mode", lenientInvalidUS);
+
+        // European format with invalid date (32/13/2024 - day 32, month 13)  
+        Date lenientInvalidEU = DateUtil.convertDate("32/13/2024", defaultTimeZone, true, allFormats);
+        assertNotNull("Invalid European date should be auto-corrected in lenient mode", lenientInvalidEU);
+
+        // February 30th (impossible date)
+        Date lenientFeb30 = DateUtil.convertDate("30/2/2024", defaultTimeZone, true, "d/M/y", "dd/MM/yyyy");
+        assertNotNull("February 30th should be auto-corrected in lenient mode", lenientFeb30);
+
+        // === Test 4: Invalid dates in strict mode (should throw ParseException) ===
+
+        // Test the specific example requested: 32/45/2025
+        try {
+            DateUtil.convertDate("32/45/2025", defaultTimeZone, false, "d/M/y", "dd/MM/yyyy");
+            Assert.fail("Expected ParseException for '32/45/2025' in strict mode");
+        } catch (ParseException e) {
+            assertTrue("ParseException should contain the invalid date", 
+                e.getMessage().contains("32/45/2025"));
+        }
+
+        // US format: Invalid month (13/25/2024)
+        try {
+            DateUtil.convertDate("13/25/2024", defaultTimeZone, false, "M/d/y", "MM/dd/yyyy");
+            Assert.fail("Expected ParseException for invalid US month '13' in strict mode");
+        } catch (ParseException e) {
+            assertTrue("ParseException should contain meaningful message", 
+                e.getMessage().contains("13/25/2024"));
+        }
+
+        // European format: Invalid day (32/12/2024)
+        try {
+            DateUtil.convertDate("32/12/2024", defaultTimeZone, false, "d/M/y", "dd/MM/yyyy");
+            Assert.fail("Expected ParseException for invalid European day '32' in strict mode");
+        } catch (ParseException e) {
+            assertTrue("ParseException should contain meaningful message", 
+                e.getMessage().contains("32/12/2024"));
+        }
+
+        // Zero month in US format (0/15/2025)
+        try {
+            DateUtil.convertDate("0/15/2025", defaultTimeZone, false, "M/d/y");
+            Assert.fail("Expected ParseException for zero month in US format in strict mode");
+        } catch (ParseException e) {
+            assertTrue("ParseException should contain meaningful message", 
+                e.getMessage().contains("0/15/2025"));
+        }
+
+        // Zero day in European format (0/12/2025)
+        try {
+            DateUtil.convertDate("0/12/2025", defaultTimeZone, false, "d/M/y");
+            Assert.fail("Expected ParseException for zero day in European format in strict mode");
+        } catch (ParseException e) {
+            assertTrue("ParseException should contain meaningful message", 
+                e.getMessage().contains("0/12/2025"));
+        }
+
+        // February 30th in strict mode
+        try {
+            DateUtil.convertDate("02/30/2024", defaultTimeZone, false, "MM/dd/yyyy");
+            Assert.fail("Expected ParseException for February 30th in strict mode");
+        } catch (ParseException e) {
+            assertTrue("ParseException should contain meaningful message", 
+                e.getMessage().contains("02/30/2024"));
+        }
+
+        // Extremely invalid date
+        try {
+            DateUtil.convertDate("99/99/2025", defaultTimeZone, false, allFormats);
+            Assert.fail("Expected ParseException for extremely invalid date '99/99/2025' in strict mode");
+        } catch (ParseException e) {
+            assertTrue("ParseException should contain meaningful message", 
+                e.getMessage().contains("99/99/2025"));
+        }
+
+        // === Test 5: Format disambiguation - same input, different interpretation ===
+
+        // "1/2/25" could be:
+        // - US format (M/d/y): January 2, 2025
+        // - European format (d/M/y): February 1, 2025
+
+        Date usInterpretation = DateUtil.convertDate("1/2/25", defaultTimeZone, false, "M/d/y");
+        Date euInterpretation = DateUtil.convertDate("1/2/25", defaultTimeZone, false, "d/M/y");
+
+        // CRITICAL: Verify they produce different dates to confirm format interpretation
+        assertNotEquals("US and European interpretations of '1/2/25' should be different",
+            usInterpretation.getMonth(), euInterpretation.getMonth());
+
+        // US interpretation: 1/2/25 = January 2, 2025 (M/d/y)
+        assertEquals("US format should interpret as January", Calendar.JANUARY, usInterpretation.getMonth());
+        assertEquals("US format should interpret as day 2", 2, usInterpretation.getDate());
+        assertEquals("US format should interpret as year 2025", 2025, usInterpretation.getYear() + 1900);
+        
+        // European interpretation: 1/2/25 = February 1, 2025 (d/M/y)  
+        assertEquals("European format should interpret as February", Calendar.FEBRUARY, euInterpretation.getMonth());
+        assertEquals("European format should interpret as day 1", 1, euInterpretation.getDate());
+        assertEquals("European format should interpret as year 2025", 2025, euInterpretation.getYear() + 1900);
+
+        // === Test 6: Additional format validation cases ===
+
+        // Test "12/1/2024" - should be unambiguous
+        // US format (M/d/y): December 1, 2024 
+        // European format (d/M/y): January 12, 2024
+        Date usAmbiguous = DateUtil.convertDate("12/1/2024", defaultTimeZone, false, "M/d/y");
+        Date euAmbiguous = DateUtil.convertDate("12/1/2024", defaultTimeZone, false, "d/M/y");
+
+        // US: December 1, 2024
+        assertEquals("US '12/1/2024': Month should be December", Calendar.DECEMBER, usAmbiguous.getMonth());
+        assertEquals("US '12/1/2024': Day should be 1", 1, usAmbiguous.getDate());
+        assertEquals("US '12/1/2024': Year should be 2024", 2024, usAmbiguous.getYear() + 1900);
+
+        // European: January 12, 2024  
+        assertEquals("EU '12/1/2024': Month should be January", Calendar.JANUARY, euAmbiguous.getMonth());
+        assertEquals("EU '12/1/2024': Day should be 12", 12, euAmbiguous.getDate());
+        assertEquals("EU '12/1/2024': Year should be 2024", 2024, euAmbiguous.getYear() + 1900);
+
+        // Test edge case: "31/12/2024" - only valid in European format
+        Date euOnly = DateUtil.convertDate("31/12/2024", defaultTimeZone, false, "d/M/y", "dd/MM/yyyy");
+        
+        // European: December 31, 2024
+        assertEquals("EU '31/12/2024': Month should be December", Calendar.DECEMBER, euOnly.getMonth());
+        assertEquals("EU '31/12/2024': Day should be 31", 31, euOnly.getDate());
+        assertEquals("EU '31/12/2024': Year should be 2024", 2024, euOnly.getYear() + 1900);
+
+        // Test edge case: "12/31/2024" - only valid in US format  
+        Date usOnly = DateUtil.convertDate("12/31/2024", defaultTimeZone, false, "M/d/y", "MM/dd/yyyy");
+        
+        // US: December 31, 2024
+        assertEquals("US '12/31/2024': Month should be December", Calendar.DECEMBER, usOnly.getMonth());
+        assertEquals("US '12/31/2024': Day should be 31", 31, usOnly.getDate());
+        assertEquals("US '12/31/2024': Year should be 2024", 2024, usOnly.getYear() + 1900);
+
+        // Verify both edge cases represent the same logical date (December 31, 2024)
+        assertEquals("Both '31/12/2024' and '12/31/2024' should represent same year", 
+            euOnly.getYear(), usOnly.getYear());
+        assertEquals("Both '31/12/2024' and '12/31/2024' should represent same month", 
+            euOnly.getMonth(), usOnly.getMonth());
+        assertEquals("Both '31/12/2024' and '12/31/2024' should represent same day", 
+            euOnly.getDate(), usOnly.getDate());
+    }
 }
