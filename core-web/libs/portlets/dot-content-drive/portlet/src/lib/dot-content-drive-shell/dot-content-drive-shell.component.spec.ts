@@ -20,7 +20,13 @@ import { GlobalStore } from '@dotcms/store';
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
 import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
-import { MOCK_ITEMS, MOCK_ROUTE, MOCK_SEARCH_RESPONSE, MOCK_SITES } from '../shared/mocks';
+import {
+    MOCK_ITEMS,
+    MOCK_ROUTE,
+    MOCK_SEARCH_RESPONSE,
+    MOCK_SITES,
+    MOCK_BASE_TYPES
+} from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
@@ -44,6 +50,9 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
+            mockProvider(DotContentTypeService, {
+                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
             provideHttpClient()
         ],
         componentProviders: [DotContentDriveStore],
@@ -91,6 +100,9 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(DotContentTypeService, {
                     getContentTypes: jest.fn().mockReturnValue(of())
+                }),
+                mockProvider(DotContentTypeService, {
+                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
                 })
             ]
         });

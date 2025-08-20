@@ -9,7 +9,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
-import { MOCK_CONTENT_TYPES } from '../../shared/mocks';
+import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES } from '../../shared/mocks';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
@@ -27,10 +27,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 filters: jest.fn().mockReturnValue({})
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
+                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
+                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
-            mockProvider(DotMessageService, new MockDotMessageService({})),
-            provideHttpClient()
+            provideHttpClient(),
+            mockProvider(DotMessageService, new MockDotMessageService({}))
         ],
         detectChanges: false
     });
@@ -77,5 +78,11 @@ describe('DotContentDriveToolbarComponent', () => {
         spectator.detectChanges();
         const input = spectator.query('[data-testid="search-input"]');
         expect(input).toBeTruthy();
+    });
+
+    it('should render the base type selector', () => {
+        spectator.detectChanges();
+        const selector = spectator.query('[data-testid="base-type-selector"]');
+        expect(selector).toBeTruthy();
     });
 });
