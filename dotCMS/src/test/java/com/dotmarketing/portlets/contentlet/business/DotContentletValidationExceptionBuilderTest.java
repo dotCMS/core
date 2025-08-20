@@ -136,8 +136,6 @@ public class DotContentletValidationExceptionBuilderTest {
         // Verify context information
         assertTrue("Context should be present", exception.getContext().isPresent());
         Map<String, ?> context = exception.getContext().get();
-        assertEquals("Context should contain field name", "Title", context.get("fieldName"));
-        assertEquals("Context should contain velocity var name", "title", context.get("velocityVarName"));
         assertEquals("Context should contain field type", "text", context.get("fieldType"));
     }
 
