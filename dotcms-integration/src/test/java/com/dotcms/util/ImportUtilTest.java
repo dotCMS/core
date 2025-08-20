@@ -199,6 +199,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on CSV but no permissions, ";
     private static final String TEST_WITH_WF_ACTION_ON_DROPDOWN_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on dropdown but not permission, ";
     private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS_AND_USING_DROPDOWN_ACTION = ", Test with WF Action ID set on CSV (but no permission) and using dropdown action, ";
+    private static final String UNIQUE_FIELDS_WARNING = "There are unique fields in this Content Type. Duplicate values are rejected during import.";
 
     public static class RelationshipTestCase {
 
@@ -740,8 +741,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Validations
         validate(results, true, false, true);
 
-        assertTrue(results.get("warnings").size() == 1);
-        assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+        assertEquals(1, results.get("warnings").size());
+        assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
     }
 
     /**
@@ -801,7 +802,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
@@ -866,8 +867,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertEquals(2, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
@@ -938,9 +939,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(1, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -1003,9 +1004,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(1, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
