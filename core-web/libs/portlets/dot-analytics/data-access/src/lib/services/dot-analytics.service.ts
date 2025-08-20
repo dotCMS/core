@@ -19,7 +19,10 @@ import {
 } from '../../index';
 import { TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../constants';
 import { createCubeQuery } from '../utils/cube/cube-query-builder.util';
-import { determineGranularityForTimeRange } from '../utils/data/analytics-data.utils';
+import {
+    determineGranularityForTimeRange,
+    fillMissingDates
+} from '../utils/data/analytics-data.utils';
 
 @Injectable({
     providedIn: 'root'
@@ -111,7 +114,7 @@ export class DotAnalyticsService {
 
         return this.#http
             .post<AnalyticsApiResponse<PageViewTimeLineEntity>>(this.#BASE_URL, query)
-            .pipe(map((response) => response.entity));
+            .pipe(map((response) => fillMissingDates(response.entity, timeRange, granularity)));
     }
 
     /**
