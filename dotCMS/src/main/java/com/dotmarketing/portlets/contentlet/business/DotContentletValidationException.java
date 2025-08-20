@@ -1,13 +1,17 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.util.FieldNameUtils.convertFieldClassName;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.SPACE;
+
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.FieldNameUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.importer.exception.ImportLineError;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
-
+import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,9 +19,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.SPACE;
 
 /**
  * Used for throwing contentlet validation problems
@@ -381,9 +382,9 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	 */
 	public static class Builder<T extends DotContentletValidationException> {
 		protected final T exception;
-		private Field firstErrorField = null;
-		private String firstErrorValue = null;
-		private String firstErrorCode = null;
+        private String firstErrorCode = ImportLineValidationCodes.UNKNOWN_ERROR.name();
+        private Field firstErrorField = null;
+        private String firstErrorValue = null;
 		private String firstErrorPattern = null;
 
 		public Builder(T exception) {
@@ -495,9 +496,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 					@Override
 					public Optional<Map<String, ?>> getContext() {
 						final Map<String, String> ctx = new HashMap<>();
-						ctx.put("fieldName", firstErrorField.getFieldName());
-						ctx.put("velocityVarName", firstErrorField.getVelocityVarName());
-						ctx.put("fieldType", firstErrorField.getFieldType());
+						ctx.put("fieldType", convertFieldClassName(firstErrorField.getFieldType()));
 						if (UtilMethods.isSet(firstErrorPattern)) {
 							ctx.put("expectedPattern", firstErrorPattern);
 						}
