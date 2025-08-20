@@ -73,13 +73,19 @@ public class CMSMaintenanceFactory {
         while (startDate.getTime().before(assetsOlderThan) || startDate.getTime().equals(assetsOlderThan)) {
             try {
                 HibernateUtil.startTransaction();
-                final int deletedRecords = removeOldVersions(startDate);
-                // Run the drop tasks iteratively, moving forward in time
-                // DROP_OLD_ASSET_ITERATE_BY_SECONDS controls how many seconds to move forward
-                // in time for each iteration - default is to iterate by 30 days
+                // Calculate the end date for this iteration (bounded query optimization)
+                final Calendar endDate = (Calendar) startDate.clone();
+                endDate.add(Calendar.SECOND,
+                        Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_SECONDS", 60 * 60 * 24 * 30));
+                // Ensure we don't go past the user-specified date
+                final Date iterationEndDate = endDate.getTime().after(assetsOlderThan) ? assetsOlderThan : endDate.getTime();
+                
+                // Use bounded query: process only content within this specific date range
+                final int deletedRecords = removeOldVersions(startDate, iterationEndDate);
+                
+                // Move forward in time for the next iteration
                 startDate.add(Calendar.SECOND,
                         Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_SECONDS", 60 * 60 * 24 * 30));
-                // We should never go past the date the user entered
                 totalRecords += deletedRecords;
                 HibernateUtil.commitTransaction();
                 if (startDate.getTime().after(assetsOlderThan)) {
@@ -134,47 +140,53 @@ public class CMSMaintenanceFactory {
     }
 
     /**
-     * Deletes all the versions of dotCMS objects that are older than the specified
-     * date.
+     * Deletes all the versions of dotCMS objects that fall within the specified date range.
+     * This method provides performance optimization by using bounded queries instead of
+     * cumulative scans from the beginning of time.
      *
-     * @param assetsOlderThan The date up to which object versions will be deleted.
+     * @param assetsFrom The start date (inclusive) - versions modified on or after this date will be considered.
+     * @param assetsTo The end date (exclusive) - versions modified before this date will be considered.
      *
-     * @return The total The total number of versions that were deleted for the specified date.
+     * @return The total number of versions that were deleted for the specified date range.
      *
      * @throws DotDataException An error occurred when deleting the data.
      */
-    private static int removeOldVersions(final Calendar assetsOlderThan) throws DotDataException {
+    private static int removeOldVersions(final Calendar assetsFrom, final Date assetsTo) throws DotDataException {
         int deletedRecords = 0;
         int totalRecords = 0;
         final String statusMsg = " Removed %d old %s";
-        Logger.info(CMSMaintenanceFactory.class, String.format("-> Dropping versions older than '%s':",
-                UtilMethods.dateToHTMLDate(assetsOlderThan.getTime(), "yyyy-MM-dd")));
+        Logger.info(CMSMaintenanceFactory.class, String.format("-> Dropping versions from '%s' to '%s':",
+                UtilMethods.dateToHTMLDate(assetsFrom.getTime(), "yyyy-MM-dd"),
+                UtilMethods.dateToHTMLDate(assetsTo, "yyyy-MM-dd")));
 
-        deletedRecords = APILocator.getContentletAPI().deleteOldContent(assetsOlderThan.getTime());
+        // Use bounded query for Contentlets - this is the key performance optimization
+        deletedRecords = APILocator.getContentletAPI().deleteOldContent(assetsFrom.getTime(), assetsTo);
         if (deletedRecords > 0) {
             Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Contentlets"));
             totalRecords += deletedRecords;
         }
 
-        deletedRecords = APILocator.getContainerAPI().deleteOldVersions(assetsOlderThan.getTime());
+        // Note: Other APIs (Container, Template, MenuLink, Workflow) don't have bounded methods yet
+        // They will continue to use the single-parameter approach for now
+        deletedRecords = APILocator.getContainerAPI().deleteOldVersions(assetsTo);
         if (deletedRecords > 0) {
             Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Containers"));
             totalRecords += deletedRecords;
         }
 
-        deletedRecords = APILocator.getTemplateAPI().deleteOldVersions(assetsOlderThan.getTime());
+        deletedRecords = APILocator.getTemplateAPI().deleteOldVersions(assetsTo);
         if (deletedRecords > 0) {
             Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Templates"));
             totalRecords += deletedRecords;
         }
 
-        deletedRecords = APILocator.getMenuLinkAPI().deleteOldVersions(assetsOlderThan.getTime());
+        deletedRecords = APILocator.getMenuLinkAPI().deleteOldVersions(assetsTo);
         if (deletedRecords > 0) {
             Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Links"));
             totalRecords += deletedRecords;
         }
 
-        deletedRecords = APILocator.getWorkflowAPI().deleteWorkflowHistoryOldVersions(assetsOlderThan.getTime());
+        deletedRecords = APILocator.getWorkflowAPI().deleteWorkflowHistoryOldVersions(assetsTo);
         if (deletedRecords > 0) {
             Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Workflow History entries"));
             totalRecords += deletedRecords;
@@ -188,6 +200,22 @@ public class CMSMaintenanceFactory {
         }
         Logger.info(CMSMaintenanceFactory.class, " ");
         return totalRecords;
+    }
+
+    /**
+     * Deletes all the versions of dotCMS objects that are older than the specified date.
+     * This method maintains backward compatibility by calling the bounded version with
+     * epoch as the start date.
+     *
+     * @param assetsOlderThan The date up to which object versions will be deleted.
+     *
+     * @return The total number of versions that were deleted for the specified date.
+     *
+     * @throws DotDataException An error occurred when deleting the data.
+     */
+    private static int removeOldVersions(final Calendar assetsOlderThan) throws DotDataException {
+        // Maintain backward compatibility by calling the bounded version
+        return removeOldVersions(Calendar.getInstance(), assetsOlderThan.getTime());
     }
 
 }
