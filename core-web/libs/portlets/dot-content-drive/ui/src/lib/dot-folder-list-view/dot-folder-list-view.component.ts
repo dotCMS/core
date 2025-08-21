@@ -3,8 +3,10 @@ import {
     Component,
     computed,
     CUSTOM_ELEMENTS_SCHEMA,
+    effect,
     input,
-    output
+    output,
+    signal
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
@@ -41,6 +43,7 @@ export class DotFolderListViewComponent {
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
 
+    selectedItems: DotContentDriveItem[] = [];
     readonly MIN_ROWS_PER_PAGE = 20;
     protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
     protected readonly HEADER_COLUMNS = HEADER_COLUMNS;
@@ -52,10 +55,16 @@ export class DotFolderListViewComponent {
         this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
     );
 
-    // Model for the table selection
-    selectedItems: DotContentDriveItem[] = [];
+    protected readonly $first = signal<number>(0);
+    protected readonly firstEffect = effect(() => {
+        const showPagination = this.$showPagination();
+        if (showPagination) {
+            this.$first.set(0);
+        }
+    });
 
     onPage(event: LazyLoadEvent) {
+        this.$first.set(event.first);
         this.paginate.emit(event);
     }
 
