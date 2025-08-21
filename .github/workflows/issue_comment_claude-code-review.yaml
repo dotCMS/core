@@ -1,0 +1,53 @@
+# Advanced Custom Trigger Conditions Example
+# This example demonstrates using custom_trigger_condition for advanced use cases
+# beyond the default @claude mention detection.
+
+name: Claude code when mentioned
+
+# Concurrency control to prevent multiple jobs running for the same PR/issue
+concurrency:
+  group: claude-${{ github.event.pull_request.number || github.event.issue.number || 'manual' }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode for debugging'
+        required: false
+        type: boolean
+        default: false
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:  
+  claude-code-review:
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
+    with:
+      trigger_mode: interactive
+      # Custom condition: Only trigger when files in core-web directory are changed
+      custom_trigger_condition: |
+        github.event_name == 'pull_request' && (
+          contains(toJSON(github.event.pull_request.files.*.filename), 'core-web/')
+        )
+      direct_prompt: |
+        This PR appears to modify configuration files or has many changes. 
+        Please review for:
+        - Configuration syntax and validity
+        - Potential breaking changes
+        - Security implications of config changes
+        - Impact on existing functionality
+      allowed_tools: |
+        Bash(git status)
+        Bash(git diff)
+        Bash(grep -r "config" .)
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: false
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+
+
