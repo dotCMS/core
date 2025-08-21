@@ -30,6 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 'Validate inputs'
         run: |
           echo "::group::Input validation"
