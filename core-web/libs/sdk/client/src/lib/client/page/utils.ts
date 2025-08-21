@@ -1,6 +1,11 @@
 import { consola } from 'consola';
 
-import { DotHttpClient, DotCMSGraphQLError, DotGraphQLApiResponse, DotHttpError } from '@dotcms/types';
+import {
+    DotHttpClient,
+    DotCMSGraphQLError,
+    DotGraphQLApiResponse,
+    DotHttpError
+} from '@dotcms/types';
 import { ErrorMessages } from '../models';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
@@ -240,7 +245,6 @@ export function mapContentResponse(
     responseData: Record<string, unknown> | undefined,
     keys: string[]
 ): Record<string, unknown> | undefined {
-
     if (!responseData) {
         return undefined;
     }
@@ -328,4 +332,3 @@ export async function fetchGraphQL({
 
 //     return await response.json();
 // }
-

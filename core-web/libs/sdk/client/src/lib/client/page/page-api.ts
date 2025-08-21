@@ -7,7 +7,7 @@ import {
     DotCMSExtendedPageResponse,
     DotCMSComposedPageResponse,
     DotHttpClient,
-    DotRequestOptions,
+    DotRequestOptions
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
@@ -66,7 +66,11 @@ export class PageClient {
      * );
      * ```
      */
-    constructor(config: DotCMSClientConfig, requestOptions: DotRequestOptions, httpClient: DotHttpClient) {
+    constructor(
+        config: DotCMSClientConfig,
+        requestOptions: DotRequestOptions,
+        httpClient: DotHttpClient
+    ) {
         this.requestOptions = requestOptions;
         this.siteId = config.siteId || '';
         this.dotcmsUrl = config.dotcmsUrl;
@@ -180,7 +184,9 @@ export class PageClient {
             const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {
-                throw new Error('No page data found. Please check the page URL and the GraphQL query.');
+                throw new Error(
+                    'No page data found. Please check the page URL and the GraphQL query.'
+                );
             }
 
             const contentResponse = mapContentResponse(response.data.content, Object.keys(content));
@@ -207,7 +213,6 @@ export class PageClient {
         }
     }
 }
-
 
 // async get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
 //     url: string,

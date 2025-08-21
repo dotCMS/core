@@ -36,9 +36,12 @@ describe('NavigationClient', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        MockedFetchHttpClient.mockImplementation(() => ({
-            request: mockRequest
-        } as Partial<FetchHttpClient> as FetchHttpClient));
+        MockedFetchHttpClient.mockImplementation(
+            () =>
+                ({
+                    request: mockRequest
+                }) as Partial<FetchHttpClient> as FetchHttpClient
+        );
 
         mockRequest.mockResolvedValue(mockNavigationData);
     });
@@ -142,7 +145,11 @@ describe('NavigationClient', () => {
             credentials: 'include'
         };
 
-        const navClient = new NavigationClient(validConfig, optionsWithCache, new FetchHttpClient());
+        const navClient = new NavigationClient(
+            validConfig,
+            optionsWithCache,
+            new FetchHttpClient()
+        );
 
         await navClient.get('/');
 

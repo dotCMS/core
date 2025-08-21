@@ -1,5 +1,5 @@
 // app.config.ts
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import {
     provideHttpClient,
@@ -22,22 +22,22 @@ import {
 import { AngularHttpClient } from './angular-httpclient';
 import { createDotCMSClient } from '@dotcms/client';
 
-// Simple provider for DotCMSClient
-function provideDotCMSClient(config: any) {
-    return {
-        provide: DotCMSClient,
-        useFactory: (httpClient: HttpClient) => {
-            const angularHttpClient = new AngularHttpClient(httpClient);
+function provideDotCMSClient(options: any): EnvironmentProviders {
+
+  return makeEnvironmentProviders([
+      {
+          provide: DotCMSClient,
+          useFactory: () => {
             const dotCMSClient = createDotCMSClient({
-                dotcmsUrl: config.dotcmsUrl,
-                authToken: config.authToken,
-                siteId: config.siteId,
-                httpClient: angularHttpClient,
+              dotcmsUrl: options.dotcmsUrl,
+              authToken: options.authToken,
+              siteId: options.siteId,
+              httpClient: options.httpClient
             });
             return new DotCMSClient(dotCMSClient);
         },
         deps: [HttpClient],
-    };
+    }]);
 }
 
 export const appConfig: ApplicationConfig = {

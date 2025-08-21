@@ -90,7 +90,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                 // If UVE is enabled, listen for changes
                 this.#dotcmsEditablePageService
                     .listen(response)
-                    .pipe(takeUntilDestroyed(this.#destroyRef))
+                    //.pipe(takeUntilDestroyed(this.#destroyRef))
                     .subscribe((page) => {
                         // Set the page content every time it changes
                         this.#setPageContent(page as ComposedPageResponse<T>);

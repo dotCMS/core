@@ -8,24 +8,24 @@ export interface HttpErrorDetails {
     statusText: string;
     message: string;
     data?: unknown; // Error response body if available
-  }
+}
 
-  /**
-   * Standardized HTTP error class for all HTTP client implementations
-   */
-  export class DotHttpError extends Error implements HttpErrorDetails {
+/**
+ * Standardized HTTP error class for all HTTP client implementations
+ */
+export class DotHttpError extends Error implements HttpErrorDetails {
     status: number;
     statusText: string;
     data?: unknown;
 
     constructor(details: HttpErrorDetails) {
-      super(details.message);
-      this.name = 'HttpError';
-      this.status = details.status;
-      this.statusText = details.statusText;
-      this.data = details.data;
+        super(details.message);
+        this.name = 'HttpError';
+        this.status = details.status;
+        this.statusText = details.statusText;
+        this.data = details.data;
     }
-  }
+}
 
 /**
  * Interface for HTTP client implementations.
@@ -57,18 +57,18 @@ export interface HttpErrorDetails {
  * ```
  */
 export interface DotHttpClient {
-  /**
-   * Makes an HTTP request.
-   *
-   * @param url - The URL to request
-   * @param options - Request options (method, headers, body, etc.)
-   * @returns A promise that resolves with the response data
-   * @throws {DotHttpError} When the request fails (non-2xx status or network error)
-   *
-   * @important This method MUST throw HttpError instances, not generic Error objects.
-   * Consumers expect HttpError with status, statusText, and data properties for proper error handling.
-   */
-  request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
+    /**
+     * Makes an HTTP request.
+     *
+     * @param url - The URL to request
+     * @param options - Request options (method, headers, body, etc.)
+     * @returns A promise that resolves with the response data
+     * @throws {DotHttpError} When the request fails (non-2xx status or network error)
+     *
+     * @important This method MUST throw HttpError instances, not generic Error objects.
+     * Consumers expect HttpError with status, statusText, and data properties for proper error handling.
+     */
+    request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
 }
 
 /**
@@ -142,66 +142,64 @@ export interface DotHttpClient {
  * ```
  */
 export abstract class BaseHttpClient implements DotHttpClient {
-  abstract request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
+    abstract request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
 
-  /**
-   * Creates a standardized HttpError from HTTP response details.
-   * Handles parsing of error response body automatically.
-   *
-   * @param status - HTTP status code
-   * @param statusText - HTTP status text
-   * @param headers - Response headers (optional)
-   * @param body - Response body (optional)
-   * @param customMessage - Optional custom error message
-   * @returns HttpError instance with parsed response data
-   */
-  protected createHttpError(
-    status: number,
-    statusText: string,
-    headers?: Record<string, string>,
-    body?: string | unknown,
-    customMessage?: string
-  ): DotHttpError {
-    let errorData: unknown = body;
+    /**
+     * Creates a standardized HttpError from HTTP response details.
+     * Handles parsing of error response body automatically.
+     *
+     * @param status - HTTP status code
+     * @param statusText - HTTP status text
+     * @param headers - Response headers (optional)
+     * @param body - Response body (optional)
+     * @param customMessage - Optional custom error message
+     * @returns HttpError instance with parsed response data
+     */
+    protected createHttpError(
+        status: number,
+        statusText: string,
+        headers?: Record<string, string>,
+        body?: string | unknown,
+        customMessage?: string
+    ): DotHttpError {
+        let errorData: unknown = body;
 
-    // If body is a string, try to parse as JSON
-    if (typeof body === 'string') {
-      try {
-        const contentType = headers?.['content-type'] || headers?.['Content-Type'];
-        if (contentType?.includes('application/json')) {
-          errorData = JSON.parse(body);
-        } else {
-          errorData = body;
+        // If body is a string, try to parse as JSON
+        if (typeof body === 'string') {
+            try {
+                const contentType = headers?.['content-type'] || headers?.['Content-Type'];
+                if (contentType?.includes('application/json')) {
+                    errorData = JSON.parse(body);
+                } else {
+                    errorData = body;
+                }
+            } catch {
+                errorData = body;
+            }
         }
-      } catch {
-        errorData = body;
-      }
+
+        return new DotHttpError({
+            status,
+            statusText,
+            message: customMessage || `HTTP ${status}: ${statusText}`,
+            data: errorData
+        });
     }
 
-    return new DotHttpError({
-      status,
-      statusText,
-      message: customMessage || `HTTP ${status}: ${statusText}`,
-      data: errorData
-    });
-  }
-
-  /**
-   * Creates a standardized HttpError for network/connection errors.
-   *
-   * @param originalError - The original network error
-   * @returns HttpError instance representing a network error
-   */
-  protected createNetworkError(originalError: Error): DotHttpError {
-    return new DotHttpError({
-      status: 0, // Network error status
-      statusText: 'Network Error',
-      message: `Network error: ${originalError.message}`,
-      data: originalError
-    });
-  }
-
-
+    /**
+     * Creates a standardized HttpError for network/connection errors.
+     *
+     * @param originalError - The original network error
+     * @returns HttpError instance representing a network error
+     */
+    protected createNetworkError(originalError: Error): DotHttpError {
+        return new DotHttpError({
+            status: 0, // Network error status
+            statusText: 'Network Error',
+            message: `Network error: ${originalError.message}`,
+            data: originalError
+        });
+    }
 }
 
 /**

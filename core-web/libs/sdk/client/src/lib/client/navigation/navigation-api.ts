@@ -11,7 +11,11 @@ export class NavigationClient {
     private BASE_URL: string;
     private httpClient: DotHttpClient;
 
-    constructor(config: DotCMSClientConfig, requestOptions: DotRequestOptions, httpClient: DotHttpClient) {
+    constructor(
+        config: DotCMSClientConfig,
+        requestOptions: DotRequestOptions,
+        httpClient: DotHttpClient
+    ) {
         this.requestOptions = requestOptions;
         this.BASE_URL = `${config?.dotcmsUrl}/api/v1/nav`;
         this.httpClient = httpClient;
@@ -37,7 +41,10 @@ export class NavigationClient {
         const parsedPath = path.replace(/^\/+/, '/').replace(/\/+$/, '/');
         const url = `${this.BASE_URL}${parsedPath}${urlParams ? `?${urlParams}` : ''}`;
 
-        const response = await this.httpClient.request<{ entity: DotCMSNavigationItem[] }>(url, this.requestOptions);
+        const response = await this.httpClient.request<{ entity: DotCMSNavigationItem[] }>(
+            url,
+            this.requestOptions
+        );
 
         return response.entity;
     }

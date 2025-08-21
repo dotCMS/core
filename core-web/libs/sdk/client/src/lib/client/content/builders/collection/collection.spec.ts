@@ -43,23 +43,36 @@ describe('CollectionBuilder', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        MockedFetchHttpClient.mockImplementation(() => ({
-            request: mockRequest
-        } as Partial<FetchHttpClient> as FetchHttpClient));
+        MockedFetchHttpClient.mockImplementation(
+            () =>
+                ({
+                    request: mockRequest
+                }) as Partial<FetchHttpClient> as FetchHttpClient
+        );
 
         mockRequest.mockResolvedValue(mockResponseData);
     });
 
     it('should initialize with valid configuration', async () => {
         const contentType = 'my-content-type';
-        const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+        const collectionBuilder = new CollectionBuilder(
+            requestOptions,
+            serverUrl,
+            contentType,
+            new FetchHttpClient()
+        );
         expect(collectionBuilder).toBeDefined();
     });
 
     describe('successful requests', () => {
         it('should build a query for a basic collection', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder;
 
@@ -77,7 +90,12 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             const response = await collectionBuilder;
 
@@ -91,7 +109,12 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response with sort', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             const sortBy: SortBy[] = [
                 {
@@ -117,7 +140,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with a specific language', async () => {
             const contentType = 'ringsOfPower';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.language(13);
 
@@ -135,7 +163,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with render on true', async () => {
             const contentType = 'boringContentType';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.render();
 
@@ -153,7 +186,12 @@ describe('CollectionBuilder', () => {
 
         it("should build a query with multiply sortBy's", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.sortBy([
                 {
@@ -185,7 +223,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with a specific depth', async () => {
             const contentType = 'droid';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.depth(2);
 
@@ -203,7 +246,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with a specific limit and page', async () => {
             const contentType = 'ship';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.limit(20).page(3);
 
@@ -221,7 +269,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with an specific query with main fields and custom fields of the content type', async () => {
             const contentType = 'lightsaber';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder
                 .query(
@@ -245,7 +298,12 @@ describe('CollectionBuilder', () => {
 
         it("should throw an error if the query doesn't end in an instance of Equals", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -263,7 +321,12 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the parameter for query is not a function or string', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -281,7 +344,12 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the depth is out of range (positive value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -295,7 +363,12 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the depth is out of range (negative value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -309,7 +382,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for draft content', async () => {
             const contentType = 'draftContent';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.draft();
 
@@ -327,7 +405,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with a specific variant', async () => {
             const contentType = 'adventure';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.variant('dimension-1334-adventure');
 
@@ -345,7 +428,12 @@ describe('CollectionBuilder', () => {
 
         it('should handle all the query methods on GetCollection', async () => {
             const contentType = 'forceSensitive';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType, new FetchHttpClient());
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType,
+                new FetchHttpClient()
+            );
 
             // be sure that this test is updated when new methods are added
             let methods = Object.getOwnPropertyNames(
@@ -517,7 +605,9 @@ describe('CollectionBuilder', () => {
                 expect((error as DotHttpError).status).toBe(404);
                 expect((error as DotHttpError).statusText).toBe('Not Found');
                 expect((error as DotHttpError).message).toBe('Content not found');
-                expect((error as DotHttpError).data).toEqual({ error: 'Content type does not exist' });
+                expect((error as DotHttpError).data).toEqual({
+                    error: 'Content type does not exist'
+                });
             }
         });
 

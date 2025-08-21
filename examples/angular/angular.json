@@ -31,7 +31,11 @@
             "outputMode": "server",
             "ssr": {
               "entry": "src/server.ts"
-            }
+            },
+            "externalDependencies": [
+              "@dotcms/types",
+              "@dotcms/types/internal"
+            ]
           },
           "configurations": {
             "production": {
@@ -130,5 +134,8 @@
     "@schematics/angular:resolver": {
       "typeSeparator": "."
     }
+  },
+  "cli": {
+    "analytics": "f8daf73c-1681-4bbe-b518-d081ac8b56ca"
   }
 }
