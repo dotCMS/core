@@ -28,8 +28,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotDialogActions
 } from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { FieldType } from '../models';
