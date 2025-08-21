@@ -1,4 +1,8 @@
-import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+// Import shared types from data-access
+import { DateRange, TimeRange, TimeRangeInput } from '@dotcms/portlets/dot-analytics/data-access';
+
+// Re-export shared types for consumers
+export { DateRange, TimeRange, TimeRangeInput };
 
 /** Union type for supported chart types in the analytics dashboard */
 export type ChartType = 'line' | 'pie' | 'bar' | 'doughnut';
@@ -32,6 +36,15 @@ export interface ChartOptions {
     responsive?: boolean;
     /** Whether to maintain aspect ratio on resize */
     maintainAspectRatio?: boolean;
+    /** Interaction configuration */
+    interaction?: {
+        /** Interaction mode */
+        mode?: 'point' | 'nearest' | 'index' | 'dataset' | 'x' | 'y';
+        /** Whether interaction requires intersection with element */
+        intersect?: boolean;
+        /** Axis for interaction detection */
+        axis?: 'x' | 'y' | 'xy';
+    };
     /** Plugin configurations */
     plugins?: {
         /** Title configuration */
@@ -81,6 +94,10 @@ export interface ChartOptions {
         };
         /** Tooltip configuration */
         tooltip?: {
+            /** Tooltip mode */
+            mode?: 'point' | 'nearest' | 'index' | 'dataset' | 'x' | 'y';
+            /** Whether tooltip requires intersection with element */
+            intersect?: boolean;
             /** Tooltip callback functions */
             callbacks?: {
                 /** Custom label callback */
@@ -108,6 +125,8 @@ export interface TableColumn {
     alignment?: 'left' | 'center' | 'right';
     /** Whether column is sortable */
     sortable?: boolean;
+    /** Column width (CSS value: %, px, rem, etc.) */
+    width?: string;
 }
 
 /** Data structure for metric card display */

@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'app-ssr',
     preset: '../../jest.preset.js',

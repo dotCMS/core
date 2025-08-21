@@ -1,8 +1,23 @@
 import {
+    addDays,
+    addHours,
+    endOfDay,
+    format,
+    isSameDay,
+    isSameMonth,
+    parse,
+    startOfDay,
+    subDays
+} from 'date-fns';
+
+import { TIME_RANGE_OPTIONS } from '../../constants';
+import {
     ChartData,
+    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
+    TimeRangeInput,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
@@ -11,20 +26,86 @@ import {
 import { parseUserAgent } from '../browser/userAgentParser';
 
 /**
+ * Time formats for different chart types
+ */
+const TIME_FORMATS = {
+    hour: 'HH:mm',
+    day: 'MMM dd'
+};
+
+/**
  * Helper functions to extract numeric values from analytics entities
  */
+
+/**
+ * Determines the appropriate granularity for analytics queries based on the time range.
+ *
+ * This utility centralizes the logic for selecting granularity levels to ensure
+ * optimal data visualization and performance across different time periods.
+ *
+ * @param timeRange - The time range for the analytics query
+ * @returns The appropriate granularity level for the given time range
+ */
+export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
+    if (Array.isArray(timeRange)) {
+        const [fromDate, toDate] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
+
+        if (isSameDay(fromDate, toDate)) {
+            return 'hour';
+        } else if (isSameMonth(fromDate, toDate)) {
+            return 'day';
+        } else {
+            return 'month';
+        }
+    }
+
+    switch (timeRange) {
+        case TIME_RANGE_OPTIONS.today:
+
+        // falls through
+        case TIME_RANGE_OPTIONS.yesterday:
+            // For today/yesterday, use hourly granularity for detailed intraday analysis
+            return 'hour';
+
+        case TIME_RANGE_OPTIONS.last7days:
+            // For last 7 days, use daily granularity
+            return 'day';
+
+        case TIME_RANGE_OPTIONS.last30days:
+            // For last 30 days, use daily granularity
+            return 'day';
+
+        default: {
+            // For custom ranges or other periods, extract days and decide
+            const daysMatch = timeRange.match(/from (\d+) days ago to now/);
+            if (daysMatch) {
+                const numDays = parseInt(daysMatch[1], 10);
+                if (numDays > 90) {
+                    return 'month';
+                } else if (numDays > 30) {
+                    return 'week';
+                } else {
+                    return 'day';
+                }
+            } else {
+                // For custom date ranges, default to day
+                return 'day';
+            }
+        }
+    }
+}
 
 /**
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['request.totalRequest']) : 0;
+    data ? Number(data['request.totalRequest'] ?? 0) : 0;
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
  */
 export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['request.totalUser']) : 0;
+    data ? Number(data['request.totalUsers']) : 0;
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
@@ -76,23 +157,27 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
         };
     }
 
-    // Sort by date to ensure correct order
-    const sortedData = [...data].sort(
-        (a, b) =>
-            new Date(a['request.createdAt']).getTime() - new Date(b['request.createdAt']).getTime()
-    );
+    const transformedData = data
+        .map((item) => ({
+            date: new Date(item['request.createdAt']),
+            value: extractPageViews(item)
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    const labels = sortedData.map((item) => {
-        const date = new Date(item['request.createdAt']);
+    // Check if all data points are from the same day (in user's local timezone)
+    const allDatesAreSameDay = transformedData.every((item, _, arr) => {
+        if (arr.length < 2) return true;
+        const currentDate = item.date;
+        const firstDate = arr[0].date;
 
-        // Format as short weekday + date (e.g., "Mon 21", "Tue 22")
-        return date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            day: 'numeric'
-        });
+        return isSameDay(firstDate, currentDate);
     });
 
-    const chartData = sortedData.map((item) => Number(item['request.totalRequest']) || 0);
+    const labels = transformedData.map((item) =>
+        format(item.date, allDatesAreSameDay ? TIME_FORMATS.hour : TIME_FORMATS.day)
+    );
+
+    const chartData = transformedData.map((item) => item.value);
 
     return {
         labels,
@@ -104,7 +189,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 2,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                cubicInterpolationMode: 'monotone'
             }
         ]
     };
@@ -202,4 +288,87 @@ export const transformDeviceBrowsersData = (
             }
         ]
     };
+};
+
+/**
+ * Fills missing dates in the data array based on the granularity
+ * @param data - The data array to fill missing dates
+ * @param granularity - The granularity of the data
+ * @returns The data array with missing dates filled
+ */
+export const fillMissingDates = (
+    data: PageViewTimeLineEntity[],
+    timeRange: TimeRangeInput,
+    granularity: Granularity
+): PageViewTimeLineEntity[] => {
+    if (!data || !Array.isArray(data)) {
+        return [];
+    }
+
+    const [startDate, endDate] = getDateRange(timeRange);
+
+    const dataMap = new Map();
+    data.forEach((item) => {
+        const dateKey = new Date(item['request.createdAt']).toISOString();
+        dataMap.set(dateKey, item);
+    });
+
+    const filledData = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+        const currentDateKey = currentDate.toISOString();
+
+        if (dataMap.has(currentDateKey)) {
+            filledData.push(dataMap.get(currentDateKey));
+        } else {
+            filledData.push({
+                'request.createdAt': currentDateKey,
+                'request.totalRequest': '0'
+            });
+        }
+        currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
+    }
+
+    return filledData;
+};
+
+/**
+ * Get the date range for the given time range
+ * @param timeRange - The time range to get the date range for
+ * @returns The date range
+ */
+export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
+    const today = new Date();
+
+    if (Array.isArray(timeRange)) {
+        const startDate = startOfDay(parse(timeRange[0], 'yyyy-MM-dd', today));
+        const endDate = endOfDay(parse(timeRange[1], 'yyyy-MM-dd', today));
+
+        return [startDate, endDate];
+    }
+
+    switch (timeRange) {
+        case TIME_RANGE_OPTIONS.today:
+            return [startOfDay(today), endOfDay(today)];
+        case TIME_RANGE_OPTIONS.yesterday: {
+            const yesterday = subDays(today, 1);
+
+            return [startOfDay(yesterday), endOfDay(yesterday)];
+        }
+
+        case TIME_RANGE_OPTIONS.last7days: {
+            const sevenDaysAgo = subDays(today, 6);
+
+            return [startOfDay(sevenDaysAgo), endOfDay(today)];
+        }
+
+        case TIME_RANGE_OPTIONS.last30days: {
+            const thirtyDaysAgo = subDays(today, 29);
+
+            return [startOfDay(thirtyDaysAgo), endOfDay(today)];
+        }
+
+        default:
+            return [startOfDay(today), endOfDay(today)];
+    }
 };

@@ -10,7 +10,8 @@ import { BINARY_OPTION, DotBinaryOptionSelectorComponent } from '@dotcms/ui';
 @Component({
     selector: 'dot-dot-template-new',
     templateUrl: './dot-template-new.component.html',
-    styleUrls: ['./dot-template-new.component.scss']
+    styleUrls: ['./dot-template-new.component.scss'],
+    standalone: false
 })
 export class DotTemplateNewComponent implements OnInit {
     private dialogService = inject(DialogService);

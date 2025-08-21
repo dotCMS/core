@@ -1,51 +1,8 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 
 import { DotCMSClient } from '@dotcms/angular';
-import { DotCMSBasicContentlet } from '@dotcms/types';
 
-export interface FileAsset {
-    fileAsset: {
-        versionPath: string;
-    };
-}
-
-export interface ContentletImage extends FileAsset {
-    identifier: string;
-    fileName: string;
-    versionPath?: string;
-}
-
-export interface Contentlet extends DotCMSBasicContentlet {
-    image: ContentletImage;
-    urlMap?: string;
-    urlTitle?: string;
-    widgetTitle?: string;
-}
-
-export interface Contentlet extends DotCMSBasicContentlet {
-    image: ContentletImage;
-    urlMap?: string;
-    urlTitle?: string;
-    widgetTitle?: string;
-}
-
-export interface Blog extends Contentlet {
-    title: string;
-    identifier: string;
-    inode: string;
-    modDate: string;
-    urlTitle: string;
-    teaser: string;
-    author: Author;
-}
-
-export interface Author {
-    firstName: string;
-    lastName: string;
-    inode: string;
-}
-
+import { Blog } from './models';
 
 @Component({
     selector: 'app-page',
@@ -59,17 +16,14 @@ export interface Author {
     `
 })
 export class Page {
-    http = inject(HttpClient);
     client = inject(DotCMSClient);
     filteredBlogs = signal<Blog[]>([]);
 
     ngOnInit() {
-        this.fetchUsingClient();
-        this.fetchHttpClient();
+        this.getBlogs();
     }
 
-    fetchUsingClient() {
-        console.log('fetching using dot client');
+    getBlogs() {
         this.client.content
             .getCollection('Blog')
             .limit(3)
@@ -81,13 +35,6 @@ export class Page {
             ])
             .then((response) => {
                 this.filteredBlogs.set(response.contentlets as Blog[]);
-            })
-    }
-
-    fetchHttpClient() {
-        console.log('fetching using http client');
-        this.http.get<{ title: string }[]>('https://jsonplaceholder.typicode.com/posts').subscribe((data) => {
-            console.log(data.length);
-        });
+            });
     }
 }

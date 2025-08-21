@@ -8,19 +8,19 @@ import { InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import {
-    RelationshipFieldSearchResponse,
-    RelationshipFieldService
-} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
+import {
+    ExistingContentService,
+    RelationshipFieldSearchResponse
+} from './existing-content.service';
 import { ExistingContentStore } from './existing-content.store';
 
 import { Column } from '../../../models/column.model';
 
 describe('ExistingContentStore', () => {
     let store: InstanceType<typeof ExistingContentStore>;
-    let service: SpyObject<RelationshipFieldService>;
+    let service: SpyObject<ExistingContentService>;
 
     const mockColumns: Column[] = [
         { field: 'title', header: 'Title' },
@@ -47,11 +47,11 @@ describe('ExistingContentStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [ExistingContentStore, mockProvider(RelationshipFieldService)]
+            providers: [ExistingContentStore, mockProvider(ExistingContentService)]
         });
 
         store = TestBed.inject(ExistingContentStore);
-        service = TestBed.inject(RelationshipFieldService) as SpyObject<RelationshipFieldService>;
+        service = TestBed.inject(ExistingContentService) as SpyObject<ExistingContentService>;
     });
 
     it('should be created', () => {

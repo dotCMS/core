@@ -130,6 +130,25 @@ describe('DotFolderListViewComponent', () => {
         });
     });
 
+    describe('Styles and Pagination', () => {
+        it('should have empty-table class when items list is empty', () => {
+            spectator.setInput('items', []);
+            spectator.setInput('totalItems', 0);
+            spectator.detectChanges();
+
+            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
+            expect(tableDebugEl.attributes['ng-reflect-style-class']).toContain('empty-table');
+        });
+
+        it('should not show pagination when there are 20 or fewer total items', () => {
+            spectator.setInput('totalItems', 20);
+            spectator.detectChanges();
+
+            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
+            expect(tableDebugEl.attributes['ng-reflect-paginator']).toBe('false');
+        });
+    });
+
     describe('Loading', () => {
         it('should show the loading row', () => {
             spectator.setInput('items', mockItems);

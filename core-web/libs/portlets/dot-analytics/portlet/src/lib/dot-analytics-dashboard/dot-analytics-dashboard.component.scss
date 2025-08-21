@@ -21,7 +21,8 @@
 
     // Element: dashboard-row (white background)
     &__dashboard-row {
-        flex: 1;
+        display: flex;
+        justify-content: center;
         width: 100%;
         background: $white;
         padding: $spacing-4;
@@ -30,7 +31,16 @@
 
     // Element: dashboard-container
     &__dashboard-container {
-        max-width: 100%;
+        max-width: 1400px;
+        width: 100%;
+    }
+
+    // Element: metrics (responsive layout)
+    &__metrics {
+        // Mobile: Stack vertically
+        @media (max-width: 991px) {
+            flex-direction: column !important;
+        }
     }
 
     // Element: metric-card
@@ -38,10 +48,16 @@
         flex: 1;
         min-width: 280px;
 
+        // Mobile: Full width
+        @media (max-width: 991px) {
+            min-width: auto;
+            width: 100%;
+        }
+
         // Override PrimeNG card styles to add border
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
         }
     }
 
@@ -53,7 +69,15 @@
         // Override PrimeNG card styles
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: bottom-section (responsive layout)
+    &__bottom-section {
+        // Mobile: Stack vertically
+        @media (max-width: 991px) {
+            flex-direction: column !important;
         }
     }
 
@@ -62,10 +86,16 @@
         width: 450px;
         flex-shrink: 0;
 
+        // Mobile: Full width
+        @media (max-width: 991px) {
+            width: 100%;
+            flex-shrink: 1;
+        }
+
         // Override PrimeNG card styles
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
         }
     }
 
@@ -74,10 +104,16 @@
         flex: 1;
         min-width: 0;
 
+        // Mobile: Full width
+        @media (max-width: 991px) {
+            width: 100%;
+            min-width: auto;
+        }
+
         // Override PrimeNG card styles
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
         }
     }
 }

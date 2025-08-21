@@ -1,43 +1,13 @@
-import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
-import {
-    ApplicationConfig,
-    provideZoneChangeDetection,
-    makeEnvironmentProviders,
-    EnvironmentProviders,
-    inject
-} from '@angular/core';
+import { provideHttpClient, withFetch } from '@angular/common/http';
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import {
     provideClientHydration,
     withEventReplay,
     withHttpTransferCacheOptions
 } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-
-import { DotCMSClient } from '@dotcms/angular';
-import { createDotCMSClient } from '@dotcms/client';
-
-import { AngularHttpClient } from './angular-httpclient';
+import { provideDotCMSClient } from '@dotcms/angular';
 import { appRoutes } from './app.routes';
-
-function provideDotCMSClient(options: any): EnvironmentProviders {
-    return makeEnvironmentProviders([
-        {
-            provide: DotCMSClient,
-            useFactory: () => {
-                const http = inject(HttpClient);
-                const httpClient = new AngularHttpClient(http);
-                const dotCMSClient = createDotCMSClient({
-                    dotcmsUrl: options.dotcmsUrl,
-                    authToken: options.authToken,
-                    siteId: options.siteId,
-                    httpClient: options.httpClient ? options.httpClient : httpClient
-                });
-
-                return new DotCMSClient(dotCMSClient);
-            }
-        }
-    ]);
-}
 
 export const appConfig: ApplicationConfig = {
     providers: [

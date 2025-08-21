@@ -1,5 +1,7 @@
 import { CubeQueryBuilder, createCubeQuery } from './cube-query-builder.util';
 
+import { TIME_RANGE_CUBEJS_MAPPING } from '../../constants';
+
 describe('CubeQueryBuilder', () => {
     let builder: CubeQueryBuilder;
 
@@ -51,23 +53,126 @@ describe('CubeQueryBuilder', () => {
         });
     });
 
+    describe('Site ID Filter', () => {
+        it('should add site ID filter with single value', () => {
+            const query = builder.siteId('site-123').build();
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.siteId',
+                    operator: 'equals',
+                    values: ['site-123']
+                }
+            ]);
+        });
+
+        it('should add site ID filter with multiple values', () => {
+            const query = builder.siteId(['site-123', 'site-456']).build();
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.siteId',
+                    operator: 'equals',
+                    values: ['site-123', 'site-456']
+                }
+            ]);
+        });
+
+        it('should combine pageviews and siteId filters', () => {
+            const query = builder.pageviews().siteId('site-123').build();
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.eventType',
+                    operator: 'equals',
+                    values: ['pageview']
+                },
+                {
+                    member: 'request.siteId',
+                    operator: 'equals',
+                    values: ['site-123']
+                }
+            ]);
+        });
+    });
+
+    describe('Custom Filters', () => {
+        it('should add custom filter', () => {
+            const query = builder.filter('path', 'equals', ['value1', 'value2']).build();
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.path',
+                    operator: 'equals',
+                    values: ['value1', 'value2']
+                }
+            ]);
+        });
+
+        it('should add multiple filters at once', () => {
+            const filters = [
+                { member: 'path', operator: 'equals' as const, values: ['val1'] },
+                { member: 'userAgent', operator: 'contains' as const, values: ['val2'] }
+            ];
+            const query = builder.filters(filters).build();
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.path',
+                    operator: 'equals',
+                    values: ['val1']
+                },
+                {
+                    member: 'request.userAgent',
+                    operator: 'contains',
+                    values: ['val2']
+                }
+            ]);
+        });
+
+        it('should combine different filter methods', () => {
+            const query = builder
+                .pageviews()
+                .siteId('site-123')
+                .filter('path', 'equals', ['value1'])
+                .build();
+
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.eventType',
+                    operator: 'equals',
+                    values: ['pageview']
+                },
+                {
+                    member: 'request.siteId',
+                    operator: 'equals',
+                    values: ['site-123']
+                },
+                {
+                    member: 'request.path',
+                    operator: 'equals',
+                    values: ['value1']
+                }
+            ]);
+        });
+    });
+
     describe('Time Range', () => {
         it('should add time range with string date range', () => {
-            const query = builder.timeRange('createdAt', 'last 1 week').build();
+            const query = builder
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days)
+                .build();
             expect(query.timeDimensions).toEqual([
                 {
                     dimension: 'request.createdAt',
-                    dateRange: 'last 1 week'
+                    dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days
                 }
             ]);
         });
 
         it('should add time range with granularity', () => {
-            const query = builder.timeRange('createdAt', 'last 12 weeks', 'week').build();
+            const query = builder
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last30days, 'week')
+                .build();
             expect(query.timeDimensions).toEqual([
                 {
                     dimension: 'request.createdAt',
-                    dateRange: 'last 12 weeks',
+                    dateRange: TIME_RANGE_CUBEJS_MAPPING.last30days,
                     granularity: 'week'
                 }
             ]);
@@ -98,7 +203,8 @@ describe('CubeQueryBuilder', () => {
             const query = createCubeQuery()
                 .measures(['totalRequest'])
                 .pageviews()
-                .timeRange('createdAt', 'last 1 week')
+                .siteId('site-123')
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days)
                 .build();
 
             expect(query).toEqual({
@@ -108,12 +214,17 @@ describe('CubeQueryBuilder', () => {
                         member: 'request.eventType',
                         operator: 'equals',
                         values: ['pageview']
+                    },
+                    {
+                        member: 'request.siteId',
+                        operator: 'equals',
+                        values: ['site-123']
                     }
                 ],
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days
                     }
                 ]
             });
@@ -123,7 +234,8 @@ describe('CubeQueryBuilder', () => {
             const query = createCubeQuery()
                 .measures(['totalSessions'])
                 .pageviews()
-                .timeRange('createdAt', 'last 1 week')
+                .siteId('site-123')
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days)
                 .build();
 
             expect(query).toEqual({
@@ -133,12 +245,17 @@ describe('CubeQueryBuilder', () => {
                         member: 'request.eventType',
                         operator: 'equals',
                         values: ['pageview']
+                    },
+                    {
+                        member: 'request.siteId',
+                        operator: 'equals',
+                        values: ['site-123']
                     }
                 ],
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days
                     }
                 ]
             });
@@ -148,8 +265,9 @@ describe('CubeQueryBuilder', () => {
             const query = createCubeQuery()
                 .measures(['totalRequest'])
                 .pageviews()
+                .siteId('site-123')
                 .orderBy('totalRequest', 'desc')
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days)
                 .limit(1)
                 .build();
 
@@ -160,13 +278,18 @@ describe('CubeQueryBuilder', () => {
                         member: 'request.eventType',
                         operator: 'equals',
                         values: ['pageview']
+                    },
+                    {
+                        member: 'request.siteId',
+                        operator: 'equals',
+                        values: ['site-123']
                     }
                 ],
                 order: { 'request.totalRequest': 'desc' },
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days
                     }
                 ],
                 limit: 1
@@ -177,8 +300,8 @@ describe('CubeQueryBuilder', () => {
             const query = createCubeQuery()
                 .measures(['totalRequest'])
                 .pageviews()
-                .orderBy('createdAt', 'asc')
-                .timeRange('createdAt', 'last 1 week', 'day')
+                .siteId('site-123')
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days, 'day')
                 .build();
 
             expect(query).toEqual({
@@ -188,13 +311,17 @@ describe('CubeQueryBuilder', () => {
                         member: 'request.eventType',
                         operator: 'equals',
                         values: ['pageview']
+                    },
+                    {
+                        member: 'request.siteId',
+                        operator: 'equals',
+                        values: ['site-123']
                     }
                 ],
-                order: { 'request.createdAt': 'asc' },
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week',
+                        dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days,
                         granularity: 'day'
                     }
                 ]
@@ -206,8 +333,9 @@ describe('CubeQueryBuilder', () => {
                 .dimensions(['userAgent'])
                 .measures(['totalRequest'])
                 .pageviews()
+                .siteId('site-123')
                 .orderBy('totalRequest', 'desc')
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days)
                 .limit(10)
                 .build();
 
@@ -219,13 +347,18 @@ describe('CubeQueryBuilder', () => {
                         member: 'request.eventType',
                         operator: 'equals',
                         values: ['pageview']
+                    },
+                    {
+                        member: 'request.siteId',
+                        operator: 'equals',
+                        values: ['site-123']
                     }
                 ],
                 order: { 'request.totalRequest': 'desc' },
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days
                     }
                 ],
                 limit: 10
@@ -237,8 +370,9 @@ describe('CubeQueryBuilder', () => {
                 .dimensions(['path', 'pageTitle'])
                 .measures(['totalRequest'])
                 .pageviews()
+                .siteId('site-123')
                 .orderBy('totalRequest', 'desc')
-                .timeRange('createdAt', 'last 1 week')
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days)
                 .limit(50)
                 .build();
 
@@ -250,13 +384,18 @@ describe('CubeQueryBuilder', () => {
                         member: 'request.eventType',
                         operator: 'equals',
                         values: ['pageview']
+                    },
+                    {
+                        member: 'request.siteId',
+                        operator: 'equals',
+                        values: ['site-123']
                     }
                 ],
                 order: { 'request.totalRequest': 'desc' },
                 timeDimensions: [
                     {
                         dimension: 'request.createdAt',
-                        dateRange: 'last 1 week'
+                        dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days
                     }
                 ],
                 limit: 50

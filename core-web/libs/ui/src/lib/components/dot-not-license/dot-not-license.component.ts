@@ -12,7 +12,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-not-license',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-not-license.component.html',
     styleUrl: './dot-not-license.component.scss',

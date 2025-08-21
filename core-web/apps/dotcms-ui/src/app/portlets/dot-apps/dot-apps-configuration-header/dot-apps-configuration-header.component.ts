@@ -6,7 +6,8 @@ import { DotApp } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-apps-configuration-header',
     templateUrl: './dot-apps-configuration-header.component.html',
-    styleUrls: ['./dot-apps-configuration-header.component.scss']
+    styleUrls: ['./dot-apps-configuration-header.component.scss'],
+    standalone: false
 })
 export class DotAppsConfigurationHeaderComponent {
     private dotRouterService = inject(DotRouterService);

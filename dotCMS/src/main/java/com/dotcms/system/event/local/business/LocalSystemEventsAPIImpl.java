@@ -220,7 +220,7 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
                         //it means it is intended for a limited audience.
                         //Both the even and the receiver must be an instance of KeyFilterable
                         final KeyFilterable keyFilterableEvent = (KeyFilterable) event;
-                        Logger.info(LocalSystemEventsAPIImpl.class, ()->" Broadcasting a Filterable Event.");
+                        Logger.debug(LocalSystemEventsAPIImpl.class, () -> " Broadcasting a Filterable Event.");
                         final Stream<KeyFilterable> keyAwareSubscribers = eventSubscribers.stream()
                                 .filter(eventSubscriber -> eventSubscriber instanceof KeyFilterable)
                                 .map(KeyFilterable.class::cast)
@@ -233,7 +233,7 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
                                 .map(EventSubscriber.class::cast)
                                 .collect(Collectors.toList());
                         broadcast(eventAudience, event);
-                        Logger.info(LocalSystemEventsAPIImpl.class, () -> String
+                        Logger.debug(LocalSystemEventsAPIImpl.class, () -> String
                                 .format(" Filtered Audience for event with key `%s`  is `%d` long. ",
                                         keyFilterableEvent.getKey(), eventAudience.size()));
                     }

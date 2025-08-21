@@ -1,7 +1,10 @@
-import { makeEnvironmentProviders, EnvironmentProviders } from '@angular/core';
+import { EnvironmentProviders, inject, makeEnvironmentProviders } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 import { createDotCMSClient } from '@dotcms/client';
 import { DotCMSClientConfig } from '@dotcms/types';
+
+import { AngularHttpClient } from '../angular-http/angular-httpclient';
 
 /**
  * Type alias for the return type of createDotCMSClient function.
@@ -21,7 +24,7 @@ type ClientType = ReturnType<typeof createDotCMSClient>;
  * dotcmsClient = inject(DotCMSClient);
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging, @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging, @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
 export interface DotCMSClient extends ClientType {}
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -66,12 +69,25 @@ export class DotCMSClient {
  *
  */
 export function provideDotCMSClient(options: DotCMSClientConfig): EnvironmentProviders {
-    const dotCMSClient = createDotCMSClient(options);
-
     return makeEnvironmentProviders([
         {
             provide: DotCMSClient,
-            useFactory: () => new DotCMSClient(dotCMSClient)
+            useFactory: () => {
+                const dotCMSClient = createDotCMSClient({
+                    dotcmsUrl: options.dotcmsUrl,
+                    authToken: options.authToken,
+                    siteId: options.siteId,
+                    httpClient: options.httpClient ? options.httpClient : createAngularHttpClient()
+                });
+
+                return new DotCMSClient(dotCMSClient);
+            }
         }
     ]);
+}
+
+function createAngularHttpClient(): AngularHttpClient {
+    const http = inject(HttpClient);
+    const httpClient = new AngularHttpClient(http);
+    return httpClient;
 }

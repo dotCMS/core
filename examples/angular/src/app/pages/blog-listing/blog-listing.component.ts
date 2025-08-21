@@ -94,9 +94,6 @@ export class BlogListingComponent implements OnInit {
         effect(
             () => {
                 this.updateFilteredBlogs();
-            },
-            {
-                allowSignalWrites: true
             }
         );
     }

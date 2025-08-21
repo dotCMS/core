@@ -25,10 +25,10 @@
                 "styles": ["apps/app-ssr/src/styles.scss"],
                 "scripts": [],
                 "server": "apps/app-ssr/src/main.server.ts",
-                "prerender": true,
                 "ssr": {
-                    "entry": "apps/app-ssr/server.ts"
-                }
+                    "entry": "apps/app-ssr/src/server.ts"
+                },
+                "prerender": true
             },
             "configurations": {
                 "production": {
@@ -40,8 +40,8 @@
                         },
                         {
                             "type": "anyComponentStyle",
-                            "maximumWarning": "2kb",
-                            "maximumError": "4kb"
+                            "maximumWarning": "4kb",
+                            "maximumError": "8kb"
                         }
                     ],
                     "outputHashing": "all"

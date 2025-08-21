@@ -28,7 +28,8 @@ import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
-    templateUrl: './content-type-fields-add-row.component.html'
+    templateUrl: './content-type-fields-add-row.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     private dotEventsService = inject(DotEventsService);

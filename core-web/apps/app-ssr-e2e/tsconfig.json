@@ -3,8 +3,8 @@
     "compilerOptions": {
         "allowJs": true,
         "outDir": "../../dist/out-tsc",
-        "module": "commonjs",
         "sourceMap": false,
+        "module": "commonjs",
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "noImplicitOverride": true,

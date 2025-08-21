@@ -185,7 +185,7 @@ RUN chown -R dotcms:dotcms /srv && \
 
 ### Stage 2: Runtime Image
 ```dockerfile
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # Install runtime dependencies
 RUN apt-get update && \

@@ -12,7 +12,8 @@ import { StructureTypeView } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-base-type-selector',
     templateUrl: './dot-base-type-selector.component.html',
-    styleUrls: ['./dot-base-type-selector.component.scss']
+    styleUrls: ['./dot-base-type-selector.component.scss'],
+    standalone: false
 })
 export class DotBaseTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);

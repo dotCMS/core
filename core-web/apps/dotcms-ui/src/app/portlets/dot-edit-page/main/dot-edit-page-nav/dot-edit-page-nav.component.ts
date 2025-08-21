@@ -6,7 +6,6 @@ import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotPageRender,
@@ -17,6 +16,8 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
@@ -38,7 +39,8 @@ interface DotEditPageNavItem {
 @Component({
     selector: 'dot-edit-page-nav',
     templateUrl: './dot-edit-page-nav.component.html',
-    styleUrls: ['./dot-edit-page-nav.component.scss']
+    styleUrls: ['./dot-edit-page-nav.component.scss'],
+    standalone: false
 })
 export class DotEditPageNavComponent implements OnChanges {
     private dotLicenseService = inject(DotLicenseService);
