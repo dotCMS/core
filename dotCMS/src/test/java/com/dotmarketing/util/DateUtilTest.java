@@ -57,8 +57,18 @@ public class DateUtilTest extends UnitTestBase {
 
     // Static European date formats (mirrored from ImportUtil.EUROPEAN_DATE_FORMATS)
     private static final String[] europeanDateFormats = new String[] {
-        "d/M/y", "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy"
+        "d/M/y", "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy", "dd-MM-yyyy"
     };
+    
+    // Combined all formats for testing
+    private static final String[] allFormats = combineFormats(dateFormatPatterns, europeanDateFormats);
+    
+    private static String[] combineFormats(String[] array1, String[] array2) {
+        String[] combined = new String[array1.length + array2.length];
+        System.arraycopy(array1, 0, combined, 0, array1.length);
+        System.arraycopy(array2, 0, combined, array1.length, array2.length);
+        return combined;
+    }
 
     @DataProvider
     public static Object[][] dateTimeCases() {
@@ -819,11 +829,6 @@ public class DateUtilTest extends UnitTestBase {
         
         final TimeZone defaultTimeZone = TimeZone.getDefault();
         
-        // Combine all formats for testing
-        final String[] allFormats = new String[dateFormatPatterns.length + europeanDateFormats.length];
-        System.arraycopy(dateFormatPatterns, 0, allFormats, 0, dateFormatPatterns.length);
-        System.arraycopy(europeanDateFormats, 0, allFormats, dateFormatPatterns.length, europeanDateFormats.length);
-        
         // === Test US/Standard Date Format Patterns ===
         
         // d-MMM-yy: "25-Dec-24" 
@@ -981,5 +986,31 @@ public class DateUtilTest extends UnitTestBase {
                     25, december25Dates[i].getDate());
             }
         }
+    }
+
+    @Test
+    public void test_specific_date_14_05_2027_should_pass() throws ParseException {
+        // Test that the date "14-05-2027" parses successfully as May 14, 2027
+        // This uses the dd-MM-yyyy format pattern that was added to support European dates
+        
+        Date result = DateUtil.convertDate("14-05-2027", false, allFormats);
+        assertNotNull("14-05-2027 should parse successfully", result);
+        
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(result);
+        
+        assertEquals("Year should be 2027", 2027, cal.get(Calendar.YEAR));
+        assertEquals("Month should be May (4)", Calendar.MAY, cal.get(Calendar.MONTH));
+        assertEquals("Day should be 14", 14, cal.get(Calendar.DAY_OF_MONTH));
+        
+        // Additional test cases for dd-MM-yyyy format
+        Date result2 = DateUtil.convertDate("01-12-2025", false, allFormats);
+        assertNotNull("01-12-2025 should parse successfully", result2);
+        
+        Calendar cal2 = Calendar.getInstance();
+        cal2.setTime(result2);
+        assertEquals("Year should be 2025", 2025, cal2.get(Calendar.YEAR));
+        assertEquals("Month should be December (11)", Calendar.DECEMBER, cal2.get(Calendar.MONTH));
+        assertEquals("Day should be 1", 1, cal2.get(Calendar.DAY_OF_MONTH));
     }
 }

@@ -178,7 +178,7 @@ public class ImportUtil {
      * European date formats to support international date parsing
      */
     protected static final String[] EUROPEAN_DATE_FORMATS = new String[] {
-        "d/M/y", "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy"
+        "d/M/y", "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy", "dd-MM-yyyy"
     };
 
     /**
