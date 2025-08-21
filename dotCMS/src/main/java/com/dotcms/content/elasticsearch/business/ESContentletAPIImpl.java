@@ -7841,9 +7841,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         this.handleUniqueFieldValidation(contentlet, field, fieldValue.toString());
                     }
                 } catch (final UniqueFieldValueDuplicatedException e) {
-                    final String errorMsg = String.format("Contentlet %s with ID '%s' ['%s'] has invalid/missing field(s). %s",
-                            !VariantAPI.DEFAULT_VARIANT.name().equalsIgnoreCase(contentlet.getVariantId()) ? "variant" : "",
-                            contentlet.getIdentifier(), contentlet.getTitle(), ExceptionUtil.getErrorMessage(e));
+                    final String errorMsg = String.format("%s with ID '%s' ['%s'] has invalid/missing field(s). %s",
+                            !VariantAPI.DEFAULT_VARIANT.name().equalsIgnoreCase(contentlet.getVariantId())
+                                    ? "Contentlet variant"
+                                    : "Contentlet",
+                            UtilMethods.isSet(contentlet.getIdentifier())
+                                    ? contentlet.getIdentifier()
+                                    : "Unknown/New",
+                            contentlet.getTitle(), ExceptionUtil.getErrorMessage(e));
                     cveBuilder = DotContentletValidationException.builder(errorMsg);
                     cveBuilder.addUniqueField(field, fieldValue != null ? fieldValue.toString() : "null");
                     Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
@@ -7906,13 +7911,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Handles the unique field validation process based on the current status of the specific
+     * Contentlet. This is based on the following rules:
+     * <ul>
+     *     <li>All Contentlets in their Default Variant are validated, as usual. No exceptions at
+     *     all.</li>
+     *     <li>For Contentlets in a specific Variant -- usually related to an Experiment -- their
+     *     unique value is validated <b>ONLY when it is different from the one in the Default
+     *     Variant</b>. If it is the same, no validation is done as such a value is expected to be
+     *     the same as the one in the Default Variant.</li>
+     * </ul>
      *
-     * @param contentlet
-     * @param field
-     * @param fieldValue
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws UniqueFieldValueDuplicatedException
+     * @param contentlet The {@link Contentlet} to whose unique value will be validated.
+     * @param field      The {@link Field} holding the unique value
+     * @param fieldValue The value of the unique field.
+     *
+     * @throws DotDataException                    An error occurred when interacting with the
+     *                                             database.
+     * @throws DotSecurityException                A permission error has occurred.
+     * @throws UniqueFieldValueDuplicatedException The specified unique value is already in use by
+     *                                             another Contentlet.
      */
     private void handleUniqueFieldValidation(final Contentlet contentlet, final Field field,
                                              final String fieldValue) throws DotDataException, DotSecurityException,
@@ -7921,9 +7939,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
                     LegacyFieldTransformer.from(field));
         } else {
-            final Contentlet contentletInDefaultVariant =
-                    this.findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(),
-                            VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), false);
+            final Contentlet contentletInDefaultVariant = this.getContentletInDefaultVariant(contentlet);
             if (null != contentletInDefaultVariant && UtilMethods.isSet(contentletInDefaultVariant.getIdentifier())) {
                 final String uniqueValue = contentletInDefaultVariant.getStringProperty(field.getVelocityVarName());
                 if (UtilMethods.isSet(uniqueValue) && !uniqueValue.equals(fieldValue)) {
@@ -7931,6 +7947,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
         }
+    }
+
+    /**
+     * Finds the Default Variant version of a Contentlet that belongs to a Variant in an Experiment.
+     * If there's no live version of the Default Variant, the working version should be returned.
+     *
+     * @param contentlet The Contentlet Variant belonging to an Experiment.
+     *
+     * @return The Default Variant version of the Contentlet
+     *
+     * @throws DotDataException     A permission error has occurred.
+     * @throws DotSecurityException A permission error has occurred.
+     */
+    private Contentlet getContentletInDefaultVariant(final Contentlet contentlet) throws DotDataException, DotSecurityException {
+        Contentlet contentletInDefaultVariant =
+                this.findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(),
+                        VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), false);
+        if (null == contentletInDefaultVariant || UtilMethods.isSet(contentletInDefaultVariant.getIdentifier())) {
+            contentletInDefaultVariant =
+                    this.findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(),
+                            VariantAPI.DEFAULT_VARIANT.name(), APILocator.systemUser(), false);
+        }
+        return contentletInDefaultVariant;
     }
 
     /**
