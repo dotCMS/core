@@ -55,16 +55,20 @@ export class DotFolderListViewComponent {
         this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
     );
 
-    protected readonly $first = signal<number>(0);
+    /**
+     * Index of the first row to be displayed in the current page.
+     * Used by PrimeNG Table for pagination state management.
+     */
+    protected readonly $currentPageFirstRowIndex = signal<number>(0);
     protected readonly firstEffect = effect(() => {
         const showPagination = this.$showPagination();
         if (showPagination) {
-            this.$first.set(0);
+            this.$currentPageFirstRowIndex.set(0);
         }
     });
 
     onPage(event: LazyLoadEvent) {
-        this.$first.set(event.first);
+        this.$currentPageFirstRowIndex.set(event.first);
         this.paginate.emit(event);
     }
 

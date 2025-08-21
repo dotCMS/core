@@ -12,7 +12,7 @@
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
-    [first]="$first()"
+    [first]="$currentPageFirstRowIndex()"
     dataKey="identifier"
     sortMode="single"
     selectionMode="multiple"
