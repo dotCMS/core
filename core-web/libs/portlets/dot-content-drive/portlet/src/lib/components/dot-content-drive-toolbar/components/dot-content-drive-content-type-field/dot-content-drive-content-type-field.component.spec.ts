@@ -36,7 +36,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             mockProvider(
                 DotMessageService,
                 new MockDotMessageService({
-                    'Content-Type': 'Content Type',
+                    'content-drive.content-type.placeholder': 'Content Type',
                     'content-drive.content-type-field.empty-state': 'No content types found'
                 })
             ),
