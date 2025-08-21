@@ -10,12 +10,14 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.annotations.VisibleForTesting;
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.time.Instant;
 
@@ -24,6 +26,8 @@ import java.time.Instant;
  * @author jsanca
  */
 public class DotObjectMapperProvider {
+    final static Lazy<Boolean> ALPHA_KEYS = Lazy.of(()->Config.getBooleanProperty("dotcms.rest.sort.json.properties", true));
+    final static Lazy<Boolean> USE_BLACKBIRD = Lazy.of(()->Config.getBooleanProperty("jackson.module.blackbird.enable", true));
 
     private final ObjectMapper defaultObjectMapper;
 
@@ -47,14 +51,20 @@ public class DotObjectMapperProvider {
 
     public static ObjectMapper createDefaultMapper() {
 
+        final Boolean alphaKeys = Config.getBooleanProperty("dotcms.rest.sort.json.properties", true);
+        final Boolean useBlackbird = Config.getBooleanProperty("jackson.module.blackbird.enable", true);
+        final Boolean supportJava18 = Config.getBooleanProperty("jackson.module.jdk8module.enable", false);
         final ObjectMapper result = new ObjectMapper();
         result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
 
-        if (Config.getBooleanProperty("dotcms.rest.sort.json.properties", true)) {
-            result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
-            result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+        result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, alphaKeys);
+        result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, alphaKeys);
+        if(useBlackbird) {
+            result.registerModule(new BlackbirdModule());
         }
-        result.registerModule(new Jdk8Module());
+        if(supportJava18){
+            result.registerModule(new Jdk8Module());
+        }
         final JavaTimeModule javaTimeModule = createJavaTimeModule();
 
         result.registerModule(javaTimeModule);
@@ -102,5 +112,3 @@ public class DotObjectMapperProvider {
     } // getInstance.
 
 } // E:O:F:DotObjectMapperProvider.
-
-

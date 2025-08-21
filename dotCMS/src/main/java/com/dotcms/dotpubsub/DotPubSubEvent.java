@@ -1,5 +1,6 @@
 package com.dotcms.dotpubsub;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,15 +24,14 @@ public final class DotPubSubEvent implements Serializable {
 
     // cannot use DotObjectMapperProvider.getInstance().getDefaultObjectMapper() b/c it does not work in
     // unit tests
-    private final static ObjectMapper objectMapper = new ObjectMapper();
-
+    private final static Lazy<ObjectMapper> objectMapper = Lazy.of(()->DotObjectMapperProvider.getInstance().getDefaultObjectMapper());
     /**
      * Construct a DotPubSubEvent from a Json String
      * 
      * @param payloadJson
      */
     public DotPubSubEvent(String payloadJson) {
-        this(Try.of(() -> objectMapper.readValue(payloadJson, Map.class)).getOrElseThrow(e -> {
+        this(Try.of(() -> objectMapper.get().readValue(payloadJson, Map.class)).getOrElseThrow(e -> {
             throw new DotRuntimeException(e);
         }));
 
@@ -49,7 +49,7 @@ public final class DotPubSubEvent implements Serializable {
     /**
      * Construct an DotPubSubEvent from a map
      * 
-     * @param payloadJson
+     * @param map
      */
     public DotPubSubEvent(Map<String, Serializable> map) {
 
@@ -109,7 +109,7 @@ public final class DotPubSubEvent implements Serializable {
     private final Lazy<String> payloadAsString = Lazy.of(() -> {
         final Map<String, Serializable> payload = getPayload();
         try {
-            return objectMapper.writeValueAsString(payload);
+            return objectMapper.get().writeValueAsString(payload);
         } catch (Exception e) {
             Logger.warn(this.getClass(), "unable to write payload as String:" + e.getMessage() + " " + payload);
             return null;
@@ -177,7 +177,7 @@ public final class DotPubSubEvent implements Serializable {
 
         public Builder withPayload(String payloadJson) {
             HashMap<String, Serializable> map =
-                            Try.of(() -> objectMapper.readValue(payloadJson, HashMap.class)).getOrElseThrow(e -> {
+                            Try.of(() -> objectMapper.get().readValue(payloadJson, HashMap.class)).getOrElseThrow(e -> {
                                 throw new DotRuntimeException(e);
                             });
 
