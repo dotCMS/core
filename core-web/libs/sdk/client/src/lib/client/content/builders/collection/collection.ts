@@ -12,6 +12,7 @@ import {
 import { sanitizeQueryForContentType } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
+import { firstValueFrom } from 'rxjs';
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.
@@ -49,7 +50,8 @@ export class CollectionBuilder<T = unknown> {
         requestOptions: DotRequestOptions,
         serverUrl: string,
         contentType: string,
-        httpClient: DotHttpClient
+        httpClient: DotHttpClient,
+        private ngClient: any
     ) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
@@ -413,5 +415,15 @@ export class CollectionBuilder<T = unknown> {
                 //allCategoriesInfo: This exist but we currently don't use it
             })
         });
+        /*
+        return firstValueFrom(this.ngClient.post(this.url, {
+            query,
+            render: this.#render,
+            sort: this.sort,
+            limit: this.#limit,
+            offset: this.offset,
+            depth: this.#depth
+        }));
+        */
     }
 }

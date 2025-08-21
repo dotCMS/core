@@ -58,31 +58,26 @@ export class AngularHttpClient extends BaseHttpClient {
         const { body, ...httpOptions } = options;
         const finalOptions = { ...httpOptions, observe: 'body' as const };
 
+
+
         switch (method.toUpperCase()) {
             case 'GET':
-                return this.httpClient
-                    .get<T>(url, finalOptions)
-                    .pipe(catchError(this.handleError.bind(this))) as Observable<T>;
+                return this.httpClient.get(url, finalOptions)  as Observable<T>;
             case 'POST':
-                return this.httpClient
-                    .post<T>(url, body, finalOptions)
-                    .pipe(catchError(this.handleError.bind(this))) as Observable<T>;
+                return this.httpClient.post(url, body, {
+                    ...finalOptions,
+                    headers: new HttpHeaders({
+                        'Content-Type': 'application/json'
+                    })
+                }) as Observable<T>;
             case 'PUT':
-                return this.httpClient
-                    .put<T>(url, body, finalOptions)
-                    .pipe(catchError(this.handleError.bind(this))) as Observable<T>;
+                return this.httpClient.put(url, body, finalOptions) as Observable<T>;
             case 'DELETE':
-                return this.httpClient
-                    .delete<T>(url, finalOptions)
-                    .pipe(catchError(this.handleError.bind(this))) as Observable<T>;
+                return this.httpClient.delete(url, finalOptions) as Observable<T>;
             case 'PATCH':
-                return this.httpClient
-                    .patch<T>(url, body, finalOptions)
-                    .pipe(catchError(this.handleError.bind(this))) as Observable<T>;
+                return this.httpClient.patch(url, body, finalOptions) as Observable<T>;
             default:
-                return this.httpClient
-                    .request<T>(method, url, { body, ...finalOptions })
-                    .pipe(catchError(this.handleError.bind(this))) as Observable<T>;
+                return this.httpClient.request(method, url, { body, ...finalOptions }) as Observable<T>;
         }
     }
 
