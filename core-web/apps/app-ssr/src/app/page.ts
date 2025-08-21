@@ -64,6 +64,12 @@ export class Page {
     filteredBlogs = signal<Blog[]>([]);
 
     ngOnInit() {
+        this.fetchUsingClient();
+        this.fetchHttpClient();
+    }
+
+    fetchUsingClient() {
+        console.log('fetching using dot client');
         this.client.content
             .getCollection('Blog')
             .limit(3)
@@ -76,5 +82,12 @@ export class Page {
             .then((response) => {
                 this.filteredBlogs.set(response.contentlets as Blog[]);
             })
+    }
+
+    fetchHttpClient() {
+        console.log('fetching using http client');
+        this.http.get<{ title: string }[]>('https://jsonplaceholder.typicode.com/posts').subscribe((data) => {
+            console.log(data.length);
+        });
     }
 }
