@@ -134,6 +134,11 @@ export class Content {
      *
      */
     getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
-        return new CollectionBuilder<T>(this.#requestOptions, this.#serverUrl, contentType, this.#httpClient);
+        return new CollectionBuilder<T>(
+            this.#requestOptions,
+            this.#serverUrl,
+            contentType,
+            this.#httpClient
+        );
     }
 }

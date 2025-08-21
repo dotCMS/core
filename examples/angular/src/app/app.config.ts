@@ -16,12 +16,11 @@ function provideDotCMSClient(options: any): EnvironmentProviders {
       {
           provide: DotCMSClient,
           useFactory: () => {
-            const ngHttpclient = inject(HttpClient)
             const dotCMSClient = createDotCMSClient({
               dotcmsUrl: options.dotcmsUrl,
               authToken: options.authToken,
               siteId: options.siteId,
-              httpClient: new options.httpClient(ngHttpclient)
+              httpClient: options.httpClient
             });
 
             return new DotCMSClient(dotCMSClient);

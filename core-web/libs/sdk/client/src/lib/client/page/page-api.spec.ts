@@ -7,7 +7,7 @@ import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
     DotRequestOptions,
-    DotCMSPageResponse,
+    DotCMSPageResponse
 } from '@dotcms/types';
 
 import { PageClient } from './page-api';
@@ -218,7 +218,9 @@ describe('PageClient', () => {
             } catch (response: unknown) {
                 const responseData = response as DotCMSPageResponse;
 
-                expect(responseData.error?.message).toBe('No page data found. Please check the page URL and the GraphQL query.');
+                expect(responseData.error?.message).toBe(
+                    'No page data found. Please check the page URL and the GraphQL query.'
+                );
             }
         });
 
