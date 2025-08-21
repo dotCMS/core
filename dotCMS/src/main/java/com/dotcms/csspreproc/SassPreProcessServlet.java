@@ -15,7 +15,9 @@ public class SassPreProcessServlet extends HttpServlet {
     
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-   
+
+        // Set content type to text/css for .dotsass files before forwarding
+        resp.setContentType("text/css");
         // forward to the CSSPreProcessorServlet
         req.getRequestDispatcher(DOTSASS_PREFIX + req.getRequestURI()).forward(req, resp);     
     }
