@@ -324,13 +324,6 @@ export interface DotCMSClientConfig {
      * @example `{ httpClient: new AxiosHttpClient() }`
      */
     httpClient?: DotHttpClient;
-
-    /**
-     * Angular HttpClient instance.
-     * If not provided, the default AngularHttpClient will be used.
-     * @example `{ ngClient: new AngularHttpClient() }`
-     */
-    ngClient?: any;
 }
 
 /**
