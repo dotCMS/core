@@ -8,12 +8,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { MultiSelectFilterEvent } from 'primeng/multiselect';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveContentTypeFieldComponent } from './dot-content-drive-content-type-field.component';
 
 import { MOCK_CONTENT_TYPES, MOCK_CONTENT_TYPES_WITH_SELECTED } from '../../../../shared/mocks';
-import { BASE_TYPES, DotContentDriveContentType } from '../../../../shared/models';
+import { DotContentDriveContentType } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 describe('DotContentDriveContentTypeFieldComponent', () => {
@@ -89,7 +90,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             jest.advanceTimersByTime(500);
 
             const expectedContentTypes = MOCK_CONTENT_TYPES_WITH_SELECTED.filter(
-                (ct) => ct.baseType !== BASE_TYPES.form && !ct.system
+                (ct) => ct.baseType !== DotCMSBaseTypesContentTypes.FORM && !ct.system
             );
 
             expect(spectator.component.$state().contentTypes).toEqual(expectedContentTypes);

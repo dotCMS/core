@@ -20,11 +20,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
-import { BASE_TYPES, DotContentDriveContentType } from '../../../../shared/models';
+import { DotContentDriveContentType } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
@@ -96,7 +96,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                         const exists = acc.find((item) => item.id === current.id);
 
                         // We want to filter out forms and system types and also remove duplicates
-                        if (!exists && !current.system && current.baseType !== BASE_TYPES.form) {
+                        if (
+                            !exists &&
+                            !current.system &&
+                            current.baseType !== DotCMSBaseTypesContentTypes.FORM
+                        ) {
                             // If the item is selected in the multiselect
                             // or is in the filters we have it in the store
                             // we want to set the selected property to true
