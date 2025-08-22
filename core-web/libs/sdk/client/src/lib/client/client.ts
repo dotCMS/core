@@ -66,7 +66,6 @@ class DotCMSClient {
      */
     constructor(config: DotCMSClientConfig = defaultConfig) {
         this.config = config;
-        console.log(config.ngClient);
         this.httpClient = config.httpClient || new FetchHttpClient();
         this.requestOptions = this.createAuthenticatedRequestOptions(this.config);
 
