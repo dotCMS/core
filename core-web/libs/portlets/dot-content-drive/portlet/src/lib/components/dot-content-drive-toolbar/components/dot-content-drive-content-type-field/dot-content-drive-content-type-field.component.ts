@@ -66,6 +66,17 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         }
     );
 
+    readonly getContentTypesEffect = effect(() => {
+        // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
+        // After that remove the uncommented code and add the line below
+        // const type = this.$mappedBaseTypes().join(',')
+        const type = undefined;
+        const filter = this.$state.filterByKeyword();
+
+        // Push the request parameters to the debounced stream
+        this.#apiRequestSubject.next({ type, filter });
+    });
+
     ngOnInit() {
         // Set up debounced API request stream with switchMap
         this.#apiRequestSubject
@@ -127,17 +138,6 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 this.$selectedContentTypes.set(cleanedContentTypes.filter((item) => item.selected));
             });
     }
-
-    readonly getContentTypesEffect = effect(() => {
-        // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
-        // After that remove the uncommented code and add the line below
-        // const type = this.$mappedBaseTypes().join(',')
-        const type = undefined;
-        const filter = this.$state.filterByKeyword();
-
-        // Push the request parameters to the debounced stream
-        this.#apiRequestSubject.next({ type, filter });
-    });
 
     /**
      * This function is used to filter the content types by keyword
