@@ -106,7 +106,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                     (acc, current) => {
                         const exists = acc.find((item) => item.id === current.id);
 
-                        // We want to filter out forms and system types and also remove duplicates
+                        // We want to remove duplicates, filter out forms and system types
                         if (
                             !exists &&
                             !current.system &&
