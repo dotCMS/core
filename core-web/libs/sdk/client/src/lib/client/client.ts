@@ -1,8 +1,6 @@
 import { consola } from 'consola';
-import { firstValueFrom } from 'rxjs';
 
 import { DotCMSClientConfig, DotRequestOptions, DotHttpClient } from '@dotcms/types';
-
 
 import { FetchHttpClient } from './adapters/fetch-http-client';
 import { Content } from './content/content-api';
@@ -72,20 +70,7 @@ class DotCMSClient {
         // Initialize clients with httpClient
         this.page = new PageClient(this.config, this.requestOptions, this.httpClient);
         this.nav = new NavigationClient(this.config, this.requestOptions, this.httpClient);
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl, this.httpClient, this.config.ngClient);
-    }
-
-    fetchUsingNgClient() {
-        const request = this.config.ngClient
-            .post('http://localhost:8080/api/content/_search', {
-            query: '+contentType:Blog +languageId:1 +live:true',
-            render: false,
-            sort: 'Blog.postingDate asc',
-            limit: 3,
-            offset: 0,
-            depth: 0
-        })
-        return firstValueFrom(request);
+        this.content = new Content(this.requestOptions, this.config.dotcmsUrl, this.httpClient);
     }
 
     /**

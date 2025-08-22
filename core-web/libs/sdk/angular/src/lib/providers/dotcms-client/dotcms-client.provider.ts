@@ -73,14 +73,11 @@ export function provideDotCMSClient(options: DotCMSClientConfig): EnvironmentPro
         {
             provide: DotCMSClient,
             useFactory: () => {
-                const http = inject(HttpClient);
-
                 const dotCMSClient = createDotCMSClient({
                     dotcmsUrl: options.dotcmsUrl,
                     authToken: options.authToken,
                     siteId: options.siteId,
-                    httpClient: options.httpClient ? options.httpClient : createAngularHttpClient(),
-                    ngClient: http
+                    httpClient: options.httpClient ? options.httpClient : createAngularHttpClient()
                 });
 
                 return new DotCMSClient(dotCMSClient);

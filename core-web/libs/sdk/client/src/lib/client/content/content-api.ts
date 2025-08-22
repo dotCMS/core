@@ -62,7 +62,7 @@ export class Content {
      * @param {string} serverUrl - The server URL.
      * @param {DotHttpClient} httpClient - HTTP client for making requests.
      */
-    constructor(requestOptions: DotRequestOptions, serverUrl: string, httpClient: DotHttpClient, private ngClient: any) {
+    constructor(requestOptions: DotRequestOptions, serverUrl: string, httpClient: DotHttpClient) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
         this.#httpClient = httpClient;
@@ -138,8 +138,7 @@ export class Content {
             this.#requestOptions,
             this.#serverUrl,
             contentType,
-            this.#httpClient,
-            this.ngClient
+            this.#httpClient
         );
     }
 }
