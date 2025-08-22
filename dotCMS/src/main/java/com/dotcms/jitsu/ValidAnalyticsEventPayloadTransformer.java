@@ -3,9 +3,13 @@ package com.dotcms.jitsu;
 
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -100,9 +104,30 @@ public enum ValidAnalyticsEventPayloadTransformer {
                 .map(jsonObject -> ValidAnalyticsEventPayloadTransformer.setRootValues(jsonObject, payload))
                 .map(jsonObject -> putContent(jsonObject, newRootContext, sessionId))
                 .map(this::putEventAttributes)
+                .map(this::transformCustom)
                 .map(ValidAnalyticsEventPayloadTransformer::removeData)
                 .map(EventsPayload.EventPayload::new)
                 .collect(Collectors.toList());
+    }
+
+    private JSONObject transformCustom(final JSONObject event) {
+        final String eventType = event.optString(EVENT_TYPE_ATTRIBUTE_NAME);
+        final JSONObject data = event.getJSONObject(DATA_ATTRIBUTE_NAME);
+
+        try {
+            if (data.has(CUSTOM_ATTRIBUTE_NAME)) {
+                final Map<String, Object> jsonAsMap = JsonUtil.getJsonFromString(
+                        data.getJSONObject(ValidAnalyticsEventPayloadAttributes.CUSTOM_ATTRIBUTE_NAME).toString());
+
+                Map<String, Object> customTranslated = APILocator.getAnalyticsCustomAttribute()
+                        .translateToDatabase(eventType, jsonAsMap);
+                data.put(CUSTOM_ATTRIBUTE_NAME, customTranslated);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return data;
     }
 
     /**
@@ -139,7 +164,7 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
     private static JSONObject transformDate(final JSONObject payload) {
         final String eventType = payload.get(EVENT_TYPE_ATTRIBUTE_NAME).toString();
-        final List<String> dateFields = AnalyticsValidatorUtil.INSTANCE.getDateField(EventType.get(eventType));
+        final List<String> dateFields = AnalyticsValidatorUtil.INSTANCE.getDateField(eventType);
 
         for (String dateField : dateFields) {
             final Object dateValue = getValueFromPath(payload, dateField);
@@ -240,10 +265,13 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
         moveToRoot(jsonObject, pageAttributes,
                 Map.of("title", "page_title", "language_id", "userlanguage"));
+
         moveToRoot(jsonObject, deviceAttributes, Map.of("language", "user_language"));
 
-        final Map<String, Object> utmAttributes = (Map<String, Object> ) dataAttributes.get(UTM_ATTRIBUTE_NAME);
-        jsonObject.put(UTM_ATTRIBUTE_NAME, utmAttributes);
+        if (dataAttributes.containsKey(UTM_ATTRIBUTE_NAME)) {
+            final Map<String, Object> utmAttributes = (Map<String, Object>) dataAttributes.get(UTM_ATTRIBUTE_NAME);
+            jsonObject.put(UTM_ATTRIBUTE_NAME, utmAttributes);
+        }
 
         final String localTimeAttributes = (String) jsonObject.get(LOCAL_TIME_ATTRIBUTE_NAME);
         jsonObject.put("utc_time", localTimeAttributes);
@@ -308,10 +336,15 @@ public enum ValidAnalyticsEventPayloadTransformer {
                                    final Map<String, Object> attributes,
                                    final Map<String, String> replacementsKeys) {
 
+        if (!UtilMethods.isSet(attributes)) {
+            return;
+        }
+
         for (Map.Entry<String, Object> attributeEntry : attributes.entrySet()) {
-            final String attributeKey = replacementsKeys.containsKey(attributeEntry.getKey()) ?
-                    replacementsKeys.get(attributeEntry.getKey()) : attributeEntry.getKey();
-            jsonObject.put(attributeKey, attributeEntry.getValue());
+            if (replacementsKeys.containsKey(attributeEntry.getKey())) {
+                final String attributeKey = replacementsKeys.get(attributeEntry.getKey());
+                jsonObject.put(attributeKey, attributeEntry.getValue());
+            }
         }
     }
 
