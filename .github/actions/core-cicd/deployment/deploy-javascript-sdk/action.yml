@@ -127,6 +127,9 @@ runs:
       if: ${{ inputs.version-type == 'custom' }}
       env:
         CUSTOM_VERSION: ${{ inputs.custom-version }}
+        CURRENT_STABLE: ${{ steps.current_version.outputs.current_stable }}
+        CURRENT_BETA: ${{ steps.current_version.outputs.current_beta }}
+        CURRENT_NEXT: ${{ steps.current_version.outputs.current_next }}
       run: |
         echo "::group::Validate custom version"
         
@@ -140,10 +143,52 @@ runs:
         if [[ ! "$CUSTOM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "::error::Invalid custom version format: '$CUSTOM_VERSION'"
           echo "Version must follow semantic versioning format: major.minor.patch (e.g., 1.3.4)"
+          echo "Examples of valid versions: 1.0.0, 2.1.3, 10.15.7"
           exit 1
         fi
         
-        echo "✅ Custom version '$CUSTOM_VERSION' is valid"
+        # Check if custom version already exists in NPM
+        echo "Checking if version $CUSTOM_VERSION already exists in NPM..."
+        
+        # Compare against current stable version
+        if [ -n "$CURRENT_STABLE" ] && [ "$CURRENT_STABLE" != "null" ] && [ "$CURRENT_STABLE" = "$CUSTOM_VERSION" ]; then
+          echo "::error::Custom version $CUSTOM_VERSION already exists as the current stable (latest) version"
+          echo "Please choose a different version number that hasn't been published yet"
+          echo "Current stable version: $CURRENT_STABLE"
+          exit 1
+        fi
+        
+        # Compare against current beta version
+        if [ -n "$CURRENT_BETA" ] && [ "$CURRENT_BETA" != "null" ] && [ "$CURRENT_BETA" = "$CUSTOM_VERSION" ]; then
+          echo "::error::Custom version $CUSTOM_VERSION already exists as the current beta version"
+          echo "Please choose a different version number that hasn't been published yet"
+          echo "Current beta version: $CURRENT_BETA"
+          exit 1
+        fi
+        
+        # Compare against current next version (extract base version)
+        if [ -n "$CURRENT_NEXT" ] && [ "$CURRENT_NEXT" != "null" ]; then
+          CURRENT_NEXT_BASE=$(echo "$CURRENT_NEXT" | sed 's/-next\.[0-9]*$//')
+          if [ "$CURRENT_NEXT_BASE" = "$CUSTOM_VERSION" ]; then
+            echo "::error::Custom version $CUSTOM_VERSION already exists as the base version for current next tag"
+            echo "Please choose a different version number that hasn't been published yet"
+            echo "Current next version: $CURRENT_NEXT (base: $CURRENT_NEXT_BASE)"
+            exit 1
+          fi
+        fi
+        
+        # Additional check: Query NPM directly to see if this exact version exists
+        echo "Performing direct NPM registry check for version $CUSTOM_VERSION..."
+        if npm view @dotcms/client@$CUSTOM_VERSION version >/dev/null 2>&1; then
+          echo "::error::Custom version $CUSTOM_VERSION already exists in NPM registry"
+          echo "Please choose a different version number that hasn't been published yet"
+          echo "You can check existing versions with: npm view @dotcms/client versions --json"
+          exit 1
+        fi
+        
+        echo "✅ Custom version '$CUSTOM_VERSION' is valid and unique"
+        echo "✅ Semantic version format check: PASSED"
+        echo "✅ NPM registry uniqueness check: PASSED"
         echo "::endgroup::"
       shell: bash
 
