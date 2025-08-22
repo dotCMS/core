@@ -231,7 +231,7 @@ export class FieldUtil {
     static getFieldsWithoutLayout(layout: DotCMSContentTypeLayoutRow[]): DotCMSContentTypeField[] {
         return layout
             .map((row: DotCMSContentTypeLayoutRow) => row.columns)
-            .filter((columns): DotCMSContentTypeLayoutColumn[] => !!columns)
+            .filter((columns: DotCMSContentTypeLayoutColumn[]) => !!columns)
             .reduce(
                 (
                     accumulator: DotCMSContentTypeLayoutColumn[],
