@@ -1,5 +1,51 @@
-import { DotContentDriveFilters } from '../shared/models';
+import {
+    DotContentDriveDecodeFunction,
+    DotContentDriveFilters,
+    DotKnownContentDriveFilters
+} from '../shared/models';
 
+/**
+ * Decodes a multi-selector value.
+ *
+ * @param {string} value
+ * @return {*}  {string[]}
+ */
+const multiSelector: DotContentDriveDecodeFunction = (value: string): string[] =>
+    value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v !== '');
+
+/**
+ * Decodes a single-selector value.
+ *
+ * @param {string} value
+ * @return {*}  {string}
+ */
+const singleSelector: DotContentDriveDecodeFunction = (value: string): string => value.trim();
+
+/**
+ * Decodes the value by the key. This is a dictionary of functions that will be used to decode the value by the key.
+ *
+ * @example
+ *
+ * ```typescript
+ * decodeByFilterKey.baseType('1,2,3')
+ * // Output: ['1', '2', '3']
+ * ```
+ *
+ * @return {*}  {Record<keyof DotKnownContentDriveFilters, (value: string) => string | string[]>}
+ */
+export const decodeByFilterKey: Record<
+    keyof DotKnownContentDriveFilters,
+    DotContentDriveDecodeFunction
+> = {
+    // Should always return an array
+    baseType: multiSelector,
+    // Should always return an array
+    contentType: multiSelector,
+    title: singleSelector
+};
 /**
  * Decodes the filters string into a record of key-value pairs.
  *
@@ -35,14 +81,14 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
-        // Handle the multiselector (,)
-        if (value.includes(',')) {
-            acc[key] = value
-                .split(',')
-                .map((v) => v.trim())
-                .filter((v) => v !== '');
+        const decodeFunction = decodeByFilterKey[key];
+
+        if (decodeFunction) {
+            // Use decode function for known keys
+            acc[key] = decodeFunction(value);
         } else {
-            acc[key] = value;
+            // Use default functions for unknown keys
+            acc[key] = value.includes(',') ? multiSelector(value) : singleSelector(value);
         }
 
         return acc;

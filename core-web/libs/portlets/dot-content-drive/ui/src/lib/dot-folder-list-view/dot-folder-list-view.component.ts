@@ -1,9 +1,12 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     CUSTOM_ELEMENTS_SCHEMA,
+    effect,
     input,
-    output
+    output,
+    signal
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
@@ -40,13 +43,32 @@ export class DotFolderListViewComponent {
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
 
-    readonly HEADER_COLUMNS = HEADER_COLUMNS;
-    readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
-
-    // Model for the table selection
     selectedItems: DotContentDriveItem[] = [];
+    readonly MIN_ROWS_PER_PAGE = 20;
+    protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
+    protected readonly HEADER_COLUMNS = HEADER_COLUMNS;
+    protected readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
+    protected readonly $showPagination = computed(
+        () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
+    );
+    protected readonly $styleClass = computed(() =>
+        this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
+    );
+
+    /**
+     * Index of the first row to be displayed in the current page.
+     * Used by PrimeNG Table for pagination state management.
+     */
+    protected readonly $currentPageFirstRowIndex = signal<number>(0);
+    protected readonly firstEffect = effect(() => {
+        const showPagination = this.$showPagination();
+        if (showPagination) {
+            this.$currentPageFirstRowIndex.set(0);
+        }
+    });
 
     onPage(event: LazyLoadEvent) {
+        this.$currentPageFirstRowIndex.set(event.first);
         this.paginate.emit(event);
     }
 

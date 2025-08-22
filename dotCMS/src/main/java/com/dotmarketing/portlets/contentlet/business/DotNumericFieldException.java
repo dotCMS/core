@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.util.FieldNameUtils.convertFieldClassName;
+
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.HashMap;
@@ -13,7 +15,6 @@ public class DotNumericFieldException extends DotContentletStateException implem
 
     private final String field;
     private final String value;
-    private final String fieldName;
     private final String fieldType;
     private final String expectedNumericType;
     private final Map<String, String> additionalContext;
@@ -22,7 +23,6 @@ public class DotNumericFieldException extends DotContentletStateException implem
         super(message);
         this.field = field;
         this.value = value == null ? "" : value.toString();
-        this.fieldName = null;
         this.fieldType = null;
         this.expectedNumericType = null;
         this.additionalContext = new HashMap<>();
@@ -31,12 +31,11 @@ public class DotNumericFieldException extends DotContentletStateException implem
     /**
      * Enhanced constructor for Builder pattern
      */
-    private DotNumericFieldException(String message, String field, Object value, String fieldName, 
+    private DotNumericFieldException(String message, String field, Object value, 
                                    String fieldType, String expectedNumericType, Map<String, String> additionalContext) {
         super(message);
         this.field = field;
         this.value = value == null ? "" : value.toString();
-        this.fieldName = fieldName;
         this.fieldType = fieldType;
         this.expectedNumericType = expectedNumericType;
         this.additionalContext = new HashMap<>(additionalContext);
@@ -60,17 +59,11 @@ public class DotNumericFieldException extends DotContentletStateException implem
     @Override
     public Optional<Map<String, ?>> getContext() {
         Map<String, String> context = new HashMap<>(additionalContext);
-        if (fieldName != null) {
-            context.put("fieldName", fieldName);
-        }
         if (fieldType != null) {
-            context.put("fieldType", fieldType);
+            context.put("fieldType", convertFieldClassName(fieldType));
         }
         if (expectedNumericType != null) {
             context.put("expectedNumericType", expectedNumericType);
-        }
-        if (field != null) {
-            context.put("velocityVarName", field);
         }
         return context.isEmpty() ? Optional.empty() : Optional.of(context);
     }
@@ -82,7 +75,6 @@ public class DotNumericFieldException extends DotContentletStateException implem
         private final String field;
         private final Object value;
         private final String expectedNumericType;
-        private String fieldName;
         private String fieldType;
         private final Map<String, String> additionalContext = new HashMap<>();
 
@@ -92,13 +84,6 @@ public class DotNumericFieldException extends DotContentletStateException implem
             this.expectedNumericType = expectedNumericType;
         }
 
-        /**
-         * Set the display name of the field
-         */
-        public Builder fieldName(String fieldName) {
-            this.fieldName = fieldName;
-            return this;
-        }
 
         /**
          * Set the type of the field (e.g., "text", "number", etc.)
@@ -122,7 +107,7 @@ public class DotNumericFieldException extends DotContentletStateException implem
         public DotNumericFieldException build() {
             String message = String.format(INVALID_NUMERIC_FIELD_MESSAGE, value,
                     expectedNumericType, field);
-            return new DotNumericFieldException(message, field, value, fieldName, fieldType,
+            return new DotNumericFieldException(message, field, value, fieldType,
                     expectedNumericType, additionalContext);
         }
     }

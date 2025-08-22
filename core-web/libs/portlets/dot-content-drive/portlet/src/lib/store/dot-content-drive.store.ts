@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, inject } from '@angular/core';
+import { computed, effect, EffectRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
@@ -18,14 +18,15 @@ import {
     BASE_QUERY,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
+    DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     SYSTEM_HOST
 } from '../shared/constants';
 import {
+    DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
     DotContentDriveSort,
-    DotContentDriveSortOrder,
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
@@ -39,10 +40,7 @@ const initialState: DotContentDriveState = {
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
-    sort: {
-        field: 'modDate',
-        order: DotContentDriveSortOrder.ASC
-    },
+    sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED
 };
 
@@ -60,8 +58,8 @@ export const DotContentDriveStore = signalStore(
                 const pathValue = path();
                 const currentSiteValue = currentSite();
                 const filtersValue = filters();
+                const filtersEntries = Object.entries(filtersValue ?? {});
 
-                // Add the path to the query, the default is "/"
                 if (pathValue) {
                     modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
                 }
@@ -72,30 +70,45 @@ export const DotContentDriveStore = signalStore(
                     .or()
                     .equals(SYSTEM_HOST.identifier);
 
-                if (filtersValue) {
-                    Object.entries(filtersValue).forEach(([key, value]) => {
-                        if (key === 'title') {
-                            // This is a indexed field, so we need to search for the title_dotraw
-                            modifiedQuery = modifiedQuery
-                                .field('title_dotraw')
-                                .equals(`*${value}*`);
-                            return;
-                        }
+                filtersEntries
+                    // Remove filters that are undefined
+                    .filter(([_key, value]) => value !== undefined)
+                    .forEach(([key, value]) => {
                         // Handle multiselectors
                         if (Array.isArray(value)) {
                             // Chain with OR
                             const orChain = value.join(' OR ');
 
-                            // Build the query
-                            const orQuery = `+${key}: (${orChain})`;
+                            // Build the query, if the value is a single value, we don't need to wrap it in parentheses
+                            const orQuery =
+                                value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
 
                             // Add the query to the modified query
                             modifiedQuery = modifiedQuery.raw(orQuery);
                             return;
                         }
+
+                        // Handle raw search for title
+                        if (key === 'title') {
+                            // This is a indexed field, so we need to search by boosting terms https://dev.dotcms.com/docs/content-search-syntax#Boost
+                            // We search by catchall, title_dotraw boosting 5 and title boosting 15, giving more weight to the title
+                            modifiedQuery = modifiedQuery.raw(
+                                `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
+                            );
+
+                            // If the value has multiple words, we need to search for each word and boost them by 5
+                            value
+                                .split(' ')
+                                .filter((word) => word.trim().length > 0)
+                                .forEach((word) => {
+                                    modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
+                                });
+
+                            return;
+                        }
+
                         modifiedQuery = modifiedQuery.field(key).equals(value);
                     });
-                }
 
                 return modifiedQuery.build();
             })
@@ -118,8 +131,20 @@ export const DotContentDriveStore = signalStore(
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
             },
-            setFilters(filters: Record<string, string>) {
-                patchState(store, { filters: { ...store.filters(), ...filters } });
+            patchFilters(filters: DotContentDriveFilters) {
+                patchState(store, {
+                    filters: { ...store.filters(), ...filters },
+                    pagination: {
+                        ...store.pagination(),
+                        offset: 0
+                    }
+                });
+            },
+            removeFilter(filter: string) {
+                const { [filter]: removedFilter, ...restFilters } = store.filters();
+                if (removedFilter) {
+                    patchState(store, { filters: restFilters });
+                }
             },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
@@ -130,12 +155,6 @@ export const DotContentDriveStore = signalStore(
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
             },
-            removeFilter(filter: string) {
-                const { [filter]: removedFilter, ...restFilters } = store.filters();
-                if (removedFilter) {
-                    patchState(store, { filters: restFilters });
-                }
-            },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             }
@@ -144,22 +163,28 @@ export const DotContentDriveStore = signalStore(
     withHooks((store) => {
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
+        let initEffect: EffectRef;
 
         return {
             onInit() {
-                const queryParams = route.snapshot.queryParams;
-                const currentSite = globalStore.siteDetails();
-                const path = queryParams['path'] || DEFAULT_PATH;
-                const filters = decodeFilters(queryParams['filters'] || '');
-                const queryTreeExpanded =
-                    queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
+                initEffect = effect(() => {
+                    const queryParams = route.snapshot.queryParams;
+                    const currentSite = globalStore.siteDetails();
+                    const path = queryParams['path'] || DEFAULT_PATH;
+                    const filters = decodeFilters(queryParams['filters'] || '');
+                    const queryTreeExpanded =
+                        queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 
-                store.initContentDrive({
-                    currentSite,
-                    path,
-                    filters,
-                    isTreeExpanded: queryTreeExpanded == 'true'
+                    store.initContentDrive({
+                        currentSite,
+                        path,
+                        filters,
+                        isTreeExpanded: queryTreeExpanded == 'true'
+                    });
                 });
+            },
+            onDestroy() {
+                initEffect?.destroy();
             }
         };
     })
