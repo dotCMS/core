@@ -52,6 +52,34 @@ export function createFakeContentType(
     };
 }
 
+export const dotcmsContentTypeBasicMock: DotCMSContentType = {
+    baseType: null,
+    clazz: null,
+    defaultType: false,
+    description: null,
+    detailPage: null,
+    expireDateVar: null,
+    fields: [],
+    fixed: false,
+    folder: null,
+    host: null,
+    iDate: null,
+    id: null,
+    layout: [],
+    modDate: null,
+    multilingualable: false,
+    nEntries: null,
+    name: null,
+    owner: null,
+    publishDateVar: null,
+    system: false,
+    urlMapPattern: null,
+    variable: null,
+    versionable: false,
+    workflows: [],
+    metadata: {}
+};
+
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
     ...EMPTY_FIELD
 };

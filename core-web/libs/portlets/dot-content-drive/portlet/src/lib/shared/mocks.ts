@@ -242,38 +242,22 @@ export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
 
 export const MOCK_CONTENT_TYPES_WITH_SELECTED: DotContentDriveContentType[] = [
     {
-        id: '1',
-        name: 'Blog',
-        variable: 'blog',
-        baseType: DotCMSBaseTypesContentTypes.CONTENT,
-        system: false,
+        ...MOCK_CONTENT_TYPES[0],
         selected: false
     },
     {
-        id: '2',
-        name: 'News',
-        variable: 'news',
-        baseType: DotCMSBaseTypesContentTypes.CONTENT,
-        system: false,
+        ...MOCK_CONTENT_TYPES[1],
         selected: false
     },
     {
-        id: '3',
-        name: 'Contact Form',
-        variable: 'contactForm',
-        baseType: DotCMSBaseTypesContentTypes.FORM,
-        system: false,
+        ...MOCK_CONTENT_TYPES[2],
         selected: false
     },
     {
-        id: '4',
-        name: 'System Content',
-        variable: 'systemContent',
-        baseType: DotCMSBaseTypesContentTypes.CONTENT,
-        system: true,
+        ...MOCK_CONTENT_TYPES[3],
         selected: true
     }
-].map(createFakeContentType) as DotContentDriveContentType[];
+];
 
 export const MOCK_BASE_TYPES: StructureTypeView[] = [
     { name: 'Content', label: 'Content', types: null },
