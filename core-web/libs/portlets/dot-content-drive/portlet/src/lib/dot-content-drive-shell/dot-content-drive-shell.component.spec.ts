@@ -10,6 +10,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import {
     DotContentSearchService,
+    DotContentTypeService,
     DotSiteService,
     DotSystemConfigService
 } from '@dotcms/data-access';
@@ -18,8 +19,14 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DEFAULT_PAGINATION } from '../shared/constants';
-import { mockItems, mockRoute, mockSearchResponse, mockSites } from '../shared/mocks';
+import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
+import {
+    MOCK_BASE_TYPES,
+    mockItems,
+    mockRoute,
+    mockSearchResponse,
+    mockSites
+} from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
@@ -43,6 +50,9 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(ActivatedRoute, mockRoute),
             mockProvider(DotSystemConfigService),
+            mockProvider(DotContentTypeService, {
+                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
             provideHttpClient()
         ],
         componentProviders: [DotContentDriveStore],
@@ -75,7 +85,7 @@ describe('DotContentDriveShellComponent', () => {
                     setStatus: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
-                    setFilters: jest.fn()
+                    patchFilters: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -87,6 +97,12 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(Location, {
                     go: jest.fn()
+                }),
+                mockProvider(DotContentTypeService, {
+                    getContentTypes: jest.fn().mockReturnValue(of())
+                }),
+                mockProvider(DotContentTypeService, {
+                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
                 })
             ]
         });
@@ -103,6 +119,14 @@ describe('DotContentDriveShellComponent', () => {
     describe('Content Loading Effect', () => {
         beforeEach(() => {
             jest.restoreAllMocks();
+        });
+
+        it('should not fetch content when store has a SYSTEM_HOST site', () => {
+            store.currentSite.mockReturnValue(SYSTEM_HOST);
+            spectator.detectChanges();
+
+            expect(contentSearchService.get).not.toHaveBeenCalled();
+            expect(store.setItems).not.toHaveBeenCalled();
         });
 
         it('should fetch content when store has a non-SYSTEM_HOST site', () => {
@@ -174,7 +198,7 @@ describe('DotContentDriveShellComponent', () => {
             // Arrange store values for this run
             store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/another/path');
-            filtersSignal.set({ contentType: 'Blog', baseType: ['1', '2', '3'] });
+            filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
