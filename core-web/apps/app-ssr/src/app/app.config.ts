@@ -1,10 +1,9 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { provideClientHydration, withEventReplay, withHttpTransferCacheOptions } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { provideDotCMSClient } from '@dotcms/angular';
 import { appRoutes } from './app.routes';
-import { withHttpTransferCacheOptions } from './transfer_cache';
 
 export const appConfig: ApplicationConfig = {
     providers: [
