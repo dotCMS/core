@@ -1,10 +1,13 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.cost.RequestCost;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.ConversionUtils;
@@ -27,18 +30,15 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.mutable.MutableBoolean;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -166,6 +166,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
     }
 
+    @RequestCost(increment = 1)
     @CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")
