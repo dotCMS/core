@@ -3,9 +3,8 @@
 # DUAL PUBLISHING BEHAVIOR:
 # LATEST TAG:
 # - If current version contains "alpha" or "beta" -> publishes 1.0.0
-# - If stable version exists -> only publishes on explicit version-type (minor/major/custom)
-# - Patch versions -> skips latest publishing (only publishes to next)
-# - Auto mode with stable version -> skips latest publishing
+# - If stable version exists -> publishes on explicit version-type (patch/minor/major/custom)
+# - Auto mode with stable version -> skips latest publishing (no version change)
 #
 # NEXT TAG:
 # - Always publishes with "-next.X" suffix where X increments
@@ -350,10 +349,6 @@ runs:
         if [ "$CURRENT_VERSION" = "$NEXT_VERSION" ] && [ "$VERSION_TYPE_USED" = "auto-no-increment" ]; then
           echo "🚫 No version change detected for latest tag (${CURRENT_VERSION} → ${NEXT_VERSION})"
           echo "   Skipping latest publishing since version-type is 'auto' and no increment is needed."
-          SHOULD_PUBLISH_LATEST="false"
-        elif [ "$VERSION_TYPE_USED" = "patch" ]; then
-          echo "🚫 Patch version detected (${CURRENT_VERSION} → ${NEXT_VERSION})"
-          echo "   Skipping latest publishing for patch versions - only publishing to next tag."
           SHOULD_PUBLISH_LATEST="false"
         else
           echo "✅ Version will be updated for latest tag (${CURRENT_VERSION} → ${NEXT_VERSION})"
