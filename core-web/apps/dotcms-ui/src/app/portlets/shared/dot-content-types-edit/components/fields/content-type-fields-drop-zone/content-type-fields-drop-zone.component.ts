@@ -21,14 +21,14 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeLayoutRow,
     DotDialogActions
 } from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { FieldType } from '../models';
@@ -114,7 +114,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
-            return FieldUtil.isColumnBreak(item.clazz);
+            return item.clazz === DotCMSClazzes.COLUMN_BREAK;
         });
     }
 

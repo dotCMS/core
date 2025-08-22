@@ -14,11 +14,8 @@ import {
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import {
-    dotcmsContentTypeFieldBasicMock,
-    FieldUtil,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsRowComponent } from '.';
 
