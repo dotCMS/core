@@ -95,11 +95,29 @@ runs:
         sdk_packages=($(find . -maxdepth 1 -type d -exec basename {} \; | grep -v "^\.$"))
         echo "Found SDK packages: ${sdk_packages[*]}"
         
-        # Check the status of each package and find the highest version
-        HIGHEST_VERSION="0.0.0"
+        # Check the status of each package, prioritizing @dotcms/client as base version
+        BASE_VERSION="0.0.0"
         VERSION_SOURCE="none"
         PACKAGES_STATUS=""
+        CLIENT_VERSION=""
         
+        # First, check if @dotcms/client exists and use it as the authoritative base
+        echo ""
+        echo "🔍 Checking @dotcms/client (base package)..."
+        if npm view @dotcms/client >/dev/null 2>&1; then
+          CLIENT_VERSION=$(npm view @dotcms/client dist-tags --json 2>/dev/null | jq -r '.latest // empty')
+          if [ -n "$CLIENT_VERSION" ] && [ "$CLIENT_VERSION" != "null" ] && [ "$CLIENT_VERSION" != "empty" ]; then
+            BASE_VERSION="$CLIENT_VERSION"
+            VERSION_SOURCE="existing"
+            echo "  ✅ @dotcms/client exists - Latest: $CLIENT_VERSION (using as base version)"
+          else
+            echo "  ⚠️ @dotcms/client exists but no latest version found"
+          fi
+        else
+          echo "  📦 @dotcms/client doesn't exist yet"
+        fi
+        
+        # Now check all packages for status tracking
         for sdk in "${sdk_packages[@]}"; do
           echo ""
           echo "🔍 Checking @dotcms/${sdk}..."
@@ -111,12 +129,15 @@ runs:
             
             echo "  ✅ Package exists - Latest: ${STABLE_VERSION:-'none'}"
             
-            # Update highest version if this package has a higher stable version
-            if [ -n "$STABLE_VERSION" ] && [ "$STABLE_VERSION" != "null" ] && [ "$STABLE_VERSION" != "empty" ]; then
-              if [ "$STABLE_VERSION" != "0.0.0" ]; then
-                if [ "$HIGHEST_VERSION" = "0.0.0" ] || [ "$(printf '%s\n' "$STABLE_VERSION" "$HIGHEST_VERSION" | sort -V | tail -n1)" = "$STABLE_VERSION" ]; then
-                  HIGHEST_VERSION="$STABLE_VERSION"
-                  VERSION_SOURCE="existing"
+            # If we don't have a base version yet and this isn't client, use this as fallback
+            if [ "$VERSION_SOURCE" = "none" ] && [ "$sdk" != "client" ]; then
+              if [ -n "$STABLE_VERSION" ] && [ "$STABLE_VERSION" != "null" ] && [ "$STABLE_VERSION" != "empty" ]; then
+                if [ "$STABLE_VERSION" != "0.0.0" ]; then
+                  if [ "$BASE_VERSION" = "0.0.0" ] || [ "$(printf '%s\n' "$STABLE_VERSION" "$BASE_VERSION" | sort -V | tail -n1)" = "$STABLE_VERSION" ]; then
+                    BASE_VERSION="$STABLE_VERSION"
+                    VERSION_SOURCE="existing"
+                    echo "  📊 Using as fallback base version: $STABLE_VERSION"
+                  fi
                 fi
               fi
             fi
@@ -130,9 +151,13 @@ runs:
         
         # Determine the base version to use
         if [ "$VERSION_SOURCE" = "existing" ]; then
-          CURRENT_VERSION="$HIGHEST_VERSION"
+          CURRENT_VERSION="$BASE_VERSION"
           echo ""
-          echo "📊 Using highest existing version: $CURRENT_VERSION"
+          if [ -n "$CLIENT_VERSION" ]; then
+            echo "📊 Using @dotcms/client as base version: $CURRENT_VERSION"
+          else
+            echo "📊 Using highest existing version: $CURRENT_VERSION"
+          fi
         else
           CURRENT_VERSION="0.0.0"
           VERSION_SOURCE="none"
@@ -326,9 +351,9 @@ runs:
           VERSION_TYPE_USED="custom"
           
           # Check if custom version is valid relative to current version
-          if [ "$VERSION_SOURCE" = "stable" ] && [ -n "$CURRENT_STABLE" ]; then
-            if version_compare "$CURRENT_STABLE" "$CUSTOM_VERSION"; then
-              echo "::warning::Custom version $CUSTOM_VERSION is not greater than current stable version $CURRENT_STABLE"
+          if [ "$VERSION_SOURCE" = "existing" ] && [ -n "$CURRENT_VERSION" ]; then
+            if version_compare "$CURRENT_VERSION" "$CUSTOM_VERSION"; then
+              echo "::warning::Custom version $CUSTOM_VERSION is not greater than current version $CURRENT_VERSION"
               echo "This will still be published, but consider if this is intentional."
             fi
           fi
@@ -347,9 +372,9 @@ runs:
           VERSION_TYPE_USED="prerelease-to-stable"
           echo "Transitioning from prerelease version ($CURRENT_VERSION) to stable 1.0.0"
           
-        elif [ "$VERSION_SOURCE" = "stable" ] && [ -n "$CURRENT_STABLE" ]; then
-          # We have a stable version, apply versioning logic
-          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_STABLE"
+        elif [ "$VERSION_SOURCE" = "existing" ] && [ -n "$CURRENT_VERSION" ]; then
+          # We have an existing version, apply versioning logic
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
           MAJOR=${VERSION_PARTS[0]:-1}
           MINOR=${VERSION_PARTS[1]:-0}
           PATCH=${VERSION_PARTS[2]:-0}
