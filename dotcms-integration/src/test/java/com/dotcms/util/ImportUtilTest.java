@@ -805,7 +805,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             assertTrue(results.get("warnings").size() == 2);
             assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
-            assertEquals("Line #3: contains duplicate values for structure unique field 'testTitle', and will be ignored.", results.get("warnings").get(1));
+            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -3382,7 +3382,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final List<String> results = imported.get("results");
         assertEquals(2, results.size());
 
-        final String expectedMessage = String.format("2 new \"%s\" were created.", contentType.name());
+        final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
         assertTrue(String.format("Expected Message %s, real messages (%s)", expectedMessage, results),
                 results.contains(expectedMessage));
 
@@ -3498,10 +3498,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final List<String> results = imported.get("results");
         assertEquals(2, results.size());
 
-        final String resultErrorMessage = String.format("0 \"%s\" contentlets updated corresponding to 0 repeated contents based on the key provided",
+        final String resultErrorMessage = String.format("0 \"%s\" content updated corresponding to 0 repeated contents based on the key provided",
                 contentType.name());
 
-        final String expectedMessage = String.format("0 new \"%s\" were created.", contentType.name());
+        final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
         assertTrue(String.format("Expected message: %s /real message: %s", expectedMessage, results),
                 results.contains(expectedMessage));
         assertTrue(String.format("Expected: %s / reals: %s", resultErrorMessage, results),
