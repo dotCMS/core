@@ -110,17 +110,42 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
             return;
         }
 
-        const updatedNode = { ...parentNode, children };
-
         this.folders.update((folders) => {
-            const index = folders.findIndex((folder) => folder.key === parentNode.key);
-            if (index !== -1) {
-                folders[index] = updatedNode;
-            }
-            return folders;
+            return this.updateNodeRecursively(folders, parentNode.key, children);
         });
 
         this.cd.markForCheck();
+    }
+
+    /**
+     * Recursively searches and updates a node at any level in the tree
+     * @param nodes - The current level of nodes to search
+     * @param nodeKey - The key of the node to update
+     * @param children - The children to add to the found node
+     * @returns Updated nodes array
+     */
+    private updateNodeRecursively(
+        nodes: TreeNode[],
+        nodeKey: string,
+        children: TreeNode[]
+    ): TreeNode[] {
+        return nodes.map((node) => {
+            // If this is the node we're looking for, update it with children
+            if (node.key === nodeKey) {
+                return { ...node, children };
+            }
+
+            // If this node has children, recursively search them
+            if (node.children && node.children.length > 0) {
+                return {
+                    ...node,
+                    children: this.updateNodeRecursively(node.children, nodeKey, children)
+                };
+            }
+
+            // Return the node unchanged if it's not the target and has no children
+            return node;
+        });
     }
 
     /**
