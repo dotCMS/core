@@ -173,76 +173,64 @@ public class TagResource {
         @QueryParam("orderBy") @DefaultValue("tagname") final String orderBy,
         @Parameter(description = "Sort direction", example = "ASC")
         @QueryParam("direction") @DefaultValue("ASC") final String direction
-    ) {
-
-        try {
-            // 1. Initialize and validate
-            final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
-                    .requiredAnonAccess(AnonymousAccess.READ)
-                    .requestAndResponse(request, response)
-                    .init();
-            
-            final User user = initDataObject.getUser();
-            
-            // 2. Validate parameters
-            validatePaginationParams(page, perPage);
-            
-            // 3. Get effective per_page value
-            final int effectivePerPage = getEffectivePerPage(perPage);
-            
-            // 4. Resolve site parameter
-            final String resolvedSiteId = helper.resolveSiteParameter(site, user, request);
-            
-            // 5. Calculate pagination offset
-            final int offset = (page - 1) * effectivePerPage;
-            
-            Logger.debug(this, UtilMethods.isSet(filter)
-                    ? String.format("Filtering Tag(s) '%s' from Site '%s', global=%s, page=%d, perPage=%d", 
-                                    filter, resolvedSiteId, global, page, effectivePerPage)
-                    : String.format("Listing ALL Tags from Site '%s', global=%s, page=%d, perPage=%d", 
-                                    resolvedSiteId, global, page, effectivePerPage));
-            
-            // 6. Get filtered tags with length ordering when filter is provided
-            final List<Tag> tags = tagAPI.getFilteredTags(
-                UtilMethods.isSet(filter) ? filter : "", 
-                resolvedSiteId, 
-                global, 
-                orderBy, 
-                offset, 
-                effectivePerPage
-            );
-            
-            // 7. Get total count efficiently
-            final long totalCount = tagAPI.getFilteredTagsCount(
-                UtilMethods.isSet(filter) ? filter : "", 
-                resolvedSiteId, 
-                global
-            );
-            
-            // 8. Convert to REST representation
-            final List<RestTag> restTags = tags.stream()
-                .map(TagsResourceHelper::toRestTag)
-                .collect(Collectors.toList());
-            
-            // 9. Build pagination metadata
-            final Pagination pagination = new Pagination.Builder()
-                .currentPage(page)
-                .perPage(effectivePerPage)
-                .totalEntries(totalCount)
-                .build();
-            
-            // 10. Return paginated response
-            return new ResponseEntityPaginatedDataView(restTags, pagination);
-            
-        } catch (BadRequestException e) {
-            throw e; // Re-throw validation errors
-        } catch (DotDataException e) {
-            Logger.error(TagResource.class, "Database error retrieving tags: " + e.getMessage(), e);
-            throw new BadRequestException("There was an error retrieving tags");
-        } catch (Exception e) {
-            Logger.error(TagResource.class, "Unexpected error retrieving tags: " + e.getMessage(), e);
-            throw new BadRequestException("An unexpected error occurred");
-        }
+    ) throws DotDataException {
+        // 1. Initialize and validate
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredAnonAccess(AnonymousAccess.READ)
+                .requestAndResponse(request, response)
+                .init();
+        
+        final User user = initDataObject.getUser();
+        
+        // 2. Validate parameters
+        validatePaginationParams(page, perPage);
+        
+        // 3. Get effective per_page value
+        final int effectivePerPage = getEffectivePerPage(perPage);
+        
+        // 4. Resolve site parameter
+        final String resolvedSiteId = helper.resolveSiteParameter(site, user, request);
+        
+        // 5. Calculate pagination offset
+        final int offset = (page - 1) * effectivePerPage;
+        
+        Logger.debug(this, UtilMethods.isSet(filter)
+                ? String.format("Filtering Tag(s) '%s' from Site '%s', global=%s, page=%d, perPage=%d", 
+                                filter, resolvedSiteId, global, page, effectivePerPage)
+                : String.format("Listing ALL Tags from Site '%s', global=%s, page=%d, perPage=%d", 
+                                resolvedSiteId, global, page, effectivePerPage));
+        
+        // 6. Get filtered tags with length ordering when filter is provided
+        final List<Tag> tags = tagAPI.getFilteredTags(
+            UtilMethods.isSet(filter) ? filter : "", 
+            resolvedSiteId, 
+            global, 
+            orderBy, 
+            offset, 
+            effectivePerPage
+        );
+        
+        // 7. Get total count efficiently
+        final long totalCount = tagAPI.getFilteredTagsCount(
+            UtilMethods.isSet(filter) ? filter : "", 
+            resolvedSiteId, 
+            global
+        );
+        
+        // 8. Convert to REST representation
+        final List<RestTag> restTags = tags.stream()
+            .map(TagsResourceHelper::toRestTag)
+            .collect(Collectors.toList());
+        
+        // 9. Build pagination metadata
+        final Pagination pagination = new Pagination.Builder()
+            .currentPage(page)
+            .perPage(effectivePerPage)
+            .totalEntries(totalCount)
+            .build();
+        
+        // 10. Return paginated response
+        return new ResponseEntityPaginatedDataView(restTags, pagination);
     }
 
     /**
