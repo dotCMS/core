@@ -637,90 +637,31 @@ public class TagResource {
     }
 
 
-    /**
-     * Deletes a single tag by its ID. This removes the tag and all its associations permanently.
-     *
-     * @param request  The current instance of the {@link HttpServletRequest}.
-     * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagId    The UUID of the tag to delete.
-     *
-     * @return 204 No Content on successful deletion.
-     */
-    @Operation(
-            summary = "Delete tag",
-            description = "Deletes a single tag by its ID. This removes the tag and all its associations permanently."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204",
-                    description = "Tag successfully deleted"),
-            @ApiResponse(responseCode = "404",
-                    description = "Tag not found",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - Authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - User does not have access to Tags portlet",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "500",
-                    description = "Internal Server Error - Database or system error",
-                    content = @Content(mediaType = "application/json"))
-    })
     @DELETE
     @JSONP
     @Path("/{tagId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response deleteTag(@Context final HttpServletRequest request,
-                             @Context final HttpServletResponse response,
-                             @Parameter(description = "Tag UUID to delete", required = true)
-                             @PathParam("tagId") final String tagId) {
+    public ResponseEntityBooleanView delete(@Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response,
+                                            @PathParam("tagId") final String tagId) throws DotDataException {
 
-        try {
-            final InitDataObject initDataObject = getInitDataObject(request, response);
-            final User user = initDataObject.getUser();
-            
-            Logger.debug(TagResource.class, () -> String.format(
-                    "User '%s' is deleting tag by ID '%s'", user.getUserId(), tagId));
-            
-            final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
-            if (tag == null) {
-                Logger.warn(TagResource.class, String.format(
-                        "Tag with ID '%s' not found for deletion", tagId));
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(new ResponseEntityView<>(List.of(
-                                new ErrorEntity("dotcms.api.error.not_found",
-                                        String.format("Tag with id %s was not found", tagId), null)
-                        )))
-                        .build();
-            }
+        final InitDataObject initDataObject = getInitDataObject(request, response);
+        final User user = initDataObject.getUser();
+        Logger.debug(TagResource.class,()->String.format("User '%s' is deleting tags by ID '%s'",user.getUserId(), tagId));
+        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
+        if (null == tag) {
 
-            tagAPI.deleteTag(tag);
-            Logger.debug(TagResource.class, () -> String.format(
-                    "Tag '%s' with ID '%s' deleted successfully", tag.getTagName(), tagId));
-            
-            return Response.noContent().build();
-            
-        } catch (DotDataException e) {
-            Logger.error(TagResource.class,
-                    "Database error deleting tag: " + e.getMessage(), e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.db",
-                                    "There was an error deleting the tag", null)
-                    )))
-                    .build();
-                    
-        } catch (Exception e) {
-            Logger.error(TagResource.class,
-                    "Unexpected error deleting tag: " + e.getMessage(), e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.internal",
-                                    "An unexpected error occurred", null)
-                    )))
-                    .build();
+            final String errorMessage = Try.of(() -> LanguageUtil
+                    .get(user.getLocale(), "tag.id.not.found", tagId))
+                    .getOrElse(String.format("Tag with id %s wasn't found.",
+                            tagId)); //fallback message
+            Logger.error(TagResource.class, errorMessage);
+            throw new DoesNotExistException(errorMessage);
         }
+
+        tagAPI.deleteTag(tag);
+        return new ResponseEntityBooleanView(true);
     }
 
     /**
