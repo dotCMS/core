@@ -89,3 +89,7 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
 
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
+
+// Folder tree constants
+export const FOLDER_TREE_API_ENDPOINT = '/api/v1/assets';
+export const FOLDER_TREE_INITIAL_PATH = '//demo.dotcms.com/';

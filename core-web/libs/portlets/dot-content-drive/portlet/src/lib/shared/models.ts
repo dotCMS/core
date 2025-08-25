@@ -111,3 +111,22 @@ export type DotContentDriveDecodeFunction = (value: string) => string | string[]
 export type DotContentDriveContentType = DotCMSContentType & {
     selected: boolean;
 };
+
+/**
+ * Represents a folder structure from DotCMS assets API.
+ *
+ * @export
+ * @interface DotCMSFolder
+ */
+export interface DotCMSFolder {
+    defaultFileType: string;
+    host: string;
+    identifier: string;
+    inode: string;
+    modDate: number;
+    name: string;
+    path: string;
+    showOnMenu: boolean;
+    title: string;
+    filesMasks?: string;
+}
