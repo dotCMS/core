@@ -4,11 +4,12 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
-import { MOCK_BASE_TYPES, mockContentTypes } from '../../shared/mocks';
+import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES } from '../../shared/mocks';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
@@ -26,10 +27,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 filters: jest.fn().mockReturnValue({})
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(mockContentTypes)),
+                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
-            provideHttpClient()
+            provideHttpClient(),
+            mockProvider(DotMessageService, new MockDotMessageService({}))
         ],
         detectChanges: false
     });

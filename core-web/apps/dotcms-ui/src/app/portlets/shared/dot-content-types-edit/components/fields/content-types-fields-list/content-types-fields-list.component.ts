@@ -3,7 +3,7 @@ import { Component, inject, Input, OnInit, signal } from '@angular/core';
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotCMSClazz, DotCMSClazzes } from '@dotcms/dotcms-models';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
 
 import { FIELD_ICONS } from './content-types-fields-icon-map';
 

@@ -7,6 +7,8 @@ import {
     computed,
     effect,
     inject,
+    DestroyRef,
+    OnInit,
     signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,18 +17,18 @@ import { FormsModule } from '@angular/forms';
 import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
-import { BASE_TYPES } from '../../../../shared/models';
+import { DotContentDriveContentType } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
-    contentTypes: DotCMSContentType[];
+    contentTypes: DotContentDriveContentType[];
     filterByKeyword: string;
     loading: boolean;
 };
@@ -38,18 +40,19 @@ type DotContentDriveContentTypeFieldState = {
     styleUrl: './dot-content-drive-content-type-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveContentTypeFieldComponent {
+export class DotContentDriveContentTypeFieldComponent implements OnInit {
     #store = inject(DotContentDriveStore);
 
     #contentTypesService = inject(DotContentTypeService);
+    #destroyRef = inject(DestroyRef);
 
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         contentTypes: [],
         filterByKeyword: '',
-        loading: false
+        loading: true
     });
 
-    readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
+    readonly $selectedContentTypes = signal<DotContentDriveContentType[]>([]);
 
     #apiRequestSubject = new Subject<{ type?: string; filter: string }>();
 
@@ -63,45 +66,9 @@ export class DotContentDriveContentTypeFieldComponent {
         }
     );
 
-    constructor() {
-        // Set up debounced API request stream with switchMap
-        this.#apiRequestSubject
-            .pipe(
-                tap(() => patchState(this.$state, { loading: true, contentTypes: [] })),
-                debounceTime(DEBOUNCE_TIME),
-                distinctUntilChanged(
-                    (prev, curr) => prev.type === curr.type && prev.filter === curr.filter
-                ),
-                switchMap(({ type, filter }) =>
-                    this.#contentTypesService
-                        .getContentTypes({ type, filter })
-                        .pipe(catchError(() => of([])))
-                ),
-                takeUntilDestroyed()
-            )
-            .subscribe((contentTypes: DotCMSContentType[]) => {
-                const contentTypeFallback = contentTypes ?? [];
-
-                patchState(this.$state, {
-                    contentTypes: contentTypeFallback?.filter(
-                        (item) => item.baseType !== BASE_TYPES.form && !item.system
-                    ),
-                    loading: false
-                });
-
-                const contentTypeFilters = this.#store.getFilterValue('contentType');
-
-                this.$selectedContentTypes.set(
-                    contentTypeFallback.filter((item) =>
-                        contentTypeFilters?.includes(item.variable)
-                    )
-                );
-            });
-    }
-
     readonly getContentTypesEffect = effect(() => {
         // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
-        // After that remove the uncommented code and
+        // After that remove the uncommented code and add the line below
         // const type = this.$mappedBaseTypes().join(',')
         const type = undefined;
         const filter = this.$state.filterByKeyword();
@@ -110,16 +77,89 @@ export class DotContentDriveContentTypeFieldComponent {
         this.#apiRequestSubject.next({ type, filter });
     });
 
+    ngOnInit() {
+        // Set up debounced API request stream with switchMap
+        this.#apiRequestSubject
+            .pipe(
+                tap(() =>
+                    patchState(this.$state, {
+                        loading: true
+                    })
+                ),
+                debounceTime(DEBOUNCE_TIME),
+                takeUntilDestroyed(this.#destroyRef),
+                switchMap(({ type, filter }) =>
+                    this.#contentTypesService
+                        .getContentTypes({ type, filter })
+                        .pipe(catchError(() => of([])))
+                )
+            )
+            .subscribe((contentTypes: DotCMSContentType[]) => {
+                const selectedContentTypes = this.$selectedContentTypes() ?? [];
+                const contentTypeFilters = this.#store.getFilterValue('contentType');
+
+                // Preserve the selected content types
+                const allContentTypes = [...selectedContentTypes, ...(contentTypes ?? [])];
+
+                // Remove duplicates
+                const cleanedContentTypes = allContentTypes.reduce<DotContentDriveContentType[]>(
+                    (acc, current) => {
+                        const exists = acc.find((item) => item.id === current.id);
+
+                        // We want to remove duplicates, filter out forms and system types
+                        if (
+                            !exists &&
+                            !current.system &&
+                            current.baseType !== DotCMSBaseTypesContentTypes.FORM
+                        ) {
+                            // If the item is selected in the multiselect
+                            // or is in the filters we have it in the store
+                            // we want to set the selected property to true
+                            const isSelected =
+                                selectedContentTypes.some((item) => item.id === current.id) ||
+                                contentTypeFilters?.includes(current.variable);
+
+                            acc.push({
+                                ...current,
+                                selected: !!isSelected
+                            });
+                        }
+
+                        return acc;
+                    },
+                    []
+                );
+
+                patchState(this.$state, {
+                    contentTypes: cleanedContentTypes,
+                    loading: false
+                });
+
+                this.$selectedContentTypes.set(cleanedContentTypes.filter((item) => item.selected));
+            });
+    }
+
+    /**
+     * This function is used to filter the content types by keyword
+     *
+     * @param {MultiSelectFilterEvent} event
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
     onFilter(event: MultiSelectFilterEvent) {
         patchState(this.$state, {
             filterByKeyword: event.filter
         });
     }
 
+    /**
+     * This function is used to handle the change event of the multiselect
+     *
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
     onChange() {
         const value = this.$selectedContentTypes() ?? [];
 
-        if (value.length > 0) {
+        if (value.length) {
             this.#store.patchFilters({
                 contentType: value.map((item) => item.variable)
             });
