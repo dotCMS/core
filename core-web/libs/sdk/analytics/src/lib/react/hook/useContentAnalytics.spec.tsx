@@ -3,35 +3,26 @@ import { renderHook } from '@testing-library/react';
 
 import { useContentAnalytics } from './useContentAnalytics';
 
-import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
-import { isInsideUVE } from '../internal';
+import { getAnalyticsInstance, isInsideUVE } from '../internal';
 
 jest.mock('../internal', () => ({
-    isInsideUVE: jest.fn()
+    isInsideUVE: jest.fn(),
+    getAnalyticsInstance: jest.fn()
 }));
 
 const mockIsInsideUVE = jest.mocked(isInsideUVE);
+const mockGetAnalyticsInstance = jest.mocked(getAnalyticsInstance);
 
 const mockTrack = jest.fn();
 const mockPageView = jest.fn();
 
-interface WrapperProps {
-    children: React.ReactNode;
-}
-
-const wrapper = ({ children }: WrapperProps) => (
-    <DotContentAnalyticsContext.Provider
-        value={{
-            track: mockTrack,
-            pageView: mockPageView
-        }}>
-        {children}
-    </DotContentAnalyticsContext.Provider>
-);
-
 describe('useContentAnalytics', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockGetAnalyticsInstance.mockReturnValue({
+            track: mockTrack as (eventName: string, payload?: Record<string, unknown>) => void,
+            pageView: mockPageView as () => void
+        });
     });
 
     afterEach(() => {
@@ -43,13 +34,13 @@ describe('useContentAnalytics', () => {
         jest.restoreAllMocks();
     });
 
-    it('should track with timestamp when outside editor', () => {
+    it('tracks with timestamp when outside editor', () => {
         mockIsInsideUVE.mockReturnValue(false);
 
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
 
-        const { result } = renderHook(() => useContentAnalytics(), { wrapper });
+        const { result } = renderHook(() => useContentAnalytics());
         result.current.track('test-event', { data: 'test' });
 
         expect(mockTrack).toHaveBeenCalledWith('test-event', {
@@ -58,13 +49,13 @@ describe('useContentAnalytics', () => {
         });
     });
 
-    it('should handle undefined payload', () => {
+    it('handles undefined payload', () => {
         mockIsInsideUVE.mockReturnValue(false);
 
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
 
-        const { result } = renderHook(() => useContentAnalytics(), { wrapper });
+        const { result } = renderHook(() => useContentAnalytics());
         result.current.track('test-event');
 
         expect(mockTrack).toHaveBeenCalledWith('test-event', {
@@ -72,10 +63,10 @@ describe('useContentAnalytics', () => {
         });
     });
 
-    it('should not track when inside editor', () => {
+    it('does not track when inside editor', () => {
         mockIsInsideUVE.mockReturnValue(true);
 
-        const { result } = renderHook(() => useContentAnalytics(), { wrapper });
+        const { result } = renderHook(() => useContentAnalytics());
         result.current.track('test-event', { data: 'test' });
 
         expect(mockTrack).not.toHaveBeenCalled();

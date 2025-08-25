@@ -1,3 +1,4 @@
-export { DotContentAnalyticsProvider } from './components/DotContentAnalyticsProvider';
-
+export { DotContentAnalytics } from './components/DotContentAnalytics';
 export { useContentAnalytics } from './hook/useContentAnalytics';
+
+
