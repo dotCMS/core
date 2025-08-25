@@ -6,7 +6,6 @@ import { Product } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-product',
-    standalone: true,
     imports: [RouterLink, NgOptimizedImage],
     template: ` <div class="overflow-hidden bg-white rounded shadow-lg my-2">
         <div class="p-4">

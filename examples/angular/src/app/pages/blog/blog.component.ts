@@ -28,7 +28,6 @@ type BlogPage = {
 
 @Component({
     selector: 'app-blog',
-    standalone: true,
     imports: [
         HeaderComponent,
         NavigationComponent,

@@ -17,7 +17,6 @@ const initialFormData: FormData = {
 
 @Component({
     selector: 'app-contact-us',
-    standalone: true,
     imports: [FormsModule],
     templateUrl: './contact-us.component.html'
 })

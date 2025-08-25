@@ -3,7 +3,6 @@ import { RecommendedCardComponent } from '../recommended-card/recommended-card.c
 import { Blog } from '../../../../contentlet.model';
 @Component({
     selector: 'app-blogs',
-    standalone: true,
     imports: [RecommendedCardComponent],
     template: ` <div class="flex flex-col">
         <h2 class="mb-7 text-2xl font-bold text-black">Latest Blog Posts</h2>
