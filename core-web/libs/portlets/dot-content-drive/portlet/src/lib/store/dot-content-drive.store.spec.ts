@@ -16,7 +16,7 @@ import {
     DEFAULT_TREE_EXPANDED,
     SYSTEM_HOST
 } from '../shared/constants';
-import { mockItems, mockSites } from '../shared/mocks';
+import { MOCK_ITEMS, MOCK_SITES } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
@@ -91,7 +91,7 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site in query when provided', () => {
-                const customSite = mockSites[0] as SiteEntity;
+                const customSite = MOCK_SITES[0] as SiteEntity;
 
                 store.initContentDrive({
                     currentSite: customSite,
@@ -194,7 +194,7 @@ describe('DotContentDriveStore', () => {
     describe('Methods', () => {
         describe('initContentDrive', () => {
             it('should update state with provided values and set status to LOADING', () => {
-                const testSite = mockSites[0];
+                const testSite = MOCK_SITES[0];
                 const testPath = '/some/path';
                 const testFilters = { contentType: ['Blog'] };
 
@@ -215,16 +215,16 @@ describe('DotContentDriveStore', () => {
 
         describe('setItems', () => {
             it('should update items and set status to LOADED', () => {
-                store.setItems(mockItems, mockItems.length);
+                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
 
-                expect(store.items()).toEqual(mockItems);
+                expect(store.items()).toEqual(MOCK_ITEMS);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
             });
 
             it('should update items with empty array', () => {
                 // First set some items
-                store.setItems(mockItems, mockItems.length);
-                expect(store.items()).toEqual(mockItems);
+                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                expect(store.items()).toEqual(MOCK_ITEMS);
 
                 // Then clear them
                 const emptyItems: DotContentDriveItem[] = [];
@@ -311,7 +311,7 @@ describe('DotContentDriveStore - onInit', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(mockSites[2])
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
             })
         ]
     });
@@ -329,6 +329,6 @@ describe('DotContentDriveStore - onInit', () => {
             contentType: ['InitialTestContentType']
         });
         expect(store.isTreeExpanded()).toBe(true);
-        expect(store.currentSite()).toBe(mockSites[2]);
+        expect(store.currentSite()).toBe(MOCK_SITES[2]);
     });
 });
