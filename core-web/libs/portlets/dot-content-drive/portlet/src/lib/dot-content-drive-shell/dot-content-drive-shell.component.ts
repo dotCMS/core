@@ -12,6 +12,7 @@ import { DotContentSearchService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
+import { DotContentDriveFolderTreeComponent } from '../components/dot-content-drive-folder-tree/dot-content-drive-folder-tree.components';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
@@ -20,7 +21,11 @@ import { encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
+    imports: [
+        DotFolderListViewComponent,
+        DotContentDriveToolbarComponent,
+        DotContentDriveFolderTreeComponent
+    ],
     providers: [DotContentDriveStore],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
