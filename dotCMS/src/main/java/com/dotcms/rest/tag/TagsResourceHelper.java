@@ -295,7 +295,7 @@ public class TagsResourceHelper {
 
     /**
      * Takes a regular Tag and transform it into a RestTag representation
-     */
+     /con*/
     public static Map<String, RestTag> toRestTagMap(final Tag... tags) {
         return toRestTagMap(Arrays.asList(tags));
     }
@@ -308,6 +308,14 @@ public class TagsResourceHelper {
         return tags.stream()
                 .collect(Collectors.toMap(Tag::getTagName, transform::appToRest,
                         (restTag, restTag2) -> restTag));
+    }
+
+    /**
+     * Takes a single Tag and transforms it into a RestTag representation
+     */
+    public static RestTag toRestTag(final Tag tag) {
+        final TagTransform transform = new TagTransform();
+        return transform.appToRest(tag);
     }
 
 }
