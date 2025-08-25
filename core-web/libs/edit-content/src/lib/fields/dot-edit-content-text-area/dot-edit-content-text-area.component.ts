@@ -242,6 +242,10 @@ export class DotEditContentTextAreaComponent {
         }
     }
 
+    /**
+     * Handle editor change
+     * @param newEditor - The new editor
+     */
     readonly handleEditorChange = signalMethod<AvailableEditorTextArea>((newEditor) => {
         if (!newEditor) {
             return;
