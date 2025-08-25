@@ -16913,7 +16913,8 @@ paths:
       tags:
       - Tags
     post:
-      description: Creates a single tag or returns existing tag if it already exists
+      description: "Creates a single tag. This operation is idempotent - if the tag\
+        \ already exists, it will return the existing tag."
       operationId: createSingleTag
       requestBody:
         content:
@@ -16923,18 +16924,12 @@ paths:
         description: Single tag data to create
         required: true
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityRestTagView"
-          description: Existing tag returned
         "201":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityRestTagView"
-          description: Tag created successfully
+          description: Tag created or retrieved successfully
         "400":
           content:
             application/json: {}

@@ -1,4 +1,6 @@
-import { decodeFilters, encodeFilters } from './functions';
+import { describe, it, expect } from '@jest/globals';
+
+import { decodeFilters, encodeFilters, decodeByFilterKey } from './functions';
 
 import { DotContentDriveFilters } from '../shared/models';
 
@@ -16,17 +18,17 @@ describe('Utility Functions', () => {
 
         it('should decode a single filter correctly', () => {
             const result = decodeFilters('contentType:Blog');
-            expect(result).toEqual({ contentType: 'Blog' });
+            expect(result).toEqual({ contentType: ['Blog'] });
         });
 
         it('should decode multiple filters correctly', () => {
             const result = decodeFilters('contentType:Blog;status:published');
-            expect(result).toEqual({ contentType: 'Blog', status: 'published' });
+            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
         });
 
         it('should handle filters with spaces correctly', () => {
             const result = decodeFilters('contentType:Blog; status:published');
-            expect(result).toEqual({ contentType: 'Blog', status: 'published' });
+            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
         });
 
         it('should handle filters with spaces in the value correctly', () => {
@@ -36,12 +38,12 @@ describe('Utility Functions', () => {
 
         it('should ignore empty filter parts - edge case', () => {
             const result = decodeFilters('contentType:Blog;;status:published;');
-            expect(result).toEqual({ contentType: 'Blog', status: 'published' });
+            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
         });
 
         it('should overwrite duplicated keys with the last value - edge case', () => {
             const result = decodeFilters('contentType:Blog;contentType:News');
-            expect(result).toEqual({ contentType: 'News' });
+            expect(result).toEqual({ contentType: ['News'] });
         });
 
         it('should handle datetime values with multiple colons - edge case', () => {
@@ -61,7 +63,7 @@ describe('Utility Functions', () => {
 
         it('should handle filters without colons - edge case', () => {
             const result = decodeFilters('contentType:Blog;status');
-            expect(result).toEqual({ contentType: 'Blog' });
+            expect(result).toEqual({ contentType: ['Blog'] });
         });
 
         it('should handle multiselector correctly', () => {
@@ -95,19 +97,19 @@ describe('Utility Functions', () => {
         });
 
         it('should encode a single filter correctly', () => {
-            const result = encodeFilters({ contentType: 'Blog' });
+            const result = encodeFilters({ contentType: ['Blog'] });
             expect(result).toBe('contentType:Blog');
         });
 
         it('should encode multiple filters correctly', () => {
-            const result = encodeFilters({ contentType: 'Blog', status: 'published' });
+            const result = encodeFilters({ contentType: ['Blog'], status: 'published' });
             const parts = result.split(';');
             expect(parts.length).toBe(2);
             expect(parts).toEqual(expect.arrayContaining(['contentType:Blog', 'status:published']));
         });
 
         it('should ignore filters with empty string values', () => {
-            const result = encodeFilters({ contentType: 'Blog', status: '' });
+            const result = encodeFilters({ contentType: ['Blog'], status: '' });
             expect(result).toBe('contentType:Blog');
         });
 
@@ -146,6 +148,51 @@ describe('Utility Functions', () => {
                     'modDate:2023-10-15T14:30:45'
                 ])
             );
+        });
+    });
+
+    describe('decodeByFilterKey', () => {
+        it('should decode baseType values as an array', () => {
+            const result = decodeByFilterKey.baseType('type1,type2,type3');
+            expect(result).toEqual(['type1', 'type2', 'type3']);
+        });
+
+        it('should decode baseType values with spaces correctly', () => {
+            const result = decodeByFilterKey.baseType('type1, type2 , type3');
+            expect(result).toEqual(['type1', 'type2', 'type3']);
+        });
+
+        it('should filter out empty baseType values', () => {
+            const result = decodeByFilterKey.baseType('type1,,type3,');
+            expect(result).toEqual(['type1', 'type3']);
+        });
+
+        it('should decode contentType values as an array', () => {
+            const result = decodeByFilterKey.contentType('Blog,News,Article');
+            expect(result).toEqual(['Blog', 'News', 'Article']);
+        });
+
+        it('should decode contentType values with spaces correctly', () => {
+            const result = decodeByFilterKey.contentType('Blog, News , Article');
+            expect(result).toEqual(['Blog', 'News', 'Article']);
+        });
+
+        it('should filter out empty contentType values', () => {
+            const result = decodeByFilterKey.contentType('Blog,,Article,');
+            expect(result).toEqual(['Blog', 'Article']);
+        });
+
+        it('should return title value as-is', () => {
+            const result = decodeByFilterKey.title('some title term');
+            expect(result).toBe('some title term');
+        });
+
+        it('should handle single values for baseType and contentType', () => {
+            const baseTypeResult = decodeByFilterKey.baseType('singleType');
+            const contentTypeResult = decodeByFilterKey.contentType('Blog');
+
+            expect(baseTypeResult).toEqual(['singleType']);
+            expect(contentTypeResult).toEqual(['Blog']);
         });
     });
 
