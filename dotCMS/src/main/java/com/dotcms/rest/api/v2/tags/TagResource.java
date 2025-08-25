@@ -552,7 +552,15 @@ public class TagResource {
         return new ResponseEntityRestTagView(restTag);
     }
 
-
+    /**
+     * Deletes a Tag based on its ID.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param tagId    The ID of the Tag to delete.
+     *
+     * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
+     */
     @DELETE
     @JSONP
     @Path("/{tagId}")
