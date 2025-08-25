@@ -12,10 +12,12 @@
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
+    [first]="$currentPageFirstRowIndex()"
     dataKey="identifier"
     sortMode="single"
     selectionMode="multiple"
     sortField="modDate"
+    [sortOrder]="-1"
     data-testId="table"
     scrollHeight="flex">
     <ng-template pTemplate="header">
