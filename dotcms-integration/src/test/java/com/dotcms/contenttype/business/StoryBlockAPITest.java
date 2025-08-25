@@ -1,14 +1,38 @@
 
 package com.dotcms.contenttype.business;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.util.CollectionsUtils;
@@ -32,25 +56,20 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Test for {@link StoryBlockAPI}
@@ -965,6 +984,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         return contentletRelationships;
     }
 
+
     /**
      * Method to test: {@link StoryBlockAPI#addContentlet(Object, Contentlet)} in conjunction with {@link StoryBlockAPIImpl#toMap(Object)}
      * Given Scenario: Test that when a contentlet with an image is added to a story block,
@@ -974,10 +994,13 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     @Test
     public void test_loadCommonContentletProps_with_title_image()
             throws DotDataException, DotSecurityException, IOException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mock(HttpServletRequest.class));
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
         ContentType contentTypeWithImage = null;
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         long time = System.currentTimeMillis();
-        final String contentTypeName = "TitleImageTestContentType_" + time;
+        final String parentContentTypeName = "ParentImageTestContentType_" + time;
+        final String childContentTypeName = "TitleImageTestContentType_" + time;
         final Host host = APILocator.systemHost();
         final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
         File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
@@ -985,6 +1008,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertNotNull("Can't find the test image file",url);
         File testImage = new File(url.getFile());
         FileUtils.copyFile(testImage, tempFile);
+
         try {
             // 1) Create the content-type and the respective fields
             final Contentlet imageFileAsset = new FileAssetDataGen(tempFile)
@@ -1008,27 +1032,68 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     .required(false)
                     .next();
 
+            // Add a binary image
+            com.dotcms.contenttype.model.field.Field binaryField = new FieldDataGen()
+                    .name("fileAsset")
+                    .velocityVarName("fileAsset")
+                    .type(BinaryField.class)
+                    .next();
+
             // Create a content type with both fields
-            ContentType contentType = new ContentTypeDataGen()
-                    .name(contentTypeName)
-                    .velocityVarName(contentTypeName)
+            ContentType childContentType = new ContentTypeDataGen()
+                    .name(childContentTypeName)
+                    .velocityVarName(childContentTypeName)
                     .host(host)
-                    .fields(List.of(titleField, imageField))
+                    .fields(List.of(titleField, imageField, binaryField))
                     .nextPersisted();
 
             // 2) Create the contentlet with the image field
-            final Contentlet contentletWithImage = new ContentletDataGen(contentType.id())
+            final Contentlet contentletWithImage = new ContentletDataGen(childContentType.id())
                     .languageId(defaultLanguage.getId())
                     .host(host)
                     .setProperty("title", "Testing StoryBlock image property")
                     .setProperty(imageField.variable(), imageFileAsset.getIdentifier())
+                    .setProperty("fileAsset",tempFile)
                     .nextPersisted();
 
-            // 3) Add the contentlet to a story block
-            final Object storyBlockWithImage = APILocator.getStoryBlockAPI().addContentlet(JSON, contentletWithImage);
+            //  create the content that has the BlockEditor
+            com.dotcms.contenttype.model.field.Field blockEditoField = new FieldDataGen()
+                    .name("blockEditor")
+                    .velocityVarName("blockEditor")
+                    .type(StoryBlockField.class)
+                    .next();
 
-            // 4) Convert to map to verify the data
-            final Map<String, Object> storyBlockMap = APILocator.getStoryBlockAPI().toMap(storyBlockWithImage);
+            ContentType parentContentType = new ContentTypeDataGen()
+                    .name(parentContentTypeName)
+                    .velocityVarName(parentContentTypeName)
+                    .host(host)
+                    .fields(List.of(blockEditoField))
+                    .nextPersisted();
+
+            // Create a contentlet with a blockEditor to hold contentlets
+            final Contentlet parentWithBlockEditor = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty("blockEditor", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .host(host)
+                    .nextPersisted();
+
+            //Modify the block editor adding the contentlet with the images
+            final Contentlet checkout = ContentletDataGen.checkout(parentWithBlockEditor);
+            final Object newStoryBlockJson = APILocator.getStoryBlockAPI().addContentlet(JSON, contentletWithImage);
+            //Set the blockEditor json to the parent
+            checkout.setProperty("blockEditor", newStoryBlockJson);
+            final Contentlet checkin = ContentletDataGen.checkin(checkout);
+            final Contentlet published = ContentletDataGen.publish(checkin);
+
+            //Call the apis
+            final StoryBlockReferenceResult storyBlockReferenceResult = storyBlockAPI
+                    .refreshReferences(published);
+
+            //Extract updated fields
+            Assert.assertTrue(storyBlockReferenceResult.isRefreshed());
+            final Contentlet parentContent = (Contentlet)storyBlockReferenceResult.getValue();
+            final Object blockEditor = parentContent.get("blockEditor");
+            final Map<String, Object> storyBlockMap = storyBlockAPI.toMap(blockEditor);
             assertNotNull(storyBlockMap);
 
             final List<Map<String, Object>> contentList = (List<Map<String, Object>>) storyBlockMap.get("content");
@@ -1037,12 +1102,19 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     .findFirst();
 
             assertTrue(contentletMap.isPresent());
-            final Map<String, Object> dataMap = (Map<String, Object>) 
+            final Map<String, Object> dataMap = (Map<String, Object>)
                     ((Map<String, Object>) contentletMap.get().get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
 
-            // 5) Verify title image information is correctly set
+            // And Verify...
+            //Verify that we have a hasImageTitle and the imageTitle per se
             assertEquals("Should have title image", true, dataMap.get(Contentlet.HAS_TITLE_IMAGE_KEY));
-            assertEquals("Title image field should match", "image", dataMap.get(Contentlet.TITLE_IMAGE_KEY));
+            assertEquals("Title image field should match", "fileAsset", dataMap.get(Contentlet.TITLE_IMAGE_KEY));
+
+            // Verify the image field is set correctly
+            assertEquals("Image field should match", imageFileAsset.getIdentifier(), dataMap.get("image"));
+
+            // Verify the binary field is correctly set as an url
+            assertThat(dataMap.get("fileAsset").toString(), startsWith("http"));
 
         } finally {
             if (contentTypeWithImage != null) {
@@ -1050,5 +1122,4 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             }
         }
     }
-
 }

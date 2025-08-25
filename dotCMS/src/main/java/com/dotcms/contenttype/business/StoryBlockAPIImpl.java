@@ -18,7 +18,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
-import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -343,7 +342,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final List<Field> fields = contentlet.getContentType().fields();
             this.loadCommonContentletProps(contentlet, dataMap);
             for (final Field field : fields) {
-                dataMap.put(field.variable(), contentlet.get(field.variable()));
+                dataMap.putIfAbsent(field.variable(), contentlet.get(field.variable()));
             }
             final Map<String, Map<String, Object>> attrsMap = new LinkedHashMap<>();
             attrsMap.put(StoryBlockAPI.DATA_KEY, dataMap);
@@ -388,6 +387,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             dataMap.put(Contentlet.HAS_TITLE_IMAGE_KEY, false);
             dataMap.put(Contentlet.TITLE_IMAGE_KEY, Contentlet.TITLE_IMAGE_NOT_FOUND);
         });
+        //Transform fileAssets into url
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if(null != request) {
+            contentlet.getContentType().fields(BinaryField.class).forEach(field ->
+                    getFileLink(contentlet, field, request).ifPresent(
+                            fileLink -> dataMap.put(field.variable(), fileLink))
+            );
+        }
     }
 
     /**
@@ -573,11 +580,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     // is referencing. This will prevent infinite recursion problems.
                     dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
                             "_raw")));
-                } else if (field instanceof BinaryField) {
-                    getFileLink(contentlet, field).ifPresent(
-                            fileLink -> dataMap.put(field.variable(), fileLink));
                 } else {
-                    dataMap.put(field.variable(), value);
+                    dataMap.putIfAbsent(field.variable(), value);
                 }
             }
         }
@@ -592,8 +596,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @return an Optional containing the file link as a String if generated successfully,
      *         or an empty Optional if an error occurs or the link cannot be generated
      */
-    private static Optional<String> getFileLink(final Contentlet contentlet, Field field) {
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+    private static Optional<String> getFileLink(final Contentlet contentlet, final Field field, final HttpServletRequest request) {
         String fileLink = null;
         try {
             fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), contentlet, field.variable());
