@@ -58,7 +58,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://granfondo-cycling.com/wp-content/uploads/sites/3/2021/09/Scott-Addict-RC-2021-Test-Review-96-2000x500.jpg\"\n}",
+					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://www.dotcms.com/assets/logo.svg?w=1920\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
