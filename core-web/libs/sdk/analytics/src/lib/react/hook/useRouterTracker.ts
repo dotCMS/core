@@ -25,7 +25,6 @@ const computeNextKey = (
 export function useRouterTracker(analytics: DotCMSAnalytics | null, debug = false) {
     const lastKeyRef = useRef<string | null>(null);
 
-    // Call Next hooks (assumed to be available in Next.js App Router)
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
