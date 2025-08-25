@@ -21,6 +21,7 @@ import {
     FOLDER_ICONS
 } from '../../shared/constants';
 import { DotCMSFolder, FolderTreeData } from '../../shared/models';
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 // Type aliases for better readability
 type FolderTreeNode = TreeNode<FolderTreeData>;
@@ -45,6 +46,8 @@ type FolderApiResponse = { entity: { subFolders?: DotCMSFolder[] } };
 export class DotContentDriveFolderTreeComponent implements OnInit {
     private readonly httpClient = inject(HttpClient);
     private readonly cd = inject(ChangeDetectorRef);
+    private readonly store = inject(DotContentDriveStore);
+
     private readonly endpoint = FOLDER_TREE_API_ENDPOINT;
     private readonly initialPath = FOLDER_TREE_INITIAL_PATH;
     protected readonly folders = signal<FolderTreeNode[]>([]);
@@ -53,6 +56,7 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
      * Component initialization - loads the initial folder structure
      */
     ngOnInit(): void {
+        // Get current site before loading the initial folders
         this.loadInitialFolders();
     }
 
@@ -62,13 +66,14 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
      */
     onNodeExpand(event: TreeNodeExpandEvent): void {
         const eventNode = event.node;
+        const { path, treeIndexes } = eventNode.data;
+        this.store.setPath(path);
 
         // Early returns for edge cases
         if (this.shouldSkipExpansion(eventNode)) {
             return;
         }
 
-        const { path, treeIndexes } = eventNode.data;
         this.loadChildFolders(eventNode, path, treeIndexes);
     }
 
@@ -93,7 +98,7 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
         path: string,
         treeIndexes: number[]
     ): void {
-        const fullPath = `${this.initialPath}${path}`;
+        const fullPath = `${this.initialPath}${this.cleanFolderPath(path)}`;
         parentNode.loading = true;
 
         this.getFolderByPath(fullPath, treeIndexes).subscribe({
@@ -130,6 +135,9 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
      */
     private updateFolderNode(parentNode: FolderTreeNode, children: FolderTreeNode[]): void {
         if (children.length === 0) {
+            parentNode.loading = false;
+            this.cd.markForCheck();
+
             return;
         }
 
@@ -142,8 +150,9 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
             // Updated the children and loading state by reference
             if (targetNode) {
                 targetNode.children = children;
-                targetNode.loading = false;
             }
+
+            parentNode.loading = false;
 
             return updatedFolders;
         });
@@ -219,7 +228,7 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
             key: folder.inode,
             label: folder.name,
             data: {
-                path: this.cleanFolderPath(folder.path),
+                path: folder.path,
                 treeIndexes: this.buildTreeIndexes(parentTreeIndexes, index)
             },
             icon: FOLDER_ICONS.FOLDER,
