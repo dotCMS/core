@@ -126,11 +126,6 @@ describe('DotEditContentTextAreaComponent', () => {
         // Act: Switch to Monaco editor
         component.onEditorChange(AvailableEditorTextArea.Monaco);
 
-        // Assert: Contentlet should be updated with new disabledWYSIWYG value
-        expect(component.$contentlet().disabledWYSIWYG).toContain(
-            `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
-        );
-
         // Assert: Event should be emitted with updated array
         expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
             `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
@@ -151,6 +146,7 @@ describe('DotEditContentTextAreaComponent', () => {
                 contentlet: contentletWithEntries
             } as unknown
         });
+        preserveSpectator.component.disabledWYSIWYGField.setValue(existingEntries);
         preserveSpectator.detectChanges();
 
         const disabledWYSIWYGChangeSpy = jest.fn();
@@ -164,7 +160,6 @@ describe('DotEditContentTextAreaComponent', () => {
             ...existingEntries,
             `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
         ];
-        expect(preserveSpectator.component.$contentlet().disabledWYSIWYG).toEqual(expectedEntries);
         expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith(expectedEntries);
     });
 
@@ -181,6 +176,9 @@ describe('DotEditContentTextAreaComponent', () => {
                 contentlet: contentletWithMonaco
             } as unknown
         });
+        clearSpectator.component.disabledWYSIWYGField.setValue([
+            `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+        ]);
         clearSpectator.detectChanges();
 
         const disabledWYSIWYGChangeSpy = jest.fn();
@@ -190,7 +188,6 @@ describe('DotEditContentTextAreaComponent', () => {
         clearSpectator.component.onEditorChange(AvailableEditorTextArea.PlainText);
 
         // Assert: Should clear disabledWYSIWYG
-        expect(clearSpectator.component.$contentlet().disabledWYSIWYG).toEqual([]);
         expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([]);
     });
 
@@ -216,10 +213,7 @@ describe('DotEditContentTextAreaComponent', () => {
         // Act: Switch to Monaco editor
         noPropertySpectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
 
-        // Assert: Should create new disabledWYSIWYG array with current field
-        expect(noPropertySpectator.component.$contentlet().disabledWYSIWYG).toEqual([
-            `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
-        ]);
+        // Assert: Should emit the new disabledWYSIWYG value
         expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
             `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
         ]);
@@ -263,9 +257,12 @@ describe('DotEditContentTextAreaComponent', () => {
         // Keep in PlainText mode
         component.$displayedEditor.set(AvailableEditorTextArea.PlainText);
 
+        spectator.detectChanges();
+
         // Act: Simulate language variable selection
         const testVariable = '${testLanguageVariable}';
         component.onSelectLanguageVariable(testVariable);
+        spectator.detectChanges();
 
         // Assert: Private method called with correct parameters
         expect(insertLanguageVariableInTextareaMock).toHaveBeenCalled();
@@ -387,6 +384,10 @@ describe('DotEditContentTextAreaComponent', () => {
                     contentlet: contentletMock
                 } as unknown
             });
+            preserveSpectator.component.disabledWYSIWYGField.setValue([
+                'otherField',
+                'wysiwygField'
+            ]);
             preserveSpectator.detectChanges();
 
             // Spy on the output event
@@ -417,6 +418,7 @@ describe('DotEditContentTextAreaComponent', () => {
                     contentlet: contentletEmpty
                 } as unknown
             });
+            workflowSpectator.component.disabledWYSIWYGField.setValue([]);
             workflowSpectator.detectChanges();
 
             const disabledWYSIWYGChangeSpy = jest.fn();
@@ -457,6 +459,7 @@ describe('DotEditContentTextAreaComponent', () => {
                     contentlet: contentletMock
                 } as unknown
             });
+            noPropertySpectator.component.disabledWYSIWYGField.setValue([]);
             noPropertySpectator.detectChanges();
 
             // Spy on the output event

@@ -24,10 +24,10 @@ import {
     TextAreaEditorOptions
 } from './dot-edit-content-text-area.constants';
 
+import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import {
     getCurrentEditorFromDisabled,
-    getDisabledWYSIWYGFromContentlet,
     updateDisabledWYSIWYGOnEditorSwitch
 } from '../shared/utils/field-editor-preferences.util';
 
@@ -117,13 +117,12 @@ export class DotEditContentTextAreaComponent {
      */
     $contentEditorUsed = computed(() => {
         const field = this.$field();
-        const contentlet = this.$contentlet();
 
         if (!field?.variable) {
             return AvailableEditorTextArea.PlainText; // Default editor
         }
 
-        const disabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);
+        const disabledWYSIWYG = this.#getCurrentDisabledWYSIWYG();
 
         // Use disabledWYSIWYG setting
         const currentEditor = getCurrentEditorFromDisabled(field.variable, disabledWYSIWYG, true);
@@ -168,27 +167,19 @@ export class DotEditContentTextAreaComponent {
      */
     onEditorChange(newEditor: AvailableEditorTextArea) {
         const field = this.$field();
-        const contentlet = this.$contentlet();
 
         if (!field?.variable) {
             throw new Error('Field variable is not available');
         }
 
         // Update disabledWYSIWYG in the contentlet
-        const currentDisabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);
+        const currentDisabledWYSIWYG = this.#getCurrentDisabledWYSIWYG();
         const updatedDisabledWYSIWYG = updateDisabledWYSIWYGOnEditorSwitch(
             field.variable,
             newEditor,
             currentDisabledWYSIWYG,
             true // isTextAreaField
         );
-
-        // Update the contentlet's disabledWYSIWYG property
-        // Note: This modifies the contentlet reference directly
-        // The parent component should handle form submission with the updated contentlet
-        if (contentlet) {
-            contentlet.disabledWYSIWYG = updatedDisabledWYSIWYG;
-        }
 
         // Emit the change event
         this.disabledWYSIWYGChange.emit(updatedDisabledWYSIWYG);
@@ -254,4 +245,20 @@ export class DotEditContentTextAreaComponent {
         this.$selectedEditorDropdown.set(newEditor);
         this.$displayedEditor.set(newEditor);
     });
+
+    /**
+     * Get the current disabledWYSIWYG value from the form control
+     * @returns The current disabledWYSIWYG value
+     */
+    #getCurrentDisabledWYSIWYG() {
+        return this.disabledWYSIWYGField?.value ?? [];
+    }
+
+    /**
+     * Get the disabledWYSIWYG field from the form control
+     * @returns The disabledWYSIWYG field
+     */
+    get disabledWYSIWYGField() {
+        return this.controlContainer.control?.get(DISABLED_WYSIWYG_FIELD);
+    }
 }
