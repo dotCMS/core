@@ -183,6 +183,16 @@ public class AnalyticsValidatorProcessor {
         }
     }
 
+/**
+     * If the current validator type represents a JSON object or an array of JSON objects,
+     * recursively processes the nested "allowed_attributes" section to collect validators
+     * for nested fields.
+     *
+     * @param jsonPathValidatorsList Collector list where discovered path validators are added
+     * @param type                   The validator type for the current node (object/array/etc.)
+     * @param jsonValue              The JSON configuration object at the current path
+     * @param currentPath            The dot-notation path accumulated so far
+     */
     private void callRecursivelyIfNeed(final List<Validators.JSONPathValidators> jsonPathValidatorsList,
                                        final ValidatorType type, JSONObject jsonValue,
                                        final String currentPath) {
@@ -194,11 +204,25 @@ public class AnalyticsValidatorProcessor {
         }
     }
 
+    /**
+     * Determines whether the current validator node represents an array of JSON objects.
+     * This is true when the node type is JSON_ARRAY and the array_type is JSON_OBJECT.
+     *
+     * @param type      The declared validator type for the node
+     * @param jsonValue The JSON configuration object for the node
+     * @return true if this node is an array of JSON objects; false otherwise
+     */
     private static boolean isJsonObjectArray(final ValidatorType type, final JSONObject jsonValue) {
         return ValidatorType.JSON_ARRAY == type &&
                 ValidatorType.valueOf(jsonValue.get(VALIDATOR_ARRAY_TYPE_ATTRIBUTE).toString().toUpperCase()) == ValidatorType.JSON_OBJECT;
     }
 
+    /**
+     * Checks if the validator type denotes a JSON object node.
+     *
+     * @param type The validator type to check
+     * @return true if the type is JSON_OBJECT; false otherwise
+     */
     private static boolean isJsonObject(ValidatorType type) {
         return ValidatorType.JSON_OBJECT == type;
     }

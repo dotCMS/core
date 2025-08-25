@@ -197,6 +197,17 @@ public class AnalyticsValidatorUtil {
         return errors;
     }
 
+    /**
+     * Validates and persists custom attribute mappings for an event, if present.
+     * <p>
+     * This method extracts the data.custom section (if any), and invokes the
+     * Analytics Custom Attribute API to check that adding any new custom attributes for the
+     * given event type does not exceed the allowed limit. It may create or update mappings.
+     * Any persistence error is wrapped in a DotRuntimeException.
+     *
+     * @param event        The event JSON object that may contain data.custom
+     * @param eventTypeStr The event type name used to validate custom attributes
+     */
     private static void checkCustomSection(final JSONObject event, String eventTypeStr) {
         final Optional<JSONObject> customSection = removeCustomSection(event);
 
@@ -210,6 +221,15 @@ public class AnalyticsValidatorUtil {
         }
     }
 
+    /**
+     * Removes and returns the data.custom JSON object from the event if present.
+     * <p>
+     * This is used prior to validation so the custom section can be processed separately and
+     * does not interfere with the standard validators.
+     *
+     * @param event The event JSON object
+     * @return An Optional containing the removed custom object if it existed; otherwise Optional.empty()
+     */
     private static Optional<JSONObject> removeCustomSection(JSONObject event) {
         if (event.has(DATA_ATTRIBUTE_NAME)) {
             final JSONObject data = event.getJSONObject(DATA_ATTRIBUTE_NAME);

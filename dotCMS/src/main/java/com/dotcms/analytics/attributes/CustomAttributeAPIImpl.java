@@ -12,16 +12,37 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Default implementation of {@link CustomAttributeAPI} backed by database persistence and a cache.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *   <li>Loading/storing attribute mappings between attribute names and database columns per event type.</li>
+ *   <li>Validating incoming custom attribute payloads and enforcing the maximum attributes constraint.</li>
+ *   <li>Translating payloads to database column keys.</li>
+ * </ul>
+ */
 public class CustomAttributeAPIImpl implements CustomAttributeAPI {
-    private String CUSTOM_ATTRIBUTE_KEY = "custom_";
+    /** Prefix used to build database column names for custom attributes. */
+    public static String CUSTOM_ATTRIBUTE_KEY = "custom_";
+    /** Maximum allowed custom attributes per event type. */
     private final int MAX_LIMIT_CUSTOM_ATTRIBUTE_BY_EVENT = 50;
     private final CustomAttributeCache customAttributeCache;
     private final CustomAttributeFactory customAttributeFactory;
 
+    /**
+     * Creates an instance using the default factory and cache providers.
+     */
     public CustomAttributeAPIImpl() {
         this(FactoryLocator.getAnalyticsCustomAttributeFactory(), CacheLocator.getAnalyticsCustomAttributeCache());
     }
 
+    /**
+     * Creates an instance with the provided dependencies.
+     *
+     * @param customAttributeFactory the persistence access for attribute mappings.
+     * @param customAttributeCache the cache used to speed up mapping lookup.
+     */
     public CustomAttributeAPIImpl(final CustomAttributeFactory customAttributeFactory,
                                   final CustomAttributeCache customAttributeCache) {
         this.customAttributeFactory = customAttributeFactory;
@@ -30,6 +51,10 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         loadCache();
     }
 
+    /**
+     * Loads all mappings into the cache from the underlying storage.
+     * Wraps any {@link DotDataException} in a {@link DotRuntimeException}.
+     */
     private void loadCache() {
         try {
             customAttributeFactory.getAll()
@@ -39,6 +64,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     @WrapInTransaction
     @CloseDBIfOpened
@@ -64,6 +90,13 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         }
     }
 
+    /**
+     * Retrieves the attribute mapping for the provided event type from the cache, attempting to
+     * lazily load the cache if a miss occurs.
+     *
+     * @param eventTypeName the event type name.
+     * @return the mapping of attribute name to database column, or {@code null} if not found.
+     */
     private Map<String, String> getCustomAttributesMatchFromCache(String eventTypeName) {
         Map<String, String> customAttributesMatchFromCache = customAttributeCache.get(eventTypeName);
 
@@ -74,6 +107,9 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         return customAttributesMatchFromCache;
     }
 
+    /**
+     * Persists and caches new attribute mappings for the given event type.
+     */
     private void assignMatchToNewAttributes(
             final String eventTypeName,
             final Map<String, String> customAttributesMatch,
@@ -90,6 +126,9 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         customAttributeCache.clearCache();
     }
 
+    /**
+     * Computes the list of attribute names present in the payload but absent from the cached mapping.
+     */
     private static List<String> getNewlyAttributes(
             final Map<String, Object> customPayload,
             final Map<String, String> customAttributesMatchFromCache) {
@@ -103,6 +142,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         return newCustomAttributes;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Map<String, Object> translateToDatabase(final String eventTypeName,
                                                    final Map<String, Object> customPayload) {

@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * JDBC-based implementation of {@link CustomAttributeFactory} using {@link DotConnect} to persist
+ * custom attribute mappings in the analytic_custom_attributes table.
+ */
 public class CustomAttributeFactoryImpl implements CustomAttributeFactory {
 
     final String INSERT_STATEMENT = "INSERT INTO analytic_custom_attributes VALUES(?, ?)";
@@ -17,6 +21,7 @@ public class CustomAttributeFactoryImpl implements CustomAttributeFactory {
     final String GET_ALL_QUERY = "SELECT * from analytic_custom_attributes";
     final String EXISTS_EVENT_TYPE = "SELECT count(*) from analytic_custom_attributes WHERE event_type = ?";
 
+    /** {@inheritDoc} */
     @Override
     public void save(String eventTypeName, Map<String, String> attributes) throws DotDataException {
         if (exists(eventTypeName)) {
@@ -50,6 +55,7 @@ public class CustomAttributeFactoryImpl implements CustomAttributeFactory {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public Map<String, Map<String, String>> getAll() throws DotDataException {
         return new DotConnect().setSQL(GET_ALL_QUERY).loadObjectResults().stream()

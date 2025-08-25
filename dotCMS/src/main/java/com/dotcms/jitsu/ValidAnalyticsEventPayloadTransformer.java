@@ -1,6 +1,7 @@
 package com.dotcms.jitsu;
 
 
+import com.dotcms.analytics.attributes.CustomAttributeAPIImpl;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.util.JsonUtil;
@@ -110,6 +111,19 @@ public enum ValidAnalyticsEventPayloadTransformer {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Translates the "custom" section inside the event's data into top-level database-ready fields.
+     * <p>
+     * If the event contains data.custom, this method will:
+     * - Parse the custom object into a Map
+     * - Use the Analytics Custom Attribute API to translate human-friendly keys to database column names
+     * - Merge the translated key/value pairs into the event JSON at the root level
+     *
+     * Any I/O parsing issues are wrapped in a RuntimeException.
+     *
+     * @param event The event JSON object that may contain data.custom
+     * @return The same event JSON object with translated custom attributes merged at the root level
+     */
     private JSONObject transformCustom(final JSONObject event) {
         final String eventType = event.optString(EVENT_TYPE_ATTRIBUTE_NAME);
         final JSONObject data = event.getJSONObject(DATA_ATTRIBUTE_NAME);
@@ -121,13 +135,13 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
                 Map<String, Object> customTranslated = APILocator.getAnalyticsCustomAttribute()
                         .translateToDatabase(eventType, jsonAsMap);
-                data.put(CUSTOM_ATTRIBUTE_NAME, customTranslated);
+                event.putAll(customTranslated);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        return data;
+        return event;
     }
 
     /**
@@ -341,10 +355,9 @@ public enum ValidAnalyticsEventPayloadTransformer {
         }
 
         for (Map.Entry<String, Object> attributeEntry : attributes.entrySet()) {
-            if (replacementsKeys.containsKey(attributeEntry.getKey())) {
-                final String attributeKey = replacementsKeys.get(attributeEntry.getKey());
-                jsonObject.put(attributeKey, attributeEntry.getValue());
-            }
+            final String attributeKey = replacementsKeys.containsKey(attributeEntry.getKey()) ?
+                    replacementsKeys.get(attributeEntry.getKey()) : attributeEntry.getKey();
+            jsonObject.put(attributeKey, attributeEntry.getValue());
         }
     }
 
