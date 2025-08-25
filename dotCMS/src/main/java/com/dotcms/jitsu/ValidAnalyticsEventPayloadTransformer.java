@@ -129,13 +129,20 @@ public enum ValidAnalyticsEventPayloadTransformer {
         final String eventType = event.optString(EVENT_TYPE_ATTRIBUTE_NAME);
         final JSONObject data = event.getJSONObject(DATA_ATTRIBUTE_NAME);
 
+        Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "transformCustom invoked for eventType='" + eventType + "' - has 'custom': " + data.has(CUSTOM_ATTRIBUTE_NAME));
+
         try {
             if (data.has(CUSTOM_ATTRIBUTE_NAME)) {
-                final Map<String, Object> jsonAsMap = JsonUtil.getJsonFromString(
-                        data.getJSONObject(ValidAnalyticsEventPayloadAttributes.CUSTOM_ATTRIBUTE_NAME).toString());
+                final JSONObject customJson = data.getJSONObject(ValidAnalyticsEventPayloadAttributes.CUSTOM_ATTRIBUTE_NAME);
+                final Map<String, Object> jsonAsMap = JsonUtil.getJsonFromString(customJson.toString());
+                Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "Parsed 'custom' map for eventType='" + eventType + "' with " + (jsonAsMap != null ? jsonAsMap.size() : 0) + " attribute(s)");
 
+                Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "Translating 'custom' attributes to DB columns for eventType='" + eventType + "'");
                 Map<String, Object> customTranslated = APILocator.getAnalyticsCustomAttribute()
                         .translateToDatabase(eventType, jsonAsMap);
+
+                Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "Translation complete for eventType='" + eventType + "'. Translated " + (customTranslated != null ? customTranslated.size() : 0) + " attribute(s): " + (customTranslated != null ? customTranslated.keySet() : java.util.Collections.emptySet()));
+
                 event.putAll(customTranslated);
             }
         } catch (IOException e) {
