@@ -8,10 +8,10 @@ import { DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
+import { EMPTY_FIELD } from '@dotcms/utils';
 import {
     dotcmsContentTypeFieldBasicMock,
     DotFieldVariablesServiceMock,
-    EMPTY_FIELD,
     LoginServiceMock,
     mockFieldVariables
 } from '@dotcms/utils-testing';

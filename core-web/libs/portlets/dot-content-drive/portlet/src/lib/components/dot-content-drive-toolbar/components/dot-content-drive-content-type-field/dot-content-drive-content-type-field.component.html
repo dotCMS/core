@@ -4,17 +4,32 @@
     [(ngModel)]="$selectedContentTypes"
     optionLabel="name"
     display="chip"
-    showClear="false"
     [lazy]="true"
-    [placeholder]="'content-drive.content-type.placeholder' | dm"
-    [loading]="$state.loading()"
     (onChange)="onChange()"
     (onClear)="onChange()"
-    (onFilter)="onFilter($event)">
+    [resetFilterOnHide]="true"
+    (onFilter)="onFilter($event)"
+    [placeholder]="'content-drive.content-type.placeholder' | dm"
+    [showClear]="false"
+    data-testid="content-type-field">
+    <ng-template pTemplate="item" let-item>
+        <div class="flex items-center gap-2 w-full">
+            @if ($state.loading() && !item.selected) {
+                <p-skeleton
+                    [style]="{
+                        height: '2rem',
+                        width: '100%'
+                    }"
+                    data-testid="content-type-field-skeleton" />
+            } @else {
+                {{ item.name }}
+            }
+        </div>
+    </ng-template>
     <ng-template pTemplate="empty">
         @if ($state.loading()) {
             <p-skeleton
-                height="32px"
+                height="2rem"
                 width="100%"
                 data-testid="content-type-field-skeleton"></p-skeleton>
         } @else {

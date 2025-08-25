@@ -1,4 +1,4 @@
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 
 /**
  * The status of the content drive.
@@ -103,19 +103,11 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
 
 /**
- * The base types of the content drive.
+ * The contentType of the content drive, with the selected property.
  *
  * @export
- * @constant {Record<string, string>} BASE_TYPES
+ * @interface DotContentDriveContentType
  */
-export const BASE_TYPES = {
-    content: 'CONTENT',
-    widget: 'WIDGET',
-    fileAsset: 'FILEASSET',
-    htmlPage: 'HTMLPAGE',
-    keyValue: 'KEY_VALUE',
-    vanityURL: 'VANITY_URL',
-    dotAsset: 'DOTASSET',
-    form: 'FORM',
-    persona: 'PERSONA'
-} as const;
+export type DotContentDriveContentType = DotCMSContentType & {
+    selected: boolean;
+};

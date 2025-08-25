@@ -932,18 +932,25 @@ public interface ContentletAPI {
 	 * @throws DotStateException 
 	 */
 	public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException,DotContentletStateException, DotContentletStateException, DotStateException;
-	
-	/**
-	 * Publishes a piece of content. 
-	 * @param contentlets
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotContentletStateException
-	 * @throws DotStateException
-	 */
-	public void publish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException,DotContentletStateException, DotStateException;
+
+    /**
+     * Publishes the list of specified Contentlets.
+     *
+     * @param contentlets          The list of {@link Contentlet} objects to publish.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If front-end Roles for the specified User must be validated, set
+     *                             this to {@code true}.
+     *
+     * @throws DotSecurityException        The specified user does not have the required permissions
+     *                                     to perform this action.
+     * @throws DotDataException            An error occurred when interacting with the database.
+     * @throws DotContentletStateException The current status of a Contentlet is causing it to not
+     *                                     be able to be published.
+     * @throws DotStateException           The current status of a Contentlet is causing it to not
+     *                                     be able to be published.
+     */
+    void publish(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
 	/**
 	 * This method unpublishes the given contentlet
