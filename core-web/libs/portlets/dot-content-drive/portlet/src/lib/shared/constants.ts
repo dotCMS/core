@@ -93,3 +93,10 @@ export const DEBOUNCE_TIME = 500;
 // Folder tree constants
 export const FOLDER_TREE_API_ENDPOINT = '/api/v1/assets';
 export const FOLDER_TREE_INITIAL_PATH = '//demo.dotcms.com/';
+
+// Folder tree icons
+export const FOLDER_ICONS = {
+    FOLDER: 'pi pi-folder',
+    FOLDER_OPEN: 'pi pi-folder-open',
+    FOLDER_CLOSED: 'pi pi-folder'
+} as const;

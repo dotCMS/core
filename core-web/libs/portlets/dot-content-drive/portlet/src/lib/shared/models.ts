@@ -130,3 +130,16 @@ export interface DotCMSFolder {
     title: string;
     filesMasks?: string;
 }
+
+/**
+ * Data structure for folder tree nodes containing navigation information.
+ *
+ * @export
+ * @interface FolderTreeData
+ */
+export interface FolderTreeData {
+    /** Array of indices representing the path to this node in the tree structure */
+    treeIndexes: number[];
+    /** The cleaned path string for the folder */
+    path: string;
+}
