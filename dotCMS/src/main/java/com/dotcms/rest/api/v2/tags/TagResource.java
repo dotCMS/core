@@ -358,7 +358,7 @@ public class TagResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response updateTag(
+    public ResponseEntityRestTagView updateTag(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Tag UUID or tag name", required = true)
@@ -432,7 +432,7 @@ public class TagResource {
         final Tag updatedTag = tagAPI.getTagByTagId(existingTag.getTagId());
         final RestTag restTag = TagsResourceHelper.toRestTag(updatedTag);
         
-        return Response.ok(new ResponseEntityRestTagView(restTag)).build();
+        return new ResponseEntityRestTagView(restTag);
     }
 
 
