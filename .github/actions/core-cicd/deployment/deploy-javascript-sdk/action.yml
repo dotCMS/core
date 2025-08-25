@@ -347,7 +347,7 @@ runs:
           VERSION_TYPE_USED="prerelease-to-stable"
           echo "Transitioning from prerelease version ($CURRENT_VERSION) to stable 1.0.0"
           
-        elif [ "$VERSION_SOURCE" = "stable" ] && [ -n "$CURRENT_STABLE" ]; then
+        elif [ "$VERSION_SOURCE" = "existing" ] && [ -n "$CURRENT_STABLE" ]; then
           # We have a stable version, apply versioning logic
           IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_STABLE"
           MAJOR=${VERSION_PARTS[0]:-1}
