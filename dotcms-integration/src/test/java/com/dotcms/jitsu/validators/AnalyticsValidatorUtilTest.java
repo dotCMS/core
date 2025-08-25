@@ -647,7 +647,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                     "}," +
                     "\"events\":[" +
                         "{" +
-                        "\"data\": {}" +
+                            "\"data\": {}" +
                         "}" +
                     "]" +
                 "}";
@@ -655,11 +655,23 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) new JSONObject(json).get("events"));
 
-        assertEquals(1, errors.size());
+        assertEquals(2, errors.size());
 
-        assertEquals("events[0].event_type", errors.get(0).getField());
-        assertEquals("REQUIRED_FIELD_MISSING", errors.get(0).getCode().toString());
-        assertEquals("Required field is missing: event_type", errors.get(0).getMessage());
+        final List<String> errorsField = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getField)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertTrue(errorsField.contains("events[0].event_type"));
+        assertTrue(errorsField.contains("events[0].local_time"));
+
+        final List<ValidationErrorCode> errorsCode = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsCode.size());
+        assertEquals("REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
     }
 
     /**
@@ -676,7 +688,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
      */
     @Test
     public void dataIsRequired() {
-        final int errorsCountExpected = 11;
+        final int errorsCountExpected = 10;
         final String json =
                 "{" +
                     "\"context\": {" +
@@ -702,7 +714,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 .collect(Collectors.toList());
 
         assertEquals(errorsCountExpected, errorsField.size());
-        assertTrue(errorsField.contains("events[0].data"));
         assertTrue(errorsField.contains("events[0].data.page"));
         assertTrue(errorsField.contains("events[0].data.page.url"));
         assertTrue(errorsField.contains("events[0].data.page.title"));
@@ -729,7 +740,6 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
 
         assertEquals(errorsCountExpected, errorsField.size());
         assertTrue(errorsMessages.contains("Required field is missing: data.page"));
-        assertTrue(errorsMessages.contains("Required field is missing: data"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.url"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.title"));
         assertTrue(errorsMessages.contains("Required field is missing: data.device"));
@@ -902,5 +912,149 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final HttpServletRequestThreadLocal requestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
         requestThreadLocal.setRequest(req);
     }
+
+    /**
+     * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
+     * When: We are going to send a event without event_type
+     * Should: return this error
+     * <pre>
+     *     {
+     *         "field": "events[0].event_type",
+     *         "code": "REQUIRED_FIELD_MISSING",
+     *         "message": "Required field is missing: events.event_type"
+     *     }
+     * </pre>
+     */
+    @Test
+    public void eventsRequiredFields() {
+        final String json =
+                "{" +
+                        "\"context\": {" +
+                            "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                            "\"session_id\": \"abc\"," +
+                            "\"user_id\": \"abc\"" +
+                        "}," +
+                        "\"events\":[{}]" +
+                "}";
+
+        final JSONObject jsonObject = new JSONObject(json);
+
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
+                .validateEvents(jsonObject.getJSONArray("events"));
+
+        assertEquals(2, errors.size());
+
+        final List<String> errorsField = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getField)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertTrue(errorsField.contains("events[0].event_type"));
+        assertTrue(errorsField.contains("events[0].local_time"));
+
+        final List<ValidationErrorCode> errorsCode = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsCode.size());
+        assertEquals("REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
+
+    }
+
+    /**
+     * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
+     * When: I sent a vent just with the event_type for a custom_event
+     * Should: return this error
+     * <pre>
+     *     {
+     *         "field": "events[0].local_time",
+     *         "code": "REQUIRED_FIELD_MISSING",
+     *         "message": "Required field is missing: events.local_time"
+     *     }
+     * </pre>
+     */
+    @Test
+    public void eventsRequiredFieldsLocalTimeAndData() {
+        final String json =
+                "{" +
+                    "\"context\": {" +
+                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"session_id\": \"abc\"," +
+                        "\"user_id\": \"abc\"" +
+                    "}," +
+                    "\"events\":[{" +
+                        "\"event_type\": \"custom_event\"," +
+                    "}]" +
+                "}";
+
+        final JSONObject jsonObject = new JSONObject(json);
+
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
+                .validateEvents(jsonObject.getJSONArray("events"));
+
+        assertEquals(1, errors.size());
+
+        final List<String> errorsField = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getField)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsField.size());
+        assertTrue(errorsField.contains("events[0].local_time"));
+
+
+        final List<ValidationErrorCode> errorsCode = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsCode.size());
+        assertEquals("REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
+
+        final List<String> errorsMessages = errors.stream()
+                .map(AnalyticsValidatorUtil.Error::getMessage)
+                .distinct()
+                .collect(Collectors.toList());
+
+        assertEquals(1, errorsField.size());
+        assertTrue(errorsMessages.contains("Required field is missing: local_time"));
+    }
+
+    /**
+     * Method to test: {@link AnalyticsValidatorUtil#validateGlobalContext(JSONObject)}}
+     * When: Send a custom section
+     * Should: it is ok, no errors must be trigger
+     */
+    @Test
+    public void eventsWithCustomSection() {
+        final String json =
+                "{" +
+                    "\"context\": {" +
+                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"session_id\": \"abc\"," +
+                        "\"user_id\": \"abc\"" +
+                    "}," +
+                    "\"events\":[{" +
+                        "\"event_type\": \"custom_event\"," +
+                        "\"local_time\": \"2025-06-09T14:30:00+02:00\"," +
+                        "\"data\": {" +
+                            "\"custom\": {" +
+                                 "\"key1\": \"value1\"," +
+                                 "\"key2\": \"value2\"" +
+                            "}" +
+                        "}" +
+                    "}]" +
+                "}";
+
+        final JSONObject jsonObject = new JSONObject(json);
+
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
+                .validateEvents(jsonObject.getJSONArray("events"));
+
+        assertTrue( errors.isEmpty());
+
+    }
+
 
 }
