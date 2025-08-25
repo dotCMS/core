@@ -43,11 +43,12 @@ export const appConfig: ApplicationConfig = {
     providers: [
         provideZoneChangeDetection({ eventCoalescing: true }),
         provideRouter(routes),
-        provideHttpClient(withFetch()),
+        provideHttpClient(),
         provideClientHydration(
             withEventReplay(),
             withHttpTransferCacheOptions({
-                includePostRequests: true
+                includePostRequests: true,
+                includeRequestsWithAuthHeaders: true
             })
         ),
         provideDotCMSClient({
