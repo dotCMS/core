@@ -12,6 +12,6 @@ public class InvalidAttributeException extends RuntimeException {
      * @param attributeName the custom attribute name that is not mapped.
      */
     public InvalidAttributeException(String eventTypeName, String attributeName) {
-        super(String.format("Custom Attribute %s is not support by %s", attributeName, eventTypeName));
+        super(String.format("Custom Attribute %s is not supported by %s", attributeName, eventTypeName));
     }
 }

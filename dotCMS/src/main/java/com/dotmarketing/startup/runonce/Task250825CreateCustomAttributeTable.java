@@ -21,7 +21,7 @@ import java.sql.SQLException;
  * <p>
  * The task only runs if the table doesn't already exist in the database.
  */
-public class Task250716CreateCustomAttributeTable extends AbstractJDBCStartupTask {
+public class Task250825CreateCustomAttributeTable extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {

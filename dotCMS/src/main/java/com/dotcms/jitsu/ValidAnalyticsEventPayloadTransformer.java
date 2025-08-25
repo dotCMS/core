@@ -6,6 +6,7 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -138,6 +139,7 @@ public enum ValidAnalyticsEventPayloadTransformer {
                 event.putAll(customTranslated);
             }
         } catch (IOException e) {
+            Logger.error(ValidAnalyticsEventPayloadTransformer.class, e.getMessage(), e);
             throw new RuntimeException(e);
         }
 

@@ -11,6 +11,6 @@ public class MissingCustomAttributeMatchException extends RuntimeException {
      * @param eventTypeName the event type name with no mapping.
      */
     public MissingCustomAttributeMatchException(String eventTypeName) {
-        super(String.format("The event %s haven't any match", eventTypeName));
+        super(String.format("No custom attributes match the specified event '%s'", eventTypeName));
     }
 }

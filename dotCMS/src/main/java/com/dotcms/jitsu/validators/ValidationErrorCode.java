@@ -52,6 +52,6 @@ public enum ValidationErrorCode {
      */
     INVALID_SITE_KEY,
 
-    MAX_LIMIT_OF_CUSTOM_ATTRIBUTE_REACH;
+    MAX_LIMIT_OF_CUSTOM_ATTRIBUTE_REACHED;
 
 }

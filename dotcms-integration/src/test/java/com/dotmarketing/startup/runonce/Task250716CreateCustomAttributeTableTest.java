@@ -37,7 +37,7 @@ public class Task250716CreateCustomAttributeTableTest {
         }
 
         //Test upgrade
-        final Task250716CreateCustomAttributeTable upgradeTask = new Task250716CreateCustomAttributeTable();
+        final Task250825CreateCustomAttributeTable upgradeTask = new Task250825CreateCustomAttributeTable();
         assertTrue(upgradeTask.forceRun());
         upgradeTask.executeUpgrade();
         assertFalse(upgradeTask.forceRun());

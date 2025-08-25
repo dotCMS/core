@@ -190,7 +190,7 @@ public class AnalyticsValidatorUtil {
                 }
             } catch (MaxCustomAttributesReachedException e) {
                 errors.add(new Error("events[" + i + "].custom: ",
-                        ValidationErrorCode.MAX_LIMIT_OF_CUSTOM_ATTRIBUTE_REACH, e.getMessage(), i));
+                        ValidationErrorCode.MAX_LIMIT_OF_CUSTOM_ATTRIBUTE_REACHED, e.getMessage(), i));
             }
         }
 

@@ -7,6 +7,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -55,11 +56,13 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
      * Loads all mappings into the cache from the underlying storage.
      * Wraps any {@link DotDataException} in a {@link DotRuntimeException}.
      */
+    @CloseDBIfOpened
     private void loadCache() {
         try {
             customAttributeFactory.getAll()
                     .forEach((key, value) -> customAttributeCache.put(key, value));
         } catch (DotDataException e) {
+            Logger.error(CustomAttributeAPIImpl.class, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
     }
@@ -67,7 +70,6 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
     /** {@inheritDoc} */
     @Override
     @WrapInTransaction
-    @CloseDBIfOpened
     public synchronized void checkCustomPayloadValidation(final String eventTypeName,
                                              final Map<String, Object> customPayload)
             throws MaxCustomAttributesReachedException, DotDataException {
@@ -131,13 +133,13 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
      */
     private static List<String> getNewlyAttributes(
             final Map<String, Object> customPayload,
-            final Map<String, String> customAttributesMatchFromCache) {
+            final Map<String, String> customAttributesMatch) {
 
-        final Set<String> oldCustomMEvents = customAttributesMatchFromCache != null ?
-                customAttributesMatchFromCache.keySet() : new HashSet<>();
+        final Set<String> oldCustomEvents = customAttributesMatch != null ?
+                customAttributesMatch.keySet() : new HashSet<>();
 
         final List<String> newCustomAttributes = customPayload.keySet().stream()
-                .filter(key -> !oldCustomMEvents.contains(key))
+                .filter(key -> !oldCustomEvents.contains(key))
                 .collect(Collectors.toList());
         return newCustomAttributes;
     }
