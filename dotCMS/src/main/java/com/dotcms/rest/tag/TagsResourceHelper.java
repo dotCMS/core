@@ -295,7 +295,7 @@ public class TagsResourceHelper {
 
     /**
      * Takes a regular Tag and transform it into a RestTag representation
-     */
+     /con*/
     public static Map<String, RestTag> toRestTagMap(final Tag... tags) {
         return toRestTagMap(Arrays.asList(tags));
     }

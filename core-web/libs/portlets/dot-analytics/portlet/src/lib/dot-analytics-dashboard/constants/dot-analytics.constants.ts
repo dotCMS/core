@@ -1,40 +1,18 @@
-import { TimeRange, TimeRangeOptions } from '@dotcms/portlets/dot-analytics/data-access';
+import { TimeRange, TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { FilterOption } from '../types';
 
-export const CUSTOM_TIME_RANGE = 'CUSTOM_TIME_RANGE';
-
-/** Mapping between URL-friendly values and internal CubeJS values */
-export const TIME_RANGE_URL_MAPPING = {
-    // URL-friendly → Internal CubeJS value
-    today: 'today',
-    yesterday: 'yesterday',
-    last7days: 'from 7 days ago to now',
-    last30days: 'from 30 days ago to now',
-    custom: CUSTOM_TIME_RANGE
-} as const;
-
-/** Reverse mapping for Internal → URL-friendly */
-export const TIME_RANGE_INTERNAL_MAPPING = {
-    // Internal CubeJS value → URL-friendly
-    today: 'today',
-    yesterday: 'yesterday',
-    'from 7 days ago to now': 'last7days',
-    'from 30 days ago to now': 'last30days',
-    [CUSTOM_TIME_RANGE]: 'custom'
-} as const;
-
 /** Available time period options for analytics data filtering */
 export const TIME_PERIOD_OPTIONS: FilterOption[] = [
-    { label: 'analytics.filters.time-period.today', value: 'today' },
-    { label: 'analytics.filters.time-period.yesterday', value: 'yesterday' },
-    { label: 'analytics.filters.time-period.last-7-days', value: 'from 7 days ago to now' },
-    { label: 'analytics.filters.time-period.last-30-days', value: 'from 30 days ago to now' },
-    { label: 'analytics.filters.time-period.custom', value: CUSTOM_TIME_RANGE }
+    { label: 'analytics.filters.time-period.today', value: TIME_RANGE_OPTIONS.today },
+    { label: 'analytics.filters.time-period.yesterday', value: TIME_RANGE_OPTIONS.yesterday },
+    { label: 'analytics.filters.time-period.last-7-days', value: TIME_RANGE_OPTIONS.last7days },
+    { label: 'analytics.filters.time-period.last-30-days', value: TIME_RANGE_OPTIONS.last30days },
+    { label: 'analytics.filters.time-period.custom', value: TIME_RANGE_OPTIONS.custom }
 ];
 
 /** Default time period selection (1 week) */
-export const DEFAULT_TIME_PERIOD: TimeRange = TimeRangeOptions.LAST_7_DAYS;
+export const DEFAULT_TIME_PERIOD: TimeRange = TIME_RANGE_OPTIONS.last7days;
 
 /** Analytics entity field keys */
 export const ANALYTICS_KEYS = {

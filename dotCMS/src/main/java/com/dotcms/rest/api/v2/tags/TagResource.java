@@ -6,6 +6,7 @@ import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.rest.tag.*;
 import com.dotcms.rest.tag.TagsResourceHelper;
 import com.dotcms.rest.api.v2.tags.ResponseEntityRestTagView;
@@ -209,15 +210,11 @@ public class TagResource {
      */
     @Operation(
             summary = "Create single tag",
-            description = "Creates a single tag or returns existing tag if it already exists"
+            description = "Creates a single tag. This operation is idempotent - if the tag already exists, it will return the existing tag."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201",
-                    description = "Tag created successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityRestTagView.class))),
-            @ApiResponse(responseCode = "200",
-                    description = "Existing tag returned",
+                    description = "Tag created or retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityRestTagView.class))),
             @ApiResponse(responseCode = "400",
@@ -244,125 +241,40 @@ public class TagResource {
             @RequestBody(description = "Single tag data to create",
                     required = true,
                     content = @Content(schema = @Schema(implementation = SingleTagForm.class)))
-            final SingleTagForm tagForm) {
+            final SingleTagForm tagForm) throws DotDataException, DotSecurityException {
 
-        try {
-            // Initialize and check permissions
-            final InitDataObject initDataObject = getInitDataObject(request, response);
-            final User user = initDataObject.getUser();
+        tagForm.checkValid();
 
+        // Initialize and check permissions
+        final InitDataObject initDataObject = getInitDataObject(request, response);
+        final User user = initDataObject.getUser();
+
+        Logger.debug(TagResource.class,()->String.format("User '%s' is adding tag: %s ", user.getUserId(), tagForm));
+
+        // Create or get the tag
+        final String siteId = helper.getValidateSite(tagForm.getSiteId(), user, request);
+        final Tag tag = tagAPI.getTagAndCreate(
+                tagForm.getName(),
+                tagForm.getOwnerId(),
+                siteId
+        );
+
+        // Bind to owner if specified
+        if (UtilMethods.isSet(tagForm.getOwnerId())) {
+            tagAPI.addUserTagInode(tag, tagForm.getOwnerId());
             Logger.debug(TagResource.class,
-                    () -> String.format("User '%s' is creating single tag: %s",
-                            user.getUserId(), tagForm.getName()));
-
-            // Validate tag name
-            Logger.debug(TagResource.class, "Validating tag form: " + tagForm.getName());
-            final List<ErrorEntity> validationErrors = validateSingleTag(tagForm);
-            Logger.debug(TagResource.class, "Validation errors found: " + validationErrors.size());
-            if (!validationErrors.isEmpty()) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(validationErrors))
-                        .build();
-            }
-
-            // Determine if this is a new tag or existing
-            final String siteId = helper.getValidateSite(tagForm.getSiteId(), user, request);
-            Tag existingTag = null;
-            try {
-                existingTag = tagAPI.getTagByNameAndHost(tagForm.getName(), siteId);
-            } catch (Exception e) {
-                // Tag doesn't exist, will be created
-            }
-
-            // Create or get the tag
-            final Tag tag = tagAPI.getTagAndCreate(
-                    tagForm.getName(),
-                    tagForm.getOwnerId(),
-                    siteId
-            );
-
-            // Bind to owner if specified
-            if (UtilMethods.isSet(tagForm.getOwnerId())) {
-                tagAPI.addUserTagInode(tag, tagForm.getOwnerId());
-                Logger.debug(TagResource.class,
-                        String.format("Tag '%s' is now bound to user '%s'",
-                                tag.getTagName(), tagForm.getOwnerId()));
-            }
-
-            // Convert to RestTag
-            final RestTag restTag = TagsResourceHelper.toRestTag(tag);
-
-            // Return 201 for new tag, 200 for existing
-            final Response.Status status = (existingTag == null)
-                    ? Response.Status.CREATED
-                    : Response.Status.OK;
-
-            return Response.status(status)
-                    .entity(new ResponseEntityRestTagView(restTag))
-                    .build();
-
-        } catch (DotSecurityException e) {
-            Logger.warn(TagResource.class,
-                    "User lacks permission to create tags: " + e.getMessage());
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.forbidden",
-                                    "User does not have access to Tags portlet")
-                    )))
-                    .build();
-
-        } catch (DotDataException e) {
-            Logger.error(TagResource.class,
-                    "Database error creating tag: " + e.getMessage(), e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.db",
-                                    "There was an error saving the tag")
-                    )))
-                    .build();
-
-        } catch (Exception e) {
-            Logger.error(TagResource.class,
-                    "Unexpected error creating tag: " + e.getMessage(), e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(new ResponseEntityView<>(List.of(
-                            new ErrorEntity("dotcms.api.error.internal",
-                                    "An unexpected error occurred")
-                    )))
-                    .build();
-        }
-    }
-
-    /**
-     * Validates a single tag form.
-     */
-    private List<ErrorEntity> validateSingleTag(final SingleTagForm form) {
-        final List<ErrorEntity> errors = new ArrayList<>();
-
-        if (!UtilMethods.isSet(form.getName())) {
-            errors.add(new ErrorEntity("tag.validation.error",
-                    "Tag name is required", "name"));
-        } else {
-            // Check for commas
-            if (form.getName().contains(",")) {
-                errors.add(new ErrorEntity("tag.validation.error",
-                        "Tag name cannot contain commas", "name"));
-            }
-            // Check length
-            if (form.getName().length() > 255) {
-                errors.add(new ErrorEntity("tag.validation.error",
-                        "Tag name cannot exceed 255 characters", "name"));
-            }
-            // Check for blank/whitespace only
-            if (form.getName().trim().isEmpty()) {
-                errors.add(new ErrorEntity("tag.validation.error",
-                        "Tag name cannot be blank", "name"));
-            }
+                    String.format("Tag '%s' is now bound to user '%s'",
+                            tag.getTagName(), tagForm.getOwnerId()));
         }
 
-        return errors;
-    }
+        // Convert to RestTag
+        final RestTag restTag = TagsResourceHelper.toRestTag(tag);
 
+        // Always return 201 (idempotent operation)
+        return Response.status(Response.Status.CREATED)
+                .entity(new ResponseEntityRestTagView(restTag))
+                .build();
+    }
 
 
     /**
@@ -683,61 +595,45 @@ public class TagResource {
     @Path("/{nameOrId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getTagsByNameOrId(@Context final HttpServletRequest request,
-                                      @Context final HttpServletResponse response,
-                                      @Parameter(description = "Tag name or UUID", required = true)
-                                      @PathParam("nameOrId") final String nameOrId,
-                                      @Parameter(description = "Site ID for name-based searches. If not provided, uses current site context with SYSTEM_HOST fallback")
-                                      @QueryParam("siteId") final String siteId) {
+    public ResponseEntityRestTagView getTagsByNameOrId(@Context final HttpServletRequest request,
+                                                       @Context final HttpServletResponse response,
+                                                       @Parameter(description = "Tag name or UUID", required = true)
+                                                       @PathParam("nameOrId") final String nameOrId,
+                                                       @Parameter(description = "Site ID for name-based searches. If not provided, uses current site context with SYSTEM_HOST fallback")
+                                                       @QueryParam("siteId") final String siteId) throws DotDataException {
 
-        try {
-            final InitDataObject initDataObject = getInitDataObject(request, response);
-            final User user = initDataObject.getUser();
+        final InitDataObject initDataObject = getInitDataObject(request, response);
+        final User user = initDataObject.getUser();
+        
+        Logger.debug(TagResource.class, () -> String.format(
+            "User '%s' is requesting tag by name or ID '%s' with siteId '%s'", 
+            user.getUserId(), nameOrId, siteId));
+        
+        Tag tag = null;
+        if (isUUID(nameOrId)) {
+            // Get by ID - no site resolution needed
+            tag = Try.of(() -> tagAPI.getTagByTagId(nameOrId)).getOrNull();
+        } else {
+            // Get by name with site resolution
+            final String resolvedSiteId = helper.getValidateSite(siteId, user, request);
+            tag = Try.of(() -> tagAPI.getTagByNameAndHost(nameOrId, resolvedSiteId)).getOrNull();
             
-            Logger.debug(TagResource.class, () -> String.format(
-                "User '%s' is requesting tag by name or ID '%s' with siteId '%s'", 
-                user.getUserId(), nameOrId, siteId));
-            
-            Tag tag = null;
-            if (isUUID(nameOrId)) {
-                // Get by ID - no site resolution needed
-                tag = Try.of(() -> tagAPI.getTagByTagId(nameOrId)).getOrNull();
-            } else {
-                // Get by name with site resolution
-                final String resolvedSiteId = helper.getValidateSite(siteId, user, request);
-                tag = Try.of(() -> tagAPI.getTagByNameAndHost(nameOrId, resolvedSiteId)).getOrNull();
-                
-                // If tag is not found in current site and we're not already checking SYSTEM_HOST, try SYSTEM_HOST as fallback
-                if (tag == null && !Host.SYSTEM_HOST.equals(resolvedSiteId)) {
-                    Logger.debug(TagResource.class, () -> String.format(
-                        "Tag '%s' not found in site '%s', trying SYSTEM_HOST fallback", nameOrId, resolvedSiteId));
-                    tag = Try.of(() -> tagAPI.getTagByNameAndHost(nameOrId, Host.SYSTEM_HOST)).getOrNull();
-                }
+            // If tag is not found in current site and we're not already checking SYSTEM_HOST, try SYSTEM_HOST as fallback
+            if (tag == null && !Host.SYSTEM_HOST.equals(resolvedSiteId)) {
+                Logger.debug(TagResource.class, () -> String.format(
+                    "Tag '%s' not found in site '%s', trying SYSTEM_HOST fallback", nameOrId, resolvedSiteId));
+                tag = Try.of(() -> tagAPI.getTagByNameAndHost(nameOrId, Host.SYSTEM_HOST)).getOrNull();
             }
-            
-            if (tag == null) {
-                Logger.warn(TagResource.class, String.format(
-                    "Tag not found: nameOrId='%s', siteId='%s'", nameOrId, siteId));
-                return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ResponseEntityView<>(List.of(
-                        new ErrorEntity("dotcms.api.error.not_found", 
-                            String.format("Tag not found: %s", nameOrId), null)
-                    )))
-                    .build();
-            }
-            
-            final RestTag restTag = TagsResourceHelper.toRestTag(tag);
-            return Response.ok(new ResponseEntityRestTagView(restTag)).build();
-            
-        } catch (Exception e) {
-            Logger.error(TagResource.class, "Unexpected error retrieving tag: " + e.getMessage(), e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(new ResponseEntityView<>(List.of(
-                    new ErrorEntity("dotcms.api.error.internal", 
-                        "An unexpected error occurred", null)
-                )))
-                .build();
         }
+        
+        if (tag == null) {
+            Logger.warn(TagResource.class, String.format(
+                "Tag not found: nameOrId='%s', siteId='%s'", nameOrId, siteId));
+            throw new DoesNotExistException(String.format("Tag not found: %s", nameOrId));
+        }
+        
+        final RestTag restTag = TagsResourceHelper.toRestTag(tag);
+        return new ResponseEntityRestTagView(restTag);
     }
 
 

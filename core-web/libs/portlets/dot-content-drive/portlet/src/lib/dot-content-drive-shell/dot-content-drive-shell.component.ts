@@ -13,7 +13,7 @@ import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
-import { SORT_ORDER } from '../shared/constants';
+import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
@@ -42,10 +42,16 @@ export class DotContentDriveShellComponent {
 
     readonly itemsEffect = effect(() => {
         const query = this.#store.$query();
+        const currentSite = this.#store.currentSite();
         const { limit, offset } = this.#store.pagination();
         const { field, order } = this.#store.sort();
 
         this.#store.setStatus(DotContentDriveStatus.LOADING);
+
+        // Avoid fetching content for SYSTEM_HOST sites
+        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+            return;
+        }
 
         this.#contentSearchService
             .get<ESContent>({
