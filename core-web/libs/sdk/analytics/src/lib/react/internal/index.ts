@@ -1,1 +1,3 @@
-export * from './uve.utils';
+export { getAnalyticsInstance } from './utils';
+export { isInsideUVE } from './uve.utils';
+

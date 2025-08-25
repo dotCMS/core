@@ -1,8 +1,7 @@
-import { useCallback, useContext, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
-import { isInsideUVE } from '../internal';
+import { getAnalyticsInstance, isInsideUVE } from '../internal';
 
 /**
  * Custom hook that handles analytics tracking for anonymous users.
@@ -53,13 +52,20 @@ import { isInsideUVE } from '../internal';
  * @returns {DotCMSAnalytics} - The analytics instance with tracking capabilities for anonymous users
  * @throws {Error} - Throws error if used outside of DotContentAnalyticsProvider or if analytics failed to initialize
  */
+/**
+ * Hook to access analytics tracking APIs without a Provider.
+ * - Relies on env-driven singleton initialization.
+ * - Adds timestamp to track payloads and de-duplicates pageView per path.
+ *
+ * @throws Error when env config is missing and analytics is not initialized.
+ */
 export const useContentAnalytics = (): DotCMSAnalytics => {
-    const instance = useContext(DotContentAnalyticsContext);
+    const instance = getAnalyticsInstance();
     const lastPathRef = useRef<string | null>(null);
 
     if (!instance) {
         throw new Error(
-            'useContentAnalytics must be used within a DotContentAnalyticsProvider and analytics must be successfully initialized'
+            'useContentAnalytics: analytics not initialized. Ensure NEXT_PUBLIC_DOTCMS_HOST and NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY are set.'
         );
     }
 
