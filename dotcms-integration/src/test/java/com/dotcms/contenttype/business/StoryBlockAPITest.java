@@ -14,10 +14,13 @@ import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -28,6 +31,9 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
+import java.io.File;
+import java.net.URL;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -957,6 +963,92 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         contentletRelationshipRecords.setRecords(CollectionsUtils.list(relatedContent));
         contentletRelationships.getRelationshipsRecords().add(contentletRelationshipRecords);
         return contentletRelationships;
+    }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#addContentlet(Object, Contentlet)} in conjunction with {@link StoryBlockAPIImpl#toMap(Object)}
+     * Given Scenario: Test that when a contentlet with an image is added to a story block,
+     * the title image information is properly included in the data map
+     * ExpectedResult: The story block data should contain hasTitleImage=true and titleImage=field variable name
+     */
+    @Test
+    public void test_loadCommonContentletProps_with_title_image()
+            throws DotDataException, DotSecurityException, IOException {
+        ContentType contentTypeWithImage = null;
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        long time = System.currentTimeMillis();
+        final String contentTypeName = "TitleImageTestContentType_" + time;
+        final Host host = APILocator.systemHost();
+        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+        File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+        Assert.assertNotNull("Can't find the test image file",url);
+        File testImage = new File(url.getFile());
+        FileUtils.copyFile(testImage, tempFile);
+        try {
+            // 1) Create the content-type and the respective fields
+            final Contentlet imageFileAsset = new FileAssetDataGen(tempFile)
+                    .host(host)
+                    .languageId(1L)
+                    .folder(imageFolder).nextPersisted();
+
+            // Create the title field
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .required(true)
+                    .next();
+
+            // Create the Image field
+            com.dotcms.contenttype.model.field.Field imageField = new FieldDataGen()
+                    .name("image")
+                    .velocityVarName("image")
+                    .type(ImageField.class)
+                    .required(false)
+                    .next();
+
+            // Create a content type with both fields
+            ContentType contentType = new ContentTypeDataGen()
+                    .name(contentTypeName)
+                    .velocityVarName(contentTypeName)
+                    .host(host)
+                    .fields(List.of(titleField, imageField))
+                    .nextPersisted();
+
+            // 2) Create the contentlet with the image field
+            final Contentlet contentletWithImage = new ContentletDataGen(contentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .host(host)
+                    .setProperty("title", "Testing StoryBlock image property")
+                    .setProperty(imageField.variable(), imageFileAsset.getIdentifier())
+                    .nextPersisted();
+
+            // 3) Add the contentlet to a story block
+            final Object storyBlockWithImage = APILocator.getStoryBlockAPI().addContentlet(JSON, contentletWithImage);
+
+            // 4) Convert to map to verify the data
+            final Map<String, Object> storyBlockMap = APILocator.getStoryBlockAPI().toMap(storyBlockWithImage);
+            assertNotNull(storyBlockMap);
+
+            final List<Map<String, Object>> contentList = (List<Map<String, Object>>) storyBlockMap.get("content");
+            final Optional<Map<String, Object>> contentletMap = contentList.stream()
+                    .filter(content -> "dotContent".equals(content.get("type")))
+                    .findFirst();
+
+            assertTrue(contentletMap.isPresent());
+            final Map<String, Object> dataMap = (Map<String, Object>) 
+                    ((Map<String, Object>) contentletMap.get().get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
+
+            // 5) Verify title image information is correctly set
+            assertEquals("Should have title image", true, dataMap.get(Contentlet.HAS_TITLE_IMAGE_KEY));
+            assertEquals("Title image field should match", "image", dataMap.get(Contentlet.TITLE_IMAGE_KEY));
+
+        } finally {
+            if (contentTypeWithImage != null) {
+                ContentTypeDataGen.remove(contentTypeWithImage);
+            }
+        }
     }
 
 }

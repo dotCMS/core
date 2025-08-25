@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.exception.ExceptionUtil;
@@ -16,6 +17,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -378,6 +381,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         dataMap.put(Contentlet.FOLDER_KEY, contentlet.getFolder());
         dataMap.put(Contentlet.SORT_ORDER_KEY, contentlet.getSortOrder());
         dataMap.put(Contentlet.MOD_USER_KEY, contentlet.getModUser());
+        contentlet.getTitleImage().ifPresentOrElse(field -> {
+            dataMap.put(Contentlet.HAS_TITLE_IMAGE_KEY, true);
+            dataMap.put(Contentlet.TITLE_IMAGE_KEY, field.variable());
+        }, () -> {
+            dataMap.put(Contentlet.HAS_TITLE_IMAGE_KEY, false);
+            dataMap.put(Contentlet.TITLE_IMAGE_KEY, Contentlet.TITLE_IMAGE_NOT_FOUND);
+        });
     }
 
     /**
@@ -549,7 +559,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *
      * @throws JsonProcessingException An error occurred when processing property with JSON data.
      */
-    private Map<String, Object> refreshContentlet(final Contentlet contentlet) throws JsonProcessingException {
+    private Map<String, Object> refreshContentlet(final Contentlet contentlet)
+            throws JsonProcessingException {
         final Map<String, Object> dataMap = new LinkedHashMap<>();
         final List<Field> fields = contentlet.getContentType().fields();
         this.loadCommonContentletProps(contentlet, dataMap);
@@ -562,12 +573,34 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     // is referencing. This will prevent infinite recursion problems.
                     dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
                             "_raw")));
+                } else if (field instanceof BinaryField) {
+                    getFileLink(contentlet, field).ifPresent(
+                            fileLink -> dataMap.put(field.variable(), fileLink));
                 } else {
                     dataMap.put(field.variable(), value);
                 }
             }
         }
         return dataMap;
+    }
+
+    /**
+     * Generates a file link for the specified contentlet and field.
+     *
+     * @param contentlet the contentlet object that contains the data
+     * @param field the field for which the file link will be generated
+     * @return an Optional containing the file link as a String if generated successfully,
+     *         or an empty Optional if an error occurs or the link cannot be generated
+     */
+    private static Optional<String> getFileLink(final Contentlet contentlet, Field field) {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        String fileLink = null;
+        try {
+            fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), contentlet, field.variable());
+        }catch (Exception e){
+            Logger.error(StoryBlockAPIImpl.class, "Error getting file link for field: " + field.variable(), e);
+        }
+        return Optional.ofNullable(fileLink);
     }
 
 }
