@@ -85,6 +85,16 @@ public interface TagAPI {
 	public java.util.List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count);
 
 	/**
+	 * Gets the count of tags filtered by tag name and/or host name
+	 * @param tagName tag name filter
+	 * @param hostFilter host name or ID filter
+	 * @param globalTagsFilter include global tags
+	 * @return count of filtered tags
+	 * @throws DotDataException
+	 */
+	public long getFilteredTagsCount(String tagName, String hostFilter, boolean globalTagsFilter) throws DotDataException;
+
+	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
 	 * @param name name of the tag to get
 	 * @param userId owner of the tag
