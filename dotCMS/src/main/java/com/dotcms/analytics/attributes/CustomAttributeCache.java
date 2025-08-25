@@ -3,6 +3,7 @@ package com.dotcms.analytics.attributes;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotmarketing.business.Cachable;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
 /**

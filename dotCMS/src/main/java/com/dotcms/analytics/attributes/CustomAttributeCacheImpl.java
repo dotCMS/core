@@ -1,16 +1,17 @@
 package com.dotcms.analytics.attributes;
 
-import com.dotcms.analytics.metrics.EventType;
-import com.dotcms.experiments.model.Experiment;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
 /**
  * Default {@link CustomAttributeCache} implementation backed by {@link DotCacheAdministrator}.
  */
+@ApplicationScoped
 public class CustomAttributeCacheImpl implements CustomAttributeCache {
     /**
      * Fetches the mapping for the given event type from the cache.

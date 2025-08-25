@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
  * JDBC-based implementation of {@link CustomAttributeFactory} using {@link DotConnect} to persist
  * custom attribute mappings in the analytic_custom_attributes table.
  */
+@ApplicationScoped
 public class CustomAttributeFactoryImpl implements CustomAttributeFactory {
 
     final String INSERT_STATEMENT = "INSERT INTO analytic_custom_attributes VALUES(?, ?)";

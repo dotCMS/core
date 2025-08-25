@@ -10,6 +10,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import org.jetbrains.annotations.NotNull;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
  *   <li>Translating payloads to database column keys.</li>
  * </ul>
  */
+@ApplicationScoped
 public class CustomAttributeAPIImpl implements CustomAttributeAPI {
     /** Prefix used to build database column names for custom attributes. */
     public static String CUSTOM_ATTRIBUTE_KEY = "custom_";
@@ -44,6 +47,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
      * @param customAttributeFactory the persistence access for attribute mappings.
      * @param customAttributeCache the cache used to speed up mapping lookup.
      */
+    @Inject
     public CustomAttributeAPIImpl(final CustomAttributeFactory customAttributeFactory,
                                   final CustomAttributeCache customAttributeCache) {
         this.customAttributeFactory = customAttributeFactory;
