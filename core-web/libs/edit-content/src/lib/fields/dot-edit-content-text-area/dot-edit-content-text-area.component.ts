@@ -1,5 +1,6 @@
+import { signalMethod } from '@ngrx/signals';
+
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -59,7 +60,7 @@ import {
         }
     ]
 })
-export class DotEditContentTextAreaComponent implements AfterViewInit {
+export class DotEditContentTextAreaComponent {
     /**
      * Control container for the form
      */
@@ -68,13 +69,12 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     /**
      * Reference to the textarea element
      */
-    private readonly textareaRef = viewChild<ElementRef<HTMLTextAreaElement>>('textarea');
+    $textareaRef = viewChild<ElementRef<HTMLTextAreaElement>>('textarea');
 
     /**
      * Reference to the Monaco editor component
      */
-    private readonly $monacoComponent =
-        viewChild<DotEditContentMonacoEditorControlComponent>('monaco');
+    $monacoComponent = viewChild<DotEditContentMonacoEditorControlComponent>('monaco');
 
     /**
      * Input field DotCMSContentTypeField
@@ -126,22 +126,23 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
         const disabledWYSIWYG = getDisabledWYSIWYGFromContentlet(contentlet);
 
         // Use disabledWYSIWYG setting
-        return getCurrentEditorFromDisabled(
-            field.variable,
-            disabledWYSIWYG,
-            true
-        ) as AvailableEditorTextArea;
+        const currentEditor = getCurrentEditorFromDisabled(field.variable, disabledWYSIWYG, true);
+
+        if (
+            currentEditor === AvailableEditorTextArea.Monaco ||
+            currentEditor === AvailableEditorTextArea.PlainText
+        ) {
+            return currentEditor;
+        }
+
+        return null;
     });
 
     readonly textAreaEditorOptions = TextAreaEditorOptions;
     readonly editorTypes = AvailableEditorTextArea;
 
-    ngAfterViewInit(): void {
-        const currentEditor = this.$contentEditorUsed();
-        // Assign the selected editor value
-        this.$selectedEditorDropdown.set(currentEditor);
-        // Editor showed
-        this.$displayedEditor.set(currentEditor);
+    constructor() {
+        this.handleEditorChange(this.$contentEditorUsed);
     }
 
     /**
@@ -150,7 +151,7 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
      */
     onSelectLanguageVariable(languageVariable: string) {
         if (this.$displayedEditor() === AvailableEditorTextArea.PlainText) {
-            const textarea = this.textareaRef()?.nativeElement;
+            const textarea = this.$textareaRef()?.nativeElement;
             if (!textarea) {
                 return;
             }
@@ -169,9 +170,8 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
         const field = this.$field();
         const contentlet = this.$contentlet();
 
-        if (!field?.variable || !contentlet) {
-            this.$displayedEditor.set(newEditor);
-            return;
+        if (!field?.variable) {
+            throw new Error('Field variable is not available');
         }
 
         // Update disabledWYSIWYG in the contentlet
@@ -186,11 +186,12 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
         // Update the contentlet's disabledWYSIWYG property
         // Note: This modifies the contentlet reference directly
         // The parent component should handle form submission with the updated contentlet
-        contentlet.disabledWYSIWYG = updatedDisabledWYSIWYG;
+        if (contentlet) {
+            contentlet.disabledWYSIWYG = updatedDisabledWYSIWYG;
+        }
 
         // Emit the change event
         this.disabledWYSIWYGChange.emit(updatedDisabledWYSIWYG);
-
         this.$displayedEditor.set(newEditor);
     }
 
@@ -240,4 +241,13 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
             console.warn('Monaco component is not available');
         }
     }
+
+    readonly handleEditorChange = signalMethod<AvailableEditorTextArea>((newEditor) => {
+        if (!newEditor) {
+            return;
+        }
+
+        this.$selectedEditorDropdown.set(newEditor);
+        this.$displayedEditor.set(newEditor);
+    });
 }
