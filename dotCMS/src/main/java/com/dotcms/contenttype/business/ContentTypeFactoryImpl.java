@@ -178,7 +178,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       final DotConnect dc = new DotConnect();
       String sql = UtilMethods.isSet(filter) ? ContentTypeSql.SELECT_BY_VAR_NAMES_FILTERED : ContentTypeSql.SELECT_BY_VAR_NAMES;
       sql = String.format(sql, String.join(COMMA, Collections.nCopies(varNames.size(), "?")));
-      if (UtilMethods.isSet(orderBy)) {
+      if (UtilMethods.isSet(orderBy) && !orderBy.contains(SQLUtil.DOT_NOT_SORT)) { // DOT_NOT_SORT is used to indicate no order by wanted
           sql = UtilMethods.isSet(orderBy) ? sql + ContentTypeSql.ORDER_BY : sql;
           final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
           sql = String.format(sql, sanitizedOrderBy);
