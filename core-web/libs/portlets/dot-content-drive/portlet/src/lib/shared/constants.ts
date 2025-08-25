@@ -92,6 +92,7 @@ export const DEBOUNCE_TIME = 500;
 
 // Folder tree constants
 export const FOLDER_TREE_API_ENDPOINT = '/api/v1/assets';
+// This should be the site key with two slashes as prefix, but for now we're using the demo site
 export const FOLDER_TREE_INITIAL_PATH = '//demo.dotcms.com/';
 
 // Folder tree icons
