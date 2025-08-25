@@ -89,3 +89,15 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
 
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
+
+// Folder tree constants
+export const FOLDER_TREE_API_ENDPOINT = '/api/v1/assets';
+// This should be the site key with two slashes as prefix, but for now we're using the demo site
+export const FOLDER_TREE_INITIAL_PATH = '//demo.dotcms.com/';
+
+// Folder tree icons
+export const FOLDER_ICONS = {
+    FOLDER: 'pi pi-folder',
+    FOLDER_OPEN: 'pi pi-folder-open',
+    FOLDER_CLOSED: 'pi pi-folder'
+} as const;

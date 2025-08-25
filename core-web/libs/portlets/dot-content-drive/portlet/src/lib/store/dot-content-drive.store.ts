@@ -146,6 +146,9 @@ export const DotContentDriveStore = signalStore(
                     patchState(store, { filters: restFilters });
                 }
             },
+            setPath(path: string) {
+                patchState(store, { path });
+            },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
             },
