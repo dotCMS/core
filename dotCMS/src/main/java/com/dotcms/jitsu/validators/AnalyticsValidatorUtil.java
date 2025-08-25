@@ -174,7 +174,7 @@ public class AnalyticsValidatorUtil {
         for (int i = 0; i < events.length(); i++) {
             final JSONObject event = events.optJSONObject(i);
 
-            final Validators validators = checkEventObject(event, errors, i)
+            final Validators validators =  Optional.ofNullable(event.optString("event_type"))
                     .map(AnalyticsValidatorUtil::getEventType)
                     .map(eventsValidators::get)
                     .orElse(new Validators(eventsGlobalValidators));
@@ -244,40 +244,6 @@ public class AnalyticsValidatorUtil {
         }
 
         return Optional.empty();
-    }
-
-    /**
-     * Checks if the event object is valid by verifying:
-     * 1. The event is not null
-     * 2. The event has an "event_type" field
-     * 3. The "event_type" field is a non-empty string
-     * 
-     * If any validation fails, appropriate errors are added to the errors list.
-     *
-     * @param event The JSON object representing the event to validate
-     * @param errors The list to which validation errors will be added
-     * @param index The index of the event in the events array, used for error reporting
-     * @return The event_type string value from the event object if it is set in the payload
-     */
-    private static Optional<String> checkEventObject(final JSONObject event, final List<Error> errors, final  int index) {
-        if (event == null) {
-            errors.add(new Error("events[" + index + "]", ValidationErrorCode.INVALID_JSON_OBJECT_TYPE,
-                    "Event is not a JSON object", index));
-            return Optional.empty();
-        }
-
-        if (!event.has("event_type")) {
-            errors.add(new Error("events[" + index + "].event_type", ValidationErrorCode.REQUIRED_FIELD_MISSING,
-                    "Required field is missing: event_type", index));
-            return Optional.empty();
-        }
-
-        final String eventTypeStr = event.optString("event_type");
-        if (eventTypeStr == null || eventTypeStr.isEmpty()) {
-            errors.add(new Error("events[" + index + "].event_type", ValidationErrorCode.INVALID_STRING_TYPE,
-                    "Event type is empty or not a string", index));
-        }
-        return Optional.of(eventTypeStr);
     }
 
     private static EventType getEventType(String eventTypeStr) {
