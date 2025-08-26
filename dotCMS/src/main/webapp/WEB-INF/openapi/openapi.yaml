@@ -16853,27 +16853,29 @@ paths:
       tags:
       - Tags
     post:
-      description: "Creates a single tag. This operation is idempotent - if the tag\
-        \ already exists, it will return the existing tag."
-      operationId: createSingleTag
+      description: "Creates one or more tags. Single tag = list with one element,\
+        \ multiple tags = list with multiple elements. This operation is idempotent\
+        \ - existing tags are returned without error."
+      operationId: createTags
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/SingleTagForm"
-        description: Single tag data to create
+        description: "List of tag data to create. Single tag = list with one element,\
+          \ multiple tags = list with multiple elements."
         required: true
       responses:
         "201":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityRestTagView"
-          description: Tag created or retrieved successfully
+                $ref: "#/components/schemas/ResponseEntityRestTagListView"
+          description: Tags created successfully
         "400":
           content:
             application/json: {}
-          description: Bad Request - Invalid tag data
+          description: Bad Request - Invalid tag data with field-level error details
         "401":
           content:
             application/json: {}
@@ -16886,7 +16888,7 @@ paths:
           content:
             application/json: {}
           description: Internal Server Error - Database or system error
-      summary: Create single tag
+      summary: Create tags
       tags:
       - Tags
     put:
@@ -16906,43 +16908,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagMapView"
           description: default response
-      tags:
-      - Tags
-  /v2/tags/_bulk:
-    post:
-      description: Creates multiple tags in bulk with optional owner assignment
-      operationId: addTag_1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TagForm"
-        description: Bulk tag data to create
-        required: true
-      responses:
-        "201":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: Tags created successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad Request - Invalid tag data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - Authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - User does not have access to Tags portlet
-        "500":
-          content:
-            application/json: {}
-          description: Internal Server Error - Database or system error
-      summary: Create multiple tags
       tags:
       - Tags
   /v2/tags/import:
@@ -23299,6 +23264,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRestTagListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRestTagView:
       type: object
       properties:
@@ -25003,6 +24993,8 @@ components:
           minLength: 1
         ownerId:
           type: string
+        persona:
+          type: boolean
         siteId:
           type: string
       required:
