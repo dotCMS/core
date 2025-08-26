@@ -539,7 +539,7 @@ public class TempFileResourceTest {
     public void test_TempResource_uploadFileByURL_success() {
         HttpServletRequest request = mockRequest();
         final String fileName = "test.png";
-        final String url = "https://www.dotcms.com/assets/logo.svg?w=1920";
+        final String url = "https://dotcms-storage.b-cdn.net/Bocas2.jpg";
 
         final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url, fileName, null);
 

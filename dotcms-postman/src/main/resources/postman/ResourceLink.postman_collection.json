@@ -56,7 +56,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://www.dotcms.com/assets/logo.svg?w=1920\"\n}",
+					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://dotcms-storage.b-cdn.net/Bocas2.jpg\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -191,7 +191,7 @@
 							"});",
 							"",
 							"pm.test(\"Includes img mime\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"image/svg+xml\");",
+							"    pm.expect(pm.response.text()).to.include(\"image/jpeg\");",
 							"});"
 						],
 						"type": "text/javascript"
