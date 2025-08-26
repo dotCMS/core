@@ -1,10 +1,13 @@
 import { usePathname, useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import { isInsideUVE } from '../internal/uve.utils';
+import { getUVEState } from '@dotcms/uve';
 
-// Using Next.js App Router hooks directly (library assumes Next environment)
+import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+
+
+// TODO: Make this work no tightly coupled to Next.js App Router https://github.com/dotCMS/core/issues/33100
+
 
 // Helpers
 const computeNextKey = (
@@ -32,7 +35,7 @@ export function useRouterTracker(analytics: DotCMSAnalytics | null, debug = fals
         if (!analytics) return;
 
         const fireIfChanged = (key: string) => {
-            if (isInsideUVE()) return;
+            if (getUVEState()) return;
             if (key === lastKeyRef.current) return;
             lastKeyRef.current = key;
             analytics.pageView();

@@ -1,46 +1,49 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { renderHook } from '@testing-library/react';
 
+import { UVE_MODE } from '@dotcms/types';
+import { getUVEState } from '@dotcms/uve';
+
 import { useContentAnalytics } from './useContentAnalytics';
 
-import { getAnalyticsInstance, isInsideUVE } from '../internal';
+import { initializeAnalytics } from '../internal';
 
-jest.mock('../internal', () => ({
-    isInsideUVE: jest.fn(),
-    getAnalyticsInstance: jest.fn()
+// Mock dependencies
+jest.mock('@dotcms/uve', () => ({
+    getUVEState: jest.fn()
 }));
 
-const mockIsInsideUVE = jest.mocked(isInsideUVE);
-const mockGetAnalyticsInstance = jest.mocked(getAnalyticsInstance);
+jest.mock('../internal', () => ({
+    initializeAnalytics: jest.fn()
+}));
 
+// Setup mocks
+const mockGetUVEState = jest.mocked(getUVEState);
+const mockInitializeAnalytics = jest.mocked(initializeAnalytics);
 const mockTrack = jest.fn();
 const mockPageView = jest.fn();
+
+const mockConfig = {
+    server: 'https://example.com',
+    siteKey: 'test-site-key',
+    debug: false
+};
 
 describe('useContentAnalytics', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        mockGetAnalyticsInstance.mockReturnValue({
-            track: mockTrack as (eventName: string, payload?: Record<string, unknown>) => void,
-            pageView: mockPageView as () => void
+        mockInitializeAnalytics.mockReturnValue({
+            track: mockTrack,
+            pageView: mockPageView
         });
-    });
-
-    afterEach(() => {
-        jest.clearAllMocks();
-        jest.resetAllMocks();
-    });
-
-    afterAll(() => {
-        jest.restoreAllMocks();
+        mockGetUVEState.mockReturnValue(undefined);
     });
 
     it('tracks with timestamp when outside editor', () => {
-        mockIsInsideUVE.mockReturnValue(false);
-
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
 
-        const { result } = renderHook(() => useContentAnalytics());
+        const { result } = renderHook(() => useContentAnalytics(mockConfig));
         result.current.track('test-event', { data: 'test' });
 
         expect(mockTrack).toHaveBeenCalledWith('test-event', {
@@ -50,12 +53,10 @@ describe('useContentAnalytics', () => {
     });
 
     it('handles undefined payload', () => {
-        mockIsInsideUVE.mockReturnValue(false);
-
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
 
-        const { result } = renderHook(() => useContentAnalytics());
+        const { result } = renderHook(() => useContentAnalytics(mockConfig));
         result.current.track('test-event');
 
         expect(mockTrack).toHaveBeenCalledWith('test-event', {
@@ -64,11 +65,34 @@ describe('useContentAnalytics', () => {
     });
 
     it('does not track when inside editor', () => {
-        mockIsInsideUVE.mockReturnValue(true);
+        mockGetUVEState.mockReturnValue({
+            mode: UVE_MODE.EDIT,
+            persona: null,
+            variantName: null,
+            experimentId: null,
+            publishDate: null,
+            languageId: '1',
+            dotCMSHost: 'https://demo.dotcms.com'
+        });
 
-        const { result } = renderHook(() => useContentAnalytics());
+        const { result } = renderHook(() => useContentAnalytics(mockConfig));
         result.current.track('test-event', { data: 'test' });
 
         expect(mockTrack).not.toHaveBeenCalled();
+    });
+
+    it('throws error when analytics fails to initialize', () => {
+        // Silenciar console.error temporalmente para este test
+        const originalError = console.error;
+        console.error = jest.fn();
+
+        mockInitializeAnalytics.mockReturnValue(null);
+
+        expect(() => {
+            renderHook(() => useContentAnalytics(mockConfig));
+        }).toThrow('useContentAnalytics: analytics not initialized');
+
+        // Restaurar console.error
+        console.error = originalError;
     });
 });

@@ -1,7 +1,9 @@
 import { useCallback, useRef } from 'react';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import { getAnalyticsInstance, isInsideUVE } from '../internal';
+import { getUVEState } from '@dotcms/uve';
+
+import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { initializeAnalytics } from '../internal';
 
 /**
  * Custom hook that handles analytics tracking for anonymous users.
@@ -59,8 +61,8 @@ import { getAnalyticsInstance, isInsideUVE } from '../internal';
  *
  * @throws Error when env config is missing and analytics is not initialized.
  */
-export const useContentAnalytics = (): DotCMSAnalytics => {
-    const instance = getAnalyticsInstance();
+export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
+    const instance = initializeAnalytics(config);
     const lastPathRef = useRef<string | null>(null);
 
     if (!instance) {
@@ -71,7 +73,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
 
     const track = useCallback(
         (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (!isInsideUVE()) {
+            if (!getUVEState()) {
                 instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()
@@ -82,7 +84,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
     );
 
     const pageView = useCallback(() => {
-        if (!isInsideUVE()) {
+        if (!getUVEState()) {
             const currentPath = window.location.pathname;
             if (currentPath !== lastPathRef.current) {
                 lastPathRef.current = currentPath;
