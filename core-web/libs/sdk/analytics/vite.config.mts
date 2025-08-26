@@ -66,7 +66,6 @@ export default defineConfig({
                 'analytics',
                 '@analytics/core',
                 '@analytics/storage-utils',
-                'next',
                 /^next\//
             ],
             output: {
