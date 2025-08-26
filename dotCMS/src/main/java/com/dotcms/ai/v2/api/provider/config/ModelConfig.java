@@ -1,4 +1,4 @@
-package com.dotcms.ai.v2.config;
+package com.dotcms.ai.v2.api.provider.config;
 
 import java.util.Map;
 

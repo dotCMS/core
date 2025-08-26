@@ -1,7 +1,6 @@
-package com.dotcms.ai.v2.provider;
+package com.dotcms.ai.v2.api.provider;
 
-import com.dotcms.ai.v2.config.ModelConfig;
-
+import com.dotcms.ai.v2.api.provider.config.ModelConfig;
 import java.util.Map;
 
 /**
@@ -10,7 +9,9 @@ import java.util.Map;
  */
 public enum Model {
 
-    OPEN_AI_GPT_40("openai", "gpt-4o-mini", "https://api.openai.com/v1");
+    OPEN_AI_GPT_40("openai", "gpt-4o-mini", "https://api.openai.com/v1"),
+    ANTHROPIC_CLAUDE_3_7("anthropic", "claude-3-7-sonnet-20250219", "https://api.openai.com/v1");
+
 
     private final String vendor;
     private final String model;

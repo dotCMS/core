@@ -1,6 +1,6 @@
-package com.dotcms.ai.v2.provider;
+package com.dotcms.ai.v2.api.provider;
 
-import com.dotcms.ai.v2.config.ModelConfig;
+import com.dotcms.ai.v2.api.provider.config.ModelConfig;
 import dev.langchain4j.model.chat.ChatModel;
 
 /**
