@@ -81,8 +81,8 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
      * Loads the initial folder structure for the tree
      */
     private loadInitialFolders(): void {
-        this.getFolderByPath(this.initialPath).subscribe({
-            next: (folders) => this.folders.set(folders),
+        this.getFolderByPath(this.initialPath, [0]).subscribe({
+            next: (folders) => this.createRootAllFolder(folders),
             error: (error) => this.handleFolderLoadError('initial folders', error)
         });
     }
@@ -231,7 +231,6 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
                 path: folder.path,
                 treeIndexes: this.buildTreeIndexes(parentTreeIndexes, index)
             },
-            icon: FOLDER_ICONS.FOLDER,
             expandedIcon: FOLDER_ICONS.FOLDER_OPEN,
             collapsedIcon: FOLDER_ICONS.FOLDER_CLOSED,
             leaf: false
@@ -289,5 +288,23 @@ export class DotContentDriveFolderTreeComponent implements OnInit {
     private handleFolderLoadError(context: string, error: unknown): void {
         console.error(`Error loading ${context}:`, error);
         this.folders.set([]);
+    }
+
+    private createRootAllFolder(children: FolderTreeNode[]): void {
+        const rootNode: FolderTreeNode = {
+            key: 'all-root',
+            label: 'All',
+            data: {
+                path: '/',
+                treeIndexes: [0]
+            },
+            expandedIcon: FOLDER_ICONS.FOLDER_OPEN,
+            collapsedIcon: FOLDER_ICONS.FOLDER_CLOSED,
+            leaf: false,
+            children: children,
+            expanded: true
+        };
+
+        this.folders.set([rootNode]);
     }
 }
