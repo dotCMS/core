@@ -191,7 +191,7 @@
 							"});",
 							"",
 							"pm.test(\"Includes img mime\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"image/jpeg\");",
+							"    pm.expect(pm.response.text()).to.include(\"image/svg+xml\");",
 							"});"
 						],
 						"type": "text/javascript"
