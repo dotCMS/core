@@ -13,6 +13,7 @@ import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
@@ -27,7 +28,8 @@ import { HEADER_COLUMNS } from '../shared/constants';
         SkeletonModule,
         DotMessagePipe,
         DotContentletStatusPipe,
-        ChipModule
+        ChipModule,
+        TooltipModule
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
