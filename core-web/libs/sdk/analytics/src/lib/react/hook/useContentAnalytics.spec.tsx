@@ -82,7 +82,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('throws error when analytics fails to initialize', () => {
-        // Silenciar console.error temporalmente para este test
+
         const originalError = console.error;
         console.error = jest.fn();
 
@@ -92,7 +92,6 @@ describe('useContentAnalytics', () => {
             renderHook(() => useContentAnalytics(mockConfig));
         }).toThrow('useContentAnalytics: analytics not initialized');
 
-        // Restaurar console.error
         console.error = originalError;
     });
 });
