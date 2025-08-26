@@ -270,7 +270,9 @@ public class AnalyticsValidatorUtil {
                 new Validators(eventsGlobalValidators);
 
         for (String path : validators.getPaths()) {
+
             final boolean isDate = validators.getValidators(path).stream()
+                    .flatMap(Collection::stream)
                     .anyMatch(validator -> DateValidator.class.isAssignableFrom(validator.getClass()));
 
             if (isDate) {

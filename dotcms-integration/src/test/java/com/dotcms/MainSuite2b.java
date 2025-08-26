@@ -11,7 +11,6 @@ import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionletTest;
-import com.dotcms.analytics.attributes.CustomAttributeAPIImpl;
 import com.dotcms.analytics.attributes.CustomAttributeAPIImplTest;
 import com.dotcms.analytics.attributes.CustomAttributeFactoryTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplIT;
@@ -491,7 +490,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240131UpdateLanguageVariableContentTypeTest.class,
         PushedAssetUtilTest.class,
         OpenAIAutoTagActionletTest.class,
-        Task250716CreateCustomAttributeTableTest.class,
+        Task250825CreateCustomAttributeTableTest.class,
         CustomAttributeAPIImplTest.class,
         CustomAttributeFactoryTest.class
 })

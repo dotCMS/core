@@ -12,7 +12,7 @@ import java.sql.Connection;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class Task250716CreateCustomAttributeTableTest {
+public class Task250825CreateCustomAttributeTableTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
