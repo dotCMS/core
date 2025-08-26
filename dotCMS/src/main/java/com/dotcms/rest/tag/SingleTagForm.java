@@ -1,8 +1,10 @@
 package com.dotcms.rest.tag;
 
 import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.ErrorEntity;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -22,14 +24,19 @@ public class SingleTagForm extends Validated {
     @Nullable
     private final String ownerId;
 
+    @Nullable
+    private final Boolean persona;
+
     @JsonCreator
     public SingleTagForm(
             @JsonProperty("name") final String name,
             @JsonProperty("siteId") final String siteId,
-            @JsonProperty("ownerId") final String ownerId) {
+            @JsonProperty("ownerId") final String ownerId,
+            @JsonProperty("persona") final Boolean persona) {
         this.name = name;
         this.siteId = siteId;
         this.ownerId = ownerId;
+        this.persona = persona;
     }
 
     public String getName() {
@@ -43,6 +50,10 @@ public class SingleTagForm extends Validated {
     public String getOwnerId() {
         return ownerId;
     }
+
+    public Boolean getPersona() {
+        return persona;
+    }
     
     @Override
     public void checkValid() {
@@ -53,12 +64,18 @@ public class SingleTagForm extends Validated {
         if (name != null) {
             // Check for commas
             if (name.contains(",")) {
-                throw new com.dotcms.rest.exception.BadRequestException("Tag name cannot contain commas");
+                final List<ErrorEntity> errors = List.of(
+                    new ErrorEntity(null, "Tag name cannot contain commas", "name")
+                );
+                throw new com.dotcms.rest.exception.BadRequestException(null, errors, "Tag name cannot contain commas");
             }
             
             // Check for blank/whitespace only
             if (name.trim().isEmpty()) {
-                throw new com.dotcms.rest.exception.BadRequestException("Tag name cannot be blank");
+                final List<ErrorEntity> errors = List.of(
+                    new ErrorEntity(null, "Tag name cannot be blank", "name")
+                );
+                throw new com.dotcms.rest.exception.BadRequestException(null, errors, "Tag name cannot be blank");
             }
         }
     }

@@ -3644,18 +3644,17 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+									"raw": "[\n   {\n      \"name\":\"{{testTagOne}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"{{testTagTwo}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v2/tags/_bulk",
+									"raw": "{{serverURL}}/api/v2/tags",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"v2",
-										"tags",
-										"_bulk"
+										"tags"
 									]
 								},
 								"description": "This tests the endpoint that brings back one specific App given the App-key."

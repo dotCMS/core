@@ -3,13 +3,14 @@ package com.dotcms.rest.api.v2.tags;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.*;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityListView;
+import com.dotcms.rest.ResponseEntityRestTagListView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
-import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.rest.tag.*;
 import com.dotcms.rest.tag.TagsResourceHelper;
-import com.dotcms.rest.api.v2.tags.ResponseEntityRestTagView;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -25,7 +26,6 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.rest.ErrorEntity;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,14 +54,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
-import static com.dotcms.rest.validation.Preconditions.checkNotNull;
-import static com.dotcms.util.DotPreconditions.checkArgument;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
 
 /**
@@ -139,86 +135,27 @@ public class TagResource {
         return new ResponseEntityTagMapView(toRestTagMap(tags));
     }
 
+
     /**
-     * Creates one or more Tags and link them to an owner/user, if provided.
+     * Creates one or more tags. Accepts a list of tag objects for unified single and bulk operations.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagForm  The {@link TagForm} containing the Tags to save.
+     * @param tagForms The list of {@link SingleTagForm} objects containing the tags to create.
      *
-     * @return The {@link ResponseEntityTagMapView} containing the saved Tags.
+     * @return The {@link ResponseEntityListView} containing the created tags.
      */
     @Operation(
-            summary = "Create multiple tags",
-            description = "Creates multiple tags in bulk with optional owner assignment"
+            summary = "Create tags",
+            description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201",
                     description = "Tags created successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityTagMapView.class))),
+                            schema = @Schema(implementation = ResponseEntityRestTagListView.class))),
             @ApiResponse(responseCode = "400",
-                    description = "Bad Request - Invalid tag data",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - Authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - User does not have access to Tags portlet",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "500",
-                    description = "Internal Server Error - Database or system error",
-                    content = @Content(mediaType = "application/json"))
-    })
-    @POST
-    @JSONP
-    @Path("/_bulk")
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView addTag(
-            @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @RequestBody(description = "Bulk tag data to create",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = TagForm.class)))
-            final TagForm tagForm) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initDataObject = getInitDataObject(request, response);
-
-        final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is adding tag(s): %s ", user.getUserId(), tagForm));
-
-        //We can assign tags to any user as long as we are admin.
-        final String userId = tagForm.getOwnerId();
-        final ImmutableList.Builder<Tag> savedTags = ImmutableList.builder();
-        final Map<String, RestTag> tags = tagForm.getTags();
-
-        saveTags(request, tags, user, userId, savedTags);
-
-        return new ResponseEntityTagMapView(toRestTagMap(savedTags.build()));
-    }
-
-    /**
-     * Creates a single tag.
-     *
-     * @param request  The current instance of the {@link HttpServletRequest}.
-     * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagForm  The {@link SingleTagForm} containing the tag to create.
-     *
-     * @return The {@link ResponseEntityRestTagView} containing the created or existing tag.
-     */
-    @Operation(
-            summary = "Create single tag",
-            description = "Creates a single tag. This operation is idempotent - if the tag already exists, it will return the existing tag."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201",
-                    description = "Tag created or retrieved successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityRestTagView.class))),
-            @ApiResponse(responseCode = "400",
-                    description = "Bad Request - Invalid tag data",
+                    description = "Bad Request - Invalid tag data with field-level error details",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - Authentication required",
@@ -235,80 +172,88 @@ public class TagResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response createSingleTag(
+    public Response createTags(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @RequestBody(description = "Single tag data to create",
+            @RequestBody(description = "List of tag data to create. Single tag = list with one element, multiple tags = list with multiple elements.",
                     required = true,
-                    content = @Content(schema = @Schema(implementation = SingleTagForm.class)))
-            final SingleTagForm tagForm) throws DotDataException, DotSecurityException {
-
-        tagForm.checkValid();
+                    content = @Content(schema = @Schema(type = "array", implementation = SingleTagForm.class)))
+            final List<SingleTagForm> tagForms) throws DotDataException, DotSecurityException {
 
         // Initialize and check permissions
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
 
-        Logger.debug(TagResource.class,()->String.format("User '%s' is adding tag: %s ", user.getUserId(), tagForm));
+        Logger.debug(TagResource.class,()->String.format("User '%s' is adding %d tag(s)", user.getUserId(), tagForms.size()));
 
-        // Create or get the tag
-        final String siteId = helper.getValidateSite(tagForm.getSiteId(), user, request);
-        final Tag tag = tagAPI.getTagAndCreate(
-                tagForm.getName(),
-                tagForm.getOwnerId(),
-                siteId
-        );
-
-        // Bind to owner if specified
-        if (UtilMethods.isSet(tagForm.getOwnerId())) {
-            tagAPI.addUserTagInode(tag, tagForm.getOwnerId());
-            Logger.debug(TagResource.class,
-                    String.format("Tag '%s' is now bound to user '%s'",
-                            tag.getTagName(), tagForm.getOwnerId()));
+        // Validate all tags upfront - fail fast with structured error
+        for (int i = 0; i < tagForms.size(); i++) {
+            final SingleTagForm form = tagForms.get(i);
+            form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
         }
 
-        // Convert to RestTag
-        final RestTag restTag = TagsResourceHelper.toRestTag(tag);
+        // Create all tags
+        final List<Tag> savedTags = saveTags(request, tagForms, user);
 
-        // Always return 201 (idempotent operation)
+        // Convert to RestTag list for response
+        final List<RestTag> resultList = savedTags.stream()
+            .map(TagsResourceHelper::toRestTag)
+            .collect(Collectors.toList());
+
         return Response.status(Response.Status.CREATED)
-                .entity(new ResponseEntityRestTagView(restTag))
+                .entity(new ResponseEntityListView<>(resultList))
                 .build();
     }
 
 
     /**
-     * Saves a Tag in dotCMS.
+     * Saves Tags in dotCMS using a list-based approach.
      *
      * @param request   The current instance of the {@link HttpServletRequest}.
-     * @param tags      The {@link Map} containing the Tags to save.
+     * @param tagForms  The {@link List} of {@link SingleTagForm} containing the Tags to save.
      * @param user      The {@link User} performing the operation.
-     * @param userId    The ID of the User to link the Tag to.
-     * @param savedTags The {@link ImmutableList.Builder} containing the Tags that were saved.
      *
+     * @return List of created {@link Tag} objects.
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
     @WrapInTransaction
-    private void saveTags(final HttpServletRequest request,
-                          final Map<String, RestTag> tags,
-                          final User user, final String userId,
-                          final ImmutableList.Builder<Tag> savedTags)
+    private List<Tag> saveTags(final HttpServletRequest request,
+                               final List<SingleTagForm> tagForms,
+                               final User user) 
             throws DotDataException, DotSecurityException {
-
-        for (final Entry<String, RestTag> entry : tags.entrySet()) {
-            final String tagKey = entry.getKey();
-            final RestTag tag   = entry.getValue();
-            final String siteId = helper.getValidateSite(tag.siteId, user, request);
-            final Tag createdTag = tagAPI.getTagAndCreate(tagKey, userId, siteId);
-            Logger.debug(TagResource.class, String.format("Saving Tag '%s'", createdTag.getTagName()));
-            savedTags.add(createdTag);
-            if (UtilMethods.isSet(userId)) {
-                tagAPI.addUserTagInode(createdTag, userId);
-                Logger.debug(TagResource.class, String.format("Tag '%s' is now bound to user '%s'",createdTag.getTagName(), userId));
+        
+        final List<Tag> savedTags = new ArrayList<>();
+        
+        for (SingleTagForm form : tagForms) {
+            // Resolve site
+            final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
+            
+            // Create or get tag
+            final boolean persona = (form.getPersona() != null) ? form.getPersona() : false;
+            final Tag tag = tagAPI.getTagAndCreate(
+                form.getName(), 
+                form.getOwnerId(), 
+                siteId,
+                persona,
+                false
+            );
+            
+            Logger.debug(TagResource.class, String.format("Saving Tag '%s'", tag.getTagName()));
+            
+            // Bind to owner if specified
+            if (UtilMethods.isSet(form.getOwnerId())) {
+                tagAPI.addUserTagInode(tag, form.getOwnerId());
+                Logger.debug(TagResource.class, 
+                    String.format("Tag '%s' is now bound to user '%s'",
+                        tag.getTagName(), form.getOwnerId()));
             }
+            
+            savedTags.add(tag);
         }
+        
+        return savedTags;
     }
 
     /**
