@@ -441,15 +441,17 @@ public class UniqueFieldDataBaseUtil {
         final List<Map<String, Object>> duplicateRecords = dotConnect.loadObjectResults();
         Logger.info(this, String.format("A total of %d records with the same hash value were found",
                 duplicateRecords.size()));
-        if (duplicateRecords.isEmpty()) {
-            return;
+        if (!duplicateRecords.isEmpty()) {
+            final List<UniqueFieldConflict> duplicateEntriesReport = new ArrayList<>();
+            duplicateRecords.forEach(record -> {
+                final String uniqueKeyVal = Try.of(() -> record.get("unique_key_val").toString()).getOrNull();
+                duplicateEntriesReport.add(this.updateDuplicates(uniqueKeyVal));
+            });
+            this.reportDuplicateRecords(duplicateEntriesReport);
         }
-        final List<UniqueFieldConflict> duplicateEntriesReport = new ArrayList<>();
-        duplicateRecords.forEach(record -> {
-            final String uniqueKeyVal = Try.of(() -> record.get("unique_key_val").toString()).getOrNull();
-            duplicateEntriesReport.add(this.updateDuplicates(uniqueKeyVal));
-        });
-        this.reportDuplicateRecords(duplicateEntriesReport);
+        // Dropping the previous temporary index, which will be replaced by the Unique Index created
+        // by the Primary Key
+        new DotConnect().setSQL("DROP INDEX IF EXISTS idx_unique_key_val").loadObjectResults();
     }
 
     /**
