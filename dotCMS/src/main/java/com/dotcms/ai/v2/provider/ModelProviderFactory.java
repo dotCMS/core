@@ -28,8 +28,10 @@ public class ModelProviderFactory {
         }
     }
 
-    // todo: add osgi support
-
+    // todo: add osgi support probably will need a proxy that gets injected this class and exposes statically to the activator
+    public void addProvider(final ModelProvider provider) {
+        providers.put(provider.name(), provider);
+    }
 
     public ChatModel get(final String providerName, final ModelConfig config) {
 
