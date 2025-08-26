@@ -7,11 +7,17 @@ import { initializeAnalytics } from '../internal';
 
 /**
  * Custom hook that handles analytics tracking for anonymous users.
+ * Provides methods to track events and page views with automatic timestamp injection.
+ * Automatically disables tracking when inside the UVE editor.
  *
  * @example
  * ```tsx
  * function Button({ title, urlTitle }) {
- *   const { track } = useContentAnalytics();
+ *   const { track } = useContentAnalytics({
+ *     server: 'https://demo.dotcms.com',
+ *     siteKey: 'my-site-key',
+ *     debug: false
+ *   });
  *
  *   // Track button click with custom properties
  *   return (
@@ -22,44 +28,9 @@ import { initializeAnalytics } from '../internal';
  * }
  * ```
  *
- * @example
- * ```tsx
- * // Session debugging example
- * function AnalyticsDebugComponent() {
- *   const { getAnonymousUserId, getSessionInfo, updateSessionActivity } = useContentAnalytics();
- *
- *   const handleManualActivity = () => {
- *     updateSessionActivity();
- *     // Manual activity updated
- *   };
- *
- *   // Debug session info in development
- *   const debugInfo = () => {
- *     if (process.env.NODE_ENV === 'development') {
- *       console.log('Anonymous ID:', getAnonymousUserId());
- *       console.log('Session info:', getSessionInfo());
- *     }
- *   };
- *
- *   return (
- *     <div>
- *       <button onClick={handleManualActivity}>Update Activity</button>
- *       <button onClick={debugInfo}>Debug Session</button>
- *       <p>User ID: {getAnonymousUserId()}</p>
- *     </div>
- *   );
- * }
- * ```
- *
- * @returns {DotCMSAnalytics} - The analytics instance with tracking capabilities for anonymous users
- * @throws {Error} - Throws error if used outside of DotContentAnalyticsProvider or if analytics failed to initialize
- */
-/**
- * Hook to access analytics tracking APIs without a Provider.
- * - Relies on env-driven singleton initialization.
- * - Adds timestamp to track payloads and de-duplicates pageView per path.
- *
- * @throws Error when env config is missing and analytics is not initialized.
+ * @param {DotCMSAnalyticsConfig} config - Required configuration object for analytics initialization
+ * @returns {DotCMSAnalytics} The analytics instance with tracking capabilities
+ * @throws {Error} When analytics initialization fails due to invalid configuration
  */
 export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
     const instance = initializeAnalytics(config);
@@ -67,7 +38,7 @@ export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
 
     if (!instance) {
         throw new Error(
-            'useContentAnalytics: analytics not initialized. Ensure NEXT_PUBLIC_DOTCMS_HOST and NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY are set.'
+            'Failed to initialize DotContentAnalytics. Please verify the required configuration (server and siteKey).'
         );
     }
 

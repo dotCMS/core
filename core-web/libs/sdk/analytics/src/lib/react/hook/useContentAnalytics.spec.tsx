@@ -90,7 +90,7 @@ describe('useContentAnalytics', () => {
 
         expect(() => {
             renderHook(() => useContentAnalytics(mockConfig));
-        }).toThrow('useContentAnalytics: analytics not initialized');
+        }).toThrow('Failed to initialize DotContentAnalytics');
 
         console.error = originalError;
     });
