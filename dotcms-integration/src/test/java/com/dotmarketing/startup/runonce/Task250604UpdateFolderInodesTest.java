@@ -11,6 +11,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -24,6 +25,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
 import java.sql.SQLException;
 import java.util.List;
@@ -78,10 +80,7 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
     @AfterClass
     public static void killoff() throws Exception {
 
-       // APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
         DbConnectionFactory.closeSilently();
-
-
     }
 
     String badIdentifier(String shorty) {
@@ -100,8 +99,6 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
     private String insertBadData() throws DotDataException, SQLException, DotSecurityException {
 
         String shorty = UUIDGenerator.shorty();
-
-
 
         new DotConnect().setSQL("INSERT INTO identifier "
                 + "(id, parent_path,asset_name,host_inode,asset_type,create_date) VALUES "
@@ -273,6 +270,42 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
         assertEquals("The folder should have the same number of permissions as before", perms.size(), origPermSize);
 
 
+
+    }
+
+
+    /**
+     * Test method {@link Task250604UpdateFolderInodes#executeUpgrade()}
+     * Given scenario: A template has a theme linked to the folder's identifier
+     * Expected result: After executing the upgrade task, the template's theme must use the folder's inode
+     */
+    @CloseDBIfOpened
+    @Test
+    public void test_update_folder_ids_with_linked_themes() throws Exception {
+        // create a bad folder with an identifier and inode that do not match
+        final String badShorty = insertBadData();
+        final String folderInode = badInode(badShorty);
+        final String identifier = badIdentifier(badShorty);
+
+        final TemplateDataGen templateDataGen = new TemplateDataGen();
+        final Template template = templateDataGen.theme(identifier).nextPersisted();
+
+        // run task to fix the bad folder data
+        Task250604UpdateFolderInodes task = new Task250604UpdateFolderInodes();
+
+        // Check that it should run now
+        assertTrue(task.forceRun());
+
+        // Run the task
+        task.executeUpgrade();
+
+        // Check that the task has fixed the bad data
+        assertFalse(task.forceRun());
+
+        //Now we have to check if the template's theme was updated to use the inode instead of the bad identifier
+        final Template updatedTemplate = APILocator.getTemplateAPI().find(template.getInode(), APILocator.systemUser(), false);
+        assertNotNull(updatedTemplate);
+        assertTrue(updatedTemplate.getTheme().equals(folderInode));
 
     }
 
