@@ -31,7 +31,7 @@ public class Task250828CreateCustomAttributeTableTest {
         try (Connection connection = DbConnectionFactory.getDataSource().getConnection()) {
             if(new DotDatabaseMetaData().tableExists(connection, "analytic_custom_attributes")) {
 
-                new DotConnect().executeUpdate("DROP TABLE Invert 'if' condition");
+                new DotConnect().executeUpdate("DROP TABLE analytic_custom_attributes");
                 DbConnectionFactory.commit();
             }
         }

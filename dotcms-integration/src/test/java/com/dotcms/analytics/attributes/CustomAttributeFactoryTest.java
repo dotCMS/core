@@ -25,7 +25,7 @@ public class CustomAttributeFactoryTest {
     }
 
     /**
-     * Method to test: {@link CustomAttributeFactoryImpl#save(EventType, Map)}
+     * Method to test: {@link CustomAttributeFactoryImpl#save(String, Map)}
      * When: called the method with a {@link EventType} that does not exist
      * Should: save it
      */
@@ -63,36 +63,18 @@ public class CustomAttributeFactoryTest {
 
 
     /**
-     * Method to test: {@link CustomAttributeFactoryImpl#save(EventType, Map)}
+     * Method to test: {@link CustomAttributeFactoryImpl#save(String, Map)}
      * When: called the method with a {@link EventType} that exist
-     * Should: throw exception
+     * Should: update it
      */
     @Test
     public void saveExists() throws DotDataException {
         final CustomAttributeFactory factory = new CustomAttributeFactoryImpl();
 
         factory.save(EventType.PAGE_VIEW.getName(), Map.of("A", "a"));
+        factory.save(EventType.PAGE_VIEW.getName(), Map.of("B", "b"));
 
-        try {
-            factory.save(EventType.PAGE_VIEW.getName(), Map.of("B", "b"));
-            throw new AssertionError("DotDataException should have been thrown");
-        } catch (DotDataException e) {
-            final String expectedMessage = "ERROR: duplicate key value violates unique constraint \"analytic_custom_attributes_pkey\"\n" +
-                    "  Detail: Key (event_type)=(pageview) already exists.{\n" +
-                    "  \"SQL\": [\"INSERT INTO analytic_custom_attributes VALUES(?, ?)\"],\n" +
-                    "  \"maxRows\": [-1],\n" +
-                    "  \"offest\": [0],\n" +
-                    "  \"params\": [\n" +
-                    "    \"pageview\",\n" +
-                    "    {\n" +
-                    "      \"null\": false,\n" +
-                    "      \"type\": \"json\",\n" +
-                    "      \"value\": \"{\\\"B\\\":\\\"b\\\"}\"\n" +
-                    "    }\n" +
-                    "  ]\n" +
-                    "}";
-            assertEquals(expectedMessage, e.getMessage());
-        }
+        assertEquals(Map.of("B", "b"), factory.getAll().get(EventType.PAGE_VIEW.getName()));
     }
 
     /**
