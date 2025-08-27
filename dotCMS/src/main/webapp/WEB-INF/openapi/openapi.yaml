@@ -25030,8 +25030,6 @@ components:
       properties:
         name:
           type: string
-          maxLength: 255
-          minLength: 1
         ownerId:
           type: string
         persona:
