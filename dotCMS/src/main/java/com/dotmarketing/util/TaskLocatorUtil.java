@@ -247,14 +247,15 @@ import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariables
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemField;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayout;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflow;
-import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifier;
 import com.dotmarketing.startup.runonce.Task241014AddTemplateValueOnContentletIndex;
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortlet;
 import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayout;
 import com.dotmarketing.startup.runonce.Task250107RemoveEsReadOnlyMonitorJob;
+import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
 import com.dotmarketing.startup.runonce.Task250603UpdateIdentifierParentPathCheckTrigger;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodes;
+import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -276,7 +277,7 @@ import java.util.stream.Collectors;
  */
 public class TaskLocatorUtil {
 
-	private static final List<Class<?>> userfixTasks = new CopyOnWriteArrayList<>();
+	private static final List<Class<?>> userFixTasks = new CopyOnWriteArrayList<>();
 
 	/**
 	 * Returns the list of tasks that are run to solve internal conflicts
@@ -284,7 +285,7 @@ public class TaskLocatorUtil {
 	 *
 	 * @return The list of Fix Tasks.
 	 */
-	private static final List<Class<?>> systemfixTasks = ImmutableList.of(
+	private static final List<Class<?>> systemFixTasks = ImmutableList.of(
 			FixTask00001CheckAssetsMissingIdentifiers.class,
 			FixTask00003CheckContainersInconsistencies.class,
 			FixTask00006CheckLinksInconsistencies.class,
@@ -312,7 +313,7 @@ public class TaskLocatorUtil {
 	 *            - The new fix task class.
 	 */
 	public static void addFixTask(Class<?> clazz){
-		userfixTasks.add(clazz);
+		userFixTasks.add(clazz);
 	}
 
 	/**
@@ -322,7 +323,7 @@ public class TaskLocatorUtil {
 	 *            - The fix task to remove.
 	 */
 	public static void removeFixTask(Class<?> clazz){
-		userfixTasks.remove(clazz);
+		userFixTasks.remove(clazz);
 	}
 
 	/**
@@ -332,8 +333,8 @@ public class TaskLocatorUtil {
 	 */
 	public static List<Class<?>> getFixTaskClasses() {
 		final List<Class<?>> l = new ArrayList<>();
-		l.addAll(systemfixTasks);
-		l.addAll(userfixTasks);
+		l.addAll(systemFixTasks);
+		l.addAll(userFixTasks);
 		return l;
 	}
 
@@ -583,6 +584,7 @@ public class TaskLocatorUtil {
         .add(Task250113CreatePostgresJobQueueTables.class)
 		.add(Task250603UpdateIdentifierParentPathCheckTrigger.class)
 		.add(Task250604UpdateFolderInodes.class)
+        .add(Task250826AddIndexesToUniqueFieldsTable.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
