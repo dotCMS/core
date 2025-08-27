@@ -4,7 +4,6 @@ import { of, Subject } from 'rxjs';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
     effect,
     inject,
     DestroyRef,
@@ -23,12 +22,11 @@ import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
-import { DotContentDriveContentType } from '../../../../shared/models';
+import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
-    contentTypes: DotContentDriveContentType[];
+    contentTypes: DotCMSContentType[];
     filterByKeyword: string;
     loading: boolean;
 };
@@ -41,31 +39,17 @@ type DotContentDriveContentTypeFieldState = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveContentTypeFieldComponent implements OnInit {
-    #store = inject(DotContentDriveStore);
-
-    #contentTypesService = inject(DotContentTypeService);
-    #destroyRef = inject(DestroyRef);
-
+    readonly #store = inject(DotContentDriveStore);
+    readonly #contentTypesService = inject(DotContentTypeService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #apiRequestSubject = new Subject<{ type?: string; filter: string }>();
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         contentTypes: [],
         filterByKeyword: '',
         loading: true
     });
 
-    readonly $selectedContentTypes = signal<DotContentDriveContentType[]>([]);
-
-    #apiRequestSubject = new Subject<{ type?: string; filter: string }>();
-
-    // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
-    // This prevents the effect from being triggered when the base types are the same or filters changes
-    private readonly $mappedBaseTypes = computed(
-        () => this.#store.filters().baseType?.map((item) => MAP_NUMBERS_TO_BASE_TYPES[item]) ?? [],
-        {
-            // This will trigger the effect if the base types are different
-            equal: (a, b) => a?.length === b?.length && a?.every((item) => b.includes(item))
-        }
-    );
-
+    readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
     readonly getContentTypesEffect = effect(() => {
         // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
         // After that remove the uncommented code and add the line below
@@ -94,48 +78,15 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                         .pipe(catchError(() => of([])))
                 )
             )
-            .subscribe((contentTypes: DotCMSContentType[]) => {
+            .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
                 const selectedContentTypes = this.$selectedContentTypes() ?? [];
-                const contentTypeFilters = this.#store.getFilterValue('contentType');
-
-                // Preserve the selected content types
-                const allContentTypes = [...selectedContentTypes, ...(contentTypes ?? [])];
-
-                // Remove duplicates
-                const cleanedContentTypes = allContentTypes.reduce<DotContentDriveContentType[]>(
-                    (acc, current) => {
-                        const exists = acc.find((item) => item.id === current.id);
-
-                        // We want to remove duplicates, filter out forms and system types
-                        if (
-                            !exists &&
-                            !current.system &&
-                            current.baseType !== DotCMSBaseTypesContentTypes.FORM
-                        ) {
-                            // If the item is selected in the multiselect
-                            // or is in the filters we have it in the store
-                            // we want to set the selected property to true
-                            const isSelected =
-                                selectedContentTypes.some((item) => item.id === current.id) ||
-                                contentTypeFilters?.includes(current.variable);
-
-                            acc.push({
-                                ...current,
-                                selected: !!isSelected
-                            });
-                        }
-
-                        return acc;
-                    },
-                    []
-                );
+                const allContentTypes = [...selectedContentTypes, ...dotCMSContentTypes];
+                const contentTypes = this.filterAndDeduplicateContentTypes(allContentTypes);
 
                 patchState(this.$state, {
-                    contentTypes: cleanedContentTypes,
+                    contentTypes,
                     loading: false
                 });
-
-                this.$selectedContentTypes.set(cleanedContentTypes.filter((item) => item.selected));
             });
     }
 
@@ -166,5 +117,45 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         } else {
             this.#store.removeFilter('contentType');
         }
+    }
+
+    /**
+     * Reset the filter by keyword when the multiselect is hidden
+     *
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
+    onHidePanel() {
+        patchState(this.$state, {
+            filterByKeyword: ''
+        });
+    }
+
+    /**
+     * Filters and deduplicates content types by:
+     * - Removing duplicates based on ID
+     * - Excluding system content types
+     * - Excluding form content types
+     *
+     * @param contentTypes - Array of content types to process
+     * @returns Filtered and deduplicated array of content types
+     */
+    private filterAndDeduplicateContentTypes(
+        contentTypes: DotCMSContentType[]
+    ): DotCMSContentType[] {
+        const uniqueIds = new Set<string>();
+
+        return contentTypes.filter((contentType) => {
+            // Skip if already seen, is system type, or is form type
+            if (
+                uniqueIds.has(contentType.id) ||
+                contentType.system ||
+                contentType.baseType === DotCMSBaseTypesContentTypes.FORM
+            ) {
+                return false;
+            }
+
+            uniqueIds.add(contentType.id);
+            return true;
+        });
     }
 }
