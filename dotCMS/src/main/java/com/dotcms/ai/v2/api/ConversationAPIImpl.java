@@ -1,7 +1,8 @@
 package com.dotcms.ai.v2.api;
 
 import com.dotcms.ai.v2.api.aiservices.AiChatService;
-import com.dotcms.ai.v2.api.aitools.AiContentTool;
+import com.dotcms.ai.v2.api.aitools.AiContentTools;
+import com.dotcms.ai.v2.api.aitools.AiContentTypeTools;
 import com.dotcms.ai.v2.api.provider.ModelProviderFactory;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
@@ -15,15 +16,18 @@ public class ConversationAPIImpl implements ConversationAPI {
 
     private final ChatMemoryFactory chatMemoryFactory;
     private final ModelProviderFactory modelProviderFactory;
-    private final AiContentTool contentTool;
+    private final AiContentTools contentTools;
+    private final AiContentTypeTools contentTypeTools;
 
     @Inject
     public ConversationAPIImpl(final ChatMemoryFactory chatMemoryFactory,
                                final ModelProviderFactory modelProviderFactory,
-                               final AiContentTool contentTool) {
+                               final AiContentTools contentTool,
+                               final AiContentTypeTools contentTypeTools) {
         this.chatMemoryFactory = chatMemoryFactory;
         this.modelProviderFactory = modelProviderFactory;
-        this.contentTool = contentTool;
+        this.contentTools = contentTool;
+        this.contentTypeTools = contentTypeTools;
     }
 
     @Override
@@ -39,7 +43,7 @@ public class ConversationAPIImpl implements ConversationAPI {
         final AiChatService aiChatService = AiServices.builder(AiChatService.class)
                 .chatModel(chatModel)
                 .chatMemory(chatMemory)
-                .tools(this.contentTool)
+                .tools(this.contentTools, this.contentTypeTools)
                 .build();
 
         return new ChatResponse(conversationId, aiChatService.chat(prompt));
