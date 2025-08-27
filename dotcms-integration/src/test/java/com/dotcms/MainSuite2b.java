@@ -490,7 +490,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240131UpdateLanguageVariableContentTypeTest.class,
         PushedAssetUtilTest.class,
         OpenAIAutoTagActionletTest.class,
-        Task250825CreateCustomAttributeTableTest.class,
+        Task250828CreateCustomAttributeTableTest.class,
         CustomAttributeAPIImplTest.class,
         CustomAttributeFactoryTest.class
 })
