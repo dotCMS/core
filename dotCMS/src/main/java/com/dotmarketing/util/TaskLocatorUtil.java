@@ -27,6 +27,7 @@ import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
 import com.dotmarketing.startup.runalways.Task00040CheckAnonymousUser;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecrets;
+import com.dotmarketing.startup.runonce.*;
 import com.dotmarketing.startup.runonce.Task00760AddContentletStructureInodeIndex;
 import com.dotmarketing.startup.runonce.Task00765AddUserForeignKeys;
 import com.dotmarketing.startup.runonce.Task00766AddFieldVariableTable;
@@ -583,9 +584,13 @@ public class TaskLocatorUtil {
 		.add(Task250107RemoveEsReadOnlyMonitorJob.class)
         .add(Task250113CreatePostgresJobQueueTables.class)
 		.add(Task250603UpdateIdentifierParentPathCheckTrigger.class)
+
 		.add(Task250604UpdateFolderInodes.class)
+        .add(Task250604UpdateFolderInodes.class)
         .add(Task250826AddIndexesToUniqueFieldsTable.class)
-		.build();
+        .add(Task250828CreateCustomAttributeTable.class)
+        .build();
+
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
