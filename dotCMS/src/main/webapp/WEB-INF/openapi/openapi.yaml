@@ -42,6 +42,9 @@ tags:
   name: Containers
 - description: Endpoints for managing content and contentlets
   name: Content
+- description: Returns the content types valid for a page based on the container/types
+    on the layout
+  name: getPagesContentTypes
 - description: Endpoints for managing folder structure and organization
   name: Folders
 - description: Form management and processing
@@ -6712,6 +6715,122 @@ paths:
           description: Internal Server Error
       summary: Updates a content type
       tags:
+      - Content Type
+  /v1/contenttype/page:
+    get:
+      description: Returns a list of content type objects based on the filtering criteria.
+      operationId: getPagesContentTypes
+      parameters:
+      - description: The URL or Identifier of the page to filter content types for
+          the palette
+        in: query
+        name: pagePathOrId
+        schema:
+          type: string
+      - description: Optional Language id
+        in: query
+        name: language
+        schema:
+          type: string
+          default: "-1"
+      - description: String to filter/search for specific content types; leave blank
+          to return all.
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: |-
+          Page number in response pagination.
+
+          Default: `1`
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - description: |-
+          Number of results per page for pagination.
+
+          Default: `10`
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int64
+          default: 10
+      - description: |-
+          Column(s) to sort the results. Multiple columns can be combined in a comma-separated list. Column names can also be set within a SQL string function, such as `upper()`.
+
+          Some possible values:
+
+          `name`, `velocity_var_name`, `mod_date`, `sort_order`
+
+          `description`, `structuretype`, `category`, `inode`
+        in: query
+        name: orderby
+        schema:
+          type: string
+          default: usage
+      - description: "Sort direction: choose between ascending or descending."
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+          enum:
+          - ASC
+          - DESC
+      - description: Filter by site identifier.
+        in: query
+        name: host
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                - baseType: string
+                  clazz: string
+                  defaultType: true
+                  description: string
+                  fixed: true
+                  folder: string
+                  folderPath: string
+                  host: string
+                  iDate: 0
+                  icon: string
+                  id: string
+                  layout: []
+                  metadata: {}
+                  modDate: 0
+                  multilingualable: true
+                  nEntries: 0
+                  name: string
+                  siteName: string
+                  sortOrder: 0
+                  system: true
+                  variable: string
+                  versionable: true
+                  workflows: []
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination:
+                  currentPage: 0
+                  perPage: 0
+                  totalEntries: 0
+                permissions: []
+          description: Content types retrieved successfully
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a list of content types for a page
+      tags:
+      - getPagesContentTypes
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
     post:
@@ -16853,22 +16972,40 @@ paths:
       tags:
       - Tags
     post:
-      operationId: addTag_1
+      description: "Creates a single tag. This operation is idempotent - if the tag\
+        \ already exists, it will return the existing tag."
+      operationId: createSingleTag
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
-              $ref: "#/components/schemas/TagForm"
+              $ref: "#/components/schemas/SingleTagForm"
+        description: Single tag data to create
+        required: true
       responses:
-        default:
+        "201":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityRestTagView"
+          description: Tag created or retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid tag data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Create single tag
       tags:
       - Tags
     put:
@@ -16888,6 +17025,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagMapView"
           description: default response
+      tags:
+      - Tags
+  /v2/tags/_bulk:
+    post:
+      description: Creates multiple tags in bulk with optional owner assignment
+      operationId: addTag_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagForm"
+        description: Bulk tag data to create
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagMapView"
+          description: Tags created successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid tag data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Create multiple tags
       tags:
       - Tags
   /v2/tags/import:
@@ -16997,23 +17171,46 @@ paths:
       - Tags
   /v2/tags/{nameOrId}:
     get:
+      description: "Retrieves a single tag by its name or UUID. For name-based searches,\
+        \ uses site context for disambiguation."
       operationId: getTagsByNameOrId_1
       parameters:
-      - in: path
+      - description: Tag name or UUID
+        in: path
         name: nameOrId
         required: true
         schema:
           type: string
+      - description: "Site ID for name-based searches. If not provided, uses current\
+          \ site context with SYSTEM_HOST fallback"
+        in: query
+        name: siteId
+        schema:
+          type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityRestTagView"
+          description: Tag found successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: Tag not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error
+      summary: Get tag by name or ID
       tags:
       - Tags
   /v2/tags/{tagId}:
@@ -23221,6 +23418,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRestTagView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRoleDetailView:
       type: object
       properties:
@@ -24893,6 +25113,19 @@ components:
           type: string
         value:
           type: string
+    SingleTagForm:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 1
+        ownerId:
+          type: string
+        siteId:
+          type: string
+      required:
+      - name
     SiteForm:
       type: object
       properties:
