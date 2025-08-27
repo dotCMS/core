@@ -8,9 +8,6 @@ import com.dotcms.rest.ResponseEntityListView;
 import com.dotcms.rest.ResponseEntityRestTagListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v2.tags.ResponseEntityRestTagView;
-import com.dotcms.rest.api.v2.tags.ResponseEntityTagInodesMapView;
-import com.dotcms.rest.api.v2.tags.ResponseEntityTagMapView;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -207,7 +204,7 @@ public class TagResource {
             .collect(Collectors.toList());
 
         return Response.status(Response.Status.CREATED)
-                .entity(new ResponseEntityListView<>(resultList))
+                .entity(new ResponseEntityRestTagListView(resultList))
                 .build();
     }
 
