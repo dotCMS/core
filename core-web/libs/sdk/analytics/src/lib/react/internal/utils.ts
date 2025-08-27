@@ -1,5 +1,8 @@
 import { initializeContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import {
+    DotCMSAnalytics,
+    DotCMSAnalyticsConfig
+} from '../../dotAnalytics/shared/dot-content-analytics.model';
 
 /**
  * Internal utilities for initializing and accessing the analytics singleton in React apps.
@@ -19,10 +22,10 @@ let cachedConfig: DotCMSAnalyticsConfig | null | undefined;
  */
 export const initializeAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics | null => {
     // Reset singleton if config changes
-    if (cachedConfig && (
-        cachedConfig.server !== config.server ||
-        cachedConfig.siteKey !== config.siteKey
-    )) {
+    if (
+        cachedConfig &&
+        (cachedConfig.server !== config.server || cachedConfig.siteKey !== config.siteKey)
+    ) {
         singleton = undefined;
     }
 

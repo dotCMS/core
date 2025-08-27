@@ -5,16 +5,13 @@ import { getUVEState } from '@dotcms/uve';
 
 import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 
-
 // TODO: Make this work no tightly coupled to Next.js App Router https://github.com/dotCMS/core/issues/33100
-
 
 // Helpers
 const computeNextKey = (
     pathname: string,
     searchParams?: URLSearchParams | ReadonlyURLSearchParams | null
-): string =>
-    `${pathname}${searchParams?.toString() ? '?' + searchParams.toString() : ''}`;
+): string => `${pathname}${searchParams?.toString() ? '?' + searchParams.toString() : ''}`;
 
 /**
  * Tracks page views on route changes using Next.js App Router signals.

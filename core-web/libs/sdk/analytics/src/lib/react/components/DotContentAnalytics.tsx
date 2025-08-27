@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { ReactElement, useMemo } from 'react';
 
@@ -27,5 +27,3 @@ export function DotContentAnalytics({ config }: DotContentAnalyticsProps): React
 
     return null;
 }
-
-

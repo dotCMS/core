@@ -82,7 +82,6 @@ describe('useContentAnalytics', () => {
     });
 
     it('throws error when analytics fails to initialize', () => {
-
         const originalError = console.error;
         console.error = jest.fn();
 
