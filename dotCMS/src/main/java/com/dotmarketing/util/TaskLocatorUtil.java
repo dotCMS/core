@@ -356,7 +356,7 @@ public class TaskLocatorUtil {
         .add(Task250113CreatePostgresJobQueueTables.class)
 		.add(Task250603UpdateIdentifierParentPathCheckTrigger.class)
 		.add(Task250604UpdateFolderInodes.class)
-        .add(Task250825CreateCustomAttributeTable.class)
+        .add(Task250828CreateCustomAttributeTable.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
