@@ -7,9 +7,9 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 /**
- * Form for creating a single tag via v2 API
+ * Form for creating a tag(s) via v2 API
  */
-public class SingleTagForm extends Validated {
+public class TagForm extends Validated {
 
     @NotNull(message = "Tag name is required")
     private final String name;
@@ -24,7 +24,7 @@ public class SingleTagForm extends Validated {
     private final Boolean persona;
 
     @JsonCreator
-    public SingleTagForm(
+    public TagForm(
             @JsonProperty("name") final String name,
             @JsonProperty("siteId") final String siteId,
             @JsonProperty("ownerId") final String ownerId,

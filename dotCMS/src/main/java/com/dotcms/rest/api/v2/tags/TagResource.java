@@ -142,7 +142,7 @@ public class TagResource {
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagForms The list of {@link SingleTagForm} objects containing the tags to create.
+     * @param tagForms The list of {@link TagForm} objects containing the tags to create.
      *
      * @return The {@link ResponseEntityListView} containing the created tags.
      */
@@ -178,8 +178,8 @@ public class TagResource {
             @Context final HttpServletResponse response,
             @RequestBody(description = "List of tag data to create. Single tag = list with one element, multiple tags = list with multiple elements.",
                     required = true,
-                    content = @Content(schema = @Schema(type = "array", implementation = SingleTagForm.class)))
-            final List<SingleTagForm> tagForms) throws DotDataException, DotSecurityException {
+                    content = @Content(schema = @Schema(type = "array", implementation = TagForm.class)))
+            final List<TagForm> tagForms) throws DotDataException, DotSecurityException {
 
         // Initialize and check permissions
         final InitDataObject initDataObject = getInitDataObject(request, response);
@@ -189,7 +189,7 @@ public class TagResource {
 
         // Validate all tags upfront - fail fast with structured error
         for (int i = 0; i < tagForms.size(); i++) {
-            final SingleTagForm form = tagForms.get(i);
+            final TagForm form = tagForms.get(i);
             form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
         }
 
@@ -211,7 +211,7 @@ public class TagResource {
      * Saves Tags in dotCMS using a list-based approach.
      *
      * @param request   The current instance of the {@link HttpServletRequest}.
-     * @param tagForms  The {@link List} of {@link SingleTagForm} containing the Tags to save.
+     * @param tagForms  The {@link List} of {@link TagForm} containing the Tags to save.
      * @param user      The {@link User} performing the operation.
      *
      * @return List of created {@link Tag} objects.
@@ -221,13 +221,13 @@ public class TagResource {
      */
     @WrapInTransaction
     private List<Tag> saveTags(final HttpServletRequest request,
-                               final List<SingleTagForm> tagForms,
+                               final List<TagForm> tagForms,
                                final User user) 
             throws DotDataException, DotSecurityException {
         
         final List<Tag> savedTags = new ArrayList<>();
         
-        for (SingleTagForm form : tagForms) {
+        for (TagForm form : tagForms) {
             // Resolve site
             final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
             

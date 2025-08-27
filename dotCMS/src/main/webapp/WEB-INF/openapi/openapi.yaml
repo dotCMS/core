@@ -16861,7 +16861,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SingleTagForm"
+              $ref: "#/components/schemas/TagForm"
         description: "List of tag data to create. Single tag = list with one element,\
           \ multiple tags = list with multiple elements."
         required: true
@@ -25025,19 +25025,6 @@ components:
           type: string
         value:
           type: string
-    SingleTagForm:
-      type: object
-      properties:
-        name:
-          type: string
-        ownerId:
-          type: string
-        persona:
-          type: boolean
-        siteId:
-          type: string
-      required:
-      - name
     SiteForm:
       type: object
       properties:
@@ -25343,14 +25330,16 @@ components:
     TagForm:
       type: object
       properties:
+        name:
+          type: string
         ownerId:
           type: string
-        tags:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/RestTag"
+        persona:
+          type: boolean
+        siteId:
+          type: string
       required:
-      - tags
+      - name
     TagInode:
       type: object
       properties:
