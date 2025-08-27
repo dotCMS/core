@@ -1,8 +1,6 @@
 package com.dotcms.rest.tag;
 
 import com.dotcms.rest.api.Validated;
-import com.dotcms.rest.exception.BadRequestException;
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import javax.validation.constraints.NotNull;
@@ -17,6 +15,7 @@ public class UpdateTagForm extends Validated {
     @NotNull
     public final String tagName;
 
+    @NotNull
     public final String tagId;
 
     public UpdateTagForm(final Builder builder) {
@@ -29,11 +28,8 @@ public class UpdateTagForm extends Validated {
 
         @JsonProperty
         private String siteId;
-        
-        @JsonProperty("tagName")
-        @JsonAlias({"name"})
+        @JsonProperty
         private String tagName;
-        
         @JsonProperty
         private String tagId;
 
@@ -59,41 +55,6 @@ public class UpdateTagForm extends Validated {
             return this;
         }
 
-    }
-
-    /**
-     * Modern getter methods for v2 API compatibility.
-     * These provide cleaner field names while maintaining backward compatibility.
-     */
-    public String getName() { 
-        return tagName; 
-    }
-    
-    public String getSiteId() { 
-        return siteId; 
-    }
-    
-    public String getTagId() { 
-        return tagId; 
-    }
-
-    @Override
-    public void checkValid() {
-        // First run Bean Validation (@NotNull checks)
-        super.checkValid();
-        
-        // Custom business rules (migrated from validateUpdateTag)
-        if (tagName != null) {
-            if (tagName.contains(",")) {
-                throw new BadRequestException("Tag name cannot contain commas");
-            }
-            if (tagName.trim().isEmpty()) {
-                throw new BadRequestException("Tag name cannot be blank");
-            }
-            if (tagName.length() > 255) {
-                throw new BadRequestException("Tag name cannot exceed 255 characters");
-            }
-        }
     }
 
     /**
