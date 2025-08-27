@@ -3647,7 +3647,7 @@
 									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v2/tags/",
+									"raw": "{{serverURL}}/api/v2/tags/_bulk",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -3655,7 +3655,7 @@
 										"api",
 										"v2",
 										"tags",
-										""
+										"_bulk"
 									]
 								},
 								"description": "This tests the endpoint that brings back one specific App given the App-key."
