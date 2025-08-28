@@ -611,8 +611,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 201\", function () {",
+							"    pm.response.to.have.status(201);",
 							"});",
 							"",
 							"pm.test(\"Verify length ordering test tags were created\", function () {",
@@ -652,7 +652,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"tag\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"tags\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"tagging\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"retag\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"metatag\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      }\n   }\n}",
+					"raw": "[\n   {\n      \"name\":\"tag\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"ownerId\":\"dotcms.org.1\",\n      \"persona\":false\n   },\n   {\n      \"name\":\"tags\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"ownerId\":\"dotcms.org.1\",\n      \"persona\":false\n   },\n   {\n      \"name\":\"tagging\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"ownerId\":\"dotcms.org.1\",\n      \"persona\":false\n   },\n   {\n      \"name\":\"retag\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"ownerId\":\"dotcms.org.1\",\n      \"persona\":false\n   },\n   {\n      \"name\":\"metatag\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"ownerId\":\"dotcms.org.1\",\n      \"persona\":false\n   }\n]",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -660,15 +660,14 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/_bulk",
+					"raw": "{{serverURL}}/api/v2/tags",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"tags",
-						"_bulk"
+						"tags"
 					]
 				}
 			},
