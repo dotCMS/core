@@ -107,6 +107,14 @@ public interface AbstractImportResult extends Serializable {
     Optional<String> lastInode();
 
     /**
+     * Retrieves the flag indicating if the process stopped because an error was found and the configuration
+     * @return an {@code Optional<Integer>} representing the last line were the error occurred or an empty
+     * Optional empty if no error occurred or if
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    Optional<Integer> stoppedOnErrorAtLine();
+
+    /**
      * Represents the type of operation being performed during an import process. This enum is used
      * to differentiate between different kinds of operations that can be performed, such as
      * publishing or previewing content.

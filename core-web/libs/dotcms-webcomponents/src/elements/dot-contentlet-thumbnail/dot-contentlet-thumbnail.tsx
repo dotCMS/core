@@ -1,4 +1,8 @@
+// We need `h` on scope to be able to render the component
+// But it is unused in this file, so we disable the rule so eslint doesn't complain
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Component, h, Host, Prop, State } from '@stencil/core';
+
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
 
 @Component({
@@ -48,6 +52,7 @@ export class DotContentletThumbnail {
             this.renderImage =
                 hasTitleImage === 'true' ||
                 mimeType === 'application/pdf' ||
+                this.contentlet['image'] ||
                 this.shouldShowVideoThumbnail();
         }
     }
@@ -99,6 +104,9 @@ export class DotContentletThumbnail {
 
         if (this.isSVG) return `/contentAsset/image/${this.contentlet.inode}/asset`;
 
+        if (this.contentlet['image'])
+            return `/dA/${this.contentlet.inode}/image/resize_w/250/quality_q/45`;
+
         return `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
             this.contentlet.modDateMilis || this.contentlet.modDate
         }`;
@@ -112,7 +120,7 @@ export class DotContentletThumbnail {
         return `${this.fieldVariable || this.contentlet.titleImage}/`;
     }
 
-    private switchToIcon(): any {
+    private switchToIcon(): void {
         this.renderImage = false;
     }
 

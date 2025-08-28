@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -13,15 +13,16 @@ export interface RegexTemplate {
 @Component({
     selector: 'dot-regex-check-property',
     templateUrl: './regex-check-property.component.html',
-    styleUrls: ['./regex-check-property.component.scss']
+    styleUrls: ['./regex-check-property.component.scss'],
+    standalone: false
 })
 export class RegexCheckPropertyComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+
     regexCheckTemplates: RegexTemplate[] = [];
 
     property: FieldProperty;
     group: UntypedFormGroup;
-
-    constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         this.regexCheckTemplates = [

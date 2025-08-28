@@ -1,24 +1,24 @@
-import { AfterViewInit, Component } from '@angular/core';
+import { AfterViewInit, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
+
+import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 @Component({
     providers: [],
     selector: 'dot-contentlets',
     template:
-        '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>'
+        '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>',
+    standalone: false
 })
 export class DotContentletsComponent implements AfterViewInit {
-    constructor(
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotRouterService: DotRouterService,
-        private dotIframeService: DotIframeService,
-        private route: ActivatedRoute,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService
-    ) {}
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotRouterService = inject(DotRouterService);
+    private dotIframeService = inject(DotIframeService);
+    private route = inject(ActivatedRoute);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
 
     ngAfterViewInit(): void {
         setTimeout(() => {

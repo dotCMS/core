@@ -14,6 +14,10 @@
     gap: $spacing-xxs;
     width: 100%;
 
+    &.hidden {
+        display: none;
+    }
+
     .divider {
         border-left: 1px solid $color-palette-gray-200;
         height: 1.5rem;
@@ -118,7 +122,7 @@
     }
 
     .p-dropdown-items .p-focus {
-        background-color: $color-palette-gray-300;
+        background-color: $color-palette-gray-200;
     }
 
     .p-dropdown-items .p-dropdown-item.p-highlight {

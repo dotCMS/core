@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -23,20 +23,19 @@ import {
 @Component({
     selector: 'dot-edit-page-view-as-controller',
     templateUrl: './dot-edit-page-view-as-controller.component.html',
-    styleUrls: ['./dot-edit-page-view-as-controller.component.scss']
+    styleUrls: ['./dot-edit-page-view-as-controller.component.scss'],
+    standalone: false
 })
 export class DotEditPageViewAsControllerComponent implements OnInit {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotLicenseService = inject(DotLicenseService);
+    dotPageStateService = inject(DotPageStateService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+
     isEnterpriseLicense$: Observable<boolean>;
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotLicenseService: DotLicenseService,
-        public dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService
-    ) {}
 
     ngOnInit(): void {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();

@@ -1,0 +1,34 @@
+@let timeFilterOptions = $translatedTimeOptions();
+@let showCustomDatePicker = $showCustomTimeRange();
+@let timePeriodPlaceholder = 'analytics.filters.time-period.placeholder' | dm;
+@let customDatePlaceholder = 'analytics.filters.custom-date-range.placeholder' | dm;
+
+<div class="flex justify-content-end align-items-center gap-3" data-testid="analytics-filters">
+    <!-- Time Period Filter -->
+    <p-dropdown
+        id="period-filter"
+        size="small"
+        [options]="timeFilterOptions"
+        [(ngModel)]="$selectedTimeRange"
+        optionLabel="label"
+        optionValue="value"
+        [placeholder]="timePeriodPlaceholder"
+        [style]="{ minWidth: '250px' }"
+        (onChange)="onChangeTimeRange($event)"
+        data-testid="period-dropdown" />
+
+    <!-- Custom Date Range Calendar -->
+    @if (showCustomDatePicker) {
+        <p-calendar
+            [(ngModel)]="$customDateRange"
+            selectionMode="range"
+            [readonlyInput]="false"
+            [showIcon]="false"
+            [placeholder]="customDatePlaceholder"
+            dateFormat="mm/dd/yy"
+            [showButtonBar]="true"
+            [style]="{ minWidth: '250px' }"
+            (onSelect)="onChangeCustomDateRange()"
+            data-testid="custom-date-range-calendar" />
+    }
+</div>

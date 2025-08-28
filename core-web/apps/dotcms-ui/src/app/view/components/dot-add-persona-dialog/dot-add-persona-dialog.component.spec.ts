@@ -8,9 +8,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { FileUploadModule } from 'primeng/fileupload';
 
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotCreatePersonaFormModule } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.module';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -29,10 +26,15 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component';
+import { DotCreatePersonaFormModule } from './dot-create-persona-form/dot-create-persona-form.module';
+
+import { DOTTestBed } from '../../../test/dot-test-bed';
+import { SiteSelectorFieldModule } from '../_common/dot-site-selector-field/dot-site-selector-field.module';
 
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input() field: NgControl;

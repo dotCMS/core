@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.rest.annotation.SwaggerCompliant;
+import io.swagger.v3.oas.annotations.media.Schema;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -17,6 +19,11 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
  *             {@link com.dotcms.rest.api.v1.user.UserResource} end-point.
  */
 @Deprecated
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
 @Tag(name = "Users")
 @Path("/user")
 public class UserResource {
@@ -43,12 +51,30 @@ public class UserResource {
 	 * @throws JSONException 
 	 *
 	 */
-
+    @Operation(
+        operationId = "getLoggedInUserLegacy",
+        summary = "Get logged in user (deprecated)",
+        description = "Returns a JSON representation of the currently logged in user including userId, emailAddress, firstName, lastName, and roleId. This endpoint is deprecated - use v1 UserResource instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "User information retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "User information containing userId, emailAddress, firstName, lastName, and roleId"))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
 	@GET
 	@Path("/getloggedinuser/{params:.*}")
 	@Produces("application/json")
 	@Deprecated
-	public Response getLoggedInUser(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
+	public Response getLoggedInUser(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+		@Parameter(description = "URL parameters for the request", required = true) @PathParam("params") String params) throws DotDataException,
 			DotRuntimeException, PortalException, SystemException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)

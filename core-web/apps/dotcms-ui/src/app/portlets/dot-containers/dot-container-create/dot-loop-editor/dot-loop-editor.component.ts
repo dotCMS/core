@@ -17,7 +17,8 @@ import { ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR } from '@angular/f
             useExisting: forwardRef(() => DotLoopEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotLoopEditorComponent implements ControlValueAccessor, OnInit {
     @Input() isEditorVisible = false;

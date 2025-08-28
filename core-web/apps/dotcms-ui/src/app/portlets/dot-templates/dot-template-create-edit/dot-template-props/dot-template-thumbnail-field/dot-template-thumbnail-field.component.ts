@@ -1,7 +1,7 @@
 import { throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, forwardRef } from '@angular/core';
+import { Component, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { finalize, switchMap, take } from 'rxjs/operators';
@@ -29,19 +29,18 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTemplateThumbnailFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor {
+    private dotTempFileUploadService = inject(DotTempFileUploadService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotCrudService = inject(DotCrudService);
+    private dotMessageService = inject(DotMessageService);
+
     asset: DotCMSTemplateThumbnail;
     error = '';
     loading = false;
-
-    constructor(
-        private dotTempFileUploadService: DotTempFileUploadService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotCrudService: DotCrudService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Handle thumbnail setup

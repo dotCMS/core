@@ -22,7 +22,8 @@ import { DotInlineEditComponent } from './dot-inline-edit.component';
             [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
             [inlineEditContentTemplate]="inlineEditContentTemplate"
             #dotEditInline></dot-inline-edit>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input() inlineEditDisplayTemplate?: TemplateRef<unknown>;

@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { NgClass, NgTemplateOutlet } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -31,13 +31,8 @@ import {
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import {
-    DotPersona,
-    DotLanguage,
-    DotDeviceListItem,
-    DotCMSContentlet
-} from '@dotcms/dotcms-models';
-import { DotCMSPage, UVE_MODE } from '@dotcms/types';
+import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
@@ -55,10 +50,8 @@ import { convertLocalTimeToUTC } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
-    standalone: true,
     imports: [
         NgClass,
-        NgTemplateOutlet,
         ButtonModule,
         ToolbarModule,
         DotEmaBookmarksComponent,
@@ -88,7 +81,7 @@ export class DotUveToolbarComponent {
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
-    @Output() editUrlContentMap = new EventEmitter<DotCMSContentlet>();
+    @Output() editUrlContentMap = new EventEmitter<DotCMSURLContentMap>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -193,10 +186,10 @@ export class DotUveToolbarComponent {
     /**
      * Handle the persona selection
      *
-     * @param {DotPersona} persona
+     * @param {DotCMSViewAsPersona} persona
      * @memberof DotEmaComponent
      */
-    onPersonaSelected(persona: DotPersona & { pageId: string }) {
+    onPersonaSelected(persona: DotCMSViewAsPersona & { pageId: string }) {
         const existPersona =
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
@@ -244,10 +237,10 @@ export class DotUveToolbarComponent {
     /**
      * Handle the persona despersonalization
      *
-     * @param {(DotPersona & { pageId: string })} persona
+     * @param {(DotCMSViewAsPersona & { pageId: string })} persona
      * @memberof EditEmaToolbarComponent
      */
-    onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
+    onDespersonalize(persona: DotCMSViewAsPersona & { pageId: string; selected: boolean }) {
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get('editpage.personalization.delete.confirm.header'),
             message: this.#dotMessageService.get(

@@ -1,16 +1,17 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { signalMethod } from '@ngrx/signals';
 
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
     inject,
     input,
     model,
+    output,
     viewChild
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ControlContainer, FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -23,13 +24,16 @@ import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { DotWysiwygTinymceComponent } from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
 import {
     AvailableEditor,
-    COMMENT_TINYMCE,
     DEFAULT_EDITOR,
     EditorOptions
 } from './dot-edit-content-wysiwyg-field.constant';
-import { shouldUseDefaultEditor } from './dot-edit-content-wysiwyg-field.utils';
 
+import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import {
+    getCurrentEditorFromDisabled,
+    updateDisabledWYSIWYGOnEditorSwitch
+} from '../shared/utils/field-editor-preferences.util';
 
 /**
  * Component representing a WYSIWYG (What You See Is What You Get) editor field for editing content in DotCMS.
@@ -37,7 +41,6 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
  */
 @Component({
     selector: 'dot-edit-content-wysiwyg-field',
-    standalone: true,
     imports: [
         FormsModule,
         DropdownModule,
@@ -52,9 +55,19 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
     host: {
         class: 'dot-wysiwyg__wrapper'
     },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
-export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
+export class DotEditContentWYSIWYGFieldComponent {
+    /**
+     * Control container for the form
+     */
+    private readonly controlContainer = inject(ControlContainer);
     /**
      * Signal to get the TinyMCE component.
      */
@@ -79,6 +92,12 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
     /**
+     * Event emitted when disabledWYSIWYG changes.
+     * Emits the updated disabledWYSIWYG array.
+     */
+    disabledWYSIWYGChange = output<string[]>();
+
+    /**
      * Representing the currently selected editor.
      */
     $selectedEditorDropdown = model<AvailableEditor>();
@@ -89,20 +108,26 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     $displayedEditor = model<AvailableEditor>(DEFAULT_EDITOR);
 
     /**
-     * Computed property that determines the default editor used for a contentlet.
+     * Computed property that determines the current editor based on disabledWYSIWYG settings
+     * with fallback to content analysis when no entry exists.
      */
     $contentEditorUsed = computed(() => {
-        const content = this.$fieldContent();
+        const field = this.$field();
 
-        if (shouldUseDefaultEditor(content)) {
+        if (!field?.variable) {
             return DEFAULT_EDITOR;
         }
 
-        if (content.includes(COMMENT_TINYMCE)) {
-            return AvailableEditor.TinyMCE;
+        const disabledWYSIWYG = this.#getCurrentDisabledWYSIWYG();
+
+        // Use disabledWYSIWYG setting
+        const currentEditor = getCurrentEditorFromDisabled(field.variable, disabledWYSIWYG, false);
+
+        if (currentEditor === AvailableEditor.Monaco || currentEditor === AvailableEditor.TinyMCE) {
+            return currentEditor;
         }
 
-        return AvailableEditor.Monaco;
+        return null;
     });
 
     /**
@@ -122,11 +147,8 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     readonly editorTypes = AvailableEditor;
     readonly editorOptions = EditorOptions;
 
-    ngAfterViewInit(): void {
-        // Assign the selected editor value
-        this.$selectedEditorDropdown.set(this.$contentEditorUsed());
-        // Editor showed
-        this.$displayedEditor.set(this.$contentEditorUsed());
+    constructor() {
+        this.handleEditorChange(this.$contentEditorUsed);
     }
 
     /**
@@ -135,6 +157,27 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     onEditorChange(newEditor: AvailableEditor) {
         const currentDisplayedEditor = this.$displayedEditor();
         const content = this.$fieldContent();
+
+        const updateEditorAndDisabledWYSIWYG = () => {
+            const field = this.$field();
+
+            if (!field?.variable) {
+                throw new Error('Field variable is not available');
+            }
+
+            // Update disabledWYSIWYG in the contentlet
+            const currentDisabledWYSIWYG = this.#getCurrentDisabledWYSIWYG();
+            const updatedDisabledWYSIWYG = updateDisabledWYSIWYGOnEditorSwitch(
+                field.variable,
+                newEditor,
+                currentDisabledWYSIWYG,
+                false // isTextAreaField
+            );
+
+            // Emit the change event
+            this.disabledWYSIWYGChange.emit(updatedDisabledWYSIWYG);
+            this.$displayedEditor.set(newEditor);
+        };
 
         if (content?.length > 0 && this.$displayedEditor() !== AvailableEditor.TinyMCE) {
             this.#confirmationService.confirm({
@@ -147,15 +190,13 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
                 rejectButtonStyleClass: 'p-button-text',
                 acceptIcon: 'none',
                 rejectIcon: 'none',
-                accept: () => {
-                    this.$displayedEditor.set(newEditor);
-                },
+                accept: updateEditorAndDisabledWYSIWYG,
                 reject: () => {
                     this.$selectedEditorDropdown.set(currentDisplayedEditor);
                 }
             });
         } else {
-            this.$displayedEditor.set(newEditor);
+            updateEditorAndDisabledWYSIWYG();
         }
     }
 
@@ -178,5 +219,34 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
                 console.warn('Monaco component is not available');
             }
         }
+    }
+
+    /**
+     * Handle editor change
+     * @param newEditor - The new editor
+     */
+    readonly handleEditorChange = signalMethod<AvailableEditor>((newEditor) => {
+        if (!newEditor) {
+            return;
+        }
+
+        this.$selectedEditorDropdown.set(newEditor);
+        this.$displayedEditor.set(newEditor);
+    });
+
+    /**
+     * Get the current disabledWYSIWYG value from the form control
+     * @returns The current disabledWYSIWYG value
+     */
+    #getCurrentDisabledWYSIWYG() {
+        return this.disabledWYSIWYGField?.value ?? [];
+    }
+
+    /**
+     * Get the disabledWYSIWYG field from the form control
+     * @returns The disabledWYSIWYG field
+     */
+    get disabledWYSIWYGField() {
+        return this.controlContainer.control?.get(DISABLED_WYSIWYG_FIELD);
     }
 }

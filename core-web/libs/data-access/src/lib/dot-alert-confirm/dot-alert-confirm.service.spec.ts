@@ -24,7 +24,7 @@ describe('DotAlertConfirmService', () => {
     let confirmationService: ConfirmationService;
 
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotAlertConfirmService,
                 ConfirmationService,
@@ -51,8 +51,8 @@ describe('DotAlertConfirmService', () => {
             }
         };
 
-        service = testbed.get(DotAlertConfirmService);
-        confirmationService = testbed.get(ConfirmationService);
+        service = TestBed.inject(DotAlertConfirmService);
+        confirmationService = TestBed.inject(ConfirmationService);
     });
 
     describe('confirmation', () => {

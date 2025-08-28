@@ -4,15 +4,14 @@ import { DEFAULT_COLORS, DotUiColorsService } from './dot-ui-colors.service';
 
 describe('DotUiColorsService', () => {
     let service: DotUiColorsService;
-    let injector;
     let setPropertySpy;
 
     beforeEach(() => {
-        injector = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [DotUiColorsService]
         });
 
-        service = injector.get(DotUiColorsService);
+        service = TestBed.inject(DotUiColorsService);
 
         setPropertySpy = jasmine.createSpy('setProperty');
         spyOn(document as Document, 'querySelector').and.returnValue({

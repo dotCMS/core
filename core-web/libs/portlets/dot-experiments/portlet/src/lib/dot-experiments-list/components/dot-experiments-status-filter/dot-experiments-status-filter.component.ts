@@ -7,7 +7,6 @@ import { DotDropdownSelectOption, DotExperimentStatus } from '@dotcms/dotcms-mod
 import { DotDropdownDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-status-filter',
     imports: [
         FormsModule,

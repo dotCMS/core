@@ -4,7 +4,7 @@ tiptap-editor {
     display: block;
     height: 100%;
     width: 100%;
-    overflow-y: auto;
+    overflow: auto;
     scrollbar-gutter: stable;
 }
 
@@ -16,13 +16,21 @@ tiptap-editor ::ng-deep .ProseMirror {
     min-height: 100%;
     outline: none;
     padding: $dot-editor-size (4 * $dot-editor-size);
-    font: $dot-editor-size;
+    font-size: $dot-editor-size;
 
     .ProseMirror-selectednode {
         &.dot-image,
         .dot-image {
             outline: 2px solid $color-palette-primary;
+
+            &:hover {
+                outline: 2px solid $color-palette-primary;
+            }
         }
+    }
+
+    .dot-image:hover {
+        outline: 2px solid $color-palette-primary-400;
     }
 
     .is-empty::before {
@@ -33,17 +41,12 @@ tiptap-editor ::ng-deep .ProseMirror {
         pointer-events: none;
     }
 
-    .add-button {
-        all: unset;
-        cursor: pointer;
-        border: solid 1px #eee;
-        width: 2 * $dot-editor-size;
-        height: 2 * $dot-editor-size;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #666;
-        background: #ffffff;
+    pre.is-empty::before {
+        position: unset;
+    }
+
+    .is-empty {
+        position: relative;
     }
 
     .ai-loading {

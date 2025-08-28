@@ -6,7 +6,7 @@
 # Key features:
 # - Triggered on push to main or manual dispatch
 # - Configurable options for reusing previous builds and running all tests
-# - Comprehensive checks including build, tests, SonarQube analysis, and CLI artifact building
+# - Comprehensive checks including build, tests, Semgrep analysis, and CLI artifact building
 # - Deployment to the trunk environment
 # - Final reporting of the workflow status
 
@@ -33,10 +33,6 @@ on:
         default: false
       publish-npm-sdk-libs:
         description: 'Publish NPM SDKs'
-        type: boolean
-        default: false
-      disable-sonar:
-        description: 'Disable SonarQube job'
         type: boolean
         default: false
       disable-semgrep:
@@ -80,18 +76,6 @@ jobs:
       contents: read
       packages: write
 
-  # SonarQube analysis job
-  sonar:
-    name: Trunk SonarQube
-    needs: [ initialize, test ]
-    if: always() && !failure() && !cancelled() && vars.DISABLE_SONAR != 'true'
-    uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
-    with:
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
   semgrep:
     name: Trunk Semgrep
     needs: [ initialize, test ]
@@ -115,7 +99,7 @@ jobs:
 
   # Deployment job - deploys to the trunk environment
   deployment:
-    needs: [ initialize,build-cli,sonar,test ]
+    needs: [ initialize,build-cli,semgrep,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
@@ -134,7 +118,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, sonar, semgrep, deployment]
+    needs: [ initialize, build, build-cli, test, semgrep, deployment]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

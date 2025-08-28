@@ -1,3 +1,5 @@
+import { Props } from 'tippy.js';
+
 import { Component, ElementRef, HostListener, input, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -16,7 +18,6 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
     selector: 'dot-image-editor-popover',
     templateUrl: './dot-image-editor-popover.component.html',
     styleUrls: ['./dot-image-editor-popover.component.scss'],
-    standalone: true,
     imports: [EditorModalDirective, InputTextModule, ReactiveFormsModule, ButtonModule]
 })
 export class DotImageEditorPopoverComponent {
@@ -36,7 +37,7 @@ export class DotImageEditorPopoverComponent {
         title: new FormControl('')
     });
 
-    protected readonly tippyOptions = {
+    protected readonly tippyOptions: Partial<Props> = {
         onShow: this.initializeFormWithImageData.bind(this),
         onShown: this.focusSearchInput.bind(this)
     };
@@ -46,6 +47,13 @@ export class DotImageEditorPopoverComponent {
         if (event.key === 'Escape') {
             this.cancelImageEditing();
         }
+    }
+
+    /**
+     * The native element of the Tippy instance.
+     */
+    get tippyElement() {
+        return this.popover?.nativeElement;
     }
 
     /**

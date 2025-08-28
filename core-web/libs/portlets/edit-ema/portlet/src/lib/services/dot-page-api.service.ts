@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
@@ -60,7 +60,7 @@ export interface PaginationData {
 
 @Injectable()
 export class DotPageApiService {
-    constructor(private http: HttpClient) {}
+    private http = inject(HttpClient);
 
     /**
      * Get a page from the Page API

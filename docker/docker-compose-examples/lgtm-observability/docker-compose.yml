@@ -1,0 +1,254 @@
+# version: '3.8'  # Removed to avoid obsolete warning
+
+services:
+  # PostgreSQL Database  
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: dotcmsdbuser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dotcms
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # OpenSearch (Elasticsearch-compatible)
+  opensearch:
+    image: opensearchproject/opensearch:1
+    environment:
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      DISABLE_INSTALL_DEMO_CONFIG: "false"
+      DISABLE_SECURITY_PLUGIN: "false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - app-net
+      - observability-net
+    restart: unless-stopped
+
+  # Agent Download (init container for OpenTelemetry and Pyroscope)
+  agent-init:
+    image: alpine:3.18
+    command: >
+      sh -c "
+        apk add --no-cache curl;
+        echo 'Downloading agents...';
+        
+        if [ ! -f /agents/opentelemetry-javaagent.jar ]; then
+          echo 'Downloading OpenTelemetry Java Agent...';
+          curl -L -o /agents/opentelemetry-javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.18.1/opentelemetry-javaagent.jar;
+          echo 'OpenTelemetry Java Agent downloaded successfully';
+        else
+          echo 'OpenTelemetry Java Agent already exists';
+        fi
+        
+        if [ ! -f /agents/pyroscope.jar ]; then
+          echo 'Downloading Pyroscope Java Agent v0.18.1 (compatible with LGTM)...';
+          curl -L -o /agents/pyroscope.jar https://github.com/grafana/pyroscope-java/releases/download/v0.18.1/pyroscope.jar;
+          echo 'Pyroscope Java Agent v0.18.1 downloaded successfully';
+        else
+          echo 'Pyroscope Java Agent already exists';
+        fi
+        
+        ls -la /agents/;
+      "
+    volumes:
+      - agents:/agents
+
+  # dotCMS with OpenTelemetry Instrumentation
+  dotcms:
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,environment"
+    labels:
+      - "service=dotcms"
+      - "environment=demo"
+    depends_on:
+      db:
+        condition: service_healthy
+      opensearch:
+        condition: service_started
+      lgtm:
+        condition: service_started
+      agent-init:
+        condition: service_completed_successfully
+    environment:
+      # Hybrid approach: Use test image with InitServlet fix + init container for agents
+      # Configure agents via CMS_JAVA_OPTS instead of relying on setenv.sh changes
+      CMS_JAVA_OPTS: '-Xmx1g -javaagent:/srv/dotserver/tomcat/agents/opentelemetry-javaagent.jar -javaagent:/srv/dotserver/tomcat/agents/pyroscope.jar'
+      LANG: 'C.UTF-8'
+      TZ: 'UTC'
+      # Database Configuration
+      DB_BASE_URL: 'jdbc:postgresql://db/dotcms'
+      DB_USERNAME: 'dotcmsdbuser'
+      DB_PASSWORD: 'password'
+      DB_MAX_CONNECTIONS: '60'
+      DB_MAX_IDLE: '10'
+      DB_VALIDATION_QUERY: 'SELECT 1'
+      # OpenSearch Configuration
+      ES_HOSTNAME: 'opensearch'
+      ES_PORT: '9200'
+      ES_PROTOCOL: 'http'
+      ES_AUTH_TYPE: 'NONE'
+      ES_INDEX_POLICY_ENABLED: 'true'
+      # Additional OpenSearch environment variables for dotCMS
+      DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+      DOT_ES_AUTH_TYPE: 'BASIC'
+      DOT_ES_PROTOCOL: 'https'
+      # Override any hardcoded ES settings
+      ELASTICSEARCH_URLS: 'https://opensearch:9200'
+      ELASTICSEARCH_HOST: 'opensearch'
+      ELASTICSEARCH_PORT: '9200'
+      ELASTICSEARCH_PROTOCOL: 'https'
+      # dotCMS Configuration
+      DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+      DOT_DOTCMS_CLUSTER_ID: 'dotcms-lgtm-demo'
+      # Micrometer Metrics Configuration
+      METRICS_ENABLED: 'true'
+      METRICS_PROMETHEUS_ENABLED: 'true'
+      METRICS_JVM_ENABLED: 'true'
+      METRICS_SYSTEM_ENABLED: 'true'
+      METRICS_DATABASE_ENABLED: 'true'
+      METRICS_CACHE_ENABLED: 'true'
+      METRICS_HTTP_ENABLED: 'true'
+      METRICS_TOMCAT_ENABLED: 'true'
+      # Dynamic tagging for observability
+      DOT_METRICS_TAG_ENV: 'demo'
+      DOT_METRICS_TAG_SERVICE: 'dotcms'
+      DOT_METRICS_TAG_DEPLOYMENT: 'lgtm-demo'
+      # OpenTelemetry Configuration - Switch to HTTP protocol for better compatibility
+      OTELCOL_ENDPOINT: 'http://lgtm:4318'
+      OTEL_ENABLED: 'true'
+      OTEL_JAVAAGENT_ENABLED: 'true'
+      OTEL_SERVICE_NAME: 'dotcms'
+      OTEL_SERVICE_VERSION: 'latest'
+      OTEL_RESOURCE_ATTRIBUTES: 'service.name=dotcms,service.version=latest,deployment.environment=demo,service.instance.id=dotcms-01'
+      OTEL_EXPORTER_OTLP_ENDPOINT: 'http://lgtm:4318'
+      OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf'
+      OTEL_TRACES_EXPORTER: 'otlp'
+      OTEL_METRICS_EXPORTER: 'otlp'
+      OTEL_LOGS_EXPORTER: 'otlp'
+      OTEL_TRACES_SAMPLER: 'parentbased_traceidratio'
+      OTEL_TRACES_SAMPLER_ARG: '0.1'  # Sample 10% of traces instead of 100%
+      OTEL_METRIC_EXPORT_INTERVAL: '60000'  # Less frequent metrics (1min vs 30sec)
+      # OpenTelemetry export configuration - optimized batch sizes
+      OTEL_EXPORTER_OTLP_LOGS_TIMEOUT: '10000'
+      OTEL_BSP_MAX_EXPORT_BATCH_SIZE: '64'   # Smaller batches (64 vs 256)
+      OTEL_BSP_EXPORT_TIMEOUT: '5000'       # Faster timeout (5s vs 10s)
+      OTEL_BSP_SCHEDULE_DELAY: '500'        # More frequent small exports
+      OTEL_EXPORTER_OTLP_COMPRESSION: 'gzip'
+      # Selective log capture - only capture WARN+ instead of INFO+
+      OTEL_INSTRUMENTATION_LOGBACK_APPENDER_ENABLED: 'true'
+      OTEL_INSTRUMENTATION_LOG4J_APPENDER_ENABLED: 'true'
+      OTEL_LOGS_BRIDGE_INSTRUMENTATION_ENABLED: 'true'
+      OTEL_LOGS_INCLUDE_LEVEL: 'WARN'       # Only WARN/ERROR logs, not INFO
+      # Reduced metrics cardinality
+      OTEL_EXPERIMENTAL_METRICS_CARDINALITY_LIMIT: '2000'  # Much lower limit
+      # Pyroscope profiling configuration - Complete setup with allocation and lock profiling
+      PYROSCOPE_SERVER_ADDRESS: 'http://lgtm:4040'
+      PYROSCOPE_APPLICATION_NAME: 'dotcms'
+      PYROSCOPE_FORMAT: 'jfr'
+      PYROSCOPE_PROFILING_INTERVAL: '10ms'
+      #PYROSCOPE_PROFILER_EVENT: 'cpu'
+      PYROSCOPE_PROFILER_ALLOC: '512k'
+      PYROSCOPE_PROFILER_LOCK: '10ms'
+      PYROSCOPE_UPLOAD_INTERVAL: '10s'
+      PYROSCOPE_LOG_LEVEL: 'DEBUG'
+      # Try simpler configuration without custom labels
+      #PYROSCOPE_BASIC_AUTH_USERNAME: ''
+      #PYROSCOPE_BASIC_AUTH_PASSWORD: ''
+      # Disable Glowroot since we're using OpenTelemetry and Pyroscope
+      GLOWROOT_ENABLED: 'false'
+    volumes:
+      - cms-shared:/data/shared
+      - agents:/srv/dotserver/tomcat/agents
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
+    networks:
+      - app-net
+      - observability-net
+    ports:
+      - "8082:8082"
+      - "8443:8443"
+      - "8090:8090"  # Management port
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8090/dotmgt/livez"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
+  # Grafana LGTM Stack (Loki, Grafana, Tempo, Mimir/Prometheus)
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "3000:3000"    # Grafana
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+      - "4040:4040"    # Pyroscope
+    environment:
+      GF_PATHS_DATA: /var/lib/grafana
+      # Enable Pyroscope and all component logging for debugging
+      ENABLE_LOGS_PYROSCOPE: "true"
+      ENABLE_LOGS_ALL: "true"
+      # Moderate gRPC message size limits - 8MB instead of default 4MB
+      # This is more reasonable for production observability workloads
+      OTEL_EXPORTER_OTLP_GRPC_MAX_RECEIVE_MESSAGE_SIZE: "8388608"
+      OTEL_EXPORTER_OTLP_GRPC_MAX_SEND_MESSAGE_SIZE: "8388608"
+      # Loki gRPC limits - 8MB
+      LOKI_GRPC_SERVER_MAX_RECV_MSG_SIZE: "8388608"
+      LOKI_GRPC_SERVER_MAX_SEND_MSG_SIZE: "8388608"
+    volumes:
+      - lgtm-data:/data
+      # Mount custom dashboard provisioning file to LGTM provisioning directory
+      - ./provisioning/dashboards/dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/dotcms-dashboards.yaml:ro
+      - ./provisioning/dashboards/dotcms-logs-dashboard.json:/otel-lgtm/grafana/dashboards/dotcms/dotcms-logs-dashboard.json:ro
+      # Mount micrometer metrics dashboards
+      - ./provisioning/dashboards/dotcms-database-monitoring.json:/otel-lgtm/grafana/dashboards/dotcms/dotcms-database-monitoring.json:ro
+      - ./provisioning/dashboards/dotcms-jvm-system.json:/otel-lgtm/grafana/dashboards/dotcms/dotcms-jvm-system.json:ro
+      - ./provisioning/dashboards/dotcms-cache-performance.json:/otel-lgtm/grafana/dashboards/dotcms/dotcms-cache-performance.json:ro
+      - ./provisioning/dashboards/dotcms-http-tomcat.json:/otel-lgtm/grafana/dashboards/dotcms/dotcms-http-tomcat.json:ro
+      # Mount Prometheus configuration and custom startup script
+      - ./prometheus-config.yml:/otel-lgtm/prometheus/prometheus.yml:ro
+      - ./run-prometheus-custom.sh:/otel-lgtm/run-prometheus.sh:ro
+      # Mount Grafana datasources configuration
+      # - ./provisioning/datasources/prometheus.yml:/otel-lgtm/grafana/conf/provisioning/datasources/dotcms-datasources.yml:ro
+    networks:
+      - observability-net
+    restart: unless-stopped
+
+networks:
+  app-net:
+    driver: bridge
+  observability-net:
+    driver: bridge
+
+volumes:
+  cms-shared:
+  dbdata:
+  opensearch-data:
+  agents:
+  lgtm-data:

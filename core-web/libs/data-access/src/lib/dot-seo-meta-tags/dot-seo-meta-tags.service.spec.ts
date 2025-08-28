@@ -4,13 +4,14 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { IMG_NOT_FOUND_KEY } from '@dotcms/dotcms-models';
 import { seoOGTagsResultOgMock } from '@dotcms/utils-testing';
 
 import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 
+import { DotMessageService } from '../dot-alert-confirm/dot-alert-confirm.service';
 import { DotSeoMetaTagsUtilService } from '../dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
+import { DotUploadService } from '../dot-upload/dot-upload.service';
 
 function createTestDocument(): XMLDocument {
     return document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);

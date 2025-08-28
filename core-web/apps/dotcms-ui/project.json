@@ -14,7 +14,13 @@
                 "main": "apps/dotcms-ui/src/main.ts",
                 "polyfills": "apps/dotcms-ui/src/polyfills.ts",
                 "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
-                "allowedCommonJsDependencies": ["lodash", "dragula", "md5", "dom-autoscroller"],
+                "allowedCommonJsDependencies": [
+                    "lodash",
+                    "dragula",
+                    "md5",
+                    "dom-autoscroller",
+                    "date-fns"
+                ],
                 "assets": [
                     "apps/dotcms-ui/src/favicon.ico",
                     "apps/dotcms-ui/src/assets",
@@ -42,6 +48,11 @@
                         "glob": "**/*",
                         "input": "./libs/portlets/edit-ema/portlet/src/lib/assets",
                         "output": "./assets/edit-ema"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/portlets/dot-content-drive/portlet/src/lib/assets",
+                        "output": "./assets/dot-content-drive"
                     }
                 ],
                 "styles": [
