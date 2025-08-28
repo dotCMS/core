@@ -145,6 +145,7 @@ This maintenance release includes the following code fixes:
 139. https://github.com/dotCMS/core/issues/32545 : api/v1/workflow/actions/default/fire/PUBLISH not respecting default value #32545
 140. https://github.com/dotCMS/core/issues/32413 : [Containers]: Pagination is not working #32413
 141. https://github.com/dotCMS/core/issues/32583 : NPE in on content edit (Not on Beta version) when content type named "Event" lacks calendar fields #32583
+142. https://github.com/dotCMS/core/issues/33006 : Backport security fix to LTSs #33006
 
 
 
