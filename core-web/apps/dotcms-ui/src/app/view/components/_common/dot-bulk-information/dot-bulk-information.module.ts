@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotBulkInformationComponent } from './dot-bulk-information.component';
 
 @NgModule({
     imports: [CommonModule, DotMessagePipe],

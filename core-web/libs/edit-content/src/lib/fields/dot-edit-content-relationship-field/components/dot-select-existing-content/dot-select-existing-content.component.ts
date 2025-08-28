@@ -2,11 +2,11 @@ import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    effect,
     inject,
     model,
     OnInit,
-    effect,
-    CUSTOM_ELEMENTS_SCHEMA,
     signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -24,25 +24,25 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TableModule } from 'primeng/table';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
-import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ExistingContentStore } from './store/existing-content.store';
 
+import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
+import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { SelectionMode } from '../../models/relationship.models';
 
 type DialogData = {
     contentTypeId: string;
     selectionMode: SelectionMode;
     currentItemsIds: string[];
+    showFields?: string[] | null;
 };
 
 const STATIC_COLUMNS = 6;
 
 @Component({
     selector: 'dot-select-existing-content',
-    standalone: true,
     imports: [
         TableModule,
         ButtonModule,
@@ -91,29 +91,19 @@ export class DotSelectExistingContentComponent implements OnInit {
     $staticColumns = signal(STATIC_COLUMNS);
 
     constructor() {
-        effect(
-            () => {
-                // Sync the selection items with the store
-                const selectionItems = this.$selectionItems();
-                if (selectionItems) {
-                    this.store.setSelectionItems(selectionItems);
-                }
-            },
-            {
-                allowSignalWrites: true
+        effect(() => {
+            // Sync the selection items with the store
+            const selectionItems = this.$selectionItems();
+            if (selectionItems) {
+                this.store.setSelectionItems(selectionItems);
             }
-        );
+        });
 
-        effect(
-            () => {
-                // Sync the selection items with the store
-                const selectionItems = this.store.selectionItems();
-                this.$selectionItems.set(selectionItems);
-            },
-            {
-                allowSignalWrites: true
-            }
-        );
+        effect(() => {
+            // Sync the selection items with the store
+            const selectionItems = this.store.selectionItems();
+            this.$selectionItems.set(selectionItems);
+        });
     }
 
     ngOnInit() {
@@ -130,7 +120,8 @@ export class DotSelectExistingContentComponent implements OnInit {
         this.store.initLoad({
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
-            selectedItemsIds: data.currentItemsIds
+            selectedItemsIds: data.currentItemsIds,
+            showFields: data.showFields
         });
     }
 

@@ -4,9 +4,10 @@ import {
     getRemainingSpaceForBox,
     parseFromDotObjectToGridStack,
     parseFromGridStackToDotObject,
-    willBoxFitInRow
+    willBoxFitInRow,
+    EMPTY_ROWS_VALUE
 } from './gridstack-utils';
-import { EMPTY_ROWS_VALUE, FULL_DATA_MOCK_UNSORTED, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
+import { FULL_DATA_MOCK_UNSORTED, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));

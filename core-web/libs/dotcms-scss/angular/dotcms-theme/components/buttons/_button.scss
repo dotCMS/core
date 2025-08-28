@@ -49,7 +49,7 @@
 }
 
 // Severity for basic button
-.p-button:enabled,
+.p-button:not(:disabled),
     // Used for file upload button
 .p-button.p-fileupload-choose {
     @extend #main-primary-severity;
@@ -77,7 +77,7 @@
 }
 
 // Severity for outlined button
-.p-button.p-button-outlined:enabled,
+.p-button.p-button-outlined:not(:disabled),
 .p-button.p-button-outlined:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     @extend #outlined-primary-severity;
 
@@ -111,7 +111,7 @@
 }
 
 // Severity for text button
-.p-button-text:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button-text:not(:disabled):not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
 a.p-button.p-button-text {
     @extend #text-primary-severity;
 

@@ -19,7 +19,7 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -29,7 +29,7 @@ import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'field.class',
+    clazz: DotCMSClazzes.TEXT,
     name: 'fieldName',
     id: '123'
 };
@@ -37,7 +37,8 @@ const mockDFormFieldData = {
 @Component({
     selector: 'dot-host-tester',
     template:
-        '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
+        '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>',
+    standalone: false
 })
 class DotHostTesterComponent {
     mockDFormFieldData: DotCMSContentTypeField = {
@@ -46,7 +47,8 @@ class DotHostTesterComponent {
 }
 
 @Directive({
-    selector: '[dotDynamicFieldProperty]'
+    selector: '[dotDynamicFieldProperty]',
+    standalone: false
 })
 class TestDynamicFieldPropertyDirective {
     @Input()
@@ -170,8 +172,8 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(async () => await startHostComponent());
 
         it('should init form', () => {
-            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith('field.class');
-            expect(comp.form.get('clazz').value).toBe('field.class');
+            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith(DotCMSClazzes.TEXT);
+            expect(comp.form.get('clazz').value).toBe(DotCMSClazzes.TEXT);
 
             expect(comp.form.get('id').value).toBe('123');
             expect(comp.form.get('property1').value).toBe('');

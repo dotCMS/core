@@ -263,7 +263,7 @@ public class ResponseUtil implements Serializable {
      */
     public static <T> void  handleAsyncResponse (final Future<T> future, final AsyncResponse asyncResponse) {
 
-        handleAsyncResponse(() -> Response.ok(new ResponseEntityView(DotConcurrentFactory.get(future))).build(), asyncResponse);
+        handleAsyncResponse(() -> Response.ok(new ResponseEntityView<>(DotConcurrentFactory.get(future))).build(), asyncResponse);
     } // handleAsyncResponse
 
     /**

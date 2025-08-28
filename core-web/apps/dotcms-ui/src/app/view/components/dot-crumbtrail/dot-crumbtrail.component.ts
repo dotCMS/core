@@ -6,7 +6,8 @@ import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
     styleUrls: ['./dot-crumbtrail.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotCrumbtrailComponent {
     /** Service responsible for managing breadcrumb data */

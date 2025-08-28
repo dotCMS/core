@@ -9,25 +9,36 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
-    templateUrl: 'iframe.component.html'
+    templateUrl: 'iframe.component.html',
+    standalone: false
 })
 export class IframeComponent implements OnInit, OnDestroy {
+    private dotIframeService = inject(DotIframeService);
+    private dotRouterService = inject(DotRouterService);
+    private dotUiColorsService = inject(DotUiColorsService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private ngZone = inject(NgZone);
+    dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    iframeOverlayService = inject(IframeOverlayService);
+    loggerService = inject(LoggerService);
+
     @ViewChild('iframeElement') iframeElement: ElementRef;
 
     @Input() src: string;
@@ -43,17 +54,6 @@ export class IframeComponent implements OnInit, OnDestroy {
     showOverlay = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotIframeService: DotIframeService,
-        private dotRouterService: DotRouterService,
-        private dotUiColorsService: DotUiColorsService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private ngZone: NgZone,
-        public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        public iframeOverlayService: IframeOverlayService,
-        public loggerService: LoggerService
-    ) {}
 
     ngOnInit(): void {
         this.iframeOverlayService.overlay

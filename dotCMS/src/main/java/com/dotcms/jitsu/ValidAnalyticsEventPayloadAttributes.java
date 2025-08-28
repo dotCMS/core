@@ -13,6 +13,7 @@ public interface ValidAnalyticsEventPayloadAttributes {
     String CONTEXT_ATTRIBUTE_NAME = "context";
     String EVENTS_ATTRIBUTE_NAME = "events";
     String DATA_ATTRIBUTE_NAME = "data";
+    String CUSTOM_ATTRIBUTE_NAME = "custom";
     String PAGE_ATTRIBUTE_NAME = "page";
     String DEVICE_ATTRIBUTE_NAME = "device";
     String UTM_ATTRIBUTE_NAME = "utm";
@@ -25,4 +26,6 @@ public interface ValidAnalyticsEventPayloadAttributes {
     String EVENT_TYPE_ATTRIBUTE_NAME = "event_type";
 
     String LOCAL_TIME_ATTRIBUTE_NAME = "local_time";
+
+    String SITE_ID_ATTRIBUTE_NAME = "site_id";
 }

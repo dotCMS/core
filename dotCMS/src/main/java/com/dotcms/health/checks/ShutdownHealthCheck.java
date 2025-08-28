@@ -43,7 +43,7 @@ public class ShutdownHealthCheck extends HealthCheckBase {
         boolean shutdownInProgress = status.isShutdownInProgress();
         boolean requestDrainingInProgress = status.isRequestDrainingInProgress();
         boolean shutdownCompleted = status.isShutdownCompleted();
-        int activeRequests = status.getActiveRequestCount();
+        long activeRequests = status.getActiveRequestCount();
         
         // Determine if system is healthy based on shutdown state
         boolean healthy;

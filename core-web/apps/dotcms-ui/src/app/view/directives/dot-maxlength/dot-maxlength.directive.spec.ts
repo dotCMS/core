@@ -7,7 +7,8 @@ import { DotMaxlengthDirective } from './dot-maxlength.directive';
 @Component({
     template: `
         <div contenteditable="true" dotMaxlength="10"></div>
-    `
+    `,
+    standalone: false
 })
 class TestComponent {}
 

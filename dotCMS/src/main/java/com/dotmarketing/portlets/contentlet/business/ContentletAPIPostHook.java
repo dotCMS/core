@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -24,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -1043,6 +1045,18 @@ public interface ContentletAPIPostHook {
 
 	}
 
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param searchCriteria The {@link SearchCriteria} object that allows you to filter the data
+     *                       being pulled.
+     * @param returnValue    The list of {@link Contentlet} objects that will be returned by the
+     *                       API call.
+     */
+    default void findAllVersions(final SearchCriteria searchCriteria, final List<Contentlet> returnValue) {
+    }
+
 	/**
 	 * Retrieves all versions for a contentlet identifier
 	 * @param identifiers
@@ -1116,7 +1130,16 @@ public interface ContentletAPIPostHook {
 	 * @param value
 	 */
 	public default void setContentletProperty(Contentlet contentlet, Field field, Object value){}
-	
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 */
+	public default void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value){}
+
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet

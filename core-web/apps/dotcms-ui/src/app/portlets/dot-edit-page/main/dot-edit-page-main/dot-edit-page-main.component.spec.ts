@@ -12,11 +12,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -59,11 +54,16 @@ import {
     MockDotRouterService,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
-import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
+import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotUiColorsService } from '../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../test/dot-test-bed';
+import { DotDownloadBundleDialogModule } from '../../../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
+import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 
@@ -90,7 +90,8 @@ class MockDotPageStateService {
 
 @Component({
     selector: 'dot-edit-contentlet',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotEditContentletComponent {
     @Output() custom = new EventEmitter<any>();

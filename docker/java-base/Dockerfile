@@ -1,7 +1,7 @@
 # ----------------------------------------------
 # Stage 1:  Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
-FROM ubuntu:20.04 AS base-builder
+FROM ubuntu:24.04 AS base-builder
 
 WORKDIR /srv
 
@@ -33,7 +33,7 @@ RUN apt update && \
 RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && jlink \
     --verbose \
     --add-modules \
-        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom \
+        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,jdk.management.agent,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom,jdk.jfr,jdk.management.jfr \
     --compress 2 \
     --no-header-files \
     --no-man-pages \

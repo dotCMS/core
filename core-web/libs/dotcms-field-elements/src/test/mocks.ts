@@ -1,7 +1,11 @@
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
 
 export const basicField: DotCMSContentTypeField = {
-    clazz: '',
+    clazz: DotCMSClazzes.TEXT,
     contentTypeId: '',
     dataType: '',
     defaultValue: '',

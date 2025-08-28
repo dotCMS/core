@@ -7,17 +7,18 @@ import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
-import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 
 import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
+
+import { DOTTestBed } from '../../../../../../../../../test/dot-test-bed';
+import { PaginationEvent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
+import { DotEditContentTypeCacheService } from '../services/dot-edit-content-type-cache.service';
+import { DotRelationshipService } from '../services/dot-relationship.service';
 
 const mockRelationships = [
     {
@@ -45,7 +46,8 @@ const cardinalities = [
 
 @Component({
     selector: 'dot-searchable-dropdown',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockSearchableDropdownComponent {
     @Input()
@@ -94,7 +96,7 @@ class MockRelationshipService {
 describe('DotEditRelationshipsComponent', () => {
     const contentTypeMock: DotCMSContentType = {
         ...dotcmsContentTypeBasicMock,
-        clazz: 'clazz',
+        clazz: DotCMSClazzes.TEXT,
         defaultType: false,
         fixed: false,
         folder: 'folder',

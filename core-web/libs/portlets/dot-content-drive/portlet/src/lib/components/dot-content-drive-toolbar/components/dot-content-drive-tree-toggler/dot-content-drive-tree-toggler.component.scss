@@ -1,0 +1,7 @@
+@use "variables" as *;
+
+:host {
+    svg.p-button-icon.pi {
+        color: $color-palette-gray-800;
+    }
+}

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -22,14 +22,14 @@ import { ToastModule } from 'primeng/toast';
     `
 })
 export class ToastComponent {
+    private messageService = inject(MessageService);
+
     @Input() severity = 'success';
     @Input() summary = 'Success Message';
     @Input() detail = 'The action "Publish" was executed succesfully';
     @Input() position = 'top-right';
     @Input() life = 2000;
     @Input() icon = 'pi-check-circle';
-
-    constructor(private messageService: MessageService) {}
 
     triggerToast() {
         this.messageService.add({

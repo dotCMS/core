@@ -1,5 +1,6 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
+import tippy from 'tippy.js';
 
 import {
     ChangeDetectorRef,
@@ -28,7 +29,6 @@ import { Link } from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
-import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
@@ -52,15 +52,13 @@ import {
     BubbleFormExtension,
     DotComands,
     DotConfigExtension,
+    DotTableCellContextMenu,
     DotFloatingButton,
-    DotTableCellExtension,
-    DotTableExtension,
-    DotTableHeaderExtension,
+    DotCMSTableExtensions,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { DotCMSPlusButton } from '../../extensions/dot-plus-button/dot-plus-button.plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
     DotMarketingConfigService,
@@ -82,7 +80,8 @@ import {
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
@@ -109,11 +108,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
-    private _customNodes: Map<string, AnyExtension> = new Map([
+    private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
-        ['table', DotTableExtension()],
         ['aiContent', AIContentNode],
         ['loader', LoaderNode]
     ]);
@@ -123,17 +121,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly dotDragHandleOptions = {
-        duration: 250
-    };
+    readonly viewContainerRef = inject(ViewContainerRef);
+    readonly dotMarketingConfigService = inject(DotMarketingConfigService);
+    readonly dotAiService = inject(DotAiService);
 
-    constructor(
-        private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService,
-        private readonly dotAiService: DotAiService
-    ) {
-        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
-    }
+    readonly dotDragHandleOptions = {
+        duration: 250,
+        zIndex: 5,
+        placement: 'left'
+    };
 
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
@@ -142,7 +138,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     get showCharData() {
         try {
             return JSON.parse(this.displayCountBar as string);
-        } catch (e) {
+        } catch {
             return true;
         }
     }
@@ -178,6 +174,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
+        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
+        tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),
@@ -467,10 +465,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             }),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
-            DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
-            DotTableHeaderExtension(),
-            TableRow,
             FreezeScroll,
             CharacterCount,
             AssetUploader(this.#injector, this.viewContainerRef),
@@ -500,14 +495,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
+                    if (node.type.name === 'table') {
+                        return '';
+                    }
+
                     return this.#dotMessageService.get('block-editor.placeholder.paragraph');
                 }
             }),
-            DotCMSPlusButton.configure({
-                showOnlyWhenEditable: true,
-                showOnlyCurrent: true,
-                includeChildren: false
-            })
+            ...DotCMSTableExtensions,
+            DotTableCellContextMenu(this.viewContainerRef)
         ];
 
         if (isAIPluginInstalled) {

@@ -1,13 +1,12 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { LazyLoadEvent } from 'primeng/api';
 
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -16,14 +15,23 @@ import {
 } from '@dotcms/data-access';
 import { dialogAction, DotApp, DotAppsSite } from '@dotcms/dotcms-models';
 
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-configuration',
     templateUrl: './dot-apps-configuration.component.html',
-    styleUrls: ['./dot-apps-configuration.component.scss']
+    styleUrls: ['./dot-apps-configuration.component.scss'],
+    standalone: false
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotAppsService = inject(DotAppsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotRouterService = inject(DotRouterService);
+    private route = inject(ActivatedRoute);
+    paginationService = inject(PaginatorService);
+
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
     @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
     apps: DotApp;
@@ -36,15 +44,6 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     totalRecords: number;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotAppsService: DotAppsService,
-        private dotMessageService: DotMessageService,
-        private dotRouterService: DotRouterService,
-        private route: ActivatedRoute,
-        public paginationService: PaginatorService
-    ) {}
 
     ngOnInit() {
         this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {

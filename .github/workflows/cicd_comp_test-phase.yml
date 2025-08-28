@@ -5,10 +5,11 @@
 #
 # Key features:
 # - Configurable test execution based on input parameters
-# - Parallel execution of different test suites
+# - Parallel execution of different test suites  
 # - Matrix strategy for running multiple test suites concurrently
 # - Reusable Maven job action for consistent test environment setup
 # - Artifact reuse from previous workflow runs
+# - DRY configuration using external YAML config
 
 name: Test Phase
 
@@ -57,193 +58,132 @@ env:
   ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
 
 jobs:
-  # JVM Unit Tests
-  linux-jvm-tests:
-    name: JVM Unit Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.jvm_unit_test || inputs.run-all-tests
-    timeout-minutes: 240
-    env:
-      MAVEN_OPTS: -Xmx2048m
+  # Generate test matrix from external configuration
+  setup-matrix:
+    name: Setup Test Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      has-tests: ${{ steps.generate-matrix.outputs.has-tests }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
+        
+      - name: Parse test configuration
+        id: parse-config
+        uses: mikefarah/yq@v4.47.1
         with:
-          stage-name: "JVM Tests"
-          maven-args: " -Dprod test -pl :dotcms-core"
-          cleanup-runner: true
-          generates-test-results: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cmd: yq -o=json .github/test-matrix.yml > config.json
 
-  # CLI Tests
-  linux-cli-tests:
-    name: CLI Tests
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.cli || inputs.run-all-tests
-    timeout-minutes: 240
-    env:
-      MAVEN_OPTS: -Xmx2048m
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Generate test matrix
+        id: generate-matrix
+        uses: actions/github-script@v7
         with:
-          fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
-        with:
-          stage-name: "CLI Tests"
-          maven-args: "-pl :dotcms-api-data-model,:dotcms-cli verify"
-          generates-test-results: true
-          cleanup-runner: true
-          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
-          needs-docker-image: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          script: |
+            const fs = require('fs');
+            
+            // Read the parsed JSON configuration
+            const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+            
+            // Build matrix from configuration
+            const matrix = [];
+            const inputs = {
+              'run-all-tests': ${{ inputs.run-all-tests }},
+              'jvm_unit_test': ${{ inputs.jvm_unit_test }},
+              'cli': ${{ inputs.cli }},
+              'frontend': ${{ inputs.frontend }}, 
+              'postman': ${{ inputs.postman }},
+              'karate': ${{ inputs.karate }},
+              'integration': ${{ inputs.integration }},
+              'e2e': ${{ inputs.e2e }}
+            };
+            
+            // Process each test type
+            for (const [testType, testConfig] of Object.entries(config.test_types)) {
+              const shouldRun = inputs['run-all-tests'] || inputs[testConfig.condition_input];
+              
+              if (!shouldRun) {
+                console.log(`Skipping ${testType} tests - not enabled`);
+                continue;
+              }
+              
+              // Process each suite in this test type
+              for (const suite of testConfig.suites) {
+                const testEntry = {
+                  // Inherit global defaults
+                  ...config.defaults,
+                  // Inherit test type defaults
+                  ...testConfig.defaults,
+                  // Apply suite-specific config
+                  ...suite,
+                  // Add metadata
+                  test_type: testType,
+                  condition_input: testConfig.condition_input
+                };
+                
+                // Build Maven args
+                if (testEntry.test_class) {
+                  // For integration/karate tests with test_class
+                  testEntry.maven_args = `${testEntry.base_maven_args} -Dit.test=${testEntry.test_class}`;
+                } else if (testEntry.collection) {
+                  // For postman tests with collection
+                  testEntry.maven_args = `${testEntry.base_maven_args} -Dpostman.collections=${testEntry.collection}`;
+                  testEntry.stage_name = `Postman ${testEntry.collection}`;
+                } else if (testEntry.maven_args && testEntry.base_maven_args) {
+                  // Combine base_maven_args first, then suite-specific maven_args
+                  testEntry.maven_args = `${testEntry.base_maven_args} ${testEntry.maven_args}`;
+                } else if (!testEntry.maven_args && testEntry.base_maven_args) {
+                  // Use base_maven_args if no specific maven_args
+                  testEntry.maven_args = testEntry.base_maven_args;
+                }
+                
+                // Clean up temporary fields
+                delete testEntry.base_maven_args;
+                delete testEntry.test_class;
+                delete testEntry.collection;
+                
+                matrix.push(testEntry);
+              }
+            }
+            
+            console.log(`Generated matrix with ${matrix.length} test configurations`);
+            
+            // Output the matrix
+            core.setOutput('matrix', JSON.stringify({ include: matrix }));
+            core.setOutput('has-tests', matrix.length > 0 ? 'true' : 'false');
 
-  # Frontend Tests
-  linux-frontend-tests:
-    name: Frontend Unit Tests
+  # Run all tests using the generated matrix
+  test-matrix:
+    name: ${{ matrix.name }}
+    needs: setup-matrix
+    if: needs.setup-matrix.outputs.has-tests == 'true'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.frontend || inputs.run-all-tests
-    timeout-minutes: 240
+    timeout-minutes: ${{ matrix.timeout_minutes }}
     env:
-      MAVEN_OPTS: -Xmx2048m
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
-        with:
-          stage-name: "Frontend Tests"
-          maven-args: "-pl :dotcms-core-web test"
-          generates-test-results: true
-          cleanup-runner: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-
-  # Integration Tests
-  linux-integration-tests:
-    name: JVM IT Tests ${{matrix.suites.name}}
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.integration || inputs.run-all-tests
-    timeout-minutes: 240
-    env:
-      MAVEN_OPTS: -Xmx2048m
+      MAVEN_OPTS: ${{ matrix.maven_opts }}
     strategy:
-      fail-fast: false
-      matrix:
-        suites:
-          - { name: "MainSuite 1a", pathName: "mainsuite1a", maven_args: '-Dit.test=MainSuite1a' }
-          - { name: "MainSuite 1b", pathName: "mainsuite1b", maven_args: '-Dit.test=MainSuite1b' }
-          - { name: "MainSuite 2a", pathName: "mainsuite2a", maven_args: '-Dit.test=MainSuite2a' }
-          - { name: "MainSuite 2b", pathName: "mainsuite2b", maven_args: '-Dit.test=MainSuite2b' }
-          - { name: "MainSuite 3a", pathName: "mainsuite3a", maven_args: '-Dit.test=MainSuite3a' }
-          - { name: "Junit5 Suite 1", pathName: "junit5suite1", maven_args: '-Dit.test=Junit5Suite1' }
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
-    steps:
+    steps:          
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
+          
+      - name: Run ${{ matrix.name }}
+        uses: ./.github/actions/core-cicd/maven-job
         with:
-          stage-name: "IT Tests ${{ matrix.suites.name }}"
-          maven-args: "-Dit.test.forkcount=1 verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}}"
-          generates-test-results: true
-          cleanup-runner: true
-          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
-          requires-node: false
+          stage-name: ${{ matrix.stage_name }}
+          maven-args: ${{ matrix.maven_args }}
+          generates-test-results: ${{ matrix.generates_test_results }}
+          cleanup-runner: ${{ matrix.cleanup_runner }}
+          dotcms-license: ${{ matrix.needs_license == true && secrets.DOTCMS_LICENSE || '' }}
+          requires-node: ${{ matrix.needs_node == true }}
+          needs-docker-image: ${{ matrix.needs_docker == true }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
 
-  # Postman Tests
-  linux-postman-tests:
-    name: Run Postman Tests - ${{matrix.collection_group}}
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.postman || inputs.run-all-tests
-    strategy:
-      fail-fast: false
-      matrix:
-        collection_group: [ 'ai', 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow', 'default-split', 'default' ]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
-        with:
-          stage-name: "Postman ${{ matrix.collection_group }}"
-          maven-args: " verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
-          generates-test-results: true
-          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
-          requires-node: true
-          needs-docker-image: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-          cleanup-runner: true
-  # Karate Tests
-  karate-tests:
-    name: Karate Tests - ${{ matrix.suites.name }}
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.karate || inputs.run-all-tests
-    strategy:
-      fail-fast: false
-      matrix:
-        suites:
-          - { name: "Default", pathName: "default", tests: 'KarateCITests#defaults'  }
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
-        with:
-          stage-name: "Karate ${{ matrix.suites.name }}"
-          maven-args: "verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=${{ matrix.suites.tests }}"
-          generates-test-results: true
-          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
-          requires-node: true
-          needs-docker-image: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-          cleanup-runner: true
-      - id: upload-karate-report
-        name: Upload Karate-report
-        uses: actions/upload-artifact@v4
-        with:
-          name: karate-reports
-          path: dotCMS/target/karate-reports
-  # E2E Testsgit 
-  linux-e2e-tests:
-    name: E2E Tests ${{matrix.suites.name}}
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.e2e || inputs.run-all-tests
-    timeout-minutes: 240
-    env:
-      MAVEN_OPTS: -Xmx2048m
-    strategy:
-      fail-fast: false
-      matrix:
-        suites:
-          - { name: "JVM E2E Suite", pathName: "jvme2etestsuite", maven_args: '-Dci=true -Dit.test=E2eTestSuite -De2e.test.forkCount=1 -pl :dotcms-e2e-java' }
-          - { name: "Node E2E Suite", pathName: "nodee2etestsuite", maven_args: '-De2e.test.env=ci -pl :dotcms-e2e-node' }
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
-        with:
-          stage-name: "E2E ${{ matrix.suites.name }}"
-          maven-args: "verify  -De2e.test.skip=false ${{ matrix.suites.maven_args}}"
-          generates-test-results: true
-          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
-          requires-node: true
-          needs-docker-image: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-          cleanup-runner: true
+

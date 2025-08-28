@@ -1,11 +1,11 @@
 import {
-    ComponentFactoryResolver,
     ComponentRef,
     Directive,
     Input,
     OnChanges,
     SimpleChanges,
-    ViewContainerRef
+    ViewContainerRef,
+    inject
 } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
@@ -14,18 +14,16 @@ import { DotCMSContentTypeField, DotDynamicFieldComponent } from '@dotcms/dotcms
 import { FieldPropertyService } from '../../../service';
 
 @Directive({
-    selector: '[dotDynamicFieldProperty]'
+    selector: '[dotDynamicFieldProperty]',
+    standalone: false
 })
 export class DynamicFieldPropertyDirective implements OnChanges {
+    private viewContainerRef = inject(ViewContainerRef);
+    private fieldPropertyService = inject(FieldPropertyService);
+
     @Input() propertyName: string;
     @Input() field: DotCMSContentTypeField;
     @Input() group: UntypedFormGroup;
-
-    constructor(
-        private viewContainerRef: ViewContainerRef,
-        private resolver: ComponentFactoryResolver,
-        private fieldPropertyService: FieldPropertyService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.field.currentValue) {
@@ -35,9 +33,8 @@ export class DynamicFieldPropertyDirective implements OnChanges {
 
     private createComponent(property): void {
         const component = this.fieldPropertyService.getComponent(property);
-        const componentFactory = this.resolver.resolveComponentFactory(component);
         const componentRef: ComponentRef<DotDynamicFieldComponent> =
-            this.viewContainerRef.createComponent(componentFactory);
+            this.viewContainerRef.createComponent(component);
 
         componentRef.instance.property = {
             field: this.field,

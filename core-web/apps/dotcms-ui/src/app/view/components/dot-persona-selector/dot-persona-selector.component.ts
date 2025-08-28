@@ -1,15 +1,16 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
 
 import { delay, take } from 'rxjs/operators';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
+import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
+
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import {
     PaginationEvent,
     SearchableDropdownComponent
-} from '@components/_common/searchable-dropdown/component';
-import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
-import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
+} from '../_common/searchable-dropdown/component/searchable-dropdown.component';
+import { DotAddPersonaDialogComponent } from '../dot-add-persona-dialog/dot-add-persona-dialog.component';
 
 export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
 
@@ -23,9 +24,14 @@ export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
 @Component({
     selector: 'dot-persona-selector',
     styleUrls: ['./dot-persona-selector.component.scss'],
-    templateUrl: 'dot-persona-selector.component.html'
+    templateUrl: 'dot-persona-selector.component.html',
+    standalone: false
 })
 export class DotPersonaSelectorComponent implements OnInit {
+    paginationService = inject(PaginatorService);
+    iframeOverlayService = inject(IframeOverlayService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+
     @Input() disabled: boolean;
     @Input() readonly: boolean;
 
@@ -46,12 +52,6 @@ export class DotPersonaSelectorComponent implements OnInit {
     value: DotPersona;
     defaultPersonaIdentifier = DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND;
     private personaSeachQuery: string;
-
-    constructor(
-        public paginationService: PaginatorService,
-        public iframeOverlayService: IframeOverlayService,
-        private dotSessionStorageService: DotSessionStorageService
-    ) {}
 
     private _pageState: DotPageRenderState;
 

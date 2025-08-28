@@ -1,0 +1,119 @@
+@use "variables" as *;
+
+// Block: analytics-dashboard
+.analytics-dashboard {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+
+    // Element: filters-row (gray background)
+    &__filters-row {
+        width: 100%;
+        background: $color-palette-gray-100;
+        border-bottom: $field-border-size solid $color-palette-gray-300;
+        padding: $spacing-3 $spacing-4;
+    }
+
+    // Element: filters-container
+    &__filters-container {
+        max-width: 100%;
+    }
+
+    // Element: dashboard-row (white background)
+    &__dashboard-row {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        background: $white;
+        padding: $spacing-4;
+        overflow: auto;
+    }
+
+    // Element: dashboard-container
+    &__dashboard-container {
+        max-width: 1400px;
+        width: 100%;
+    }
+
+    // Element: metrics (responsive layout)
+    &__metrics {
+        // Mobile: Stack vertically
+        @media (max-width: 991px) {
+            flex-direction: column !important;
+        }
+    }
+
+    // Element: metric-card
+    &__metric-card {
+        flex: 1;
+        min-width: 280px;
+
+        // Mobile: Full width
+        @media (max-width: 991px) {
+            min-width: auto;
+            width: 100%;
+        }
+
+        // Override PrimeNG card styles to add border
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: timeline-chart
+    &__timeline-chart {
+        flex: 1;
+        min-width: 0;
+
+        // Override PrimeNG card styles
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: bottom-section (responsive layout)
+    &__bottom-section {
+        // Mobile: Stack vertically
+        @media (max-width: 991px) {
+            flex-direction: column !important;
+        }
+    }
+
+    // Element: device-chart
+    &__device-chart {
+        width: 450px;
+        flex-shrink: 0;
+
+        // Mobile: Full width
+        @media (max-width: 991px) {
+            width: 100%;
+            flex-shrink: 1;
+        }
+
+        // Override PrimeNG card styles
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: table
+    &__table {
+        flex: 1;
+        min-width: 0;
+
+        // Mobile: Full width
+        @media (max-width: 991px) {
+            width: 100%;
+            min-width: auto;
+        }
+
+        // Override PrimeNG card styles
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+}

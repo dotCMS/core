@@ -1,11 +1,11 @@
 import { Subject } from 'rxjs';
 
-import { Directive, ElementRef, OnDestroy, Optional, Renderer2, Self } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, Renderer2, inject } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotEditPageNavComponent } from '@portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component';
+import { DotEditPageNavComponent } from '../dot-edit-page-nav.component';
 
 const urlPortletRules = {
     content: { clazz: 'portlet-content' },
@@ -22,15 +22,21 @@ const urlPortletRules = {
     selector: '[dotNavbar]'
 })
 export class DotEditPageNavDirective implements OnDestroy {
+    private readonly dotEditPageNavComponent = inject(DotEditPageNavComponent, {
+        optional: true,
+        self: true
+    });
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+    private renderer = inject(Renderer2);
+    private hostElement = inject(ElementRef);
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        @Optional() @Self() private readonly dotEditPageNavComponent: DotEditPageNavComponent,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private renderer: Renderer2,
-        private hostElement: ElementRef
-    ) {
+    constructor() {
+        const dotEditPageNavComponent = this.dotEditPageNavComponent;
+        const router = this.router;
+
         if (dotEditPageNavComponent) {
             router.events
                 .pipe(

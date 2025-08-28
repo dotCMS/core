@@ -7,7 +7,8 @@ import {
     OnChanges,
     OnInit,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -35,21 +36,22 @@ interface DropdownEvent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit
 {
+    private dotWorkflowsActionsSelectorFieldService = inject(
+        DotWorkflowsActionsSelectorFieldService
+    );
+
     @ViewChild('dropdown') dropdown: Dropdown;
     @Input() workflows: DotCMSWorkflow[];
 
     actions$: Observable<SelectItemGroup[]>;
     disabled = false;
     value: string;
-
-    constructor(
-        private dotWorkflowsActionsSelectorFieldService: DotWorkflowsActionsSelectorFieldService
-    ) {}
 
     ngOnInit() {
         this.actions$ = this.dotWorkflowsActionsSelectorFieldService.get().pipe(

@@ -7,7 +7,8 @@ import {
     OnChanges,
     OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
 
 import { DotContentTypeService, PaginatorService } from '@dotcms/data-access';
@@ -19,9 +20,13 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
     providers: [PaginatorService],
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',
-    styleUrls: ['./dot-new-relationships.component.scss']
+    styleUrls: ['./dot-new-relationships.component.scss'],
+    standalone: false
 })
 export class DotNewRelationshipsComponent implements OnInit, OnChanges {
+    paginatorService = inject(PaginatorService);
+    private contentTypeService = inject(DotContentTypeService);
+
     @Input() cardinality: number;
 
     @Input() velocityVar: string;
@@ -34,11 +39,6 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
 
     contentType: DotCMSContentType;
     currentCardinalityIndex: number;
-
-    constructor(
-        public paginatorService: PaginatorService,
-        private contentTypeService: DotContentTypeService
-    ) {}
 
     ngOnInit() {
         this.paginatorService.url = 'v1/contenttype';
