@@ -1,6 +1,7 @@
-package com.dotcms.rest.tag;
+package com.dotcms.rest.api.v2.tags;
 
 import com.dotcms.rest.api.Validated;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import javax.validation.constraints.NotNull;
@@ -15,7 +16,6 @@ public class UpdateTagForm extends Validated {
     @NotNull
     public final String tagName;
 
-    @NotNull
     public final String tagId;
 
     public UpdateTagForm(final Builder builder) {
@@ -28,8 +28,11 @@ public class UpdateTagForm extends Validated {
 
         @JsonProperty
         private String siteId;
-        @JsonProperty
+        
+        @JsonProperty("tagName")
+        @JsonAlias({"name"})
         private String tagName;
+        
         @JsonProperty
         private String tagId;
 
@@ -58,9 +61,30 @@ public class UpdateTagForm extends Validated {
     }
 
     /**
-     * good old toString
-     * @return
+     * Modern getter methods for v2 API compatibility.
+     * These provide cleaner field names while maintaining backward compatibility.
      */
+    public String getName() { 
+        return tagName; 
+    }
+    
+    public String getSiteId() { 
+        return siteId; 
+    }
+    
+    public String getTagId() { 
+        return tagId; 
+    }
+
+    @Override
+    public void checkValid() {
+        // First run Bean Validation (@NotNull checks)
+        super.checkValid();
+        
+        // Use shared v2 validation logic with structured error responses
+        TagValidationHelper.validateTagName(tagName, "tagName");
+    }
+
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString( this );
