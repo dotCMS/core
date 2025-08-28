@@ -53,6 +53,8 @@ public class SQLUtil {
 	private static final SecurityLoggerServiceAPI securityLoggerServiceAPI =
 			APILocator.getSecurityLogger();
 
+	// When you need to send a sort but do not want to actually sort by anything
+	public static final String DOT_NOT_SORT  = "dotnosort";
 	public static final String ASC  = "asc";
 	public static final String DESC  = "desc";
 	public static final String _ASC  = " " + ASC ;
