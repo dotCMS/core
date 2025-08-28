@@ -1,1 +1,1 @@
-export * from './uve.utils';
+export { initializeAnalytics } from './utils';
