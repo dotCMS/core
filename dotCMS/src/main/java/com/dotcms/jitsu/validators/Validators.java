@@ -2,10 +2,7 @@ package com.dotcms.jitsu.validators;
 
 import com.dotcms.analytics.metrics.EventType;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +16,7 @@ public class Validators {
      * Map of validators organized by JSON path.
      * The key is the JSON path and the value is a collection of validators for that path.
      */
-    final Map<String, List<AnalyticsValidator>> validatorsByJsonPath;
+    final Map<String, JSONPathValidators> validatorsByJsonPath;
 
     /**
      * Constructs a new Validators instance for the specified event type.
@@ -28,7 +25,7 @@ public class Validators {
         this.validatorsByJsonPath = jsonPathValidators.stream()
                 .collect(Collectors.toMap(
                         JSONPathValidators::getJsonPath,
-                        JSONPathValidators::getAnalyticsValidators
+                        jsonPathValidator -> jsonPathValidator
                 ));
     }
 
@@ -38,9 +35,23 @@ public class Validators {
      * @param jsonPath The JSON path for which to retrieve validators
      * @return The list of validators associated with the specified JSON path
      */
-    public List<AnalyticsValidator> getValidators(final String jsonPath){
-        return validatorsByJsonPath.get(jsonPath);
+    public Optional<List<AnalyticsValidator>> getValidators(final String jsonPath){
+        if (validatorsByJsonPath.containsKey(jsonPath)) {
+
+            return Optional.of(validatorsByJsonPath.get(jsonPath).getAnalyticsValidators());
+        }
+
+        return Optional.empty();
     }
+
+    public Map<String, List<AnalyticsValidator>> getValidators(){
+        return validatorsByJsonPath.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            (entry) -> entry.getValue().getAnalyticsValidators()
+                    ));
+    }
+
 
     /**
      * Gets all JSON paths that have validators associated with them.
@@ -52,8 +63,22 @@ public class Validators {
     }
 
     public boolean isRequired(final String path) {
-        return validatorsByJsonPath.get(path).stream()
+        if (!validatorsByJsonPath.containsKey(path)) {
+            return false;
+        }
+
+        return validatorsByJsonPath.get(path)
+                .getAnalyticsValidators()
+                .stream()
                 .anyMatch(validator -> validator instanceof RequiredFieldValidator);
+    }
+
+    public void addAll(final List<JSONPathValidators> eventsGlobalValidators) {
+        for (final JSONPathValidators eventsGlobalValidator : eventsGlobalValidators) {
+            validatorsByJsonPath.put(eventsGlobalValidator.getJsonPath(),
+                    eventsGlobalValidator);
+        }
+
     }
 
     /**

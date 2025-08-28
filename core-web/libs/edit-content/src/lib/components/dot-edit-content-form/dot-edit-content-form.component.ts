@@ -45,6 +45,7 @@ import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
+import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
@@ -360,7 +361,7 @@ export class DotEditContentFormComponent implements OnInit {
         return Object.fromEntries(
             Object.entries(value).map(([key, fieldValue]) => {
                 // Handle disabledWYSIWYG as a special case - preserve array format
-                if (key === 'disabledWYSIWYG') {
+                if (key === DISABLED_WYSIWYG_FIELD) {
                     return [key, fieldValue || []];
                 }
 
@@ -400,7 +401,7 @@ export class DotEditContentFormComponent implements OnInit {
         const contentlet = this.$store.contentlet();
         const disabledWYSIWYG = contentlet?.disabledWYSIWYG || [];
 
-        controls['disabledWYSIWYG'] = this.#fb.control(disabledWYSIWYG);
+        controls[DISABLED_WYSIWYG_FIELD] = this.#fb.control(disabledWYSIWYG);
 
         this.form = this.#fb.group(controls);
     }
