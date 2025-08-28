@@ -246,11 +246,6 @@ public class TagFactoryImpl implements TagFactory {
                 if ( UtilMethods.isSet(tagName) ) {
 
                     String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
-                    
-                    // If no effective tag storage (e.g., SYSTEM_HOST site with global=false), return empty results
-                    if (effectiveTagStorage == null) {
-                        return List.of();
-                    }
 
                     String personaFragment = "";
                     if ( excludePersonas ) {
@@ -266,7 +261,11 @@ public class TagFactoryImpl implements TagFactory {
                     String sql = "SELECT * FROM tag WHERE tagname LIKE ? " + globalTagsFragment + personaFragment + sortStr;
 
                     dc.setSQL(SQLUtil.addLimits(sql, start, count));
-                    dc.addParam("%" + tagName.toLowerCase() + "%");
+                    String escapedTagName = tagName.replace("\\", "\\\\")
+                                                   .replace("_", "\\_")
+                                                   .replace("%", "\\%")
+                                                   .toLowerCase();
+                    dc.addParam("%" + escapedTagName + "%");
                     dc.addParam(effectiveTagStorage);
                     if ( globalTagsFilter ) {
                         dc.addParam(Host.SYSTEM_HOST);
@@ -279,11 +278,6 @@ public class TagFactoryImpl implements TagFactory {
                     //it will check all global tags and current host tags.
 
                     String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
-                    
-                    // For global=true, effectiveTagStorage should never be null, but handle gracefully
-                    if (effectiveTagStorage == null) {
-                        return List.of();
-                    }
 
                     String personaFragment = "";
                     if ( excludePersonas ) {
@@ -303,11 +297,6 @@ public class TagFactoryImpl implements TagFactory {
                     String sql = "SELECT * FROM tag ";
 
                     String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
-                    
-                    // If no effective tag storage, return empty results
-                    if (effectiveTagStorage == null) {
-                        return List.of();
-                    }
 
                     String personaFragment = "";
                     if ( excludePersonas ) {
@@ -350,11 +339,6 @@ public class TagFactoryImpl implements TagFactory {
                     
                     String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
                     
-                    // If no effective tag storage, return 0 count
-                    if (effectiveTagStorage == null) {
-                        return 0L;
-                    }
-                    
                     String personaFragment = "";
                     if (excludePersonas) {
                         personaFragment = " AND persona = ? ";
@@ -369,7 +353,11 @@ public class TagFactoryImpl implements TagFactory {
                     String sql = "SELECT COUNT(*) as count FROM tag WHERE tagname LIKE ? " + globalTagsFragment + personaFragment;
                     
                     dc.setSQL(sql);
-                    dc.addParam("%" + tagName.toLowerCase() + "%");
+                    String escapedTagName = tagName.replace("\\", "\\\\")
+                                                   .replace("_", "\\_")
+                                                   .replace("%", "\\%")
+                                                   .toLowerCase();
+                    dc.addParam("%" + escapedTagName + "%");
                     dc.addParam(effectiveTagStorage);
                     if (globalTagsFilter) {
                         dc.addParam(Host.SYSTEM_HOST);
@@ -381,11 +369,6 @@ public class TagFactoryImpl implements TagFactory {
                     // Check if tag name is not set and if should display global tags
                     
                     String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
-                    
-                    // For global=true, effectiveTagStorage should never be null, but handle gracefully
-                    if (effectiveTagStorage == null) {
-                        return 0L;
-                    }
                     
                     String personaFragment = "";
                     if (excludePersonas) {
@@ -405,11 +388,6 @@ public class TagFactoryImpl implements TagFactory {
                     String sql = "SELECT COUNT(*) as count FROM tag ";
                     
                     String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
-                    
-                    // If no effective tag storage, return 0 count
-                    if (effectiveTagStorage == null) {
-                        return 0L;
-                    }
                     
                     String personaFragment = "";
                     if (excludePersonas) {
@@ -807,7 +785,7 @@ public class TagFactoryImpl implements TagFactory {
      * 
      * @param host The host to resolve tag storage for
      * @param globalTagsFilter Whether global tags should be included
-     * @return The effective tag storage ID, or null if no results should be returned
+     * @return The effective tag storage ID
      */
     private String getEffectiveTagStorage(Host host, boolean globalTagsFilter) {
         Object tagStorage = host.getMap().get("tagStorage");
@@ -815,11 +793,6 @@ public class TagFactoryImpl implements TagFactory {
         // If no tagStorage set, use site's own identifier (consistent with TagAPIImpl)
         if (!UtilMethods.isSet(tagStorage)) {
             return host.getIdentifier();
-        }
-        
-        // If tagStorage is SYSTEM_HOST and global=false, return null to indicate no results
-        if (!globalTagsFilter && Host.SYSTEM_HOST.equals(tagStorage.toString())) {
-            return null;
         }
         
         return tagStorage.toString();

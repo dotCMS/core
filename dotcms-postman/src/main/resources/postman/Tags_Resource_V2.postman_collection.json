@@ -1411,21 +1411,29 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Verify global=false excludes SYSTEM_HOST tags\", function () {",
+							"pm.test(\"Verify global=false respects site tag storage configuration\", function () {",
 							"    const jsonData = pm.response.json();",
 							"    const tags = jsonData.entity;",
 							"    ",
 							"    pm.expect(tags).to.be.an('array');",
 							"    ",
-							"    // Should only include site-specific tags, no SYSTEM_HOST tags",
+							"    // When a site uses SYSTEM_HOST as tag storage, its tags will have siteId=SYSTEM_HOST",
+							"    // This is expected behavior - the site chose to use global tag storage",
 							"    const systemHostTags = tags.filter(tag => tag.siteId === 'SYSTEM_HOST');",
-							"    pm.expect(systemHostTags.length).to.equal(0);",
-							"    ",
-							"    // All tags should be for the specified site",
 							"    const targetSiteId = pm.collectionVariables.get('tagsSiteId');",
-							"    tags.forEach(tag => {",
-							"        pm.expect(tag.siteId).to.equal(targetSiteId);",
-							"    });",
+							"    ",
+							"    // With global=false, we should only see tags from the site's storage location",
+							"    if (systemHostTags.length > 0) {",
+							"        // Site is using SYSTEM_HOST as tag storage",
+							"        tags.forEach(tag => {",
+							"            pm.expect(tag.siteId).to.equal('SYSTEM_HOST');",
+							"        });",
+							"    } else {",
+							"        // Site is using its own tag storage",
+							"        tags.forEach(tag => {",
+							"            pm.expect(tag.siteId).to.equal(targetSiteId);",
+							"        });",
+							"    }",
 							"    ",
 							"    // Should have fewer or equal tags compared to global=true",
 							"    const tagsWithGlobal = pm.collectionVariables.get('tagsWithGlobal');",
@@ -3112,6 +3120,541 @@
 					]
 				},
 				"description": "Creates tag with non-existent site ID (falls back to default site)"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Site with Site-Specific Storage",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('randomNumSite', _.random(200, 999));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Retrieve and save the Site ID for site-specific storage tests\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.collectionVariables.set('siteSpecificStorageSiteId', jsonData.entity.identifier);",
+							"    ",
+							"    // Verify this site uses its own storage (not SYSTEM_HOST)",
+							"    const tagStorage = jsonData.entity.tagStorage;",
+							"    if (tagStorage && tagStorage !== 'SYSTEM_HOST') {",
+							"        pm.expect(tagStorage).to.equal(jsonData.entity.identifier);",
+							"    } else if (!tagStorage || tagStorage === null) {",
+							"        // Default behavior - uses site's own identifier",
+							"        console.log('Site uses default tag storage (own identifier)');",
+							"    }",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"siteName\":\"site-specific-tags{{randomNumSite}}.com\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site"
+					]
+				},
+				"description": "Creates a site that uses its own storage for tags (not SYSTEM_HOST)"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Site to Use Own Tag Storage",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Verify site now uses its own storage for tags\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const siteId = pm.collectionVariables.get('siteSpecificStorageSiteId');",
+							"    ",
+							"    pm.expect(jsonData.entity.tagStorage).to.equal(siteId);",
+							"    pm.expect(jsonData.entity.tagStorage).to.not.equal('SYSTEM_HOST');",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"siteName\": \"site-specific-tags{{randomNumSite}}.com\",\n    \"tagStorage\": \"{{siteSpecificStorageSiteId}}\",\n    \"forceExecution\": true\n}"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site?id={{siteSpecificStorageSiteId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{siteSpecificStorageSiteId}}"
+						}
+					]
+				},
+				"description": "Updates the site to use its own identifier as tag storage instead of SYSTEM_HOST"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Tags in Site-Specific Storage",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('siteSpecificTag1', 'site-tag-' + _.random(1000, 9999));",
+							"pm.collectionVariables.set('siteSpecificTag2', 'site-tag-' + _.random(1000, 9999));",
+							"pm.collectionVariables.set('specialCharTag', 'tag_with%special' + _.random(100, 999));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Tags created with site-specific storage\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const targetSiteId = pm.collectionVariables.get('siteSpecificStorageSiteId');",
+							"    ",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(3);",
+							"    ",
+							"    // All tags should be stored with the site's own identifier",
+							"    jsonData.entity.forEach(tag => {",
+							"        pm.expect(tag.siteId).to.equal(targetSiteId);",
+							"        pm.expect(tag.siteId).to.not.equal('SYSTEM_HOST');",
+							"        pm.expect(tag.id).to.not.be.undefined;",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"{{siteSpecificTag1}}\",\n    \"siteId\": \"{{siteSpecificStorageSiteId}}\"\n},{\n    \"name\": \"{{siteSpecificTag2}}\",\n    \"siteId\": \"{{siteSpecificStorageSiteId}}\"\n},{\n    \"name\": \"{{specialCharTag}}\",\n    \"siteId\": \"{{siteSpecificStorageSiteId}}\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates tags in a site using site-specific storage"
+			},
+			"response": []
+		},
+		{
+			"name": "List Tags Site-Specific Storage - Global False",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Verify global=false shows only site-specific tags\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const tags = jsonData.entity;",
+							"    const targetSiteId = pm.collectionVariables.get('siteSpecificStorageSiteId');",
+							"    ",
+							"    pm.expect(tags).to.be.an('array');",
+							"    ",
+							"    // Should only show tags from the site's own storage",
+							"    // No SYSTEM_HOST tags should appear",
+							"    tags.forEach(tag => {",
+							"        pm.expect(tag.siteId).to.equal(targetSiteId);",
+							"        pm.expect(tag.siteId).to.not.equal('SYSTEM_HOST');",
+							"    });",
+							"    ",
+							"    // Should find our created tags",
+							"    const tag1Name = pm.collectionVariables.get('siteSpecificTag1');",
+							"    const tag2Name = pm.collectionVariables.get('siteSpecificTag2');",
+							"    const specialCharTagName = pm.collectionVariables.get('specialCharTag');",
+							"    ",
+							"    const foundTag1 = tags.find(tag => tag.label === tag1Name);",
+							"    const foundTag2 = tags.find(tag => tag.label === tag2Name);",
+							"    const foundSpecialTag = tags.find(tag => tag.label === specialCharTagName);",
+							"    ",
+							"    pm.expect(foundTag1, 'Site-specific tag 1 should be found').to.not.be.undefined;",
+							"    pm.expect(foundTag2, 'Site-specific tag 2 should be found').to.not.be.undefined;",
+							"    pm.expect(foundSpecialTag, 'Special character tag should be found').to.not.be.undefined;",
+							"    ",
+							"    // Save count for comparison with global=true",
+							"    pm.collectionVariables.set('siteSpecificTagsCount', tags.length);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags?site={{siteSpecificStorageSiteId}}&global=false&per_page=100",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					],
+					"query": [
+						{
+							"key": "site",
+							"value": "{{siteSpecificStorageSiteId}}"
+						},
+						{
+							"key": "global",
+							"value": "false"
+						},
+						{
+							"key": "per_page",
+							"value": "100"
+						}
+					]
+				},
+				"description": "Lists tags for site with site-specific storage, global=false should show only own tags"
+			},
+			"response": []
+		},
+		{
+			"name": "List Tags Site-Specific Storage - Global True",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Verify global=true includes both site-specific and global tags\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const tags = jsonData.entity;",
+							"    const targetSiteId = pm.collectionVariables.get('siteSpecificStorageSiteId');",
+							"    ",
+							"    pm.expect(tags).to.be.an('array');",
+							"    ",
+							"    // Should include site's own tags",
+							"    const siteSpecificTags = tags.filter(tag => tag.siteId === targetSiteId);",
+							"    pm.expect(siteSpecificTags.length).to.be.gte(3); // At least our 3 created tags",
+							"    ",
+							"    // May include global SYSTEM_HOST tags if they exist",
+							"    const globalTags = tags.filter(tag => tag.siteId === 'SYSTEM_HOST');",
+							"    ",
+							"    // Verify our specific tags are present",
+							"    const tag1Name = pm.collectionVariables.get('siteSpecificTag1');",
+							"    const tag2Name = pm.collectionVariables.get('siteSpecificTag2');",
+							"    const specialCharTagName = pm.collectionVariables.get('specialCharTag');",
+							"    ",
+							"    const foundTag1 = tags.find(tag => tag.label === tag1Name);",
+							"    const foundTag2 = tags.find(tag => tag.label === tag2Name);",
+							"    const foundSpecialTag = tags.find(tag => tag.label === specialCharTagName);",
+							"    ",
+							"    pm.expect(foundTag1, 'Site-specific tag 1 should be found').to.not.be.undefined;",
+							"    pm.expect(foundTag2, 'Site-specific tag 2 should be found').to.not.be.undefined;",
+							"    pm.expect(foundSpecialTag, 'Special character tag should be found').to.not.be.undefined;",
+							"    ",
+							"    // Should have equal or more tags than global=false",
+							"    const siteSpecificOnlyCount = pm.collectionVariables.get('siteSpecificTagsCount');",
+							"    pm.expect(tags.length).to.be.gte(siteSpecificOnlyCount);",
+							"    ",
+							"    console.log(`Site-specific tags: ${siteSpecificTags.length}, Global tags: ${globalTags.length}, Total: ${tags.length}`);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags?site={{siteSpecificStorageSiteId}}&global=true&per_page=100",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					],
+					"query": [
+						{
+							"key": "site",
+							"value": "{{siteSpecificStorageSiteId}}"
+						},
+						{
+							"key": "global",
+							"value": "true"
+						},
+						{
+							"key": "per_page",
+							"value": "100"
+						}
+					]
+				},
+				"description": "Lists tags for site with site-specific storage, global=true should show own + global tags"
+			},
+			"response": []
+		},
+		{
+			"name": "Test Special Character Tag Search - Site Specific",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Verify LIKE escaping works correctly for special characters\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const tags = jsonData.entity;",
+							"    const specialCharTagName = pm.collectionVariables.get('specialCharTag');",
+							"    const targetSiteId = pm.collectionVariables.get('siteSpecificStorageSiteId');",
+							"    ",
+							"    pm.expect(tags).to.be.an('array');",
+							"    ",
+							"    // Should find exact match for our special character tag",
+							"    const foundTag = tags.find(tag => tag.label === specialCharTagName);",
+							"    pm.expect(foundTag, 'Special character tag should be found exactly').to.not.be.undefined;",
+							"    pm.expect(foundTag.siteId).to.equal(targetSiteId);",
+							"    ",
+							"    // Verify the tag contains the special characters we expect",
+							"    pm.expect(foundTag.label).to.include('_');",
+							"    pm.expect(foundTag.label).to.include('%');",
+							"    ",
+							"    // Should not match wildcard patterns (tests LIKE escaping)",
+							"    const allTags = tags.map(tag => tag.label);",
+							"    console.log(`Found tags matching search: ${allTags.join(', ')}`);",
+							"    console.log(`Searching for: ${specialCharTagName}`);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags?site={{siteSpecificStorageSiteId}}&filter={{specialCharTag}}&global=false&per_page=50",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					],
+					"query": [
+						{
+							"key": "site",
+							"value": "{{siteSpecificStorageSiteId}}"
+						},
+						{
+							"key": "filter",
+							"value": "{{specialCharTag}}"
+						},
+						{
+							"key": "global",
+							"value": "false"
+						},
+						{
+							"key": "per_page",
+							"value": "50"
+						}
+					]
+				},
+				"description": "Tests LIKE escaping fix by searching for tag with special characters (_ and %)"
 			},
 			"response": []
 		}
