@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business.uniquefields.extratable;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -510,11 +511,12 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException An error occurred when interacting with the database.
      */
+    @ExternalTransaction
     public void addTableIndexes() throws DotDataException {
         boolean defaultAutoCommit = false;
         Connection connection = null;
         try {
-            connection = DbConnectionFactory.getDataSource().getConnection();
+            connection = DbConnectionFactory.getConnection();
             defaultAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(true);
             Logger.info(this, "(1/6) Adding GIN Index for the supporting_values->'contentletIds' JSONB attribute");
@@ -691,15 +693,7 @@ public class UniqueFieldDataBaseUtil {
      */
     @WrapInTransaction
     public void dropUniqueFieldsValidationTable() throws DotDataException {
-        try {
-            new DotConnect().setSQL("DROP TABLE unique_fields").loadObjectResults();
-        } catch (final DotDataException e) {
-            final Throwable cause = e.getCause();
-            if (!(cause instanceof SQLException) ||
-                    !"ERROR: table \"unique_fields\" does not exist".equals(cause.getMessage())) {
-                throw e;
-            }
-        }
+        new DotConnect().setSQL("DROP TABLE IF EXISTS unique_fields").loadObjectResults();
     }
 
     /**
