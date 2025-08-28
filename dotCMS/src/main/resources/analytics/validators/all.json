@@ -22,6 +22,26 @@
   "events": {
     "type": "json_array",
     "array_type": "json_object",
-    "required": true
+    "required": true,
+
+    "allowed_attributes": {
+        "event_type": {
+          "type": "string",
+          "required": true
+        },
+        "local_time": {
+          "type": "date",
+          "required": true
+        },
+        "data": {
+          "type": "json_object",
+
+          "allowed_attributes": {
+            "custom": {
+              "type": "json_object"
+            }
+          }
+        }
+    }
   }
 }
