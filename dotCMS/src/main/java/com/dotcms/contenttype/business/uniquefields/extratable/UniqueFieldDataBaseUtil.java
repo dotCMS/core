@@ -693,15 +693,7 @@ public class UniqueFieldDataBaseUtil {
      */
     @WrapInTransaction
     public void dropUniqueFieldsValidationTable() throws DotDataException {
-        try {
-            new DotConnect().setSQL("DROP TABLE unique_fields").loadObjectResults();
-        } catch (final DotDataException e) {
-            final Throwable cause = e.getCause();
-            if (!(cause instanceof SQLException) ||
-                    !"ERROR: table \"unique_fields\" does not exist".equals(cause.getMessage())) {
-                throw e;
-            }
-        }
+        new DotConnect().setSQL("DROP TABLE IF EXISTS unique_fields").loadObjectResults();
     }
 
     /**
