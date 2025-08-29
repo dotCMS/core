@@ -78,8 +78,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: true,
-                siteKey: 'test-key',
-                redirectFn: expect.any(Function)
+                siteKey: 'test-key'
             });
         });
 
@@ -93,8 +92,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: true,
                 autoPageView: true,
-                siteKey: 'test-key',
-                redirectFn: expect.any(Function)
+                siteKey: 'test-key'
             });
         });
 
@@ -108,8 +106,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: false,
-                siteKey: 'test-key',
-                redirectFn: expect.any(Function)
+                siteKey: 'test-key'
             });
         });
 
@@ -125,8 +122,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: true,
                 autoPageView: false,
-                siteKey: 'custom-site-key',
-                redirectFn: expect.any(Function)
+                siteKey: 'custom-site-key'
             });
         });
     });

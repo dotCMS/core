@@ -342,7 +342,6 @@ public class CircuitBreakerUrlTest {
 
         final String key = "testBreaker";
         final int timeout = 10000;
-
         CircuitBreaker breaker = CircuitBreakerPool.getBreaker(key);
 
         assert (breaker.isClosed());
