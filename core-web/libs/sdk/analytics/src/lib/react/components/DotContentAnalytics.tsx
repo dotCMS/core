@@ -9,7 +9,11 @@ import { initializeAnalytics } from '../internal/utils';
 /**
  * Internal component that uses Next.js hooks requiring Suspense boundary
  */
-function DotContentAnalyticsTracker({ config }: { config: DotCMSAnalyticsConfig }): ReactElement | null {
+function DotContentAnalyticsTracker({
+    config
+}: {
+    config: DotCMSAnalyticsConfig;
+}): ReactElement | null {
     const analytics = useMemo(() => initializeAnalytics(config), [config]);
     const debug = Boolean(config.debug);
 
