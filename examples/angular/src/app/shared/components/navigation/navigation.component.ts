@@ -4,7 +4,6 @@ import { DotCMSNavigationItem } from '@dotcms/types';
 
 @Component({
     selector: 'app-navigation',
-    standalone: true,
     imports: [RouterLink],
     template: ` <nav>
         <ul class="flex space-x-4 text-white">

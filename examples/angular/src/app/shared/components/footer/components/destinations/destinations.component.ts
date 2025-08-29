@@ -6,7 +6,6 @@ import { Destination } from '../../../../contentlet.model';
 
 @Component({
     selector: 'app-destinations',
-    standalone: true,
     imports: [RecommendedCardComponent],
     template: ` <div class="flex flex-col">
         <h2 class="mb-7 text-2xl font-bold text-black">Popular Destinations</h2>

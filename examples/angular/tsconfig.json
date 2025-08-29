@@ -14,12 +14,21 @@
     "sourceMap": true,
     "declaration": false,
     "experimentalDecorators": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
-    "lib": ["ES2022", "dom"]
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "paths": {
+      "@dotcms/angular": ["../../core-web/dist/libs/sdk/angular"],
+      "@dotcms/client": ["../../core-web/dist/libs/sdk/client"],
+      "@dotcms/types": ["../../core-web/dist/libs/sdk/types"],
+      "@dotcms/uve": ["../../core-web/dist/libs/sdk/uve"],
+      }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

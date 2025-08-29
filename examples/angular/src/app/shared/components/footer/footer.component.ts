@@ -8,7 +8,6 @@ import { FooterContent } from '../../contentlet.model';
 
 @Component({
     selector: 'app-footer',
-    standalone: true,
     imports: [BlogsComponent, DestinationsComponent, NgOptimizedImage],
     template: `<footer class="p-4 text-white bg-red-100 py-24">
         <div class="grid md:grid-cols-3 sm:grid-cols-1 md:grid-rows-1 sm:grid-rows-3 gap-7 mx-24">
