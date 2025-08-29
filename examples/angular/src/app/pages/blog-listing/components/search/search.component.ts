@@ -32,7 +32,6 @@ export class SearchComponent {
           takeUntilDestroyed(),
         )
         .subscribe((value) => {
-          console.log('value', value);
           this.searchQueryChange.emit(value);
         });
     }
