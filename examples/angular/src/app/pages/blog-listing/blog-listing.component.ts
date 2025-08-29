@@ -1,19 +1,21 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
+import { DotCMSClient } from '@dotcms/angular';
+import { ActivatedRoute } from '@angular/router';
+
+import { DotCMSPageAsset } from '@dotcms/types';
 
 import { ErrorComponent } from '../../shared/components/error/error.component';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
-
 import { SearchComponent } from './components/search/search.component';
 import { BlogCardComponent } from './components/blog-card/blog-card.component';
-
-import { DotCMSPageAsset } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
 import { buildExtraQuery } from '../../shared/queries';
 import { ExtraContent, Blog } from '../../shared/contentlet.model';
-import { DotCMSClient } from '@dotcms/angular';
+
 
 type DotCMSPage = {
     pageAsset: DotCMSPageAsset;
@@ -33,14 +35,17 @@ const LIMIT_BLOGS = 10;
         BlogCardComponent
     ],
     providers: [EditablePageService],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './blog-listing.component.html'
 })
 export class BlogListingComponent {
     readonly #editablePageService = inject<EditablePageService<DotCMSPage>>(EditablePageService);
     // Use proper client injection via token
-    private readonly client = inject(DotCMSClient);
+    readonly #client = inject(DotCMSClient);
+    readonly #route = inject(ActivatedRoute);
+    readonly #location = inject(Location);
 
-    searchQuery = signal('');
+    searchQuery = signal(this.#route.snapshot.queryParamMap.get('search') || '');
     filteredBlogs = signal<Blog[]>([]);
 
     readonly components = DYNAMIC_COMPONENTS;
@@ -66,7 +71,7 @@ export class BlogListingComponent {
     }
 
     onSearchQueryChange(query: string): void {
-        this.searchQuery.set(query);
+      this.searchQuery.set(query);
     }
 
     private updateFilteredBlogs(): void {
@@ -80,12 +85,14 @@ export class BlogListingComponent {
         const blogs = pageState.pageResponse.content.blogs || [];
 
         if (!query.length) {
+            this.#location.go(`/blog`);
             this.filteredBlogs.set(blogs);
             return;
         }
 
+        this.#location.go(`/blog?search=${query}`);
         // Use the properly injected DotCMS client to search
-        this.client.content
+        this.#client.content
             .getCollection('Blog')
             .limit(LIMIT_BLOGS)
             .query((qb) => qb.field('title').equals(`${query}*`))
