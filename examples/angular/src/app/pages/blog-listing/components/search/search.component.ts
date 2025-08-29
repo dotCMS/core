@@ -1,17 +1,32 @@
-import { Component, signal, output, input } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, output } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
     selector: 'app-search',
     templateUrl: './search.component.html',
-    imports: [FormsModule]
+    imports: [ReactiveFormsModule]
 })
 export class SearchComponent {
-    searchQuery = input<string>('');
     searchQueryChange = output<string>();
 
-    onSearchChange(event: Event): void {
-        const value = (event.target as HTMLInputElement).value;
-        this.searchQueryChange.emit(value);
+    inputControl = new FormControl<string>('', { nonNullable: true });
+
+    constructor() {
+      this.handleSearchQueryChange();
+    }
+
+    handleSearchQueryChange(): void {
+      this.inputControl.valueChanges
+        .pipe(
+          debounceTime(500),
+          distinctUntilChanged(),
+          filter((value) => value.length > 3),
+          takeUntilDestroyed(),
+        )
+        .subscribe((value) => {
+          this.searchQueryChange.emit(value);
+        });
     }
 }

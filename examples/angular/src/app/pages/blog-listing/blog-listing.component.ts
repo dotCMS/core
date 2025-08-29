@@ -1,4 +1,4 @@
-import { Component, OnInit, Signal, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 
 import { ErrorComponent } from '../../shared/components/error/error.component';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
@@ -15,26 +15,6 @@ import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { ExtraContent, Blog } from '../../shared/contentlet.model';
 import { PageState } from '../../shared/models';
 import { DotCMSClient } from '@dotcms/angular';
-
-// Function to debounce calls
-function debounce<T extends (...args: any[]) => void>(
-    func: T,
-    wait: number
-): (...args: Parameters<T>) => void {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-
-    return function (...args: Parameters<T>): void {
-        const later = () => {
-            timeout = null;
-            func(...args);
-        };
-
-        if (timeout !== null) {
-            clearTimeout(timeout);
-        }
-        timeout = setTimeout(later, wait);
-    };
-}
 
 type DotCMSPage = {
     pageAsset: DotCMSPageAsset;
@@ -54,12 +34,11 @@ type DotCMSPage = {
     providers: [EditablePageService],
     templateUrl: './blog-listing.component.html'
 })
-export class BlogListingComponent implements OnInit {
+export class BlogListingComponent {
     readonly #editablePageService = inject<EditablePageService<DotCMSPage>>(EditablePageService);
     // Use proper client injection via token
     private readonly client = inject(DotCMSClient);
 
-    $pageState!: Signal<PageState<DotCMSPage>>;
     searchQuery = signal('');
     filteredBlogs = signal<Blog[]>([]);
 
@@ -71,30 +50,21 @@ export class BlogListingComponent implements OnInit {
         () => this.$pageState().pageResponse?.content?.navigation?.children || []
     );
 
-    ngOnInit() {
-        this.$pageState = this.#editablePageService.initializePage({
-            graphql: {
-                ...BASE_EXTRA_QUERIES
-            }
-        });
-    }
+    $pageState = this.#editablePageService.initializePage({
+      graphql: {
+        ...BASE_EXTRA_QUERIES
+      }
+    });
 
     constructor() {
-        effect(
-            () => {
-                this.updateFilteredBlogs();
-            }
-        );
+      effect(() => {
+        this.updateFilteredBlogs();
+      });
     }
 
     onSearchQueryChange(query: string): void {
         this.searchQuery.set(query);
-        this.debouncedSearch(query);
     }
-
-    private debouncedSearch = debounce((query: string) => {
-        this.updateFilteredBlogs();
-    }, 500);
 
     private updateFilteredBlogs(): void {
         const query = this.searchQuery();
@@ -114,7 +84,7 @@ export class BlogListingComponent implements OnInit {
         // Use the properly injected DotCMS client to search
         this.client.content
             .getCollection('Blog')
-            .limit(3)
+            .limit(10)
             .query((qb: any) => qb.field('title').equals(`${query}*`))
             .sortBy([
                 {

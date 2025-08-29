@@ -13,8 +13,7 @@ import { DestinationListingComponent } from './components/destination-listing/de
         @switch (contentlet().componentType) { @case ('destinationListing') {
         <!-- There is a gap between angular templates and typescript, although the type is correct
           Angular is not able to infer the type correctly. So we use $any to tell Angular to ignore the type -->
-        <app-destination-listing [widgetCodeJSON]="$any(contentlet()).widgetCodeJSON">
-        </app-destination-listing>
+        <app-destination-listing [widgetCodeJSON]="$any(contentlet()).widgetCodeJSON" />
         } @default {
         <ng-container [dotCMSShowWhen]="UVE_MODE.EDIT">
             <div class="bg-blue-100 p-4">

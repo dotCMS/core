@@ -13,7 +13,7 @@ import { ReorderButtonComponent } from '../reorder-button/reorder-button.compone
                 </h2>
                 <app-reorder-button />
             </div>
-            <ng-content></ng-content>
+            <ng-content />
         </header>
     `,
     styleUrl: './header.component.css',

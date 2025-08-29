@@ -18,7 +18,6 @@
             type="search"
             class="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 outline-hidden"
             placeholder="Search blogs..."
-            [value]="searchQuery()"
-            (input)="onSearchChange($event)" />
+            [formControl]="inputControl" />
     </div>
 </div>

@@ -8,7 +8,7 @@ import { PageForm } from '../../shared/contentlet.model';
     imports: [DotCMSShowWhenDirective, ContactUsComponent],
     template: `
         @if (formType() === 'contact-us') {
-        <app-contact-us [description]="description()"></app-contact-us>
+        <app-contact-us [description]="description()" />
         } @else {
         <ng-container [dotCMSShowWhen]="UVE_MODE.EDIT">
             <div>
