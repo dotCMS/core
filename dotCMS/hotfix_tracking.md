@@ -66,4 +66,5 @@ This maintenance release includes the following code fixes:
 60. https://github.com/dotCMS/core/issues/32413 : [Containers]: Pagination is not working #32413
 61. https://github.com/dotCMS/core/issues/32346 : Edit Contentlet Screen Closes Automatically on Save in Page Preview #32346
 62. https://github.com/dotCMS/core/issues/32583 : NPE in on content edit (Not on Beta version) when content type named "Event" lacks calendar fields #32583
+63. https://github.com/dotCMS/core/issues/33006 : Backport security fix to LTSs #33006
 
