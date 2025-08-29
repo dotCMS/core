@@ -11,7 +11,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
     selector: 'app-web-page-content',
-    standalone: true,
     imports: [],
     template: '',
     styleUrl: './web-page-content.component.css',

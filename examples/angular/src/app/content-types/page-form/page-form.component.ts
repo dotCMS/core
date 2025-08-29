@@ -5,7 +5,6 @@ import { ContactUsComponent } from './components/contact-us/contact-us.component
 import { PageForm } from '../../shared/contentlet.model';
 @Component({
     selector: 'app-page-form',
-    standalone: true,
     imports: [DotCMSShowWhenDirective, ContactUsComponent],
     template: `
         @if (formType() === 'contact-us') {

@@ -21,7 +21,6 @@ type DotCMSPage = {
 
 @Component({
     selector: 'app-dotcms-page',
-    standalone: true,
     imports: [
         DotCMSLayoutBodyComponent,
         HeaderComponent,

@@ -5,7 +5,6 @@ import { SimpleWidget } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-simple-widget',
-    standalone: true,
     imports: [DotCMSShowWhenDirective],
     template: `
         @if (isTravelBot()) {

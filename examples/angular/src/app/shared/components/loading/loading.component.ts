@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 
 @Component({
     selector: 'app-loading',
-    standalone: true,
     imports: [],
     template: `
         <div class="loading-container">

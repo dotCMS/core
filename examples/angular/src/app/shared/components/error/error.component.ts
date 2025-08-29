@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { PageError } from '../../models';
 @Component({
     selector: 'app-error',
-    standalone: true,
     imports: [RouterLink],
     template: `<div class="flex justify-center items-center w-full bg-slate-100 min-h-dvh">
         <section>

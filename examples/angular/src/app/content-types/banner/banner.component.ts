@@ -7,7 +7,6 @@ import { Banner } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-banner',
-    standalone: true,
     imports: [RouterLink, NgOptimizedImage, DotCMSEditableTextComponent],
     template: `<div
         class="flex overflow-hidden relative justify-center items-center w-full h-96 bg-gray-200">

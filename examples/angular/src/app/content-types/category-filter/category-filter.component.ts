@@ -4,7 +4,6 @@ import { CategoryFilter } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-category-filter',
-    standalone: true,
     imports: [RouterLink],
     template: `
         @if (hasCategories()) {

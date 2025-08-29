@@ -8,7 +8,6 @@ import { DestinationListingComponent } from './components/destination-listing/de
 
 @Component({
     selector: 'app-vtl-include',
-    standalone: true,
     imports: [DotCMSShowWhenDirective, DestinationListingComponent],
     template: `
         @switch (contentlet().componentType) { @case ('destinationListing') {

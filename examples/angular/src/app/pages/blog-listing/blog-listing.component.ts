@@ -43,7 +43,6 @@ type DotCMSPage = {
 
 @Component({
     selector: 'app-blog-listing',
-    standalone: true,
     imports: [
         HeaderComponent,
         NavigationComponent,

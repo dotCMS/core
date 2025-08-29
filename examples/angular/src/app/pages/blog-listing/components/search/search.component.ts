@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 @Component({
     selector: 'app-search',
     templateUrl: './search.component.html',
-    standalone: true,
     imports: [FormsModule]
 })
 export class SearchComponent {
