@@ -14,32 +14,32 @@ import { buildExtraQuery } from '../../shared/queries';
 import { ExtraContent } from '../../shared/contentlet.model';
 
 type DotCMSPage = {
-    pageAsset: DotCMSPageAsset;
-    content: ExtraContent;
+  pageAsset: DotCMSPageAsset;
+  content: ExtraContent;
 };
 
 @Component({
-    selector: 'app-dotcms-page',
-    imports: [
-        DotCMSLayoutBodyComponent,
-        HeaderComponent,
-        NavigationComponent,
-        FooterComponent,
-        ErrorComponent,
-        LoadingComponent
-    ],
-    providers: [EditablePageService],
-    templateUrl: './dot-cms-page.component.html'
+  selector: 'app-dotcms-page',
+  imports: [
+    DotCMSLayoutBodyComponent,
+    HeaderComponent,
+    NavigationComponent,
+    FooterComponent,
+    ErrorComponent,
+    LoadingComponent,
+  ],
+  providers: [EditablePageService],
+  templateUrl: './dot-cms-page.component.html',
 })
 export class DotCMSPageComponent {
-    readonly #editablePageService = inject<EditablePageService<DotCMSPage>>(EditablePageService);
+  readonly #editablePageService =
+    inject<EditablePageService<DotCMSPage>>(EditablePageService);
 
-    readonly components = DYNAMIC_COMPONENTS;
+  readonly components = DYNAMIC_COMPONENTS;
 
-    $pageState = this.#editablePageService.initializePage({
-        graphql: {
-            ...buildExtraQuery()
-        }
-    });
-
+  $pageState = this.#editablePageService.initializePage({
+    graphql: {
+      ...buildExtraQuery(),
+    },
+  });
 }

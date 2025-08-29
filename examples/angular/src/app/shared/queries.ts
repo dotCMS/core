@@ -1,7 +1,7 @@
 import { DotCMSGraphQLParams } from '@dotcms/types';
 
 export const blogQuery = (limit: number) => {
-    return `
+  return `
     search(query: "+contenttype:Blog +live:true", limit: ${limit}) {
         title
         identifier
@@ -25,10 +25,10 @@ export const blogQuery = (limit: number) => {
         }
     }
 `;
-}
+};
 
 export const destinationQuery = (limit: number) => {
-    return `
+  return `
     search(query: "+contenttype:Destination +live:true", limit: ${limit}) {
           title
           identifier
@@ -46,7 +46,7 @@ export const destinationQuery = (limit: number) => {
           }
       }
   `;
-}
+};
 
 export const navigationQuery = `
 DotNavigation(uri: "/", depth: 2) {
@@ -85,16 +85,18 @@ interface BaseExtraQueriesParams {
   limitDestinations?: number;
 }
 
-export const buildExtraQuery = (params?: BaseExtraQueriesParams): DotCMSGraphQLParams => {
+export const buildExtraQuery = (
+  params?: BaseExtraQueriesParams,
+): DotCMSGraphQLParams => {
   const { limitBlogs = 3, limitDestinations = 3 } = params || {};
 
   return {
-      content: {
-          logoImage: logoQuery,
-          blogs: blogQuery(limitBlogs),
-          destinations: destinationQuery(limitDestinations),
-          navigation: navigationQuery
-      },
-      fragments: [fragmentNav]
+    content: {
+      logoImage: logoQuery,
+      blogs: blogQuery(limitBlogs),
+      destinations: destinationQuery(limitDestinations),
+      navigation: navigationQuery,
+    },
+    fragments: [fragmentNav],
   };
-}
+};

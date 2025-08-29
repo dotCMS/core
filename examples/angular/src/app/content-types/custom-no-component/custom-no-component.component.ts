@@ -8,7 +8,8 @@ import { DotCMSBasicContentlet } from '@dotcms/types';
     <div
       class="relative w-full bg-gray-200 h-12 flex justify-center items-center overflow-hidden"
     >
-      No component for this "{{contentlet().contentType}}" contentlet or widget
+      No component for this "{{ contentlet().contentType }}" contentlet or
+      widget
     </div>
   `,
   styles: '',
