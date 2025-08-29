@@ -36,11 +36,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -74,6 +70,7 @@ import static com.liferay.util.StringPool.PERCENT;
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     private static final String LOAD_CONTENTTYPE_DETAILS_FROM_CACHE = "LOAD_CONTENTTYPE_DETAILS_FROM_CACHE";
+    private static final String INODE_COLUMN = "inode";
     final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
@@ -209,7 +206,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-      return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+      try {
+          return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
@@ -236,9 +237,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     @Override
     public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset,final String siteId)
             throws DotDataException {
-        return UtilMethods.isSet(siteId)
-                ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
-                : dbSearch(search, baseType,orderBy, limit, offset, null);
+        try {
+            return UtilMethods.isSet(siteId)
+                    ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
+                    : dbSearch(search, baseType,orderBy, limit, offset, null);
+        } catch (DotSecurityException e) {
+            throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+        }
     }
 
   @Override
@@ -247,16 +252,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     return search(search,baseType.getType(),orderBy,limit,offset);
   }
 
-  @Override
-  public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
-
-    return search(search, BaseContentType.ANY, orderBy, limit, offset);
-  }
-
-  @Override
-  public List<ContentType> search(String search, String orderBy) throws DotDataException {
-    return search(search, BaseContentType.ANY, orderBy, Config.getIntProperty("PER_PAGE", 50), 0);
-  }
 
   @Override
   public List<ContentType> search(String search) throws DotDataException {
@@ -273,25 +268,51 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     return search(search, BaseContentType.ANY, orderBy, limit, 0);
   }
 
+    @Override
+    public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
+        return search(search, BaseContentType.ANY, orderBy, limit, offset);
+    }
+
+    @Override
+    public List<ContentType> search(String search, String orderBy) throws DotDataException {
+        return search(search, BaseContentType.ANY, orderBy, Config.getIntProperty("PER_PAGE", 50), 0);
+    }
+
   @Override
   public List<ContentType> search(final List<String> sites, final String search, final int type,
                                   final String orderBy, final int limit, final int offset) throws DotDataException {
-      return dbSearch(search, type, orderBy, limit, offset, sites);
+      try {
+          return dbSearch(search, type, orderBy, limit, offset, sites);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
   public int searchCount(String search) throws DotDataException {
-      return dbCount(search, BaseContentType.ANY.getType());
+      try {
+          return dbCount(search, BaseContentType.ANY.getType());
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
   public int searchCount(String search, int baseType) throws DotDataException {
-      return dbCount(search, baseType);
+      try {
+          return dbCount(search, baseType);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
   public int searchCount(String search, BaseContentType baseType) throws DotDataException {
-      return dbCount(search, baseType.getType());
+      try {
+          return dbCount(search, baseType.getType());
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
@@ -722,8 +743,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
  *
  * @throws DotDataException An error occurred when retrieving information from the database.
  */
+ @CloseDBIfOpened
  private List<ContentType> dbSearch(final String search, final int baseType, String orderBy,
-                                    int limit, final int offset, final List<String> siteIds) throws DotDataException {
+                                    int limit, final int offset, final List<String> siteIds) throws DotDataException, DotSecurityException {
     if (limit == 0) {
         throw new DotDataException("The 'limit' param must be greater than 0");
     }
@@ -732,91 +754,246 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // Our legacy code passes in raw sql conditions. We need to detect
     // and handle those
     final SearchCondition searchCondition = new SearchCondition(search);
-    if (SQLUtil.sanitizeSortBy(orderBy).isEmpty()) {
-    	orderBy = ContentTypeFactory.MOD_DATE_COLUMN;
-    }
+     // SECURITY: Sanitize orderBy parameter to prevent SQL injection
+     String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+     if (sanitizedOrderBy.isEmpty()) {
+         sanitizedOrderBy = ContentTypeFactory.MOD_DATE_COLUMN;
+     }
 
-    String siteIdsParam = this.formatSiteIdsToSqlQuery(siteIds);
-    siteIdsParam = UtilMethods.isSet(siteIdsParam) ? siteIdsParam : "'" + PERCENT + "'";
-    final DotConnect dc = new DotConnect();
+     // SECURITY: Validate and prepare site parameters
+     List<String> validatedSites = validateSiteIds(siteIds);
 
-    if (LOAD_FROM_CACHE.get()) {
-        dc.setSQL(String.format(ContentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION,
-                SQLUtil.sanitizeCondition(searchCondition.condition),
-                SQLUtil.sanitizeCondition(siteIdsParam),
-                orderBy));
-    } else {
-        dc.setSQL(String.format(ContentTypeSql.SELECT_QUERY_CONDITION,
-                SQLUtil.sanitizeCondition(searchCondition.condition),
-                SQLUtil.sanitizeCondition(siteIdsParam),
-                orderBy));
-    }
+     // SECURITY: Create DotConnect early for connection access
+     final DotConnect dc = new DotConnect();
+
+     // SECURITY: Build SQL with proper parameterization (no String.format injection)
+     StringBuilder sqlBuilder = new StringBuilder();
+     if (LOAD_FROM_CACHE.get()) {
+         sqlBuilder.append(ContentTypeSql.SELECT_ONLY_INODE_FIELD);
+     } else {
+         sqlBuilder.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
+     }
+
+     sqlBuilder.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
+
+     // SECURITY: Add safe condition if present
+     if (searchCondition.safeCondition != null) {
+         sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+     }
+
+     // SECURITY: Add community edition filtering (hardcoded values - not user input)
+     if (searchCondition.isCommunityEdition) {
+         sqlBuilder.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
+                 .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+     }
+
+     // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
+     if (!validatedSites.isEmpty()) {
+         // Build multiple OR conditions with proper parameterization and escaping
+         String likeConditions = validatedSites.stream()
+                 .map(site -> "host LIKE ? ESCAPE '\\'")
+                 .collect(Collectors.joining(" OR "));
+         sqlBuilder.append(" AND (").append(likeConditions).append(") ");
+     } else {
+         // No sites specified - match all non-NULL hosts (preserves original behavior)
+         sqlBuilder.append(" AND host IS NOT NULL ");
+     }
+
+     sqlBuilder.append(" and structuretype >= ? and structuretype <= ? ");
+
+     if (LOAD_FROM_CACHE.get()) {
+         sqlBuilder.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
+     }
+
+     sqlBuilder.append(" order by ").append(sanitizedOrderBy);
+
+     // SECURITY: Execute with proper parameter binding
+     dc.setSQL(sqlBuilder.toString());
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
-    // inode like
-    dc.addParam( searchCondition.search );
-    // lower(name) like
-    dc.addParam(searchCondition.search.toLowerCase());
-    // velocity_var_name like
-    dc.addParam( searchCondition.search );
-    // Look for types of the specified base Content Type
-    dc.addParam(baseType);
-    // If any base Content Type must be retrieved -- type 0 -- then include all base types
-    dc.addParam((baseType == 0) ? 100000 : baseType);
+     // Add common search parameters using helper method
+     addCommonSearchParameters(dc, searchCondition);
 
-    Logger.debug(this, () -> "QUERY: " + dc.getSQL());
+     // Add site parameters for LIKE clauses (substring matching with escaping)
+     if (!validatedSites.isEmpty()) {
+         // Add escaped LIKE patterns with wildcards: %escaped_site%
+         for (String site : validatedSites) {
+             String escapedPattern = "%" + escapeLikePattern(site) + "%";
+             dc.addParam(escapedPattern);
+         }
+     }
+     // Note: No parameter needed for "host IS NOT NULL"
 
-    if (LOAD_FROM_CACHE.get()) {
-        return dc.loadObjectResults()
-                .stream()
-                .map(type -> Try.of(() -> find((String) type.get(INODE_COLUMN)))
-                        .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
-                                String.format("Failed to retrieve Content Type with Inode '%s': %s",
-                                        type.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
-                        .getOrNull())
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    } else {
-        return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
-    }
-  }
+     // Add content type parameters
+     dc.addParam(baseType);                                     // structuretype >= ?
+     dc.addParam((baseType == 0) ? 100000 : baseType);        // structuretype <= ?
+
+     Logger.debug(this, () -> "SECURE QUERY: " + dc.getSQL());
+
+     if (LOAD_FROM_CACHE.get()) {
+         return dc.loadObjectResults()
+                 .stream()
+                 .map(type -> Try.of(() -> find((String) type.get(INODE_COLUMN)))
+                         .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
+                                 String.format("Failed to retrieve Content Type with Inode '%s': %s",
+                                         type.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
+                         .getOrNull())
+                 .filter(Objects::nonNull)
+                 .collect(Collectors.toList());
+     } else {
+         return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
+     }
+ }
 
     /**
-     * Appends the list of Site Identifiers to a SQL query that will allow to look for more than one
-     * Site.
+     * SECURITY: Escapes LIKE pattern special characters to prevent LIKE injection attacks.
+     * This method escapes the wildcard characters %, _, and the escape character \ itself.
      *
-     * @param siteIds The list of Site Identifiers to search for.
-     *
-     * @return A SQL-ready string that can be used in a WHERE clause to lok for data in more than
-     * one Site.
+     * @param input The input string to escape for use in LIKE patterns
+     * @return The escaped string safe for use in LIKE patterns with ESCAPE '\'
      */
-    private String formatSiteIdsToSqlQuery(final List<String> siteIds) {
-        return UtilMethods.isNotSet(siteIds) ? BLANK : siteIds.stream()
-                .map(site -> "'" + PERCENT + site + PERCENT +"'").collect(Collectors.joining(" OR host LIKE "));
+    private String escapeLikePattern(String input) {
+        if (input == null) {
+            return null;
+        }
+        // Escape backslash first to avoid double-escaping
+        return input.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 
-  private int dbCount(String search, int baseType) throws DotDataException {
-    int bottom = (baseType == 0) ? 0 : baseType;
-    int top = (baseType == 0) ? 100000 : baseType;
+    /**
+     * SECURITY: Site validation that filters out invalid site IDs.
+     * Used for LIKE pattern matching queries (host LIKE ? ESCAPE '\\').
+     * Behavior aligned with HostUtil.resolveSiteIds() for consistency.
+     */
+    private List<String> validateSiteIds(final List<String> siteIds) {
+        if (UtilMethods.isNotSet(siteIds)) {
+            return Collections.emptyList(); // Will match all hosts
+        }
 
-    search = LicenseManager.getInstance().isCommunity() 
-                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() +" and structuretype <> " + BaseContentType.PERSONA.getType() 
-                    : search;
-    
-    
-    SearchCondition searchCondition = new SearchCondition(search);
+        List<String> validSites = new ArrayList<>();
 
-    DotConnect dc = new DotConnect();
-    dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
-    dc.addParam( searchCondition.search );
-    dc.addParam( searchCondition.search.toLowerCase());
-    dc.addParam( searchCondition.search );
-    dc.addParam(bottom);
-    dc.addParam(top);
-    return dc.getInt("test");
-  }
+        // SECURITY: Validate site IDs for LIKE pattern matching
+        for (String siteId : siteIds) {
+            if (siteId != null && IdentifierValidator.isValid(siteId, IdentifierValidator.SITE_PROFILE)) {
+                validSites.add(siteId);
+            } else {
+                // SECURITY: Do not log user input to prevent log injection
+                Logger.warn(this, "Invalid site identifier rejected during validation");
+            }
+        }
 
-  private void updateFolderFileAssetReferences(ContentType type) throws DotDataException {
+        return validSites;
+    }
+
+
+    /**
+     * SECURITY: Adds common search parameters to DotConnect for both search and count queries
+     */
+    private void addCommonSearchParameters(DotConnect dc, SearchCondition searchCondition) throws DotSecurityException {
+        // Add search parameters
+        dc.addParam(searchCondition.search);                      // inode like ?
+        dc.addParam(searchCondition.search.toLowerCase());        // lower(name) like ?
+        dc.addParam(searchCondition.search);                      // velocity_var_name like ?
+
+        // Add safe condition parameter if present
+        if (searchCondition.safeCondition != null) {
+            addSafeConditionParameter(dc, searchCondition.safeCondition);
+        }
+    }
+
+    /**
+     * SECURITY: Adds safe condition parameter with proper type conversion and validation
+     */
+    private void addSafeConditionParameter(DotConnect dc, SafeCondition safeCondition) throws DotSecurityException {
+        // Only add parameters for non-IS NULL conditions
+        if (safeCondition.value == null) {
+            return; // IS NULL/IS NOT NULL conditions don't need parameters
+        }
+
+        if ("structuretype".equals(safeCondition.field)) {
+            addStructureTypeParameter(dc, safeCondition.value);
+        } else if (isBooleanField(safeCondition.field)) {
+            dc.addParam(Boolean.parseBoolean(safeCondition.value));
+        } else {
+            dc.addParam(safeCondition.value);
+        }
+    }
+
+    /**
+     * SECURITY: Adds structuretype parameter with integer validation and overflow protection
+     */
+    private void addStructureTypeParameter(DotConnect dc, String value) throws DotSecurityException {
+        try {
+            // SECURITY: Validate integer range to prevent overflow
+            long longValue = Long.parseLong(value);
+            if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+                Logger.warn(this, "Integer overflow prevented for structuretype value: " + SecurityUtils.sanitizeForLogging(value));
+                throw new DotSecurityException("Invalid structuretype value: out of range");
+            }
+            dc.addParam((int) longValue);
+        } catch (NumberFormatException e) {
+            Logger.warn(this, "Invalid numeric format for structuretype: " + SecurityUtils.sanitizeForLogging(value));
+            throw new DotSecurityException("Invalid structuretype value: must be a valid integer", e);
+        }
+    }
+
+    /**
+     * SECURITY: Checks if a field is a boolean type field
+     */
+    private boolean isBooleanField(String field) {
+        return "system".equals(field) || "fixed".equals(field) || "default_structure".equals(field);
+    }
+
+    /**
+     * SECURITY: Checks if a column name could be ambiguous in multi-table queries.
+     * These columns exist in both the 'inode' and 'structure' tables used in ContentType queries.
+     */
+    private static boolean isAmbiguousColumn(String column) {
+        return "inode".equals(column) || "name".equals(column);
+    }
+
+    // SECURITY: Fully parameterized count query with proper community edition handling
+    private int dbCount(String search, int baseType) throws DotDataException, DotSecurityException {
+        int bottom = (baseType == 0) ? 0 : baseType;
+        int top = (baseType == 0) ? 100000 : baseType;
+
+        SearchCondition searchCondition = new SearchCondition(search);
+        DotConnect dc = new DotConnect();
+
+        // SECURITY: Build parameterized count query like dbSearch approach
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT COUNT(*) as test FROM structure, inode ");
+        sqlBuilder.append("WHERE structure.inode = inode.inode AND inode.type = 'structure' ");
+        sqlBuilder.append("AND (inode.inode LIKE ? OR LOWER(structure.name) LIKE ? OR structure.velocity_var_name LIKE ?) ");
+
+        // SECURITY: Add safe condition if present
+        if (searchCondition.safeCondition != null) {
+            sqlBuilder.append(" AND ").append(searchCondition.safeCondition.sqlCondition);
+        }
+
+        // SECURITY: Add community edition filtering (hardcoded values - not user input)
+        if (searchCondition.isCommunityEdition) {
+            sqlBuilder.append(" AND structure.structuretype <> ").append(BaseContentType.FORM.getType())
+                    .append(" AND structure.structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+        }
+
+        sqlBuilder.append(" AND structure.structuretype >= ? AND structure.structuretype <= ? ");
+        sqlBuilder.append(" AND structure.marked_for_deletion = ").append(DbConnectionFactory.getDBFalse());
+
+        dc.setSQL(sqlBuilder.toString());
+
+        // Add common search parameters using helper method
+        addCommonSearchParameters(dc, searchCondition);
+
+        // Add base type range parameters
+        dc.addParam(bottom);                                           // structuretype >= ?
+        dc.addParam(top);
+        return dc.getInt("test");
+    }
+
+        private void updateFolderFileAssetReferences(ContentType type) throws DotDataException {
     if (!(type instanceof FileAssetContentType))
       return;
     ContentType defaultFileAssetStructure = find(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
@@ -877,54 +1054,288 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
 
-  /**
-   * parses legacy conditions passed in as raw sql
-   *
-   * @author root
-   *
-   */
-  static class SearchCondition {
-    final String search;
-    final String condition;
+    /**
+     * SECURITY: Safe search condition processor that supports both text search and parameterized SQL conditions.
+     * Preserves legacy functionality while preventing SQL injection through safe parameterization.
+     */
+    static class SearchCondition {
+        final String search;
+        final String condition;
+        final boolean isCommunityEdition;
+        final SafeCondition safeCondition;
 
-    final String appendCondition = LicenseManager.getInstance().isCommunity() 
-                    ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
-                    : BLANK;
+        final String appendCondition = LicenseManager.getInstance().isCommunity()
+                ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType()
+                : BLANK;
 
-    SearchCondition(final String searchOrCondition) {
-      if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
-        this.condition = appendCondition;
-        this.search = PERCENT;
-      } else if (this.containsComparisonOperator(searchOrCondition)) {
-        this.search = PERCENT;
-        this.condition = searchOrCondition.toLowerCase().trim().startsWith("and")
-                ? searchOrCondition
-                : "AND " + searchOrCondition + appendCondition;
-      } else {
-        this.condition = appendCondition;
-        this.search = PERCENT + searchOrCondition + PERCENT;
-      }
+        SearchCondition(final String searchOrCondition) throws DotDataException {
+            this.isCommunityEdition = LicenseManager.getInstance().isCommunity();
+
+            if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals(PERCENT)) {
+                this.condition = appendCondition;
+                this.search = PERCENT;
+                this.safeCondition = null;
+            } else if (containsComparisonOperator(searchOrCondition)) {
+                // SECURITY: Parse comparison operators safely with parameterization
+                this.search = PERCENT;
+                this.condition = searchOrCondition.toLowerCase().trim().startsWith("and")
+                        ? searchOrCondition + appendCondition
+                        : "AND " + searchOrCondition + appendCondition;
+                this.safeCondition = SafeCondition.parse(searchOrCondition);
+            } else {
+                // Regular search term
+                this.condition = appendCondition;
+                this.search = PERCENT + searchOrCondition + PERCENT;
+                this.safeCondition = null;
+            }
+        }
+
+        /**
+         * SECURITY: Check for comparison operators that indicate SQL condition usage
+         */
+        private boolean containsComparisonOperator(final String searchOrCondition) {
+            return searchOrCondition.contains("<")
+                    || searchOrCondition.contains("=")
+                    || searchOrCondition.contains(">")
+                    || searchOrCondition.toLowerCase().contains(" like ")
+                    || searchOrCondition.toLowerCase().contains(" is ");
+        }
+
+        @Override
+        public String toString() {
+            return "SearchCondition [search=" + search + ", isCommunityEdition=" + isCommunityEdition +
+                    ", safeCondition=" + safeCondition + "]";
+        }
+
     }
 
     /**
-    *
-    * @param searchOrCondition
-    * @return
-    */
-    private boolean containsComparisonOperator(final String searchOrCondition) {
-      return searchOrCondition.contains("<")
-              || searchOrCondition.contains("=")
-              || searchOrCondition.contains(">")
-              || searchOrCondition.toLowerCase().contains(" like ")
-              || searchOrCondition.toLowerCase().contains(" is ");
-    }
+     * SECURITY: Safe condition parser that converts comparison operators into parameterized SQL.
+     * Prevents SQL injection while preserving comparison functionality.
+     */
+    static class SafeCondition {
+        final String field;
+        final String operator;
+        final String value;
+        final String sqlCondition;
 
-    @Override
-    public String toString() {
-      return "SearchCondition [search=" + search + ", condition=" + condition + "]";
-    }
+        private SafeCondition(String field, String operator, String value, String sqlCondition) {
+            this.field = field;
+            this.operator = operator;
+            this.value = value;
+            this.sqlCondition = sqlCondition;
+        }
 
-  }
+        /**
+         * SECURITY: Parse user input into safe parameterized conditions using Config-based whitelist.
+         * Much simpler approach that focuses on SQL safety patterns rather than specific field hardcoding.
+         */
+        static SafeCondition parse(String condition) throws DotDataException {
+            if (!UtilMethods.isSet(condition)) {
+                return null;
+            }
+
+            String trimmed = condition.trim();
+            if (trimmed.toLowerCase().startsWith("and ")) {
+                trimmed = trimmed.substring(4).trim();
+            }
+
+            // SECURITY: Handle legacy integer=integer patterns for dynamic query building
+            // Equal integers (1=1, 0=0, etc.) = "always true" = no condition needed
+            // Different integers (1=0, 2=3, etc.) = "never matches" = empty results
+            Pattern integerEqualityPattern = Pattern.compile("^\\s*(\\d+)\\s*=\\s*(\\d+)\\s*$");
+            Matcher integerMatcher = integerEqualityPattern.matcher(trimmed);
+            if (integerMatcher.matches()) {
+                int left = Integer.parseInt(integerMatcher.group(1));
+                int right = Integer.parseInt(integerMatcher.group(2));
+                if (left == right) {
+                    Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '" + trimmed + "' condition to 'no condition' for safety");
+                    return null; // No condition needed - return all results
+                } else {
+                    Logger.debug(ContentTypeFactoryImpl.class, "SECURITY: Converting legacy '" + trimmed + "' condition to 'never matches' for safety");
+                    return new SafeCondition("1", "=", "0", "1 = 0"); // Never matches condition
+                }
+            }
+
+            // SECURITY: Simple pattern-based validation using Config properties
+            // This approach focuses on SQL safety patterns rather than specific field whitelisting
+
+            // Get allowed column names from Config (fallback to known safe defaults)
+            Set<String> allowedColumns = getAllowedColumns();
+
+            // Parse the condition using safe SQL patterns
+            return parseConditionSafely(trimmed, allowedColumns);
+        }
+
+        /**
+         * SECURITY: Gets allowed column names from the consolidated whitelist in SQLUtil
+         * Uses the same whitelist as other SQL operations for consistency
+         */
+        private static Set<String> getAllowedColumns() {
+            // SECURITY: Use consolidated whitelist from SQLUtil for consistency
+            return Arrays.stream(SQLUtil.getConditionalColumnsWhitelist().toArray(new String[0]))
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+        }
+
+        /**
+         * SECURITY: Validates column name against allowed columns whitelist
+         */
+        private static void validateColumn(String column, Set<String> allowedColumns) throws DotDataException {
+            if (!allowedColumns.contains(column)) {
+                Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Column not allowed: " + SecurityUtils.sanitizeForLogging(column));
+                throw new DotDataException("Column not allowed: " + column);
+            }
+        }
+
+        /**
+         * SECURITY: Parses SQL conditions using safe patterns and validation
+         * Supports: column = 'value', column = number, column IS [NOT] NULL, column LIKE 'pattern'
+         */
+        private static SafeCondition parseConditionSafely(String condition, Set<String> allowedColumns) throws DotDataException {
+            // SECURITY: Basic SQL injection patterns to reject immediately
+            if (containsDangerousPatterns(condition)) {
+                Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Dangerous SQL pattern detected in condition: " + SecurityUtils.sanitizeForLogging(condition));
+                throw new DotDataException("Invalid condition format");
+            }
+
+            // Pattern 1: [table.]column = 'value' or [table.]column = number
+            // Handles both qualified (structure.system) and unqualified (system) column names
+            Pattern equalityPattern = Pattern.compile(
+                    "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=|!=|<>|>|<|>=|<=)\\s*(?:'([^']*)'|(\\d+))\\s*$",
+                    Pattern.CASE_INSENSITIVE
+            );
+
+            Matcher equalityMatcher = equalityPattern.matcher(condition);
+            if (equalityMatcher.matches()) {
+                String table = equalityMatcher.group(1); // Can be null for unqualified columns
+                String column = equalityMatcher.group(2).toLowerCase();
+                String operator = equalityMatcher.group(3);
+                String stringValue = equalityMatcher.group(4);
+                String numericValue = equalityMatcher.group(5);
+
+                validateColumn(column, allowedColumns);
+
+                String value = stringValue != null ? stringValue : numericValue;
+
+                // SECURITY: Reject ambiguous columns - require explicit table qualification
+                if (isAmbiguousColumn(column) && table == null) {
+                    Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+                    throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+                }
+
+                // Use table qualification if provided, otherwise use column directly
+                String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+
+                String sqlCondition = qualifiedColumn + " " + operator + " ?";
+                return new SafeCondition(column, operator, value, sqlCondition);
+            }
+
+            // Pattern 2: [table.]column IS [NOT] NULL
+            Pattern nullPattern = Pattern.compile(
+                    "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+IS\\s+(NOT\\s+)?NULL\\s*$",
+                    Pattern.CASE_INSENSITIVE
+            );
+
+            Matcher nullMatcher = nullPattern.matcher(condition);
+            if (nullMatcher.matches()) {
+                String table = nullMatcher.group(1); // Can be null for unqualified columns
+                String column = nullMatcher.group(2).toLowerCase();
+                String notPart = nullMatcher.group(3);
+                String operator = notPart != null ? "IS NOT NULL" : "IS NULL";
+
+                validateColumn(column, allowedColumns);
+
+                // SECURITY: Reject ambiguous columns - require explicit table qualification
+                if (isAmbiguousColumn(column) && table == null) {
+                    Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+                    throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+                }
+
+                // Use table qualification if provided, otherwise use column directly
+                String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+
+                String sqlCondition = qualifiedColumn + " " + operator;
+                return new SafeCondition(column, operator, null, sqlCondition);
+            }
+
+            // Pattern 3: [table.]column LIKE 'pattern'
+            Pattern likePattern = Pattern.compile(
+                    "^\\s*(?:([a-zA-Z_][a-zA-Z0-9_]*)\\.)?([a-zA-Z_][a-zA-Z0-9_]*)\\s+LIKE\\s+'([^']*)'\\s*$",
+                    Pattern.CASE_INSENSITIVE
+            );
+
+            Matcher likeMatcher = likePattern.matcher(condition);
+            if (likeMatcher.matches()) {
+                String table = likeMatcher.group(1); // Can be null for unqualified columns
+                String column = likeMatcher.group(2).toLowerCase();
+                String pattern = likeMatcher.group(3);
+
+                validateColumn(column, allowedColumns);
+
+                // SECURITY: Reject ambiguous columns - require explicit table qualification
+                if (isAmbiguousColumn(column) && table == null) {
+                    Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Ambiguous column rejected: " + SecurityUtils.sanitizeForLogging(column));
+                    throw new DotDataException("Ambiguous column '" + column + "' - specify table prefix (e.g., 'structure." + column + "' or 'inode." + column + "')");
+                }
+
+                // Use table qualification if provided, otherwise use column directly
+                String qualifiedColumn = (table != null) ? table.toLowerCase() + "." + column : column;
+
+                String sqlCondition = qualifiedColumn + " LIKE ?";
+                return new SafeCondition(column, "LIKE", pattern, sqlCondition);
+            }
+
+            // If no patterns match, reject the condition
+            Logger.warn(ContentTypeFactoryImpl.class, "SECURITY: Invalid condition format: " + SecurityUtils.sanitizeForLogging(condition));
+            throw new DotDataException("Invalid condition format");
+        }
+
+        /**
+         * SECURITY: Detects obvious SQL injection attack patterns to prevent them from reaching the database
+         * Focuses on clear attack indicators rather than individual keywords that might be legitimate parameter values
+         */
+        private static boolean containsDangerousPatterns(String condition) {
+            String lower = condition.toLowerCase();
+
+            // Check for SQL comment patterns (almost never legitimate in condition values)
+            if (lower.contains("--") || lower.contains("/*") || lower.contains("*/")) {
+                return true;
+            }
+
+            // Check for statement terminators (should never appear in condition values)
+            if (lower.contains(";")) {
+                return true;
+            }
+
+            // Check for obvious multi-statement injection patterns
+            if (lower.matches(".*\\b(union|select|insert|update|delete|drop|create|alter)\\s+(select|from|into|table|database)\\b.*")) {
+                return true;
+            }
+
+            // Check for system function calls (pg_, xp_, sp_, @@)
+            if (lower.contains("pg_") || lower.contains("xp_") || lower.contains("sp_") ||
+                    lower.contains("@@")) {
+                return true;
+            }
+
+            // Check for obvious string escape attempts
+            if (lower.contains("''") || lower.matches(".*\\bchar\\s*\\(.*")) {
+                return true;
+            }
+
+            // Check for obvious concatenation attempts
+            if (lower.matches(".*\\|\\|.*") || lower.matches(".*\\bconcat\\s*\\(.*")) {
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "SafeCondition[field=" + field + ", operator=" + operator + ", value=" + value + "]";
+        }
+    }
 
   static class CleanURLMap {
     final String urlMap;

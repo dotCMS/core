@@ -37,10 +37,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
@@ -1249,9 +1246,10 @@ public class ContentTypeResource implements Serializable {
 													   description = "Requires POST body consisting of a JSON object with the following properties:\n\n" +
 															   "| Property |  Type  | Description |\n" +
 															   "|----------|--------|-------------|\n" +
-															   "| `filter`   | JSON Object | Contains two properties: <table><tr><td>`query`</td><td>A simple query returning " +
-															   								"full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list " +
-															   								"of specific content type variables.</td></tr></table> |\n" +
+															   "| `filter`   | JSON Object | Contains three properties: <table><tr><td>`query`</td><td>A simple query returning " +
+															   								  "full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list " +
+															   								  "of specific content type variables.</td></tr><tr><td>`sites`</td><td>A comma-separated list " +
+															    							  "of site identifiers or keys.</td></tr></table> |\n" +
 															   "| `page` | Integer | Which page of results to show. Defaults to `1`. |\n" +
 															   "| `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |\n" +
 															   "| `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |\n" +
@@ -1264,7 +1262,8 @@ public class ContentTypeResource implements Serializable {
 																			   value = "{\n" +
 																					   "  \"filter\": {\n" +
 																					   "    \"query\": \"\",\n" +
-																					   "    \"types\": \"Blog,Activity\"\n" +
+																					   "    \"types\": \"Blog,Activity\",\n" +
+																					   "    \"sites\": \"demo.dotcms.com,SYSTEM_HOST\"\n" +
 																					   "  },\n" +
 																					   "  \"page\": 1,\n" +
 																					   "  \"perPage\": 10,\n" +
@@ -1284,11 +1283,31 @@ public class ContentTypeResource implements Serializable {
 		final String types = getFilterValue(form, "types", StringPool.BLANK);
 		final List<String> typeVarNames = UtilMethods.isSet(types) ? Arrays.asList(types.split(COMMA)) : null;
 		final String filter = getFilterValue(form, "query", StringPool.BLANK);
+		final String sites = getFilterValue(form, "sites", StringPool.BLANK);
 		final Map<String, Object> extraParams = new HashMap<>();
 		if (UtilMethods.isSet(typeVarNames)) {
 			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
 		}
 		try {
+			if (UtilMethods.isSet(sites)) {
+				// SECURITY: Validate sites parameter to prevent SQL injection (same validation as GET method)
+				List<String> siteList = Arrays.asList(sites.split(COMMA));
+
+				// SECURITY: Prevent DoS attacks with excessive number of sites
+				if (siteList.size() > 100) {
+					Logger.warn(this, "Too many sites requested in ContentTypeResource POST filter: " + siteList.size());
+					throw new DotDataException("Too many sites specified. Maximum 100 sites allowed per request.");
+				}
+
+				for (String site : siteList) {
+					if (!IdentifierValidator.isValid(site, IdentifierValidator.SITE_PROFILE)) {
+						// SECURITY: Do not log or return user input to prevent information disclosure
+						Logger.warn(this, "Invalid site identifier rejected in ContentTypeResource POST filter");
+						throw new DotDataException("Invalid site identifier format");
+					}
+				}
+				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME, siteList);
+			}
 			final PaginationUtil paginationUtil =
 					new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
 			response = paginationUtil.getPage(req, user, filter, form.getPage(), form.getPerPage(), form.getOrderBy(),
@@ -1507,8 +1526,23 @@ public class ContentTypeResource implements Serializable {
 				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 			}
 			if (UtilMethods.isSet(sites)) {
-				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME,
-						Arrays.asList(sites.split(COMMA)));
+				// SECURITY: Validate sites parameter to prevent SQL injection
+				List<String> siteList = Arrays.asList(sites.split(COMMA));
+
+				// SECURITY: Prevent DoS attacks with excessive number of sites
+				if (siteList.size() > 100) {
+					Logger.warn(this, "Too many sites requested in ContentTypeResource: " + siteList.size());
+					throw new DotDataException("Too many sites specified. Maximum 100 sites allowed per request.");
+				}
+
+				for (String site : siteList) {
+					if (!IdentifierValidator.isValid(site, IdentifierValidator.SITE_PROFILE)) {
+						// SECURITY: Do not log or return user input to prevent information disclosure
+						Logger.warn(this, "Invalid site identifier rejected in ContentTypeResource");
+						throw new DotDataException("Invalid site identifier format");
+					}
+				}
+				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME, siteList);
 			}
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
 			return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
