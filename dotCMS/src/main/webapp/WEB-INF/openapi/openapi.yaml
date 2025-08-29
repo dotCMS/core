@@ -26972,6 +26972,10 @@ components:
           type: string
         roleId:
           type: string
+        step:
+          type: object
+          additionalProperties:
+            type: string
         taskId:
           type: string
         type:

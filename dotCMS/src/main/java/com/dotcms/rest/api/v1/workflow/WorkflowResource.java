@@ -5655,9 +5655,19 @@ public class WorkflowResource {
 
     private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
 
+        final WorkflowStep step = Try.of(()->this.workflowHelper.findStepById(wfTimeLine.stepId())).getOrNull();
+        final Map<String, String> minimalStepViewMap = new HashMap<>();
+        if (Objects.nonNull(step)) {
+
+            minimalStepViewMap.put("id",step.getId());
+            minimalStepViewMap.put("name",step.getName());
+            minimalStepViewMap.put("creationDate",step.getCreationDate().toString());
+            minimalStepViewMap.put("escalationAction",step.getEscalationAction());
+        }
+
         final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
         return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
-                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
+                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type(), minimalStepViewMap);
     }
 
     /**
