@@ -9,7 +9,7 @@ import { BlogPostComponent } from './blog-post/blog-post.component';
 import { BlockEditorContent, DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
 import { ContentletImage, ExtraContent } from '../../shared/contentlet.model';
-import { BASE_EXTRA_QUERIES } from '../../shared/queries';
+import { buildExtraQuery } from '../../shared/queries';
 import { PageState } from '../../shared/models';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
@@ -47,7 +47,7 @@ export class BlogComponent implements OnInit {
     ngOnInit() {
         this.$pageState = this.#editablePageService.initializePage({
             graphql: {
-                ...BASE_EXTRA_QUERIES
+                ...buildExtraQuery()
             }
         });
     }

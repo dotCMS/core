@@ -11,15 +11,16 @@ import { BlogCardComponent } from './components/blog-card/blog-card.component';
 import { DotCMSPageAsset } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
-import { BASE_EXTRA_QUERIES } from '../../shared/queries';
+import { buildExtraQuery } from '../../shared/queries';
 import { ExtraContent, Blog } from '../../shared/contentlet.model';
-import { PageState } from '../../shared/models';
 import { DotCMSClient } from '@dotcms/angular';
 
 type DotCMSPage = {
     pageAsset: DotCMSPageAsset;
     content: ExtraContent;
 };
+
+const LIMIT_BLOGS = 10;
 
 @Component({
     selector: 'app-blog-listing',
@@ -52,7 +53,9 @@ export class BlogListingComponent {
 
     $pageState = this.#editablePageService.initializePage({
       graphql: {
-        ...BASE_EXTRA_QUERIES
+        ...buildExtraQuery({
+          limitBlogs: LIMIT_BLOGS
+        })
       }
     });
 
@@ -84,8 +87,8 @@ export class BlogListingComponent {
         // Use the properly injected DotCMS client to search
         this.client.content
             .getCollection('Blog')
-            .limit(10)
-            .query((qb: any) => qb.field('title').equals(`${query}*`))
+            .limit(LIMIT_BLOGS)
+            .query((qb) => qb.field('title').equals(`${query}*`))
             .sortBy([
                 {
                     field: 'Blog.postingDate',

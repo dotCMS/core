@@ -22,7 +22,6 @@ export class SearchComponent {
         .pipe(
           debounceTime(500),
           distinctUntilChanged(),
-          filter((value) => value.length > 3),
           takeUntilDestroyed(),
         )
         .subscribe((value) => {
