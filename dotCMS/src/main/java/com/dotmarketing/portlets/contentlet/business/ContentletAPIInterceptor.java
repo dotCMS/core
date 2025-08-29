@@ -602,6 +602,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public int deleteOldContent(Date deleteFrom, Date deleteTo) throws DotDataException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.deleteOldContent(deleteFrom, deleteTo);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		int c = conAPI.deleteOldContent(deleteFrom, deleteTo);
+		for(ContentletAPIPostHook post : postHooks){
+			post.deleteOldContent(deleteFrom, deleteTo, c);
+		}
+		return c;
+	}
+
+	@Override
 	public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
