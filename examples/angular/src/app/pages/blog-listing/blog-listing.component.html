@@ -1,9 +1,11 @@
-@if ($pageState(); as pageState) { @if (pageState.status === 'loading') {
-<app-loading />
+@let pageState = $pageState();
+
+@if (pageState.status === 'loading') {
+  <app-loading />
 } @else if (pageState.error) {
-<app-error [$error]="pageState.error" />
+  <app-error [$error]="pageState.error" />
 } @else if (pageState.pageResponse && pageState.status === 'success') {
-<div class="flex flex-col gap-6 min-h-screen bg-slate-50">
+  <div class="flex flex-col gap-6 min-h-screen bg-slate-50">
     <!-- Header with navigation -->
     <app-header>
         <app-navigation [items]="navigation()" />
@@ -42,5 +44,5 @@
             <p class="text-center">&copy; {{ year }} TravelLux. All rights reserved.</p>
         </div>
     </footer>
-</div>
-} }
+  </div>
+}

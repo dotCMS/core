@@ -1,4 +1,4 @@
-import { Component, OnInit, Signal, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { ErrorComponent } from '../../shared/components/error/error.component';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
@@ -12,7 +12,6 @@ import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
 import { buildExtraQuery } from '../../shared/queries';
 import { ExtraContent } from '../../shared/contentlet.model';
-import { PageState } from '../../shared/models';
 
 type DotCMSPage = {
     pageAsset: DotCMSPageAsset;
@@ -32,18 +31,15 @@ type DotCMSPage = {
     providers: [EditablePageService],
     templateUrl: './dot-cms-page.component.html'
 })
-export class DotCMSPageComponent implements OnInit {
+export class DotCMSPageComponent {
     readonly #editablePageService = inject<EditablePageService<DotCMSPage>>(EditablePageService);
-
-    $pageState!: Signal<PageState<DotCMSPage>>;
 
     readonly components = DYNAMIC_COMPONENTS;
 
-    ngOnInit() {
-        this.$pageState = this.#editablePageService.initializePage({
-            graphql: {
-                ...buildExtraQuery()
-            }
-        });
-    }
+    $pageState = this.#editablePageService.initializePage({
+        graphql: {
+            ...buildExtraQuery()
+        }
+    });
+
 }

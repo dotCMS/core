@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
@@ -39,16 +39,12 @@ type BlogPage = {
     providers: [EditablePageService],
     templateUrl: './blog.component.html'
 })
-export class BlogComponent implements OnInit {
+export class BlogComponent {
     readonly #editablePageService = inject<EditablePageService<BlogPage>>(EditablePageService);
 
-    $pageState!: Signal<PageState<BlogPage>>;
-
-    ngOnInit() {
-        this.$pageState = this.#editablePageService.initializePage({
-            graphql: {
-                ...buildExtraQuery()
-            }
-        });
-    }
+    $pageState = this.#editablePageService.initializePage({
+        graphql: {
+            ...buildExtraQuery()
+        }
+    });
 }
