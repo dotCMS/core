@@ -1,0 +1,498 @@
+{
+	"info": {
+		"_postman_id": "eb368c08-8543-40cf-b207-fc4ec18294cd",
+		"name": "ContentTypePagesResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "ContentTypeForPages",
+			"item": [
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						},
+						"description": "Logout before try with invalid user"
+					},
+					"response": []
+				},
+				{
+					"name": "GetCurrentSite",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Storing workflow data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"currentSiteHost\", jsonData.entity.hostname);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/currentSite",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"currentSite"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetFirstPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"currentPageId\", jsonData.contentlets[0].identifier);",
+									"pm.collectionVariables.set(\"currentPageUrl\", jsonData.contentlets[0].url);",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/render/false/query/+contentType:htmlpageasset",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"render",
+								"false",
+								"query",
+								"+contentType:htmlpageasset"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckContentTypeForPages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Storing workflow data\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    let length = jsonData.entity.length;",
+									"    let currentPage = jsonData.pagination.currentPage;",
+									"    let perPage = jsonData.pagination.perPage;",
+									"    let totalEntries = jsonData.pagination.totalEntries;",
+									"    ",
+									"    pm.expect(length).to.greaterThan(0)",
+									"    pm.expect(totalEntries).to.greaterThan(0)",
+									"    pm.expect(perPage).to.eql(10)",
+									"    pm.expect(currentPage).to.eql(1)",
+									"",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{currentPageId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{currentPageId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckContentTypeForPagesByUrl",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking Content Type Information\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    let length = jsonData.entity.length;",
+									"    let currentPage = jsonData.pagination.currentPage;",
+									"    let perPage = jsonData.pagination.perPage;",
+									"    let totalEntries = jsonData.pagination.totalEntries;",
+									"    ",
+									"    pm.expect(length).to.greaterThan(0)",
+									"    pm.expect(totalEntries).to.greaterThan(0)",
+									"    pm.expect(perPage).to.eql(10)",
+									"    pm.expect(currentPage).to.eql(1)",
+									"",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{currentPageUrl}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{currentPageUrl}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckContentTypeForPagesBadRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 \", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId=NONEXIST",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "NONEXIST"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"if (!pm.environment.get('jwt')) {",
+							"    console.log(\"generating....\")",
+							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"",
+							"    if (!pm.environment.get('jwt')) {",
+							"        const username = pm.environment.get(\"user\");",
+							"        const password = pm.environment.get(\"password\");",
+							"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+							"",
+							"        const requestOptions = {",
+							"            url: apiUrl,",
+							"            method: \"POST\",",
+							"            header: {",
+							"                \"accept\": \"*/*\",",
+							"                \"content-type\": \"application/json\",",
+							"                \"Authorization\": `Basic ${basicAuth}`",
+							"            },",
+							"            body: {",
+							"                mode: \"raw\",",
+							"                raw: JSON.stringify({",
+							"                    \"expirationSeconds\": 7200,",
+							"                    \"userId\": \"dotcms.org.1\",",
+							"                    \"network\": \"0.0.0.0/0\",",
+							"                    \"claims\": {\"label\": \"postman-tests\"}",
+							"                })",
+							"            }",
+							"        };",
+							"",
+							"        pm.sendRequest(requestOptions, function (err, response) {",
+							"            if (err) {",
+							"                console.log(err);",
+							"            } else {",
+							"                const jwt = response.json().entity.jwt;",
+							"                pm.environment.set('jwt', jwt);",
+							"                console.log(jwt);",
+							"            }",
+							"        });",
+							"    }",
+							"}",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "currentSiteJost",
+			"value": ""
+		},
+		{
+			"key": "currentSiteHost",
+			"value": ""
+		},
+		{
+			"key": "currentPageId",
+			"value": ""
+		},
+		{
+			"key": "currentPageUrl",
+			"value": ""
+		}
+	]
+}
