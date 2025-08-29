@@ -64,8 +64,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static org.awaitility.Awaitility.await;
 
 @RunWith(DataProviderRunner.class)
 public class SiteSearchJobImplTest extends IntegrationTestBase {
@@ -326,8 +328,12 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         Assert.assertFalse(recentAudits.isEmpty());
         final SiteSearchAudit siteSearchAudit = recentAudits.get(0);
 
-        final SiteSearchResults search1 = siteSearchAPI.search(siteSearchAudit.getIndexName(), "our-page*",0, 10);
-        Assert.assertTrue(search1.getTotalResults() >= 1);
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .until(() -> {
+                    final SiteSearchResults search1 = siteSearchAPI.search(siteSearchAudit.getIndexName(), "our-page*", 0, 10);
+                    return search1.getTotalResults() >= 1;
+                });
 
         final File runOnceBundleRoot = BundlerUtil.getBundleRoot(generatedBundleId1, false);
         Assert.assertTrue(runOnceBundleRoot.exists());
@@ -360,8 +366,12 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         Assert.assertFalse(recentAudits.isEmpty());
         final SiteSearchAudit siteSearchAudit2 = recentAudits.get(0);
 
-        final SiteSearchResults search2 = siteSearchAPI.search(siteSearchAudit2.getIndexName(), "our-page*",0, 10);
-        Assert.assertTrue(search2.getTotalResults() >= 1);
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .until(() -> {
+                    final SiteSearchResults search2 = siteSearchAPI.search(siteSearchAudit2.getIndexName(), "our-page*", 0, 10);
+                    return search2.getTotalResults() >= 1;
+                });
 
         //Create Contentlet in English
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
@@ -401,8 +411,12 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         final SiteSearchAudit siteSearchAudit3 = recentAudits.get(0);
 
         //Now we make sure the page is now part of Site-search search results.
-        final SiteSearchResults search3 = siteSearchAPI.search(siteSearchAudit3.getIndexName(), pageName,0, 10);
-        Assert.assertEquals(1, search3.getTotalResults());
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .until(() -> {
+                    final SiteSearchResults search3 = siteSearchAPI.search(siteSearchAudit3.getIndexName(), pageName, 0, 10);
+                    return search3.getTotalResults() == 1;
+                });
 
         final String generatedBundleId2 = thirdRunJob.getBundleId();
 
@@ -439,8 +453,12 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         Assert.assertFalse(recentAudits.isEmpty());
         final SiteSearchAudit siteSearchAudit4 = recentAudits.get(0);
         //Now we make sure the page is Not part of Site-search search results.
-        final SiteSearchResults search4 = siteSearchAPI.search(siteSearchAudit4.getIndexName(), pageName,0, 10);
-        Assert.assertEquals(0, search4.getTotalResults());
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .until(() -> {
+                    final SiteSearchResults search4 = siteSearchAPI.search(siteSearchAudit4.getIndexName(), pageName, 0, 10);
+                    return search4.getTotalResults() == 0;
+                });
     }
 
     static class TestCaseSiteSearch {

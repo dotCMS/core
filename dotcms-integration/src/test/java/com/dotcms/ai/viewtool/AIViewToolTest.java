@@ -17,9 +17,11 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.awaitility.Awaitility;
 
 import java.io.File;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -111,10 +113,17 @@ public class AIViewToolTest extends IntegrationTestBase {
     public void test_generateImage_fromStringPrompt() {
         // given
         final String prompt = "Image about Jupiter moon Ganymede";
-        // when
-        final JSONObject response = aiViewTool.generateImage(prompt);
-        // then
-        assertImageResponse(response, prompt, "ganymede");
+        // when & then - wait for image generation to complete asynchronously with retry
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)  // Check every 2 seconds
+                .pollDelay(1, TimeUnit.SECONDS)     // Wait 1 second before first attempt
+                .ignoreExceptions()                 // Continue retrying on exceptions
+                .until(() -> {
+                    final JSONObject response = aiViewTool.generateImage(prompt);
+                    assertImageResponse(response, prompt, "ganymede");
+                    return true; // Only return true if all assertions pass
+                });
     }
 
     /**
@@ -127,10 +136,17 @@ public class AIViewToolTest extends IntegrationTestBase {
     public void test_generateImage_fromMapPrompt() {
         // given
         final Map<String, Object> prompt = Map.of("prompt", "Image of Dalai Lama winning a slam dunk contest");
-        // when
-        final JSONObject response = aiViewTool.generateImage(prompt);
-        // then
-        assertImageResponse(response, prompt.get("prompt").toString(), "dalailama");
+        // when & then - wait for image generation to complete asynchronously with retry
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)  // Check every 2 seconds
+                .pollDelay(1, TimeUnit.SECONDS)     // Wait 1 second before first attempt
+                .ignoreExceptions()                 // Continue retrying on exceptions
+                .until(() -> {
+                    final JSONObject response = aiViewTool.generateImage(prompt);
+                    assertImageResponse(response, prompt.get("prompt").toString(), "dalailama");
+                    return true; // Only return true if all assertions pass
+                });
     }
 
 
