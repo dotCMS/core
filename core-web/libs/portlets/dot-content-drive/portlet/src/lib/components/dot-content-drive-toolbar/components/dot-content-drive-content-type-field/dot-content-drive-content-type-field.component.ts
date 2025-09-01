@@ -9,19 +9,23 @@ import {
     DestroyRef,
     OnInit,
     signal,
-    viewChild
+    computed
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { MultiSelect, MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
+import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { catchError, debounceTime, skip, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentType,
+    DotPagination
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME } from '../../../../shared/constants';
@@ -30,6 +34,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 type DotContentDriveContentTypeFieldState = {
     filter: string;
     loading: boolean;
+    canLoadMore: boolean;
     contentTypes: DotCMSContentType[];
 };
 
@@ -46,22 +51,24 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #contentTypesService = inject(DotContentTypeService);
     readonly #searchSubject = new Subject<{ type?: string; filter: string }>();
-    readonly multiSelect = viewChild(MultiSelect);
 
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         filter: '',
         loading: true,
+        canLoadMore: true,
         contentTypes: []
     });
 
     readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
-
     readonly getContentTypesEffect = effect(() => {
         const type = undefined;
         const filter = this.$state.filter();
 
         // Push the request parameters to the debounced stream
         this.#searchSubject.next({ type, filter });
+    });
+    readonly fechingItems = computed(() => {
+        return this.$state.loading() && this.$state.canLoadMore();
     });
 
     ngOnInit() {
@@ -176,19 +183,28 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         const URLContentTypes = contentTypesString.split(',');
 
         this.#contentTypesService
-            .getContentTypes({ filter: '' })
+            .getContentTypesWithPagination({ filter: '' })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
                 catchError(() => of([]))
             )
-            .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
-                const contentTypes = this.filterAndDeduplicateContentTypes(dotCMSContentTypes);
-                const selectedContentTypes = contentTypes.filter((ct) =>
-                    URLContentTypes.includes(ct.variable)
-                );
-                this.updateState({ contentTypes, loading: false });
-                this.$selectedContentTypes.set(selectedContentTypes);
-            });
+            .subscribe(
+                ({
+                    contentTypes,
+                    pagination
+                }: {
+                    contentTypes: DotCMSContentType[];
+                    pagination: DotPagination;
+                }) => {
+                    const dotCMSContentTypes = this.filterAndDeduplicateContentTypes(contentTypes);
+                    const selectedContentTypes = dotCMSContentTypes.filter((ct) =>
+                        URLContentTypes.includes(ct.variable)
+                    );
+                    const canLoadMore = pagination.currentPage < pagination.totalEntries;
+                    this.updateState({ contentTypes, canLoadMore, loading: false });
+                    this.$selectedContentTypes.set(selectedContentTypes);
+                }
+            );
     }
 
     /**

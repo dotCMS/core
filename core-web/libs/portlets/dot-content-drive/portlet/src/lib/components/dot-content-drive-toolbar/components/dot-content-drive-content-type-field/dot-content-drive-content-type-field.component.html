@@ -1,11 +1,11 @@
 <p-multiSelect
+    display="chip"
+    optionLabel="name"
     [ngModelOptions]="{ standalone: true }"
-    [panelStyleClass]="$state.loading() ? 'hide-empty-message' : ''"
+    [panelStyleClass]="fechingItems() ? 'hide-empty-message' : ''"
     [filter]="true"
     [options]="$state.contentTypes()"
     [(ngModel)]="$selectedContentTypes"
-    optionLabel="name"
-    display="chip"
     [emptyFilterMessage]="'content-drive.content-type-field.empty-state' | dm"
     (onChange)="onChange()"
     (onClear)="onChange()"
@@ -22,7 +22,7 @@
         </div>
     </ng-template>
     <ng-template pTemplate="footer">
-        @if ($state.loading()) {
+        @if (fechingItems()) {
             <div class="footer">
                 <i class="pi pi-spin pi-spinner"></i>
                 <!-- Remember to add the dot message to the label -->
