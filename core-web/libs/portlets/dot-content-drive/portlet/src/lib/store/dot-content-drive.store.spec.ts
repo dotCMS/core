@@ -59,10 +59,7 @@ describe('DotContentDriveStore', () => {
             it('should build base query when no path or filters are provided', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(`+(conhost:${SYSTEM_HOST.identifier} OR +conhost:${SYSTEM_HOST.identifier})`)
                     .build();
 
                 expect(store.$query()).toEqual(baseQuery);
@@ -81,10 +78,7 @@ describe('DotContentDriveStore', () => {
                     .raw(BASE_QUERY)
                     .field('parentPath')
                     .equals(testPath)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(`+(conhost:${SYSTEM_HOST.identifier} OR +conhost:${SYSTEM_HOST.identifier})`)
                     .build();
 
                 expect(store.$query()).toEqual(expectedQuery);
@@ -102,10 +96,7 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .field('conhost')
-                    .equals(customSite.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(`+(conhost:${customSite.identifier} OR +conhost:${SYSTEM_HOST.identifier})`)
                     .build();
 
                 expect(store.$query()).toEqual(expectedQuery);
@@ -126,10 +117,7 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(`+(conhost:${SYSTEM_HOST.identifier} OR +conhost:${SYSTEM_HOST.identifier})`)
                     .field('contentType')
                     .equals('Blog')
                     .field('status')
@@ -153,10 +141,7 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(`+(conhost:${SYSTEM_HOST.identifier} OR +conhost:${SYSTEM_HOST.identifier})`)
                     .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
                     .build();
 
@@ -177,10 +162,7 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(`+(conhost:${SYSTEM_HOST.identifier} OR +conhost:${SYSTEM_HOST.identifier})`)
                     .raw(
                         `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
                     )

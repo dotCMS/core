@@ -65,7 +65,7 @@ export const DotContentDriveStore = signalStore(
                 }
 
                 modifiedQuery = modifiedQuery.raw(
-                    `+(conhost:${currentSiteValue?.identifier} OR +conhost:${SYSTEM_HOST.identifier}) `
+                    `+(conhost:${currentSiteValue?.identifier} OR +conhost:${SYSTEM_HOST.identifier})`
                 );
 
                 filtersEntries
