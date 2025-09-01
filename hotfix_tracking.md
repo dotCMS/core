@@ -9,3 +9,4 @@ Release-25.07.10 LTS
 3. https://github.com/dotCMS/core/issues/32583 : NPE in on content edit (Not on Beta version) when content type named "Event" lacks calendar fields #32583
 4. https://github.com/dotCMS/core/issues/33006 : Backport security fix to LTSs #33006
 5. https://github.com/dotCMS/core/issues/32989 : Upgrade Tomcat to Latest Version 9 Patch Release #32989
+6. https://github.com/dotCMS/core/issues/32929 : Core: Create user not set user role #32929
