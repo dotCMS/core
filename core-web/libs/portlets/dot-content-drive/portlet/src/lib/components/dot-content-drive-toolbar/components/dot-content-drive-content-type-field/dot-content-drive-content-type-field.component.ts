@@ -13,7 +13,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 
 import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -47,7 +46,6 @@ type DotContentDriveContentTypeFieldState = {
 })
 export class DotContentDriveContentTypeFieldComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
-    readonly #route = inject(ActivatedRoute);
     readonly #destroyRef = inject(DestroyRef);
     readonly #contentTypesService = inject(DotContentTypeService);
     readonly #searchSubject = new Subject<{ type?: string; filter: string }>();
@@ -179,8 +177,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      * @memberof DotContentDriveContentTypeFieldComponent
      */
     private loadInitialContentTypes() {
-        const contentTypesString = this.#route.snapshot.queryParams['contentType'] ?? '';
-        const URLContentTypes = contentTypesString.split(',');
+        const contentTypeVariables = (this.#store.getFilterValue('contentType') as string[]) ?? [];
 
         this.#contentTypesService
             .getContentTypesWithPagination({ filter: '' })
@@ -197,12 +194,12 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                     pagination: DotPagination;
                 }) => {
                     const dotCMSContentTypes = this.filterAndDeduplicateContentTypes(contentTypes);
-                    const selectedContentTypes = dotCMSContentTypes.filter((ct) =>
-                        URLContentTypes.includes(ct.variable)
-                    );
                     const canLoadMore = pagination.currentPage < pagination.totalEntries;
+                    const selectedItems = dotCMSContentTypes.filter(({ variable }) =>
+                        contentTypeVariables.includes(variable)
+                    );
                     this.updateState({ contentTypes, canLoadMore, loading: false });
-                    this.$selectedContentTypes.set(selectedContentTypes);
+                    this.$selectedContentTypes.set(selectedItems);
                 }
             );
     }
