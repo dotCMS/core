@@ -11,3 +11,4 @@ Release-25.07.10 LTS
 5. https://github.com/dotCMS/core/issues/32989 : Upgrade Tomcat to Latest Version 9 Patch Release #32989
 6. https://github.com/dotCMS/core/issues/32929 : Core: Create user not set user role #32929
 7. https://github.com/dotCMS/core/issues/33093 : Update image reference breaking out build #33093
+8. https://github.com/dotCMS/core/issues/33031 : Reset Approvals sub-action not working as expected #33031
