@@ -212,8 +212,6 @@ jobs:
         with:
           path: ${{ env.DOCKER_BUILD_CONTEXT }}/context
           key: docker-context-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
-          restore-keys: |
-            docker-context-${{ steps.set-common-vars.outputs.date }}
         if: success()
 
       - name: Create Release
