@@ -102,7 +102,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     protected onChange() {
         const value = this.$selectedContentTypes();
 
-        if (value.length) {
+        if (value?.length) {
             this.#store.patchFilters({
                 contentType: value.map((item) => item.variable)
             });
