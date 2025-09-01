@@ -31,10 +31,11 @@ describe('DotContentDriveBaseTypeSelectorComponent', () => {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
             {
-                provide: DotMessageService, useValue: new MockDotMessageService({
-                'content-drive.base-type.placeholder': 'Base Type'
-            })
-        }
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'content-drive.base-type.placeholder': 'Base Type'
+                })
+            }
         ],
         detectChanges: false
     });
@@ -102,17 +103,19 @@ describe('DotContentDriveBaseTypeSelectorComponent', () => {
         expect(store.removeFilter).toHaveBeenCalledWith('baseType');
     });
 
-    describe("MultiSelect", () => {
+    describe('MultiSelect', () => {
         it('should have correct properties configured', () => {
             spectator.detectChanges();
 
-            const multiSelectDebugElement = spectator.fixture.debugElement.query(By.directive(MultiSelect));
+            const multiSelectDebugElement = spectator.fixture.debugElement.query(
+                By.directive(MultiSelect)
+            );
             const multiSelectComponent = multiSelectDebugElement.componentInstance;
-            
+
             expect(multiSelectComponent.scrollHeight).toBe('25rem');
             expect(multiSelectComponent.resetFilterOnHide).toBe(true);
             expect(multiSelectComponent.showToggleAll).toBe(true);
-            
+
             // For placeholder, we need to check the resolved value from the DOM
             const multiSelectElement = spectator.query('p-multiselect');
             expect(multiSelectElement.getAttribute('ng-reflect-placeholder')).toBe('Base Type');
