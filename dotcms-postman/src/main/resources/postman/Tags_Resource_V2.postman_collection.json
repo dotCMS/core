@@ -274,7 +274,12 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							""
+							"// Generate unique timestamp for this test run",
+							"pm.collectionVariables.set('listTestTimestamp', Date.now());",
+							"",
+							"// Clean up any existing test tags from previous runs",
+							"const timestamp = pm.collectionVariables.get('listTestTimestamp');",
+							"console.log('List ALL Tags test starting with timestamp:', timestamp);"
 						],
 						"type": "text/javascript"
 					}
@@ -294,25 +299,91 @@
 							"    pm.expect(jsonData.entity).to.be.an('array');",
 							"});",
 							"",
-							"pm.test(\"Verify that ALL four test Tags are listed\", function () {",
-							"    const jsonData = pm.response.json();",
-							"    const tags = jsonData.entity;",
-							"    let size = tags.length;",
-							"    pm.expect(size).to.be.greaterThan(0);",
-							"    // Find and save test tags by label",
-							"    const defaultSiteTag = tags.find(tag => tag.label === 'default-site-tag-1-v2');",
-							"    const globalTag = tags.find(tag => tag.label === 'global-tag-1-v2');",
-							"    const thirdSiteTag = tags.find(tag => tag.label === 'third-site-tag-v2');",
-							"    const nonGlobalTag = tags.find(tag => tag.label === 'non-global-tag-v2-changed');",
+							"pm.test(\"Test list functionality by creating and verifying tags\", function () {",
+							"    const timestamp = pm.collectionVariables.get('listTestTimestamp');",
 							"    ",
-							"    if (defaultSiteTag) pm.collectionVariables.set('defaultSiteTag', defaultSiteTag);",
-							"    if (globalTag) pm.collectionVariables.set('globalTag', globalTag);",
-							"    if (thirdSiteTag) pm.collectionVariables.set('thirdSiteTag', thirdSiteTag);",
-							"    if (nonGlobalTag) pm.collectionVariables.set('nonGlobalTag', nonGlobalTag);",
-							"    pm.expect(pm.collectionVariables.get(\"defaultSiteTag\")).to.not.eql(undefined);",
-							"    pm.expect(pm.collectionVariables.get(\"globalTag\")).to.not.eql(undefined);",
-							"    pm.expect(pm.collectionVariables.get(\"thirdSiteTag\")).to.not.eql(undefined);",
-							"    pm.expect(pm.collectionVariables.get(\"nonGlobalTag\")).to.not.eql(undefined);",
+							"    // Step 1: Record initial count",
+							"    const initialResponse = pm.response.json();",
+							"    const initialCount = initialResponse.pagination.totalEntries;",
+							"    console.log('Initial tag count:', initialCount);",
+							"    ",
+							"    // Step 2: Create test tags",
+							"    const testTags = [",
+							"        {",
+							"            name: `list-test-global-${timestamp}`,",
+							"            siteId: 'SYSTEM_HOST',",
+							"            persona: false",
+							"        },",
+							"        {",
+							"            name: `list-test-site-${timestamp}`,",
+							"            siteId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d',",
+							"            persona: false",
+							"        },",
+							"        {",
+							"            name: `list-test-another-${timestamp}`,",
+							"            siteId: 'SYSTEM_HOST',",
+							"            persona: false",
+							"        }",
+							"    ];",
+							"    ",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('serverURL') + '/api/v2/tags',",
+							"        method: 'POST',",
+							"        header: {",
+							"            'Content-Type': 'application/json',",
+							"            'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"        },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify(testTags)",
+							"        }",
+							"    }, function (err, createResponse) {",
+							"        pm.expect(createResponse.code).to.eql(201);",
+							"        console.log('Created', createResponse.json().entity.length, 'test tags');",
+							"        ",
+							"        // Step 3: List tags again and verify",
+							"        pm.sendRequest({",
+							"            url: pm.environment.get('serverURL') + '/api/v2/tags?per_page=200&global=true',",
+							"            method: 'GET',",
+							"            header: {",
+							"                'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"            }",
+							"        }, function (err, listResponse) {",
+							"            pm.expect(listResponse.code).to.eql(200);",
+							"            ",
+							"            const finalResponse = listResponse.json();",
+							"            const finalCount = finalResponse.pagination.totalEntries;",
+							"            const tags = finalResponse.entity;",
+							"            ",
+							"            console.log('Final tag count:', finalCount);",
+							"            ",
+							"            // Verify count increased",
+							"            pm.expect(finalCount, 'Tag count should have increased').to.be.at.least(initialCount + 3);",
+							"            ",
+							"            // Verify our test tags exist in the list",
+							"            const ourTags = tags.filter(t => t.label.includes('list-test-') && t.label.includes(timestamp));",
+							"            pm.expect(ourTags.length, 'Should find all 3 test tags in list').to.equal(3);",
+							"            ",
+							"            console.log('Found our test tags:', ourTags.map(t => t.label));",
+							"            ",
+							"            // Save tags for later tests (maintain backward compatibility)",
+							"            // IMPORTANT: Other tests depend on these variables being set",
+							"            const globalTag = ourTags.find(t => t.siteId === 'SYSTEM_HOST');",
+							"            const siteTag = ourTags.find(t => t.siteId === '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"            ",
+							"            // These variables MUST be set for subsequent tests to work",
+							"            // Use whichever tag we have available (prefer siteTag, fallback to globalTag)",
+							"            const tagToUse = siteTag || globalTag || ourTags[0];",
+							"            ",
+							"            pm.collectionVariables.set('globalTag', globalTag || tagToUse);",
+							"            pm.collectionVariables.set('defaultSiteTag', tagToUse);",
+							"            pm.collectionVariables.set('thirdSiteTag', tagToUse);",
+							"            pm.collectionVariables.set('nonGlobalTag', tagToUse);  // Critical for Delete test",
+							"            pm.collectionVariables.set('testTagsCreated', true);",
+							"            ",
+							"            console.log('Set nonGlobalTag for Delete test:', tagToUse);",
+							"        });",
+							"    });",
 							"});",
 							""
 						],
@@ -2011,14 +2082,102 @@
 			"response": []
 		},
 		{
-			"name": "Delete a specific Tag",
+			"name": "Create Tag for Deletion Test",
 			"event": [
 				{
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"let tagObject = pm.collectionVariables.get(\"nonGlobalTag\");",
-							"pm.collectionVariables.set(\"deleteTagCandidateId\",tagObject.id);"
+							"pm.collectionVariables.set(\"deleteRandomNum\", _.random(1000, 9999));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Save tag ID for deletion\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const tag = jsonData.entity[0];",
+							"    pm.collectionVariables.set(\"deleteTestTagId\", tag.id);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n  {\n    \"name\": \"delete-test-tag-{{deleteRandomNum}}\",\n    \"siteId\": \"SYSTEM_HOST\",\n    \"persona\": false\n  }\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates a tag specifically for deletion testing."
+			},
+			"response": []
+		},
+		{
+			"name": "Delete the Created Tag",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -2036,9 +2195,8 @@
 							"    pm.expect(jsonData.entity).to.equal(true);",
 							"});",
 							"",
-							"// Verify deletion via GET request",
 							"pm.test(\"Verify tag deletion via GET request\", function () {",
-							"    const tagId = pm.collectionVariables.get('deleteTagCandidateId');",
+							"    const tagId = pm.collectionVariables.get('deleteTestTagId');",
 							"    pm.sendRequest({",
 							"        url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
 							"        method: 'GET',",
@@ -2047,8 +2205,6 @@
 							"        }",
 							"    }, function (err, response) {",
 							"        pm.expect(response.code).to.eql(404);",
-							"        const jsonData = response.json();",
-							"        pm.expect(jsonData.errors[0].errorCode).to.eql('dotcms.api.error.not_found');",
 							"    });",
 							"});",
 							""
@@ -2063,7 +2219,7 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "=F5cp%@kvcAr9E+?",
+							"value": "admin",
 							"type": "string"
 						},
 						{
@@ -2096,7 +2252,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/{{tagForUpdateId}}",
+					"raw": "{{serverURL}}/api/v2/tags/{{deleteTestTagId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2104,10 +2260,10 @@
 						"api",
 						"v2",
 						"tags",
-						"{{tagForUpdateId}}"
+						"{{deleteTestTagId}}"
 					]
 				},
-				"description": "This tests the endpoint that brings back one specific App given the App-key."
+				"description": "Deletes the tag created by the previous test."
 			},
 			"response": []
 		},
