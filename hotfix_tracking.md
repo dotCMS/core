@@ -10,3 +10,4 @@ Release-25.07.10 LTS
 4. https://github.com/dotCMS/core/issues/33006 : Backport security fix to LTSs #33006
 5. https://github.com/dotCMS/core/issues/32989 : Upgrade Tomcat to Latest Version 9 Patch Release #32989
 6. https://github.com/dotCMS/core/issues/32929 : Core: Create user not set user role #32929
+7. https://github.com/dotCMS/core/issues/33093 : Update image reference breaking out build #33093
