@@ -12,11 +12,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, skip, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
@@ -26,9 +27,9 @@ import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
-    contentTypes: DotCMSContentType[];
-    filterByKeyword: string;
+    filter: string;
     loading: boolean;
+    contentTypes: DotCMSContentType[];
 };
 
 @Component({
@@ -40,75 +41,57 @@ type DotContentDriveContentTypeFieldState = {
 })
 export class DotContentDriveContentTypeFieldComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
-    readonly #contentTypesService = inject(DotContentTypeService);
+    readonly #route = inject(ActivatedRoute);
     readonly #destroyRef = inject(DestroyRef);
-    readonly #apiRequestSubject = new Subject<{ type?: string; filter: string }>();
+    readonly #contentTypesService = inject(DotContentTypeService);
+    readonly #searchSubject = new Subject<{ type?: string; filter: string }>();
+
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
-        contentTypes: [],
-        filterByKeyword: '',
-        loading: true
+        filter: '',
+        loading: true,
+        contentTypes: []
     });
 
     readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
+
     readonly getContentTypesEffect = effect(() => {
-        // TODO: We need to improve this when this ticket is done: https://github.com/dotCMS/core/issues/32991
-        // After that remove the uncommented code and add the line below
-        // const type = this.$mappedBaseTypes().join(',')
         const type = undefined;
-        const filter = this.$state.filterByKeyword();
+        const filter = this.$state.filter();
 
         // Push the request parameters to the debounced stream
-        this.#apiRequestSubject.next({ type, filter });
+        this.#searchSubject.next({ type, filter });
     });
 
     ngOnInit() {
-        // Set up debounced API request stream with switchMap
-        this.#apiRequestSubject
-            .pipe(
-                tap(() =>
-                    patchState(this.$state, {
-                        loading: true
-                    })
-                ),
-                debounceTime(DEBOUNCE_TIME),
-                takeUntilDestroyed(this.#destroyRef),
-                switchMap(({ type, filter }) =>
-                    this.#contentTypesService
-                        .getContentTypes({ type, filter })
-                        .pipe(catchError(() => of([])))
-                )
-            )
-            .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
-                const selectedContentTypes = this.$selectedContentTypes() ?? [];
-                const allContentTypes = [...selectedContentTypes, ...dotCMSContentTypes];
-                const contentTypes = this.filterAndDeduplicateContentTypes(allContentTypes);
-
-                patchState(this.$state, {
-                    contentTypes,
-                    loading: false
-                });
-            });
+        this.loadInitialContentTypes();
+        this.setupFilterSubscription();
     }
 
     /**
-     * This function is used to filter the content types by keyword
+     * Handles filter input changes from the multiselect component.
      *
-     * @param {MultiSelectFilterEvent} event
+     * Updates the filter state which triggers the reactive effect to fetch
+     * filtered content types with debouncing.
+     *
+     * @param {MultiSelectFilterEvent} event - The filter event containing the search term
+     * @protected
      * @memberof DotContentDriveContentTypeFieldComponent
      */
-    onFilter(event: MultiSelectFilterEvent) {
-        patchState(this.$state, {
-            filterByKeyword: event.filter
-        });
+    protected onFilter({ filter }: MultiSelectFilterEvent) {
+        this.updateState({ filter });
     }
 
     /**
-     * This function is used to handle the change event of the multiselect
+     * Handles selection changes in the multiselect component.
      *
+     * Updates the store filters based on selected content types or removes
+     * the filter if no content types are selected.
+     *
+     * @protected
      * @memberof DotContentDriveContentTypeFieldComponent
      */
-    onChange() {
-        const value = this.$selectedContentTypes() ?? [];
+    protected onChange() {
+        const value = this.$selectedContentTypes();
 
         if (value.length) {
             this.#store.patchFilters({
@@ -120,14 +103,29 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     }
 
     /**
-     * Reset the filter by keyword when the multiselect is hidden
+     * Resets the filter when the multiselect panel is hidden.
      *
+     * Clears the search filter to ensure a clean state when the user
+     * reopens the multiselect dropdown.
+     *
+     * @protected
      * @memberof DotContentDriveContentTypeFieldComponent
      */
-    onHidePanel() {
-        patchState(this.$state, {
-            filterByKeyword: ''
-        });
+    protected onHidePanel() {
+        this.updateState({ filter: '' });
+    }
+
+    /**
+     * Utility method to update the component state.
+     *
+     * Provides a centralized way to patch the component state with type safety.
+     *
+     * @param {Partial<DotContentDriveContentTypeFieldState>} state - Partial state to update
+     * @private
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
+    private updateState(state: Partial<DotContentDriveContentTypeFieldState>) {
+        patchState(this.$state, state);
     }
 
     /**
@@ -147,15 +145,87 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         return contentTypes.filter((contentType) => {
             // Skip if already seen, is system type, or is form type
             if (
-                uniqueIds.has(contentType.id) ||
+                uniqueIds.has(contentType.variable) ||
                 contentType.system ||
                 contentType.baseType === DotCMSBaseTypesContentTypes.FORM
             ) {
                 return false;
             }
 
-            uniqueIds.add(contentType.id);
+            uniqueIds.add(contentType.variable);
             return true;
         });
+    }
+
+    /**
+     * Loads the initial set of content types on component initialization.
+     *
+     * This method:
+     * - Fetches all available content types without any filter
+     * - Processes URL query parameters to pre-select content types
+     * - Sets the initial state for both available and selected content types
+     * - Executes immediately without debounce for fast initial load
+     *
+     * @private
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
+    private loadInitialContentTypes() {
+        const contentTypesString = this.#route.snapshot.queryParams['contentType'] ?? '';
+        const URLContentTypes = contentTypesString.split(',');
+
+        this.#contentTypesService
+            .getContentTypes({ filter: '' })
+            .pipe(
+                tap(() => this.updateState({ loading: true })),
+                catchError(() => of([]))
+            )
+            .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
+                const contentTypes = this.filterAndDeduplicateContentTypes(dotCMSContentTypes);
+                const selectedContentTypes = contentTypes.filter((ct) =>
+                    URLContentTypes.includes(ct.variable)
+                );
+                this.updateState({ contentTypes, loading: false });
+                this.$selectedContentTypes.set(selectedContentTypes);
+            });
+    }
+
+    /**
+     * Sets up the reactive subscription for handling user-initiated content type filtering.
+     *
+     * This method:
+     * - Listens to filter changes triggered by user input in the multiselect component
+     * - Applies debouncing to prevent excessive API calls during typing
+     * - Skips the initial emission to avoid duplicate requests (initial load is handled separately)
+     * - Merges filtered results with currently selected content types
+     * - Updates the available content types list while preserving user selections
+     *
+     * @private
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
+    private setupFilterSubscription() {
+        this.#searchSubject
+            .pipe(
+                skip(1), // Skip initial emission to avoid duplicate API call (handled by loadInitialContentTypes)
+                tap(() => {
+                    patchState(this.$state, { loading: true });
+                }),
+                debounceTime(DEBOUNCE_TIME),
+                takeUntilDestroyed(this.#destroyRef),
+                switchMap(({ filter }) =>
+                    this.#contentTypesService
+                        .getContentTypes({ filter })
+                        .pipe(catchError(() => of([])))
+                )
+            )
+            .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
+                const selectedContentTypes = this.$selectedContentTypes();
+                const allContentTypes = [...selectedContentTypes, ...dotCMSContentTypes];
+                const contentTypes = this.filterAndDeduplicateContentTypes(allContentTypes);
+
+                patchState(this.$state, {
+                    contentTypes,
+                    loading: false
+                });
+            });
     }
 }
