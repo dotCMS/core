@@ -89,6 +89,8 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 @Path("/v1/users")
 public class UserResource implements Serializable {
 
+	public static final String USER_ID = "userID";
+
 	private final WebResource webResource;
 	private final UserAPI userAPI;
 	private final HostAPI siteAPI;
@@ -703,7 +705,8 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 
-			return Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
