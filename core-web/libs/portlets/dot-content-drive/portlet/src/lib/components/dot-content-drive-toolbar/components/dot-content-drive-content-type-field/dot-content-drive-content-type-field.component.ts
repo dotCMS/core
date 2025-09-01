@@ -27,7 +27,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEBOUNCE_TIME } from '../../../../shared/constants';
+import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
@@ -49,6 +49,8 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #contentTypesService = inject(DotContentTypeService);
     readonly #searchSubject = new Subject<{ type?: string; filter: string }>();
+
+    protected readonly MULTISELECT_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
 
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         filter: '',
