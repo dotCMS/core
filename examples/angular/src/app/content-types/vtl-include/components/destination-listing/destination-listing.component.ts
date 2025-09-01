@@ -5,19 +5,20 @@ import { DestinationListingWidgetJSON } from '../../../../shared/contentlet.mode
 import { EditContentletButtonComponent } from '../../../../shared/components/edit-contentlet-button/edit-contentlet-button.component';
 
 @Component({
-    selector: 'app-destination-listing',
-    templateUrl: './destination-listing.component.html',
-    standalone: true,
-    imports: [RouterLink, NgOptimizedImage, EditContentletButtonComponent]
+  selector: 'app-destination-listing',
+  templateUrl: './destination-listing.component.html',
+  imports: [RouterLink, NgOptimizedImage, EditContentletButtonComponent],
 })
 export class DestinationListingComponent {
-    widgetCodeJSON = input.required<DestinationListingWidgetJSON>();
+  widgetCodeJSON = input.required<DestinationListingWidgetJSON>();
 
-    destinations = computed(() => this.widgetCodeJSON().destinations || []);
+  destinations = computed(() => this.widgetCodeJSON().destinations || []);
 
-    currentYear = new Date().getFullYear();
+  currentYear = new Date().getFullYear();
 
-    hasDestinations = computed(
-        () => this.widgetCodeJSON().destinations && this.widgetCodeJSON().destinations.length > 0
-    );
+  hasDestinations = computed(
+    () =>
+      this.widgetCodeJSON().destinations &&
+      this.widgetCodeJSON().destinations.length > 0,
+  );
 }

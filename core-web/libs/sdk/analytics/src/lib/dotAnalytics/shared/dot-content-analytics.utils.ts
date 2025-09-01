@@ -209,12 +209,7 @@ export const getDataAnalyticsAttributes = (): DotCMSAnalyticsConfig => {
         server: script.getAttribute('data-server') || '',
         debug: script.getAttribute('data-debug') === 'true',
         autoPageView: script.getAttribute('data-auto-page-view') !== 'false',
-        siteKey: script.getAttribute('data-site-key') || '',
-        redirectFn: script.getAttribute('data-redirect-fn')
-            ? ((window as unknown as Record<string, unknown>)[
-                  script.getAttribute('data-redirect-fn')!
-              ] as (href: string) => void)
-            : defaultRedirectFn
+        siteKey: script.getAttribute('data-site-key') || ''
     };
 };
 
