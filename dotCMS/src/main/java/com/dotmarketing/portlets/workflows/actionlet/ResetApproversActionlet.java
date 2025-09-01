@@ -110,9 +110,9 @@ public class ResetApproversActionlet extends WorkFlowActionlet {
 						continue;
 					}
 
-					final String description = "{'description':'"+ changeMap.get("description") +
-							"', 'type':'" + WorkflowHistoryType.APPROVAL.name() +
-							"', 'state':'"+  WorkflowHistoryState.RESET.name() +"' }";
+					final String description = "{\"description\":\""+ changeMap.get("description") +
+							"\", \"type\":\"" + WorkflowHistoryType.APPROVAL.name() +
+							"\", \"state\":\""+  WorkflowHistoryState.RESET.name() +"\" }";
 					history.setChangeDescription(description);
 					APILocator.getWorkflowAPI().saveWorkflowHistory(history);
 				}

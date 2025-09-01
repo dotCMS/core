@@ -150,6 +150,7 @@ This maintenance release includes the following code fixes:
 144. https://github.com/dotCMS/core/issues/32989 : Upgrade Tomcat to Latest Version 9 Patch Release #32989
 145. https://github.com/dotCMS/core/issues/32929 : Core: Create user not set user role #32929
 146. https://github.com/dotCMS/core/issues/33093 : Update image reference breaking out build #33093
+147. https://github.com/dotCMS/core/issues/33031 : Reset Approvals sub-action not working as expected #33031
 
 
 
