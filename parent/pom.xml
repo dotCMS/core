@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <properties>
-        <tomcat.version>9.0.85</tomcat.version>
+        <tomcat.version>9.0.108</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>

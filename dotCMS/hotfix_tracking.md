@@ -147,6 +147,7 @@ This maintenance release includes the following code fixes:
 141. https://github.com/dotCMS/core/issues/32583 : NPE in on content edit (Not on Beta version) when content type named "Event" lacks calendar fields #32583
 142. https://github.com/dotCMS/core/issues/33006 : Backport security fix to LTSs #33006
 143. https://github.com/dotCMS/core/issues/31452 : Remove Outdated Cache Restore Step in Maven (Legacy) Release Workflow #31452
+144. https://github.com/dotCMS/core/issues/32989 : Upgrade Tomcat to Latest Version 9 Patch Release #32989
 
 
 
