@@ -63,7 +63,7 @@
                             [contentlet]="item"
                             data-testId="contentlet-thumbnail" />
                     </div>
-                    <span class="truncate-text">{{ item.title }}</span>
+                    <span data-testId="item-title-text" class="truncate-text">{{ item.title }}</span>
                 </td>
                 <td data-testId="item-status">
                     @if (status === 'Published') {
