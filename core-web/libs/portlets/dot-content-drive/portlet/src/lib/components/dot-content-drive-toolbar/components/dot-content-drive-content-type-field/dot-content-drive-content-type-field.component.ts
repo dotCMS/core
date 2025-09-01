@@ -8,13 +8,14 @@ import {
     inject,
     DestroyRef,
     OnInit,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
+import { MultiSelect, MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { catchError, debounceTime, skip, switchMap, tap } from 'rxjs/operators';
@@ -45,6 +46,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #contentTypesService = inject(DotContentTypeService);
     readonly #searchSubject = new Subject<{ type?: string; filter: string }>();
+    readonly multiSelect = viewChild(MultiSelect);
 
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         filter: '',
@@ -111,7 +113,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      * @protected
      * @memberof DotContentDriveContentTypeFieldComponent
      */
-    protected onHidePanel() {
+    protected onPanelHide() {
         this.updateState({ filter: '' });
     }
 
@@ -206,9 +208,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         this.#searchSubject
             .pipe(
                 skip(1), // Skip initial emission to avoid duplicate API call (handled by loadInitialContentTypes)
-                tap(() => {
-                    patchState(this.$state, { loading: true });
-                }),
+                tap(() => this.updateState({ loading: true })),
                 debounceTime(DEBOUNCE_TIME),
                 takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ filter }) =>
@@ -222,10 +222,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 const allContentTypes = [...selectedContentTypes, ...dotCMSContentTypes];
                 const contentTypes = this.filterAndDeduplicateContentTypes(allContentTypes);
 
-                patchState(this.$state, {
-                    contentTypes,
-                    loading: false
-                });
+                this.updateState({ contentTypes, loading: false });
             });
     }
 }

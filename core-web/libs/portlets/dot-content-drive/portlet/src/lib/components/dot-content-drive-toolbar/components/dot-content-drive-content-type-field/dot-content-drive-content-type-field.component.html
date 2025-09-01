@@ -1,19 +1,19 @@
 <p-multiSelect
     [ngModelOptions]="{ standalone: true }"
+    [panelStyleClass]="$state.loading() ? 'hide-empty-message' : ''"
     [filter]="true"
     [options]="$state.contentTypes()"
     [(ngModel)]="$selectedContentTypes"
     optionLabel="name"
     display="chip"
-    [lazy]="true"
+    [emptyFilterMessage]="'content-drive.content-type-field.empty-state' | dm"
     (onChange)="onChange()"
     (onClear)="onChange()"
     [resetFilterOnHide]="true"
     (onFilter)="onFilter($event)"
-    (onHidePanel)="onHidePanel()"
+    (onPanelHide)="onPanelHide()"
     [placeholder]="'content-drive.content-type.placeholder' | dm"
     [showClear]="false"
-    [loading]="$state.loading()"
     [scrollHeight]="'25rem'"
     data-testid="content-type-field">
     <ng-template pTemplate="item" let-item>
@@ -21,14 +21,13 @@
             {{ item.name }}
         </div>
     </ng-template>
-    <ng-template pTemplate="empty">
+    <ng-template pTemplate="footer">
         @if ($state.loading()) {
-            <p-skeleton
-                height="2rem"
-                width="100%"
-                data-testid="content-type-field-skeleton"></p-skeleton>
-        } @else {
-            {{ 'content-drive.content-type-field.empty-state' | dm }}
+            <div class="footer">
+                <i class="pi pi-spin pi-spinner"></i>
+                <!-- Remember to add the dot message to the label -->
+                <span>Searching for more results…</span>
+            </div>
         }
     </ng-template>
 </p-multiSelect>
