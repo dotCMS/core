@@ -403,8 +403,8 @@ public class CircuitBreakerUrlTest {
         CircuitBreakerUrl cburl =
                 CircuitBreakerUrl.builder()
                         // Returns 400 Bad Request
-                        .setUrl("https://run.mocky.io/v3/434b4b0e-9a8b-4895-88e3-beab1b8d0a0d")
-                        .setMethod(Method.POST)
+                        .setUrl("https://httpbin.org/status/400")
+                        .setMethod(Method.GET)
                         .setTimeout(timeout)
                         .setCircuitBreaker(breaker)
                         .build();
