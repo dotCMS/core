@@ -1250,7 +1250,6 @@ public class ContentTypeResource implements Serializable {
 															   								"full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list " +
 																						    "of specific content type variables.</td></tr><tr><td>`sites`</td><td>A comma-separated list " +
 																						    "of site identifiers or keys.</td></tr></table> |\n" +
-															   								"of specific content type variables.</td></tr></table> |\n" +
 															   "| `page` | Integer | Which page of results to show. Defaults to `1`. |\n" +
 															   "| `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |\n" +
 															   "| `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |\n" +
