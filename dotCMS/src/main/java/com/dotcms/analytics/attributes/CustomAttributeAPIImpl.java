@@ -227,6 +227,9 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
 
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public TranslatedQuery translateFromFriendlyName(final String query) throws CustomAttributeProcessingException {
         if (!continasCustomAttributes(query)) {
             return new TranslatedQuery(query);
@@ -266,6 +269,9 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public ReportResponse translateResults(final ReportResponse reportResponse, final Map<String, String> matchApplied){
         final List<ResultSetItem> results = reportResponse.getResults();
         final List<ResultSetItem> newResults = new ArrayList<>();
@@ -285,6 +291,16 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         return new ReportResponse(newResults);
     }
 
+    /**
+     * Extracts the list of event type values from a Cube.js query JSON structure.
+     * <p>
+     * This inspects the top-level "filters" array and recursively traverses any nested
+     * logical groups ("and" / "or") collecting the values of filters whose
+     * {@code member} equals {@code request.eventType}.
+     *
+     * @param queryAsJson the parsed Cube.js query as a map.
+     * @return a list of event type strings found in the filter tree (possibly empty).
+     */
     public static List<String> extractEventTypeFilter(final Map<String, Object> queryAsJson) {
 
         Object filtersObject = queryAsJson.get("filters");
@@ -305,6 +321,12 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         return results;
     }
 
+    /**
+     * Parses a Cube.js query JSON string into a map structure.
+     *
+     * @param cubeJsQueryJson the Cube.js query as a JSON string.
+     * @return the parsed map; if parsing fails, an empty map is returned.
+     */
     private static Map<String, Object> getAsJson(final String cubeJsQueryJson)  {
         try {
             return JsonUtil.getJsonFromString(cubeJsQueryJson);
@@ -313,6 +335,13 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         }
     }
 
+    /**
+     * Extracts the values for a single filter node when it targets the event type dimension.
+     *
+     * @param filter a single filter object from the Cube.js query.
+     * @return an optional list of event type strings if the filter's member is "request.eventType";
+     *         otherwise, {@link Optional#empty()}.
+     */
     private static  Optional<List<String>> getEventTypes(Map<String, Object> filter) {
         final String member = filter.get("member") != null ?
                 filter.get("member").toString() : StringPool.BLANK;
@@ -328,6 +357,14 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         return Optional.empty();
     }
 
+    /**
+     * Recursively traverses a filter node, accumulating any event type values into the given results list.
+     * <p>
+     * The filter node can be a logical group ("and" / "or") or a direct condition with a "member".
+     *
+     * @param filterNode the current filter node (may be {@code null}).
+     * @param results the mutable list to collect discovered event type values into.
+     */
     private static void collectEventTypes(final Map<String, Object> filterNode, List<String> results) {
         if (filterNode == null) return;
 
@@ -351,6 +388,13 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         }
     }
 
+    /**
+     * Safely retrieves a list of filter maps from the given node attribute (e.g., "and" or "or").
+     *
+     * @param filterNode the node containing a list attribute.
+     * @param attributeName the attribute name to read (usually "and" or "or").
+     * @return the list of maps if present and well-formed; otherwise an empty list.
+     */
     private static List<Map<String, Object>> getList(final Map<String, Object> filterNode, final String attributeName) {
         Object asObject = filterNode.get(attributeName);
 
