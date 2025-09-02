@@ -58,7 +58,7 @@ export class DotContentDriveShellComponent {
                 query,
                 limit,
                 offset,
-                sort: `score,${field} ${order}`
+                sort: `${field} ${order}`
             })
             .pipe(
                 take(1),

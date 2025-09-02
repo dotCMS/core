@@ -60,7 +60,7 @@ describe('DotContentDriveStore', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
                     .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier})`
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
                     )
                     .build();
 
@@ -81,7 +81,7 @@ describe('DotContentDriveStore', () => {
                     .field('parentPath')
                     .equals(testPath)
                     .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier})`
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
                     )
                     .build();
 
@@ -100,7 +100,9 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .raw(`+(conhost:${customSite.identifier} OR conhost:${SYSTEM_HOST.identifier})`)
+                    .raw(
+                        `+(conhost:${customSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    )
                     .build();
 
                 expect(store.$query()).toEqual(expectedQuery);
@@ -122,7 +124,7 @@ describe('DotContentDriveStore', () => {
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
                     .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier})`
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
                     )
                     .field('contentType')
                     .equals('Blog')
@@ -148,7 +150,7 @@ describe('DotContentDriveStore', () => {
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
                     .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier})`
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
                     )
                     .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
                     .build();
@@ -171,7 +173,7 @@ describe('DotContentDriveStore', () => {
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
                     .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier})`
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
                     )
                     .raw(
                         `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
