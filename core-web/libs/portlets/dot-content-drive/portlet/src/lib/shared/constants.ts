@@ -89,3 +89,5 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
 
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
+
+export const PANEL_SCROLL_HEIGHT = '25rem';
