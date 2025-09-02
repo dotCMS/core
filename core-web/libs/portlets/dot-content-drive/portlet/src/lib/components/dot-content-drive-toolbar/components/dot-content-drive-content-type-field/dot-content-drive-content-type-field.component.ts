@@ -179,13 +179,14 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      * @memberof DotContentDriveContentTypeFieldComponent
      */
     private loadInitialContentTypes() {
-        const contentTypeVariables = (this.#store.getFilterValue('contentType') as string[]) ?? [];
-
         this.#contentTypesService
             .getContentTypesWithPagination({ filter: '' })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
-                catchError(() => of([]))
+                catchError(() => of({
+                    contentTypes: [],
+                    pagination: {}
+                }))
             )
             .subscribe(
                 ({
@@ -195,11 +196,10 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                     contentTypes: DotCMSContentType[];
                     pagination: DotPagination;
                 }) => {
-                    const dotCMSContentTypes = this.filterAndDeduplicateContentTypes(contentTypes);
+                    const items = this.filterAndDeduplicateContentTypes(contentTypes);
+                    const storeVariables = this.getVariablesFromStore();
                     const canLoadMore = pagination.currentPage < pagination.totalEntries;
-                    const selectedItems = dotCMSContentTypes.filter(({ variable }) =>
-                        contentTypeVariables.includes(variable)
-                    );
+                    const selectedItems = items.filter(({ variable }) => storeVariables.includes(variable));
                     this.updateState({ contentTypes, canLoadMore, loading: false });
                     this.$selectedContentTypes.set(selectedItems);
                 }
@@ -239,5 +239,21 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
 
                 this.updateState({ contentTypes, loading: false });
             });
+    }
+
+    /**
+     * Retrieves the content type variables from the store.
+     *
+     * @returns The content type variables from the store.
+     * @private
+     * @memberof DotContentDriveContentTypeFieldComponent
+     */
+    private getVariablesFromStore() {
+        try {
+            return (this.#store.getFilterValue('contentType') as string[]) ?? [];
+        } catch (error) {
+            console.warn('Error retrieving content type filters from store:', error);
+            return [];
+        }
     }
 }

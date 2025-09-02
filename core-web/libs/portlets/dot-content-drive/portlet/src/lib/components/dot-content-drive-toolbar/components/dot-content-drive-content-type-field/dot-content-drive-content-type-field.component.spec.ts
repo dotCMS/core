@@ -30,6 +30,14 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         spectator.detectChanges();
     };
 
+    const triggerMultiSelectOnFilter = (filter = '') => {
+        spectator.triggerEventHandler('[data-testid="content-type-field"]', 'onFilter', {
+            filter
+        });
+        spectator.detectChanges();
+    };
+
+
     const createComponent = createComponentFactory({
         component: DotContentDriveContentTypeFieldComponent,
         providers: [
@@ -73,7 +81,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         mockStore = spectator.inject(DotContentDriveStore);
-        mockContentTypeService = spectator.inject(DotContentTypeService);
+        mockContentTypeService = spectator.inject(DotContentTypeService, true);
     });
 
     afterEach(() => {
@@ -206,7 +214,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //     });
     // });
 
-    // describe('Content Types Loading Effect', () => {
+    // fdescribe('Content Types Loading Effect', () => {
     //     it('should trigger effect on component initialization', () => {
     //         spectator.detectChanges();
 
@@ -224,7 +232,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //         jest.clearAllMocks();
 
     //         // Update filter which should trigger the effect
-    //         spectator.component.onFilter({ filter: 'blog' } as MultiSelectFilterEvent);
+    //         triggerMultiSelectOnFilter('blog');
     //         spectator.detectChanges();
     //         jest.advanceTimersByTime(500);
 
@@ -253,7 +261,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //         jest.clearAllMocks();
 
     //         // Use the component's method to update the state, which properly triggers effects
-    //         spectator.component.onFilter({ filter: 'updated-filter' } as MultiSelectFilterEvent);
+    //         triggerMultiSelectOnFilter('updated-filter');
     //         spectator.detectChanges(); // Trigger change detection after state update
 
     //         jest.advanceTimersByTime(500);
@@ -269,12 +277,12 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //         jest.clearAllMocks();
 
     //         // First request
-    //         spectator.component.onFilter({ filter: 'first' } as MultiSelectFilterEvent);
+    //         triggerMultiSelectOnFilter('first');
     //         spectator.detectChanges();
     //         jest.advanceTimersByTime(200);
 
     //         // Second request before first completes (should cancel first)
-    //         spectator.component.onFilter({ filter: 'second' } as MultiSelectFilterEvent);
+    //         triggerMultiSelectOnFilter('second');
     //         spectator.detectChanges();
     //         jest.advanceTimersByTime(500);
 
@@ -304,7 +312,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //         spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES_WITH_SELECTED[0]]);
     //         spectator.detectChanges();
 
-    //         spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
+    //         triggerMultiSelectOnFilter('test');
 
     //         spectator.detectChanges();
     //         jest.advanceTimersByTime(500);
@@ -322,7 +330,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //         ]);
     //         spectator.detectChanges();
 
-    //         spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
+    //         triggerMultiSelectOnFilter('test');
 
     //         mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[0]]));
 
@@ -336,56 +344,40 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //     });
     // });
 
-    // describe('onFilter Method', () => {
-    //     it('should update filter keyword in state immediately', () => {
-    //         const filterEvent: MultiSelectFilterEvent = {
-    //             filter: 'test filter'
-    //         } as MultiSelectFilterEvent;
+    describe('onFilter Method', () => {
+        it('should update filter keyword in state immediately', () => {
+            triggerMultiSelectOnFilter('test filter');
+            spectator.detectChanges();
 
-    //         spectator.component.onFilter(filterEvent);
-    //         spectator.detectChanges();
+            expect(spectator.component.$state().filter).toBe('test filter');
+        });
 
-    //         expect(spectator.component.$state().filter).toBe('test filter');
-    //     });
+        it('should trigger effect when filter keyword changes', () => {
+            spectator.detectChanges();
+            jest.clearAllMocks();
 
-    //     it('should trigger effect when filter keyword changes', () => {
-    //         spectator.detectChanges();
-    //         jest.clearAllMocks();
+            triggerMultiSelectOnFilter('blog');
+            spectator.detectChanges();
+            jest.advanceTimersByTime(500);
 
-    //         const filterEvent: MultiSelectFilterEvent = {
-    //             filter: 'blog'
-    //         } as MultiSelectFilterEvent;
+            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
+                type: undefined,
+                filter: 'blog'
+            });
+        });
 
-    //         spectator.component.onFilter(filterEvent);
-    //         spectator.detectChanges();
-    //         jest.advanceTimersByTime(500);
+        it('should handle empty filter', () => {
+            triggerMultiSelectOnFilter('');
 
-    //         expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-    //             type: undefined,
-    //             filter: 'blog'
-    //         });
-    //     });
+            expect(spectator.component.$state().filter).toBe('');
+        });
 
-    //     it('should handle empty filter', () => {
-    //         const filterEvent: MultiSelectFilterEvent = {
-    //             filter: ''
-    //         } as MultiSelectFilterEvent;
+        it('should handle null or undefined filter values', () => {
+            triggerMultiSelectOnFilter(null as string | null);
 
-    //         spectator.component.onFilter(filterEvent);
-
-    //         expect(spectator.component.$state().filter).toBe('');
-    //     });
-
-    //     it('should handle null or undefined filter values', () => {
-    //         const filterEvent: MultiSelectFilterEvent = {
-    //             filter: null as string | null
-    //         } as MultiSelectFilterEvent;
-
-    //         spectator.component.onFilter(filterEvent);
-
-    //         expect(spectator.component.$state().filter).toBeNull();
-    //     });
-    // });
+            expect(spectator.component.$state().filter).toBeNull();
+        });
+    });
 
     describe('onChange Method', () => {
         beforeEach(() => {
@@ -552,52 +544,47 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     //     });
     // });
 
-    // describe('Error Handling', () => {
-    //     it('should handle null content types response gracefully', () => {
-    //         mockContentTypeService.getContentTypes.mockReturnValue(of(null));
+    describe('Error Handling', () => {
+        describe('loadInitialContentTypes', () => {
+            it('should handle empty content types response gracefully', () => {
+                const MOCK_RESPONSE =  {
+                    contentTypes: [],
+                    pagination: {
+                        currentPage: 0,
+                        perPage: 20,
+                        totalEntries: 0,
+                        totalPages: 0
+                    }
+                };
+                mockContentTypeService.getContentTypesWithPagination.mockReturnValue(of(MOCK_RESPONSE));
+    
+                spectator.detectChanges();
+    
+                // The component should handle null response and set empty array
+                expect(spectator.component.$state().contentTypes).toEqual([]);
+                expect(spectator.component.$state().loading).toBe(false);
+            });
+    
+            it('should gracefully handle service errors with catchError', () => {
+                mockContentTypeService.getContentTypesWithPagination.mockReturnValue(
+                    throwError(() => new Error('Service unavailable'))
+                );
+    
+                spectator.detectChanges();
+    
+                // catchError should return empty array, and loading should be false
+                expect(spectator.component.$state().contentTypes).toEqual([]);
+                expect(spectator.component.$state().loading).toBe(false);
+            });
+        });
 
-    //         spectator.detectChanges();
-    //         jest.advanceTimersByTime(500);
+        it('should handle store filter retrieval errors', () => {
+            mockStore.getFilterValue.mockImplementation(() => {
+                throw new Error('Store error');
+            });
 
-    //         // The component should handle null response and set empty array
-    //         expect(spectator.component.$state().contentTypes).toEqual([]);
-    //         expect(spectator.component.$state().loading).toBe(false);
-    //     });
-
-    //     it('should handle undefined content types response gracefully', () => {
-    //         mockContentTypeService.getContentTypes.mockReturnValue(of(undefined));
-
-    //         spectator.detectChanges();
-    //         jest.advanceTimersByTime(500);
-
-    //         // The component should handle undefined response and set empty array
-    //         expect(spectator.component.$state().contentTypes).toEqual([]);
-    //         expect(spectator.component.$state().loading).toBe(false);
-    //     });
-
-    //     it('should gracefully handle service errors with catchError', () => {
-    //         mockContentTypeService.getContentTypes.mockReturnValue(
-    //             throwError(() => new Error('Service unavailable'))
-    //         );
-
-    //         spectator.detectChanges();
-    //         jest.advanceTimersByTime(500);
-
-    //         // catchError should return empty array, and loading should be false
-    //         expect(spectator.component.$state().contentTypes).toEqual([]);
-    //         expect(spectator.component.$state().loading).toBe(false);
-    //     });
-
-    //     it('should handle store filter retrieval errors', () => {
-    //         mockStore.getFilterValue.mockImplementation(() => {
-    //             throw new Error('Store error');
-    //         });
-
-    //         // Should not throw and component should still work
-    //         expect(() => {
-    //             spectator.detectChanges();
-    //             jest.advanceTimersByTime(500);
-    //         }).not.toThrow();
-    //     });
-    // });
+            // Should not throw and component should still work
+            expect(() => spectator.detectChanges()).not.toThrow();
+        });
+    });
 });
