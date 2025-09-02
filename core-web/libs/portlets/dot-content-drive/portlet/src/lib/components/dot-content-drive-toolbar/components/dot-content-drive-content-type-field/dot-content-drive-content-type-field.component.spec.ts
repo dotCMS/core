@@ -19,7 +19,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     let mockStore: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let mockContentTypeService: SpyObject<DotContentTypeService>;
 
-    // Approach 1: Using spectator's triggerEventHandler (most reliable for PrimeNG)
+    // Helper functions for triggering MultiSelect events
     const triggerMultiSelectOnChange = (selectedValues?: DotCMSContentType[]) => {
         spectator.triggerEventHandler('[data-testid="content-type-field"]', 'onChange', {
             value: selectedValues || []
@@ -78,6 +78,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         detectChanges: false
     });
 
+    // Test setup with fake timers for testing debounced operations
     beforeAll(() => {
         jest.useFakeTimers();
     });
@@ -93,8 +94,8 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllTimers();
-        jest.clearAllMocks();
+        jest.clearAllTimers(); // Clear any pending timers between tests
+        jest.clearAllMocks(); // Reset all mock call history
     });
 
     describe('Component Initialization', () => {
@@ -105,14 +106,14 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(spectator.component.$selectedContentTypes()).toEqual([]);
         });
 
-        it('should trigger initial API request on component initialization through effect', () => {
+        it('should trigger initial content types API request on component initialization', () => {
             spectator.detectChanges();
             expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
                 filter: ''
             });
         });
 
-        it('should filter out forms and system types from loaded content types', async () => {
+        it('should filter out forms and system content types after initial load', async () => {
             spectator.detectChanges();
             const expectedContentTypes = MOCK_CONTENT_TYPES.filter(
                 (ct) => ct.baseType !== DotCMSBaseTypesContentTypes.FORM && !ct.system
@@ -122,7 +123,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(spectator.component.$state().loading).toBe(false);
         });
 
-        it('should set selected content types based on store filters', () => {
+        it('should initialize selected content types from store filters', () => {
             mockStore.getFilterValue.mockReturnValue(['blog', 'news']);
 
             spectator.detectChanges();
@@ -135,7 +136,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(spectator.component.$selectedContentTypes()).toEqual(expectedSelected);
         });
 
-        it('should handle empty content type filters from store', () => {
+        it('should handle missing content type filters from store', () => {
             mockStore.getFilterValue.mockReturnValue(null);
 
             spectator.detectChanges();
@@ -147,33 +148,29 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
     describe('Loading State Management', () => {
         beforeEach(() => {
-            // Overpass the initial effect call beacuse we have a skip(1) in the filter subscription
+            // Skip initial effect call because of skip(1) in filter subscription
             spectator.detectChanges();
         });
 
-        it('should set loading to true when starting a request through Subject', () => {
+        it('should set loading to true when starting a filter request', () => {
             triggerMultiSelectOnFilter('test');
             expect(spectator.component.$state().loading).toBe(true);
         });
 
-        it('should set loading to false when request completes successfully', () => {
+        it('should set loading to false when filter request completes successfully', () => {
             spectator.detectChanges();
-
-            // Clear the initial request mock calls
-            jest.clearAllMocks();
+            jest.clearAllMocks(); // Clear initial request mock calls
 
             triggerMultiSelectOnFilter('test');
             expect(spectator.component.$state().loading).toBe(true);
 
-            // Advance timers to complete the debounced request
-            jest.advanceTimersByTime(500);
+            jest.advanceTimersByTime(500); // Complete debounced request
 
             expect(spectator.component.$state().loading).toBe(false);
             expect(spectator.component.$state().contentTypes.length).toBeGreaterThan(0);
         });
 
-        it('should set loading to false when request fails', () => {
-            // Mock the service to return an error for the filter request
+        it('should set loading to false when filter request fails', () => {
             mockContentTypeService.getContentTypes.mockReturnValue(
                 throwError(() => new Error('Network error'))
             );
@@ -191,8 +188,8 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         });
     });
 
-    describe('Content Types', () => {
-        it('should call loadInitialContentTypes on component initialization and skip the initial effect call', () => {
+    describe('API Integration & Content Type Loading', () => {
+        it('should call initial content types API with pagination on component initialization', () => {
             spectator.detectChanges();
 
             expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
@@ -201,139 +198,27 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(mockContentTypeService.getContentTypes).not.toHaveBeenCalled();
         });
 
-        it.skip('should handle baseType filters (currently disabled)', () => {
-            // This tests the current implementation where baseType is explicitly undefined
+        it.skip('should handle base type filters (currently disabled feature)', () => {
+            // Tests current implementation where baseType is explicitly undefined
             mockStore.filters.mockReturnValue({ baseType: ['1', '2'] });
 
             spectator.detectChanges();
             jest.advanceTimersByTime(500);
 
-            // Due to the TODO in the component, type is always undefined
+            // Due to TODO in component, type parameter is always undefined
             expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
                 filter: ''
             });
         });
-
-        describe('Loading Effect', () => {
-            beforeEach(() => {
-                // Overpass the initial effect call beacuse we have a skip(1) in the filter subscription
-                spectator.detectChanges();
-            });
-
-            it('should call getContentTypes with current filter from state', () => {
-                spectator.detectChanges();
-                jest.clearAllMocks();
-
-                // Update filter which should trigger the effect
-                triggerMultiSelectOnFilter('blog');
-                spectator.detectChanges();
-                jest.advanceTimersByTime(500);
-
-                expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-                    type: undefined,
-                    filter: 'blog'
-                });
-            });
-
-            it('should trigger effect when filter signal changes', () => {
-                spectator.detectChanges();
-                jest.clearAllMocks();
-
-                // Use the component's method to update the state, which properly triggers effects
-                triggerMultiSelectOnFilter('updated-filter');
-                spectator.detectChanges(); // Trigger change detection after state update
-
-                jest.advanceTimersByTime(500);
-
-                expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-                    type: undefined,
-                    filter: 'updated-filter'
-                });
-            });
-
-            it('should use switchMap to cancel previous requests', () => {
-                spectator.detectChanges();
-                jest.clearAllMocks();
-
-                // First request
-                triggerMultiSelectOnFilter('first');
-                spectator.detectChanges();
-                jest.advanceTimersByTime(200);
-
-                // Second request before first completes (should cancel first)
-                triggerMultiSelectOnFilter('second');
-                spectator.detectChanges();
-                jest.advanceTimersByTime(500);
-
-                // Should only have been called once with the final filter value
-                expect(mockContentTypeService.getContentTypes).toHaveBeenCalledTimes(1);
-                expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-                    type: undefined,
-                    filter: 'second'
-                });
-            });
-
-            it('should handle error responses gracefully', () => {
-                mockContentTypeService.getContentTypes.mockReturnValue(
-                    throwError(() => new Error('Network error'))
-                );
-
-                spectator.detectChanges();
-                triggerMultiSelectOnFilter('test');
-                jest.advanceTimersByTime(500);
-
-                // Should set empty array on error and loading to false (catchError returns [])
-                expect(spectator.component.$state().contentTypes).toEqual([]);
-                expect(spectator.component.$state().loading).toBe(false);
-            });
-
-            it('should preserve selected content types', () => {
-                mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[1]]));
-                spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES[0]]);
-                spectator.detectChanges();
-
-                triggerMultiSelectOnFilter('test');
-
-                spectator.detectChanges();
-                jest.advanceTimersByTime(500);
-
-                expect(spectator.component.$state().contentTypes).toEqual([
-                    MOCK_CONTENT_TYPES[0],
-                    MOCK_CONTENT_TYPES[1]
-                ]);
-            });
-
-            it('should preserve selected content types and remove duplicates', () => {
-                spectator.component.$selectedContentTypes.set([
-                    MOCK_CONTENT_TYPES[0],
-                    MOCK_CONTENT_TYPES[1]
-                ]);
-                spectator.detectChanges();
-
-                triggerMultiSelectOnFilter('test');
-
-                mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[0]]));
-
-                spectator.detectChanges();
-                jest.advanceTimersByTime(500);
-
-                expect(spectator.component.$state().contentTypes).toEqual([
-                    MOCK_CONTENT_TYPES[0],
-                    MOCK_CONTENT_TYPES[1]
-                ]);
-            });
-        });
     });
 
-    describe('onFilter Method', () => {
-        it('should update filter keyword in state immediately', () => {
-            triggerMultiSelectOnFilter('test filter');
+    describe('Content Type Filtering & Search', () => {
+        beforeEach(() => {
+            // Skip initial effect call because of skip(1) in filter subscription
             spectator.detectChanges();
-
-            expect(spectator.component.$state().filter).toBe('test filter');
         });
 
-        it('should trigger effect when filter keyword changes', () => {
+        it('should call API with current filter when filter changes', () => {
             spectator.detectChanges();
             jest.clearAllMocks();
 
@@ -347,29 +232,149 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             });
         });
 
-        it('should handle empty filter', () => {
+        it('should trigger API request when filter signal changes', () => {
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            triggerMultiSelectOnFilter('updated-filter');
+            spectator.detectChanges();
+
+            jest.advanceTimersByTime(500);
+
+            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
+                type: undefined,
+                filter: 'updated-filter'
+            });
+        });
+
+        it('should debounce rapid filter changes and cancel previous requests', () => {
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Simulate rapid typing scenario
+            triggerMultiSelectOnFilter('first');
+            spectator.detectChanges();
+            jest.advanceTimersByTime(200); // Advance time but don't complete debounce
+
+            // Type more before first request completes (tests switchMap cancellation)
+            triggerMultiSelectOnFilter('second');
+            spectator.detectChanges();
+            jest.advanceTimersByTime(500); // Complete the debounced request
+
+            // Should only call API once with final filter value due to switchMap
+            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledTimes(1);
+            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
+                type: undefined,
+                filter: 'second'
+            });
+        });
+
+        it('should handle filter API request errors gracefully', () => {
+            mockContentTypeService.getContentTypes.mockReturnValue(
+                throwError(() => new Error('Network error'))
+            );
+
+            spectator.detectChanges();
+            triggerMultiSelectOnFilter('test');
+            jest.advanceTimersByTime(500);
+
+            // Should return empty array on error and set loading to false
+            expect(spectator.component.$state().contentTypes).toEqual([]);
+            expect(spectator.component.$state().loading).toBe(false);
+        });
+
+        it('should preserve selected content types when loading new filter results', () => {
+            // Setup: Mock API to return only one content type, pre-select another
+            mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[1]]));
+            spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES[0]]);
+            spectator.detectChanges();
+
+            triggerMultiSelectOnFilter('test');
+            spectator.detectChanges();
+            jest.advanceTimersByTime(500); // Complete the filter request
+
+            // Should merge selected items with API results
+            expect(spectator.component.$state().contentTypes).toEqual([
+                MOCK_CONTENT_TYPES[0], // Previously selected item (preserved)
+                MOCK_CONTENT_TYPES[1] // New item from API
+            ]);
+        });
+
+        it('should preserve selected content types and avoid duplicates in results', () => {
+            // Setup: Pre-select content types that include one that will be returned by API
+            spectator.component.$selectedContentTypes.set([
+                MOCK_CONTENT_TYPES[0],
+                MOCK_CONTENT_TYPES[1]
+            ]);
+            spectator.detectChanges();
+
+            triggerMultiSelectOnFilter('test');
+            // Mock API returns a content type that's already selected
+            mockContentTypeService.getContentTypes.mockReturnValue(of([MOCK_CONTENT_TYPES[0]]));
+
+            spectator.detectChanges();
+            jest.advanceTimersByTime(500);
+
+            // Should avoid duplicates when merging selected + API results
+            expect(spectator.component.$state().contentTypes).toEqual([
+                MOCK_CONTENT_TYPES[0],
+                MOCK_CONTENT_TYPES[1]
+            ]);
+        });
+    });
+
+    describe('Filter Input Handling', () => {
+        it('should update filter state immediately when filter input changes', () => {
+            triggerMultiSelectOnFilter('test filter');
+            spectator.detectChanges();
+
+            expect(spectator.component.$state().filter).toBe('test filter');
+        });
+
+        it('should handle empty filter input', () => {
             triggerMultiSelectOnFilter('');
 
             expect(spectator.component.$state().filter).toBe('');
         });
 
-        it('should handle null or undefined filter values', () => {
+        it('should handle null or undefined filter values gracefully', () => {
             triggerMultiSelectOnFilter(null as string | null);
 
             expect(spectator.component.$state().filter).toBeNull();
         });
+
+        it('should handle multiple rapid filter changes (simulating user typing)', () => {
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Simulate rapid sequential typing without delays between keystrokes
+            triggerMultiSelectOnFilter('b');
+            triggerMultiSelectOnFilter('bl');
+            triggerMultiSelectOnFilter('blo');
+            triggerMultiSelectOnFilter('blog');
+
+            spectator.detectChanges();
+            jest.advanceTimersByTime(500); // Wait for debounce period to complete
+
+            // Should debounce all rapid changes and only make one final API call
+            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledTimes(1);
+            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
+                type: undefined,
+                filter: 'blog'
+            });
+        });
     });
 
-    describe('onChange Method', () => {
+    describe('Content Type Selection & Store Integration', () => {
         beforeEach(() => {
-            // Set up component with valid content types
+            // Set up component with pre-selected content types for testing
             spectator.component.$selectedContentTypes.set([
                 MOCK_CONTENT_TYPES[0], // blog
                 MOCK_CONTENT_TYPES[1] // news
             ]);
         });
 
-        it('should patch filters when content types are selected', () => {
+        it('should update store filters when content types are selected', () => {
             triggerMultiSelectOnChange();
 
             expect(mockStore.patchFilters).toHaveBeenCalledWith({
@@ -377,7 +382,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             });
         });
 
-        it('should remove filter when no content types are selected', () => {
+        it('should remove store filter when no content types are selected', () => {
             spectator.component.$selectedContentTypes.set([]);
 
             triggerMultiSelectOnChange();
@@ -385,7 +390,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
         });
 
-        it('should handle null selected content types', () => {
+        it('should handle null selected content types by removing filter', () => {
             spectator.component.$selectedContentTypes.set(null as unknown as DotCMSContentType[]);
 
             triggerMultiSelectOnChange();
@@ -393,7 +398,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
         });
 
-        it('should handle undefined selected content types', () => {
+        it('should handle undefined selected content types by removing filter', () => {
             spectator.component.$selectedContentTypes.set(
                 undefined as unknown as DotCMSContentType[]
             );
@@ -403,7 +408,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(mockStore.removeFilter).toHaveBeenCalledWith('contentType');
         });
 
-        it('should extract variable names correctly from selected content types', () => {
+        it('should correctly extract variable names from selected content types', () => {
             const customContentTypes = [
                 { variable: 'custom1' } as DotCMSContentType,
                 { variable: 'custom2' } as DotCMSContentType,
@@ -419,53 +424,13 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         });
     });
 
-    describe('Template Integration', () => {
+    describe('User Interaction & Event Handling', () => {
         beforeEach(() => {
-            // Overpass the initial effect call beacuse we have a skip(1) in the filter subscription
+            // Skip initial effect call because of skip(1) in filter subscription
             spectator.detectChanges();
         });
 
-        it('should render p-multiSelect component', () => {
-            const multiSelect = spectator.query('[data-testid="content-type-field"]');
-            expect(multiSelect).toBeTruthy();
-        });
-
-        it('should show empty state message when not loading and no results', () => {
-            patchState(spectator.component.$state, {
-                contentTypes: [],
-                loading: false
-            });
-
-            const emptyMessage = spectator.query('[data-testid="content-type-field"]');
-            expect(emptyMessage).toBeTruthy();
-        });
-
-        it('should set selected content types when multiselect value changes', () => {
-            const customContentTypes = [
-                { variable: 'custom1' } as DotCMSContentType,
-                { variable: 'custom2' } as DotCMSContentType,
-                { variable: 'custom3' } as DotCMSContentType
-            ];
-
-            spectator.component.$selectedContentTypes.set(customContentTypes);
-            triggerMultiSelectOnChange(customContentTypes);
-
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({
-                contentType: ['custom1', 'custom2', 'custom3']
-            });
-        });
-
-        it('should trigger a api call when multiselect filter changes', () => {
-            const filter = 'test';
-
-            triggerMultiSelectOnFilter(filter);
-            jest.advanceTimersByTime(500);
-            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-                filter
-            });
-        });
-
-        it('should trigger a api call with empty filter when multiselect panel is hidden', () => {
+        it('should reset filter to empty when multiselect panel is hidden', () => {
             triggerMultiSelectOnFilter('ANY_FILTER');
             jest.advanceTimersByTime(500);
 
@@ -480,34 +445,11 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             });
         });
 
-        it('should handle multiple rapid filter changes through DOM events', () => {
-            spectator.detectChanges();
-            jest.clearAllMocks();
-
-            // Simulate rapid typing in the filter
-            triggerMultiSelectOnFilter('b');
-            triggerMultiSelectOnFilter('bl');
-            triggerMultiSelectOnFilter('blo');
-            triggerMultiSelectOnFilter('blog');
-
-            spectator.detectChanges();
-            jest.advanceTimersByTime(500);
-
-            // Should debounce and only make one API call
-            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledTimes(1);
-            expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-                type: undefined,
-                filter: 'blog'
-            });
-        });
-
-        it('should simulate user selecting and clearing items', () => {
+        it('should handle complete user workflow of selecting and clearing items', () => {
             spectator.detectChanges();
 
-            // Set up some content types
+            // User selects a content type
             spectator.component.$selectedContentTypes.set([MOCK_CONTENT_TYPES[0]]);
-
-            // User selects items
             triggerMultiSelectOnChange();
             expect(mockStore.patchFilters).toHaveBeenCalledWith({
                 contentType: ['blog']
@@ -515,7 +457,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
             jest.clearAllMocks();
 
-            // User clears selection
+            // User clears the selection
             spectator.component.$selectedContentTypes.set([]);
             triggerMultiSelectOnClear();
 
@@ -523,10 +465,31 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         });
     });
 
-    describe('Error Handling', () => {
-        describe('loadInitialContentTypes', () => {
-            it('should handle empty content types response gracefully', () => {
-                const MOCK_RESPONSE = {
+    describe('Template Integration & UI Rendering', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should render multiselect component with correct test id', () => {
+            const multiSelect = spectator.query('[data-testid="content-type-field"]');
+            expect(multiSelect).toBeTruthy();
+        });
+
+        it('should display empty state when not loading and no results available', () => {
+            patchState(spectator.component.$state, {
+                contentTypes: [],
+                loading: false
+            });
+
+            const emptyMessage = spectator.query('[data-testid="content-type-field"]');
+            expect(emptyMessage).toBeTruthy();
+        });
+    });
+
+    describe('Error Handling & Edge Cases', () => {
+        describe('API Response Errors', () => {
+            it('should handle empty content types API response gracefully', () => {
+                const emptyApiResponse = {
                     contentTypes: [],
                     pagination: {
                         currentPage: 0,
@@ -536,36 +499,38 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
                     }
                 };
                 mockContentTypeService.getContentTypesWithPagination.mockReturnValue(
-                    of(MOCK_RESPONSE)
+                    of(emptyApiResponse)
                 );
 
                 spectator.detectChanges();
 
-                // The component should handle null response and set empty array
+                // Component should handle empty response and update state correctly
                 expect(spectator.component.$state().contentTypes).toEqual([]);
                 expect(spectator.component.$state().loading).toBe(false);
             });
 
-            it('should gracefully handle service errors with catchError', () => {
+            it('should handle initial content types API service errors with catchError', () => {
                 mockContentTypeService.getContentTypesWithPagination.mockReturnValue(
                     throwError(() => new Error('Service unavailable'))
                 );
 
                 spectator.detectChanges();
 
-                // catchError should return empty array, and loading should be false
+                // catchError should return empty array and set loading to false
                 expect(spectator.component.$state().contentTypes).toEqual([]);
                 expect(spectator.component.$state().loading).toBe(false);
             });
         });
 
-        it('should handle store filter retrieval errors', () => {
-            mockStore.getFilterValue.mockImplementation(() => {
-                throw new Error('Store error');
-            });
+        describe('Store Integration Errors', () => {
+            it('should handle store filter retrieval errors gracefully', () => {
+                mockStore.getFilterValue.mockImplementation(() => {
+                    throw new Error('Store error');
+                });
 
-            // Should not throw and component should still work
-            expect(() => spectator.detectChanges()).not.toThrow();
+                // Component should not throw error and continue working
+                expect(() => spectator.detectChanges()).not.toThrow();
+            });
         });
     });
 });
