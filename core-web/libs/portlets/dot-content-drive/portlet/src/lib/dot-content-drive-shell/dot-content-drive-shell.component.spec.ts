@@ -99,10 +99,17 @@ describe('DotContentDriveShellComponent', () => {
                     go: jest.fn()
                 }),
                 mockProvider(DotContentTypeService, {
-                    getContentTypes: jest.fn().mockReturnValue(of())
-                }),
-                mockProvider(DotContentTypeService, {
-                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypesWithPagination: jest.fn().mockReturnValue(
+                        of({
+                            contentTypes: MOCK_BASE_TYPES,
+                            pagination: {
+                                currentPage: MOCK_BASE_TYPES.length,
+                                totalEntries: MOCK_BASE_TYPES.length * 2,
+                                totalPages: 1
+                            }
+                        })
+                    )
                 })
             ]
         });
@@ -140,7 +147,7 @@ describe('DotContentDriveShellComponent', () => {
                 query: '+testField:testValue',
                 limit: DEFAULT_PAGINATION.limit,
                 offset: DEFAULT_PAGINATION.offset,
-                sort: 'score,modDate asc'
+                sort: 'modDate asc'
             });
 
             expect(store.setItems).toHaveBeenCalledWith(MOCK_ITEMS, MOCK_ITEMS.length);
@@ -173,7 +180,7 @@ describe('DotContentDriveShellComponent', () => {
                 query: '+testField:testValue',
                 limit: DEFAULT_PAGINATION.limit,
                 offset: DEFAULT_PAGINATION.offset,
-                sort: 'score,baseType desc'
+                sort: 'baseType desc'
             });
         });
 
@@ -188,7 +195,7 @@ describe('DotContentDriveShellComponent', () => {
                 query: '+testField:testValue',
                 limit: 10,
                 offset: 0,
-                sort: 'score,modDate asc'
+                sort: 'modDate asc'
             });
         });
     });
