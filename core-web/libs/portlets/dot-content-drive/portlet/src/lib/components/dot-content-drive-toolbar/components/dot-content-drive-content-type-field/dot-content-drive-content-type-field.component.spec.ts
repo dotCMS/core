@@ -146,75 +146,51 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         });
     });
 
-    // describe('Loading State Management', () => {
-    //     it('should set loading to true when starting a request through Subject', () => {
-    //         // Trigger a new request via onFilter which updates state and triggers effect
-    //         spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
-    //         spectator.detectChanges();
+    describe('Loading State Management', () => {
+        beforeEach(() => {
+            // Overpass the initial effect call beacuse we have a skip(1) in the filter subscription
+            spectator.detectChanges();
+        });
 
-    //         // The Subject subscription should immediately set loading to true and clear content types
-    //         expect(spectator.component.$state().loading).toBe(true);
-    //         expect(spectator.component.$state().contentTypes).toEqual([]);
-    //     });
+        it('should set loading to true when starting a request through Subject', () => {
+            triggerMultiSelectOnFilter('test');
+            expect(spectator.component.$state().loading).toBe(true);
+        });
 
-    //     it('should set loading to false when request completes successfully', () => {
-    //         spectator.detectChanges();
+        it('should set loading to false when request completes successfully', () => {
+            spectator.detectChanges();
 
-    //         // Clear the initial request mock calls
-    //         jest.clearAllMocks();
+            // Clear the initial request mock calls
+            jest.clearAllMocks();
 
-    //         spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
-    //         expect(spectator.component.$state().loading).toBe(true);
+            triggerMultiSelectOnFilter('test');
+            expect(spectator.component.$state().loading).toBe(true);
 
-    //         // Advance timers to complete the debounced request
-    //         jest.advanceTimersByTime(500);
+            // Advance timers to complete the debounced request
+            jest.advanceTimersByTime(500);
 
-    //         expect(spectator.component.$state().loading).toBe(false);
-    //         expect(spectator.component.$state().contentTypes.length).toBeGreaterThan(0);
-    //     });
+            expect(spectator.component.$state().loading).toBe(false);
+            expect(spectator.component.$state().contentTypes.length).toBeGreaterThan(0);
+        });
 
-    //     it('should set loading to false when request fails', () => {
-    //         // Mock the service to return an error for the filter request
-    //         mockContentTypeService.getContentTypes.mockReturnValue(
-    //             throwError(() => new Error('Network error'))
-    //         );
+        it('should set loading to false when request fails', () => {
+            // Mock the service to return an error for the filter request
+            mockContentTypeService.getContentTypes.mockReturnValue(
+                throwError(() => new Error('Network error'))
+            );
 
-    //         spectator.detectChanges();
-    //         jest.clearAllMocks();
+            spectator.detectChanges();
+            jest.clearAllMocks();
 
-    //         spectator.component.onFilter({ filter: 'test' } as MultiSelectFilterEvent);
-    //         expect(spectator.component.$state().loading).toBe(true);
+            triggerMultiSelectOnFilter('test');
+            expect(spectator.component.$state().loading).toBe(true);
 
-    //         jest.advanceTimersByTime(500);
+            jest.advanceTimersByTime(500);
 
-    //         expect(spectator.component.$state().loading).toBe(false);
-    //         expect(spectator.component.$state().contentTypes).toEqual([]);
-    //     });
-
-    //     it('should handle multiple rapid requests with Subject-based debouncing', () => {
-    //         spectator.detectChanges();
-
-    //         // Make multiple rapid requests
-    //         spectator.component.onFilter({ filter: 'first' } as MultiSelectFilterEvent);
-    //         spectator.detectChanges();
-    //         jest.advanceTimersByTime(200);
-
-    //         spectator.component.onFilter({ filter: 'second' } as MultiSelectFilterEvent);
-    //         spectator.detectChanges();
-    //         jest.advanceTimersByTime(200);
-
-    //         spectator.component.onFilter({ filter: 'third' } as MultiSelectFilterEvent);
-    //         spectator.detectChanges();
-    //         jest.advanceTimersByTime(500);
-
-    //         // Should only make one API call for the last request due to debouncing
-    //         expect(mockContentTypeService.getContentTypes).toHaveBeenCalledTimes(1);
-    //         expect(mockContentTypeService.getContentTypes).toHaveBeenCalledWith({
-    //             type: undefined,
-    //             filter: 'third'
-    //         });
-    //     });
-    // });
+            expect(spectator.component.$state().loading).toBe(false);
+            expect(spectator.component.$state().contentTypes).toEqual([]);
+        });
+    });
 
     // fdescribe('Content Types Loading Effect', () => {
     //     it('should trigger effect on component initialization', () => {
