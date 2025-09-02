@@ -1,16 +1,26 @@
-import { useCallback, useContext, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
-import { isInsideUVE } from '../internal';
+import { getUVEState } from '@dotcms/uve';
+
+import {
+    DotCMSAnalytics,
+    DotCMSAnalyticsConfig
+} from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { initializeAnalytics } from '../internal';
 
 /**
  * Custom hook that handles analytics tracking for anonymous users.
+ * Provides methods to track events and page views with automatic timestamp injection.
+ * Automatically disables tracking when inside the UVE editor.
  *
  * @example
  * ```tsx
  * function Button({ title, urlTitle }) {
- *   const { track } = useContentAnalytics();
+ *   const { track } = useContentAnalytics({
+ *     server: 'https://demo.dotcms.com',
+ *     siteKey: 'my-site-key',
+ *     debug: false
+ *   });
  *
  *   // Track button click with custom properties
  *   return (
@@ -21,51 +31,23 @@ import { isInsideUVE } from '../internal';
  * }
  * ```
  *
- * @example
- * ```tsx
- * // Session debugging example
- * function AnalyticsDebugComponent() {
- *   const { getAnonymousUserId, getSessionInfo, updateSessionActivity } = useContentAnalytics();
- *
- *   const handleManualActivity = () => {
- *     updateSessionActivity();
- *     // Manual activity updated
- *   };
- *
- *   // Debug session info in development
- *   const debugInfo = () => {
- *     if (process.env.NODE_ENV === 'development') {
- *       console.log('Anonymous ID:', getAnonymousUserId());
- *       console.log('Session info:', getSessionInfo());
- *     }
- *   };
- *
- *   return (
- *     <div>
- *       <button onClick={handleManualActivity}>Update Activity</button>
- *       <button onClick={debugInfo}>Debug Session</button>
- *       <p>User ID: {getAnonymousUserId()}</p>
- *     </div>
- *   );
- * }
- * ```
- *
- * @returns {DotCMSAnalytics} - The analytics instance with tracking capabilities for anonymous users
- * @throws {Error} - Throws error if used outside of DotContentAnalyticsProvider or if analytics failed to initialize
+ * @param {DotCMSAnalyticsConfig} config - Required configuration object for analytics initialization
+ * @returns {DotCMSAnalytics} The analytics instance with tracking capabilities
+ * @throws {Error} When analytics initialization fails due to invalid configuration
  */
-export const useContentAnalytics = (): DotCMSAnalytics => {
-    const instance = useContext(DotContentAnalyticsContext);
+export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
+    const instance = initializeAnalytics(config);
     const lastPathRef = useRef<string | null>(null);
 
     if (!instance) {
         throw new Error(
-            'useContentAnalytics must be used within a DotContentAnalyticsProvider and analytics must be successfully initialized'
+            'Failed to initialize DotContentAnalytics. Please verify the required configuration (server and siteKey).'
         );
     }
 
     const track = useCallback(
         (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (!isInsideUVE()) {
+            if (!getUVEState()) {
                 instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()
@@ -76,7 +58,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
     );
 
     const pageView = useCallback(() => {
-        if (!isInsideUVE()) {
+        if (!getUVEState()) {
             const currentPath = window.location.pathname;
             if (currentPath !== lastPathRef.current) {
                 lastPathRef.current = currentPath;

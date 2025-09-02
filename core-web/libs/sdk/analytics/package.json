@@ -22,7 +22,8 @@
     "dependencies": {
         "analytics": "^0.8.0",
         "@analytics/core": "^0.13.0",
-        "@analytics/storage-utils": "^0.4.0"
+        "@analytics/storage-utils": "^0.4.0",
+        "@dotcms/uve": "latest"
     },
     "peerDependencies": {
         "react": "^18 || ^19"
@@ -30,7 +31,8 @@
     "devDependencies": {
         "@testing-library/jest-dom": "^6.1.6",
         "@testing-library/react": "^14.0.0",
-        "vite": "~5.0.0"
+        "vite": "~5.0.0",
+        "@dotcms/types": "latest"
     },
     "main": "./index.js",
     "module": "./index.js",

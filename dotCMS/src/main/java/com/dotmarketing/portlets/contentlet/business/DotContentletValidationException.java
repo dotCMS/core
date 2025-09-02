@@ -7,9 +7,11 @@ import static com.liferay.util.StringPool.SPACE;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.FieldNameUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Used for throwing contentlet validation problems
@@ -386,6 +389,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
         private Field firstErrorField = null;
         private String firstErrorValue = null;
 		private String firstErrorPattern = null;
+        private String firstErrorHint = null;
 
 		public Builder(T exception) {
 			this.exception = exception;
@@ -396,7 +400,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		 */
 		public Builder<T> addRequiredField(Field field, String value) {
 			exception.addRequiredField(field);
-			captureFirstError(field, value, ImportLineValidationCodes.REQUIRED_FIELD_MISSING.name(), null);
+			captureFirstError(field, value, ImportLineValidationCodes.REQUIRED_FIELD_MISSING.name(), null, null);
 			return this;
 		}
 
@@ -405,7 +409,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		 */
 		public Builder<T> addPatternField(Field field, String value, String pattern) {
 			exception.addPatternField(field);
-			captureFirstError(field, value, ImportLineValidationCodes.VALIDATION_FAILED_PATTERN.name(), pattern);
+			captureFirstError(field, value, ImportLineValidationCodes.VALIDATION_FAILED_PATTERN.name(), pattern, null);
 			return this;
 		}
 
@@ -414,7 +418,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		 */
 		public Builder<T> addBadTypeField(Field field, String value) {
 			exception.addBadTypeField(field);
-			captureFirstError(field, value, ImportLineValidationCodes.INVALID_FIELD_TYPE.name(), null);
+			captureFirstError(field, value, ImportLineValidationCodes.INVALID_FIELD_TYPE.name(), null, null);
 			return this;
 		}
 
@@ -423,51 +427,87 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		 */
 		public Builder<T> addUniqueField(Field field, String value) {
 			exception.addUniqueField(field);
-			captureFirstError(field, value, ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name(), null);
+			captureFirstError(field, value, ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name(), null, null);
 			return this;
 		}
 
 		/**
 		 * Add a required relationship validation error
 		 */
-		public Builder<T> addRequiredRelationship(Relationship relationship, List<Contentlet> contentlets) {
-			exception.addRequiredRelationship(relationship, contentlets);
-			return this;
-		}
+        public Builder<T> addRequiredRelationship(Relationship relationship,
+                List<Contentlet> contentlets) {
+            exception.addRequiredRelationship(relationship, contentlets);
+            final String value = relationship.getRelationTypeValue();
+            final Field dummy = new Field();
+            dummy.setFieldName(value);
+            dummy.setVelocityVarName(value);
+            dummy.setFieldType(FieldType.RELATIONSHIP.toString());
+            captureFirstError(dummy, toInodeString(contentlets),
+                    ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name(), null,
+                    "The relationship is required for the selected contentlets");
+            return this;
+        }
 
 		/**
 		 * Add an invalid content relationship validation error
 		 */
-		public Builder<T> addInvalidContentRelationship(Relationship relationship, List<Contentlet> contentlets) {
-			exception.addInvalidContentRelationship(relationship, contentlets);
-			return this;
-		}
+        public Builder<T> addInvalidContentRelationship(Relationship relationship,
+                List<Contentlet> contentlets) {
+            exception.addInvalidContentRelationship(relationship, contentlets);
+            final String value = relationship.getRelationTypeValue();
+            final Field dummy = new Field();
+            dummy.setFieldName(value);
+            dummy.setVelocityVarName(value);
+            dummy.setFieldType(FieldType.RELATIONSHIP.toString());
+            captureFirstError(dummy, toInodeString(contentlets),
+                    ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name(), null,
+                    "The relationship is not valid for the selected contentlets");
+            return this;
+        }
 
 		/**
 		 * Add a bad relationship validation error
 		 */
 		public Builder<T> addBadRelationship(Relationship relationship, List<Contentlet> contentlets) {
 			exception.addBadRelationship(relationship, contentlets);
+            final String value = relationship.getRelationTypeValue();
+            final Field dummy = new Field();
+            dummy.setFieldName(value);
+            dummy.setVelocityVarName(value);
+            dummy.setFieldType(FieldType.RELATIONSHIP.toString());
+            captureFirstError(dummy,toInodeString(contentlets),ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name(), null, null);
 			return this;
 		}
 
 		/**
 		 * Add a bad cardinality relationship validation error
 		 */
-		public Builder<T> addBadCardinalityRelationship(Relationship relationship, List<Contentlet> contentlets) {
-			exception.addBadCardinalityRelationship(relationship, contentlets);
-			return this;
-		}
+        public Builder<T> addBadCardinalityRelationship(Relationship relationship,
+                List<Contentlet> contentlets) {
+            exception.addBadCardinalityRelationship(relationship, contentlets);
+            final String value = relationship.getRelationTypeValue();
+            final Field dummy = new Field();
+            dummy.setFieldName(value);
+            dummy.setVelocityVarName(value);
+            dummy.setFieldType(FieldType.RELATIONSHIP.toString());
+            captureFirstError(dummy, toInodeString(contentlets),
+                    ImportLineValidationCodes.RELATIONSHIP_CARDINALITY_ERROR.name(), null,
+                    "The relationship cardinality is not valid for the selected contentlets. " +
+                         "Check if the assigment is breaking a One-to-One or One-to-Many relationship rule."
+            );
+            return this;
+        }
 
 		/**
 		 * Capture first error information for ImportLineError
 		 */
-		private void captureFirstError(Field field, String value, String errorCode, String pattern) {
+		private void captureFirstError(Field field, String value, String errorCode, String pattern, String hint) {
 			if (firstErrorField == null) {
 				firstErrorField = field;
 				firstErrorValue = value;
 				firstErrorCode = errorCode;
 				firstErrorPattern = pattern;
+                firstErrorHint = hint;
 			}
 		}
 
@@ -500,6 +540,9 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 						if (UtilMethods.isSet(firstErrorPattern)) {
 							ctx.put("expectedPattern", firstErrorPattern);
 						}
+                        if (UtilMethods.isSet(firstErrorHint)) {
+                            ctx.put("errorHint", firstErrorHint);
+                        }
 						return Optional.of(ctx);
 					}
 				};
@@ -532,6 +575,26 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	 */
 	public static Builder<FileAssetValidationException> fileAssetBuilder(String message) {
 		return new Builder<>(new FileAssetValidationException(message));
+	}
+
+	/**
+	 * Converts a list of contentlets to a comma-separated string of their inodes.
+	 * Filters out contentlets with empty inodes and returns "N/A" if no valid inodes exist.
+	 *
+	 * @param contentlets List of contentlets to extract inodes from
+	 * @return Comma-separated string of valid inodes, or "N/A" if none exist
+	 */
+	public static String toInodeString(List<Contentlet> contentlets) {
+		if (contentlets == null || contentlets.isEmpty()) {
+			return "N/A";
+		}
+
+		String result = contentlets.stream()
+			.map(Contentlet::getInode)
+			.filter(UtilMethods::isSet)
+			.collect(Collectors.joining(","));
+
+		return UtilMethods.isSet(result) ? result : "N/A";
 	}
 
 }

@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -57,6 +58,9 @@ public class Task250826AddIndexesToUniqueFieldsTableTest extends IntegrationTest
         // ╚══════════════════╝
         final Task250826AddIndexesToUniqueFieldsTable task =
                 new Task250826AddIndexesToUniqueFieldsTable();
+        if (!task.forceRun()) {
+            new UniqueFieldDataBaseUtil().createTableAndPopulate();
+        }
 
         // ╔════════════════════════╗
         // ║  Generating Test data  ║
