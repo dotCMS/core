@@ -1,17 +1,26 @@
 package com.dotcms.analytics.attributes;
 
+import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.logging.log4j.core.util.JsonUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,6 +36,8 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class CustomAttributeAPIImpl implements CustomAttributeAPI {
+    public static final String FRIENDLY_QUERY_CUSTOM_ATTRIBUTE_PREFIX = "request.custom.";
+    public static final String QUERY_CUSTOM_ATTRIBUTE_PREFIX = "request.";
     /** Prefix used to build database column names for custom attributes. */
     public static String CUSTOM_ATTRIBUTE_KEY = "custom_";
     /** Maximum allowed custom attributes per event type. */
@@ -198,5 +209,148 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
 
         Logger.debug(CustomAttributeAPIImpl.class, () -> "Translated " + translateCustomPayload.size() + " attribute(s) for eventType='" + eventTypeName + "'");
         return translateCustomPayload;
+    }
+
+    @Override
+    public TranslatedQuery translateFromFriendlyName(final String query) throws CustomAttributeProcessingException {
+        if (!continasCustomAttributes(query)) {
+            return new TranslatedQuery(query);
+        }
+
+        final Map<String, Object> queryAsJson = getAsJson(query);
+
+        if (!UtilMethods.isSet(queryAsJson)) {
+            return new TranslatedQuery(query);
+        }
+
+        final List<String> eventsTypes = extractEventTypeFilter(queryAsJson);
+
+        if (eventsTypes.size() != 1) {
+            throw new CustomAttributeProcessingException("It is impossible to determine the EventType to resolve the custom attribute match");
+        }
+
+        final String eventTypeNameOptional = eventsTypes.get(0);
+
+        final Map<String, String> customAttributesMatches = getCustomAttributesMatchFromCache(eventTypeNameOptional);
+        final Map<String, String> matchApplyed = new HashMap<>();
+
+        String translateResponse = query;
+
+        if (UtilMethods.isSet(customAttributesMatches)) {
+            for (Map.Entry<String, String> customMatch : customAttributesMatches.entrySet()) {
+                final String findBy =  FRIENDLY_QUERY_CUSTOM_ATTRIBUTE_PREFIX + customMatch.getKey();
+                final String replaceBy = QUERY_CUSTOM_ATTRIBUTE_PREFIX + customMatch.getValue();
+
+                translateResponse = translateResponse.replaceAll("\"" + findBy + "\"",
+                        "\"" + replaceBy + "\"");
+                matchApplyed.put(findBy, replaceBy);
+            }
+        }
+
+        return new TranslatedQuery(translateResponse, matchApplyed);
+    }
+
+    @Override
+    public ReportResponse translateResults(final ReportResponse reportResponse, final Map<String, String> matchApplied){
+        final List<ResultSetItem> results = reportResponse.getResults();
+        final List<ResultSetItem> newResults = new ArrayList<>();
+
+        for (final ResultSetItem result : results) {
+            final Map<String, Object> map = result.getAll();
+            final Map<String, Object> newMap = new HashMap<>();
+
+            for (String key : map.keySet()) {
+                final String newKey = matchApplied.getOrDefault(key, key);
+                newMap.put(newKey, map.get(key));
+            }
+
+            newResults.add(new ResultSetItem(newMap));
+        }
+
+        return new ReportResponse(newResults);
+    }
+
+    public static List<String> extractEventTypeFilter(final Map<String, Object> queryAsJson) {
+
+        Object filtersObject = queryAsJson.get("filters");
+
+        if (filtersObject == null) {
+            return Collections.emptyList();
+        }
+
+        final List<Map<String, Object>> filters =  List.class.isAssignableFrom(filtersObject.getClass()) ?
+                (List<Map<String, Object>>) filtersObject : Collections.emptyList();
+
+        final List<String> results = new ArrayList<>();
+
+        for (final Map<String, Object> filter : filters) {
+            collectEventTypes(filter, results);
+        }
+
+        return results;
+    }
+
+    private static Map<String, Object> getAsJson(final String cubeJsQueryJson)  {
+        try {
+            return JsonUtil.getJsonFromString(cubeJsQueryJson);
+        } catch (IOException e) {
+            return new HashMap<>();
+        }
+    }
+
+    private static  Optional<List<String>> getEventTypes(Map<String, Object> filter) {
+        final String member = filter.get("member") != null ?
+                filter.get("member").toString() : StringPool.BLANK;
+
+        if ( member.equals("request.eventType")) {
+            final List<String> values = (List<String>) filter.get("values");
+
+            if (values != null && values.size() > 0) {
+                return Optional.of(values);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private static void collectEventTypes(final Map<String, Object> filterNode, List<String> results) {
+        if (filterNode == null) return;
+
+        if (filterNode.containsKey("or")) {
+            final List<Map<String, Object>> filters = getList(filterNode, "or");
+
+            for (Map<String, Object> subFilter : filters) {
+                collectEventTypes(subFilter, results);
+            }
+        }else if (filterNode.containsKey("and")) {
+            final List<Map<String, Object>> filters = getList(filterNode, "and");
+
+            for (Map<String, Object> subFilter : filters) {
+                collectEventTypes(subFilter, results);
+            }
+        }
+        // Case 2: Direct filter with "member" or "dimension"
+        else if (filterNode.containsKey("member")) {
+            getEventTypes(filterNode).ifPresent(results::addAll);
+
+        }
+    }
+
+    private static List<Map<String, Object>> getList(final Map<String, Object> filterNode, final String attributeName) {
+        Object asObject = filterNode.get(attributeName);
+
+        if (!List.class.isAssignableFrom(asObject.getClass())) {
+            return Collections.emptyList();
+        }
+
+        try {
+            return (List<Map<String, Object>>) asObject;
+        } catch (ClassCastException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private static boolean continasCustomAttributes(final String cubeJsQueryJson) {
+        return cubeJsQueryJson.contains(FRIENDLY_QUERY_CUSTOM_ATTRIBUTE_PREFIX);
     }
 }

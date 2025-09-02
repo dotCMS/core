@@ -1,8 +1,9 @@
 package com.dotcms.analytics.attributes;
 
-import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.analytics.content.ReportResponse;
 import com.dotmarketing.exception.DotDataException;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -45,4 +46,31 @@ public interface CustomAttributeAPI {
      * @throws InvalidAttributeException if one or more attributes in the payload are not known/mapped for this event type.
      */
     Map<String, Object> translateToDatabase(String eventTypeName, Map<String, Object> customPayload);
+
+    TranslatedQuery translateFromFriendlyName(String query) throws CustomAttributeProcessingException;
+
+    ReportResponse translateResults(ReportResponse reportResponse, Map<String, String> matchApplied);
+
+
+    class TranslatedQuery {
+        private String translateQuery;
+        private Map<String, String> matchApplied;
+
+        public TranslatedQuery(final String query, final Map<String, String> matchApplied) {
+            this.translateQuery = query;
+            this.matchApplied = matchApplied == null ? new HashMap<>() : matchApplied;
+        }
+
+        public TranslatedQuery(final String query) {
+            this(query, new HashMap<>());
+        }
+
+        public String getTranslateQuery() {
+            return translateQuery;
+        }
+
+        public Map<String, String> getMatchApplied() {
+            return matchApplied;
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.analytics.content;
 
+import com.dotcms.analytics.attributes.CustomAttributeAPI;
+import com.dotcms.analytics.attributes.CustomAttributeProcessingException;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ContentAnalyticsQuery;
 import com.dotcms.analytics.content.ReportResponse;
@@ -16,7 +18,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -25,7 +26,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.Lazy;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.inject.Inject;
@@ -65,17 +65,21 @@ public class ContentAnalyticsResource {
 
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
+    private final CustomAttributeAPI customAttributeAPI;
 
     @Inject
-    public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI) {
-        this(new WebResource(), contentAnalyticsAPI);
+    public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI,
+                                    final CustomAttributeAPI customAttributeAPI) {
+        this(new WebResource(), contentAnalyticsAPI, customAttributeAPI);
     }
 
     @VisibleForTesting
     public ContentAnalyticsResource(final WebResource webResource,
-                                    final ContentAnalyticsAPI contentAnalyticsAPI) {
+                                    final ContentAnalyticsAPI contentAnalyticsAPI,
+                                    final CustomAttributeAPI customAttributeAPI) {
         this.webResource = webResource;
         this.contentAnalyticsAPI = contentAnalyticsAPI;
+        this.customAttributeAPI = customAttributeAPI;
     }
 
     /**
@@ -192,7 +196,7 @@ public class ContentAnalyticsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ReportResponseEntityView queryCubeJs(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
-                                          final String cubeJsQueryJson) {
+                                          final String cubeJsQueryJson) throws CustomAttributeProcessingException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
@@ -204,12 +208,27 @@ public class ContentAnalyticsResource {
         checkNotNull(cubeJsQueryJson, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
         Logger.debug(this,  ()->"Querying content analytics data with the cube query json: " + cubeJsQueryJson);
 
-        final ReportResponse reportResponse =
-                this.contentAnalyticsAPI.runRawReport(cubeJsQueryJson, user);
+        final CustomAttributeAPI.TranslatedQuery translatedQuery = customAttributeAPI.translateFromFriendlyName(cubeJsQueryJson);
+
+        ReportResponse reportResponse =
+                this.contentAnalyticsAPI.runRawReport(translatedQuery.getTranslateQuery(), user);
+
+        if (!translatedQuery.getMatchApplied().isEmpty()) {
+            reportResponse = customAttributeAPI.translateResults(reportResponse,
+                    invertMap(translatedQuery.getMatchApplied()));
+        }
 
         return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
     }
 
+    private Map<String, String> invertMap(Map<String, String> map) {
+        return map.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getValue,
+                        Map.Entry::getKey
+                ));
+    }
 
     /**
      * Returns information of specific dotCMS objects whose health and engagement data is tracked,

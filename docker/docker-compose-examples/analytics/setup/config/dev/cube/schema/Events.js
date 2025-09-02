@@ -128,6 +128,7 @@ cube('HttpResponses', {
   }
 });
 
+console.log();
 cube('request', {
   sql: `SELECT *
         FROM events 
@@ -219,6 +220,13 @@ cube('request', {
     clusterId: { sql: 'cluster_id', type: `string` },
     customerId: { sql: 'customer_id', type: `string` },
     createdAt: { sql: 'utc_time', type: `time`, },
+
+    //custom attributes
+    custom_1: { sql: 'custom_1', type: 'string' },
+    custom_2: { sql: 'custom_2', type: 'string' },
+    custom_3: { sql: 'custom_3', type: 'string' }
+
+
   },
   measures: {
     count: {
