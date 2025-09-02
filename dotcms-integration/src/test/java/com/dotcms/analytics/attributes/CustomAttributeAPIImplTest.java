@@ -3,6 +3,7 @@ package com.dotcms.analytics.attributes;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.model.ResultSetItem;
+import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -20,6 +21,11 @@ import java.util.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 public class CustomAttributeAPIImplTest {
 

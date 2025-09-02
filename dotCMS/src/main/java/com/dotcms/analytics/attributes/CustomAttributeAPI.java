@@ -4,6 +4,10 @@ import com.dotcms.analytics.content.ReportResponse;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.HashMap;
+
+import com.dotcms.analytics.metrics.EventType;
+import com.dotmarketing.exception.DotDataException;
+
 import java.util.Map;
 
 /**

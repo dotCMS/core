@@ -389,7 +389,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       contentTypeList = this.contentTypeFactory.find(lowercaseVarNames, filter.toLowerCase(), offset, limit, orderBy);
     } else if (offset > 0 || limit > 0) {
       int adjustedLimit = offset + limit;
-      adjustedLimit = adjustedLimit > lowercaseVarNames.size() ? lowercaseVarNames.size() : limit;
+      adjustedLimit = adjustedLimit > lowercaseVarNames.size() ? lowercaseVarNames.size() : adjustedLimit;
       final List<String> varNamesSubList = lowercaseVarNames.subList(offset, adjustedLimit);
       contentTypeList = this.contentTypeFactory.find(varNamesSubList, null, internalOffset, internalLimit, orderBy);
     } else {

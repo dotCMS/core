@@ -6,11 +6,17 @@ import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.JsonUtil;
+
+import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -21,6 +27,12 @@ import org.jetbrains.annotations.Nullable;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
+
+import org.jetbrains.annotations.NotNull;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,8 +48,10 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class CustomAttributeAPIImpl implements CustomAttributeAPI {
+
     public static final String FRIENDLY_QUERY_CUSTOM_ATTRIBUTE_PREFIX = "request.custom.";
     public static final String QUERY_CUSTOM_ATTRIBUTE_PREFIX = "request.";
+
     /** Prefix used to build database column names for custom attributes. */
     public static String CUSTOM_ATTRIBUTE_KEY = "custom_";
     /** Maximum allowed custom attributes per event type. */
@@ -210,6 +224,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         Logger.debug(CustomAttributeAPIImpl.class, () -> "Translated " + translateCustomPayload.size() + " attribute(s) for eventType='" + eventTypeName + "'");
         return translateCustomPayload;
     }
+
 
     @Override
     public TranslatedQuery translateFromFriendlyName(final String query) throws CustomAttributeProcessingException {

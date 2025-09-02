@@ -1,19 +1,17 @@
-package com.dotcms.rest.tag;
+package com.dotcms.rest.api.v2.tags;
 
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 /**
- * Form for creating a single tag via v2 API
+ * Form for creating a tag(s) via v2 API
  */
-public class SingleTagForm extends Validated {
+public class TagForm extends Validated {
 
     @NotNull(message = "Tag name is required")
-    @Size(min = 1, max = 255, message = "Tag name must be between 1 and 255 characters")
     private final String name;
 
     @Nullable
@@ -22,14 +20,19 @@ public class SingleTagForm extends Validated {
     @Nullable
     private final String ownerId;
 
+    @Nullable
+    private final Boolean persona;
+
     @JsonCreator
-    public SingleTagForm(
+    public TagForm(
             @JsonProperty("name") final String name,
             @JsonProperty("siteId") final String siteId,
-            @JsonProperty("ownerId") final String ownerId) {
+            @JsonProperty("ownerId") final String ownerId,
+            @JsonProperty("persona") final Boolean persona) {
         this.name = name;
         this.siteId = siteId;
         this.ownerId = ownerId;
+        this.persona = persona;
     }
 
     public String getName() {
@@ -43,23 +46,15 @@ public class SingleTagForm extends Validated {
     public String getOwnerId() {
         return ownerId;
     }
+
+    public Boolean getPersona() {
+        return persona;
+    }
     
     @Override
     public void checkValid() {
-        // First run Bean Validation
         super.checkValid();
-        
-        // Then add custom business rules
-        if (name != null) {
-            // Check for commas
-            if (name.contains(",")) {
-                throw new com.dotcms.rest.exception.BadRequestException("Tag name cannot contain commas");
-            }
-            
-            // Check for blank/whitespace only
-            if (name.trim().isEmpty()) {
-                throw new com.dotcms.rest.exception.BadRequestException("Tag name cannot be blank");
-            }
-        }
+
+        TagValidationHelper.validateTagName(name, "name");
     }
 }

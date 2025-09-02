@@ -93,13 +93,15 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
 							"});",
 							"",
 							"pm.test(\"Retrieve and save the Tag ID to update it later\", function () {",
 							"    const jsonData = pm.response.json();    ",
-							"    const tag = jsonData.entity['non-global-tag-v2'];",
+							"    const tags = jsonData.entity;",
+							"    const tag = tags.find(t => t.label === 'non-global-tag-v2');",
+							"    pm.expect(tag).to.not.be.undefined;",
 							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
 							"});",
 							""
@@ -144,18 +146,17 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"default-site-tag-1-v2\":{\n         \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n         \"persona\":false\n      },\n      \"global-tag-1-v2\":{\n         \"siteId\":\"SYSTEM_HOST\",\n         \"persona\":false\n      },\n      \"third-site-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"non-global-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+					"raw": "[\n   {\n      \"name\":\"default-site-tag-1-v2\",\n      \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"global-tag-1-v2\",\n      \"siteId\":\"SYSTEM_HOST\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"third-site-tag-v2\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"non-global-tag-v2\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/_bulk",
+					"raw": "{{serverURL}}/api/v2/tags",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"tags",
-						"_bulk"
+						"tags"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -184,9 +185,27 @@
 							"",
 							"pm.test(\"Check that the updated Tag is being returned correctly\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData.entity);",
-							"    const tag = jsonData.entity['non-global-tag-v2-changed'];    ",
-							"    pm.expect(tag).not.eql(undefined);",
+							"    pm.expect(jsonData.entity).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.label).to.eql('non-global-tag-v2-changed');",
+							"    pm.expect(jsonData.entity.siteId).to.eql('8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"    pm.expect(jsonData.entity.id).to.eql(pm.collectionVariables.get('tagForUpdateId'));",
+							"});",
+							"",
+							"// Verify via GET request",
+							"pm.test(\"Verify tag update via GET request\", function () {",
+							"    const tagId = pm.collectionVariables.get('tagForUpdateId');",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"        method: 'GET',",
+							"        header: {",
+							"            'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"        }",
+							"    }, function (err, response) {",
+							"        pm.expect(response.code).to.eql(200);",
+							"        const tag = response.json().entity;",
+							"        pm.expect(tag.label).to.eql('non-global-tag-v2-changed');",
+							"        pm.expect(tag.siteId).to.eql('8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"    });",
 							"});",
 							""
 						],
@@ -230,10 +249,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-v2-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
+					"raw": "{\n   \"name\":\"non-global-tag-v2-changed\",\n   \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/",
+					"raw": "{{serverURL}}/api/v2/tags/{{tagForUpdateId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -241,7 +260,7 @@
 						"api",
 						"v2",
 						"tags",
-						""
+						"{{tagForUpdateId}}"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -938,13 +957,13 @@
 							"    },",
 							"    body: {",
 							"        mode: 'raw',",
-							"        raw: JSON.stringify({",
+							"        raw: JSON.stringify([{",
 							"            name: pm.collectionVariables.get(\"disambigTagName\"),",
 							"            siteId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d'",
-							"        })",
+							"        }])",
 							"    }",
 							"}, function (err, res) {",
-							"    pm.collectionVariables.set(\"defaultSiteTagId\", res.json().entity.id);",
+							"    pm.collectionVariables.set(\"defaultSiteTagId\", res.json().entity[0].id);",
 							"    ",
 							"    // Create same tag name on SYSTEM_HOST",
 							"    pm.sendRequest({",
@@ -956,13 +975,13 @@
 							"        },",
 							"        body: {",
 							"            mode: 'raw',",
-							"            raw: JSON.stringify({",
+							"            raw: JSON.stringify([{",
 							"                name: pm.collectionVariables.get(\"disambigTagName\"),",
 							"                siteId: 'SYSTEM_HOST'",
-							"            })",
+							"            }])",
 							"        }",
 							"    }, function (err2, res2) {",
-							"        pm.collectionVariables.set(\"systemHostTagId\", res2.json().entity.id);",
+							"        pm.collectionVariables.set(\"systemHostTagId\", res2.json().entity[0].id);",
 							"    });",
 							"});"
 						],
@@ -1071,13 +1090,13 @@
 							"    },",
 							"    body: {",
 							"        mode: 'raw',",
-							"        raw: JSON.stringify({",
+							"        raw: JSON.stringify([{",
 							"            name: pm.collectionVariables.get(\"fallbackTagName\"),",
 							"            siteId: 'SYSTEM_HOST'",
-							"        })",
+							"        }])",
 							"    }",
 							"}, function (err, res) {",
-							"    pm.collectionVariables.set(\"fallbackTagId\", res.json().entity.id);",
+							"    pm.collectionVariables.set(\"fallbackTagId\", res.json().entity[0].id);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -1176,14 +1195,29 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200 OK\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"There must be no generated errors\", function () {",
+							"pm.test(\"Response body should contain boolean true\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    let errors = jsonData.errors.length;",
-							"    pm.expect(errors).to.be.eq(0);",
+							"    pm.expect(jsonData.entity).to.equal(true);",
+							"});",
+							"",
+							"// Verify deletion via GET request",
+							"pm.test(\"Verify tag deletion via GET request\", function () {",
+							"    const tagId = pm.collectionVariables.get('deleteTagCandidateId');",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"        method: 'GET',",
+							"        header: {",
+							"            'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"        }",
+							"    }, function (err, response) {",
+							"        pm.expect(response.code).to.eql(404);",
+							"        const jsonData = response.json();",
+							"        pm.expect(jsonData.errors[0].errorCode).to.eql('dotcms.api.error.not_found');",
+							"    });",
 							"});",
 							""
 						],
@@ -1267,8 +1301,8 @@
 							"",
 							"pm.test(\"The error message must be present\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    let errorMsg = jsonData.message;",
-							"    pm.expect(errorMsg).to.not.eql(undefined);",
+							"    pm.expect(jsonData.message).to.not.be.undefined;",
+							"    pm.expect(jsonData.message).to.include(\"was not found\");",
 							"});",
 							""
 						],
@@ -1527,15 +1561,17 @@
 							"    pm.response.to.have.status(201);",
 							"});",
 							"",
-							"pm.test(\"Response contains created tag data\", function () {",
+							"pm.test(\"Response contains created tag data in array\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
-							"    pm.expect(jsonData.entity.id).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.siteId).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.persona).to.be.a('boolean');",
-							"    pm.expect(jsonData.entity.siteName).to.not.be.undefined;",
-							"    pm.collectionVariables.set(\"createdSingleTagId\", jsonData.entity.id);",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
+							"    pm.expect(tag.id).to.not.be.undefined;",
+							"    pm.expect(tag.siteId).to.not.be.undefined;",
+							"    pm.expect(tag.persona).to.be.a('boolean');",
+							"    pm.expect(tag.siteName).to.not.be.undefined;",
+							"    pm.collectionVariables.set(\"createdSingleTagId\", tag.id);",
 							"});",
 							"",
 							"pm.test(\"Verify created tag by GET ID endpoint\", function () {",
@@ -1547,7 +1583,7 @@
 							"        pm.expect(res.code).to.equal(200);",
 							"        const jsonData = res.json();",
 							"        const tagKey = pm.collectionVariables.get(\"singleTagName\");",
-							"        const tag = jsonData.entity[tagKey];",
+							"        const tag = jsonData.entity;",
 							"        pm.expect(tag).to.not.be.undefined;",
 							"        pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
 							"        pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdSingleTagId\"));",
@@ -1583,7 +1619,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"{{singleTagName}}\"\n}"
+					"raw": "[{\n    \"name\": \"{{singleTagName}}\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -1620,14 +1656,16 @@
 							"    pm.response.to.have.status(201);",
 							"});",
 							"",
-							"pm.test(\"Tag created with correct site association\", function () {",
+							"pm.test(\"Tag created with correct site association in array format\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.label).to.equal(pm.collectionVariables.get(\"siteTagName\"));",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"siteTagName\"));",
 							"    // Site has tagStorage=SYSTEM_HOST, so tag is stored in SYSTEM_HOST",
-							"    pm.expect(jsonData.entity.siteId).to.equal('SYSTEM_HOST');",
-							"    pm.expect(jsonData.entity.siteName).to.equal('System Host');",
-							"    pm.collectionVariables.set(\"createdSiteTagId\", jsonData.entity.id);",
+							"    pm.expect(tag.siteId).to.equal('SYSTEM_HOST');",
+							"    pm.expect(tag.siteName).to.equal('System Host');",
+							"    pm.collectionVariables.set(\"createdSiteTagId\", tag.id);",
 							"});",
 							"",
 							"pm.test(\"Verify site tag by GET ID endpoint\", function () {",
@@ -1639,7 +1677,7 @@
 							"        pm.expect(res.code).to.equal(200);",
 							"        const jsonData = res.json();",
 							"        const tagKey = pm.collectionVariables.get(\"siteTagName\");",
-							"        const tag = jsonData.entity[tagKey];",
+							"        const tag = jsonData.entity;",
 							"        pm.expect(tag).to.not.be.undefined;",
 							"        pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"siteTagName\"));",
 							"        pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdSiteTagId\"));",
@@ -1676,7 +1714,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"{{siteTagName}}\",\n    \"siteId\": \"{{tagsSiteId}}\"\n}"
+					"raw": "[{\n    \"name\": \"{{siteTagName}}\",\n    \"siteId\": \"{{tagsSiteId}}\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -1713,13 +1751,15 @@
 							"    pm.response.to.have.status(201);",
 							"});",
 							"",
-							"pm.test(\"Tag created with owner binding\", function () {",
+							"pm.test(\"Tag created with owner binding in array format\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.label).to.equal(pm.collectionVariables.get(\"ownerTagName\"));",
-							"    pm.expect(jsonData.entity.id).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.siteName).to.not.be.undefined;",
-							"    pm.collectionVariables.set(\"createdOwnerTagId\", jsonData.entity.id);",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"ownerTagName\"));",
+							"    pm.expect(tag.id).to.not.be.undefined;",
+							"    pm.expect(tag.siteName).to.not.be.undefined;",
+							"    pm.collectionVariables.set(\"createdOwnerTagId\", tag.id);",
 							"});",
 							"",
 							"pm.test(\"Verify owner tag by GET ID endpoint\", function () {",
@@ -1782,7 +1822,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"{{ownerTagName}}\",\n    \"ownerId\": \"dotcms.org.1\"\n}"
+					"raw": "[{\n    \"name\": \"{{ownerTagName}}\",\n    \"ownerId\": \"dotcms.org.1\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -1819,11 +1859,13 @@
 							"    pm.response.to.have.status(201);",
 							"});",
 							"",
-							"pm.test(\"Returns existing tag data\", function () {",
+							"pm.test(\"Returns existing tag data in array\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
-							"    pm.expect(jsonData.entity.id).to.equal(pm.collectionVariables.get(\"createdSingleTagId\"));",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
+							"    pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdSingleTagId\"));",
 							"});",
 							""
 						],
@@ -1853,7 +1895,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"{{singleTagName}}\"\n}"
+					"raw": "[{\n    \"name\": \"{{singleTagName}}\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -1866,7 +1908,7 @@
 						"tags"
 					]
 				},
-				"description": "Attempts to create same tag again, idempotent operation returns 201 with existing tag"
+				"description": "Attempts to create same tag again, idempotent operation returns 200 with existing tag"
 			},
 			"response": []
 		},
@@ -1893,14 +1935,12 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
-							"pm.test(\"Response contains validation error\", function () {",
+							"pm.test(\"Response contains validation error with indexed field name\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    // ValidationException returns errors as direct array",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
 							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
 							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
 							"    const error = jsonData[0];",
-							"    // Bean Validation returns null errorCode for @NotBlank violations",
-							"    pm.expect(error.errorCode).to.be.null;",
 							"    pm.expect(error.message).to.equal(\"Tag name is required\");",
 							"    pm.expect(error.fieldName).to.equal(\"name\");",
 							"});",
@@ -1931,8 +1971,8 @@
 					}
 				],
 				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"siteId\": \"{{tagsSiteId}}\"\n}"
+					"mode": "raw", 
+					"raw": "[{}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -1969,14 +2009,12 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
-							"pm.test(\"Response contains validation error\", function () {",
+							"pm.test(\"Response contains validation error with indexed field name\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    // ValidationException returns errors as direct array",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
 							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
 							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
 							"    const error = jsonData[0];",
-							"    // Bean Validation returns null errorCode for @Size violations",
-							"    pm.expect(error.errorCode).to.be.null;",
 							"    pm.expect(error.message).to.equal(\"Tag name must be between 1 and 255 characters\");",
 							"    pm.expect(error.fieldName).to.equal(\"name\");",
 							"});",
@@ -2008,7 +2046,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"\"\n}"
+					"raw": "[{\n    \"name\": \"\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -2048,11 +2086,14 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
-							"pm.test(\"Response contains comma validation error\", function () {",
+							"pm.test(\"Response contains comma validation error with indexed field name\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    // BadRequestException returns single error object",
-							"    pm.expect(jsonData.error).to.not.be.undefined;",
-							"    pm.expect(jsonData.error).to.include(\"Tag name cannot contain commas\");",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
+							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
+							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+							"    const error = jsonData[0];",
+							"    pm.expect(error.message).to.equal(\"Tag name cannot contain commas\");",
+							"    pm.expect(error.fieldName).to.equal(\"name\");",
 							"});",
 							""
 						],
@@ -2082,7 +2123,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"tag,with,comma\"\n}"
+					"raw": "[{\n    \"name\": \"tag,with,comma\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -2121,14 +2162,12 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
-							"pm.test(\"Response contains length validation error\", function () {",
+							"pm.test(\"Response contains length validation error with indexed field name\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    // ValidationException returns errors as direct array",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
 							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
 							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
 							"    const error = jsonData[0];",
-							"    // Bean Validation returns null errorCode for @Size violations",
-							"    pm.expect(error.errorCode).to.be.null;",
 							"    pm.expect(error.message).to.equal(\"Tag name must be between 1 and 255 characters\");",
 							"    pm.expect(error.fieldName).to.equal(\"name\");",
 							"});",
@@ -2160,7 +2199,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"{{longTagName}}\"\n}"
+					"raw": "[{\n    \"name\": \"{{longTagName}}\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -2197,13 +2236,15 @@
 							"    pm.expect(pm.response.code).to.equal(201);",
 							"});",
 							"",
-							"pm.test(\"Tag created with fallback to default site\", function () {",
+							"pm.test(\"Tag created with fallback to default site in array format\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.not.be.undefined;",
-							"    pm.expect(jsonData.entity.label).to.equal(pm.collectionVariables.get(\"invalidSiteTagName\"));",
-							"    pm.expect(jsonData.entity.id).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"invalidSiteTagName\"));",
+							"    pm.expect(tag.id).to.not.be.undefined;",
 							"    // Tag should be created in default site due to invalid site ID fallback",
-							"    pm.expect(jsonData.entity.siteName).to.not.be.undefined;",
+							"    pm.expect(tag.siteName).to.not.be.undefined;",
 							"});",
 							""
 						],
@@ -2233,7 +2274,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"{{invalidSiteTagName}}\",\n    \"siteId\": \"invalid-site-id-12345\"\n}"
+					"raw": "[{\n    \"name\": \"{{invalidSiteTagName}}\",\n    \"siteId\": \"invalid-site-id-12345\"\n}]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",

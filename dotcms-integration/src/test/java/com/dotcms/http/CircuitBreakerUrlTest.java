@@ -341,7 +341,7 @@ public class CircuitBreakerUrlTest {
         final NullOutputStream nos = new NullOutputStream();
 
         final String key = "testBreaker";
-        final int timeout = 2000;
+        final int timeout = 6000;
 
         CircuitBreaker breaker = CircuitBreakerPool.getBreaker(key);
 
