@@ -41,6 +41,8 @@
         .p-timeline-event-content {
             padding: 0;
             overflow: hidden;
+            margin-bottom: $spacing-1;
+            margin-left: $spacing-0;
         }
 
         .p-timeline-event-connector {
@@ -58,7 +60,7 @@
     padding: $spacing-3 $spacing-4;
 
     ::ng-deep .p-skeleton {
-        background: $color-palette-gray-200;
+        background-color: $color-palette-gray-200;
         border-radius: $border-radius-md;
     }
 }
@@ -113,24 +115,17 @@
     border: 2px solid $white;
     position: relative;
     z-index: 1;
-}
-
-.history__marker--current {
-    background: $color-palette-yellow;
-    box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
-}
-
-.history__marker--published {
-    background: $color-palette-green;
-    box-shadow: 0 0 0 2px $color-palette-green-op-20;
+    background: $color-palette-gray-400;
 }
 
 .history__marker--live {
     background: $color-palette-green;
+    box-shadow: 0 0 0 2px $color-palette-green-op-20;
 }
 
 .history__marker--draft {
-    background: $color-palette-gray-400;
+    background: $color-palette-yellow;
+    box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
 }
 
 // Timeline item structure
@@ -139,13 +134,21 @@
     border-radius: $border-radius-md;
     padding: $spacing-1;
     position: relative;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+    transition: background-color $basic-speed ease;
+
+    &:hover {
+        background: $color-palette-primary-op-10;
+    }
 }
 
 .history__item-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: $spacing-3;
+    align-items: center;
 }
 
 .history__time-section {
@@ -154,16 +157,10 @@
     gap: $spacing-2;
 }
 
-.history__time-now {
-    font-weight: 700;
-    color: $color-palette-gray-800;
-    font-size: $font-size-md;
-}
-
 .history__time-relative {
-    font-weight: 600;
-    color: $color-palette-gray-600;
-    font-size: $font-size-sm;
+    font-weight: $font-weight-medium-bold;
+    color: $black;
+    font-size: $font-size-md;
 }
 
 .history__status {
@@ -201,39 +198,29 @@
 }
 
 .history__menu-button {
-    ::ng-deep .p-button {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-
-        &:hover {
-            background: $color-palette-gray-200;
-        }
-    }
+    //background-color: transparent;
 }
 
 .history__user-section {
     display: flex;
     align-items: center;
-    gap: $spacing-2;
-    margin-bottom: $spacing-2;
+    gap: $spacing-0;
 }
 
-.history__avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-
-    ::ng-deep .p-avatar {
-        width: 32px;
-        height: 32px;
-    }
+::ng-deep .history__avatar.p-avatar {
+    width: 21px;
+    height: 21px;
+    // border-radius: 50%;
+    // font-size: $font-size-xs;
+    // line-height: 21px;
+    // display: flex;
+    // align-items: center;
+    // justify-content: center;
 }
 
 .history__user-name {
-    font-weight: 600;
-    color: $color-palette-gray-700;
-    font-size: $font-size-sm;
+    color: $color-palette-gray-800;
+    font-size: $font-size-md;
 }
 
 .history__states {
@@ -261,19 +248,21 @@
 }
 
 // OverlayPanel styles
-::ng-deep .history__overlay {
-    .p-overlaypanel {
-        background: $white;
-        border: 1px solid $color-palette-gray-300;
-        border-radius: $border-radius-md;
-        box-shadow: $shadow-l;
-        padding: 0;
-        min-width: 300px;
-        max-width: 400px;
+::ng-deep .history__overlay.p-overlaypanel {
+    background: $color-palette-primary-200;
+    min-width: 220px;
+    max-width: 220px;
+    margin-left: -10px;
 
-        .p-overlaypanel-content {
-            padding: 0;
-        }
+    &:before {
+        left: 20px;
+        border-left: 7px solid $color-palette-gray-100;
+        border-right: 7px solid $color-palette-gray-100;
+        border-bottom: 12px solid $color-palette-primary-200;
+    }
+
+    .p-overlaypanel-content {
+        padding: $spacing-1;
     }
 }
 
@@ -309,16 +298,6 @@
     display: flex;
     gap: $spacing-2;
     margin-top: $spacing-2;
-}
-
-// Timeline item hover effect
-.history__timeline-item {
-    cursor: pointer;
-    transition: background-color $basic-speed ease;
-
-    &:hover {
-        background: $color-palette-gray-500;
-    }
 }
 
 // Responsive adjustments

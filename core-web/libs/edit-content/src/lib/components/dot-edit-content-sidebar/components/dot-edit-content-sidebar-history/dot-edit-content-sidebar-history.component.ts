@@ -9,7 +9,7 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TimelineModule } from 'primeng/timeline';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
 import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 /**
@@ -41,7 +41,7 @@ export class DotEditContentSidebarHistoryComponent {
      * List of history items to display
      * @readonly
      */
-    $historyItems = input<DotCMSContentlet[]>([], { alias: 'historyItems' });
+    $historyItems = input<DotCMSContentletVersion[]>([], { alias: 'historyItems' });
 
     /**
      * Current status of the history component
@@ -74,12 +74,12 @@ export class DotEditContentSidebarHistoryComponent {
     /**
      * Currently selected item for the overlay
      */
-    selectedItem: DotCMSContentlet | null = null;
+    selectedItem: DotCMSContentletVersion | null = null;
 
     /**
      * Gets the status label for a history item
      */
-    getStatusLabel(item: DotCMSContentlet): string {
+    getStatusLabel(item: DotCMSContentletVersion): string {
         if (item.live && item.working) {
             return 'Published';
         } else if (item.working) {
@@ -94,7 +94,7 @@ export class DotEditContentSidebarHistoryComponent {
     /**
      * Gets the CSS class for the status badge
      */
-    getStatusClass(item: DotCMSContentlet): string {
+    getStatusClass(item: DotCMSContentletVersion): string {
         if (item.live && item.working) {
             return 'history__status--published';
         } else if (item.working) {
@@ -109,22 +109,20 @@ export class DotEditContentSidebarHistoryComponent {
     /**
      * Gets the timeline marker color based on the content status
      */
-    getTimelineMarkerClass(item: DotCMSContentlet, index: number): string {
-        if (index === 0) {
-            return 'history__marker--current';
-        } else if (item.live && item.working) {
-            return 'history__marker--published';
-        } else if (item.live) {
+    getTimelineMarkerClass(item: DotCMSContentletVersion): string {
+        if (item.live) {
             return 'history__marker--live';
+        } else if (item.working) {
+            return 'history__marker--draft';
         }
 
-        return 'history__marker--draft';
+        return '';
     }
 
     /**
      * Shows the overlay panel with item details on hover
      */
-    showOverlay(event: MouseEvent, item: DotCMSContentlet): void {
+    showOverlay(event: MouseEvent, item: DotCMSContentletVersion): void {
         this.selectedItem = item;
         this.overlayPanel.show(event);
     }
@@ -140,7 +138,7 @@ export class DotEditContentSidebarHistoryComponent {
     /**
      * Gets menu items for version actions
      */
-    getVersionMenuItems(item: DotCMSContentlet) {
+    getVersionMenuItems(item: DotCMSContentletVersion) {
         return [
             {
                 label: 'Preview',
@@ -163,21 +161,21 @@ export class DotEditContentSidebarHistoryComponent {
     /**
      * Handle version preview action
      */
-    onPreviewVersion(_item: DotCMSContentlet): void {
+    onPreviewVersion(_item: DotCMSContentletVersion): void {
         // TODO: Implement preview functionality
     }
 
     /**
      * Handle version restore action
      */
-    onRestoreVersion(_item: DotCMSContentlet): void {
+    onRestoreVersion(_item: DotCMSContentletVersion): void {
         // TODO: Implement restore functionality
     }
 
     /**
      * Handle version compare action
      */
-    onCompareVersion(_item: DotCMSContentlet): void {
+    onCompareVersion(_item: DotCMSContentletVersion): void {
         // TODO: Implement compare functionality
     }
 }

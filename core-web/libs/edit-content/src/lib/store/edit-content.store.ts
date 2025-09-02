@@ -6,6 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import {
     ComponentStatus,
     DotCMSContentlet,
+    DotCMSContentletVersion,
     DotCMSContentType,
     DotCMSWorkflow,
     DotCMSWorkflowAction,
@@ -102,7 +103,7 @@ export interface EditContentState {
     };
 
     // Versions state
-    versions: DotCMSContentlet[];
+    versions: DotCMSContentletVersion[];
     versionsStatus: {
         status: ComponentStatus;
         error: string | null;

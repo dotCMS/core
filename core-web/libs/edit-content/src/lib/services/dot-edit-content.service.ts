@@ -10,7 +10,12 @@ import {
     DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSContentlet,
+    DotCMSContentletVersion,
+    DotContentletDepth
+} from '@dotcms/dotcms-models';
 
 import {
     CustomTreeNode,
@@ -301,17 +306,17 @@ export class DotEditContentService {
     }
 
     /**
-     * Retrieves the versions for a content item by its identifier.
+     * Retrieves the version history for a content item by its identifier.
      * Returns all versions of the content including live, working, and archived versions.
      *
      * @param {string} identifier - The unique identifier of the content item
-     * @returns {Observable<DotCMSContentlet[]>} Observable that emits an array of contentlet versions ordered by modification date
+     * @returns {Observable<DotCMSContentletVersion[]>} Observable that emits an array of contentlet version history ordered by modification date
      */
-    getVersions(identifier: string): Observable<DotCMSContentlet[]> {
+    getVersions(identifier: string): Observable<DotCMSContentletVersion[]> {
         return this.#http
             .get<{
-                entity: DotCMSContentlet[];
-            }>(`/api/v1/content/versions?identifier=${identifier}`)
-            .pipe(pluck('entity', 'versions'));
+                entity: DotCMSContentletVersion[];
+            }>(`/api/v1/content/versions/id/${identifier}/history`)
+            .pipe(pluck('entity'));
     }
 }
