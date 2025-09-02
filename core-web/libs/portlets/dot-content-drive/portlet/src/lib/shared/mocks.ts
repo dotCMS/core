@@ -238,7 +238,7 @@ export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
     }
 ].map(createFakeContentType);
 
-export const MOCK_CONTENT_TYPES_WITH_SELECTED: DotCMSContentType[] = [
+export const SELECTED_CONTENT_TYPES: DotCMSContentType[] = [
     MOCK_CONTENT_TYPES[0],
     MOCK_CONTENT_TYPES[1],
     MOCK_CONTENT_TYPES[2],

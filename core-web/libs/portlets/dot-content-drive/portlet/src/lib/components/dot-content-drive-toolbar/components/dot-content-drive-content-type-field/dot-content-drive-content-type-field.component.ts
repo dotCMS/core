@@ -196,11 +196,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                     contentTypes: DotCMSContentType[];
                     pagination: DotPagination;
                 }) => {
-                    const items = this.filterAndDeduplicateContentTypes(contentTypes);
+                    const dotCMSContentTypes = this.filterAndDeduplicateContentTypes(contentTypes);
                     const storeVariables = this.getVariablesFromStore();
                     const canLoadMore = pagination.currentPage < pagination.totalEntries;
-                    const selectedItems = items.filter(({ variable }) => storeVariables.includes(variable));
-                    this.updateState({ contentTypes, canLoadMore, loading: false });
+                    const selectedItems = dotCMSContentTypes.filter(({ variable }) => storeVariables.includes(variable));
+                    this.updateState({ contentTypes: dotCMSContentTypes, canLoadMore, loading: false });
                     this.$selectedContentTypes.set(selectedItems);
                 }
             );
