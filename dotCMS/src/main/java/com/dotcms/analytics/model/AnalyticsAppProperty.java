@@ -18,16 +18,16 @@ import java.util.stream.Collectors;
  */
 public enum AnalyticsAppProperty {
 
-    CLIENT_ID("clientId") {
+    CLIENT_ID("clientId", AnalyticsApp.ANALYTICS_APP_CLIENT_ID_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(final String value) {
-            return builder -> builder.clientId(value);
+            return builder -> builder.clientId(resolveEnvVarValue(this, value));
         }
     },
-    CLIENT_SECRET("clientSecret") {
+    CLIENT_SECRET("clientSecret", AnalyticsApp.ANALYTICS_APP_CLIENT_SECRET_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.clientSecret(value);
+            return builder -> builder.clientSecret(resolveEnvVarValue(this, value));
         }
     },
     ANALYTICS_KEY("analyticsKey") {
