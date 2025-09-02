@@ -1,0 +1,6 @@
+<p-contextMenu #contextMenu [model]="items()" />
+
+@if ($showAddToBundle()) {
+<dot-add-to-bundle
+[assetIdentifier]="$contextMenuData().contentlet.identifier" />
+}

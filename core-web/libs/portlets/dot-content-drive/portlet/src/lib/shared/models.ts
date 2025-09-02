@@ -58,6 +58,12 @@ export interface DotContentDriveInit {
     isTreeExpanded: boolean;
 }
 
+export interface DotContentDriveContextMenu {
+    triggeredEvent: Event;
+    contentlet: DotContentDriveItem;
+    showAddToBundle: boolean;
+}
+
 /**
  * The state of the content drive.
  *
@@ -70,6 +76,7 @@ export interface DotContentDriveState extends DotContentDriveInit {
     totalItems: number;
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
+    contextMenu?: DotContentDriveContextMenu
 }
 
 /**

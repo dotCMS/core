@@ -23,6 +23,7 @@ import {
     SYSTEM_HOST
 } from '../shared/constants';
 import {
+    DotContentDriveContextMenu,
     DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
@@ -41,7 +42,7 @@ const initialState: DotContentDriveState = {
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
-    isTreeExpanded: DEFAULT_TREE_EXPANDED
+    isTreeExpanded: DEFAULT_TREE_EXPANDED,
 };
 
 export const DotContentDriveStore = signalStore(
@@ -157,6 +158,9 @@ export const DotContentDriveStore = signalStore(
             },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
+            },
+            setContextMenu(contextMenu: DotContentDriveContextMenu) {
+                patchState(store, { contextMenu });
             }
         };
     }),

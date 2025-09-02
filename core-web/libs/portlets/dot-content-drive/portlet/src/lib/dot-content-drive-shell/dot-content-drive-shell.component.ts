@@ -1,16 +1,16 @@
 import { EMPTY } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentSearchService } from '@dotcms/data-access';
+import { DotContentSearchService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
-import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { ContextMenuData, DotFolderListViewComponent, DotFolderListViewContextMenuComponent } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
@@ -20,8 +20,8 @@ import { encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
-    providers: [DotContentDriveStore],
+    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, DotFolderListViewContextMenuComponent],
+    providers: [DotContentDriveStore, DotWorkflowsActionsService],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -32,6 +32,7 @@ export class DotContentDriveShellComponent {
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #router = inject(Router);
     readonly #location = inject(Location);
+    readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -39,6 +40,8 @@ export class DotContentDriveShellComponent {
     readonly $treeExpanded = this.#store.isTreeExpanded;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
+
+    $contextMenuData = signal<ContextMenuData | null>(null);
 
     readonly itemsEffect = effect(() => {
         const query = this.#store.$query();
@@ -118,5 +121,10 @@ export class DotContentDriveShellComponent {
             field: event.field,
             order: SORT_ORDER[event.order] ?? DotContentDriveSortOrder.ASC
         });
+    }
+
+    onContextMenu({event, contentlet}: ContextMenuData) {
+        event.preventDefault();
+        this.$contextMenuData.set({event, contentlet});
     }
 }

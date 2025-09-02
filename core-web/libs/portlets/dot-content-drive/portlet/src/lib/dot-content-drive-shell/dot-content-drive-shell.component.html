@@ -12,7 +12,12 @@
     [totalItems]="$totalItems()"
     [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
     (paginate)="onPaginate($event)"
-    (sort)="onSort($event)" />
+    (sort)="onSort($event)"
+    (rightClick)="onContextMenu($event)"
+    #listView
+    />
+
+<dot-folder-list-context-menu [contextMenuData]="$contextMenuData()" />
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
 <div class="detail-view center-content"></div>
