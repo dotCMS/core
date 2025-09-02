@@ -9,10 +9,12 @@ import com.dotcms.rest.ResponseEntityRestTagListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityTagOperationView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.tag.RestTag;
 import com.dotcms.rest.tag.TagsResourceHelper;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -55,7 +57,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
@@ -676,37 +680,79 @@ public class TagResource {
     }
 
     /**
-     * Imports Tags from a CSV file.
+     * Imports Tags from a CSV file with detailed row-level error reporting.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
      * @param form     The {@link FormDataMultiPart} containing the CSV file.
      *
-     * @return A {@link ResponseEntityBooleanView} containing the result of the import operation.
+     * @return A {@link ResponseEntityTagOperationView} containing import statistics and detailed error information.
      *
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws IOException          An error occurred when reading the CSV file.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
+    @Operation(
+        summary = "Import tags from CSV file",
+        description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics and error information for each failed row."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                description = "Import completed with detailed results",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = ResponseEntityTagOperationView.class))),
+        @ApiResponse(responseCode = "400",
+                description = "Bad Request - Invalid file format or content",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                description = "Unauthorized - Authentication required",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                description = "Forbidden - User does not have access to Tags portlet",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+                description = "Internal Server Error - Database or system error",
+                content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/import")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final ResponseEntityBooleanView importTags(
+    public final ResponseEntityTagOperationView importTags(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @RequestBody(description = "CSV file with tag data in format: tag_name,host_id",
+                    required = true)
             final FormDataMultiPart form
     ) throws DotDataException, IOException, DotSecurityException {
         final InitDataObject initDataObject = getInitDataObject(request, response);
 
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class, String.format("User '%s' is importing Tags form CSV file.",user.getUserId()));
-        helper.importTags(form, user, request);
-
-        return new ResponseEntityBooleanView(true);
+        Logger.debug(TagResource.class, String.format("User '%s' is importing Tags from CSV file.", user.getUserId()));
+        
+        // Get detailed import results
+        final TagsResourceHelper.TagImportResult result = helper.importTags(form, user, request);
+        
+        // Build statistics map
+        final Map<String, Object> stats = Map.of(
+            "totalRows", result.totalRows,
+            "successCount", result.successCount,
+            "failureCount", result.errors.size(),
+            "success", result.errors.isEmpty()
+        );
+        
+        Logger.info(TagResource.class, String.format(
+            "Tag import completed for user '%s': %d total, %d success, %d errors", 
+            user.getUserId(), result.totalRows, result.successCount, result.errors.size()));
+        
+        // Return a detailed response with statistics and errors
+        return new ResponseEntityTagOperationView(
+            stats,
+            ImmutableList.copyOf(result.errors)
+    );
     }
 
 }
