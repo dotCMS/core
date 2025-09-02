@@ -1,11 +1,14 @@
+/* eslint-disable no-console */
 import { CommonModule } from "@angular/common";
-import { Component, ViewChild, effect, inject, model, signal } from "@angular/core";
+import { Component, ViewChild, effect, inject, signal } from "@angular/core";
 
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
 import { DotCurrentUserService, DotEventsService, DotHttpErrorManagerService, DotMessageService, DotRenderMode, DotWorkflowActionsFireService, DotWorkflowEventHandlerService, DotWorkflowsActionsService } from "@dotcms/data-access";
 import { DotCMSWorkflowActionEvent, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotAddToBundleComponent } from "@dotcms/ui";
+
+import { DotContentDriveContextMenu } from "../../shared/models";
+import { DotContentDriveStore } from "../../store/dot-content-drive.store";
 
 export interface ContextMenuData {
     event: Event;
@@ -16,12 +19,10 @@ export interface ContextMenuData {
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
     standalone: true,
-    imports: [CommonModule, ContextMenuModule, DotAddToBundleComponent]
+    imports: [CommonModule, ContextMenuModule]
 })
 export class DotFolderListViewContextMenuComponent {
     @ViewChild('contextMenu') contextMenu: ContextMenu;
-    
-    $contextMenuData = model<ContextMenuData | null>(null, { alias: 'contextMenuData' });
     
     #dotMessageService = inject(DotMessageService);
     #workflowsActionsService = inject(DotWorkflowsActionsService);
@@ -30,11 +31,16 @@ export class DotFolderListViewContextMenuComponent {
     #httpErrorManagerService = inject(DotHttpErrorManagerService);
     #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     #dotCurrentUser = inject(DotCurrentUserService);
+    #store = inject(DotContentDriveStore);
 
+    $contextMenuData = this.#store.contextMenu;
 
     readonly rightClickEffect = effect(() => {
         const contextMenuData = this.$contextMenuData();
-        if (contextMenuData && this.contextMenu) {
+
+        console.log('called effect', contextMenuData);
+
+        if (contextMenuData && !this.contextMenu?.visible()) {
             this.getMenuItems(contextMenuData);
         }
     });
@@ -45,19 +51,24 @@ export class DotFolderListViewContextMenuComponent {
     $showAddToBundle = signal(false);
 
 
-    async getMenuItems({ event, contentlet: item }: ContextMenuData) {
+    async getMenuItems({ triggeredEvent, contentlet }: DotContentDriveContextMenu) {
+
+        if (!triggeredEvent || !contentlet) {
+            return;
+        }
 
         this.items.set([]);
         
         const memoizedMenuItems = this.$memoizedMenuItems();
 
-        if (memoizedMenuItems[item.inode]) {
-            this.items.set(memoizedMenuItems[item.inode]);
-            this.#showContextMenuAndReset(event);
+        if (memoizedMenuItems[contentlet.inode]) {
+            this.items.set(memoizedMenuItems[contentlet.inode]);
+            // this.#showContextMenuAndReset(triggeredEvent);
+            this.contextMenu?.show(triggeredEvent);
             return;
         }
 
-        const workflowActions = await this.#workflowsActionsService.getByInode(item.inode, DotRenderMode.LISTING).toPromise();
+        const workflowActions = await this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING).toPromise();
 
         const actionsMenu = [];
         workflowActions.map(action => {
@@ -65,7 +76,7 @@ export class DotFolderListViewContextMenuComponent {
                 label: `${this.#dotMessageService.get(action.name)}`,
                 command: () => {
                     if (!(action.actionInputs?.length > 0)) {
-                        this.#fireWorkflowAction(item.inode, action.id);
+                        this.#fireWorkflowAction(contentlet.inode, action.id);
 
                         return;
                     }
@@ -73,7 +84,7 @@ export class DotFolderListViewContextMenuComponent {
                     const wfActionEvent: DotCMSWorkflowActionEvent = {
                         workflow: action,
                         callback: 'ngWorkflowEventCallback',
-                        inode: item.inode,
+                        inode: contentlet.inode,
                         selectedInodes: null
                     };
 
@@ -83,24 +94,32 @@ export class DotFolderListViewContextMenuComponent {
 
             actionsMenu.push(menuItem);
 
-            this.$memoizedMenuItems.set({...this.$memoizedMenuItems(), [item.inode]: this.items()});
         })
 
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
-            command: () => this.$showAddToBundle.set(true)
+            command: () => {
+                console.log("Called add to bundle");
+                this.#store.setShowAddToBundle(true)
+            }
         });
 
         this.items.set(actionsMenu);
+        this.$memoizedMenuItems.set({...this.$memoizedMenuItems(), [contentlet.inode]: this.items()});
 
-        this.#showContextMenuAndReset(event);
+        // this.#showContextMenuAndReset(triggeredEvent);
+
+        this.contextMenu?.show(triggeredEvent);
     }
 
-    #showContextMenuAndReset(event: Event) {
-        this.contextMenu.show(event);
-        // Reset the right click event
-        this.$contextMenuData.set(null);
-    }
+    // #showContextMenuAndReset(event: Event) {
+
+    //     if (this.contextMenu && !this.contextMenu.visible()) {
+    //         this.contextMenu?.show(event);
+    //     }
+    //     // Reset the right click event
+    //     // this.#store.setContextMenu(null);
+    // }
 
 
     #fireWorkflowAction(contentletInode: string, actionId: string): void {
@@ -118,4 +137,12 @@ export class DotFolderListViewContextMenuComponent {
     //     return loggedUser.;
 
     // }
+
+    tryToHide() {
+        console.log('tryToHide!!!!');
+        // debugger;
+        // this.contextMenu?.hide();
+        // this.contextMenu?.hide();
+        this.#store.patchContextMenu({ triggeredEvent: null });
+    }
 }

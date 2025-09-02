@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
     CUSTOM_ELEMENTS_SCHEMA,
     effect,
-    inject,
     input,
     output,
     signal
@@ -18,10 +18,7 @@ import { TableModule } from 'primeng/table';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import { ContextMenuData } from './components/dot-folder-list-context-menu.component';
-
 import { HEADER_COLUMNS } from '../shared/constants';
-import { DotContentDriveStore } from '../../../../portlet/src/lib/store/dot-content-drive.store';
 
 
 @Component({
@@ -48,9 +45,10 @@ export class DotFolderListViewComponent {
     selectionChange = output<DotContentDriveItem[]>();
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
-    rightClick = output<ContextMenuData>();
+    //TODO: Put ContextMenuData and move that interface to models or something else
+    rightClick = output<any>();
 
-    #store = inject(DotContentDriveStore);
+    // #store = inject(DotContentDriveStore);
 
     selectedItems: DotContentDriveItem[] = [];
     readonly MIN_ROWS_PER_PAGE = 20;
@@ -79,8 +77,10 @@ export class DotFolderListViewComponent {
 
 
     onContextMenu(event: Event, contentlet: DotContentDriveItem) {
+
+        console.log('called onContextMenu from dot-folder-list-view', {event,contentlet});
         event.preventDefault();
-        // this.rightClick.emit({event,contentlet});
+        this.rightClick.emit({event,contentlet});
 
         // this.#store.setContextMenu({ triggeredEvent: event,contentlet,showAddToBundle: false });
     }

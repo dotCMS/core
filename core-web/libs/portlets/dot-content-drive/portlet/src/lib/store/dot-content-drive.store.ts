@@ -14,6 +14,8 @@ import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
+import { withContextMenu } from './features/withContextMenu';
+
 import {
     BASE_QUERY,
     DEFAULT_PAGINATION,
@@ -23,7 +25,6 @@ import {
     SYSTEM_HOST
 } from '../shared/constants';
 import {
-    DotContentDriveContextMenu,
     DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
@@ -159,8 +160,14 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
-            setContextMenu(contextMenu: DotContentDriveContextMenu) {
-                patchState(store, { contextMenu });
+
+            reloadContentDrive() {
+                patchState(store, {
+                    currentSite: store.currentSite() ?? SYSTEM_HOST,
+                    path: store.path(),
+                    filters: store.filters(),
+                    isTreeExpanded: store.isTreeExpanded()
+                });
             }
         };
     }),
@@ -191,5 +198,6 @@ export const DotContentDriveStore = signalStore(
                 initEffect?.destroy();
             }
         };
-    })
+    }),
+    withContextMenu()
 );

@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
 import { EMPTY } from 'rxjs';
 
-import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { JsonPipe, Location } from '@angular/common';
+import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
@@ -10,9 +11,11 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
-import { ContextMenuData, DotFolderListViewComponent, DotFolderListViewContextMenuComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderListViewComponent, } from '@dotcms/portlets/content-drive/ui';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
+import { ContextMenuData, DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -20,7 +23,7 @@ import { encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, DotFolderListViewContextMenuComponent],
+    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, DotFolderListViewContextMenuComponent, DotAddToBundleComponent, JsonPipe],
     providers: [DotContentDriveStore, DotWorkflowsActionsService],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
@@ -38,10 +41,17 @@ export class DotContentDriveShellComponent {
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+    readonly $contextMenuData = this.#store.contextMenu;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
-    $contextMenuData = signal<ContextMenuData | null>(null);
+
+    readonly addToBundleEffect = effect(() => {
+        const showAddToBundle = this.#store.contextMenu()?.showAddToBundle;
+        console.log('addToBundleEffect', showAddToBundle);
+    });
+
+    // $contextMenuData = signal<ContextMenuData | null>(null);
 
     readonly itemsEffect = effect(() => {
         const query = this.#store.$query();
@@ -124,7 +134,14 @@ export class DotContentDriveShellComponent {
     }
 
     onContextMenu({event, contentlet}: ContextMenuData) {
+        // console.log('called onContextMenu from dot-content-drive-shell. Setting the store', {event, contentlet});
         event.preventDefault();
-        this.$contextMenuData.set({event, contentlet});
+        // this.$contextMenuData.set({event, contentlet});
+        this.#store.patchContextMenu({ triggeredEvent: event,contentlet });
+
+    }
+
+    cancelAddToBundle() {
+        this.#store.setShowAddToBundle(false);
     }
 }

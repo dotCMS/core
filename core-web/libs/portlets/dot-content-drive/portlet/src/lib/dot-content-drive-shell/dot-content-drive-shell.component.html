@@ -14,10 +14,15 @@
     (paginate)="onPaginate($event)"
     (sort)="onSort($event)"
     (rightClick)="onContextMenu($event)"
-    #listView
-    />
+    #listView />
 
-<dot-folder-list-context-menu [contextMenuData]="$contextMenuData()" />
+<dot-folder-list-context-menu />
+
+<pre style="position: absolute; top: 0; width: 300px; height: 300px; z-index: 1000; overflow: scroll;"><code>{{ $contextMenuData() | json }}</code></pre>
+
+@if ($contextMenuData()?.showAddToBundle) {
+    <dot-add-to-bundle (cancel)="cancelAddToBundle()" [assetIdentifier]="$contextMenuData().contentlet.identifier" />
+}
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
 <div class="detail-view center-content"></div>
