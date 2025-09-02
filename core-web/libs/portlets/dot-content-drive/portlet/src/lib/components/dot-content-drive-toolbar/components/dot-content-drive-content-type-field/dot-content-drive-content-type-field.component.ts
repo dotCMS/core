@@ -183,10 +183,12 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
             .getContentTypesWithPagination({ filter: '' })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
-                catchError(() => of({
-                    contentTypes: [],
-                    pagination: {}
-                }))
+                catchError(() =>
+                    of({
+                        contentTypes: [],
+                        pagination: {}
+                    })
+                )
             )
             .subscribe(
                 ({
@@ -199,8 +201,14 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                     const dotCMSContentTypes = this.filterAndDeduplicateContentTypes(contentTypes);
                     const storeVariables = this.getVariablesFromStore();
                     const canLoadMore = pagination.currentPage < pagination.totalEntries;
-                    const selectedItems = dotCMSContentTypes.filter(({ variable }) => storeVariables.includes(variable));
-                    this.updateState({ contentTypes: dotCMSContentTypes, canLoadMore, loading: false });
+                    const selectedItems = dotCMSContentTypes.filter(({ variable }) =>
+                        storeVariables.includes(variable)
+                    );
+                    this.updateState({
+                        contentTypes: dotCMSContentTypes,
+                        canLoadMore,
+                        loading: false
+                    });
                     this.$selectedContentTypes.set(selectedItems);
                 }
             );
