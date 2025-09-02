@@ -17,6 +17,7 @@ public class WorkflowTimelineItemView {
     private final String taskId;
     private final String type;
     private final Map<String, String> step;
+    private final Map<String, String> action;
 
 
     public WorkflowTimelineItemView(final Date createdDate,
@@ -25,7 +26,8 @@ public class WorkflowTimelineItemView {
                                     final String commentDescription,
                                     final String taskId,
                                     final String type,
-                                    final Map<String, String> step) {
+                                    final Map<String, String> step,
+                                    final Map<String, String> action) {
         this.createdDate = createdDate;
         this.roleId = roleId;
         this.postedBy = postedBy;
@@ -33,6 +35,11 @@ public class WorkflowTimelineItemView {
         this.taskId = taskId;
         this.type = type;
         this.step = step;
+        this.action = action;
+    }
+
+    public Map<String, String> getAction() {
+        return action;
     }
 
     public Map<String, String> getStep() {

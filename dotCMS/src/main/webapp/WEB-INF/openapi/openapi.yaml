@@ -26963,6 +26963,10 @@ components:
     WorkflowTimelineItemView:
       type: object
       properties:
+        action:
+          type: object
+          additionalProperties:
+            type: string
         commentDescription:
           type: string
         createdDate:

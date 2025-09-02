@@ -13461,7 +13461,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://dotcms-storage.b-cdn.net/Bocas2.jpg\"\n}",
+							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -17708,6 +17708,8 @@
 									"        pm.expect(item).to.have.property(\"roleId\");",
 									"        pm.expect(item).to.have.property(\"taskId\");",
 									"        pm.expect(item).to.have.property(\"type\");",
+									"        pm.expect(item).to.have.property(\"action\");",
+									"        pm.expect(item).to.have.property(\"step\");",
 									"        ",
 									"        // Verificación de tipo de dato para cada propiedad",
 									"        pm.expect(item.commentDescription).to.be.a(\"string\");",
@@ -19775,6 +19777,12 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "identifier",
+			"value": ""
 		}
 	]
 }
