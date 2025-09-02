@@ -23,15 +23,22 @@ import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Provides common-use or utility methods for the {@link com.dotcms.rest.api.v2.tags.TagResource}
@@ -367,6 +374,172 @@ public class TagsResourceHelper {
     public static RestTag toRestTag(final Tag tag) {
         final TagTransform transform = new TagTransform();
         return transform.appToRest(tag);
+    }
+
+    /**
+     * Exports tags in the specified format (CSV or JSON).
+     * Uses the same filtering logic as the list endpoint.
+     *
+     * @param request  The HTTP request
+     * @param response The HTTP response
+     * @param format   The export format (csv or json)
+     * @param global   Include global/system tags
+     * @param siteId   Filter by specific host/site
+     * @param filter   Tag name filter (LIKE search)
+     * @param user     The user performing the export
+     *
+     * @throws DotDataException     An error occurred when retrieving Tag data
+     * @throws DotSecurityException The user does not have required permissions
+     * @throws IOException          An error occurred during file generation
+     */
+    public void exportTags(
+        final HttpServletRequest request,
+        final HttpServletResponse response,
+        final String format,
+        final Boolean global,
+        final String siteId,
+        final String filter,
+        final User user
+    ) throws DotDataException, DotSecurityException, IOException {
+        
+        // Use the same site resolution as list endpoint
+        final String resolvedSiteId = resolveSiteParameter(siteId, user, request);
+        
+        // Get all filtered tags (no pagination for export)
+        final String tagFilter = UtilMethods.isSet(filter) ? filter : "";
+        final List<Tag> tags = tagAPI.getFilteredTags(
+            tagFilter,
+            resolvedSiteId,
+            global,
+            "tagname",  // default sort
+            0,          // start from beginning
+            -1          // get all results
+        );
+        
+        Logger.info(TagsResourceHelper.class, 
+            String.format("Exporting %d tags in %s format", tags.size(), format));
+        
+        if ("json".equals(format)) {
+            exportTagsAsJson(response, tags, user);
+        } else {
+            exportTagsAsCsv(response, tags);
+        }
+    }
+
+    /**
+     * Exports tags as CSV file.
+     *
+     * @param response The HTTP response
+     * @param tags     The list of tags to export
+     *
+     * @throws IOException An error occurred during CSV generation
+     */
+    private void exportTagsAsCsv(
+        final HttpServletResponse response,
+        final List<Tag> tags
+    ) throws IOException {
+        
+        response.setContentType("text/csv; charset=UTF-8");
+        final String fileName = String.format("tags-export-%s.csv",
+            UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd"));
+        response.setHeader("Content-Disposition", 
+            String.format("attachment; filename=\"%s\"", fileName));
+        
+        try (final PrintWriter writer = response.getWriter()) {
+            // Write CSV header
+            writer.println("\"Tag Name\",\"Host ID\"");
+            
+            // Write tag data
+            for (final Tag tag : tags) {
+                writer.printf("\"%s\",\"%s\"%n",
+                    escapeCsvValue(tag.getTagName()),
+                    tag.getHostId()
+                );
+            }
+        }
+    }
+
+    /**
+     * Exports tags as JSON file.
+     *
+     * @param response The HTTP response
+     * @param tags     The list of tags to export
+     * @param user     The user performing the export (for host name resolution)
+     *
+     * @throws IOException       An error occurred during JSON generation
+     * @throws DotDataException  An error occurred retrieving host information
+     */
+    private void exportTagsAsJson(
+        final HttpServletResponse response,
+        final List<Tag> tags,
+        final User user
+    ) throws IOException, DotDataException {
+        
+        response.setContentType("application/json; charset=UTF-8");
+        final String fileName = String.format("tags-export-%s.json",
+            UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd"));
+        response.setHeader("Content-Disposition",
+            String.format("attachment; filename=\"%s\"", fileName));
+        
+        // Build JSON structure with tag details
+        final List<Map<String, Object>> tagList = new ArrayList<>();
+        for (final Tag tag : tags) {
+            final Map<String, Object> tagData = new HashMap<>();
+            tagData.put("tagName", tag.getTagName());
+            tagData.put("hostId", tag.getHostId());
+            
+            // Try to add host name for better context
+            Try.of(() -> hostAPI.find(tag.getHostId(), user, false))
+                .onSuccess(host -> {
+                    if (host != null) {
+                        tagData.put("hostName", 
+                            host.isSystemHost() ? "System Host" : host.getHostname());
+                    }
+                });
+            
+            tagList.add(tagData);
+        }
+        
+        // Write JSON using Jackson
+        final Map<String, Object> result = Map.of("tags", tagList);
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(response.getWriter(), result);
+    }
+
+    /**
+     * Downloads a CSV template for tag imports.
+     *
+     * @param response The HTTP response
+     *
+     * @throws IOException An error occurred during template generation
+     */
+    public void downloadImportTemplate(final HttpServletResponse response) throws IOException {
+        
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", 
+            "attachment; filename=\"tag-import-template.csv\"");
+        
+        try (final PrintWriter writer = response.getWriter()) {
+            writer.println("# dotCMS Tag Import Template");
+            writer.println("# Required columns: Tag Name, Host ID");
+            writer.println("Tag Name,Host ID");
+            writer.println("\"Example Tag\",\"SYSTEM_HOST\"");
+            writer.println("\"Site Specific Tag\",\"48190c8c-42c4-46af-8d1a-0cd5db894797\"");
+        }
+    }
+
+    /**
+     * Escapes special characters in CSV values.
+     *
+     * @param value The value to escape
+     * @return The escaped value
+     */
+    private String escapeCsvValue(final String value) {
+        if (value == null) {
+            return "";
+        }
+        // Escape quotes by doubling them
+        return value.replace("\"", "\"\"");
     }
 
 }
