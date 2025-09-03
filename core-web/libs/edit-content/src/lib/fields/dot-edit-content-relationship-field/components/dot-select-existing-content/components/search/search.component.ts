@@ -1,18 +1,32 @@
-import { Component, inject, input, output, viewChild } from '@angular/core';
+import { Component, inject, input, output, viewChild, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
+
+import { TreeNodeItem } from '../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { SearchParams } from '../../../../models/search.model';
+
+export const DEBOUNCE_TIME = 300;
+
+interface ActiveFilter {
+    label: string;
+    value: string | number;
+    type: string;
+}
 
 /**
  * A standalone component that provides search functionality with language and site filtering.
@@ -25,7 +39,6 @@ import { SiteFieldComponent } from './components/site-field/site-field.component
  */
 @Component({
     selector: 'dot-search',
-    standalone: true,
     imports: [
         InputTextModule,
         ButtonModule,
@@ -36,15 +49,27 @@ import { SiteFieldComponent } from './components/site-field/site-field.component
         ReactiveFormsModule,
         LanguageFieldComponent,
         SiteFieldComponent,
-        InputGroupAddonModule
+        InputGroupAddonModule,
+        ChipModule
     ],
+    styleUrls: ['./search.component.scss'],
     templateUrl: './search.component.html'
 })
 export class SearchComponent {
     /**
      * Reference to the OverlayPanel component used for advanced search options.
      */
-    $overlayPanel = viewChild(OverlayPanel);
+    $overlayPanel = viewChild.required(OverlayPanel);
+
+    /**
+     * Reference to the language field component to access its store.
+     */
+    $languageField = viewChild.required(LanguageFieldComponent);
+
+    /**
+     * Reference to the site field component to access its store.
+     */
+    $siteField = viewChild.required(SiteFieldComponent);
 
     /**
      * Output signal that emits search parameters when the search is performed.
@@ -56,6 +81,54 @@ export class SearchComponent {
      * Input signal that indicates if the search is loading.
      */
     $isLoading = input.required<boolean>({ alias: 'isLoading' });
+
+    /**
+     * Signal that stores the currently active search parameters.
+     * Updated only when a search is actually performed.
+     */
+    $activeSearchParams = signal<SearchParams>({});
+
+    /**
+     * Computed property that returns active filters based on the last executed search.
+     */
+    $activeFilters = computed(() => {
+        const searchParams = this.$activeSearchParams();
+        const filters: ActiveFilter[] = [];
+
+        if (!searchParams.systemSearchableFields) return filters;
+
+        // Language filter
+        const languageId = searchParams.systemSearchableFields.languageId as number;
+        if (languageId && languageId !== -1) {
+            filters.push({
+                label: this.getLanguageDisplayLabel(languageId as number),
+                value: languageId,
+                type: 'language'
+            });
+        }
+
+        // Site filter
+        const siteId = searchParams.systemSearchableFields.siteId as string;
+        if (siteId) {
+            filters.push({
+                label: this.getSiteDisplayLabel(siteId),
+                value: `site:${siteId}`,
+                type: 'site'
+            });
+        }
+
+        // Folder filter
+        const folderId = searchParams.systemSearchableFields.folderId as string;
+        if (folderId) {
+            filters.push({
+                label: this.getSiteDisplayLabel(folderId),
+                value: `folder:${folderId}`,
+                type: 'folder'
+            });
+        }
+
+        return filters;
+    });
 
     /**
      * FormBuilder instance for creating reactive forms.
@@ -77,24 +150,47 @@ export class SearchComponent {
         })
     });
 
+    constructor() {
+        // debounced search.
+        this.form
+            .get('query')
+            ?.valueChanges.pipe(
+                takeUntilDestroyed(),
+                debounceTime(DEBOUNCE_TIME),
+                distinctUntilChanged()
+            )
+            .subscribe(() => {
+                this.doSearch();
+            });
+    }
+
     /**
-     * Resets the search form to its initial state and optionally toggles the overlay panel.
+     * Resets the search form to its initial state and clears active filters.
      *
      * @param event - Optional mouse event that triggered the clear action
      */
     clearForm() {
         this.form.reset();
         this.$overlayPanel().hide();
+
+        // Clear active search parameters
+        this.$activeSearchParams.set({});
+
         this.onSearch.emit({});
     }
 
     /**
      * Performs the search by emitting the current form values and hiding the overlay panel.
+     * Also updates the active search parameters for tag display.
      * This method is triggered when the user submits the search form.
      */
     doSearch() {
         this.$overlayPanel().hide();
         const values = this.getValues();
+
+        // Update the active search parameters
+        this.$activeSearchParams.set(values);
+
         this.onSearch.emit(values);
     }
 
@@ -158,5 +254,54 @@ export class SearchComponent {
             },
             {} as Record<string, unknown>
         );
+    }
+
+    /**
+     * Removes a specific filter and performs a new search.
+     *
+     * @param filterType - The type of filter to remove ('language' | 'site' | 'folder')
+     */
+    removeFilter(filterType: 'language' | 'site' | 'folder') {
+        if (filterType === 'language') {
+            this.form.get('systemSearchableFields.languageId')?.setValue(-1);
+        } else {
+            this.form.get('systemSearchableFields.siteOrFolderId')?.setValue('');
+        }
+
+        this.doSearch();
+    }
+
+    /**
+     * Gets a display-friendly label for the language filter.
+     *
+     * @param languageId - The language ID
+     * @returns A formatted label for display
+     */
+    private getLanguageDisplayLabel(languageId: number): string {
+        const languageValue = this.$languageField()?.languageControl?.value;
+
+        return languageValue?.isoCode || `Language Id: ${languageId}`;
+    }
+
+    /**
+     * Gets a display-friendly label for the site/folder filter.
+     *
+     * @param siteOrFolderId - The site or folder ID in format "type:id"
+     * @returns A formatted label for display, truncated to 45 characters with ellipsis if needed
+     */
+    private getSiteDisplayLabel(siteOrFolderId: string): string {
+        const siteFieldValue = this.$siteField()?.siteControl?.value as TreeNodeItem;
+        let label: string;
+
+        // Try to get the site/folder name from the child component if available
+        if (siteFieldValue) {
+            label = siteFieldValue.label;
+        } else {
+            // Fallback to ID only
+            label = siteOrFolderId;
+        }
+
+        // Truncate if 45 characters or longer
+        return label.length >= 45 ? label.substring(0, 45) + '...' : label;
     }
 }

@@ -37,9 +37,8 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotDateFieldException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -64,6 +63,7 @@ import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.exception.HeaderValidationException;
+import com.dotmarketing.util.importer.exception.ImportLineError;
 import com.dotmarketing.util.importer.exception.ImportLineException;
 import com.dotmarketing.util.importer.exception.ValidationMessageException;
 import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
@@ -104,18 +104,21 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -172,6 +175,28 @@ public class ImportUtil {
         "EEEE, MMMM dd, yyyy", "MM/dd/yyyy", "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa", "yyyy-MM-dd" };
 
     /**
+     * European date formats to support international date parsing
+     */
+    protected static final String[] EUROPEAN_DATE_FORMATS = new String[] {
+        "d/M/y", "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy", "dd-MM-yyyy"
+    };
+
+    /**
+     * Combined date formats including both US and European patterns for comprehensive date parsing
+     */
+    protected static final String[] ALL_DATE_FORMATS = combineArrays(IMP_DATE_FORMATS, EUROPEAN_DATE_FORMATS);
+
+    /**
+     * Helper method to combine two string arrays
+     */
+    private static String[] combineArrays(String[] array1, String[] array2) {
+        String[] combined = new String[array1.length + array2.length];
+        System.arraycopy(array1, 0, combined, 0, array1.length);
+        System.arraycopy(array2, 0, combined, array1.length, array2.length);
+        return combined;
+    }
+
+    /**
      * Date format patterns for different field types
      */
     private static final String DATE_FIELD_FORMAT_PATTERN = "yyyyMMdd";
@@ -201,6 +226,8 @@ public class ImportUtil {
      * a more structured response format.
      * <p>
      * This method maintains backwards compatibility with existing code.
+     * It SO is IMPORTANT to notice thar on this method {@code stopOnError} is set to false
+     * as it didn't exist before and the default value of the {@code stopOnError} flag is false.
      *
      * @param importId
      *            - The ID of this data import.
@@ -324,6 +351,8 @@ public class ImportUtil {
         int failedRows = 0;
         int lineNumber = 0;
 
+        int stoppedOnErrorAtLine = -1;
+
         // Track successful imports separately from line number for consistent commit granularity
         int successfulImports = 0;
 
@@ -436,7 +465,8 @@ public class ImportUtil {
                                 //Importing content record...
                                 resultBuilder = new LineImportResultBuilder(lineNumber);
                                 importLine(csvLine, params.siteId(),
-                                        contentType, params.preview(), params.isMultilingual(), params.user(), identifier,
+                                        contentType, params.preview(), params.stopOnError(),
+                                        params.isMultilingual(), params.user(), identifier,
                                         workflowActionIdColumnIndex, lineNumber, languageToImport,
                                         headers, keyFields, chosenKeyFields, keyContentUpdated,
                                         contentTypePermissions, uniqueFieldBeans, uniqueFields,
@@ -515,6 +545,7 @@ public class ImportUtil {
                             // Stop on first error if configured
                             if (params.stopOnError()) {
                                 Logger.info(ImportUtil.class, "Per given configuration the Import process Stopped on Error at line " + lineNumber);
+                                stoppedOnErrorAtLine = lineNumber;
                                 break;
                             }
 
@@ -587,8 +618,17 @@ public class ImportUtil {
         );
 
         // Preparing the response
-        return generateImportResult(params, lineNumber, failedRows,
+        return generateImportResult(params, lineNumber, failedRows, stoppedOnErrorAtLine,
                 messages, fileInfoBuilder, counters, chosenKeyFields, contentType);
+    }
+
+    /**
+     * Comparator for validation messages that sorts by line number first, then by error code.
+     * Messages without line numbers or error codes are sorted to the end.
+     */
+    private static Comparator<ValidationMessage> validationMessageComparator() {
+        return Comparator.comparing((ValidationMessage m) -> m.lineNumber().orElse(Integer.MAX_VALUE))
+                .thenComparing(m -> m.code().orElse("\uFFFF")); // Use high Unicode character to sort nulls last
     }
 
     /**
@@ -607,8 +647,10 @@ public class ImportUtil {
      * @return an {@link ImportResult} object containing details about the operation, processed
      * data, validation messages, and summary information
      */
-    private static ImportResult generateImportResult(final ImportFileParams params, final int lineNumber,
-            final int failedRows, final List<ValidationMessage> messages,
+    private static ImportResult generateImportResult(
+            final ImportFileParams params, final int lineNumber,
+            final int failedRows, final int stoppedOnErrorAtLine,
+            final List<ValidationMessage> messages,
             final Builder fileInfoBuilder, final Counters counters,
             final Set<String> chosenKeyFields, final Structure contentType) {
 
@@ -617,14 +659,17 @@ public class ImportUtil {
 
         final var infoMessages = messages.stream()
                 .filter(message -> message.type() == ValidationMessageType.INFO)
+                .sorted(validationMessageComparator())
                 .collect(Collectors.toList());
 
         final var warningMessages = messages.stream()
                 .filter(message -> message.type() == ValidationMessageType.WARNING)
+                .sorted(validationMessageComparator())
                 .collect(Collectors.toList());
 
         final var errorMessages = messages.stream()
                 .filter(message -> message.type() == ValidationMessageType.ERROR)
+                .sorted(validationMessageComparator())
                 .collect(Collectors.toList());
 
         final String action = params.preview() ? "Content preview" : "Content import";
@@ -663,6 +708,7 @@ public class ImportUtil {
                 .contentTypeVariableName(contentType.getVelocityVarName())
                 .lastInode(Optional.ofNullable(counters.getLastInode()))
                 .fileInfo(fileInfo)
+                .stoppedOnErrorAtLine( stoppedOnErrorAtLine > 0 ? Optional.of(stoppedOnErrorAtLine) : Optional.empty() )
                 .data(ResultData.builder()
                         .processed(ProcessedData.builder()
                                 .parsedRows(lineNumber)
@@ -801,13 +847,14 @@ public class ImportUtil {
                     .invalidValue(validationMessageException.getInvalidValue())
                     .context(validationMessageException.getContext());
         }
-        if (ex instanceof DotJsonFieldException) {
-            final var jsonFieldException = (DotJsonFieldException) ex;
+
+        if(ex instanceof ImportLineError){
+            final var importLineError = (ImportLineError) ex;
             messageBuilder
-                    .code(ImportLineValidationCodes.INVALID_JSON.name())
-                    .field(jsonFieldException.getField())
-                    .invalidValue(jsonFieldException.getInvalidJson())
-                    .context(jsonFieldException.getContext());
+                    .code(importLineError.getCode())
+                    .field(importLineError.getField())
+                    .invalidValue(importLineError.getValue())
+                    .context(importLineError.getContext().orElseGet(Map::of));
         }
 
         messageBuilder.message(ex.getMessage());
@@ -904,7 +951,7 @@ public class ImportUtil {
 
         // Generate summary messages
         addHeadersSummaryMessages(headers.size(), typeInfo.importableFields,
-                relationships.size(), user, validationBuilder);
+                relationshipsMap, user, validationBuilder);
 
         return validationBuilder.build();
     }
@@ -963,7 +1010,7 @@ public class ImportUtil {
         }
 
         // Validate required fields
-        List<String> missingHeaders = validateRequiredFields(headerFields, user, contentType,
+        final List<String> missingHeaders = validateRequiredFields(headerFields, user, contentType,
                 validationBuilder);
 
         // Validate multilingual requirements if needed
@@ -972,9 +1019,9 @@ public class ImportUtil {
 
         // Validate key fields and unique fields
         validateKeyFields(keyFieldsInodes, headers, user, validationBuilder);
-        processUniqueFields(uniqueFields, user, validationBuilder);
+        printUniqueFieldsWarning(uniqueFields, user, validationBuilder);
 
-        String[] headersNames = headers.values()
+        final String[] headersNames = headers.values()
                 .stream()
                 .map(Field::getVelocityVarName)
                 .toArray(String[]::new);
@@ -1522,31 +1569,32 @@ public class ImportUtil {
 
     /**
      * Processes unique fields and adds appropriate warning messages. Alerts users about fields that
-     * require unique values.
+     * require unique values. Creates a single consolidated warning message for all unique fields.
      *
      * @param uniqueFields      List of fields marked as unique
-     * @param user              User performing the import
+     * @param user              User performing the import (unused, kept for compatibility)
      * @param validationBuilder Builder to accumulate validation messages
-     * @throws LanguageException If language key lookup fails
      */
-    private static void processUniqueFields(final List<Field> uniqueFields, final User user,
-            final HeaderValidationResult.Builder validationBuilder) throws LanguageException {
+    private static void printUniqueFieldsWarning(final List<Field> uniqueFields, final User user,
+            final HeaderValidationResult.Builder validationBuilder) {
         if (uniqueFields.isEmpty()) {
             return;
         }
 
-        for (Field uniqueField : uniqueFields) {
-            validationBuilder.addMessages(
-                    ValidationMessage.builder()
-                            .type(ValidationMessageType.WARNING)
-                            .code(HeaderValidationCodes.UNIQUE_FIELD.name())
-                            .field(uniqueField.getVelocityVarName())
-                            .message(LanguageUtil.get(user, "the-structure-field") + " " +
-                                    uniqueField.getVelocityVarName() + " " +
-                                    LanguageUtil.get(user, "is-unique"))
-                            .build()
-            );
-        }
+        // Create comma-separated list of unique field names
+        String fieldNames = uniqueFields.stream()
+                .map(Field::getVelocityVarName)
+                .collect(Collectors.joining(", "));
+
+        validationBuilder.addMessages(
+                ValidationMessage.builder()
+                        .type(ValidationMessageType.WARNING)
+                        .code(HeaderValidationCodes.UNIQUE_FIELD.name())
+                        .field(fieldNames) // Comma-separated list of unique fields
+                        .lineNumber(1)
+                        .message("There are unique fields in this Content Type. Duplicate values are rejected during import.")
+                        .build()
+        );
     }
 
     /**
@@ -1559,14 +1607,14 @@ public class ImportUtil {
      *
      * @param headerCount          Number of valid headers found
      * @param importableFieldCount Number of fields that can be imported
-     * @param relationshipCount    Number of relationships found
+     * @param relationshipsMap     Map of relationships found
      * @param user                 User performing the import
      * @param validationBuilder    Builder to accumulate validation messages
      * @throws LanguageException If language key lookup fails
      */
     private static void addHeadersSummaryMessages(final int headerCount,
             final int importableFieldCount,
-            final int relationshipCount, final User user,
+            final Map<String, Relationship> relationshipsMap, final User user,
             final HeaderValidationResult.Builder validationBuilder) throws LanguageException {
 
         if (headerCount != importableFieldCount) {
@@ -1603,13 +1651,26 @@ public class ImportUtil {
             );
         }
 
-        if (relationshipCount > 0) {
+        if (!relationshipsMap.isEmpty()) {
+            StringBuilder relationships = new StringBuilder();
+            final int count = relationshipsMap.size();
+            final Iterator<Entry<String, Relationship>> iterator = relationshipsMap.entrySet()
+                    .iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Relationship> entry = iterator.next();
+                final Relationship value = entry.getValue();
+                if (value != null) {
+                    relationships.append(value.getRelationTypeValue());
+                }
+                if (iterator.hasNext()) {
+                    relationships.append(", ");
+                }
+            }
             validationBuilder.addMessages(
                     ValidationMessage.builder()
                             .type(ValidationMessageType.INFO)
-                            .message(LanguageUtil.get(user, relationshipCount + " " +
-                                    LanguageUtil.get(user,
-                                            "relationship-match-these-will-be-imported")))
+                            .message(count + " Relationship field" + (count > 1 ? "(s) were" : "was") + " found and will be used for import." )
+                            .field(relationships.toString())
                             .build()
             );
         }
@@ -1657,6 +1718,7 @@ public class ImportUtil {
             final String currentHostId,
             final Structure contentType,
             final boolean preview,
+            final boolean stopOnError,
             boolean isMultilingual,
             final User user,
             final String identifier,
@@ -1698,12 +1760,11 @@ public class ImportUtil {
             resultBuilder.setIgnoreLine(true);
             return;
         }
-
         //Check if line has repeated values for a unique field, if it does then ignore the line
         if (!uniqueFieldBeans.isEmpty()) {
-            boolean ignoreLine = validateUniqueFields(user, lineNumber, language,
+            final boolean ignoreLine = validateUniqueFields(user, lineNumber, language, stopOnError,
                     uniqueFieldBeans, uniqueFields, resultBuilder);
-            if (ignoreLine) {
+            if (ignoreLine && !stopOnError) { //Do not ignore the line if the stopOnError flag is on so an exception will be thrown
                 resultBuilder.setIgnoreLine(true);
                 return;
             }
@@ -2363,9 +2424,11 @@ public class ImportUtil {
         Pair<Host, Folder> siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
         if (siteAndFolder == null) {
             throw ImportLineException.builder()
-                    .message("Invalid site/folder inode found")
-                    .code(ImportLineValidationCodes.INVALID_LOCATION.name())
+                    .message("The provided inode/path does not exist or is not associated with a valid Site or Folder.")
+                    .code(ImportLineValidationCodes.INVALID_SITE_FOLDER_REF.name())
                     .field(field.getVelocityVarName())
+                    //Add context here
+                    .context(Map.of("errorHint", "The value must be a valid site-name folder path or their respective inodes."))
                     .invalidValue(value)
                     .build();
         }
@@ -2382,27 +2445,39 @@ public class ImportUtil {
      */
     private static Object validateBinaryField(final Field field, final String value) {
         if (UtilMethods.isNotSet(value)) {
-            // If the value is not set return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
+            // If the value is not set, return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
             return value;
         }
+        
         //Here we need to throw an exception if the value is not set and the value is required
         final boolean validURL = UtilMethods.isValidStrictURL(value);
         if(!validURL) {
+            
             // If the value is not a valid URL, we throw an exception
             throw ImportLineException.builder()
                     .message("The provided value is not a syntactically valid URL")
                     .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                     .field(field.getVelocityVarName())
                     .invalidValue(value)
+                    .context(Map.of("errorHint","invalid URL format."))
                     .build();
         }
-        if (UtilMethods.isSet(value) && !tempFileAPI.validUrl(value)) {
-            throw ImportLineException.builder()
-                    .message("URL is syntactically valid but returned a non-success HTTP response")
-                    .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
-                    .field(field.getVelocityVarName())
-                    .invalidValue(value)
-                    .build();
+        if (UtilMethods.isSet(value)) {
+            final boolean validUrl = Try.of(()->tempFileAPI.validUrl(value)).getOrElse(false);
+            if (!validUrl) {
+                
+                throw ImportLineException.builder()
+                        .message("URL is syntactically valid but returned a non-success HTTP response")
+                        .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
+                        .field(field.getVelocityVarName())
+                        .invalidValue(value)
+                        .context(Map.of(
+                                "errorHint", "The server responded with an error (e.g. 4xx or 5xx). " +
+                                   "This may indicate the resource was not found, access was denied, " +
+                                   "or the server is unavailable."
+                        ))
+                        .build();
+            }
         }
         return value;
     }
@@ -2438,6 +2513,7 @@ public class ImportUtil {
                         .message("Unable to match the given path with a file stored in dotCMS")
                         .code(ImportLineValidationCodes.INVALID_FILE_PATH.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","The provided value must be a valid file /folder/file path in dotCMS or an external URL."))
                         .invalidValue(value)
                         .build();
             }
@@ -2449,6 +2525,7 @@ public class ImportUtil {
                         .message("The provided value is not a syntactically valid URL nor a valid dotCMS path")
                         .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","The provided value must be a valid URL or a valid dotCMS path."))
                         .invalidValue(value)
                         .build();
             }
@@ -2458,6 +2535,7 @@ public class ImportUtil {
                         .message("URL is syntactically valid but returned a non-success HTTP response")
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
+                        .context(Map.of("errorHint","There's a problem accessing the content at the provided URL."))
                         .invalidValue(value)
                         .build();
             }
@@ -2653,7 +2731,7 @@ public class ImportUtil {
                 if (null != relationship) {
                     Logger.warn(ImportUtil.class,
                             String.format("A validation error occurred with Relationship " +
-                                            "'%s'[%s]: e.getMessage()", relationship.getRelationTypeValue(),
+                                            "'%s'[%s]: %s", relationship.getRelationTypeValue(),
                                     relationship.getInode(), e
                                             .getMessage()), e);
                 } else {
@@ -3233,7 +3311,7 @@ public class ImportUtil {
             }
 
             // Validate the contentlet, it routes to the appropriate validation strategy weather or not it might have relationships
-            validateContentlet(lineNumber,
+            validateContentlet(
                     headers, categories, cont, csvRelationshipRecordsParentOnly,
                     csvRelationshipRecordsChildOnly, csvRelationshipRecords);
 
@@ -3287,7 +3365,6 @@ public class ImportUtil {
      * that includes relationship validation. Otherwise, a standard validation without
      * relationship checks is applied.
      *
-     * @param lineNumber The line number in the CSV file being processed
      * @param headers Map of column positions to their corresponding field definitions
      * @param categories Set of categories associated with this contentlet
      * @param cont The contentlet to validate
@@ -3296,7 +3373,7 @@ public class ImportUtil {
      * @param csvRelationshipRecords Map of bidirectional relationships
      * @throws DotDataException If validation fails or other data access issues occur
      */
-    private static void validateContentlet(final int lineNumber,
+    private static void validateContentlet(
             final Map<Integer, Field> headers,
             final Set<Category> categories,
             final Contentlet cont,
@@ -3309,7 +3386,6 @@ public class ImportUtil {
         final boolean hasRelationships = headers.values().stream()
                 .anyMatch((field -> field.getFieldType()
                         .equals(FieldType.RELATIONSHIP.toString())));
-        try {
             //if we have relationships, we need to validate them
             if (hasRelationships) {
                 ContentletRelationships contentletRelationships = loadRelationshipRecords(
@@ -3322,73 +3398,7 @@ public class ImportUtil {
                 //Otherwise, we call standard validation
                 conAPI.validateContentlet(cont, null, new ArrayList<>(categories), true);
             }
-        } catch (DotContentletValidationException ex) {
-            final String code = getErrorMappedCode(ex);
-            throw ImportLineException.builder()
-                    .message(ex.getMessage())
-                    .code(code)
-                    .lineNumber(lineNumber)
-                    .field(getOffendingFieldsAsString(ex))
-                    .build();
-        }
 
-    }
-
-    /**
-     * Extracts the error code from a DotContentletValidationException.
-     * @param ex The exception to extract the code from.
-     * @return The mapped error code as a string.
-     */
-    private static String getErrorMappedCode(final DotContentletValidationException ex) {
-        String code = ImportLineValidationCodes.UNKNOWN_ERROR.name();
-        if (null != ex.getNotValidRelationship() && !ex.getNotValidRelationship().isEmpty()) {
-            code = ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name();
-        } else if (null != ex.getNotValidFields()){
-            final Map<String, List<Field>> notValidFields = ex.getNotValidFields();
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_REQUIRED)) {
-                code = ImportLineValidationCodes.REQUIRED_FIELD_MISSING.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_PATTERN)) {
-                code = ImportLineValidationCodes.VALIDATION_FAILED_PATTERN.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_UNIQUE)) {
-                code = ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name();
-            }
-            if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_BADTYPE)) {
-                code = ImportLineValidationCodes.INVALID_FIELD_TYPE.name();
-            }
-        }
-        return code;
-    }
-
-    /**
-     * Extracts the offending fields from a DotContentletValidationException.
-     * @param ex The exception to extract the fields from.
-     * @return A string representation of the offending fields.
-     */
-    private static String getOffendingFieldsAsString(final DotContentletValidationException ex) {
-        final StringBuilder sb = new StringBuilder();
-        final Map<String, List<Field>> errors = ex.getNotValidFields();
-        final Set<String> keys = errors.keySet();
-        for (String key : keys) {
-            sb.append(key).append(": ");
-            List<Field> fields = errors.get(key);
-            int count = 0;
-            for (Field field : fields) {
-                if (count > 0) {
-                    sb.append(", ");
-                }
-                sb.append(field.getVelocityVarName());
-                count++;
-            }
-            sb.append("\n");
-        }
-
-        String fields = null;
-        if (sb.length() > 0) {
-            fields = sb.toString();
-        }
-        return fields;
     }
 
     /**
@@ -3661,7 +3671,7 @@ public class ImportUtil {
                     Logger.error(ImportUtil.class, "Error setting image field", e);
                     throw ImportLineException.builder()
                             .message("Error processing file asset from URL: " + uriOrIdentifier + " under site: " + siteId)
-                            .code(ImportLineValidationCodes.INVALID_LOCATION.name())
+                            .code(ImportLineValidationCodes.INVALID_SITE_FOLDER_REF.name())
                             .invalidValue(uriOrIdentifier)
                             .build();
                 }
@@ -3877,8 +3887,9 @@ public class ImportUtil {
                         .lineNumber(lineNumber);
 
                 if (e instanceof ImportLineException) {
-                    messageBuilder.code(((ImportLineException) e).getCode());
-                    messageBuilder.context(((ImportLineException) e).getContext());
+                    final ImportLineException le = (ImportLineException) e;
+                    messageBuilder.code(le.getCode());
+                    messageBuilder.context(le.getContext());
                 }
 
                 resultBuilder.messages.add(messageBuilder.build());
@@ -3912,14 +3923,16 @@ public class ImportUtil {
                 final var messageBuilder = ValidationMessage.builder()
                         .type(ValidationMessageType.WARNING)
                         .message(LanguageUtil.get(user,
-                                "message.import.contentlet.invalid.action.selected") + " "
+                                "message.import.contentlet.invalid.action.selected")
+                                + System.lineSeparator()
                                 + e.getMessage())
                         .invalidValue(wfActionId)
                         .lineNumber(lineNumber);
 
                 if (e instanceof ImportLineException) {
-                    messageBuilder.code(((ImportLineException) e).getCode());
-                    messageBuilder.context(((ImportLineException) e).getContext());
+                    final ImportLineException le = (ImportLineException)e;
+                    messageBuilder.code(le.getCode());
+                    messageBuilder.context(le.getContext());
                 }
 
                 resultBuilder.messages.add(messageBuilder.build());
@@ -4543,13 +4556,17 @@ public class ImportUtil {
                     ))
                     .build();
         } catch (final DotDataException | IllegalArgumentException e) {
+            final String identifier = StringUtils.defaultIfEmpty(contentlet.getIdentifier(),"N/A");
+            final String title = StringUtils.abbreviate(
+                       StringUtils.defaultIfEmpty(contentlet.getTitle(),"N/A"),
+                    30);
             throw ImportLineException.builder()
                     .message(String.format(
-                            "An error occurred when validating Workflow Action '%s' on " +
-                                    "content '%s'", actionId, contentlet.getIdentifier()))
+                            "An error occurred executing Workflow Action '%s' on content with identifier '%s' and title '%s' ",
+                            actionId, identifier, title))
                     .code(ImportLineValidationCodes.INVALID_WORKFLOW_ACTION.name())
                     .context(Map.of(
-                            "Identifier", contentlet.getIdentifier(),
+                            "Identifier", identifier,
                             "WorkflowActionId", actionId,
                             "Error", e.getMessage()
                     ))
@@ -4576,14 +4593,10 @@ public class ImportUtil {
                 try {
                     valueObj = parseExcelDate(value);
                 } catch (ParseException e) {
-                    throw ImportLineException.builder()
-                            .message(
-                                    "Value couldn't be parsed as any of the following supported formats: "
-                                            + printSupportedDateFormats()
-                            )
-                            .code(ImportLineValidationCodes.INVALID_DATE_FORMAT.name())
-                            .field(field.getVelocityVarName())
-                            .invalidValue(value)
+                    throw DotDateFieldException.conversionErrorBuilder(field.getVelocityVarName(), value)
+                            .fieldType(field.getFieldType())
+                            .acceptedFormats(IMP_DATE_FORMATS)
+                            .addContext("errorMessage", e.getMessage())
                             .build();
                 }
             } else {
@@ -4611,7 +4624,7 @@ public class ImportUtil {
      * false.
      * @throws LanguageException If an error occurs during language validation.
      */
-    private static boolean validateUniqueFields(User user, int lineNumber, long language,
+    private static boolean validateUniqueFields(User user, int lineNumber, long language, boolean stopOnError,
             List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields,
             final LineImportResultBuilder resultBuilder) throws LanguageException {
         boolean ignoreLine = false;
@@ -4620,32 +4633,56 @@ public class ImportUtil {
             int count = 0;
             for (UniqueFieldBean bean : uniqueFieldBeans) {
                 if (bean.field().equals(f) && language == bean.languageId()) {
-                    if (count > 0 && value != null && value.equals(bean.value())
-                            && lineNumber == bean
-                            .lineNumber()) {
+                    if (count > 0 && value != null && value.equals(bean.value()) && lineNumber == bean.lineNumber()) {
                         resultBuilder.incrementContentToCreate(-1);
                         ignoreLine = true;
-                        resultBuilder.addValidationMessage(ValidationMessage.builder()
-                                .type(ValidationMessageType.WARNING)
-                                .message(LanguageUtil
-                                        .get(user,
-                                                "contains-duplicate-values-for-structure-unique-field")
-                                        + " '"
-                                        + f.getVelocityVarName() + "', " + LanguageUtil.get(user,
-                                        "and-will-be-ignored"))
-                                .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
-                                .field(bean.field().getVelocityVarName())
-                                .invalidValue(bean.value().toString())
-                                .lineNumber(lineNumber)
-                                .build());
+                        if(!stopOnError) {
+                            //this is clearly an error that will cause an exception that will be thrown downstream
+                            //Therefore we don't need it reported twice so only log it as a warning when stopOnError is not on
+                            resultBuilder.addValidationMessage(dupeWarning(user, lineNumber, f, bean));
+                        }
                     }
                     value = bean.value();
                     count++;
-
                 }
             }
         }
         return ignoreLine;
+    }
+
+    /**
+     * Build the warning message describing the offending dupe value encountered situation
+     * @param user
+     * @param lineNumber
+     * @param f
+     * @param bean
+     * @return
+     * @throws LanguageException
+     */
+    private static ValidationMessage dupeWarning(User user, int lineNumber, Field f,
+            UniqueFieldBean bean) throws LanguageException {
+        return ValidationMessage.builder()
+                .type(ValidationMessageType.WARNING)
+                .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
+                .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
+                .field(bean.field().getVelocityVarName())
+                .invalidValue(bean.value().toString())
+                .lineNumber(lineNumber)
+                .build();
+    }
+
+    /**
+     * Builds a duplicate unique field validation message using String.format
+     *
+     * @param user the user for localization
+     * @param velocityVarName the field variable name
+     * @return the formatted message
+     */
+    private static String dupeUniqueFieldMessage(User user, String velocityVarName)
+            throws LanguageException {
+        String basePattern = LanguageUtil.get(user, "contains-duplicate-values-for-structure-unique-field") + " '%s'";
+        String fullPattern = basePattern + ", " + LanguageUtil.get(user, "and-will-be-ignored");
+        return String.format(fullPattern, velocityVarName);
     }
 
     /**
@@ -4830,7 +4867,7 @@ public class ImportUtil {
      * @throws ParseException
      */
     private static Date parseExcelDate ( String date ) throws ParseException {
-        return DateUtil.convertDate( date, IMP_DATE_FORMATS );
+        return DateUtil.convertDate( date, false, ALL_DATE_FORMATS );
     }
 
     /**

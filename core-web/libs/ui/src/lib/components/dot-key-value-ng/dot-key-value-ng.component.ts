@@ -17,7 +17,6 @@ export interface DotKeyValue {
     selector: 'dot-key-value-ng',
     styleUrls: ['./dot-key-value-ng.component.scss'],
     templateUrl: './dot-key-value-ng.component.html',
-    standalone: true,
     imports: [
         TableModule,
         DotKeyValueTableHeaderRowComponent,

@@ -279,8 +279,7 @@ public class PageRenderUtil implements Serializable {
 
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
 
-                final String uniqueUUIDForRender = needParseContainerPrefix(container, uniqueId) ?
-                        ParseContainer.getDotParserContainerUUID(uniqueId) : uniqueId;
+                final String uniqueUUIDForRender = getUniqueUUIDForRender(uniqueId, container);
 
                 if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
                     continue;
@@ -344,6 +343,14 @@ public class PageRenderUtil implements Serializable {
 
         return rawContainers;
         }
+
+    private String getUniqueUUIDForRender(String uniqueId, Container container) {
+        if (needParseContainerPrefix(container, uniqueId)) {
+            return ParseContainer.getDotParserContainerUUID(uniqueId);
+        } else {
+            return uniqueId.equals(ContainerUUID.UUID_LEGACY_VALUE) ? ContainerUUID.UUID_START_VALUE : uniqueId;
+        }
+    }
 
     /**
      * Retrieves the Time Machine Date from the current HTTP Request, if available.

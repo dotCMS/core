@@ -1,21 +1,10 @@
 import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
-import {
-    DotContentletLockerService,
-    DotExperimentsService,
-    DotFavoritePageService,
-    DotHttpErrorHandled,
-    DotHttpErrorManagerService,
-    DotLicenseService,
-    DotMessageService,
-    DotPageRenderService,
-    DotRouterService
-} from '@dotcms/data-access';
 import { CurrentUser, HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
@@ -31,6 +20,18 @@ import {
     PageModelChangeEventType
 } from '@dotcms/dotcms-models';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
+
+import { DotContentletLockerService } from '../dot-contentlet-locker/dot-contentlet-locker.service';
+import { DotExperimentsService } from '../dot-experiments/dot-experiments.service';
+import { DotFavoritePageService } from '../dot-favorite-page/dot-favorite-page.service';
+import {
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService
+} from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotLicenseService } from '../dot-license/dot-license.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotPageRenderService } from '../dot-page-render/dot-page-render.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 export class DotPageStateService {

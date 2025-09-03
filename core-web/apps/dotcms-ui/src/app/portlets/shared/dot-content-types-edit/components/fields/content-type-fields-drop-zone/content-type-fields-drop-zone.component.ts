@@ -21,14 +21,14 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeLayoutRow,
     DotDialogActions
 } from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { FieldType } from '../models';
@@ -44,7 +44,8 @@ import { FieldPropertyService } from '../service/field-properties.service';
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     styleUrls: ['./content-type-fields-drop-zone.component.scss'],
-    templateUrl: './content-type-fields-drop-zone.component.html'
+    templateUrl: './content-type-fields-drop-zone.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
     private dotMessageService = inject(DotMessageService);
@@ -113,7 +114,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
-            return FieldUtil.isColumnBreak(item.clazz);
+            return item.clazz === DotCMSClazzes.COLUMN_BREAK;
         });
     }
 

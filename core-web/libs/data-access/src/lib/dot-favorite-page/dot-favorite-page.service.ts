@@ -2,8 +2,9 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { DotESContentService, ESOrderDirection } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
+
+import { DotESContentService, ESOrderDirection } from '../dot-es-content/dot-es-content.service';
 
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
 

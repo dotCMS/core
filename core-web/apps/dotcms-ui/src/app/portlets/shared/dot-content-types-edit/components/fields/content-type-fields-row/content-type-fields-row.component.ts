@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
 
 /**
  * Display all the Field Types
@@ -13,7 +13,8 @@ import { FieldUtil } from '@dotcms/utils-testing';
 @Component({
     selector: 'dot-content-type-fields-row',
     styleUrls: ['./content-type-fields-row.component.scss'],
-    templateUrl: './content-type-fields-row.component.html'
+    templateUrl: './content-type-fields-row.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsRowComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

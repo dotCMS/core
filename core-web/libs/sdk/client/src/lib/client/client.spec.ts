@@ -120,7 +120,7 @@ describe('DotCMSClient', () => {
             try {
                 createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
-            } catch (error) {
+            } catch {
                 // This is expected, verify the error
             }
 
@@ -138,7 +138,7 @@ describe('DotCMSClient', () => {
             try {
                 createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
-            } catch (error) {
+            } catch {
                 // This is expected, verify the error
             }
 

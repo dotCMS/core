@@ -9,7 +9,8 @@ import {
     DotCMSContentType,
     StructureTypeView,
     ContentTypeView,
-    DotCopyContentTypeDialogFormFields
+    DotCopyContentTypeDialogFormFields,
+    DotPagination
 } from '@dotcms/dotcms-models';
 
 @Injectable()
@@ -43,6 +44,28 @@ export class DotContentTypeService {
             )
             .pipe(pluck('entity'));
     }
+
+    /**
+     *Get the content types from the endpoint
+     *
+     * @param {*} { filter = '', page = 40, type = '' }
+     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @memberof DotContentTypeService
+     */
+    getContentTypesWithPagination({ filter = '', page = 40, type = '' }): Observable<{
+        contentTypes: DotCMSContentType[];
+        pagination: DotPagination;
+    }> {
+        return this.#httpClient
+            .get<{
+                entity: DotCMSContentType[];
+                pagination: DotPagination;
+            }>(
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${type ? `&type=${type}` : ''}`
+            )
+            .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
+    }
+
     /**
      * Gets all content types excluding the RECENT ones
      *

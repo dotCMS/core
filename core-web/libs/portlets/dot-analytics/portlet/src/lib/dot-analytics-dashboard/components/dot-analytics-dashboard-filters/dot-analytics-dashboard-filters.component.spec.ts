@@ -1,30 +1,43 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { format } from 'date-fns';
+
+import { Dropdown } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+import { TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsDashboardFiltersComponent } from './dot-analytics-dashboard-filters.component';
 
-import { DEFAULT_TIME_PERIOD, TIME_PERIOD_OPTIONS } from '../../constants';
+import { TIME_PERIOD_OPTIONS } from '../../constants';
 
 describe('DotAnalyticsDashboardFiltersComponent', () => {
     let spectator: Spectator<DotAnalyticsDashboardFiltersComponent>;
 
+    const messageServiceMock = new MockDotMessageService({
+        'analytics.metrics.total-pageviews': 'Total Pageviews',
+        'analytics.metrics.unique-visitors': 'Unique Visitors',
+        'analytics.metrics.top-page-performance': 'Top Page Performance'
+    });
+
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardFiltersComponent,
-        mocks: [DotMessageService]
+        mocks: [DotMessageService],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-
-        // Set the required input after component creation
-        spectator.setInput('selectedTimeRange', DEFAULT_TIME_PERIOD as TimeRange);
-        spectator.detectChanges();
-
-        // Setup the mock to return translated values
-        const messageService = spectator.inject(DotMessageService);
-        (messageService.get as jest.Mock).mockImplementation((key: string) => `Translated ${key}`);
+        spectator = createComponent({
+            props: {
+                timeRange: TIME_RANGE_OPTIONS.last7days
+            } as unknown
+        });
     });
 
     describe('Component Initialization', () => {
@@ -41,75 +54,152 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
             const dropdown = spectator.query(byTestId('period-dropdown'));
             expect(dropdown).toBeTruthy();
         });
+
+        it('should not show custom calendar initially', () => {
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeFalsy();
+        });
     });
 
     describe('Default Values', () => {
         it('should initialize with default time period from constants', () => {
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
         it('should have time period options from constants', () => {
             expect(spectator.component.$timeOptions()).toEqual(TIME_PERIOD_OPTIONS);
         });
+
+        it('should initialize custom date range as null', () => {
+            expect(spectator.component.$customDateRange()).toBeNull();
+        });
     });
 
-    describe('Event Emissions', () => {
-        it('should emit timeRangeChanged when onTimeRangeChange is called', () => {
-            const timeRangeChangedSpy = jest.fn();
-            spectator.output('$timeRangeChanged').subscribe(timeRangeChangedSpy);
+    describe('Custom Time Range Visibility', () => {
+        it('should show custom calendar when CUSTOM_TIME_RANGE is selected', () => {
+            spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
+            spectator.detectChanges();
 
-            const newTimeRange: TimeRange = 'from 30 days ago to now';
-            spectator.component.onTimeRangeChange(newTimeRange);
-
-            expect(timeRangeChangedSpy).toHaveBeenCalledWith(newTimeRange);
+            expect(spectator.component.$showCustomTimeRange()).toBe(true);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeTruthy();
         });
 
-        it('should emit timeRangeChanged with different time range values', () => {
-            const timeRangeChangedSpy = jest.fn();
-            spectator.output('$timeRangeChanged').subscribe(timeRangeChangedSpy);
+        it('should hide custom calendar when switching away from CUSTOM_TIME_RANGE', () => {
+            spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('custom-date-range-calendar'))).toBeTruthy();
 
-            const timeRanges: TimeRange[] = ['from 7 days ago to now', 'from 30 days ago to now'];
+            spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.last7days);
+            spectator.detectChanges();
 
-            timeRanges.forEach((timeRange) => {
-                spectator.component.onTimeRangeChange(timeRange);
-                expect(timeRangeChangedSpy).toHaveBeenCalledWith(timeRange);
+            expect(spectator.component.$showCustomTimeRange()).toBe(false);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeFalsy();
+        });
+    });
+
+    describe('timeRange input change', () => {
+        it('should show custom calendar when custom date range is selected', () => {
+            spectator.setInput('timeRange', ['2024-01-01', '2024-01-31']);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showCustomTimeRange()).toBe(true);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeTruthy();
+
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.custom);
+            const customDateRange = spectator.component.$customDateRange();
+            const from = format(customDateRange[0], 'yyyy-MM-dd');
+            const to = format(customDateRange[1], 'yyyy-MM-dd');
+            expect([from, to]).toEqual(['2024-01-01', '2024-01-31']);
+        });
+
+        it('should reset custom date range when time range is changed to last7days', () => {
+            spectator.setInput('timeRange', TIME_RANGE_OPTIONS.last7days);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showCustomTimeRange()).toBe(false);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeFalsy();
+
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+            expect(spectator.component.$customDateRange()).toBeNull();
+        });
+
+        it('should reset custom date range when time range is changed to last30days', () => {
+            spectator.setInput('timeRange', TIME_RANGE_OPTIONS.last30days);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showCustomTimeRange()).toBe(false);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeFalsy();
+
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last30days);
+            expect(spectator.component.$customDateRange()).toBeNull();
+        });
+    });
+
+    describe('Custom Date Range Change', () => {
+        it('should emit custom date range when custom date range is selected', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const customDateRange = [
+                new Date('2024-01-01T00:00:00'),
+                new Date('2024-01-31T00:00:00')
+            ];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
+
+            expect(changeFiltersSpy).toHaveBeenCalledWith({
+                time_range: TIME_RANGE_OPTIONS.custom,
+                from: '2024-01-01',
+                to: '2024-01-31'
+            });
+        });
+
+        it('should not emit custom date range when custom date range is selected with incomplete date range', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const customDateRange = [new Date('2024-01-01T00:00:00')];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
+
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not emit custom date range when custom date range is selected with invalid date range', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const customDateRange = [
+                new Date('2024-01-01T00:00:00'),
+                new Date('1993-01-01T00:00:00')
+            ];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
+
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onChangeTimeRange', () => {
+        it('should emit time range when time range is selected', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            spectator.triggerEventHandler(Dropdown, 'onChange', {
+                value: TIME_RANGE_OPTIONS.last7days,
+                originalEvent: createFakeEvent('change')
             });
 
-            expect(timeRangeChangedSpy).toHaveBeenCalledTimes(2);
-        });
-    });
-
-    describe('Dropdown Interaction', () => {
-        it('should emit timeRangeChanged when dropdown value changes', () => {
-            const timeRangeChangedSpy = jest.fn();
-            spectator.output('$timeRangeChanged').subscribe(timeRangeChangedSpy);
-
-            const newTimeRange: TimeRange = 'from 30 days ago to now';
-
-            // Simulate dropdown change by calling the component method directly
-            spectator.component.onTimeRangeChange(newTimeRange);
-
-            expect(timeRangeChangedSpy).toHaveBeenCalledWith(newTimeRange);
+            expect(changeFiltersSpy).toHaveBeenCalledWith({
+                time_range: TIME_RANGE_OPTIONS.last7days
+            });
         });
 
-        it('should have correct dropdown properties', () => {
-            const dropdown = spectator.query(byTestId('period-dropdown'));
+        it('should not emit when time range is a custom date range', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            spectator.triggerEventHandler(Dropdown, 'onChange', {
+                value: TIME_RANGE_OPTIONS.custom,
+                originalEvent: createFakeEvent('change')
+            });
 
-            expect(dropdown).toHaveAttribute('optionLabel', 'label');
-            expect(dropdown).toHaveAttribute('optionValue', 'value');
-            expect(dropdown).toHaveAttribute('size', 'small');
-        });
-    });
-
-    describe('Accessibility', () => {
-        it('should have proper test ids for testing', () => {
-            expect(spectator.query(byTestId('analytics-filters'))).toBeTruthy();
-            expect(spectator.query(byTestId('period-dropdown'))).toBeTruthy();
-        });
-
-        it('should have proper dropdown id for accessibility', () => {
-            const dropdown = spectator.query('#period-filter');
-            expect(dropdown).toBeTruthy();
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
         });
     });
 });

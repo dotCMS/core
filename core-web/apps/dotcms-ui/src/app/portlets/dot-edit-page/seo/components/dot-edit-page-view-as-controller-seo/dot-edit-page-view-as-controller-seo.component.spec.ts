@@ -7,9 +7,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotDevicesService,
     DotLanguagesService,
@@ -40,12 +37,17 @@ import {
 
 import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as-controller-seo.component';
 
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
+
 @Component({
     selector: 'dot-test-host',
     template: `
         <dot-edit-page-view-as-controller-seo
             [pageState]="pageState"></dot-edit-page-view-as-controller-seo>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     @Input()
@@ -54,7 +56,8 @@ class DotTestHostComponent {
 
 @Component({
     selector: 'dot-persona-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPersonaSelectorComponent {
     @Input()
@@ -71,7 +74,8 @@ class MockDotPersonaSelectorComponent {
 
 @Component({
     selector: 'dot-device-selector-seo',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotDeviceSelectorComponent {
     @Input()
@@ -82,7 +86,8 @@ class MockDotDeviceSelectorComponent {
 
 @Component({
     selector: 'dot-language-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotLanguageSelectorComponent {
     @Input()

@@ -10,8 +10,7 @@ describe('DotAssetCardSkeletonComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAssetCardSkeletonComponent,
-        imports: [CardModule, SkeletonModule],
-        declarations: [Skeleton]
+        imports: [CardModule, SkeletonModule]
     });
 
     beforeEach(() => {

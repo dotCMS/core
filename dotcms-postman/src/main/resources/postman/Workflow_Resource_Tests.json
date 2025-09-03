@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fda4d193-749b-484f-be5d-9fe1c2b8a736",
+		"_postman_id": "32c1be7f-c9b6-49ce-a10c-4110061f3bcb",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -13461,7 +13461,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg\"\n}",
+							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://dotcms-storage.b-cdn.net/Bocas2.jpg\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -17708,6 +17708,8 @@
 									"        pm.expect(item).to.have.property(\"roleId\");",
 									"        pm.expect(item).to.have.property(\"taskId\");",
 									"        pm.expect(item).to.have.property(\"type\");",
+									"        pm.expect(item).to.have.property(\"action\");",
+									"        pm.expect(item).to.have.property(\"step\");",
 									"        ",
 									"        // Verificación de tipo de dato para cada propiedad",
 									"        pm.expect(item.commentDescription).to.be.a(\"string\");",
@@ -17999,193 +18001,6 @@
 									"});",
 									"",
 									"// Test para verificar que \"errors\" es un array vacío",
-									"pm.test(\"Errors array is empty\", function () {",
-									"    const errors = pm.response.json().errors;",
-									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions?renderMode=EDITING",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"contentlet",
-								"{{contentletInode}}",
-								"actions"
-							],
-							"query": [
-								{
-									"key": "renderMode",
-									"value": "EDITING"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Resetable",
-			"item": [
-				{
-					"name": "CreateContentPreconditions",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
-									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
-									"",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"packages": {},
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\",\n        \"contentHost\": \"default\"\n    }\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						},
-						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
-					},
-					"response": []
-				},
-				{
-					"name": "CheckResetable",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Response has expected properties\", function () {",
-									"    const jsonData = pm.response.json();",
-									"    pm.expect(jsonData).to.have.property(\"entity\");",
-									"    pm.expect(jsonData).to.have.property(\"errors\");",
-									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
-									"    pm.expect(jsonData).to.have.property(\"messages\");",
-									"    pm.expect(jsonData).to.have.property(\"pagination\");",
-									"    pm.expect(jsonData).to.have.property(\"permissions\");",
-									"});",
-									"",
-									"pm.test(\"Entity is an array and contains items\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
-									"});",
-									"",
-									"pm.test(\"Each entity item has expected properties\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    entity.forEach(item => {",
-									"        pm.expect(item).to.have.property(\"actionInputs\").that.is.an(\"array\");",
-									"        pm.expect(item).to.have.property(\"assignable\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"commentable\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"condition\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"hasArchiveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasDeleteActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasDestroyActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasMoveActionletActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasMoveActionletHasPathActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasOnlyBatchActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasPublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasPushPublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasSaveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasUnarchiveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasUnpublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"icon\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"id\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"name\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextAssign\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextStep\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
-									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
-									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
-									"        ",
-									"        const allowedShowOnValues = [\"NEW\", \"LISTING\", \"PUBLISHED\", \"UNLOCKED\", \"ARCHIVED\", \"UNPUBLISHED\", \"EDITING\", \"LOCKED\"];",
-									"        item.showOn.forEach(status => {",
-									"            pm.expect(allowedShowOnValues).to.include(status);",
-									"        });",
-									"    });",
-									"});",
-									"",
 									"pm.test(\"Errors array is empty\", function () {",
 									"    const errors = pm.response.json().errors;",
 									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
@@ -19775,6 +19590,12 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "identifier",
+			"value": ""
 		}
 	]
 }

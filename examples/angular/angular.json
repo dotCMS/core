@@ -16,9 +16,7 @@
             "outputPath": "dist/angular",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
@@ -70,7 +68,7 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
-              "proxyConfig": "./proxy.conf.json"
+            "proxyConfig": "./proxy.conf.json"
           },
           "configurations": {
             "production": {
@@ -91,18 +89,10 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "tsconfig.spec.json",
-            "assets": [
-              "src/favicon.ico",
-              "src/assets"
-            ],
-            "styles": [
-              "src/styles.css"
-            ],
+            "assets": ["src/favicon.ico", "src/assets"],
+            "styles": ["src/styles.css"],
             "scripts": []
           }
         }
@@ -136,6 +126,10 @@
     }
   },
   "cli": {
+<<<<<<< HEAD
     "analytics": "f8daf73c-1681-4bbe-b518-d081ac8b56ca"
+=======
+    "analytics": "0edec4ee-1cae-4e3b-9f4f-8961fece817a"
+>>>>>>> main
   }
 }

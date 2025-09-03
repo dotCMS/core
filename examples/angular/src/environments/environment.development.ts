@@ -1,5 +1,10 @@
 export const environment = {
-    dotcmsUrl: 'https://demo.dotcms.com',
-    authToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlmZDc5NmNkNi0xNmFjLTQ4OTEtYWE1YS0yMDJiMzY0N2Q5MTUiLCJ4bW9kIjoxNzU1MDIxNjkwMDAwLCJuYmYiOjE3NTUwMjE2OTAsImlzcyI6IjE5NGY5NzZhNjUiLCJsYWJlbCI6ImRlbW8iLCJleHAiOjE4NDk2NjU2MDAsImlhdCI6MTc1NTAyMTY5MCwianRpIjoiNWMzMjcwM2MtZjVjYS00ZDE3LWIzOWQtZmEzZmMyYWQyMTEzIn0.gKv_bXg-fMvbWmTVTvecaikG1saNP8fnF4j0aEi4--E',
-    siteId: 'YOUR_SITE_ID'
+  dotcmsUrl: 'http://localhost:8080',
+  /**
+   * This auth token will be exposed in the client-side requests,
+   * for security purposes, make sure is read-only.
+   * More info: https://www.dotcms.com/docs/latest/permissions
+   */
+  authToken: 'YOUR_AUTH_TOKEN',
+  siteId: 'YOUR_SITE_ID',
 };

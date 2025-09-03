@@ -1,24 +1,33 @@
+import { signalMethod } from '@ngrx/signals';
+import { format, parse } from 'date-fns';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    effect,
     inject,
     input,
     model,
-    output,
-    signal
+    signal,
+    output
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Params } from '@angular/router';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { CalendarModule } from 'primeng/calendar';
+import { DropdownModule, DropdownChangeEvent } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    TIME_RANGE_OPTIONS,
+    TimeRange,
+    TimeRangeInput
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../constants';
+import { FilterOption, TIME_PERIOD_OPTIONS } from '../../constants';
+import { isValidCustomDateRange } from '../../utils/dot-analytics.utils';
 
 /**
  * Filter controls component for analytics dashboard.
@@ -27,8 +36,7 @@ import { DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../co
  */
 @Component({
     selector: 'dot-analytics-dashboard-filters',
-    standalone: true,
-    imports: [CommonModule, DropdownModule, FormsModule, DotMessagePipe],
+    imports: [CommonModule, CalendarModule, DropdownModule, FormsModule, DotMessagePipe],
     templateUrl: './dot-analytics-dashboard-filters.component.html',
     styleUrls: ['./dot-analytics-dashboard-filters.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -36,38 +44,76 @@ import { DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../co
 export class DotAnalyticsDashboardFiltersComponent {
     private readonly dotMessageService = inject(DotMessageService);
 
+    $timeRange = input.required<TimeRangeInput>({ alias: 'timeRange' });
+
     /** Currently selected time period value */
-    readonly $selectedTimeRange = model<string>(DEFAULT_TIME_PERIOD);
+    $selectedTimeRange = model<TimeRange | null>(null);
+
+    /** Custom date range selection for calendar */
+    $customDateRange = model<Date[] | null>(null);
 
     /** Available time period options for dropdown */
-    readonly $timeOptions = signal<FilterOption[]>(TIME_PERIOD_OPTIONS);
+    $timeOptions = signal<FilterOption[]>(TIME_PERIOD_OPTIONS);
 
-    /** Emits when time period selection changes */
-    readonly $timeRangeChanged = output<TimeRange>({ alias: 'timeRangeChanged' });
-
-    readonly $selected = input.required<TimeRange>({ alias: 'selectedTimeRange' });
-
-    constructor() {
-        effect(() => {
-            this.$selectedTimeRange.set(this.$selected());
-        });
-    }
+    /** Check if custom time range is selected */
+    $showCustomTimeRange = computed(() => this.$selectedTimeRange() === TIME_RANGE_OPTIONS.custom);
 
     /** Translated time period options for display */
-    readonly $translatedTimeOptions = computed(() => {
+    $translatedTimeOptions = computed(() => {
         return this.$timeOptions().map((option) => ({
             ...option,
             label: this.dotMessageService.get(option.label)
         }));
     });
 
-    /**
-     * Handles time period selection change.
-     * Updates internal state and emits change event.
-     *
-     * @param value - Selected time period value
-     */
-    onTimeRangeChange(value: TimeRange): void {
-        this.$timeRangeChanged.emit(value);
+    changeFilters = output<Params>();
+
+    constructor() {
+        this.#handleChangeInputTimeRange(this.$timeRange);
     }
+
+    /** Handle change time range */
+    onChangeTimeRange(event: DropdownChangeEvent): void {
+        if (event.value === TIME_RANGE_OPTIONS.custom) {
+            return;
+        }
+
+        this.changeFilters.emit({
+            time_range: event.value
+        });
+    }
+
+    /** Handle change custom date range */
+    onChangeCustomDateRange(): void {
+        const customDateRange = this.$customDateRange();
+
+        if (!customDateRange?.length || customDateRange.length === 1) {
+            return;
+        }
+
+        const [from, to] = customDateRange;
+        const fromDate = format(from, 'yyyy-MM-dd');
+        const toDate = format(to, 'yyyy-MM-dd');
+        if (!isValidCustomDateRange(fromDate, toDate)) {
+            return;
+        }
+
+        this.changeFilters.emit({
+            time_range: TIME_RANGE_OPTIONS.custom,
+            from: fromDate,
+            to: toDate
+        });
+    }
+
+    /** Handle change input time range */
+    readonly #handleChangeInputTimeRange = signalMethod<TimeRangeInput>((timeRange) => {
+        if (Array.isArray(timeRange)) {
+            this.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
+            const [from, to] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
+            this.$customDateRange.set([from, to]);
+        } else {
+            this.$selectedTimeRange.set(timeRange);
+            this.$customDateRange.set(null);
+        }
+    });
 }

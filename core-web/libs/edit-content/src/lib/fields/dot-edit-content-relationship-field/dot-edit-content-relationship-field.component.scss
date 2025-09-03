@@ -7,8 +7,7 @@
                 background-color: $color-palette-gray-100;
             }
             .p-datatable-footer {
-                padding-left: 0;
-                padding-right: 0;
+                padding: $spacing-1 0 0 0;
             }
             .p-datatable-wrapper {
                 border: 1px solid $color-palette-gray-300;
@@ -26,29 +25,39 @@
         }
     }
 }
+
 .add-item-btn {
     position: absolute;
     top: 0.4rem;
     right: 0.4rem;
 }
+
 .relationship-field__table_header {
     th {
         font-weight: $font-weight-bold;
         background-color: $color-palette-gray-100;
     }
 }
-.min-w-12rem {
-    min-width: 12rem;
-    width: 12rem;
-    max-width: 12rem;
-}
-.min-w-8rem {
-    min-width: 8rem;
-    width: 8rem;
-    max-width: 8rem;
-}
-.min-w-3rem {
-    min-width: 3rem;
+
+.drag-handle-column {
     width: 3rem;
-    max-width: 3rem;
+    min-width: 3rem;
+}
+
+.title-column {
+    width: 12rem;
+    min-width: 12rem;
+}
+
+.dynamic-column {
+    min-width: 8rem;
+}
+
+.image-column {
+    width: 6rem;
+    min-width: 6rem;
+}
+
+.actions-column {
+    width: 4rem;
 }

@@ -6,8 +6,6 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import {
     DotCopyButtonComponent,
     DotDialogModule,
@@ -19,6 +17,8 @@ import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/do
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
 
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 

@@ -8,11 +8,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotBulkInformationModule } from '@components/_common/dot-bulk-information/dot-bulk-information.module';
-import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { DotListingDataTableModule } from '@components/dot-listing-data-table';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotSiteBrowserService } from '@dotcms/data-access';
 import {
     DotActionMenuButtonComponent,
@@ -21,9 +16,15 @@ import {
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
-import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
 
+import { DotTemplateListResolver } from './dot-template-list-resolver.service';
 import { DotTemplateListComponent } from './dot-template-list.component';
+
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotBulkInformationModule } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.module';
+import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
+import { DotListingDataTableModule } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.module';
 
 @NgModule({
     declarations: [DotTemplateListComponent],

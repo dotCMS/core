@@ -1,357 +1,208 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createRoutingFactory,
+    mockProvider,
+    SpectatorRouting,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotAnalyticsDashboardStore, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    DotAnalyticsDashboardStore,
+    DotAnalyticsService,
+    TIME_RANGE_OPTIONS
+} from '@dotcms/portlets/dot-analytics/data-access';
+import { GlobalStore } from '@dotcms/store';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
+import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
+import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
+import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 import DotAnalyticsDashboardComponent from './dot-analytics-dashboard.component';
 
+const messageServiceMock = new MockDotMessageService({
+    'analytics.metrics.total-pageviews': 'Total Pageviews',
+    'analytics.metrics.unique-visitors': 'Unique Visitors',
+    'analytics.metrics.top-page-performance': 'Top Page Performance'
+});
+
 describe('DotAnalyticsDashboardComponent', () => {
-    let spectator: Spectator<DotAnalyticsDashboardComponent>;
+    let spectator: SpectatorRouting<DotAnalyticsDashboardComponent>;
+    let store: InstanceType<typeof DotAnalyticsDashboardStore>;
+    let router: SpyObject<Router>;
 
-    const mockStoreSignals = {
-        timeRange: jest.fn().mockReturnValue('from 7 days ago to now' as TimeRange),
-
-        // Direct resource signals
-        totalPageViews: jest.fn().mockReturnValue({
-            status: ComponentStatus.LOADED,
-            data: { 'request.totalRequest': '1250' },
-            error: null
-        }),
-        uniqueVisitors: jest.fn().mockReturnValue({
-            status: ComponentStatus.LOADED,
-            data: { 'request.totalUser': '342' },
-            error: null
-        }),
-        topPagePerformance: jest.fn().mockReturnValue({
-            status: ComponentStatus.LOADED,
-            data: {
-                'request.totalRequest': '89',
-                'request.pageTitle': 'Home Page',
-                'request.path': '/home'
-            },
-            error: null
-        }),
-        pageViewTimeLine: jest.fn().mockReturnValue({
-            status: ComponentStatus.LOADED,
-            data: [
-                {
-                    'request.totalRequest': '10',
-                    'request.createdAt': '2024-01-01T00:00:00Z',
-                    'request.createdAt.day': '2024-01-01'
-                },
-                {
-                    'request.totalRequest': '20',
-                    'request.createdAt': '2024-01-02T00:00:00Z',
-                    'request.createdAt.day': '2024-01-02'
-                }
-            ],
-            error: null
-        }),
-        pageViewDeviceBrowsers: Object.assign(
-            () => ({
-                status: ComponentStatus.LOADED,
-                data: [
-                    { 'request.totalRequest': '60', 'request.userAgent': 'Chrome' },
-                    { 'request.totalRequest': '40', 'request.userAgent': 'Firefox' }
-                ],
-                error: null
-            }),
-            {
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
-            }
-        ),
-        topPagesTable: jest.fn().mockReturnValue({
-            status: ComponentStatus.LOADED,
-            data: [
-                {
-                    'request.pageTitle': 'Home',
-                    'request.path': '/home',
-                    'request.totalRequest': '100'
-                }
-            ],
-            error: null
-        }),
-
-        // Computed/transformed data
-        metricsData: jest.fn().mockReturnValue([
-            {
-                name: 'analytics.metrics.total-pageviews',
-                value: 1250,
-                subtitle: 'analytics.metrics.total-pageviews.subtitle',
-                icon: 'pi-eye',
-                status: ComponentStatus.LOADED,
-                error: null
-            },
-            {
-                name: 'analytics.metrics.unique-visitors',
-                value: 342,
-                subtitle: 'analytics.metrics.unique-visitors.subtitle',
-                icon: 'pi-users',
-                status: ComponentStatus.LOADED,
-                error: null
-            },
-            {
-                name: 'analytics.metrics.top-page-performance',
-                value: 89,
-                subtitle: 'Home Page',
-                icon: 'pi-chart-bar',
-                status: ComponentStatus.LOADED,
-                error: null
-            }
-        ]),
-        topPagesTableData: jest
-            .fn()
-            .mockReturnValue([{ pageTitle: 'Home', path: '/home', views: 100 }]),
-        pageViewTimeLineData: jest.fn().mockReturnValue({
-            labels: ['Jan', 'Feb'],
-            datasets: [{ label: 'Page Views', data: [10, 20] }]
-        }),
-        pageViewDeviceBrowsersData: jest.fn().mockReturnValue({
-            labels: ['Chrome', 'Firefox'],
-            datasets: [{ label: 'Device Usage', data: [60, 40] }]
-        })
-    };
-
-    const mockStore = {
-        ...mockStoreSignals,
-        setTimeRange: jest.fn(),
-        loadTotalPageViews: jest.fn(),
-        loadPageViewDeviceBrowsers: jest.fn(),
-        loadPageViewTimeLine: jest.fn(),
-        loadTopPagePerformance: jest.fn(),
-        loadUniqueVisitors: jest.fn(),
-        loadTopPagesTable: jest.fn(),
-        loadAllDashboardData: jest.fn()
-    };
-
-    const createComponent = createComponentFactory({
+    const createComponent = createRoutingFactory({
         component: DotAnalyticsDashboardComponent,
-        schemas: [CUSTOM_ELEMENTS_SCHEMA],
+        declarations: [
+            MockComponent(DotAnalyticsDashboardChartComponent),
+            MockComponent(DotAnalyticsDashboardFiltersComponent),
+            MockComponent(DotAnalyticsDashboardMetricsComponent),
+            MockComponent(DotAnalyticsDashboardTableComponent)
+        ],
         providers: [
-            {
-                provide: DotAnalyticsDashboardStore,
-                useValue: mockStore
-            },
+            DotAnalyticsDashboardStore,
+            mockProvider(DotMessageService),
+            mockProvider(DotAnalyticsService),
             {
                 provide: DotMessageService,
-                useValue: {
-                    get: jest.fn().mockReturnValue('Translated message')
-                }
-            }
+                useValue: messageServiceMock
+            },
+            mockProvider(GlobalStore, {
+                currentSiteId: jest.fn().mockReturnValue('test-site-123')
+            }),
+            mockProvider(Router)
         ]
     });
 
-    beforeEach(() => {
-        // Reset all mocks
-        jest.clearAllMocks();
-
-        spectator = createComponent({
-            detectChanges: false // Prevent automatic change detection
+    describe('Component Rendering', () => {
+        beforeEach(() => {
+            spectator = createComponent();
+            store = spectator.inject(DotAnalyticsDashboardStore);
         });
-    });
 
-    describe('Component Initialization', () => {
         it('should create component successfully', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should have all required child components with data-testid', () => {
-            spectator.detectChanges();
-
-            // Verificar que los componentes hijos existan usando data-testid
-            expect(spectator.query(byTestId('analytics-filters'))).toExist();
-            expect(spectator.query(byTestId('refresh-button'))).toExist();
-            expect(spectator.query(byTestId('analytics-metric-card'))).toExist();
-            expect(spectator.query(byTestId('analytics-timeline-chart'))).toExist();
-            expect(spectator.query(byTestId('analytics-device-chart'))).toExist();
-            expect(spectator.query(byTestId('analytics-table'))).toExist();
-        });
-
-        it('should render multiple metric cards', () => {
-            spectator.detectChanges();
-
-            // Verificar que se renderizan múltiples metric cards
+        it('should render exactly 3 metric cards', () => {
             const metricCards = spectator.queryAll(byTestId('analytics-metric-card'));
-            expect(metricCards).toHaveLength(3); // Basado en nuestro mock que tiene 3 elementos
+            expect(metricCards).toHaveLength(3);
+        });
+
+        it('should render line chart component', () => {
+            const timelineChart = spectator.query(byTestId('analytics-timeline-chart'));
+            expect(timelineChart).toExist();
+        });
+
+        it('should render pie chart component', () => {
+            const deviceChart = spectator.query(byTestId('analytics-device-chart'));
+            expect(deviceChart).toExist();
+        });
+
+        it('should render table component', () => {
+            const table = spectator.query(byTestId('analytics-table'));
+            expect(table).toExist();
+        });
+
+        it('should render filters component', () => {
+            const filters = spectator.query(byTestId('analytics-filters'));
+            expect(filters).toExist();
+        });
+
+        it('should render refresh button', () => {
+            const refreshButton = spectator.query(byTestId('refresh-button'));
+            expect(refreshButton).toExist();
+        });
+
+        describe('User Interactions', () => {
+            it('should call onRefresh when refresh button is clicked', () => {
+                const spy = jest.spyOn(store, 'loadAllDashboardData');
+
+                const refreshButton = spectator.query(byTestId('refresh-button'));
+                expect(refreshButton).toExist();
+
+                spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', null);
+
+                expect(spy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.last7days, 'test-site-123');
+            });
         });
     });
 
-    describe('Component State', () => {
-        it('should expose store signals correctly', () => {
-            // Time range
-            expect(spectator.component['$currentTimeRange']()).toBe('from 7 days ago to now');
+    describe('Query Params Logic', () => {
+        it('should timeRange be last7days when empty query params', () => {
+            spectator = createComponent();
+            store = spectator.inject(DotAnalyticsDashboardStore);
 
-            // Direct resource signals
-            expect(spectator.component['$totalPageViews']()).toEqual({
-                status: ComponentStatus.LOADED,
-                data: { 'request.totalRequest': '1250' },
-                error: null
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+
+        it('should timeRange be last7days when valid predefined time range in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'last7days'
+                }
             });
+            store = spectator.inject(DotAnalyticsDashboardStore);
 
-            expect(spectator.component['$uniqueVisitors']()).toEqual({
-                status: ComponentStatus.LOADED,
-                data: { 'request.totalUser': '342' },
-                error: null
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+
+        it('should timeRange be custom date range when valid custom date range in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'custom',
+                    from: '2024-01-01',
+                    to: '2024-01-31'
+                }
             });
+            store = spectator.inject(DotAnalyticsDashboardStore);
 
-            expect(spectator.component['$topPagePerformance']()).toEqual({
-                status: ComponentStatus.LOADED,
-                data: {
-                    'request.totalRequest': '89',
-                    'request.pageTitle': 'Home Page',
-                    'request.path': '/home'
+            expect(store.timeRange()).toEqual(['2024-01-01', '2024-01-31']);
+        });
+
+        it('should call router.navigate with invalid query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'invalid-range'
+                }
+            });
+            router = spectator.inject(Router);
+            const route = spectator.inject(ActivatedRoute);
+
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                relativeTo: route,
+                queryParams: {
+                    time_range: 'last7days'
                 },
-                error: null
-            });
-
-            expect(spectator.component['$pageViewTimeLine']()).toEqual({
-                status: ComponentStatus.LOADED,
-                data: [
-                    {
-                        'request.totalRequest': '10',
-                        'request.createdAt': '2024-01-01T00:00:00Z',
-                        'request.createdAt.day': '2024-01-01'
-                    },
-                    {
-                        'request.totalRequest': '20',
-                        'request.createdAt': '2024-01-02T00:00:00Z',
-                        'request.createdAt.day': '2024-01-02'
-                    }
-                ],
-                error: null
-            });
-
-            expect(spectator.component['$pageViewDeviceBrowsers']()).toEqual({
-                status: ComponentStatus.LOADED,
-                data: [
-                    { 'request.totalRequest': '60', 'request.userAgent': 'Chrome' },
-                    { 'request.totalRequest': '40', 'request.userAgent': 'Firefox' }
-                ],
-                error: null
-            });
-
-            expect(spectator.component['$topPagesTable']()).toEqual({
-                status: ComponentStatus.LOADED,
-                data: [
-                    {
-                        'request.pageTitle': 'Home',
-                        'request.path': '/home',
-                        'request.totalRequest': '100'
-                    }
-                ],
-                error: null
-            });
-
-            // Computed/transformed data
-            expect(spectator.component['$metricsData']()).toHaveLength(3);
-            expect(spectator.component['$topPagesTableData']()).toHaveLength(1);
-            expect(spectator.component['$pageviewsTimelineData']()).toEqual({
-                labels: ['Jan', 'Feb'],
-                datasets: [{ label: 'Page Views', data: [10, 20] }]
-            });
-            expect(spectator.component['$deviceBreakdownData']()).toEqual({
-                labels: ['Chrome', 'Firefox'],
-                datasets: [{ label: 'Device Usage', data: [60, 40] }]
-            });
-
-            // Status signal (the one the user kept)
-            expect(spectator.component['$deviceBreakdownStatus']()).toBe(ComponentStatus.LOADED);
-        });
-    });
-
-    describe('Public Methods', () => {
-        describe('onTimeRangeChange', () => {
-            it('should call store setTimeRange with provided time range', () => {
-                const newTimeRange: TimeRange = 'from 30 days ago to now';
-
-                spectator.component.onTimeRangeChange(newTimeRange);
-
-                expect(mockStore.setTimeRange).toHaveBeenCalledWith(newTimeRange);
+                queryParamsHandling: 'replace',
+                replaceUrl: true
             });
         });
 
-        describe('onRefresh', () => {
-            it('should call loadAllDashboardData with current time range', () => {
-                const currentTimeRange = 'from 7 days ago to now';
+        it('should call router.navigate with custom range has incomplete dates', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'custom',
+                    from: '2024-01-01'
+                    // to: '2024-01-31'
+                }
+            });
+            router = spectator.inject(Router);
+            const route = spectator.inject(ActivatedRoute);
 
-                spectator.component.onRefresh();
-
-                expect(mockStore.loadAllDashboardData).toHaveBeenCalledWith(currentTimeRange);
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                relativeTo: route,
+                queryParams: {
+                    time_range: 'last7days'
+                },
+                queryParamsHandling: 'replace',
+                replaceUrl: true
             });
         });
-    });
 
-    describe('Store Integration', () => {
-        it('should have access to store methods', () => {
-            // Verificar que el componente tiene acceso a los métodos del store
-            expect(typeof spectator.component.onTimeRangeChange).toBe('function');
-            expect(typeof spectator.component.onRefresh).toBe('function');
-        });
-
-        it('should handle different time ranges', () => {
-            const timeRanges: TimeRange[] = ['from 7 days ago to now', 'from 30 days ago to now'];
-
-            timeRanges.forEach((timeRange) => {
-                spectator.component.onTimeRangeChange(timeRange);
-                expect(mockStore.setTimeRange).toHaveBeenCalledWith(timeRange);
+        it('should call router.navigate with invalid custom range ', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'custom',
+                    from: '2024-01-01',
+                    to: '1993-01-31'
+                }
             });
-        });
-    });
+            router = spectator.inject(Router);
+            const route = spectator.inject(ActivatedRoute);
 
-    describe('Component Properties', () => {
-        it('should have all required signal properties', () => {
-            // Verificar que el componente tiene todas las propiedades signals esperadas
-            expect(spectator.component['$currentTimeRange']).toBeDefined();
-
-            // Direct resource signals
-            expect(spectator.component['$totalPageViews']).toBeDefined();
-            expect(spectator.component['$uniqueVisitors']).toBeDefined();
-            expect(spectator.component['$topPagePerformance']).toBeDefined();
-            expect(spectator.component['$pageViewTimeLine']).toBeDefined();
-            expect(spectator.component['$pageViewDeviceBrowsers']).toBeDefined();
-            expect(spectator.component['$topPagesTable']).toBeDefined();
-
-            // Computed/transformed data
-            expect(spectator.component['$metricsData']).toBeDefined();
-            expect(spectator.component['$topPagesTableData']).toBeDefined();
-            expect(spectator.component['$pageviewsTimelineData']).toBeDefined();
-            expect(spectator.component['$deviceBreakdownData']).toBeDefined();
-
-            // Status signal (the one the user kept)
-            expect(spectator.component['$deviceBreakdownStatus']).toBeDefined();
-        });
-    });
-
-    describe('Button Interactions', () => {
-        it('should call onRefresh when refresh button is clicked', () => {
-            const spy = jest.spyOn(spectator.component, 'onRefresh');
-
-            // Trigger change detection to render the button
-            spectator.detectChanges();
-
-            // Find the refresh button
-            const refreshButton = spectator.query(byTestId('refresh-button'));
-            expect(refreshButton).toExist();
-
-            // Simulate click event using triggerEventHandler
-            spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', null);
-
-            // Verify the method was called
-            expect(spy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should verify refresh button has correct configuration', () => {
-            spectator.detectChanges();
-
-            const refreshButton = spectator.query(byTestId('refresh-button'));
-            expect(refreshButton).toExist();
-
-            // Verify button attributes
-            expect(refreshButton).toHaveAttribute('data-testid', 'refresh-button');
-            expect(refreshButton).toHaveClass('analytics-dashboard__refresh-button');
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                relativeTo: route,
+                queryParams: {
+                    time_range: 'last7days'
+                },
+                queryParamsHandling: 'replace',
+                replaceUrl: true
+            });
         });
     });
 });

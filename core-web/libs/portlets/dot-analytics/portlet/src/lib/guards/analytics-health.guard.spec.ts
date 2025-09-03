@@ -6,7 +6,7 @@ import { ActivatedRoute, Route, Router } from '@angular/router';
 import { DotExperimentsService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
 
-import { analyticsHealthGuard } from './analytics-health.guard';
+import { analyticsHealthGuard, clearAnalyticsHealthCache } from './analytics-health.guard';
 
 describe('analyticsHealthGuard', () => {
     let mockRouter: Router;
@@ -17,6 +17,9 @@ describe('analyticsHealthGuard', () => {
     const mockSegments = [];
 
     beforeEach(() => {
+        // Clear cache before each test to ensure isolation
+        clearAnalyticsHealthCache();
+
         mockRouter = {
             navigate: jest.fn()
         } as unknown as Router;

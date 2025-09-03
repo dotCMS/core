@@ -1,11 +1,11 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { getRelationshipFromContentlet } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils';
+import { DotCMSClazzes, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
-jest.mock('@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils', () => ({
+jest.mock('../../utils/relationshipFromContentlet', () => ({
     getRelationshipFromContentlet: jest.fn()
 }));
 
@@ -13,7 +13,7 @@ describe('DotEditContentFormResolutions', () => {
     const mockField: DotCMSContentTypeField = {
         variable: 'testField',
         defaultValue: 'default value',
-        clazz: 'test-class',
+        clazz: DotCMSClazzes.TEXT,
         contentTypeId: 'test-content-type',
         dataType: 'text',
         fieldType: 'text',
@@ -214,9 +214,6 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.CHECKBOX,
                 FIELD_TYPES.CONSTANT,
                 FIELD_TYPES.CUSTOM_FIELD,
-                FIELD_TYPES.DATE,
-                FIELD_TYPES.DATE_AND_TIME,
-                FIELD_TYPES.TIME,
                 FIELD_TYPES.HIDDEN,
                 FIELD_TYPES.JSON,
                 FIELD_TYPES.KEY_VALUE,
@@ -230,6 +227,14 @@ describe('DotEditContentFormResolutions', () => {
 
             defaultFieldTypes.forEach((fieldType) => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.TEXTAREA]);
+            });
+        });
+
+        it('should use dateResolutionFn for date field types', () => {
+            const dateFieldTypes = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
+
+            dateFieldTypes.forEach((fieldType) => {
+                expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.DATE]);
             });
         });
     });

@@ -39,16 +39,14 @@ import {
     DotCMSWorkflowAction,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
-import {
-    CALENDAR_FIELD_TYPES,
-    CONTENT_SEARCH_ROUTE,
-    FLATTENED_FIELD_TYPES
-} from '../../models/dot-edit-content-field.constant';
+import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
+import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
@@ -56,7 +54,8 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     generatePreviewUrl,
     getFinalCastedValue,
-    isFilteredType
+    isFilteredType,
+    processFieldValue
 } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
@@ -84,7 +83,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  */
 @Component({
     selector: 'dot-edit-content-form',
-    standalone: true,
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
@@ -111,6 +109,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     ]
 })
 export class DotEditContentFormComponent implements OnInit {
+    readonly #rootStore = inject(GlobalStore);
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
@@ -118,6 +117,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
+
     /**
      * Output event emitter that informs when the form has changed.
      * Emits an object of type Record<string, string> containing the updated form values.
@@ -173,6 +173,11 @@ export class DotEditContentFormComponent implements OnInit {
      */
     $tabs = this.$store.tabs;
 
+    /**
+     * The system timezone.
+     */
+    $systemTimezone = computed(() => this.#rootStore.systemTimezone());
+
     ngOnInit(): void {
         if (this.$store.tabs().length) {
             this.initializeForm();
@@ -184,18 +189,15 @@ export class DotEditContentFormComponent implements OnInit {
         /**
          * Effect that enables or disables the form based on the loading state.
          */
-        effect(
-            () => {
-                const isLoading = this.$store.isLoading();
+        effect(() => {
+            const isLoading = this.$store.isLoading();
 
-                if (isLoading) {
-                    this.form.disable();
-                } else {
-                    this.form.enable();
-                }
-            },
-            { allowSignalWrites: true }
-        );
+            if (isLoading) {
+                this.form.disable();
+            } else {
+                this.form.enable();
+            }
+        });
 
         /**
          * Effect that initializes the form and form listener when copying locale.
@@ -344,40 +346,33 @@ export class DotEditContentFormComponent implements OnInit {
      * Processes the form value, applying specific transformations for different field types.
      *
      * Handles special cases:
+     * - disabledWYSIWYG: Preserves array format for WYSIWYG editor preferences
      * - Flattened fields: Joins array values with commas
-     * - Calendar fields: Formats dates to the required string format
+     * - Calendar fields: Converts dates to UTC timestamps
      * - Null/undefined values: Converts to empty string
      *
      * @private
-     * @param {Record<string, string | string[] | Date | null | undefined>} value - The raw form value
+     * @param {Record<string, any>} value - The raw form value
      * @returns {FormValues} The processed form value ready for submission
      */
     private processFormValue(
-        value: Record<string, string | string[] | Date | null | undefined>
+        value: Record<string, string | string[] | Date | number | null | undefined>
     ): FormValues {
         return Object.fromEntries(
             Object.entries(value).map(([key, fieldValue]) => {
+                // Handle disabledWYSIWYG as a special case - preserve array format
+                if (key === DISABLED_WYSIWYG_FIELD) {
+                    return [key, fieldValue || []];
+                }
+
                 const field = this.$formFields().find((f) => f.variable === key);
 
                 if (!field) {
                     return [key, fieldValue];
                 }
 
-                if (
-                    Array.isArray(fieldValue) &&
-                    FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-                ) {
-                    fieldValue = fieldValue.join(',');
-                } else if (
-                    fieldValue instanceof Date &&
-                    CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-                ) {
-                    fieldValue = fieldValue
-                        .toISOString()
-                        .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
-                }
-
-                return [key, fieldValue ?? ''];
+                const processedValue = processFieldValue(fieldValue, field);
+                return [key, processedValue ?? ''];
             })
         );
     }
@@ -388,7 +383,8 @@ export class DotEditContentFormComponent implements OnInit {
      * This method:
      * 1. Filters out non-form fields
      * 2. Creates form controls with appropriate initial values and validators
-     * 3. Combines all controls into a FormGroup
+     * 3. Adds disabledWYSIWYG as a form control to track WYSIWYG editor preferences
+     * 4. Combines all controls into a FormGroup
      *
      * @private
      */
@@ -400,6 +396,12 @@ export class DotEditContentFormComponent implements OnInit {
             }),
             {}
         );
+
+        // Add disabledWYSIWYG as a form control to track WYSIWYG editor preferences
+        const contentlet = this.$store.contentlet();
+        const disabledWYSIWYG = contentlet?.disabledWYSIWYG || [];
+
+        controls[DISABLED_WYSIWYG_FIELD] = this.#fb.control(disabledWYSIWYG);
 
         this.form = this.#fb.group(controls);
     }
@@ -548,5 +550,24 @@ export class DotEditContentFormComponent implements OnInit {
      */
     onContentLockChange(event: InputSwitchChangeEvent) {
         event.checked ? this.$store.lockContent() : this.$store.unlockContent();
+    }
+
+    /**
+     * Handles changes to the disabledWYSIWYG attribute from field components.
+     *
+     * This method is triggered when any field component (WYSIWYG or textarea) changes
+     * the disabledWYSIWYG configuration. It updates the form control to keep the form
+     * data synchronized with the latest WYSIWYG editor preferences.
+     *
+     * Note: The contentlet in the store is already updated by the field components,
+     * this method only ensures the form control reflects those changes.
+     *
+     * @param {string[]} disabledWYSIWYG - The updated disabledWYSIWYG array
+     * @memberof DotEditContentFormComponent
+     */
+    onDisabledWYSIWYGChange(disabledWYSIWYG: string[]) {
+        if (this.form && this.form.get('disabledWYSIWYG')) {
+            this.form.get('disabledWYSIWYG')?.setValue(disabledWYSIWYG, { emitEvent: true });
+        }
     }
 }

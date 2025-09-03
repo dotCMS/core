@@ -6,16 +6,18 @@ import { NavigationExtras } from '@angular/router';
 
 import { take, tap } from 'rxjs/operators';
 
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-forgot-password-component',
     templateUrl: 'forgot-password.component.html',
-    styleUrls: ['./forgot-password.component.scss']
+    styleUrls: ['./forgot-password.component.scss'],
+    standalone: false
 })
 export class ForgotPasswordComponent implements OnInit {
     private fb = inject(UntypedFormBuilder);

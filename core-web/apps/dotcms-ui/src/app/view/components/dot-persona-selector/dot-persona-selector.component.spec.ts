@@ -15,24 +15,19 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
-import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
-import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import {
     DotAlertConfirmService,
     DotEventsService,
-    DotMessageService,
-    PaginatorService,
-    DotSessionStorageService,
-    DotRouterService,
     DotHttpErrorManagerService,
-    DotMessageDisplayService
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotSystemConfigService,
+    PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -47,6 +42,13 @@ import {
 
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+import { DotAddPersonaDialogComponent } from '../dot-add-persona-dialog/dot-add-persona-dialog.component';
+import { DotAddPersonaDialogModule } from '../dot-add-persona-dialog/dot-add-persona-dialog.module';
+import { DotPersonaSelectedItemModule } from '../dot-persona-selected-item/dot-persona-selected-item.module';
+import { DotPersonaSelectorOptionModule } from '../dot-persona-selector-option/dot-persona-selector-option.module';
+
 @Component({
     selector: 'dot-host-component',
     template: `
@@ -54,7 +56,8 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
             (selected)="selectedPersonaHandler($event)"
             (delete)="deletePersonaHandler($event)"
             [disabled]="disabled"></dot-persona-selector>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input() disabled: boolean;
@@ -101,6 +104,44 @@ describe('DotPersonaSelectorComponent', () => {
 
     const siteServiceMock = new SiteServiceMock();
 
+    const mockSystemConfig: DotSystemConfig = {
+        logos: {
+            loginScreen: '',
+            navBar: ''
+        },
+        colors: {
+            primary: '#54428e',
+            secondary: '#3a3847',
+            background: '#BB30E1'
+        },
+        releaseInfo: {
+            buildDate: 'June 24, 2019',
+            version: '5.0.0'
+        },
+        systemTimezone: {
+            id: 'America/Costa_Rica',
+            label: 'Costa Rica',
+            offset: 360
+        },
+        languages: [],
+        license: {
+            level: 100,
+            displayServerId: '19fc0e44',
+            levelName: 'COMMUNITY EDITION',
+            isCommunity: true
+        },
+        cluster: {
+            clusterId: 'test-cluster',
+            companyKeyDigest: 'test-digest'
+        }
+    };
+
+    class MockDotSystemConfigService {
+        getSystemConfig() {
+            return of(mockSystemConfig);
+        }
+    }
+
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [DotPersonaSelectorComponent, HostTestComponent],
@@ -134,6 +175,7 @@ describe('DotPersonaSelectorComponent', () => {
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 DotHttpErrorManagerService,
                 ConfirmationService,
                 DotAlertConfirmService,

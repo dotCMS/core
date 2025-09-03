@@ -4,10 +4,11 @@
 
 .p-multiselect {
     @extend #form-field-base;
-    min-width: 13rem;
+    min-width: 14rem;
     padding-right: 0;
     min-height: $field-height-md;
-    height: auto;
+    height: 2.5em;
+    width: 100%;
 
     &:not(.p-multiselect-open):hover {
         @extend #form-field-hover;
@@ -31,7 +32,7 @@
                 padding: $spacing-1 0;
                 height: auto;
                 flex-wrap: wrap;
-                overflow: visible;
+                overflow: hidden;
             }
         }
     }
@@ -64,6 +65,10 @@
 
         .p-multiselect-label {
             gap: $spacing-0;
+            display: block;
+            cursor: pointer;
+            overflow: hidden;
+            // max-width: 10.70em;
         }
 
         .p-multiselect-token {
@@ -74,6 +79,8 @@
 
 .p-multiselect-panel {
     @extend #field-panel;
+    min-width: 20rem;
+    padding: 0;
 
     .p-multiselect-header {
         @extend #field-panel-header;
@@ -102,6 +109,10 @@
 
         .p-multiselect-item {
             @extend #field-panel-item;
+
+            &[data-p-highlight="true"] {
+                @extend #field-panel-item-highlight;
+            }
 
             &.p-highlight {
                 @extend #field-panel-item-highlight;
