@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.attributes.CustomAttributeCache;
+import com.dotcms.analytics.attributes.CustomAttributeCacheImpl;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -402,6 +404,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return serviceRef;
 	 }
 
+	public static CustomAttributeCache getAnalyticsCustomAttributeCache() {
+		return (CustomAttributeCache) getInstance(CacheIndex.ANALYTICS_CUSTOMATTRIBUTE_CACHE);
+	}
+
 
 	@Override
 	protected Object createService(CacheIndex enumObj) {
@@ -486,7 +492,8 @@ enum CacheIndex
 	EXPERIMENTS_CACHE("ExperimentsCache"),
 	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
 	Javascript("Javascript"),
-	JOB_CACHE("JobCache");
+	JOB_CACHE("JobCache"),
+	ANALYTICS_CUSTOMATTRIBUTE_CACHE("CustomAttributeCache");
 
 	Cachable create() {
 		switch(this) {
@@ -543,6 +550,7 @@ enum CacheIndex
 			case CHAINABLE_404_STORAGE_CACHE: return new Chainable404StorageCache();
 			case Javascript: return new JsCache();
 			case JOB_CACHE: return new JobCacheImpl();
+			case ANALYTICS_CUSTOMATTRIBUTE_CACHE: return new CustomAttributeCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
