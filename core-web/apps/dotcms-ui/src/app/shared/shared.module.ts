@@ -51,7 +51,6 @@ export class SharedModule {
                 DotcmsEventsService,
                 LoggerService,
                 LoginService,
-                SiteService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotEventsSocket,
                 StringUtils,
