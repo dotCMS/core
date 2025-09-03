@@ -108,9 +108,7 @@ export class SiteService {
      * @memberof SiteService
      */
     get switchSite$(): Observable<Site> {
-        return this._switchSite$.asObservable().pipe(
-            startWith(this.selectedSite)
-        );
+        return this._switchSite$.asObservable().pipe(startWith(this.selectedSite));
     }
 
     /**
