@@ -1,5 +1,7 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
+
+import { AccordionModule } from 'primeng/accordion';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -7,6 +9,7 @@ import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
+
 import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
 import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
@@ -28,6 +31,7 @@ export interface DotHistoryPagination {
     standalone: true,
     imports: [
         CommonModule,
+        AccordionModule,
         TimelineModule,
         AvatarModule,
         ButtonModule,

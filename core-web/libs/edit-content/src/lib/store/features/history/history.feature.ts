@@ -84,7 +84,7 @@ export function withHistory() {
                     pipe(
                         switchMap(({ identifier, page }) => {
                             const currentPagination = store.versionsPagination();
-                            const limit = currentPagination?.perPage || 10;
+                            const limit = currentPagination?.perPage || 20;
 
                             return dotEditContentService
                                 .getVersions(identifier, { page, limit })
