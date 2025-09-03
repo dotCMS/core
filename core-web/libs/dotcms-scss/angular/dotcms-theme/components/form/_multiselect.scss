@@ -80,6 +80,7 @@
 .p-multiselect-panel {
     @extend #field-panel;
     min-width: 20rem;
+    padding: 0;
 
     .p-multiselect-header {
         @extend #field-panel-header;
