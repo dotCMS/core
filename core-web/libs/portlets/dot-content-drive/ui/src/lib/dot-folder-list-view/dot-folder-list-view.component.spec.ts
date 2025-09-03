@@ -113,7 +113,7 @@ describe('DotFolderListViewComponent', () => {
                     byTestId('header-column-not-sortable')
                 );
 
-                expect(notSortableColumns.length).toBe(3);
+                expect(notSortableColumns.length).toBe(4);
             });
 
             it('should have one checkbox column', () => {

@@ -155,7 +155,6 @@ export class DotFolderListViewContextMenuComponent {
     }
 
     #fireWorkflowAction(contentletInode: string, actionId: string) {
-        this.#dotMessageService.get('Workflow-executed');
         this.#workflowActionsFireService.fireTo({ actionId, inode: contentletInode }).subscribe(
             () => {
                 this.#store.reloadContentDrive();
