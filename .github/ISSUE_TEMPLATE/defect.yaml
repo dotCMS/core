@@ -2,6 +2,7 @@ name: Defect
 description: Report a bug or issue with existing functionality
 title: "[DEFECT] "
 labels: ["Triage"]
+type: bug
 assignees: []
 
 body:

@@ -2,6 +2,7 @@ name: Theme
 description: High-level strategic initiative that groups related EPICs
 title: "[THEME] "
 labels: []
+type: theme
 assignees: []
 
 body:
