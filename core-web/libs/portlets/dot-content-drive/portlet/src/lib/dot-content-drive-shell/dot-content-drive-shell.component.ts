@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-import { EMPTY } from 'rxjs';
 
 import { JsonPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
@@ -7,16 +6,13 @@ import { Router } from '@angular/router';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 
-import { catchError, take } from 'rxjs/operators';
-
-import { DotContentSearchService, DotWorkflowsActionsService } from '@dotcms/data-access';
-import { ESContent } from '@dotcms/dotcms-models';
+import { DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotFolderListViewComponent, } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { ContextMenuData, DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
-import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
+import { SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
@@ -32,7 +28,6 @@ import { encodeFilters } from '../utils/functions';
 export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
-    readonly #contentSearchService = inject(DotContentSearchService);
     readonly #router = inject(Router);
     readonly #location = inject(Location);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
@@ -49,40 +44,6 @@ export class DotContentDriveShellComponent {
     readonly addToBundleEffect = effect(() => {
         const showAddToBundle = this.#store.contextMenu()?.showAddToBundle;
         console.log('addToBundleEffect', showAddToBundle);
-    });
-
-    readonly itemsEffect = effect(() => {
-        console.log('itemsEffect compute');
-        const query = this.#store.$query();
-        const currentSite = this.#store.currentSite();
-        const { limit, offset } = this.#store.pagination();
-        const { field, order } = this.#store.sort();
-
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
-
-        // Avoid fetching content for SYSTEM_HOST sites
-        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
-            return;
-        }
-
-        this.#contentSearchService
-            .get<ESContent>({
-                query,
-                limit,
-                offset,
-                sort: `score,${field} ${order}`
-            })
-            .pipe(
-                take(1),
-                catchError(() => {
-                    this.#store.setStatus(DotContentDriveStatus.ERROR);
-
-                    return EMPTY;
-                })
-            )
-            .subscribe((response) => {
-                this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
-            });
     });
 
     readonly updateQueryParamsEffect = effect(() => {

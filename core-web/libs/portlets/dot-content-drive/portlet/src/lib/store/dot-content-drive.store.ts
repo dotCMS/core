@@ -6,11 +6,15 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
+import { EMPTY } from 'rxjs';
 
 import { computed, effect, EffectRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { catchError, take } from 'rxjs/operators';
+
+import { DotContentSearchService } from '@dotcms/data-access';
+import { DotContentDriveItem, ESContent } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
@@ -48,7 +52,7 @@ const initialState: DotContentDriveState = {
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite }) => {
+    withComputed(({ path, filters, currentSite, pagination, sort }) => {
         return {
             $query: computed(() => {
                 const query = new QueryBuilder();
@@ -60,7 +64,7 @@ export const DotContentDriveStore = signalStore(
                 const pathValue = path();
                 const currentSiteValue = currentSite();
                 const filtersValue = filters();
-                console.log('called computed $query', filtersValue);
+                // console.log('called computed $query', filtersValue);
                 const filtersEntries = Object.entries(filtersValue ?? {});
 
                 if (pathValue) {
@@ -114,10 +118,68 @@ export const DotContentDriveStore = signalStore(
                     });
 
                 return modifiedQuery.build();
-            })
+            }),
+            $searchParams: computed(() => ({
+                query: (() => {
+                    const query = new QueryBuilder();
+                    const baseQuery = query.raw(BASE_QUERY);
+                    let modifiedQuery = baseQuery;
+
+                    const pathValue = path();
+                    const currentSiteValue = currentSite();
+                    const filtersValue = filters();
+                    const filtersEntries = Object.entries(filtersValue ?? {});
+
+                    if (pathValue) {
+                        modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
+                    }
+
+                    modifiedQuery = modifiedQuery
+                        .field('conhost')
+                        .equals(currentSiteValue?.identifier)
+                        .or()
+                        .equals(SYSTEM_HOST.identifier);
+
+                    filtersEntries
+                        .filter(([_key, value]) => value !== undefined)
+                        .forEach(([key, value]) => {
+                            // Handle multiselectors
+                            if (Array.isArray(value)) {
+                                const orChain = value.join(' OR ');
+                                const orQuery =
+                                    value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
+                                modifiedQuery = modifiedQuery.raw(orQuery);
+                                return;
+                            }
+
+                            // Handle raw search for title
+                            if (key === 'title') {
+                                modifiedQuery = modifiedQuery.raw(
+                                    `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
+                                );
+                                value
+                                    .split(' ')
+                                    .filter((word) => word.trim().length > 0)
+                                    .forEach((word) => {
+                                        modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
+                                    });
+                                return;
+                            }
+
+                            modifiedQuery = modifiedQuery.field(key).equals(value);
+                        });
+
+                    return modifiedQuery.build();
+                })(),
+                pagination: pagination(),
+                sort: sort(),
+                currentSite: currentSite()
+            }))
         };
     }),
     withMethods((store) => {
+        const contentSearchService = inject(DotContentSearchService);
+        
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
@@ -161,11 +223,43 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
+            async loadItems() {
+                const { query, pagination, sort, currentSite } = store.$searchParams();
+                const { limit, offset } = pagination;
+                const { field, order } = sort;
+                
+                patchState(store, { status: DotContentDriveStatus.LOADING });
+                
+                // Avoid fetching content for SYSTEM_HOST sites
+                if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                    return;
+                }
+                
+                contentSearchService
+                    .get<ESContent>({
+                        query,
+                        limit,
+                        offset,
+                        sort: `score,${field} ${order}`
+                    })
+                    .pipe(
+                        take(1),
+                        catchError(() => {
+                            patchState(store, { status: DotContentDriveStatus.ERROR });
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((response) => {
+                        patchState(store, { 
+                            items: response.jsonObjectView.contentlets,
+                            totalItems: response.resultsSize,
+                            status: DotContentDriveStatus.LOADED
+                        });
+                    });
+            },
             reloadContentDrive() {
-                // Trigger change sequence to recompute $query
-                console.log('called reloadContentDrive');
-                patchState(store, { filters: {}  });
-                // patchState(store, { filters: { ...store.filters() }, status: DotContentDriveStatus.LOADED });
+                // console.log('called reloadContentDrive');
+                this.loadItems();
             }
         };
     }),
@@ -173,6 +267,7 @@ export const DotContentDriveStore = signalStore(
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
         let initEffect: EffectRef;
+        let searchEffect: EffectRef;
 
         return {
             onInit() {
@@ -191,9 +286,16 @@ export const DotContentDriveStore = signalStore(
                         isTreeExpanded: queryTreeExpanded == 'true'
                     });
                 });
+                
+                searchEffect = effect(() => {
+                    // const searchParams = store.$searchParams();
+                    // console.log('searchEffect triggered', searchParams);
+                    store.loadItems();
+                });
             },
             onDestroy() {
                 initEffect?.destroy();
+                searchEffect?.destroy();
             }
         };
     }),
