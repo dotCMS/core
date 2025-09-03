@@ -1,15 +1,10 @@
 package com.dotcms.analytics.attributes;
 
 import com.dotcms.analytics.content.ReportResponse;
-import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.JsonUtil;
-
-import com.dotcms.analytics.metrics.EventType;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -19,19 +14,10 @@ import com.dotmarketing.util.Logger;
 
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
-import org.apache.logging.log4j.core.util.JsonUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
-
-import org.jetbrains.annotations.NotNull;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -231,7 +217,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
      * {@inheritDoc}
      */
     public TranslatedQuery translateFromFriendlyName(final String query) throws CustomAttributeProcessingException {
-        if (!continasCustomAttributes(query)) {
+        if (!containsCustomAttributes(query)) {
             return new TranslatedQuery(query);
         }
 
@@ -409,7 +395,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         }
     }
 
-    private static boolean continasCustomAttributes(final String cubeJsQueryJson) {
+    private static boolean containsCustomAttributes(final String cubeJsQueryJson) {
         return cubeJsQueryJson.contains(FRIENDLY_QUERY_CUSTOM_ATTRIBUTE_PREFIX);
     }
 }

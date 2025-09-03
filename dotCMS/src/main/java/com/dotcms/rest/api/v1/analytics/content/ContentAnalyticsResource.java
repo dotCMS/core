@@ -21,6 +21,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.MapUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -215,19 +216,10 @@ public class ContentAnalyticsResource {
 
         if (!translatedQuery.getMatchApplied().isEmpty()) {
             reportResponse = customAttributeAPI.translateResults(reportResponse,
-                    invertMap(translatedQuery.getMatchApplied()));
+                    MapUtil.invertMap(translatedQuery.getMatchApplied()));
         }
 
         return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
-    }
-
-    private Map<String, String> invertMap(Map<String, String> map) {
-        return map.entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getValue,
-                        Map.Entry::getKey
-                ));
     }
 
     /**
