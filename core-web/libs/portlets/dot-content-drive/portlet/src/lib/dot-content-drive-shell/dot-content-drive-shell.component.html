@@ -15,6 +15,7 @@
     (paginate)="onPaginate($event)"
     (sort)="onSort($event)"
     (rightClick)="onContextMenu($event)"
+    (doubleClick)="onDoubleClick($event)"
     #listView />
 
 <dot-folder-list-context-menu />
@@ -22,7 +23,9 @@
 <p-toast position="top-center" data-testId="content-drive-toast" />
 
 @if ($contextMenuData()?.showAddToBundle) {
-    <dot-add-to-bundle (cancel)="cancelAddToBundle()" [assetIdentifier]="$contextMenuData().contentlet.identifier" />
+    <dot-add-to-bundle
+        (cancel)="cancelAddToBundle()"
+        [assetIdentifier]="$contextMenuData().contentlet.identifier" />
 }
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->

@@ -37,7 +37,6 @@ import { HEADER_COLUMNS } from '../shared/constants';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFolderListViewComponent {
-
     $items = input<DotContentDriveItem[]>([], { alias: 'items' });
     $totalItems = input<number>(0, { alias: 'totalItems' });
     $loading = input<boolean>(false, { alias: 'loading' });
@@ -46,6 +45,7 @@ export class DotFolderListViewComponent {
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
     rightClick = output<ContextMenuData>();
+    doubleClick = output<DotContentDriveItem>();
 
     selectedItems: DotContentDriveItem[] = [];
     readonly MIN_ROWS_PER_PAGE = 20;
@@ -73,7 +73,7 @@ export class DotFolderListViewComponent {
 
     onContextMenu(event: Event, contentlet: DotContentDriveItem) {
         event.preventDefault();
-        this.rightClick.emit({event,contentlet});
+        this.rightClick.emit({ event, contentlet });
     }
 
     onPage(event: LazyLoadEvent) {
@@ -87,5 +87,9 @@ export class DotFolderListViewComponent {
 
     onSort(event: SortEvent) {
         this.sort.emit(event);
+    }
+
+    onDoubleClick(contentlet: DotContentDriveItem) {
+        this.doubleClick.emit(contentlet);
     }
 }

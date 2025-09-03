@@ -60,8 +60,8 @@ export interface DotContentDriveInit {
 
 export interface DotContentDriveContextMenu {
     triggeredEvent: Event;
-    contentlet: DotContentDriveItem,
-    showAddToBundle: boolean
+    contentlet: DotContentDriveItem;
+    showAddToBundle: boolean;
 }
 
 /**
@@ -76,7 +76,7 @@ export interface DotContentDriveState extends DotContentDriveInit {
     totalItems: number;
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
-    contextMenu?: DotContentDriveContextMenu
+    contextMenu?: DotContentDriveContextMenu;
 }
 
 /**

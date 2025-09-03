@@ -1,18 +1,22 @@
-import { CommonModule } from "@angular/common";
-import { Component, effect, inject, signal, viewChild } from "@angular/core";
-import { Router } from "@angular/router";
+import { CommonModule } from '@angular/common';
+import { Component, effect, inject, signal, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
 
-import { MenuItem, MessageService } from "primeng/api";
+import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
-import { take } from "rxjs/operators";
+import {
+    DotMessageService,
+    DotRenderMode,
+    DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
+import { DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
 
-import { DotContentTypeService, DotMessageService, DotRenderMode, DotWorkflowActionsFireService, DotWorkflowEventHandlerService, DotWorkflowsActionsService } from "@dotcms/data-access";
-import { DotCMSWorkflowActionEvent, DotContentDriveItem, FeaturedFlags } from '@dotcms/dotcms-models';
-
-import { DotContentDriveContextMenu, DotContentDriveStatus } from "../../shared/models";
-import { DotContentDriveStore } from "../../store/dot-content-drive.store";
-
+import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
+import { DotContentDriveNavigationService } from '../../shared/services';
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 @Component({
     selector: 'dot-folder-list-context-menu',
@@ -20,7 +24,6 @@ import { DotContentDriveStore } from "../../store/dot-content-drive.store";
     imports: [CommonModule, ContextMenuModule]
 })
 export class DotFolderListViewContextMenuComponent {
-
     contextMenu = viewChild<ContextMenu>('contextMenu');
     #dotMessageService = inject(DotMessageService);
     #workflowsActionsService = inject(DotWorkflowsActionsService);
@@ -28,10 +31,10 @@ export class DotFolderListViewContextMenuComponent {
     #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     #router = inject(Router);
     #store = inject(DotContentDriveStore);
-    #dotContentTypeService = inject(DotContentTypeService);
+    #navigationService = inject(DotContentDriveNavigationService);
     #messageService = inject(MessageService);
 
-    $items = signal<MenuItem[]>([]);    
+    $items = signal<MenuItem[]>([]);
     $memoizedMenuItems = signal<Record<string, MenuItem[]>>({});
     $contextMenuData = this.#store.contextMenu;
     $showAddToBundle = signal(false);
@@ -60,7 +63,7 @@ export class DotFolderListViewContextMenuComponent {
         if (status === DotContentDriveStatus.LOADING) {
             this.$memoizedMenuItems.set({});
         }
-    })
+    });
 
     /**
      * Hides the context menu by clearing the triggered event.
@@ -80,7 +83,7 @@ export class DotFolderListViewContextMenuComponent {
         }
 
         this.$items.set([]);
-        
+
         const memoizedMenuItems = this.$memoizedMenuItems();
 
         if (memoizedMenuItems[contentlet.inode]) {
@@ -89,28 +92,29 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
-        const workflowActions = await this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING).toPromise();
+        const workflowActions = await this.#workflowsActionsService
+            .getByInode(contentlet.inode, DotRenderMode.LISTING)
+            .toPromise();
 
         const actionsMenu = [];
-        
+
         if (contentlet.contentType === 'htmlpageasset') {
             actionsMenu.push({
                 label: this.#dotMessageService.get('content-drive.context-menu.edit-page'),
                 command: () => {
-                    const url = contentlet.urlMap || contentlet.url;
-                    this.#router.navigate(['/edit-page/content'], { queryParams: { url, language_id: contentlet.languageId } });
+                    this.#navigationService.editContent(contentlet);
                 }
-            }); 
+            });
         } else {
             actionsMenu.push({
                 label: this.#dotMessageService.get('content-drive.context-menu.edit-contentlet'),
                 command: () => {
-                    this.#editContentlet(contentlet);
+                    this.#navigationService.editContent(contentlet);
                 }
             });
         }
 
-        workflowActions.map(action => {
+        workflowActions.map((action) => {
             const menuItem = {
                 label: `${this.#dotMessageService.get(action.name)}`,
                 command: () => {
@@ -130,20 +134,23 @@ export class DotFolderListViewContextMenuComponent {
 
                     this.#dotWorkflowEventHandlerService.open(wfActionEvent);
                 }
-            }
+            };
 
             actionsMenu.push(menuItem);
-        })
+        });
 
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
             command: () => {
-                this.#store.setShowAddToBundle(true)
+                this.#store.setShowAddToBundle(true);
             }
         });
 
         this.$items.set(actionsMenu);
-        this.$memoizedMenuItems.set({...this.$memoizedMenuItems(), [contentlet.inode]: this.$items()});
+        this.$memoizedMenuItems.set({
+            ...this.$memoizedMenuItems(),
+            [contentlet.inode]: this.$items()
+        });
         this.contextMenu()?.show(triggeredEvent);
     }
 
@@ -165,24 +172,8 @@ export class DotFolderListViewContextMenuComponent {
                     summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
                     life: 2000
                 });
-                console.error("Error firing workflow action", error);
+                console.error('Error firing workflow action', error);
             }
         );
-    }
-
-    #editContentlet(contentlet: DotContentDriveItem) {
-        this.#dotContentTypeService
-            .getContentType(contentlet.contentType)
-            .pipe(take(1))
-            .subscribe((contentType) => {
-                const shouldRedirectToOldContentEditor = !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
-                if (shouldRedirectToOldContentEditor) {
-                    this.#router.navigate([`c/content/${contentlet.inode}`]);
-
-                    return;
-                }
-
-                this.#router.navigate([`content/${contentlet.inode}`]);
-            });
     }
 }

@@ -20,7 +20,6 @@
     [sortOrder]="-1"
     data-testId="table"
     scrollHeight="flex">
-    
     <ng-template pTemplate="header">
         <tr data-testId="header-row">
             <th style="width: 2.5rem"><p-tableHeaderCheckbox data-testId="header-checkbox" /></th>
@@ -46,13 +45,16 @@
         @let status = item | dotContentletStatus;
 
         @if ($loading()) {
-            <tr data-testId="loading-row" >
+            <tr data-testId="loading-row">
                 <td [colSpan]="SKELETON_SPAN">
                     <p-skeleton height="3rem" width="100%" />
                 </td>
             </tr>
         } @else {
-            <tr data-testId="item-row" (contextmenu)="onContextMenu($event,item)">
+            <tr
+                data-testId="item-row"
+                (contextmenu)="onContextMenu($event, item)"
+                (dblclick)="onDoubleClick(item)">
                 <td data-testId="item-checkbox">
                     <p-tableCheckbox [value]="item" />
                 </td>
@@ -79,9 +81,9 @@
                 <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
                 <td data-testId="item-actions" class="text-center">
-                    <p-button 
-                        icon="pi pi-ellipsis-v" 
-                        [text]="true" 
+                    <p-button
+                        icon="pi pi-ellipsis-v"
+                        [text]="true"
                         [rounded]="true"
                         size="small"
                         (onClick)="onContextMenu($event, item)"
@@ -90,8 +92,6 @@
                 </td>
             </tr>
         }
-
-
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <tr class="no-highlight">
@@ -112,7 +112,6 @@
             </td>
         </tr>
     </ng-template>
-
 </p-table>
 
 <!-- <p-contextMenu #contextMenu [model]="items" /> -->

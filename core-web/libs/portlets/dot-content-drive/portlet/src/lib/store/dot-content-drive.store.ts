@@ -47,7 +47,7 @@ const initialState: DotContentDriveState = {
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
-    isTreeExpanded: DEFAULT_TREE_EXPANDED,
+    isTreeExpanded: DEFAULT_TREE_EXPANDED
 };
 
 export const DotContentDriveStore = signalStore(
@@ -147,7 +147,9 @@ export const DotContentDriveStore = signalStore(
                             if (Array.isArray(value)) {
                                 const orChain = value.join(' OR ');
                                 const orQuery =
-                                    value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
+                                    value.length > 1
+                                        ? `+${key}:(${orChain})`
+                                        : `+${key}:${orChain}`;
                                 modifiedQuery = modifiedQuery.raw(orQuery);
                                 return;
                             }
@@ -179,7 +181,7 @@ export const DotContentDriveStore = signalStore(
     }),
     withMethods((store) => {
         const contentSearchService = inject(DotContentSearchService);
-        
+
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
@@ -227,14 +229,14 @@ export const DotContentDriveStore = signalStore(
                 const { query, pagination, sort, currentSite } = store.$searchParams();
                 const { limit, offset } = pagination;
                 const { field, order } = sort;
-                
+
                 patchState(store, { status: DotContentDriveStatus.LOADING });
-                
+
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier === SYSTEM_HOST.identifier) {
                     return;
                 }
-                
+
                 contentSearchService
                     .get<ESContent>({
                         query,
@@ -250,7 +252,7 @@ export const DotContentDriveStore = signalStore(
                         })
                     )
                     .subscribe((response) => {
-                        patchState(store, { 
+                        patchState(store, {
                             items: response.jsonObjectView.contentlets,
                             totalItems: response.resultsSize,
                             status: DotContentDriveStatus.LOADED
@@ -285,7 +287,7 @@ export const DotContentDriveStore = signalStore(
                         isTreeExpanded: queryTreeExpanded == 'true'
                     });
                 });
-                
+
                 searchEffect = effect(() => {
                     // const searchParams = store.$searchParams();
                     // console.log('searchEffect triggered', searchParams);

@@ -1017,7 +1017,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             });
         }
 
-        console.log({actionsMenu});
+        console.log({ actionsMenu });
 
         return actionsMenu;
     }

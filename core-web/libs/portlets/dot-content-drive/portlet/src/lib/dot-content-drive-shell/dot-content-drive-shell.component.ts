@@ -6,6 +6,7 @@ import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotContentDriveNavigationService } from '../shared/services';
 import { ContextMenuData } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent } from '@dotcms/ui';
@@ -36,6 +37,7 @@ export class DotContentDriveShellComponent {
 
     readonly #router = inject(Router);
     readonly #location = inject(Location);
+    readonly #navigationService = inject(DotContentDriveNavigationService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -95,6 +97,10 @@ export class DotContentDriveShellComponent {
     onContextMenu({ event, contentlet }: ContextMenuData) {
         event.preventDefault();
         this.#store.patchContextMenu({ triggeredEvent: event, contentlet });
+    }
+
+    onDoubleClick(contentlet: any) {
+        this.#navigationService.editContent(contentlet);
     }
 
     cancelAddToBundle() {
