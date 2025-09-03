@@ -245,7 +245,7 @@ public class TagFactoryImpl implements TagFactory {
                 //Filter by tagname, hosts and persona
                 if ( UtilMethods.isSet(tagName) ) {
 
-                    String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
 
                     String personaFragment = "";
                     if ( excludePersonas ) {
@@ -258,7 +258,7 @@ public class TagFactoryImpl implements TagFactory {
                         globalTagsFragment = " AND host_id = ? ";
                     }
 
-                    String sql = "SELECT * FROM tag WHERE tagname LIKE ? " + globalTagsFragment + personaFragment + sortStr;
+                    String sql = "SELECT * FROM tag WHERE tagname LIKE ? ESCAPE '\\' " + globalTagsFragment + personaFragment + sortStr;
 
                     dc.setSQL(SQLUtil.addLimits(sql, start, count));
                     String escapedTagName = tagName.replace("\\", "\\\\")
@@ -277,7 +277,7 @@ public class TagFactoryImpl implements TagFactory {
                     //check if tag name is not set and if should display global tags
                     //it will check all global tags and current host tags.
 
-                    String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
 
                     String personaFragment = "";
                     if ( excludePersonas ) {
@@ -296,7 +296,7 @@ public class TagFactoryImpl implements TagFactory {
                     //check all current host tags.
                     String sql = "SELECT * FROM tag ";
 
-                    String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
 
                     String personaFragment = "";
                     if ( excludePersonas ) {
@@ -337,7 +337,7 @@ public class TagFactoryImpl implements TagFactory {
                 // Filter by tagname, hosts and persona
                 if (UtilMethods.isSet(tagName)) {
                     
-                    String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
                     
                     String personaFragment = "";
                     if (excludePersonas) {
@@ -350,7 +350,7 @@ public class TagFactoryImpl implements TagFactory {
                         globalTagsFragment = " AND host_id = ? ";
                     }
                     
-                    String sql = "SELECT COUNT(*) as count FROM tag WHERE tagname LIKE ? " + globalTagsFragment + personaFragment;
+                    String sql = "SELECT COUNT(*) as count FROM tag WHERE tagname LIKE ? ESCAPE '\\' " + globalTagsFragment + personaFragment;
                     
                     dc.setSQL(sql);
                     String escapedTagName = tagName.replace("\\", "\\\\")
@@ -368,7 +368,7 @@ public class TagFactoryImpl implements TagFactory {
                 } else if (!UtilMethods.isSet(tagName) && globalTagsFilter) {
                     // Check if tag name is not set and if should display global tags
                     
-                    String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
                     
                     String personaFragment = "";
                     if (excludePersonas) {
@@ -387,7 +387,7 @@ public class TagFactoryImpl implements TagFactory {
                     // Check all current host tags.
                     String sql = "SELECT COUNT(*) as count FROM tag ";
                     
-                    String effectiveTagStorage = getEffectiveTagStorage(host, globalTagsFilter);
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
                     
                     String personaFragment = "";
                     if (excludePersonas) {
@@ -784,10 +784,9 @@ public class TagFactoryImpl implements TagFactory {
      * Resolves the effective tag storage for a host, respecting the global parameter.
      * 
      * @param host The host to resolve tag storage for
-     * @param globalTagsFilter Whether global tags should be included
      * @return The effective tag storage ID
      */
-    private String getEffectiveTagStorage(Host host, boolean globalTagsFilter) {
+    private String getEffectiveTagStorage(Host host) {
         Object tagStorage = host.getMap().get("tagStorage");
         
         // If no tagStorage set, use site's own identifier (consistent with TagAPIImpl)

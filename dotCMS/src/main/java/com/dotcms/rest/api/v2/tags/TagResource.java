@@ -62,7 +62,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
@@ -78,6 +77,8 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 public class TagResource {
 
     public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags with Inode %s were found.";
+    private static final int MAX_ITEMS_PER_PAGE = 500;
+    
     private final WebResource webResource;
     private final TagAPI tagAPI;
 	private final TagsResourceHelper helper;
@@ -239,8 +240,8 @@ public class TagResource {
             throw new BadRequestException("Page number must be greater than 0");
         }
 
-        if (perPage != null && (perPage < 1 || perPage > 500)) {
-            throw new BadRequestException("Items per page must be between 1 and 500");
+        if (perPage != null && (perPage < 1 || perPage > MAX_ITEMS_PER_PAGE)) {
+            throw new BadRequestException("Items per page must be between 1 and " + MAX_ITEMS_PER_PAGE);
         }
     }
 
