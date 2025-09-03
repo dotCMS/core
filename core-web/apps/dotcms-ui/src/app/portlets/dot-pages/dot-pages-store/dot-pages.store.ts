@@ -901,7 +901,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         item: DotCMSContentlet,
         favoritePage?: DotCMSContentlet
     ): MenuItem[] {
-        debugger;
         const actionsMenu: MenuItem[] = [];
 
         const favoritePageUrl = favoritePage
@@ -1016,8 +1015,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 command: () => this.showAddToBundle(item.identifier)
             });
         }
-
-        console.log({ actionsMenu });
 
         return actionsMenu;
     }

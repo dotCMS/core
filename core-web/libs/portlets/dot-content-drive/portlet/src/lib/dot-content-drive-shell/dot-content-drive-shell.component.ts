@@ -6,8 +6,7 @@ import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
-import { DotContentDriveNavigationService } from '../shared/services';
-import { ContextMenuData } from '@dotcms/dotcms-models';
+import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
@@ -15,6 +14,7 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import { SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
 
@@ -94,15 +94,27 @@ export class DotContentDriveShellComponent {
         });
     }
 
+    /**
+     * Handles right-click context menu event on a content item
+     * @param event The mouse event that triggered the context menu
+     * @param contentlet The content item that was right-clicked
+     */
     onContextMenu({ event, contentlet }: ContextMenuData) {
         event.preventDefault();
         this.#store.patchContextMenu({ triggeredEvent: event, contentlet });
     }
 
-    onDoubleClick(contentlet: any) {
+    /**
+     * Handles double click event on a content item
+     * @param contentlet The content item that was double clicked
+     */
+    onDoubleClick(contentlet: DotContentDriveItem) {
         this.#navigationService.editContent(contentlet);
     }
 
+    /**
+     * Cancels the "Add to Bundle" dialog by setting its visibility to false
+     */
     cancelAddToBundle() {
         this.#store.setShowAddToBundle(false);
     }
