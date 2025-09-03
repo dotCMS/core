@@ -22,6 +22,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -195,7 +196,7 @@ public class ContentHelper {
 
       if(contentlet.isHTMLPage() || contentlet.isFileAsset()){
         //use identifier api to get the url
-        return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
+        return this.getUrl(contentlet.getIdentifier());
       }
       return contentlet.getStringProperty(URL_FIELD);
 
@@ -203,29 +204,27 @@ public class ContentHelper {
     } // getUrl.
 
 
+  /**
+   * Gets if possible the url associated to this asset identifier
+   *
+   * @param identifierStr {@link Object}
+   * @return String the url, null if can not get
+   */
+  public String getUrl(final String identifierStr) {
 
+    try {
 
-    /**
-     * Gets if possible the url associated to this asset identifier
-     * @param identifierObj {@link Object}
-     * @return String the url, null if can not get
-     */
-    public String getUrl ( final Object identifierObj) {
+      final Identifier identifier = this.identifierAPI.find(identifierStr);
+      return (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getId()))
+          ? identifier.getURI()
+          : null;
+    } catch (DotDataException e) {
+      throw new DotRuntimeException(
+          "The identifierStr parameter is not valid [" + identifierStr + "], unable to get the url", e);
 
-        String url = null;
-        if ( identifierObj != null ) {
-            try {
+    }
 
-                final Identifier identifier = this.identifierAPI.find(  (String) identifierObj );
-                url = ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) )?
-                        identifier.getURI():null;
-            } catch ( DotDataException e ) {
-                Logger.error( this.getClass(), "Unable to get Identifier with id [" + identifierObj + "]. Could not get the url", e );
-            }
-        }
-
-        return url;
-    } // getUrl.
+  } // getUrl.
 
     /**
      *
