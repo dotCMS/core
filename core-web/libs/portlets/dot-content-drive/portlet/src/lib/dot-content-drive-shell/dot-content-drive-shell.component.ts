@@ -1,6 +1,4 @@
-/* eslint-disable no-console */
-
-import { JsonPipe, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -8,14 +6,12 @@ import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { ContextMenuData } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
-import {
-    ContextMenuData,
-    DotFolderListViewContextMenuComponent
-} from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
+import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import { SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -28,7 +24,6 @@ import { encodeFilters } from '../utils/functions';
         DotContentDriveToolbarComponent,
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
-        JsonPipe,
         ToastModule
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
@@ -49,11 +44,6 @@ export class DotContentDriveShellComponent {
     readonly $contextMenuData = this.#store.contextMenu;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
-
-    readonly addToBundleEffect = effect(() => {
-        const showAddToBundle = this.#store.contextMenu()?.showAddToBundle;
-        console.log('addToBundleEffect', showAddToBundle);
-    });
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     ChangeDetectionStrategy,
     Component,
@@ -16,11 +15,10 @@ import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { HEADER_COLUMNS } from '../shared/constants';
-
 
 @Component({
     selector: 'dot-folder-list-view',
@@ -47,8 +45,7 @@ export class DotFolderListViewComponent {
     selectionChange = output<DotContentDriveItem[]>();
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
-    //TODO: Put ContextMenuData and move that interface to models or something else
-    rightClick = output<any>();
+    rightClick = output<ContextMenuData>();
 
     selectedItems: DotContentDriveItem[] = [];
     readonly MIN_ROWS_PER_PAGE = 20;

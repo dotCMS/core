@@ -7,6 +7,7 @@
     data-testid="tree-selector">
     Tree selector works
 </div>
+
 <dot-folder-list-view
     [items]="$items()"
     [totalItems]="$totalItems()"
@@ -19,8 +20,6 @@
 <dot-folder-list-context-menu />
 
 <p-toast position="top-center" data-testId="content-drive-toast" />
-
-<pre style="position: absolute; top: 0; width: 300px; height: 300px; z-index: 1000; overflow: scroll;"><code>{{ $contextMenuData() | json }}</code></pre>
 
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle (cancel)="cancelAddToBundle()" [assetIdentifier]="$contextMenuData().contentlet.identifier" />

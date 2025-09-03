@@ -1,50 +1,50 @@
-/* eslint-disable no-console */
 import { CommonModule } from "@angular/common";
-import { Component, ViewChild, effect, inject, signal } from "@angular/core";
+import { Component, effect, inject, signal, viewChild } from "@angular/core";
 import { Router } from "@angular/router";
 
-import { MessageService } from "primeng/api";
+import { MenuItem, MessageService } from "primeng/api";
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
 import { take } from "rxjs/operators";
 
-import { DotContentTypeService, DotEventsService, DotMessageService, DotRenderMode, DotWorkflowActionsFireService, DotWorkflowEventHandlerService, DotWorkflowsActionsService } from "@dotcms/data-access";
+import { DotContentTypeService, DotMessageService, DotRenderMode, DotWorkflowActionsFireService, DotWorkflowEventHandlerService, DotWorkflowsActionsService } from "@dotcms/data-access";
 import { DotCMSWorkflowActionEvent, DotContentDriveItem, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotContentDriveContextMenu, DotContentDriveStatus } from "../../shared/models";
 import { DotContentDriveStore } from "../../store/dot-content-drive.store";
 
-export interface ContextMenuData {
-    event: Event;
-    contentlet: DotContentDriveItem;
-}
+
 @Component({
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
     imports: [CommonModule, ContextMenuModule]
 })
 export class DotFolderListViewContextMenuComponent {
-    @ViewChild('contextMenu') contextMenu: ContextMenu;
-    
+
+    contextMenu = viewChild<ContextMenu>('contextMenu');
     #dotMessageService = inject(DotMessageService);
     #workflowsActionsService = inject(DotWorkflowsActionsService);
     #workflowActionsFireService = inject(DotWorkflowActionsFireService);
-    #dotEventsService = inject(DotEventsService);
     #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     #router = inject(Router);
     #store = inject(DotContentDriveStore);
     #dotContentTypeService = inject(DotContentTypeService);
     #messageService = inject(MessageService);
 
-    $items = signal([]);    
+    $items = signal<MenuItem[]>([]);    
+    $memoizedMenuItems = signal<Record<string, MenuItem[]>>({});
     $contextMenuData = this.#store.contextMenu;
-    $memoizedMenuItems = signal({});
     $showAddToBundle = signal(false);
 
+    /**
+     * Effect that handles right-click context menu events.
+     * When context menu data is available and the menu is not currently visible,
+     * it triggers fetching and displaying the menu items.
+     */
     readonly rightClickEffect = effect(() => {
         const contextMenuData = this.$contextMenuData();
 
-        if (contextMenuData && !this.contextMenu?.visible()) {
+        if (contextMenuData && !this.contextMenu()?.visible()) {
             this.getMenuItems(contextMenuData);
         }
     });
@@ -62,12 +62,19 @@ export class DotFolderListViewContextMenuComponent {
         }
     })
 
+    /**
+     * Hides the context menu by clearing the triggered event.
+     */
     hideContextMenu() {
         this.#store.patchContextMenu({ triggeredEvent: null });
     }
 
+    /**
+     * Retrieves and displays the context menu items for a given contentlet.
+     * It checks if the menu has already been memoized and displays it if available.
+     * Otherwise, it fetches the workflow actions and builds the menu.
+     */
     async getMenuItems({ triggeredEvent, contentlet }: DotContentDriveContextMenu) {
-
         if (!triggeredEvent || !contentlet) {
             return;
         }
@@ -78,7 +85,7 @@ export class DotFolderListViewContextMenuComponent {
 
         if (memoizedMenuItems[contentlet.inode]) {
             this.$items.set(memoizedMenuItems[contentlet.inode]);
-            this.contextMenu?.show(triggeredEvent);
+            this.contextMenu()?.show(triggeredEvent);
             return;
         }
 
@@ -98,7 +105,6 @@ export class DotFolderListViewContextMenuComponent {
             actionsMenu.push({
                 label: this.#dotMessageService.get('content-drive.context-menu.edit-contentlet'),
                 command: () => {
-                    // Here i need to implement the editContentlet
                     this.#editContentlet(contentlet);
                 }
             });
@@ -132,26 +138,24 @@ export class DotFolderListViewContextMenuComponent {
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
             command: () => {
-                console.log("Called add to bundle");
                 this.#store.setShowAddToBundle(true)
             }
         });
 
         this.$items.set(actionsMenu);
         this.$memoizedMenuItems.set({...this.$memoizedMenuItems(), [contentlet.inode]: this.$items()});
-        this.contextMenu?.show(triggeredEvent);
+        this.contextMenu()?.show(triggeredEvent);
     }
 
-    #fireWorkflowAction(contentletInode: string, actionId: string): void {
+    #fireWorkflowAction(contentletInode: string, actionId: string) {
         this.#dotMessageService.get('Workflow-executed');
         this.#workflowActionsFireService.fireTo({ actionId, inode: contentletInode }).subscribe(
             () => {
                 this.#store.reloadContentDrive();
-                // this.#dotEventsService.notify('save-page', { payload, value });
+
                 this.#messageService.add({
                     severity: 'success',
                     summary: this.#dotMessageService.get('content-drive.toast.workflow-executed'),
-                    // detail: this.#dotMessageService.get('Workflow-executed-detail'),
                     life: 2000
                 });
             },
@@ -159,7 +163,6 @@ export class DotFolderListViewContextMenuComponent {
                 this.#messageService.add({
                     severity: 'success',
                     summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
-                    // detail: this.#dotMessageService.get('Workflow-executed-detail'),
                     life: 2000
                 });
                 console.error("Error firing workflow action", error);
@@ -169,17 +172,17 @@ export class DotFolderListViewContextMenuComponent {
 
     #editContentlet(contentlet: DotContentDriveItem) {
         this.#dotContentTypeService
-        .getContentType(contentlet.contentType)
-        .pipe(take(1))
-        .subscribe((contentType) => {
-            const shouldRedirectToOldContentEditor = !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
-            if (shouldRedirectToOldContentEditor) {
-                this.#router.navigate([`c/content/${contentlet.inode}`]);
+            .getContentType(contentlet.contentType)
+            .pipe(take(1))
+            .subscribe((contentType) => {
+                const shouldRedirectToOldContentEditor = !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+                if (shouldRedirectToOldContentEditor) {
+                    this.#router.navigate([`c/content/${contentlet.inode}`]);
 
-                return;
-            }
+                    return;
+                }
 
-            this.#router.navigate([`content/${contentlet.inode}`]);
-        });
+                this.#router.navigate([`content/${contentlet.inode}`]);
+            });
     }
 }
