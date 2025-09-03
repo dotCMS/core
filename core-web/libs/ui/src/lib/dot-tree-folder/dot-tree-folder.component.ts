@@ -12,12 +12,12 @@ import {
 
 import { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
+import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 
 @Component({
-    selector: 'dot-sidebar',
+    selector: 'dot-tree-folder',
     imports: [TreeModule, SkeletonModule],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
@@ -74,6 +74,14 @@ export class DotTreeFolderComponent {
     onNodeSelect = output<TreeNodeExpandEvent>();
 
     /**
+     * Event emitter for when a node is collapsed.
+     *
+     * @event onNodeCollapse
+     * @type {TreeNodeCollapseEvent}
+     */
+    onNodeCollapse = output<TreeNodeCollapseEvent>();
+
+    /**
      * Computed property representing the component's state.
      *
      * @returns An object containing:
@@ -108,5 +116,13 @@ export class DotTreeFolderComponent {
         const number = Math.floor(Math.random() * (100 - 75 + 1)) + 75;
 
         return `${number}%`;
+    }
+
+    onNodeExpandFn(event: TreeNodeExpandEvent) {
+        this.onNodeExpand.emit(event);
+    }
+
+    onNodeCollapseFn(event: TreeNodeCollapseEvent) {
+        this.onNodeCollapse.emit(event);
     }
 }

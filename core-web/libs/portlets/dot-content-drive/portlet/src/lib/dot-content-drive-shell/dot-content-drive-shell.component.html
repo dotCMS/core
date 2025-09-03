@@ -1,11 +1,15 @@
 <dot-content-drive-toolbar data-testid="toolbar" />
 
-<!-- Just placeholders for now.-->
 <div
     class="tree-selector center-content"
     [class.expanded]="$treeExpanded()"
     data-testid="tree-selector">
-    Tree selector works
+    <dot-tree-folder
+        [folders]="$folders()"
+        [loading]="$loading()"
+        (onNodeExpand)="onNodeExpand($event)"
+        (onNodeSelect)="onNodeExpand($event)"
+        (onNodeCollapse)="onNodeCollapse($event)" />
 </div>
 <dot-folder-list-view
     [items]="$items()"

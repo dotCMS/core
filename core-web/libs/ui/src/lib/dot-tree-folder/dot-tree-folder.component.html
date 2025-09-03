@@ -11,9 +11,14 @@
         styleClass="w-full h-full"
         loadingMode="icon"
         (onNodeSelect)="onNodeSelect.emit($event)"
-        (onNodeExpand)="onNodeExpand.emit($event)">
+        (onNodeExpand)="onNodeExpandFn($event)"
+        (onNodeCollapse)="onNodeCollapseFn($event)">
         <ng-template let-node pTemplate="default">
             <span>{{ node.label }}</span>
+        </ng-template>
+        <ng-template let-context let-node="rowData" pTemplate="togglericon">
+            <!-- Always show an icon, but different styles based on state -->
+            <i [class]="context ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
         </ng-template>
     </p-tree>
 } @else {

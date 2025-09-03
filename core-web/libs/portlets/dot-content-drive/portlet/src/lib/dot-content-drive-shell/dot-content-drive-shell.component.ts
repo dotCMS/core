@@ -1,16 +1,19 @@
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LazyLoadEvent, SortEvent } from 'primeng/api';
+import { LazyLoadEvent, SortEvent, TreeNode } from 'primeng/api';
+import { TreeNodeCollapseEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, map, pluck, take } from 'rxjs/operators';
 
 import { DotContentSearchService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotTreeFolderComponent } from '@dotcms/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
@@ -18,9 +21,39 @@ import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/model
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
 
+export interface DotFolder {
+    id: string;
+    hostName: string;
+    path: string;
+    addChildrenAllowed: boolean;
+}
+
+export type TreeNodeData = {
+    type: 'site' | 'folder';
+    path: string;
+    hostname: string;
+    id: string;
+};
+
+export type TreeNodeItem = TreeNode<TreeNodeData>;
+
+const ALL_FOLDER_ITEM: TreeNodeItem = {
+    key: 'ALL_FOLDER',
+    label: 'All',
+    data: {
+        type: 'site',
+        path: '/',
+        hostname: SYSTEM_HOST.identifier,
+        id: ''
+    },
+    children: [],
+    leaf: false,
+    expanded: true
+};
+
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
+    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, DotTreeFolderComponent],
     providers: [DotContentDriveStore],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
@@ -30,6 +63,7 @@ export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #contentSearchService = inject(DotContentSearchService);
+    readonly #http = inject(HttpClient);
     readonly #router = inject(Router);
     readonly #location = inject(Location);
 
@@ -37,6 +71,8 @@ export class DotContentDriveShellComponent {
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+    $folders = signal<TreeNodeItem[]>([]);
+    $loading = signal<boolean>(false);
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
@@ -96,6 +132,12 @@ export class DotContentDriveShellComponent {
         this.#location.go(urlTree.toString());
     });
 
+    constructor() {
+        this.getFoldersTreeNode(`demo.dotcms.com`).subscribe((folders) =>
+            this.$folders.set([ALL_FOLDER_ITEM, ...folders.folders])
+        );
+    }
+
     onPaginate(event: LazyLoadEvent) {
         // Explicit check because it can potentially be 0
         if (event.rows === undefined || event.first === undefined) {
@@ -118,5 +160,78 @@ export class DotContentDriveShellComponent {
             field: event.field,
             order: SORT_ORDER[event.order] ?? DotContentDriveSortOrder.ASC
         });
+    }
+
+    // MOVE THIS TO A SERVICE
+
+    /**
+     *
+     *
+     * @param {string} path
+     * @return {*}  {Observable<DotFolder[]>}
+     * @memberof DotEditContentService
+     */
+    getFolders(path: string): Observable<DotFolder[]> {
+        return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
+    }
+
+    /**
+     * Retrieves folders and transforms them into a tree node structure.
+     * The first folder in the response is considered the parent folder.
+     *
+     * @param {string} path - The path to fetch folders from
+     * @returns {Observable<{ parent: DotFolder; folders: TreeNodeItem[] }>} Observable that emits an object containing the parent folder and child folders as TreeNodeItems
+     */
+    getFoldersTreeNode(path: string): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
+        return this.getFolders(`//${path}`).pipe(
+            map((folders) => {
+                const parent = folders.shift();
+
+                return {
+                    parent,
+                    folders: folders.map((folder) => {
+                        // Split by sladh and remove empty
+                        const arrayPath = folder.path.split('/').filter((path) => path);
+                        const label = arrayPath.pop();
+
+                        return {
+                            key: folder.id,
+                            label,
+                            data: {
+                                id: folder.id,
+                                hostname: folder.hostName,
+                                path: folder.path,
+                                type: 'folder'
+                            },
+                            leaf: false
+                        };
+                    })
+                };
+            })
+        );
+    }
+
+    onNodeExpand(event: TreeNodeSelectEvent) {
+        const { node } = event;
+        const { hostname, path } = node.data;
+
+        node.loading = true;
+
+        const fullPath = `${hostname}${path}`;
+
+        this.getFoldersTreeNode(fullPath).subscribe(({ folders: children }) => {
+            node.loading = false;
+            node.children = [...children];
+        });
+    }
+
+    onNodeCollapse(event: TreeNodeCollapseEvent) {
+        const { node } = event;
+
+        if (node.key === 'ALL_FOLDER') {
+            node.expanded = true;
+
+            return;
+        }
     }
 }
