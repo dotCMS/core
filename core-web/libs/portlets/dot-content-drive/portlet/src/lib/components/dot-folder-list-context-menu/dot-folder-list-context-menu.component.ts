@@ -7,7 +7,7 @@ import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { DotCurrentUserService, DotEventsService, DotHttpErrorManagerService, DotMessageService, DotRenderMode, DotWorkflowActionsFireService, DotWorkflowEventHandlerService, DotWorkflowsActionsService } from "@dotcms/data-access";
 import { DotCMSWorkflowActionEvent, DotContentDriveItem } from '@dotcms/dotcms-models';
 
-import { DotContentDriveContextMenu } from "../../shared/models";
+import { DotContentDriveContextMenu, DotContentDriveStatus } from "../../shared/models";
 import { DotContentDriveStore } from "../../store/dot-content-drive.store";
 
 export interface ContextMenuData {
@@ -76,6 +76,7 @@ export class DotFolderListViewContextMenuComponent {
                 label: `${this.#dotMessageService.get(action.name)}`,
                 command: () => {
                     if (!(action.actionInputs?.length > 0)) {
+                        this.#store.setStatus(DotContentDriveStatus.LOADING);
                         this.#fireWorkflowAction(contentlet.inode, action.id);
 
                         return;
@@ -125,8 +126,11 @@ export class DotFolderListViewContextMenuComponent {
     #fireWorkflowAction(contentletInode: string, actionId: string): void {
         const value = this.#dotMessageService.get('Workflow-executed');
         this.#workflowActionsFireService.fireTo({ actionId, inode: contentletInode }).subscribe(
-            (payload) => this.#dotEventsService.notify('save-page', { payload, value }),
-            // TODO: Check if this is necessary, can be a console.error?
+            (payload) => {
+                this.#dotEventsService.notify('save-page', { payload, value });
+                this.#store.reloadContentDrive();
+            },
+            // TODO:.re can be a console.error?
             (error) => this.#httpErrorManagerService.handle(error, true)
         );
     }

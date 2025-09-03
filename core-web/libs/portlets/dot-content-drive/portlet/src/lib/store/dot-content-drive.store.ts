@@ -60,6 +60,7 @@ export const DotContentDriveStore = signalStore(
                 const pathValue = path();
                 const currentSiteValue = currentSite();
                 const filtersValue = filters();
+                console.log('called computed $query', filtersValue);
                 const filtersEntries = Object.entries(filtersValue ?? {});
 
                 if (pathValue) {
@@ -160,14 +161,11 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
-
             reloadContentDrive() {
-                patchState(store, {
-                    currentSite: store.currentSite() ?? SYSTEM_HOST,
-                    path: store.path(),
-                    filters: store.filters(),
-                    isTreeExpanded: store.isTreeExpanded()
-                });
+                // Trigger change sequence to recompute $query
+                console.log('called reloadContentDrive');
+                patchState(store, { filters: {}  });
+                // patchState(store, { filters: { ...store.filters() }, status: DotContentDriveStatus.LOADED });
             }
         };
     }),

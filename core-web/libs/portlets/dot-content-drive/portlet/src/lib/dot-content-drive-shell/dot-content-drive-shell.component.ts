@@ -51,9 +51,8 @@ export class DotContentDriveShellComponent {
         console.log('addToBundleEffect', showAddToBundle);
     });
 
-    // $contextMenuData = signal<ContextMenuData | null>(null);
-
     readonly itemsEffect = effect(() => {
+        console.log('itemsEffect compute');
         const query = this.#store.$query();
         const currentSite = this.#store.currentSite();
         const { limit, offset } = this.#store.pagination();
