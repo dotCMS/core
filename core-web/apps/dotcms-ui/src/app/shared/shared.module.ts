@@ -13,7 +13,6 @@ import {
     DotEventsSocketURL,
     LoggerService,
     LoginService,
-    SiteService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';

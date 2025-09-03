@@ -60,6 +60,7 @@ export class SiteService {
             .subscribeToEvents<Site>(['SWITCH_SITE'])
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
+            debugger
         loginService.watchUser(() => this.loadCurrentSite());
     }
 
