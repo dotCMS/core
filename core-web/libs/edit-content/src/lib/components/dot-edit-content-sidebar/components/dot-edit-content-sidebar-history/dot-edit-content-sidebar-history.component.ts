@@ -1,13 +1,13 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, ViewChild } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, input, inject } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { MenuModule } from 'primeng/menu';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TimelineModule } from 'primeng/timeline';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
 import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
@@ -25,18 +25,21 @@ import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotc
         AvatarModule,
         ButtonModule,
         MenuModule,
-        OverlayPanelModule,
         SkeletonModule,
+        TooltipModule,
         DotGravatarDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
         ChipModule
     ],
+    providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
     styleUrls: ['./dot-edit-content-sidebar-history.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarHistoryComponent {
+    private datePipe = inject(DatePipe);
+    private dotMessagePipe = inject(DotMessagePipe);
     /**
      * List of history items to display
      * @readonly
@@ -67,49 +70,23 @@ export class DotEditContentSidebarHistoryComponent {
     readonly $hasHistoryItems = computed(() => this.$historyItems().length > 0);
 
     /**
-     * ViewChild reference to the overlay panel
+     * Cached translations map for all labels used in the component
      */
-    @ViewChild('overlayPanel') overlayPanel!: OverlayPanel;
-
-    /**
-     * Currently selected item for the overlay
-     */
-    selectedItem: DotCMSContentletVersion | null = null;
-
-    /**
-     * Gets the status label for a history item
-     */
-    getStatusLabel(item: DotCMSContentletVersion): string {
-        if (item.live && item.working) {
-            return 'Published';
-        } else if (item.working) {
-            return 'Working';
-        } else if (item.live) {
-            return 'Live';
-        }
-
-        return 'Draft';
-    }
-
-    /**
-     * Gets the CSS class for the status badge
-     */
-    getStatusClass(item: DotCMSContentletVersion): string {
-        if (item.live && item.working) {
-            return 'history__status--published';
-        } else if (item.working) {
-            return 'history__status--working';
-        } else if (item.live) {
-            return 'history__status--live';
-        }
-
-        return 'history__status--draft';
-    }
+    private readonly labels = {
+        preview: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.preview'),
+        restore: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.restore'),
+        compare: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.compare')
+    } as const;
 
     /**
      * Gets the timeline marker color based on the content status
      */
-    getTimelineMarkerClass(item: DotCMSContentletVersion): string {
+    getTimelineMarkerClass(item: DotCMSContentletVersion | undefined): string {
+        // Safety check for undefined item
+        if (!item) {
+            return '';
+        }
+
         if (item.live) {
             return 'history__marker--live';
         } else if (item.working) {
@@ -120,39 +97,25 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
-     * Shows the overlay panel with item details on hover
-     */
-    showOverlay(event: MouseEvent, item: DotCMSContentletVersion): void {
-        this.selectedItem = item;
-        this.overlayPanel.show(event);
-    }
-
-    /**
-     * Hides the overlay panel when mouse leaves
-     */
-    hideOverlay(): void {
-        this.overlayPanel.hide();
-        this.selectedItem = null;
-    }
-
-    /**
      * Gets menu items for version actions
      */
-    getVersionMenuItems(item: DotCMSContentletVersion) {
+    getVersionMenuItems(item: DotCMSContentletVersion | undefined) {
+        // Safety check for undefined item
+        if (!item) {
+            return [];
+        }
+
         return [
             {
-                label: 'Preview',
-                icon: 'pi pi-eye',
+                label: this.labels.preview,
                 command: () => this.onPreviewVersion(item)
             },
             {
-                label: 'Restore',
-                icon: 'pi pi-refresh',
+                label: this.labels.restore,
                 command: () => this.onRestoreVersion(item)
             },
             {
-                label: 'Compare',
-                icon: 'pi pi-clone',
+                label: this.labels.compare,
                 command: () => this.onCompareVersion(item)
             }
         ];

@@ -1,16 +1,5 @@
 @use "variables" as *;
 
-@keyframes fadeInHistory {
-    from {
-        opacity: 0;
-        transform: translateY(-$spacing-1);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 // Block
 .history {
     display: flex;
@@ -26,9 +15,6 @@
     padding: $spacing-3 $spacing-4;
 
     ::ng-deep .history__timeline {
-        .p-timeline-event {
-        }
-
         .p-timeline-event-marker {
             width: 12px;
             height: 12px;
@@ -142,6 +128,10 @@
 
     &:hover {
         background: $color-palette-primary-op-10;
+
+        .history__actions {
+            visibility: visible;
+        }
     }
 }
 
@@ -163,42 +153,11 @@
     font-size: $font-size-md;
 }
 
-.history__status {
-    padding: $spacing-1 $spacing-2;
-    border-radius: $border-radius-sm;
-    font-size: $font-size-xs;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.history__status--published {
-    background: $color-palette-green;
-    color: $white;
-}
-
-.history__status--working {
-    background: $color-palette-yellow;
-    color: $white;
-}
-
-.history__status--live {
-    background: $color-palette-green;
-    color: $white;
-}
-
-.history__status--draft {
-    background: $color-palette-gray-500;
-    color: $white;
-}
-
 .history__actions {
     display: flex;
+    visibility: hidden;
     align-items: center;
-}
-
-.history__menu-button {
-    //background-color: transparent;
+    margin-left: $spacing-1;
 }
 
 .history__user-section {
@@ -210,22 +169,11 @@
 ::ng-deep .history__avatar.p-avatar {
     width: 21px;
     height: 21px;
-    // border-radius: 50%;
-    // font-size: $font-size-xs;
-    // line-height: 21px;
-    // display: flex;
-    // align-items: center;
-    // justify-content: center;
 }
 
 .history__user-name {
     color: $color-palette-gray-800;
     font-size: $font-size-md;
-}
-
-.history__states {
-    display: flex;
-    gap: $spacing-2;
 }
 
 .history__state {
@@ -247,91 +195,50 @@
     color: $color-palette-green;
 }
 
-// OverlayPanel styles
-::ng-deep .history__overlay.p-overlaypanel {
-    background: $color-palette-primary-200;
-    min-width: 220px;
-    max-width: 220px;
-    margin-left: -10px;
-
-    &:before {
-        left: 20px;
-        border-left: 7px solid $color-palette-gray-100;
-        border-right: 7px solid $color-palette-gray-100;
-        border-bottom: 12px solid $color-palette-primary-200;
+// Tooltip styles
+::ng-deep .history__tooltip.p-tooltip {
+    &.p-tooltip-bottom {
+        transform: translateX(-55px);
     }
 
-    .p-overlaypanel-content {
-        padding: $spacing-1;
-    }
-}
+    .p-tooltip-text {
+        background: $color-palette-primary-200;
+        padding: 0;
+        min-width: 220px;
+        max-width: 220px;
 
-.history__overlay-title {
-    margin: 0;
-    color: $color-palette-gray-800;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-bold;
-    word-wrap: break-word;
-}
-
-.history__overlay-list {
-    padding-left: $spacing-3;
-    margin: 0;
-
-    li {
-        font-size: $font-size-sm;
-        color: $color-palette-gray-700;
-        line-height: 1.5;
-
-        &:last-child {
-            margin-bottom: 0;
+        .history__overlay-content {
+            padding: $spacing-1;
+            display: flex;
+            flex-direction: column;
+            gap: $spacing-0;
         }
 
-        strong {
+        .history__overlay-title {
+            margin: 0;
             color: $color-palette-gray-800;
-            font-weight: 600;
+            font-size: $font-size-sm;
+            font-weight: $font-weight-bold;
+            word-wrap: break-word;
         }
-    }
-}
 
-.history__overlay-states {
-    display: flex;
-    gap: $spacing-2;
-    margin-top: $spacing-2;
-}
+        .history__overlay-list {
+            padding-left: $spacing-3;
+            margin: 0;
 
-// Responsive adjustments
-@media (max-width: $screen-sm-max) {
-    .history__content {
-        padding: $spacing-2;
-    }
-
-    .history__item {
-        padding: $spacing-2;
-    }
-
-    .history__header {
-        flex-direction: column;
-        gap: $spacing-2;
-    }
-
-    .history__meta {
-        align-items: flex-start;
-    }
-
-    .history__content-info {
-        flex-direction: column;
-        gap: $spacing-2;
-    }
-
-    ::ng-deep .history__overlay {
-        .p-overlaypanel {
-            min-width: 280px;
-            max-width: 320px;
+            li {
+                color: $color-palette-gray-700;
+            }
         }
     }
 
-    .history__overlay-content {
-        padding: $spacing-3;
+    &.p-tooltip-bottom {
+        .p-tooltip-arrow {
+            border-bottom-color: $color-palette-primary-200;
+            border-top-color: transparent;
+            border-left-color: transparent;
+            border-right-color: transparent;
+            left: 20px;
+        }
     }
 }
