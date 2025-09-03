@@ -54,71 +54,6 @@ export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
     withComputed(({ path, filters, currentSite, pagination, sort }) => {
         return {
-            $query: computed(() => {
-                const query = new QueryBuilder();
-
-                const baseQuery = query.raw(BASE_QUERY);
-
-                let modifiedQuery = baseQuery;
-
-                const pathValue = path();
-                const currentSiteValue = currentSite();
-                const filtersValue = filters();
-                // console.log('called computed $query', filtersValue);
-                const filtersEntries = Object.entries(filtersValue ?? {});
-
-                if (pathValue) {
-                    modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
-                }
-
-                modifiedQuery = modifiedQuery
-                    .field('conhost')
-                    .equals(currentSiteValue?.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier);
-
-                filtersEntries
-                    // Remove filters that are undefined
-                    .filter(([_key, value]) => value !== undefined)
-                    .forEach(([key, value]) => {
-                        // Handle multiselectors
-                        if (Array.isArray(value)) {
-                            // Chain with OR
-                            const orChain = value.join(' OR ');
-
-                            // Build the query, if the value is a single value, we don't need to wrap it in parentheses
-                            const orQuery =
-                                value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
-
-                            // Add the query to the modified query
-                            modifiedQuery = modifiedQuery.raw(orQuery);
-                            return;
-                        }
-
-                        // Handle raw search for title
-                        if (key === 'title') {
-                            // This is a indexed field, so we need to search by boosting terms https://dev.dotcms.com/docs/content-search-syntax#Boost
-                            // We search by catchall, title_dotraw boosting 5 and title boosting 15, giving more weight to the title
-                            modifiedQuery = modifiedQuery.raw(
-                                `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
-                            );
-
-                            // If the value has multiple words, we need to search for each word and boost them by 5
-                            value
-                                .split(' ')
-                                .filter((word) => word.trim().length > 0)
-                                .forEach((word) => {
-                                    modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
-                                });
-
-                            return;
-                        }
-
-                        modifiedQuery = modifiedQuery.field(key).equals(value);
-                    });
-
-                return modifiedQuery.build();
-            }),
             $searchParams: computed(() => ({
                 query: (() => {
                     const query = new QueryBuilder();
@@ -225,7 +160,7 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
-            async loadItems() {
+            loadItems() {
                 const { query, pagination, sort, currentSite } = store.$searchParams();
                 const { limit, offset } = pagination;
                 const { field, order } = sort;
@@ -288,9 +223,12 @@ export const DotContentDriveStore = signalStore(
                     });
                 });
 
+                /**
+                 * Effect that triggers a content reload when search parameters change.
+                 * loadItems internally uses $searchParams signal, so it will be triggered
+                 * whenever query, pagination or sort changes.
+                 */
                 searchEffect = effect(() => {
-                    // const searchParams = store.$searchParams();
-                    // console.log('searchEffect triggered', searchParams);
                     store.loadItems();
                 });
             },
