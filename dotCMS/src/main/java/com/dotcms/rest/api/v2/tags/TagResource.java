@@ -204,7 +204,7 @@ public class TagResource {
             UtilMethods.isSet(filter) ? filter : "",
             resolvedSiteId,
             global,
-            orderBy,
+            "DESC".equalsIgnoreCase(direction) ? "-" + orderBy : orderBy,
             offset,
             effectivePerPage
         );
