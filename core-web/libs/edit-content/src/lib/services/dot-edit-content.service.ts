@@ -14,8 +14,37 @@ import {
     DotCMSContentType,
     DotCMSContentlet,
     DotCMSContentletVersion,
-    DotContentletDepth
+    DotContentletDepth,
+    DotCMSResponse
 } from '@dotcms/dotcms-models';
+
+/**
+ * Interface for pagination parameters
+ */
+export interface PaginationParams {
+    offset?: number;
+    limit?: number;
+}
+
+/**
+ * Interface for page-based pagination (for component usage)
+ */
+export interface PagePaginationParams {
+    page?: number;
+    limit?: number;
+}
+
+/**
+ * Interface for paginated versions response
+ */
+export interface PaginatedVersionsResponse {
+    entity: DotCMSContentletVersion[];
+    pagination: {
+        currentPage: number;
+        perPage: number;
+        totalEntries: number;
+    };
+}
 
 import {
     CustomTreeNode,
@@ -310,13 +339,39 @@ export class DotEditContentService {
      * Returns all versions of the content including live, working, and archived versions.
      *
      * @param {string} identifier - The unique identifier of the content item
-     * @returns {Observable<DotCMSContentletVersion[]>} Observable that emits an array of contentlet version history ordered by modification date
+     * @param {PagePaginationParams} [paginationParams] - Optional pagination parameters (page-based)
+     * @returns {Observable<PaginatedVersionsResponse>} Observable that emits paginated contentlet version history
      */
-    getVersions(identifier: string): Observable<DotCMSContentletVersion[]> {
+    getVersions(
+        identifier: string,
+        paginationParams?: PagePaginationParams
+    ): Observable<PaginatedVersionsResponse> {
+        let httpParams = new HttpParams();
+
+        if (paginationParams?.page && paginationParams?.limit) {
+            // Calculate offset from page number (page 1 = offset 1, page 2 = offset 2, etc.)
+            const offset = paginationParams.page;
+            httpParams = httpParams.set('offset', offset.toString());
+            httpParams = httpParams.set('limit', paginationParams.limit.toString());
+        } else if (paginationParams?.limit) {
+            // Default to first page if only limit is provided
+            httpParams = httpParams.set('offset', '1');
+            httpParams = httpParams.set('limit', paginationParams.limit.toString());
+        }
+
         return this.#http
-            .get<{
-                entity: DotCMSContentletVersion[];
-            }>(`/api/v1/content/versions/id/${identifier}/history`)
-            .pipe(pluck('entity'));
+            .get<
+                DotCMSResponse<DotCMSContentletVersion[]>
+            >(`/api/v1/content/versions/id/${identifier}/history`, { params: httpParams })
+            .pipe(
+                map((response) => ({
+                    entity: response.entity,
+                    pagination: response.pagination as {
+                        currentPage: number;
+                        perPage: number;
+                        totalEntries: number;
+                    }
+                }))
+            );
     }
 }

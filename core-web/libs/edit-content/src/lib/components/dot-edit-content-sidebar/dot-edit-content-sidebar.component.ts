@@ -63,9 +63,9 @@ export class DotEditContentSidebarComponent {
     readonly $initialContentletState = this.$store.initialContentletState;
     readonly $activitiesStatus = computed(() => this.$store.activitiesStatus().status);
 
-    // History - placeholder properties (to be connected to store later)
-
+    // History properties
     readonly $versionsItems = this.$store.versions;
+    readonly $versionsPagination = this.$store.versionsPagination;
     readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
 
     /**
@@ -104,7 +104,7 @@ export class DotEditContentSidebarComponent {
             if (identifier) {
                 this.$store.getReferencePages(identifier);
                 this.$store.loadActivities(identifier);
-                this.$store.loadVersions(identifier);
+                this.$store.loadVersions({ identifier, pagination: { page: 1, limit: 10 } });
             }
         });
     });
@@ -145,5 +145,16 @@ export class DotEditContentSidebarComponent {
             comment: $event,
             identifier
         });
+    }
+
+    /**
+     * Handles pagination navigation for version history
+     * @param page - The page number to navigate to
+     */
+    onVersionsPageChange(page: number) {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.loadVersionsPage({ identifier, page });
+        }
     }
 }

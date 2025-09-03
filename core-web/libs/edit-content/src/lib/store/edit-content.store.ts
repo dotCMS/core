@@ -104,6 +104,11 @@ export interface EditContentState {
 
     // Versions state
     versions: DotCMSContentletVersion[];
+    versionsPagination: {
+        currentPage: number;
+        perPage: number;
+        totalEntries: number;
+    } | null;
     versionsStatus: {
         status: ComponentStatus;
         error: string | null;
@@ -179,6 +184,7 @@ export const initialRootState: EditContentState = {
 
     // Versions state
     versions: [],
+    versionsPagination: null,
     versionsStatus: {
         status: ComponentStatus.INIT,
         error: null

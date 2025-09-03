@@ -1,6 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, inject } from '@angular/core';
-
+import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -8,9 +7,17 @@ import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
-
 import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
 import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+
+/**
+ * Interface for pagination data
+ */
+export interface DotHistoryPagination {
+    currentPage: number;
+    perPage: number;
+    totalEntries: number;
+}
 
 /**
  * Component that displays content version history in the sidebar.
@@ -60,6 +67,17 @@ export class DotEditContentSidebarHistoryComponent {
     $contentIdentifier = input<string>('', { alias: 'contentIdentifier' });
 
     /**
+     * Pagination data for history items
+     * @readonly
+     */
+    $pagination = input<DotHistoryPagination | null>(null, { alias: 'pagination' });
+
+    /**
+     * Event emitted when page changes
+     */
+    pageChange = output<number>();
+
+    /**
      * Determines if the history is in a loading state
      */
     readonly $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
@@ -68,6 +86,30 @@ export class DotEditContentSidebarHistoryComponent {
      * Determines if there are history items to display
      */
     readonly $hasHistoryItems = computed(() => this.$historyItems().length > 0);
+
+    /**
+     * Determines if pagination should be shown
+     */
+    readonly $showPagination = computed(() => {
+        const pagination = this.$pagination();
+        return pagination && pagination.totalEntries > pagination.perPage;
+    });
+
+    /**
+     * Determines if previous page button should be enabled
+     */
+    readonly $canGoPrevious = computed(() => {
+        const pagination = this.$pagination();
+        return pagination && pagination.currentPage > 1;
+    });
+
+    /**
+     * Determines if next page button should be enabled
+     */
+    readonly $canGoNext = computed(() => {
+        const pagination = this.$pagination();
+        return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
+    });
 
     /**
      * Cached translations map for all labels used in the component
@@ -140,5 +182,25 @@ export class DotEditContentSidebarHistoryComponent {
      */
     onCompareVersion(_item: DotCMSContentletVersion): void {
         // TODO: Implement compare functionality
+    }
+
+    /**
+     * Handle previous page navigation
+     */
+    onPreviousPage(): void {
+        const pagination = this.$pagination();
+        if (pagination && this.$canGoPrevious()) {
+            this.pageChange.emit(pagination.currentPage - 1);
+        }
+    }
+
+    /**
+     * Handle next page navigation
+     */
+    onNextPage(): void {
+        const pagination = this.$pagination();
+        if (pagination && this.$canGoNext()) {
+            this.pageChange.emit(pagination.currentPage + 1);
+        }
     }
 }

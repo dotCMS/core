@@ -124,6 +124,29 @@
                     </div>
                 </ng-template>
             </p-timeline>
+
+            <!-- Pagination Controls -->
+            @if ($showPagination()) {
+                <div class="history__pagination" data-testid="history-pagination">
+                    <p-button
+                        icon="pi pi-chevron-left"
+                        styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
+                        [disabled]="!$canGoPrevious()"
+                        (click)="onPreviousPage()"
+                        data-testid="previous-page-button"
+                        [pTooltip]="'edit.content.sidebar.history.pagination.previous' | dm"
+                        tooltipPosition="top"></p-button>
+
+                    <p-button
+                        icon="pi pi-chevron-right"
+                        styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
+                        [disabled]="!$canGoNext()"
+                        (click)="onNextPage()"
+                        data-testid="next-page-button"
+                        [pTooltip]="'edit.content.sidebar.history.pagination.next' | dm"
+                        tooltipPosition="top"></p-button>
+                </div>
+            }
         </div>
     }
 </section>

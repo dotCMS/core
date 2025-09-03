@@ -12,7 +12,10 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { ContentletIdentifier } from '../../../models/dot-edit-content-field.type';
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import {
+    DotEditContentService,
+    PagePaginationParams
+} from '../../../services/dot-edit-content.service';
 import { EditContentState } from '../../edit-content.store';
 
 /**
@@ -30,9 +33,12 @@ export function withHistory() {
                 /**
                  * Loads versions for a given content identifier
                  * Retrieves all versions of the content including live, working, and archived versions
-                 * @param identifier Content identifier
+                 * @param params Object containing identifier and optional pagination parameters
                  */
-                loadVersions: rxMethod<ContentletIdentifier>(
+                loadVersions: rxMethod<{
+                    identifier: ContentletIdentifier;
+                    pagination?: PagePaginationParams;
+                }>(
                     pipe(
                         tap(() => {
                             patchState(store, {
@@ -42,12 +48,13 @@ export function withHistory() {
                                 }
                             });
                         }),
-                        switchMap((identifier) =>
-                            dotEditContentService.getVersions(identifier).pipe(
+                        switchMap(({ identifier, pagination }) =>
+                            dotEditContentService.getVersions(identifier, pagination).pipe(
                                 tapResponse({
-                                    next: (versions) => {
+                                    next: (response) => {
                                         patchState(store, {
-                                            versions,
+                                            versions: response.entity,
+                                            versionsPagination: response.pagination,
                                             versionsStatus: {
                                                 status: ComponentStatus.LOADED,
                                                 error: null
@@ -70,11 +77,51 @@ export function withHistory() {
                 ),
 
                 /**
+                 * Loads a specific page of versions
+                 * @param params Object containing identifier and page number
+                 */
+                loadVersionsPage: rxMethod<{ identifier: ContentletIdentifier; page: number }>(
+                    pipe(
+                        switchMap(({ identifier, page }) => {
+                            const currentPagination = store.versionsPagination();
+                            const limit = currentPagination?.perPage || 10;
+
+                            return dotEditContentService
+                                .getVersions(identifier, { page, limit })
+                                .pipe(
+                                    tapResponse({
+                                        next: (response) => {
+                                            patchState(store, {
+                                                versions: response.entity,
+                                                versionsPagination: response.pagination,
+                                                versionsStatus: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        error: (error: HttpErrorResponse) => {
+                                            errorManager.handle(error);
+                                            patchState(store, {
+                                                versionsStatus: {
+                                                    status: ComponentStatus.ERROR,
+                                                    error: error.message
+                                                }
+                                            });
+                                        }
+                                    })
+                                );
+                        })
+                    )
+                ),
+
+                /**
                  * Clears the versions data and resets status to initial state
                  */
                 clearVersions: () => {
                     patchState(store, {
                         versions: [],
+                        versionsPagination: null,
                         versionsStatus: {
                             status: ComponentStatus.INIT,
                             error: null
