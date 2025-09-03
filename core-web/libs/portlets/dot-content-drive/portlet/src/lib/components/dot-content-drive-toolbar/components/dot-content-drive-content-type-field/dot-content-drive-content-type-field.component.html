@@ -1,39 +1,32 @@
 <p-multiSelect
+    display="chip"
+    optionLabel="name"
+    [ngModelOptions]="{ standalone: true }"
+    [panelStyleClass]="fechingItems() ? 'hide-empty-message' : ''"
     [filter]="true"
     [options]="$state.contentTypes()"
     [(ngModel)]="$selectedContentTypes"
-    optionLabel="name"
-    display="chip"
-    [lazy]="true"
+    [emptyFilterMessage]="'content-drive.content-type-field.empty-state' | dm"
     (onChange)="onChange()"
     (onClear)="onChange()"
     [resetFilterOnHide]="true"
     (onFilter)="onFilter($event)"
+    (onPanelHide)="onPanelHide()"
     [placeholder]="'content-drive.content-type.placeholder' | dm"
     [showClear]="false"
+    [scrollHeight]="MULTISELECT_SCROLL_HEIGHT"
     data-testid="content-type-field">
     <ng-template pTemplate="item" let-item>
         <div class="flex items-center gap-2 w-full">
-            @if ($state.loading() && !item.selected) {
-                <p-skeleton
-                    [style]="{
-                        height: '2rem',
-                        width: '100%'
-                    }"
-                    data-testid="content-type-field-skeleton" />
-            } @else {
-                {{ item.name }}
-            }
+            {{ item.name }}
         </div>
     </ng-template>
-    <ng-template pTemplate="empty">
-        @if ($state.loading()) {
-            <p-skeleton
-                height="2rem"
-                width="100%"
-                data-testid="content-type-field-skeleton"></p-skeleton>
-        } @else {
-            {{ 'content-drive.content-type-field.empty-state' | dm }}
+    <ng-template pTemplate="footer">
+        @if (fechingItems()) {
+            <div class="footer">
+                <i class="pi pi-spin pi-spinner"></i>
+                <span>{{ 'content.drive.contenttype.search.state.label' | dm }}</span>
+            </div>
         }
     </ng-template>
 </p-multiSelect>

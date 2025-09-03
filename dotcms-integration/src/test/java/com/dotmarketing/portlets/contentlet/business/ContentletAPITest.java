@@ -3085,10 +3085,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             final Contentlet newContentlet = createContentlet(testStructure, null, false);
             newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
             contentletAPI.delete(newContentlet, user, false);
-            final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user,
-                    false);
-            assertTrue(!UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(
-                    foundContentlet.getInode()));
+            
+            // Wait for the contentlet to be deleted asynchronously
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+                return !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode());
+            });
 
             AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(),
                     "contentlet");
