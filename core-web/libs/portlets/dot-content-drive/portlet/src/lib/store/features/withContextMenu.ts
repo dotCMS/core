@@ -5,9 +5,6 @@ import { DotContentDriveContextMenu, DotContentDriveState } from "../../shared/m
 
 interface WithContextMenuState {
     contextMenu: DotContentDriveContextMenu | null;
-    // triggeredEvent: Event;
-    // contentlet: DotContentDriveItem;
-    // showAddToBundle: boolean;
 }
 
 export function withContextMenu() {

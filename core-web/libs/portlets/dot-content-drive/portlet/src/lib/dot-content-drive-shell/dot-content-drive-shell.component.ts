@@ -4,14 +4,18 @@ import { JsonPipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LazyLoadEvent, SortEvent } from 'primeng/api';
+import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
-import { DotFolderListViewComponent, } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
-import { ContextMenuData, DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
+import {
+    ContextMenuData,
+    DotFolderListViewContextMenuComponent
+} from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import { SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -19,8 +23,15 @@ import { encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, DotFolderListViewContextMenuComponent, DotAddToBundleComponent, JsonPipe],
-    providers: [DotContentDriveStore, DotWorkflowsActionsService],
+    imports: [
+        DotFolderListViewComponent,
+        DotContentDriveToolbarComponent,
+        DotFolderListViewContextMenuComponent,
+        DotAddToBundleComponent,
+        JsonPipe,
+        ToastModule
+    ],
+    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -30,7 +41,6 @@ export class DotContentDriveShellComponent {
 
     readonly #router = inject(Router);
     readonly #location = inject(Location);
-    readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -39,7 +49,6 @@ export class DotContentDriveShellComponent {
     readonly $contextMenuData = this.#store.contextMenu;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
-
 
     readonly addToBundleEffect = effect(() => {
         const showAddToBundle = this.#store.contextMenu()?.showAddToBundle;
@@ -93,12 +102,9 @@ export class DotContentDriveShellComponent {
         });
     }
 
-    onContextMenu({event, contentlet}: ContextMenuData) {
-        // console.log('called onContextMenu from dot-content-drive-shell. Setting the store', {event, contentlet});
+    onContextMenu({ event, contentlet }: ContextMenuData) {
         event.preventDefault();
-        // this.$contextMenuData.set({event, contentlet});
-        this.#store.patchContextMenu({ triggeredEvent: event,contentlet });
-
+        this.#store.patchContextMenu({ triggeredEvent: event, contentlet });
     }
 
     cancelAddToBundle() {

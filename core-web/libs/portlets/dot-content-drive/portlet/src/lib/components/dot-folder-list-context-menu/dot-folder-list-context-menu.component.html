@@ -1,9 +1,4 @@
 <p-contextMenu 
-#contextMenu 
-[model]="items()" 
-(onHide)="hideContextMenu()" />
-
-<!-- @if ($showAddToBundle()) {
-<dot-add-to-bundle
-[assetIdentifier]="$contextMenuData().contentlet.identifier" />
-} -->
+    #contextMenu 
+    [model]="$items()" 
+    (onHide)="hideContextMenu()" />

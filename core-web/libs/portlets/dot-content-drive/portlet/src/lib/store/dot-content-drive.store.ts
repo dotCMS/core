@@ -258,7 +258,6 @@ export const DotContentDriveStore = signalStore(
                     });
             },
             reloadContentDrive() {
-                // console.log('called reloadContentDrive');
                 this.loadItems();
             }
         };
