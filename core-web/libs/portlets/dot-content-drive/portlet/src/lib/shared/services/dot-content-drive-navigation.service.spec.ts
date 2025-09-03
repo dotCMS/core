@@ -31,7 +31,9 @@ describe('DotContentDriveNavigationService', () => {
         spectator = createService();
         service = spectator.service;
         router = spectator.inject(Router) as jest.Mocked<Router>;
-        contentTypeService = spectator.inject(DotContentTypeService) as jest.Mocked<DotContentTypeService>;
+        contentTypeService = spectator.inject(
+            DotContentTypeService
+        ) as jest.Mocked<DotContentTypeService>;
     });
 
     afterEach(() => {
@@ -101,7 +103,7 @@ describe('DotContentDriveNavigationService', () => {
                 }
             } as unknown as DotCMSContentType;
 
-            contentTypeService.getContentType.mockReturnValue(of(mockContentType ));
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
             service.editContent(mockContentlet);
 
