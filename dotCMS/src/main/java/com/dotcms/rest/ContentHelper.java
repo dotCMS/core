@@ -215,12 +215,12 @@ public class ContentHelper {
     try {
 
       final Identifier identifier = this.identifierAPI.find(identifierStr);
-      return (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getId()))
+      return UtilMethods.isSet(()->identifier.getId())
           ? identifier.getURI()
           : null;
-    } catch (DotDataException e) {
+    } catch (Exception e) {
       throw new DotRuntimeException(
-          "The identifierStr parameter is not valid [" + identifierStr + "], unable to get the url", e);
+          "The identifierStr parameter is not valid ['" + identifierStr + "'], unable to get the url", e);
 
     }
 
