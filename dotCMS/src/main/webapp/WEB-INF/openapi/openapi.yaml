@@ -16948,6 +16948,40 @@ paths:
       tags:
       - Internationalization
   /v2/tags:
+    delete:
+      description: Deletes one or more tags by their IDs
+      operationId: delete_17
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Object containing array of tag IDs
+              example:
+                tagIds:
+                - tag-123
+                - tag-456
+                - tag-789
+        description: Tag IDs to delete
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Tags deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - tagIds field is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete tags
+      tags:
+      - Tags
     get:
       operationId: list_14
       parameters:
@@ -17217,27 +17251,6 @@ paths:
             application/json: {}
           description: Internal Server Error
       summary: Get tag by name or ID
-      tags:
-      - Tags
-  /v2/tags/{tagId}:
-    delete:
-      operationId: delete_17
-      parameters:
-      - in: path
-        name: tagId
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: default response
       tags:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:

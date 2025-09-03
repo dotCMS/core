@@ -415,6 +415,15 @@ public class TagAPIImpl implements TagAPI {
 
     @WrapInTransaction
     @Override
+    public void deleteTags(String... tagIds) throws DotDataException {
+        if (tagIds == null || tagIds.length == 0) {
+            return;
+        }
+        tagFactory.deleteTagsInBatch(java.util.Arrays.asList(tagIds));
+    }
+
+    @WrapInTransaction
+    @Override
     public void editTag ( String tagName, String oldTagName, String userId ) throws DotDataException {
 
         tagName = escapeSingleQuote(tagName);
