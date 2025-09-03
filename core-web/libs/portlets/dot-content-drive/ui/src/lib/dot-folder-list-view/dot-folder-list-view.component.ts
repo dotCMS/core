@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
@@ -24,12 +25,13 @@ import { HEADER_COLUMNS } from '../shared/constants';
 @Component({
     selector: 'dot-folder-list-view',
     imports: [
-        TableModule,
+        ButtonModule,
+        ChipModule,
+        DotContentletStatusPipe,
+        DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
-        DotMessagePipe,
-        DotContentletStatusPipe,
-        ChipModule
+        TableModule
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
@@ -47,8 +49,6 @@ export class DotFolderListViewComponent {
     sort = output<SortEvent>();
     //TODO: Put ContextMenuData and move that interface to models or something else
     rightClick = output<any>();
-
-    // #store = inject(DotContentDriveStore);
 
     selectedItems: DotContentDriveItem[] = [];
     readonly MIN_ROWS_PER_PAGE = 20;
@@ -74,15 +74,9 @@ export class DotFolderListViewComponent {
         }
     });
 
-
-
     onContextMenu(event: Event, contentlet: DotContentDriveItem) {
-
-        console.log('called onContextMenu from dot-folder-list-view', {event,contentlet});
         event.preventDefault();
         this.rightClick.emit({event,contentlet});
-
-        // this.#store.setContextMenu({ triggeredEvent: event,contentlet,showAddToBundle: false });
     }
 
     onPage(event: LazyLoadEvent) {
