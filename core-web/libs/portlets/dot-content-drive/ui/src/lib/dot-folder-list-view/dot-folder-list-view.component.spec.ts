@@ -263,6 +263,20 @@ describe('DotFolderListViewComponent', () => {
             expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
         });
 
+        it('should have item title text with truncate-text class', () => {
+            const itemTitleText = spectator.query(byTestId('item-title-text'));
+
+            expect(itemTitleText).toBeTruthy();
+            expect(itemTitleText).toHaveClass('truncate-text');
+        });
+
+        it('should not have max-width: 100% style on item-title td', () => {
+            const itemTitleTd = spectator.query(byTestId('item-title'));
+            const computedStyle = window.getComputedStyle(itemTitleTd);
+
+            expect(computedStyle.maxWidth).not.toBe('100%');
+        });
+
         describe('Status', () => {
             it('should have a published status', () => {
                 const statusColumn = spectator.query(byTestId('item-status'));

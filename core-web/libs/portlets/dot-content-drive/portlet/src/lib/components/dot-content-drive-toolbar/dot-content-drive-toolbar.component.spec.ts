@@ -28,6 +28,16 @@ describe('DotContentDriveToolbarComponent', () => {
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
+                getContentTypesWithPagination: jest.fn().mockReturnValue(
+                    of({
+                        contentTypes: MOCK_CONTENT_TYPES,
+                        pagination: {
+                            currentPage: MOCK_CONTENT_TYPES.length,
+                            totalEntries: MOCK_CONTENT_TYPES.length * 2,
+                            totalPages: 1
+                        }
+                    })
+                ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
             provideHttpClient(),
