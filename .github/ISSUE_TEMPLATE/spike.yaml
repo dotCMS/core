@@ -2,7 +2,7 @@ name: Spike
 description: Timeboxed research to turn unknowns into knowns
 title: "[SPIKE] "
 labels: [""]
-type: task
+type: spike
 assignees: []
 
 body:
