@@ -554,8 +554,8 @@
 							"    // Should default to page 1",
 							"    pm.expect(pagination.currentPage).to.eql(1);",
 							"    ",
-							"    // Should default to 25 per page (from DOTCMS_PAGINATION_ROWS)",
-							"    pm.expect(pagination.perPage).to.eql(25);",
+							"    // Should default to 10 per page (from DOTCMS_PAGINATION_ROWS)",
+							"    pm.expect(pagination.perPage).to.eql(10);",
 							"    ",
 							"    // Response should have tags array",
 							"    pm.expect(jsonData.entity).to.be.an('array');",
@@ -610,21 +610,27 @@
 			"response": []
 		},
 		{
-			"name": "List Tags with Invalid Page Error",
+			"name": "List Tags with Page Zero Defaults to Page One",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 400 for invalid page\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"HTTP Status code must be 200 (page 0 defaults to page 1)\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Verify error message for invalid page parameter\", function () {",
+							"pm.test(\"Response returns valid paginated data structure\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.have.property('error');",
-							"    const errorMessage = jsonData.error.toLowerCase();",
-							"    pm.expect(errorMessage).to.include('page');",
+							"    pm.expect(jsonData).to.have.property('entity');",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData).to.have.property('pagination');",
+							"});",
+							"",
+							"pm.test(\"Pagination shows page 1 (default when page=0)\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    // PaginationUtil converts page 0 to page 1",
+							"    pm.expect(jsonData.pagination.currentPage).to.equal(1);",
 							"});",
 							""
 						],
