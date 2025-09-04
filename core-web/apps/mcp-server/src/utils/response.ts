@@ -29,32 +29,36 @@ export type McpResponse = McpSuccessResponse | McpErrorResponse;
 /**
  * Formats response data for LLM consumption
  */
-export function formatResponse(
+function formatResponse(
     message: string,
-    data?: unknown,
-    options?: {
-        includeRawData?: boolean;
-        maxDataLength?: number;
-    }
+    data?: unknown
 ): string {
     if (!data) {
         return message;
     }
 
-    const opts = { includeRawData: false, maxDataLength: 1000, ...options };
+    // Get maxDataLength from environment variable - no truncation if not set
+    const envMaxLength = process.env.MCP_RESPONSE_MAX_LENGTH;
+    const maxDataLength = envMaxLength ? parseInt(envMaxLength, 10) : undefined;
 
     // Handle different data types appropriately
     if (typeof data === 'string') {
-        return `${message}\n\n${data}`;
+        // Only truncate if maxDataLength is set and greater than 0
+        const truncated = maxDataLength && maxDataLength > 0 && data.length > maxDataLength
+            ? data.substring(0, maxDataLength) + '...[truncated]'
+            : data;
+
+        return `${message}\n\n${truncated}`;
     }
 
     if (typeof data === 'object') {
         // For objects, provide structured information
         const jsonStr = JSON.stringify(data, null, 2);
-        const truncated =
-            jsonStr.length > opts.maxDataLength
-                ? jsonStr.substring(0, opts.maxDataLength) + '...[truncated]'
-                : jsonStr;
+
+        // Only truncate if maxDataLength is set and greater than 0
+        const truncated = maxDataLength && maxDataLength > 0 && jsonStr.length > maxDataLength
+            ? jsonStr.substring(0, maxDataLength) + '...[truncated]'
+            : jsonStr;
 
         return `${message}\n\nDetails:\n${truncated}`;
     }
