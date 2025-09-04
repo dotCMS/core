@@ -112,9 +112,14 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     /**
      * Return the Analytics Js Code to inject
      *
+     * Replaces template placeholders:
+     * - ${site_auth}: Analytics site key from the current host → data-analytics-auth
+     * - ${debug}: Debug mode flag (default: false) → data-analytics-debug
+     * - ${auto_page_view}: Auto page view tracking flag (default: true) → data-analytics-auto-page-view
+     *
      * @param currentHost Host to use the {@link com.dotcms.analytics.app.AnalyticsApp}
      * @param request To get the Domain name
-     * @return
+     * @return The processed Analytics JS code with placeholders replaced
      */
     private String getJSCode(final Host currentHost, final HttpServletRequest request) {
 
@@ -122,7 +127,9 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
 
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
 
-            Map.of("${jitsu_key}", this.analyticsKeyFunction.apply(currentHost))
+            Map.of("${site_auth}", this.analyticsKeyFunction.apply(currentHost),
+                   "${debug}", "false",
+                   "${auto_page_view}", "true")
                     .forEach((key, value) -> {
 
                 int start;

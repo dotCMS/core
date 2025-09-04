@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from '../../core/shared/dot-content-analytics.model';
 
 // Mock initializeContentAnalytics to avoid real initialization
 const mockAnalyticsInstance = {
