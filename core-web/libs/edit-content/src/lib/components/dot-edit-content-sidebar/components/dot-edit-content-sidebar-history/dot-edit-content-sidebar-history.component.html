@@ -3,7 +3,7 @@
     [initialActiveTab]="'versions'"
     (activeTabChange)="onAccordionTabChange($event)">
     <!-- Versions Tab -->
-    <dot-sidebar-accordion-tab id="versions" label="Versions">
+    <dot-sidebar-accordion-tab id="versions" [label]="'edit.content.sidebar.history.versions' | dm">
         <section class="history" role="region" aria-label="Content Version History">
             @if ($isLoading()) {
                 <!-- Loading state -->
@@ -44,7 +44,9 @@
     </dot-sidebar-accordion-tab>
 
     <!-- Push Publish Tab -->
-    <dot-sidebar-accordion-tab id="push-publish" label="Push Publish">
+    <dot-sidebar-accordion-tab
+        id="push-publish"
+        [label]="'edit.content.sidebar.history.push.publish' | dm">
         <div class="push-publish-content">
             <!-- TODO: Add Push Publish content here -->
             <p>Push Publish functionality will be implemented here.</p>
