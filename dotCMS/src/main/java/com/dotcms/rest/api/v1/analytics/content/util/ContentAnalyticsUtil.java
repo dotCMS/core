@@ -258,7 +258,7 @@ public class ContentAnalyticsUtil {
     public static Optional<String> getSiteKeyFromAppSecrets(final Host currentSite) {
         try {
             final Optional<AppSecrets> secretsOpt = APILocator.getAppsAPI()
-                    .getSecrets(CONTENT_ANALYTICS_APP_KEY, false, currentSite, APILocator.systemUser());
+                    .getSecrets(CONTENT_ANALYTICS_APP_KEY, true, currentSite, APILocator.systemUser());
             
             if (secretsOpt.isPresent()) {
                 final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
