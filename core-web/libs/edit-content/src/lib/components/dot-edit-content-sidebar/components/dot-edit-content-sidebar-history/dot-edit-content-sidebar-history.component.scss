@@ -20,7 +20,7 @@
 .history__content {
     flex: 1;
     overflow-y: auto;
-    padding: $spacing-3 $spacing-4;
+    padding: $spacing-4;
     min-height: 0; // Importante para flexbox scroll
 
     ::ng-deep .history__timeline {
@@ -36,8 +36,9 @@
         .p-timeline-event-content {
             padding: 0;
             overflow: hidden;
-            margin-bottom: $spacing-1;
+            margin-bottom: $spacing-4;
             margin-left: $spacing-0;
+            margin-top: -14px;
         }
 
         .p-timeline-event-connector {

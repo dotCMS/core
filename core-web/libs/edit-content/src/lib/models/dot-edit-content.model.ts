@@ -78,7 +78,8 @@ export interface Activity {
 export enum DotHistoryTimelineItemActionType {
     PREVIEW = 'preview',
     RESTORE = 'restore',
-    COMPARE = 'compare'
+    COMPARE = 'compare',
+    DELETE = 'delete'
 }
 
 /**

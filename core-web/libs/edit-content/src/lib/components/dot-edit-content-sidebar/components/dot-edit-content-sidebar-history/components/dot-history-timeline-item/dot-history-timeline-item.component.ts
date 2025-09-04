@@ -67,7 +67,8 @@ export class DotHistoryTimelineItemComponent {
     private readonly labels = computed(() => ({
         preview: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.preview'),
         restore: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.restore'),
-        compare: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.compare')
+        compare: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.compare'),
+        delete: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.delete')
     }));
 
     /**
@@ -81,6 +82,7 @@ export class DotHistoryTimelineItemComponent {
         return [
             {
                 label: labels.preview,
+                disabled: true,
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.PREVIEW,
@@ -89,6 +91,7 @@ export class DotHistoryTimelineItemComponent {
             },
             {
                 label: labels.restore,
+                disabled: true,
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.RESTORE,
@@ -97,9 +100,19 @@ export class DotHistoryTimelineItemComponent {
             },
             {
                 label: labels.compare,
+                disabled: true,
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.COMPARE,
+                        item
+                    })
+            },
+            {
+                label: labels.delete,
+                disabled: true,
+                command: () =>
+                    this.actionTriggered.emit({
+                        type: DotHistoryTimelineItemActionType.DELETE,
                         item
                     })
             }
