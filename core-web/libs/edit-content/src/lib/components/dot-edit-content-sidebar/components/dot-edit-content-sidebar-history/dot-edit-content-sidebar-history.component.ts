@@ -1,10 +1,8 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
 
-import { AccordionModule } from 'primeng/accordion';
-import { ButtonModule } from 'primeng/button';
+import { ScrollerModule, ScrollerLazyLoadEvent } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
@@ -31,10 +29,8 @@ import {
     standalone: true,
     imports: [
         CommonModule,
-        AccordionModule,
-        TimelineModule,
+        ScrollerModule,
         SkeletonModule,
-        ButtonModule,
         TooltipModule,
         DotMessagePipe,
         DotSidebarAccordionComponent,
@@ -48,8 +44,9 @@ import {
 })
 export class DotEditContentSidebarHistoryComponent {
     private readonly dotMessagePipe = inject(DotMessagePipe);
+
     /**
-     * List of history items to display
+     * List of history items to display (accumulated items from store)
      * @readonly
      */
     $historyItems = input<DotCMSContentletVersion[]>([], { alias: 'historyItems' });
@@ -89,25 +86,9 @@ export class DotEditContentSidebarHistoryComponent {
     readonly $hasHistoryItems = computed(() => this.$historyItems().length > 0);
 
     /**
-     * Determines if pagination should be shown
+     * Determines if there are more items to load for infinite scroll
      */
-    readonly $showPagination = computed(() => {
-        const pagination = this.$pagination();
-        return pagination && pagination.totalEntries > pagination.perPage;
-    });
-
-    /**
-     * Determines if previous page button should be enabled
-     */
-    readonly $canGoPrevious = computed(() => {
-        const pagination = this.$pagination();
-        return pagination && pagination.currentPage > 1;
-    });
-
-    /**
-     * Determines if next page button should be enabled
-     */
-    readonly $canGoNext = computed(() => {
+    readonly $hasMoreItems = computed(() => {
         const pagination = this.$pagination();
         return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
     });
@@ -171,21 +152,31 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
-     * Handle previous page navigation
+     * Handle infinite scroll when user scrolls near the end
      */
-    onPreviousPage(): void {
-        const pagination = this.$pagination();
-        if (pagination && this.$canGoPrevious()) {
-            this.pageChange.emit(pagination.currentPage - 1);
+    onScrollIndexChange(event: ScrollerLazyLoadEvent): void {
+        if (this.shouldLoadMore(event) && !this.$isLoading()) {
+            this.loadNextPage();
         }
     }
 
     /**
-     * Handle next page navigation
+     * Determine if we should load more items based on scroll position
      */
-    onNextPage(): void {
+    private shouldLoadMore(event: ScrollerLazyLoadEvent): boolean {
+        const { last } = event;
+        const totalItems = this.$historyItems().length;
+        const threshold = 5; // Load when 5 items remaining
+
+        return totalItems - last <= threshold && this.$hasMoreItems();
+    }
+
+    /**
+     * Load the next page of history items
+     */
+    private loadNextPage(): void {
         const pagination = this.$pagination();
-        if (pagination && this.$canGoNext()) {
+        if (pagination && this.$hasMoreItems()) {
             this.pageChange.emit(pagination.currentPage + 1);
         }
     }

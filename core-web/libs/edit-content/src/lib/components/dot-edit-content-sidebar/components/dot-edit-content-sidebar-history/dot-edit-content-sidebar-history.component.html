@@ -22,49 +22,46 @@
             } @else {
                 <!-- History content -->
                 <div class="history__content">
-                    <p-timeline
-                        [value]="$historyItems()"
-                        layout="vertical"
-                        styleClass="history__timeline"
+                    <p-scroller
+                        [items]="$historyItems()"
+                        [itemSize]="69"
+                        [lazy]="true"
+                        scrollHeight="100%"
+                        (onScrollIndexChange)="onScrollIndexChange($event)"
+                        styleClass="history__scroller"
                         data-testid="history-timeline">
-                        <ng-template pTemplate="marker" let-item let-index="index">
-                            <div
-                                class="history__marker"
-                                [class]="getTimelineMarkerClass(item)"
-                                data-testid="timeline-marker"></div>
+                        <ng-template pTemplate="item" let-item let-index="index">
+                            <div class="history__timeline-row" [attr.data-index]="index">
+                                <!-- Timeline structure replicating p-timeline -->
+                                <div class="history__timeline-event">
+                                    <!-- Marker and Connector Column -->
+                                    <div class="history__timeline-marker-column">
+                                        <!-- Marker -->
+                                        <div
+                                            class="history__marker"
+                                            [class]="getTimelineMarkerClass(item)"
+                                            data-testid="timeline-marker"></div>
+
+                                        <!-- Connector line -->
+                                        <div
+                                            class="history__timeline-connector"
+                                            [class.history__timeline-connector--last]="
+                                                index === $historyItems().length - 1
+                                            "></div>
+                                    </div>
+
+                                    <!-- Content -->
+                                    <div class="history__timeline-content">
+                                        <dot-history-timeline-item
+                                            [item]="item"
+                                            (actionTriggered)="
+                                                onTimelineItemAction($event)
+                                            "></dot-history-timeline-item>
+                                    </div>
+                                </div>
+                            </div>
                         </ng-template>
-
-                        <ng-template pTemplate="content" let-item let-index="index">
-                            <dot-history-timeline-item
-                                [item]="item"
-                                (actionTriggered)="
-                                    onTimelineItemAction($event)
-                                "></dot-history-timeline-item>
-                        </ng-template>
-                    </p-timeline>
-
-                    <!-- Pagination Controls -->
-                    @if ($showPagination()) {
-                        <div class="history__pagination" data-testid="history-pagination">
-                            <p-button
-                                icon="pi pi-chevron-left"
-                                styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
-                                [disabled]="!$canGoPrevious()"
-                                (click)="onPreviousPage()"
-                                data-testid="previous-page-button"
-                                [pTooltip]="'edit.content.sidebar.history.pagination.previous' | dm"
-                                tooltipPosition="top"></p-button>
-
-                            <p-button
-                                icon="pi pi-chevron-right"
-                                styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
-                                [disabled]="!$canGoNext()"
-                                (click)="onNextPage()"
-                                data-testid="next-page-button"
-                                [pTooltip]="'edit.content.sidebar.history.pagination.next' | dm"
-                                tooltipPosition="top"></p-button>
-                        </div>
-                    }
+                    </p-scroller>
                 </div>
             }
         </section>

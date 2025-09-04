@@ -23,31 +23,15 @@
     padding: $spacing-4;
     min-height: 0; // Importante para flexbox scroll
 
-    ::ng-deep .history__timeline {
-        .p-timeline-event-marker {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 2px solid $white;
-            position: relative;
-            z-index: 1;
-        }
+    // Custom timeline styles for PrimeNG Scroller
+    .history__scroller {
+        height: 100%;
+        width: 100%;
 
-        .p-timeline-event-content {
-            padding: 0;
-            overflow: hidden;
-            margin-bottom: $spacing-4;
-            margin-left: $spacing-0;
-            margin-top: -14px;
-        }
-
-        .p-timeline-event-connector {
-            background: $color-palette-gray-300;
-            width: 2px;
-        }
-
-        .p-timeline-event-opposite {
-            display: none;
+        ::ng-deep {
+            .p-scroller-content {
+                width: 100%;
+            }
         }
     }
 }
@@ -97,7 +81,51 @@
     box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
 }
 
-// Timeline item styles are now handled by the dot-history-timeline-item component
+// Custom timeline structure styles - marker and connector in same column
+.history__timeline-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: $spacing-4;
+
+    &:last-child {
+        margin-bottom: 0;
+
+        .history__timeline-connector {
+            display: none;
+        }
+    }
+}
+
+.history__timeline-event {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: $spacing-3;
+}
+
+.history__timeline-marker-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 8px; // Align marker with content top
+}
+
+.history__timeline-connector {
+    width: 2px;
+    height: $spacing-4;
+    background: $color-palette-gray-300;
+    margin-top: 4px;
+
+    &.history__timeline-connector--last {
+        display: none;
+    }
+}
+
+.history__timeline-content {
+    flex: 1;
+    min-width: 0; // Prevent flex item from overflowing
+}
 
 // Pagination styles
 .history__pagination {

@@ -9,13 +9,10 @@ import { inject } from '@angular/core';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
 
 import { ContentletIdentifier } from '../../../models/dot-edit-content-field.type';
-import {
-    DotEditContentService,
-    PagePaginationParams
-} from '../../../services/dot-edit-content.service';
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EditContentState } from '../../edit-content.store';
 
 /**
@@ -31,68 +28,62 @@ export function withHistory() {
                 errorManager = inject(DotHttpErrorManagerService)
             ) => ({
                 /**
-                 * Loads versions for a given content identifier
-                 * Retrieves all versions of the content including live, working, and archived versions
-                 * @param params Object containing identifier and optional pagination parameters
-                 */
-                loadVersions: rxMethod<{
-                    identifier: ContentletIdentifier;
-                    pagination?: PagePaginationParams;
-                }>(
-                    pipe(
-                        tap(() => {
-                            patchState(store, {
-                                versionsStatus: {
-                                    status: ComponentStatus.LOADING,
-                                    error: null
-                                }
-                            });
-                        }),
-                        switchMap(({ identifier, pagination }) =>
-                            dotEditContentService.getVersions(identifier, pagination).pipe(
-                                tapResponse({
-                                    next: (response) => {
-                                        patchState(store, {
-                                            versions: response.entity,
-                                            versionsPagination: response.pagination,
-                                            versionsStatus: {
-                                                status: ComponentStatus.LOADED,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        errorManager.handle(error);
-                                        patchState(store, {
-                                            versionsStatus: {
-                                                status: ComponentStatus.ERROR,
-                                                error: error.message
-                                            }
-                                        });
-                                    }
-                                })
-                            )
-                        )
-                    )
-                ),
-
-                /**
-                 * Loads a specific page of versions
+                 * Loads content versions with intelligent pagination and accumulation
+                 *
+                 * This method automatically handles:
+                 * - Initial loading (page 1 or new content): Replaces all versions
+                 * - Infinite scroll accumulation (page 2+): Appends new versions
+                 * - Loading states: Shows loading only on initial load
+                 * - Assumes endpoint provides unique items per page
+                 *
                  * @param params Object containing identifier and page number
+                 * @param params.identifier - Content identifier to load versions for
+                 * @param params.page - Page number (1 for initial load, 2+ for infinite scroll)
                  */
-                loadVersionsPage: rxMethod<{ identifier: ContentletIdentifier; page: number }>(
+                loadVersions: rxMethod<{ identifier: ContentletIdentifier; page: number }>(
                     pipe(
+                        tap(({ page }) => {
+                            // Only show loading on initial load (page 1)
+                            if (page === 1) {
+                                patchState(store, {
+                                    versionsStatus: {
+                                        status: ComponentStatus.LOADING,
+                                        error: null
+                                    }
+                                });
+                            }
+                        }),
                         switchMap(({ identifier, page }) => {
                             const currentPagination = store.versionsPagination();
+                            const currentVersions = store.versions();
                             const limit = currentPagination?.perPage || 20;
+
+                            // Detect if we're switching content or starting fresh
+                            const isNewContent =
+                                currentPagination === null || currentVersions.length === 0;
 
                             return dotEditContentService
                                 .getVersions(identifier, { page, limit })
                                 .pipe(
                                     tapResponse({
                                         next: (response) => {
+                                            let newVersions: DotCMSContentletVersion[];
+
+                                            // Logic for accumulation:
+                                            // 1. If new content OR page 1: reset (initial load)
+                                            // 2. Otherwise: accumulate items (endpoint guarantees no duplicates)
+                                            if (isNewContent || page === 1) {
+                                                newVersions = response.entity;
+                                            } else {
+                                                // Accumulate: append new items directly
+                                                newVersions = [
+                                                    ...currentVersions,
+                                                    ...response.entity
+                                                ];
+                                            }
+
                                             patchState(store, {
-                                                versions: response.entity,
+                                                versions: newVersions, // All accumulated items for display
                                                 versionsPagination: response.pagination,
                                                 versionsStatus: {
                                                     status: ComponentStatus.LOADED,
@@ -114,6 +105,16 @@ export function withHistory() {
                         })
                     )
                 ),
+
+                /**
+                 * Resets versions to empty array
+                 * Useful when switching content or starting fresh
+                 */
+                resetVersions: () => {
+                    patchState(store, {
+                        versions: []
+                    });
+                },
 
                 /**
                  * Clears the versions data and resets status to initial state

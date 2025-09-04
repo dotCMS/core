@@ -103,7 +103,7 @@ export interface EditContentState {
     };
 
     // Versions state
-    versions: DotCMSContentletVersion[];
+    versions: DotCMSContentletVersion[]; // All accumulated versions for infinite scroll
     versionsPagination: {
         currentPage: number;
         perPage: number;
@@ -183,7 +183,7 @@ export const initialRootState: EditContentState = {
     },
 
     // Versions state
-    versions: [],
+    versions: [], // All accumulated versions for infinite scroll
     versionsPagination: null,
     versionsStatus: {
         status: ComponentStatus.INIT,

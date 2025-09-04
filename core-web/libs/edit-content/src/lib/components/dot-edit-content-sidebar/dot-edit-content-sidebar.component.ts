@@ -64,7 +64,7 @@ export class DotEditContentSidebarComponent {
     readonly $activitiesStatus = computed(() => this.$store.activitiesStatus().status);
 
     // History properties
-    readonly $versionsItems = this.$store.versions;
+    readonly $versionsItems = this.$store.versions; // All accumulated versions for infinite scroll
     readonly $versionsPagination = this.$store.versionsPagination;
     readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
 
@@ -104,7 +104,7 @@ export class DotEditContentSidebarComponent {
             if (identifier) {
                 this.$store.getReferencePages(identifier);
                 this.$store.loadActivities(identifier);
-                this.$store.loadVersions({ identifier, pagination: { page: 1, limit: 20 } });
+                this.$store.loadVersions({ identifier, page: 1 });
             }
         });
     });
@@ -148,13 +148,13 @@ export class DotEditContentSidebarComponent {
     }
 
     /**
-     * Handles pagination navigation for version history
+     * Handles pagination navigation for version history (automatically detects initial vs accumulation)
      * @param page - The page number to navigate to
      */
     onVersionsPageChange(page: number) {
         const identifier = this.$identifier();
         if (identifier) {
-            this.$store.loadVersionsPage({ identifier, page });
+            this.$store.loadVersions({ identifier, page });
         }
     }
 }
