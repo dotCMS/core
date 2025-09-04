@@ -1,42 +1,45 @@
 @use "variables" as *;
 
-// Host component debe ocupar toda la altura
+// Host component takes full height
 :host {
     display: block;
     height: 100%;
 }
 
-// Reusable Sidebar Accordion Styles
+// Sidebar Accordion Styles
 .dot-sidebar-accordion {
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    contain: layout style paint; // CSS containment for better performance
 
-    // Durante transiciones secuenciales, deshabilitar clicks adicionales
+    // During transitions, disable specific headers only
     &--transitioning {
-        .accordion-header {
+        .accordion-header--disabled {
             pointer-events: none;
             cursor: default;
+            opacity: 0.7;
+            transition: opacity 0.1s ease;
         }
     }
 }
 
-// Estilos para los tabs
+// Tab styles
 .accordion-tab {
     display: flex;
     flex-direction: column;
 
     &.active {
-        flex: 1; // Tab activo ocupa todo el espacio restante
-        min-height: 0; // Importante para que el contenido no empuje otros elementos
+        flex: 1; // Active tab takes remaining space
+        min-height: 0; // Prevent content from pushing other elements
 
         .accordion-content {
             flex: 1;
             min-height: 0;
-            overflow: hidden; // El contenedor no debe hacer scroll
+            overflow: hidden; // Container should not scroll
 
-            // Pero el contenido interno sí debe tener scroll
+            // But internal content should have scroll
             > * {
                 height: 100%;
                 overflow-y: auto;
@@ -44,17 +47,17 @@
         }
     }
 
-    // Tabs inactivos solo muestran el header
+    // Inactive tabs only show header
     &:not(.active) {
-        flex: none; // No ocupa espacio extra
-        flex-shrink: 0; // No se encoge
+        flex: none; // No extra space
+        flex-shrink: 0; // Don't shrink
 
         .accordion-header {
-            display: flex; // Asegurar que el header siempre sea visible
+            display: flex; // Ensure header is always visible
         }
 
         .accordion-content {
-            display: block; // El contenido existe pero colapsado
+            display: block; // Content exists but collapsed
         }
     }
 }
@@ -69,11 +72,17 @@
     user-select: none;
     min-height: 56px;
     transition:
-        background-color 0.2s ease,
-        border-bottom 0.1s ease 0.4s; // Delay border transition
+        background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        border-bottom 0.1s ease 0.3s,
+        opacity 0.1s ease; // Smooth opacity for disabled state
+    will-change: background-color, opacity; // GPU optimization
 
-    &:hover {
+    &:hover:not(&--disabled) {
         background: $color-palette-gray-100;
+    }
+
+    &--disabled {
+        cursor: default;
     }
 
     span {
@@ -87,11 +96,12 @@
         font-size: $font-size-sm;
         color: $color-palette-primary;
         margin-left: auto;
-        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        will-change: transform; // GPU optimization
     }
 }
 
-// Rotación del chevron cuando el tab está activo
+// Chevron rotation when tab is active
 .accordion-tab.active .accordion-header i {
     transform: rotate(180deg);
 }
@@ -99,44 +109,48 @@
 .accordion-content {
     border-bottom: 1px solid $color-palette-gray-400;
     overflow: hidden;
+    contain: layout style; // CSS containment for animation performance
 
-    // Angular Animations manejará height, opacity, transform, visibility
-    // Solo mantenemos estilos que no interfieren con las animaciones
+    // GPU acceleration hints - Angular Animations will handle these
+    will-change: height, opacity, transform;
+    transform: translate3d(0, 0, 0); // Force GPU layer
+    backface-visibility: hidden; // Prevent flicker
 
-    // Asegurar scroll en contenido expandido
+    // Ensure scroll on expanded content
     &--expanded > * {
         height: 100%;
         overflow-y: auto;
+        overscroll-behavior: contain; // Better scroll performance
     }
 
-    // Durante colapso, deshabilitar pointer events
+    // During collapse, disable pointer events smoothly
     &--collapsed {
         pointer-events: none;
     }
 }
 
-// Reglas especiales para bordes
+// Special border rules
 .accordion-tab {
-    // El último tab NUNCA debe tener border-bottom en su contenido, sin importar el estado
+    // Last tab should NEVER have border-bottom on content, regardless of state
     &:last-child .accordion-content {
         border-bottom: none !important;
     }
 
-    // Cuando hay un tab expandido, el último header colapsado no debe tener border-bottom
+    // When there's an expanded tab, last collapsed header should not have border-bottom
     &:last-child .accordion-header {
         border-bottom: 1px solid $color-palette-gray-400;
         transition:
             background-color 0.2s ease,
-            border-bottom 0.1s ease; // Sin delay para el estado normal
+            border-bottom 0.1s ease; // No delay for normal state
     }
 }
 
-// Cuando hay algún tab activo, remover border del último header si está colapsado
+// When there's an active tab, remove border from last header if collapsed
 .dot-sidebar-accordion--has-active {
     .accordion-tab:last-child:not(.active) .accordion-header {
         border-bottom: none;
         transition:
             background-color 0.2s ease,
-            border-bottom 0.1s ease 0.3s; // Delay para que desaparezca después del colapso
+            border-bottom 0.1s ease 0.3s; // Delay to disappear after collapse
     }
 }

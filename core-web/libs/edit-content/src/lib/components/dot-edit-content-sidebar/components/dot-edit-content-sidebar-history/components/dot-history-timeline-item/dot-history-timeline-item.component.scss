@@ -12,9 +12,10 @@
 // Block - Timeline Item Container
 .timeline-item {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     width: 100%;
     gap: $spacing-0;
+    min-height: 80px;
 }
 
 // Timeline Marker Column
@@ -23,8 +24,6 @@
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
-    height: 100%; // Take full height of the timeline item
-    min-height: 80px; // Minimum height to ensure proper spacing
     padding: 0 2px; // Add padding to prevent box-shadow clipping
 }
 
@@ -64,8 +63,7 @@
 
 // Bottom connector - fills remaining space
 .timeline-item__connector--bottom {
-    flex: 1; // Takes all remaining space
-    min-height: 1rem; // Minimum height to ensure visibility
+    flex: 1; // Takes all remaining space dynamically
 }
 
 // Hide connectors for first and last items

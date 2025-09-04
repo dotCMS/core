@@ -1,4 +1,4 @@
-import { trigger, state, style, transition, animate } from '@angular/animations';
+import { trigger, state, style, transition, animate, AnimationEvent } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -64,7 +64,8 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
                     height: '0',
                     opacity: '0',
                     visibility: 'hidden',
-                    transform: 'translateY(-8px)'
+                    transform: 'translate3d(0, -4px, 0)', // GPU acceleration
+                    willChange: 'height, opacity, transform'
                 })
             ),
             state(
@@ -73,13 +74,13 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
                     height: '*',
                     opacity: '1',
                     visibility: 'visible',
-                    transform: 'translateY(0)'
+                    transform: 'translate3d(0, 0, 0)', // GPU acceleration
+                    willChange: 'auto'
                 })
             ),
-            // Faster collapse for sequential animations
-            transition('expanded => collapsed', [animate('{{timing}}')]),
-            // Slightly slower expand for smoother feel
-            transition('collapsed => expanded', [animate('{{timing}}')]),
+            // Optimized transitions with different timing for smooth feel
+            transition('expanded => collapsed', [animate('{{collapseTime}} {{collapseEasing}}')]),
+            transition('collapsed => expanded', [animate('{{expandTime}} {{expandEasing}}')]),
             transition('void => *', animate(0))
         ])
     ]
@@ -94,10 +95,10 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
     $initialActiveTab = input<string>('', { alias: 'initialActiveTab' });
 
     /**
-     * Transition options for animations (similar to PrimeNG)
+     * Transition options for animations (optimized PrimeNG-style timing)
      * @readonly
      */
-    $transitionOptions = input<string>('200ms cubic-bezier(0.86, 0, 0.07, 1)', {
+    $transitionOptions = input<string>('150ms cubic-bezier(0.25, 0.8, 0.25, 1)', {
         alias: 'transitionOptions'
     });
 
@@ -118,10 +119,11 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
     $activeTab = signal<string | null>(null);
 
     /**
-     * State for managing sequential transitions
+     * State for managing smooth transitions with animation callbacks
      */
-    isTransitioning = false;
+    $isTransitioning = signal(false);
     private pendingTab: string | null = null;
+    private animationStates = new Map<string, 'expanding' | 'collapsing' | 'idle'>();
 
     /**
      * Computed property to check if there's an active tab
@@ -139,17 +141,20 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
     }
 
     /**
-     * Toggle accordion tab with sequential smooth animation
+     * Toggle accordion tab with smooth animation callbacks (no setTimeout!)
      *
-     * Handles the logic for expanding/collapsing tabs with smooth transitions.
-     * When switching between tabs, it first collapses the current tab, then expands the target tab.
+     * Modern implementation using Angular animation callbacks for perfect timing.
+     * Provides smooth sequential transitions without blocking the main thread.
      *
      * @param tabId - The unique identifier of the tab to toggle
      * @public
      */
     toggleTab(tabId: string): void {
-        // If already in transition, ignore additional clicks
-        if (this.isTransitioning) {
+        // If already transitioning this specific tab, ignore
+        if (
+            this.animationStates.get(tabId) !== 'idle' &&
+            this.animationStates.get(tabId) !== undefined
+        ) {
             return;
         }
 
@@ -158,6 +163,7 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
 
         // If no tab active, expand directly
         if (!currentActive) {
+            this.animationStates.set(tabId, 'expanding');
             this.$activeTab.set(targetTab);
             this.activeTabChange.emit(targetTab);
             return;
@@ -165,40 +171,64 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
 
         // If there's an active tab and we want to change to another, do sequential transition
         if (currentActive && targetTab && currentActive !== targetTab) {
-            this.isTransitioning = true;
+            this.$isTransitioning.set(true);
             this.pendingTab = targetTab;
+
+            // Mark current tab as collapsing
+            this.animationStates.set(currentActive, 'collapsing');
 
             // First collapse the current tab
             this.$activeTab.set(null);
             this.activeTabChange.emit(null);
-
-            // Wait for collapse animation to complete before expanding new tab
-            const collapseTime = this.extractAnimationDuration(this.$transitionOptions());
-            setTimeout(() => {
-                this.$activeTab.set(this.pendingTab);
-                this.activeTabChange.emit(this.pendingTab);
-                this.pendingTab = null;
-                this.cdr.detectChanges();
-
-                // Wait for expand animation to complete
-                setTimeout(() => {
-                    this.isTransitioning = false;
-                    this.cdr.detectChanges();
-                }, collapseTime);
-            }, collapseTime);
+            // Animation callback will handle the expansion of new tab
         } else {
             // Just collapse the current tab or expand if none active
+            if (currentActive) {
+                this.animationStates.set(currentActive, 'collapsing');
+            }
             this.$activeTab.set(targetTab);
             this.activeTabChange.emit(targetTab);
         }
     }
 
     /**
+     * Handle animation events with perfect timing
+     *
+     * @param event - Angular animation event
+     * @param tabId - The unique identifier of the tab
+     */
+    onAnimationDone(event: AnimationEvent, tabId: string): void {
+        const currentState = this.animationStates.get(tabId);
+
+        if (event.toState === 'collapsed' && currentState === 'collapsing') {
+            this.animationStates.set(tabId, 'idle');
+
+            // If there's a pending tab to expand, do it now
+            if (this.pendingTab && this.$isTransitioning()) {
+                this.animationStates.set(this.pendingTab, 'expanding');
+                this.$activeTab.set(this.pendingTab);
+                this.activeTabChange.emit(this.pendingTab);
+                this.pendingTab = null;
+            } else {
+                this.$isTransitioning.set(false);
+            }
+        } else if (event.toState === 'expanded' && currentState === 'expanding') {
+            this.animationStates.set(tabId, 'idle');
+            this.$isTransitioning.set(false);
+        }
+
+        this.cdr.detectChanges();
+    }
+
+    /**
      * Extract duration from transition options string
+     *
+     * @param transitionOptions - CSS transition string (e.g., '150ms ease')
+     * @returns Duration in milliseconds
      */
     private extractAnimationDuration(transitionOptions: string): number {
         const match = transitionOptions.match(/(\d+)ms/);
-        return match ? parseInt(match[1], 10) : 200; // Default 400ms
+        return match ? parseInt(match[1], 10) : 200; // Default 200ms
     }
 
     /**
@@ -213,19 +243,29 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
     }
 
     /**
-     * Get animation state for a tab
+     * Get animation state for a tab with optimized timing parameters
      *
      * @param tabId - The unique identifier of the tab
-     * @returns Animation state object with value and timing parameters
+     * @returns Animation state object with value and optimized timing parameters
      * @public
      */
     getAnimationState(tabId: string) {
         const isActive = this.isTabActive(tabId);
         const baseOptions = this.$transitionOptions();
 
+        // Parse timing for different phases
+        const duration = this.extractAnimationDuration(baseOptions);
+        const collapseTime = `${Math.round(duration * 0.8)}ms`; // Slightly faster collapse
+        const expandTime = `${duration}ms`; // Full duration for expand
+
         return {
             value: isActive ? 'expanded' : 'collapsed',
-            params: { timing: baseOptions }
+            params: {
+                collapseTime,
+                expandTime,
+                collapseEasing: 'cubic-bezier(0.4, 0.0, 1, 1)', // Fast out
+                expandEasing: 'cubic-bezier(0.0, 0.0, 0.2, 1)' // Smooth in
+            }
         };
     }
 }
