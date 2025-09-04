@@ -1,9 +1,8 @@
-import { Observable } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 
-import { TreeNode } from 'primeng/api';
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
 import { map, pluck, tap } from 'rxjs/operators';
@@ -11,37 +10,15 @@ import { map, pluck, tap } from 'rxjs/operators';
 import { GlobalStore } from '@dotcms/store';
 import { DotTreeFolderComponent } from '@dotcms/ui';
 
+import {
+    ALL_FOLDER,
+    createTreeNode,
+    DotFolder,
+    generateAllParentPaths,
+    TreeNodeItem
+} from './utils';
+
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-
-export interface DotFolder {
-    id: string;
-    hostName: string;
-    path: string;
-    addChildrenAllowed: boolean;
-}
-
-export type TreeNodeData = {
-    type: 'site' | 'folder';
-    path: string;
-    hostname: string;
-    id: string;
-};
-
-export type TreeNodeItem = TreeNode<TreeNodeData>;
-
-const ALL_FOLDER: TreeNodeItem = {
-    key: 'ALL_FOLDER',
-    label: 'All',
-    loading: false,
-    data: {
-        type: 'folder',
-        path: '',
-        hostname: '',
-        id: ''
-    },
-    leaf: false,
-    expanded: true
-};
 
 @Component({
     selector: 'dot-content-drive-sidebar',
@@ -68,6 +45,24 @@ export class DotContentDriveSidebarComponent {
         }
     });
 
+    constructor() {
+        this.testFetchAllParentFolders();
+    }
+
+    /**
+     * Test method to demonstrate fetchAllParentFolders functionality
+     * Uncomment the call in getSiteFoldersEffect to test
+     */
+    private testFetchAllParentFolders(): void {
+        const testPath = 'demo.dotcms.com/application/apivtl/';
+
+        this.fetchAllParentFolders(testPath).subscribe({
+            next: (_allFolders) => {
+                // console.log(_allFolders);
+            }
+        });
+    }
+
     /**
      * Handles node selection events
      *
@@ -91,6 +86,12 @@ export class DotContentDriveSidebarComponent {
 
         node.loading = true;
         const fullPath = `${hostname}${path}`;
+
+        if (node.children?.length > 0) {
+            node.loading = false;
+            node.expanded = true;
+            return;
+        }
 
         this.getFoldersTreeNode(fullPath).subscribe(({ folders }) => {
             node.loading = false;
@@ -116,6 +117,32 @@ export class DotContentDriveSidebarComponent {
     }
 
     /**
+     * Fetches all parent folders from a given path using parallel API calls
+     *
+     * Example: '/main/sub-folder/inner-folder/child-folder' will make calls to:
+     * - /main/sub-folder/inner-folder/child-folder
+     * - /main/sub-folder/inner-folder
+     * - /main/sub-folder
+     * - /main
+     * - /
+     *
+     * @param {string} hostname - The site hostname
+     * @param {string} targetPath - The full path to generate parent paths from
+     * @returns {Observable<DotFolder[][]>} Observable that emits an array of folder arrays (one for each path level)
+     */
+    fetchAllParentFolders(path: string): Observable<DotFolder[][]> {
+        const paths = generateAllParentPaths(path);
+
+        // Create API calls for each path, prefixed with hostname
+        const folderRequests = paths.map((path) => {
+            const fullPath = `/${path}`;
+            return this.getFolders(fullPath);
+        });
+
+        return forkJoin(folderRequests);
+    }
+
+    /**
      * Fetches folders by path from the API
      *
      * @param {string} path - The path to fetch folders from
@@ -125,36 +152,6 @@ export class DotContentDriveSidebarComponent {
         return this.#http
             .post<{ entity: DotFolder[] }>('/api/v1/folder/byPath', { path })
             .pipe(pluck('entity'));
-    }
-
-    /**
-     * Extracts the folder name from a full path
-     *
-     * @param {string} path - The full folder path
-     * @returns {string} The folder name
-     */
-    private getFolderLabel(path: string): string {
-        return path.split('/').filter(Boolean).pop() || '';
-    }
-
-    /**
-     * Transforms a DotFolder into a TreeNodeItem
-     *
-     * @param {DotFolder} folder - The folder to transform
-     * @returns {TreeNodeItem} The tree node item
-     */
-    private createTreeNode(folder: DotFolder): TreeNodeItem {
-        return {
-            key: folder.id,
-            label: this.getFolderLabel(folder.path),
-            data: {
-                id: folder.id,
-                hostname: folder.hostName,
-                path: folder.path,
-                type: 'folder'
-            },
-            leaf: false
-        };
     }
 
     /**
@@ -173,7 +170,7 @@ export class DotContentDriveSidebarComponent {
 
                 return {
                     parent,
-                    folders: childFolders.map((folder) => this.createTreeNode(folder))
+                    folders: childFolders.map((folder) => createTreeNode(folder))
                 };
             })
         );
