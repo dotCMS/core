@@ -1,0 +1,56 @@
+name: Theme
+description: High-level strategic initiative that groups related EPICs
+title: "[THEME] "
+labels: []
+type: theme
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Note: This template is intended for Product team use only.**
+        
+        ## Theme Overview
+        Themes represent broad strategic initiatives that align with product vision and encompass multiple EPICs.
+
+  - type: input
+    id: theme-title
+    attributes:
+      label: Theme Title
+      description: Concise, action-based title that reflects strategic value
+      placeholder: "e.g., Enhanced Content Management Experience"
+    validations:
+      required: true
+
+  - type: textarea
+    id: vision
+    attributes:
+      label: Vision
+      description: Explain in detail how this theme will benefit our customers
+      placeholder: "Describe the strategic value and customer impact..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: personas
+    attributes:
+      label: Target Personas
+      description: Select the personas this theme primarily affects
+      options:
+        - label: Developer teams
+        - label: Content teams
+        - label: DevOps teams
+        - label: System administrators (dotCMS)
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Related resources (design docs, research, etc.)
+      placeholder: |
+        - [Kickoff deck](url)
+        - [Research document](url)
+        - [Design files](url)
+    validations:
+      required: false

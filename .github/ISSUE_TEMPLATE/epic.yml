@@ -1,0 +1,59 @@
+name: EPIC
+description: Wide area of functionality that delivers significant value within a theme
+title: "[EPIC] "
+labels: []
+type: epic
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Note: This template is intended for Product team use only.**
+        
+        EPICs represent wide areas of functionality that solve specific problems and deliver significant value.
+
+  - type: input
+    id: epic-title
+    attributes:
+      label: EPIC Title
+      description: Concise, action-based title that reflects user value
+      placeholder: "e.g., Universal Visual Editor Enhancements"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Explain the problem this EPIC solves and how it will benefit customers
+      placeholder: "Describe the user problem, proposed solution, and customer value..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: personas
+    attributes:
+      label: Target Personas
+      description: Select the personas this EPIC affects
+      options:
+        - label: Developer teams
+        - label: Content teams
+        - label: DevOps teams
+        - label: System administrators (dotCMS)
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Related resources
+      placeholder: |
+        - [Kickoff deck](url)
+        - [GitHub](url)
+        - [Walkthrough](url)
+        - [Figma](url)
+        - [Slack Channel](url)
+        - [EPIC Folder in Google Drive](url)
+        - [POC](url)
+    validations:
+      required: false

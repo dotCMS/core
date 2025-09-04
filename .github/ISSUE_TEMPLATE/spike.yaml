@@ -1,0 +1,75 @@
+name: Spike
+description: Timeboxed research to turn unknowns into knowns
+title: "[SPIKE] "
+labels: [""]
+type: spike
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Note: This template is intended for Engineering team use.**
+
+  - type: input
+    id: spike-title
+    attributes:
+      label: Spike Title
+      description: Clear, concise title describing the research objective
+      placeholder: "e.g., Research integration options for new authentication system"
+    validations:
+      required: true
+
+  - type: textarea
+    id: research-question
+    attributes:
+      label: Research Question
+      description: What specific question or unknown needs to be investigated?
+      placeholder: "What we need to learn or understand..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: timebox
+    attributes:
+      label: Timebox
+      description: How much time should be allocated to this research?
+      options:
+        - 2h
+        - 4h
+        - 8h
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What deliverables or outcomes define completion of this spike?
+      placeholder: |
+        - [ ] Document findings on approach A vs approach B
+        - [ ] Provide recommendation with pros/cons
+        - [ ] Create proof of concept if feasible
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Background information and why this research is needed
+      placeholder: "Provide context on why this spike is necessary..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Related resources, documentation, or references
+      placeholder: |
+        - [Related documentation](url)
+        - [Similar implementations](url)
+        - [Technical specs](url)
+    validations:
+      required: false
