@@ -92,6 +92,29 @@ Before setting up the MCP server, you need these environment variables to connec
 | `DOTCMS_URL` | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
 | `VERBOSE`    | ❌       | Enable detailed logging for troubleshooting | `true` |
+| `RESPONSE_MAX_LENGTH` | ❌       | Maximum character limit for response truncation (no truncation if not set) | `5000` |
+
+### Response Truncation
+
+The MCP server includes intelligent response truncation to manage large data responses and optimize performance. This feature is controlled by the `RESPONSE_MAX_LENGTH` environment variable:
+
+**Behavior:**
+- **Not set or 0**: No truncation occurs (unlimited response length)
+- **Positive number**: Responses are truncated to the specified character limit
+- **Invalid value**: No truncation occurs (falls back to unlimited)
+
+**When truncation occurs:**
+- Large content search results
+- Extensive content type schemas
+- Bulk content operations
+- Any response exceeding the specified limit
+
+**Truncation format:**
+```
+Original response content...
+[truncated]
+```
+
 
 ## Quickstart
 
