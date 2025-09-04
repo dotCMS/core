@@ -44,10 +44,22 @@ export function formatResponse(
     }
 
     // Check for environment variable to control truncation
-    const envMaxLength = process.env.MCP_RESPONSE_MAX_LENGTH;
-    const defaultMaxLength = envMaxLength ? parseInt(envMaxLength, 10) : Number.MAX_SAFE_INTEGER;
+    const envMaxLength = process.env.RESPONSE_MAX_LENGTH;
+    let defaultMaxLength: number | undefined;
     
-    const opts = { includeRawData: false, maxDataLength: defaultMaxLength, ...options };
+    if (envMaxLength) {
+        const parsedLength = parseInt(envMaxLength, 10);
+        // Only use valid positive numbers
+        if (!isNaN(parsedLength) && parsedLength > 0) {
+            defaultMaxLength = parsedLength;
+        }
+    }
+    
+    const opts = { includeRawData: false, ...options };
+    // Only set maxDataLength if we have a valid default or explicit option
+    if (defaultMaxLength !== undefined && opts.maxDataLength === undefined) {
+        opts.maxDataLength = defaultMaxLength;
+    }
 
     // Handle different data types appropriately
     if (typeof data === 'string') {
@@ -58,14 +70,14 @@ export function formatResponse(
         // For objects, provide structured information
         const jsonStr = JSON.stringify(data, null, 2);
         
-        const shouldTruncate = jsonStr.length > opts.maxDataLength;
+        const shouldTruncate = opts.maxDataLength !== undefined && jsonStr.length > opts.maxDataLength;
         if (shouldTruncate) {
             const logger = new Logger('formatResponse');
             logger.log(`Response truncated from ${jsonStr.length} to ${opts.maxDataLength} characters`);
         }
         
         const truncated = shouldTruncate
-            ? jsonStr.substring(0, opts.maxDataLength) + '...[truncated]'
+            ? jsonStr.substring(0, opts.maxDataLength!) + '...[truncated]'
             : jsonStr;
 
         return `${message}\n\nDetails:\n${truncated}`;

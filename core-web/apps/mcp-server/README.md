@@ -92,7 +92,7 @@ Before setting up the MCP server, you need these environment variables to connec
 | `DOTCMS_URL` | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
 | `VERBOSE`    | ❌       | Enable detailed logging for troubleshooting | `true` |
-| `MCP_RESPONSE_MAX_LENGTH` | ❌ | Maximum length for response truncation. When not set, responses are returned in full | `1000` |
+| `RESPONSE_MAX_LENGTH` | ❌ | Maximum length for response truncation. When not set, responses are returned in full. Invalid values (0, negative, non-numeric) are ignored | `1000` |
 
 ## Quickstart
 
@@ -113,7 +113,8 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
             "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-auth-token",
+                "RESPONSE_MAX_LENGTH": "1000"
             }
         }
     }
@@ -132,7 +133,8 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
             "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-auth-token",
+                "RESPONSE_MAX_LENGTH": "1000"
             }
         }
     }
@@ -403,8 +405,9 @@ The MCP server includes comprehensive logging:
 
 The MCP server supports configurable response truncation to manage large response sizes:
 
--   **Environment Control**: Set `MCP_RESPONSE_MAX_LENGTH` to control maximum response length
+-   **Environment Control**: Set `RESPONSE_MAX_LENGTH` to control maximum response length
 -   **Default Behavior**: When not set, responses are returned in full (no truncation)
+-   **Invalid Values**: Invalid values (0, negative numbers, non-numeric strings, empty strings) are ignored and no truncation is applied
 -   **Flexible Configuration**: Different deployment scenarios can use different limits
 -   **Truncation Logging**: When truncation occurs, it's logged with original and truncated lengths
 -   **Backwards Compatibility**: Existing deployments continue working without changes
@@ -413,13 +416,19 @@ The MCP server supports configurable response truncation to manage large respons
 
 ```bash
 # No truncation (default)
-# MCP_RESPONSE_MAX_LENGTH is not set
+# RESPONSE_MAX_LENGTH is not set
 
 # Limit responses to 1000 characters
-export MCP_RESPONSE_MAX_LENGTH=1000
+export RESPONSE_MAX_LENGTH=1000
 
 # Limit responses to 5000 characters for high-capacity clients
-export MCP_RESPONSE_MAX_LENGTH=5000
+export RESPONSE_MAX_LENGTH=5000
+
+# Invalid values - no truncation will occur
+export RESPONSE_MAX_LENGTH=0        # Ignored (zero)
+export RESPONSE_MAX_LENGTH=-100     # Ignored (negative)
+export RESPONSE_MAX_LENGTH=invalid  # Ignored (non-numeric)
+export RESPONSE_MAX_LENGTH=""       # Ignored (empty)
 ```
 
 When responses are truncated, you'll see log messages like:
