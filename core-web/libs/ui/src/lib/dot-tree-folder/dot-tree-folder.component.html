@@ -14,7 +14,7 @@
         (onNodeExpand)="onNodeExpand.emit($event)"
         (onNodeCollapse)="onNodeCollapse.emit($event)">
         <ng-template let-node pTemplate="default">
-            <span>{{ node.label }} {{ node.loading }}</span>
+            <span>{{ node.label }}</span>
         </ng-template>
         <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
         <ng-template let-expanded pTemplate="togglericon">
