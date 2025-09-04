@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -17,7 +17,8 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotContentDriveItem, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { createFakeContentlet, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
@@ -28,46 +29,18 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 describe('DotFolderListViewContextMenuComponent', () => {
     let spectator: Spectator<DotFolderListViewContextMenuComponent>;
     let component: DotFolderListViewContextMenuComponent;
-    let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
-    let workflowsActionsService: jest.Mocked<DotWorkflowsActionsService>;
-    let navigationService: jest.Mocked<DotContentDriveNavigationService>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
+    let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
+    let navigationService: SpyObject<DotContentDriveNavigationService>;
 
-    const mockContentlet = {
-        contentType: 'blog',
-        inode: 'test-inode-123',
-        identifier: 'test-id',
-        title: 'Test Blog',
-        modDate: '2023-01-01',
-        modUser: 'test-user',
-        modUserName: 'Test User',
-        baseType: 'CONTENT'
-    } as unknown as DotContentDriveItem;
+    const mockContentlet = createFakeContentlet();
 
-    const mockWorkflowActions = [
-        {
-            id: 'action-1',
-            name: 'Publish',
-            actionInputs: []
-        },
-        {
-            id: 'action-2',
-            name: 'Save/Assign',
-            actionInputs: [{ id: 'input-1' }]
-        }
-    ] as DotCMSWorkflowAction[];
+    const mockWorkflowActions = mockWorkflowsActions; // 3 mocked workflow actions
 
     const createComponent = createComponentFactory({
         component: DotFolderListViewContextMenuComponent,
         componentProviders: [DotContentDriveStore],
         providers: [
-            // mockProvider(DotContentDriveStore, {
-            //     contextMenu: jest.fn().mockReturnValue(null),
-            //     status: jest.fn().mockReturnValue(DotContentDriveStatus.LOADED),
-            //     patchContextMenu: jest.fn(),
-            //     setStatus: jest.fn(),
-            //     setShowAddToBundle: jest.fn(),
-            //     reloadContentDrive: jest.fn()
-            // }),
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn().mockReturnValue(of(mockWorkflowActions))
             }),
@@ -104,15 +77,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         component = spectator.component;
-        store = spectator.inject(DotContentDriveStore, true) as jest.Mocked<
-            InstanceType<typeof DotContentDriveStore>
-        >;
-        workflowsActionsService = spectator.inject(
-            DotWorkflowsActionsService
-        ) as jest.Mocked<DotWorkflowsActionsService>;
-        navigationService = spectator.inject(
-            DotContentDriveNavigationService
-        ) as jest.Mocked<DotContentDriveNavigationService>;
+        store = spectator.inject(DotContentDriveStore, true);
+        workflowsActionsService = spectator.inject(DotWorkflowsActionsService);
+        navigationService = spectator.inject(DotContentDriveNavigationService);
     });
 
     afterEach(() => {
@@ -173,7 +140,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 mockContentlet.inode,
                 DotRenderMode.LISTING
             );
-            expect(component.$items()).toHaveLength(4); // Edit + 2 workflow actions + Add to Bundle
+            expect(component.$items()).toHaveLength(5); // Edit + 3 workflow actions + Add to Bundle
         });
 
         it('should build correct menu items for contentlet', async () => {
@@ -181,9 +148,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             const items = component.$items();
             expect(items[0].label).toBe('content-drive.context-menu.edit-contentlet');
-            expect(items[1].label).toBe('Publish');
-            expect(items[2].label).toBe('Save/Assign');
-            expect(items[3].label).toBe('contenttypes.content.add_to_bundle');
+            expect(items[1].label).toBe('Assign Workflow');
+            expect(items[2].label).toBe('Save');
+            expect(items[3].label).toBe('Save / Publish');
+            expect(items[4].label).toBe('contenttypes.content.add_to_bundle');
         });
 
         it('should build correct menu items for htmlpageasset', async () => {
@@ -212,7 +180,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             const items = component.$items();
-            items[3].command?.({} as unknown as MenuItemCommandEvent);
+            items[4].command?.({} as unknown as MenuItemCommandEvent);
 
             expect(store.contextMenu().showAddToBundle).toBe(true);
         });
@@ -241,7 +209,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-            expect(component.$items()).toHaveLength(4);
+            expect(component.$items()).toHaveLength(5);
         });
     });
 

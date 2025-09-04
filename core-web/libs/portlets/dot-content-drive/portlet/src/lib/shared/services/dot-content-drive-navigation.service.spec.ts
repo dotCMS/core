@@ -5,7 +5,8 @@ import { of } from 'rxjs';
 import { Router } from '@angular/router';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentType, DotContentDriveItem, FeaturedFlags } from '@dotcms/dotcms-models';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotContentDriveNavigationService } from './dot-content-drive-navigation.service';
 
@@ -30,10 +31,8 @@ describe('DotContentDriveNavigationService', () => {
     beforeEach(() => {
         spectator = createService();
         service = spectator.service;
-        router = spectator.inject(Router) as jest.Mocked<Router>;
-        contentTypeService = spectator.inject(
-            DotContentTypeService
-        ) as jest.Mocked<DotContentTypeService>;
+        router = spectator.inject(Router);
+        contentTypeService = spectator.inject(DotContentTypeService);
     });
 
     afterEach(() => {
@@ -42,18 +41,11 @@ describe('DotContentDriveNavigationService', () => {
 
     describe('editContent', () => {
         it('should navigate to page editor when contentType is htmlpageasset', () => {
-            const mockContentlet = {
+            const mockContentlet = createFakeContentlet({
                 contentType: 'htmlpageasset',
                 urlMap: '/test-page',
-                languageId: 1,
-                inode: 'test-inode',
-                identifier: 'test-id',
-                title: 'Test Page',
-                modDate: '2023-01-01',
-                modUser: 'test-user',
-                modUserName: 'Test User',
-                baseType: 'HTMLPAGE'
-            } as unknown as DotContentDriveItem;
+                languageId: 1
+            });
 
             service.editContent(mockContentlet);
 
@@ -63,18 +55,11 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         it('should use url property when urlMap is not available for htmlpageasset', () => {
-            const mockContentlet = {
+            const mockContentlet = createFakeContentlet({
                 contentType: 'htmlpageasset',
                 url: '/test-page-url',
-                languageId: 2,
-                inode: 'test-inode',
-                identifier: 'test-id',
-                title: 'Test Page',
-                modDate: '2023-01-01',
-                modUser: 'test-user',
-                modUserName: 'Test User',
-                baseType: 'HTMLPAGE'
-            } as unknown as DotContentDriveItem;
+                languageId: 2
+            });
 
             service.editContent(mockContentlet);
 
@@ -84,24 +69,16 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         it('should navigate to new content editor when feature flag is enabled', () => {
-            const mockContentlet = {
+            const mockContentlet = createFakeContentlet({
                 contentType: 'blog',
-                inode: 'test-inode-123',
-                identifier: 'test-id',
-                title: 'Test Blog',
-                modDate: '2023-01-01',
-                modUser: 'test-user',
-                modUserName: 'Test User',
-                baseType: 'CONTENT'
-            } as unknown as DotContentDriveItem;
+                inode: 'test-inode-123'
+            });
 
-            const mockContentType = {
+            const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
-                metadata: {
-                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                }
-            } as unknown as DotCMSContentType;
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+            });
 
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
@@ -112,24 +89,16 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         it('should navigate to old content editor when feature flag is disabled', () => {
-            const mockContentlet: DotContentDriveItem = {
+            const mockContentlet = createFakeContentlet({
                 contentType: 'news',
-                inode: 'test-inode-456',
-                identifier: 'test-id',
-                title: 'Test News',
-                modDate: '2023-01-01',
-                modUser: 'test-user',
-                modUserName: 'Test User',
-                baseType: 'CONTENT'
-            } as unknown as DotContentDriveItem;
+                inode: 'test-inode-456'
+            });
 
-            const mockContentType = {
+            const mockContentType = createFakeContentType({
                 id: 'news',
                 name: 'News',
-                metadata: {
-                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                }
-            } as unknown as DotCMSContentType;
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }
+            });
 
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
@@ -140,22 +109,16 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         it('should navigate to old content editor when feature flag is missing', () => {
-            const mockContentlet: DotContentDriveItem = {
+            const mockContentlet = createFakeContentlet({
                 contentType: 'product',
-                inode: 'test-inode-789',
-                identifier: 'test-id',
-                title: 'Test Product',
-                modDate: '2023-01-01',
-                modUser: 'test-user',
-                modUserName: 'Test User',
-                baseType: 'CONTENT'
-            } as unknown as DotContentDriveItem;
+                inode: 'test-inode-789'
+            });
 
-            const mockContentType = {
+            const mockContentType = createFakeContentType({
                 id: 'product',
                 name: 'Product',
                 metadata: {}
-            } as unknown as DotCMSContentType;
+            });
 
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
@@ -166,22 +129,12 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         it('should navigate to old content editor when metadata is undefined', () => {
-            const mockContentlet: DotContentDriveItem = {
+            const mockContentlet = createFakeContentlet({
                 contentType: 'event',
-                inode: 'test-inode-000',
-                identifier: 'test-id',
-                title: 'Test Event',
-                modDate: '2023-01-01',
-                modUser: 'test-user',
-                modUserName: 'Test User',
-                baseType: 'CONTENT'
-            } as unknown as DotContentDriveItem;
+                inode: 'test-inode-000'
+            });
 
-            const mockContentType = {
-                id: 'event',
-                name: 'Event'
-                // metadata is undefined
-            } as unknown as DotCMSContentType;
+            const mockContentType = createFakeContentType({ id: 'event', name: 'Event' });
 
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 

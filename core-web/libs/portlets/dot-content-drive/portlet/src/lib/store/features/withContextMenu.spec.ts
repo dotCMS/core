@@ -3,6 +3,7 @@ import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { withContextMenu } from './withContextMenu';
 
@@ -54,17 +55,7 @@ describe('withContextMenu', () => {
     });
 
     describe('methods', () => {
-        const mockContentlet = {
-            contentType: 'blog',
-            inode: 'test-inode-123',
-            identifier: 'test-id',
-            title: 'Test Blog',
-            modDate: '2023-01-01',
-            modUser: 'test-user',
-            modUserName: 'Test User',
-            baseType: 'CONTENT'
-        } as unknown as DotContentDriveItem;
-
+        const mockContentlet = createFakeContentlet();
         const mockEvent = new MouseEvent('contextmenu');
 
         describe('setContextMenu', () => {
@@ -248,16 +239,7 @@ describe('withContextMenu', () => {
     });
 
     describe('integration scenarios', () => {
-        const mockContentlet = {
-            contentType: 'news',
-            inode: 'news-inode',
-            identifier: 'news-id',
-            title: 'News Item',
-            modDate: '2023-02-01',
-            modUser: 'editor',
-            modUserName: 'Editor User',
-            baseType: 'CONTENT'
-        } as unknown as DotContentDriveItem;
+        const mockContentlet = createFakeContentlet();
 
         it('should handle typical context menu workflow', () => {
             const mockEvent = new MouseEvent('contextmenu');
