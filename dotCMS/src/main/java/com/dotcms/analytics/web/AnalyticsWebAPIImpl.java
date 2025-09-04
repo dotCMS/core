@@ -86,11 +86,14 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
      */
     private boolean anySecrets (final Host host) {
 
-        return   Try.of(
-                        () ->
-                                this.appsAPI.getSecrets(
-                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
-                .getOrElseGet(e -> false);
+        Try.of(() -> this.appsAPI.getSecrets(
+                        ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
+                .getOrElseGet(e -> {
+                    Logger.warn(this, "Error getting analytics secrets. Please check that the App Content Analytics is configured: " + e.getMessage() + " for the site: " + host.getHostname(), e);
+                    return false;
+                });
+
+        return true;
     }
 
     @Override
