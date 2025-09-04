@@ -10,6 +10,8 @@ import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
 import com.dotcms.jitsu.validators.AnalyticsValidator;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.jitsu.validators.SiteKeyValidator;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -243,6 +245,33 @@ public class ContentAnalyticsUtil {
                     siteFromRequestOpt.get(), ExceptionUtil.getErrorMessage(e));
             Logger.error(SiteKeyValidator.class, errorMsg, e);
             throw new AnalyticsValidator.AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
+        }
+    }
+
+    /**
+     * Retrieves the site key from Content Analytics app secrets for the given site.
+     * This method looks up the app secrets and extracts the 'siteKey' value.
+     *
+     * @param currentSite The site to retrieve the site key for
+     * @return Optional containing the site key string if found, empty otherwise
+     */
+    public static Optional<String> getSiteKeyFromAppSecrets(final Host currentSite) {
+        try {
+            final Optional<AppSecrets> secretsOpt = APILocator.getAppsAPI()
+                    .getSecrets(CONTENT_ANALYTICS_APP_KEY, false, currentSite, APILocator.systemUser());
+            
+            if (secretsOpt.isPresent()) {
+                final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
+                final Secret siteKeySecret = secretsMap.get("siteKey");
+                if (siteKeySecret != null) {
+                    return Optional.of(siteKeySecret.getString());
+                }
+            }
+            return Optional.empty();
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(ContentAnalyticsUtil.class, 
+                    "Error retrieving site key from app secrets for site: " + currentSite.getIdentifier(), e);
+            return Optional.empty();
         }
     }
 

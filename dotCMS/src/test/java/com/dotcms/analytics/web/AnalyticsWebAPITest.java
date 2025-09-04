@@ -2,6 +2,7 @@ package com.dotcms.analytics.web;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.beans.Host;
@@ -18,6 +19,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import static com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY;
+
 /**
  * Test cases for {@link AnalyticsWebAPI}
  * @author jsanca
@@ -26,8 +29,8 @@ public class AnalyticsWebAPITest {
 
     /**
      * Method to test: {@link com.dotcms.analytics.web.AnalyticsWebAPIImpl#isAutoJsInjectionEnabled(HttpServletRequest)}
-     * Given Scenario: The FF is on and the app is configured
-     * ExpectedResult: the injection is allowed b.c all pre at meet
+     * Given Scenario: The FF is on and the app is configured with secrets
+     * ExpectedResult: The injection is allowed because all prerequisites are met
      */
     @Test
     public void test_auto_js_injection_allowed() throws DotDataException, DotSecurityException {
@@ -43,23 +46,23 @@ public class AnalyticsWebAPITest {
         final AppSecrets secrets = new AppSecrets.Builder().build();
         Mockito.when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(host);
         Mockito.when(appsAPI.getSecrets(
-                AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.of(secrets));
+                CONTENT_ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.of(secrets));
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost-> ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost));
+                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
 
         Assert.assertTrue(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
 
     /**
      * Method to test: {@link com.dotcms.analytics.web.AnalyticsWebAPIImpl#isAutoJsInjectionEnabled(HttpServletRequest)}
-     * Given Scenario: The FF is off and the app is configured
-     * ExpectedResult: the injection wont be allowed b.c not all pre at meet
+     * Given Scenario: The FF is off and the app is configured with secrets
+     * ExpectedResult: The injection won't be allowed because not all prerequisites are met
      */
     @Test
     public void test_auto_js_injection_ff_off_not_allowed() throws DotDataException, DotSecurityException {
-        // FF on
+        // FF off
         final AtomicBoolean isAutoInjectTurnedOn = new AtomicBoolean(false);
         final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
         final AppsAPI appsAPI  = Mockito.mock(AppsAPI.class);
@@ -71,19 +74,19 @@ public class AnalyticsWebAPITest {
         final AppSecrets secrets = new AppSecrets.Builder().build();
         Mockito.when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(host);
         Mockito.when(appsAPI.getSecrets(
-                AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.of(secrets));
+                CONTENT_ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.of(secrets));
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost->ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost));
+                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
 
         Assert.assertFalse(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
 
     /**
      * Method to test: {@link com.dotcms.analytics.web.AnalyticsWebAPIImpl#isAutoJsInjectionEnabled(HttpServletRequest)}
-     * Given Scenario: The FF is off and the app is configured
-     * ExpectedResult: the injection wont be allowed b.c not all pre at meet
+     * Given Scenario: The FF is on but the app is not configured (no secrets)
+     * ExpectedResult: The injection won't be allowed because not all prerequisites are met
      */
     @Test
     public void test_auto_js_injection_ff_on_but_app_not_config_then_not_allowed() throws DotDataException, DotSecurityException {
@@ -98,19 +101,19 @@ public class AnalyticsWebAPITest {
 
         Mockito.when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(host);
         Mockito.when(appsAPI.getSecrets(
-                AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.empty());
+                CONTENT_ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.empty());
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost->ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost));
+                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
 
         Assert.assertFalse(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
 
     /**
      * Method to test: {@link com.dotcms.analytics.web.AnalyticsWebAPIImpl#getCode(Host, HttpServletRequest)}
-     * Given Scenario: The FF is off and the app is configured
-     * ExpectedResult: the injection wont be allowed b.c not all pre at meet
+     * Given Scenario: The FF is on and no app secrets are configured, fallback analytics key is provided
+     * ExpectedResult: JavaScript code is generated with fallback analytics key and debug/auto-page-view attributes
      */
     @Test
     public void test_get_code() throws DotDataException, DotSecurityException {
@@ -129,7 +132,7 @@ public class AnalyticsWebAPITest {
         Mockito.when(request.getLocalPort()).thenReturn(8090);
         Mockito.when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(host);
         Mockito.when(appsAPI.getSecrets(
-                AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.empty());
+                CONTENT_ANALYTICS_APP_KEY, true, host, systemUser)).thenReturn(Optional.empty());
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
