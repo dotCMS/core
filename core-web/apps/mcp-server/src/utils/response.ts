@@ -29,7 +29,7 @@ export type McpResponse = McpSuccessResponse | McpErrorResponse;
 /**
  * Formats response data for LLM consumption
  */
-function formatResponse(
+export function formatResponse(
     message: string,
     data?: unknown
 ): string {
