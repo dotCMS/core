@@ -1,5 +1,13 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    computed,
+    input,
+    inject,
+    output
+} from '@angular/core';
 
 import { AccordionModule } from 'primeng/accordion';
 import { AvatarModule } from 'primeng/avatar';
@@ -51,9 +59,14 @@ export interface DotHistoryPagination {
 export class DotEditContentSidebarHistoryComponent {
     private datePipe = inject(DatePipe);
     private dotMessagePipe = inject(DotMessagePipe);
+    private cdr = inject(ChangeDetectorRef);
 
     // Estado del accordion personalizado
-    activeTab: 'versions' | 'push-publish' | null = 'versions';
+    activeTab: 'versions' | 'push-publish' | 'analytics' | null = 'versions';
+
+    // Estado para manejar transiciones secuenciales
+    isTransitioning = false; // Público para el template
+    private pendingTab: 'versions' | 'push-publish' | 'analytics' | null = null;
     /**
      * List of history items to display
      * @readonly
@@ -212,9 +225,45 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
-     * Toggle accordion tab
+     * Toggle accordion tab with smooth sequential animation
      */
-    toggleTab(tab: 'versions' | 'push-publish'): void {
-        this.activeTab = this.activeTab === tab ? null : tab;
+    toggleTab(tab: 'versions' | 'push-publish' | 'analytics'): void {
+        // Si ya está en transición, ignorar clicks adicionales
+        if (this.isTransitioning) {
+            return;
+        }
+
+        const targetTab = this.activeTab === tab ? null : tab;
+
+        // Si no hay tab activo, expandir directamente
+        if (!this.activeTab) {
+            this.activeTab = targetTab;
+            return;
+        }
+
+        // Si hay tab activo y queremos cambiar a otro, hacer transición secuencial
+        if (this.activeTab && targetTab && this.activeTab !== targetTab) {
+            this.isTransitioning = true;
+            this.pendingTab = targetTab;
+
+            // Primero colapsar el tab actual
+            this.activeTab = null;
+
+            // Después de 300ms (duración del colapso), expandir el nuevo tab
+            setTimeout(() => {
+                this.activeTab = this.pendingTab;
+                this.pendingTab = null;
+                this.cdr.detectChanges(); // Forzar detección de cambios
+
+                // Después de 500ms (duración de la expansión), permitir nuevas transiciones
+                setTimeout(() => {
+                    this.isTransitioning = false;
+                    this.cdr.detectChanges(); // Forzar detección de cambios
+                }, 400);
+            }, 200);
+        } else {
+            // Colapsar el tab actual
+            this.activeTab = targetTab;
+        }
     }
 }

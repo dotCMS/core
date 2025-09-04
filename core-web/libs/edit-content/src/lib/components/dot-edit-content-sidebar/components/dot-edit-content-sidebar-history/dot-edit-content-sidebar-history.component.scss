@@ -12,6 +12,20 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+
+    // Durante transiciones, deshabilitar todos los eventos del mouse
+    &--transitioning {
+        pointer-events: none;
+
+        .accordion-content {
+            pointer-events: none !important;
+        }
+
+        // Solo permitir clicks en headers durante transición
+        .accordion-header {
+            pointer-events: auto;
+        }
+    }
 }
 
 .accordion-tab {
@@ -78,6 +92,7 @@
     max-height: 0;
     opacity: 0;
     transform: translateY(-8px);
+    pointer-events: none; // Deshabilitar eventos durante colapso
     transition:
         max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
         opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -88,6 +103,7 @@
         max-height: 2000px; // Altura suficiente para cualquier contenido
         opacity: 1;
         transform: translateY(0);
+        pointer-events: auto; // Habilitar eventos cuando está expandido
         transition:
             max-height 0.5s cubic-bezier(0.25, 0.8, 0.25, 1),
             opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -99,6 +115,7 @@
         max-height: 0;
         opacity: 0;
         transform: translateY(-8px);
+        pointer-events: none; // Deshabilitar eventos durante colapso
         transition:
             max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
             opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),

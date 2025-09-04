@@ -1,5 +1,8 @@
 <!-- Custom Accordion Implementation -->
-<div class="custom-accordion" [class.custom-accordion--has-active]="activeTab !== null">
+<div
+    class="custom-accordion"
+    [class.custom-accordion--has-active]="activeTab !== null"
+    [class.custom-accordion--transitioning]="isTransitioning">
     <!-- Versions Tab -->
     <div class="accordion-tab" [class.active]="activeTab === 'versions'">
         <div class="accordion-header" (click)="toggleTab('versions')">
@@ -191,6 +194,30 @@
             <div class="push-publish-content">
                 <!-- TODO: Add Push Publish content here -->
                 <p>Push Publish functionality will be implemented here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div class="accordion-tab" [class.active]="activeTab === 'analytics'">
+        <div class="accordion-header" (click)="toggleTab('analytics')">
+            <span>Analytics</span>
+            <i class="pi pi-chevron-down"></i>
+        </div>
+        <div
+            class="accordion-content"
+            [class.accordion-content--expanded]="activeTab === 'analytics'"
+            [class.accordion-content--collapsed]="activeTab !== 'analytics'">
+            <div class="analytics-content">
+                <!-- TODO: Add Analytics content here -->
+                <p>Analytics functionality will be implemented here.</p>
+                <p>This could include:</p>
+                <ul>
+                    <li>Page views</li>
+                    <li>User interactions</li>
+                    <li>Performance metrics</li>
+                    <li>Content engagement</li>
+                </ul>
             </div>
         </div>
     </div>
