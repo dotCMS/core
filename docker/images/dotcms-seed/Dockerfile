@@ -16,8 +16,8 @@ ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
 
 # Build env dependencies
 # Installing basic packages 
-RUN sudo dnf update -y
-RUN sudo dnf install grep openssl git sed  -y --setopt=install_weak_deps=False
+RUN dnf update -y
+RUN dnf install grep openssl git sed -y --setopt=install_weak_deps=False
     
 RUN mkdir -p /build/src \
     && echo "Pulling dotCMS src" \
