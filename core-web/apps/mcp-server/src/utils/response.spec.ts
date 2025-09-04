@@ -36,8 +36,8 @@ describe('Response Utils', () => {
         });
 
         it('should truncate long object data when environment variable is set', () => {
-            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
-            process.env.MCP_RESPONSE_MAX_LENGTH = '100';
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '100';
 
             const largeData = {
                 longString: 'a'.repeat(1000),
@@ -51,15 +51,15 @@ describe('Response Utils', () => {
 
             // Restore original env
             if (originalEnv) {
-                process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
             } else {
-                delete process.env.MCP_RESPONSE_MAX_LENGTH;
+                delete process.env.RESPONSE_MAX_LENGTH;
             }
         });
 
         it('should not truncate when environment variable is not set', () => {
-            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
-            delete process.env.MCP_RESPONSE_MAX_LENGTH;
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            delete process.env.RESPONSE_MAX_LENGTH;
 
             const largeData = {
                 longString: 'a'.repeat(2000),
@@ -74,13 +74,13 @@ describe('Response Utils', () => {
 
             // Restore original env
             if (originalEnv) {
-                process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
             }
         });
 
         it('should not truncate when environment variable is set to 0', () => {
-            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
-            process.env.MCP_RESPONSE_MAX_LENGTH = '0';
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '0';
 
             const largeData = {
                 longString: 'a'.repeat(2000),
@@ -95,9 +95,9 @@ describe('Response Utils', () => {
 
             // Restore original env
             if (originalEnv) {
-                process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
             } else {
-                delete process.env.MCP_RESPONSE_MAX_LENGTH;
+                delete process.env.RESPONSE_MAX_LENGTH;
             }
         });
 
@@ -117,8 +117,8 @@ describe('Response Utils', () => {
         });
 
         it('should truncate long string data when environment variable is set', () => {
-            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
-            process.env.MCP_RESPONSE_MAX_LENGTH = '50';
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '50';
 
             const longString = 'a'.repeat(100);
             const result = formatResponse('Message', longString);
@@ -129,15 +129,15 @@ describe('Response Utils', () => {
 
             // Restore original env
             if (originalEnv) {
-                process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
             } else {
-                delete process.env.MCP_RESPONSE_MAX_LENGTH;
+                delete process.env.RESPONSE_MAX_LENGTH;
             }
         });
 
         it('should not truncate short string data', () => {
-            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
-            process.env.MCP_RESPONSE_MAX_LENGTH = '100';
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '100';
 
             const shortString = 'Short message';
             const result = formatResponse('Message', shortString);
@@ -148,15 +148,15 @@ describe('Response Utils', () => {
 
             // Restore original env
             if (originalEnv) {
-                process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
             } else {
-                delete process.env.MCP_RESPONSE_MAX_LENGTH;
+                delete process.env.RESPONSE_MAX_LENGTH;
             }
         });
 
         it('should not truncate when environment variable is set to invalid value', () => {
-            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
-            process.env.MCP_RESPONSE_MAX_LENGTH = 'invalid';
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = 'invalid';
 
             const largeData = {
                 longString: 'a'.repeat(2000),
@@ -171,9 +171,9 @@ describe('Response Utils', () => {
 
             // Restore original env
             if (originalEnv) {
-                process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
             } else {
-                delete process.env.MCP_RESPONSE_MAX_LENGTH;
+                delete process.env.RESPONSE_MAX_LENGTH;
             }
         });
     });

@@ -38,7 +38,7 @@ export function formatResponse(
     }
 
     // Get maxDataLength from environment variable - no truncation if not set
-    const envMaxLength = process.env.MCP_RESPONSE_MAX_LENGTH;
+    const envMaxLength = process.env.RESPONSE_MAX_LENGTH;
     const maxDataLength = envMaxLength ? parseInt(envMaxLength, 10) : undefined;
 
     // Handle different data types appropriately
