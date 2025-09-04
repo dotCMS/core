@@ -1,0 +1,22 @@
+<!-- Reusable Sidebar Accordion -->
+<div
+    class="dot-sidebar-accordion"
+    [class.dot-sidebar-accordion--has-active]="$hasActiveTab()"
+    [class.dot-sidebar-accordion--transitioning]="isTransitioning">
+    @for (tab of $tabs(); track tab.$id()) {
+        <div class="accordion-tab" [class.active]="isTabActive(tab.$id())">
+            <div class="accordion-header" (click)="toggleTab(tab.$id())">
+                <span>{{ tab.$label() }}</span>
+                <i class="pi pi-chevron-down"></i>
+            </div>
+            <div
+                class="accordion-content"
+                [@accordionContent]="getAnimationState(tab.$id())"
+                [class.accordion-content--expanded]="isTabActive(tab.$id())"
+                [class.accordion-content--collapsed]="!isTabActive(tab.$id())">
+                <!-- Proyectar el contenido del tab específico usando ngTemplateOutlet -->
+                <ng-container *ngTemplateOutlet="tab.tabContent"></ng-container>
+            </div>
+        </div>
+    }
+</div>

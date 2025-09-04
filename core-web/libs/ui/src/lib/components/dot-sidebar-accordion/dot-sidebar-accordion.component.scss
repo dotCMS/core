@@ -1,0 +1,142 @@
+@use "variables" as *;
+
+// Host component debe ocupar toda la altura
+:host {
+    display: block;
+    height: 100%;
+}
+
+// Reusable Sidebar Accordion Styles
+.dot-sidebar-accordion {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    // Durante transiciones secuenciales, deshabilitar clicks adicionales
+    &--transitioning {
+        .accordion-header {
+            pointer-events: none;
+            cursor: default;
+        }
+    }
+}
+
+// Estilos para los tabs
+.accordion-tab {
+    display: flex;
+    flex-direction: column;
+
+    &.active {
+        flex: 1; // Tab activo ocupa todo el espacio restante
+        min-height: 0; // Importante para que el contenido no empuje otros elementos
+
+        .accordion-content {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden; // El contenedor no debe hacer scroll
+
+            // Pero el contenido interno sí debe tener scroll
+            > * {
+                height: 100%;
+                overflow-y: auto;
+            }
+        }
+    }
+
+    // Tabs inactivos solo muestran el header
+    &:not(.active) {
+        flex: none; // No ocupa espacio extra
+        flex-shrink: 0; // No se encoge
+
+        .accordion-header {
+            display: flex; // Asegurar que el header siempre sea visible
+        }
+
+        .accordion-content {
+            display: block; // El contenido existe pero colapsado
+        }
+    }
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-3;
+    border-bottom: 1px solid $color-palette-gray-400;
+    cursor: pointer;
+    user-select: none;
+    min-height: 56px;
+    transition:
+        background-color 0.2s ease,
+        border-bottom 0.1s ease 0.4s; // Delay border transition
+
+    &:hover {
+        background: $color-palette-gray-100;
+    }
+
+    span {
+        font-size: $font-size-lmd;
+        font-weight: $font-weight-medium-bold;
+        color: $black;
+        flex: 1;
+    }
+
+    i {
+        font-size: $font-size-sm;
+        color: $color-palette-primary;
+        margin-left: auto;
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+}
+
+// Rotación del chevron cuando el tab está activo
+.accordion-tab.active .accordion-header i {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    border-bottom: 1px solid $color-palette-gray-400;
+    overflow: hidden;
+
+    // Angular Animations manejará height, opacity, transform, visibility
+    // Solo mantenemos estilos que no interfieren con las animaciones
+
+    // Asegurar scroll en contenido expandido
+    &--expanded > * {
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    // Durante colapso, deshabilitar pointer events
+    &--collapsed {
+        pointer-events: none;
+    }
+}
+
+// Reglas especiales para bordes
+.accordion-tab {
+    // El último tab NUNCA debe tener border-bottom en su contenido, sin importar el estado
+    &:last-child .accordion-content {
+        border-bottom: none !important;
+    }
+
+    // Cuando hay un tab expandido, el último header colapsado no debe tener border-bottom
+    &:last-child .accordion-header {
+        border-bottom: 1px solid $color-palette-gray-400;
+        transition:
+            background-color 0.2s ease,
+            border-bottom 0.1s ease; // Sin delay para el estado normal
+    }
+}
+
+// Cuando hay algún tab activo, remover border del último header si está colapsado
+.dot-sidebar-accordion--has-active {
+    .accordion-tab:last-child:not(.active) .accordion-header {
+        border-bottom: none;
+        transition:
+            background-color 0.2s ease,
+            border-bottom 0.1s ease 0.3s; // Delay para que desaparezca después del colapso
+    }
+}

@@ -1,224 +1,177 @@
-<!-- Custom Accordion Implementation -->
-<div
-    class="custom-accordion"
-    [class.custom-accordion--has-active]="activeTab !== null"
-    [class.custom-accordion--transitioning]="isTransitioning">
+<!-- Reusable Sidebar Accordion -->
+<dot-sidebar-accordion
+    [initialActiveTab]="'versions'"
+    (activeTabChange)="onAccordionTabChange($event)">
     <!-- Versions Tab -->
-    <div class="accordion-tab" [class.active]="activeTab === 'versions'">
-        <div class="accordion-header" (click)="toggleTab('versions')">
-            <span>Versions</span>
-            <i class="pi pi-chevron-down"></i>
-        </div>
-        <div
-            class="accordion-content"
-            [class.accordion-content--expanded]="activeTab === 'versions'"
-            [class.accordion-content--collapsed]="activeTab !== 'versions'">
-            <section class="history" role="region" aria-label="Content Version History">
-                @if ($isLoading()) {
-                    <!-- Loading state -->
-                    <div class="history__loading" data-testid="loading-state">
-                        @for (item of [1, 2, 3, 4]; track $index) {
-                            <div class="history__skeleton-item">
-                                <p-skeleton width="100%" height="60px" />
-                            </div>
-                        }
-                    </div>
-                } @else if (!$hasHistoryItems()) {
-                    <!-- Empty state -->
-                    <span class="history__empty">
-                        {{ 'edit.content.sidebar.history.empty.message' | dm }}
-                    </span>
-                } @else {
-                    <!-- History content -->
-                    <div class="history__content">
-                        <p-timeline
-                            [value]="$historyItems()"
-                            layout="vertical"
-                            styleClass="history__timeline"
-                            data-testid="history-timeline">
-                            <ng-template pTemplate="marker" let-item let-index="index">
-                                <div
-                                    class="history__marker"
-                                    [class]="getTimelineMarkerClass(item)"
-                                    data-testid="timeline-marker"></div>
-                            </ng-template>
+    <dot-sidebar-accordion-tab id="versions" label="Versions">
+        <section class="history" role="region" aria-label="Content Version History">
+            @if ($isLoading()) {
+                <!-- Loading state -->
+                <div class="history__loading" data-testid="loading-state">
+                    @for (item of [1, 2, 3, 4]; track $index) {
+                        <div class="history__skeleton-item">
+                            <p-skeleton width="100%" height="60px" />
+                        </div>
+                    }
+                </div>
+            } @else if (!$hasHistoryItems()) {
+                <!-- Empty state -->
+                <span class="history__empty">
+                    {{ 'edit.content.sidebar.history.empty.message' | dm }}
+                </span>
+            } @else {
+                <!-- History content -->
+                <div class="history__content">
+                    <p-timeline
+                        [value]="$historyItems()"
+                        layout="vertical"
+                        styleClass="history__timeline"
+                        data-testid="history-timeline">
+                        <ng-template pTemplate="marker" let-item let-index="index">
+                            <div
+                                class="history__marker"
+                                [class]="getTimelineMarkerClass(item)"
+                                data-testid="timeline-marker"></div>
+                        </ng-template>
 
-                            <ng-template pTemplate="content" let-item let-index="index">
-                                <div
-                                    class="history__timeline-item"
-                                    data-testid="history-item"
-                                    [pTooltip]="tooltipContent"
-                                    tooltipPosition="bottom"
-                                    [tooltipOptions]="{
-                                        showDelay: 100,
-                                        hideDelay: 100,
-                                        tooltipStyleClass: 'history__tooltip',
-                                        escape: false,
-                                        positionStyle: 'absolute',
-                                        appendTo: 'body'
-                                    }">
-                                    <ng-template #tooltipContent>
-                                        <div class="history__overlay-content">
-                                            <h4
-                                                class="history__overlay-title"
-                                                data-testid="overlay-title">
-                                                {{ item.title }}
-                                            </h4>
-                                            <ul class="history__overlay-list">
+                        <ng-template pTemplate="content" let-item let-index="index">
+                            <div
+                                class="history__timeline-item"
+                                data-testid="history-item"
+                                [pTooltip]="tooltipContent"
+                                tooltipPosition="bottom"
+                                [tooltipOptions]="{
+                                    showDelay: 100,
+                                    hideDelay: 100,
+                                    tooltipStyleClass: 'history__tooltip',
+                                    escape: false,
+                                    positionStyle: 'absolute',
+                                    appendTo: 'body'
+                                }">
+                                <ng-template #tooltipContent>
+                                    <div class="history__overlay-content">
+                                        <h4
+                                            class="history__overlay-title"
+                                            data-testid="overlay-title">
+                                            {{ item.title }}
+                                        </h4>
+                                        <ul class="history__overlay-list">
+                                            <li>
+                                                {{ item.modDate | date: 'MMM d, yyyy - h:mm a' }}
+                                            </li>
+                                            <li>
+                                                {{ item.languageFlag }}
+                                            </li>
+                                            @if (item.experimentVariant) {
                                                 <li>
                                                     {{
-                                                        item.modDate | date: 'MMM d, yyyy - h:mm a'
-                                                    }}
+                                                        'edit.content.sidebar.history.variant' | dm
+                                                    }}:
+                                                    {{ item.experimentVariant }}
                                                 </li>
-                                                <li>
-                                                    {{ item.languageFlag }}
-                                                </li>
-                                                @if (item.experimentVariant) {
-                                                    <li>
-                                                        {{
-                                                            'edit.content.sidebar.history.variant'
-                                                                | dm
-                                                        }}:
-                                                        {{ item.experimentVariant }}
-                                                    </li>
-                                                }
-                                            </ul>
-                                        </div>
-                                    </ng-template>
-                                    <!-- Timeline item header -->
-                                    <div class="history__item-header">
-                                        <div class="history__time-section">
-                                            <span
-                                                class="history__time-relative"
-                                                data-testid="time-display">
-                                                {{ item.modDate | dotRelativeDate }}
-                                            </span>
-
-                                            @if (item.live) {
-                                                <p-chip
-                                                    styleClass="history__state history__state--live p-chip-sm p-chip-success"
-                                                    [label]="
-                                                        'edit.content.sidebar.history.published'
-                                                            | dm
-                                                    "
-                                                    data-testid="state-live" />
-                                            } @else if (item.working) {
-                                                <p-chip
-                                                    styleClass="history__state history__state--working p-chip-sm p-chip-warning"
-                                                    [label]="
-                                                        'edit.content.sidebar.history.draft' | dm
-                                                    "
-                                                    data-testid="state-draft" />
                                             }
+                                        </ul>
+                                    </div>
+                                </ng-template>
+                                <!-- Timeline item header -->
+                                <div class="history__item-header">
+                                    <div class="history__time-section">
+                                        <span
+                                            class="history__time-relative"
+                                            data-testid="time-display">
+                                            {{ item.modDate | dotRelativeDate }}
+                                        </span>
 
-                                            @if (item.experimentVariant) {
-                                                <p-chip
-                                                    styleClass="history__state history__state--variant p-chip-sm p-chip-secondary"
-                                                    [label]="
-                                                        'edit.content.sidebar.history.variant.tag'
-                                                            | dm
-                                                    "
-                                                    data-testid="state-variant" />
-                                            }
-                                        </div>
+                                        @if (item.live) {
+                                            <p-chip
+                                                styleClass="history__state history__state--live p-chip-sm p-chip-success"
+                                                [label]="
+                                                    'edit.content.sidebar.history.published' | dm
+                                                "
+                                                data-testid="state-live" />
+                                        } @else if (item.working) {
+                                            <p-chip
+                                                styleClass="history__state history__state--working p-chip-sm p-chip-warning"
+                                                [label]="'edit.content.sidebar.history.draft' | dm"
+                                                data-testid="state-draft" />
+                                        }
 
-                                        <div class="history__actions">
-                                            <p-button
-                                                icon="pi pi-ellipsis-v"
-                                                styleClass="p-button-rounded p-button-sm p-button-text history__menu-button p-button-tertiary"
-                                                (click)="versionMenu.toggle($event)"
-                                                data-testid="version-menu-button"></p-button>
-                                            <p-menu
-                                                #versionMenu
-                                                [appendTo]="'body'"
-                                                [model]="getVersionMenuItems(item)"
-                                                [popup]="true"></p-menu>
-                                        </div>
+                                        @if (item.experimentVariant) {
+                                            <p-chip
+                                                styleClass="history__state history__state--variant p-chip-sm p-chip-secondary"
+                                                [label]="
+                                                    'edit.content.sidebar.history.variant.tag' | dm
+                                                "
+                                                data-testid="state-variant" />
+                                        }
                                     </div>
 
-                                    <!-- User info -->
-                                    <div class="history__user-section">
-                                        <p-avatar
-                                            dotGravatar
-                                            [email]="item.modUser"
-                                            styleClass="history__avatar"
-                                            data-testid="user-avatar"></p-avatar>
-                                        <span class="history__user-name" data-testid="history-user">
-                                            {{ item.modUserName || item.modUser }}
-                                        </span>
+                                    <div class="history__actions">
+                                        <p-button
+                                            icon="pi pi-ellipsis-v"
+                                            styleClass="p-button-rounded p-button-sm p-button-text history__menu-button p-button-tertiary"
+                                            (click)="versionMenu.toggle($event)"
+                                            data-testid="version-menu-button"></p-button>
+                                        <p-menu
+                                            #versionMenu
+                                            [appendTo]="'body'"
+                                            [model]="getVersionMenuItems(item)"
+                                            [popup]="true"></p-menu>
                                     </div>
                                 </div>
-                            </ng-template>
-                        </p-timeline>
 
-                        <!-- Pagination Controls -->
-                        @if ($showPagination()) {
-                            <div class="history__pagination" data-testid="history-pagination">
-                                <p-button
-                                    icon="pi pi-chevron-left"
-                                    styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
-                                    [disabled]="!$canGoPrevious()"
-                                    (click)="onPreviousPage()"
-                                    data-testid="previous-page-button"
-                                    [pTooltip]="
-                                        'edit.content.sidebar.history.pagination.previous' | dm
-                                    "
-                                    tooltipPosition="top"></p-button>
-
-                                <p-button
-                                    icon="pi pi-chevron-right"
-                                    styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
-                                    [disabled]="!$canGoNext()"
-                                    (click)="onNextPage()"
-                                    data-testid="next-page-button"
-                                    [pTooltip]="'edit.content.sidebar.history.pagination.next' | dm"
-                                    tooltipPosition="top"></p-button>
+                                <!-- User info -->
+                                <div class="history__user-section">
+                                    <p-avatar
+                                        dotGravatar
+                                        [email]="item.modUser"
+                                        styleClass="history__avatar"
+                                        data-testid="user-avatar"></p-avatar>
+                                    <span class="history__user-name" data-testid="history-user">
+                                        {{ item.modUserName || item.modUser }}
+                                    </span>
+                                </div>
                             </div>
-                        }
-                    </div>
-                }
-            </section>
-        </div>
-    </div>
+                        </ng-template>
+                    </p-timeline>
+
+                    <!-- Pagination Controls -->
+                    @if ($showPagination()) {
+                        <div class="history__pagination" data-testid="history-pagination">
+                            <p-button
+                                icon="pi pi-chevron-left"
+                                styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
+                                [disabled]="!$canGoPrevious()"
+                                (click)="onPreviousPage()"
+                                data-testid="previous-page-button"
+                                [pTooltip]="'edit.content.sidebar.history.pagination.previous' | dm"
+                                tooltipPosition="top"></p-button>
+
+                            <p-button
+                                icon="pi pi-chevron-right"
+                                styleClass="p-button-rounded p-button-sm p-button-text history__pagination-button"
+                                [disabled]="!$canGoNext()"
+                                (click)="onNextPage()"
+                                data-testid="next-page-button"
+                                [pTooltip]="'edit.content.sidebar.history.pagination.next' | dm"
+                                tooltipPosition="top"></p-button>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    </dot-sidebar-accordion-tab>
 
     <!-- Push Publish Tab -->
-    <div class="accordion-tab" [class.active]="activeTab === 'push-publish'">
-        <div class="accordion-header" (click)="toggleTab('push-publish')">
-            <span>Push Publish</span>
-            <i class="pi pi-chevron-down"></i>
+    <dot-sidebar-accordion-tab id="push-publish" label="Push Publish">
+        <div class="push-publish-content">
+            <!-- TODO: Add Push Publish content here -->
+            <p>Push Publish functionality will be implemented here.</p>
+            <p>Push Publish functionality will be implemented here.</p>
+            <ul>
+                <li>Push Publish functionality will be implemented here.</li>
+                <li>Push Publish functionality will be implemented here.</li>
+            </ul>
         </div>
-        <div
-            class="accordion-content"
-            [class.accordion-content--expanded]="activeTab === 'push-publish'"
-            [class.accordion-content--collapsed]="activeTab !== 'push-publish'">
-            <div class="push-publish-content">
-                <!-- TODO: Add Push Publish content here -->
-                <p>Push Publish functionality will be implemented here.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Analytics Tab -->
-    <div class="accordion-tab" [class.active]="activeTab === 'analytics'">
-        <div class="accordion-header" (click)="toggleTab('analytics')">
-            <span>Analytics</span>
-            <i class="pi pi-chevron-down"></i>
-        </div>
-        <div
-            class="accordion-content"
-            [class.accordion-content--expanded]="activeTab === 'analytics'"
-            [class.accordion-content--collapsed]="activeTab !== 'analytics'">
-            <div class="analytics-content">
-                <!-- TODO: Add Analytics content here -->
-                <p>Analytics functionality will be implemented here.</p>
-                <p>This could include:</p>
-                <ul>
-                    <li>Page views</li>
-                    <li>User interactions</li>
-                    <li>Performance metrics</li>
-                    <li>Content engagement</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
+    </dot-sidebar-accordion-tab>
+</dot-sidebar-accordion>

@@ -1,13 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    computed,
-    input,
-    inject,
-    output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
 
 import { AccordionModule } from 'primeng/accordion';
 import { AvatarModule } from 'primeng/avatar';
@@ -19,7 +11,13 @@ import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
-import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotGravatarDirective,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotSidebarAccordionComponent,
+    DotSidebarAccordionTabComponent
+} from '@dotcms/ui';
 
 /**
  * Interface for pagination data
@@ -49,7 +47,9 @@ export interface DotHistoryPagination {
         DotGravatarDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
-        ChipModule
+        ChipModule,
+        DotSidebarAccordionComponent,
+        DotSidebarAccordionTabComponent
     ],
     providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
@@ -59,14 +59,6 @@ export interface DotHistoryPagination {
 export class DotEditContentSidebarHistoryComponent {
     private datePipe = inject(DatePipe);
     private dotMessagePipe = inject(DotMessagePipe);
-    private cdr = inject(ChangeDetectorRef);
-
-    // Estado del accordion personalizado
-    activeTab: 'versions' | 'push-publish' | 'analytics' | null = 'versions';
-
-    // Estado para manejar transiciones secuenciales
-    isTransitioning = false; // Público para el template
-    private pendingTab: 'versions' | 'push-publish' | 'analytics' | null = null;
     /**
      * List of history items to display
      * @readonly
@@ -225,45 +217,11 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
-     * Toggle accordion tab with smooth sequential animation
+     * Handle accordion tab change
      */
-    toggleTab(tab: 'versions' | 'push-publish' | 'analytics'): void {
-        // Si ya está en transición, ignorar clicks adicionales
-        if (this.isTransitioning) {
-            return;
-        }
-
-        const targetTab = this.activeTab === tab ? null : tab;
-
-        // Si no hay tab activo, expandir directamente
-        if (!this.activeTab) {
-            this.activeTab = targetTab;
-            return;
-        }
-
-        // Si hay tab activo y queremos cambiar a otro, hacer transición secuencial
-        if (this.activeTab && targetTab && this.activeTab !== targetTab) {
-            this.isTransitioning = true;
-            this.pendingTab = targetTab;
-
-            // Primero colapsar el tab actual
-            this.activeTab = null;
-
-            // Después de 300ms (duración del colapso), expandir el nuevo tab
-            setTimeout(() => {
-                this.activeTab = this.pendingTab;
-                this.pendingTab = null;
-                this.cdr.detectChanges(); // Forzar detección de cambios
-
-                // Después de 500ms (duración de la expansión), permitir nuevas transiciones
-                setTimeout(() => {
-                    this.isTransitioning = false;
-                    this.cdr.detectChanges(); // Forzar detección de cambios
-                }, 400);
-            }, 200);
-        } else {
-            // Colapsar el tab actual
-            this.activeTab = targetTab;
-        }
+    onAccordionTabChange(_activeTab: string | null): void {
+        // Aquí puedes agregar lógica adicional si es necesaria
+        // Por ejemplo, tracking de analytics, etc.
+        // console.log('Active tab changed to:', activeTab);
     }
 }
