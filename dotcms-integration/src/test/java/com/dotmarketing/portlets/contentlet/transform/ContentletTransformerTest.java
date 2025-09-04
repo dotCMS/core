@@ -253,8 +253,8 @@ public class ContentletTransformerTest extends IntegrationTestBase {
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
         final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE){
             @Override
-            public String getUrl(Contentlet contentlet) {
-                return anyUrl;
+            public Optional<String> getUrl(Contentlet contentlet) {
+                return Optional.of(anyUrl);
             }
         };
         final String identifier = "1234";
@@ -288,10 +288,10 @@ public class ContentletTransformerTest extends IntegrationTestBase {
         final String urlExpected = "home_page";
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
         final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE){
-            @Override
-            public String getUrl(Contentlet contentlet) {
-                return urlExpected;
-            }
+          @Override
+          public Optional<String> getUrl(Contentlet contentlet) {
+            return Optional.of(urlExpected);
+          }
         };
 
         final APIProvider toolBox = new Builder().withContentHelper(contentHelper).build();
@@ -718,8 +718,8 @@ public class ContentletTransformerTest extends IntegrationTestBase {
 
         final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE){
             @Override
-            public String getUrl(Contentlet contentlet) {
-                return urlExpected;
+            public Optional<String> getUrl(Contentlet contentlet) {
+              return Optional.of(urlExpected);
             }
         };
 

@@ -134,9 +134,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         //However WebAssets (Pages, FileAssets) are forced to calculate it.
         //To prevent any miscalculated urls.
         if (!map.containsKey(URL_FIELD)) {
-            final String url = toolBox.contentHelper.getUrl(contentlet);
-            if (null != url) {
-                map.put(URL_FIELD, url);
+            final Optional<String> url = toolBox.contentHelper.getUrl(contentlet);
+            if (url.isPresent()) {
+                map.put(URL_FIELD, url.get());
             }
         }
 

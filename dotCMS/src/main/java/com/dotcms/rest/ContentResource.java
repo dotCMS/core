@@ -838,9 +838,12 @@ public class ContentResource {
             m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
         }
 
-        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
-            m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(contentlet));
+        Optional<String> url = ContentHelper.getInstance().getUrl(contentlet);
+        if(url.isPresent()){
+          m.put(HTMLPageAssetAPI.URL_FIELD, url);
         }
+
+
 
         final Set<String> jsonFields = this.contentHelper.getJSONFields(type);
         for (String key : m.keySet()) {

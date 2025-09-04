@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 
@@ -21,6 +23,7 @@ import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -105,12 +108,12 @@ public class ContentletToMapTransformer {
             Logger.warn(this, "Unable to set property: " + Contentlet.HOST_NAME, e);
         }
 
-        if (!properties.containsKey(HTMLPageAssetAPI.URL_FIELD)) {
-            final String url = contentHelper.getUrl(contentlet);
-            if (null != url) {
-                properties.put(HTMLPageAssetAPI.URL_FIELD, url);
-            }
+
+        final Optional<String> url = contentHelper.getUrl(contentlet);
+        if (url.isPresent()) {
+          properties.put(URL_FIELD, url.get());
         }
+
         addConstants(contentlet);
         setAdditionalProperties(contentlet);
         clean(contentlet);

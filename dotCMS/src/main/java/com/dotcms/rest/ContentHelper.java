@@ -192,13 +192,13 @@ public class ContentHelper {
      * @param contentlet {@link Contentlet}
      * @return String the url, null if can not get
      */
-    public String getUrl (@NotNull final Contentlet contentlet) {
+    public Optional<String> getUrl (@NotNull final Contentlet contentlet) {
 
       if(contentlet.isHTMLPage() || contentlet.isFileAsset()){
         //use identifier api to get the url
-        return this.getWebAssetUrl(contentlet);
+        return Optional.ofNullable(this.getWebAssetUrl(contentlet));
       }
-      return contentlet.getStringProperty(URL_FIELD);
+      return Optional.ofNullable(contentlet.getStringProperty(URL_FIELD));
 
 
     } // getUrl.
@@ -454,9 +454,12 @@ public class ContentHelper {
             jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
         }
 
-        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
-            jsonObject.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(contentlet));
+        Optional<String> url = ContentHelper.getInstance().getUrl(contentlet);
+        if(url.isPresent()){
+          jsonObject.put(HTMLPageAssetAPI.URL_FIELD, url);
         }
+
+
 
         jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
         jsonObject.put("contentTypeIcon", type.icon());

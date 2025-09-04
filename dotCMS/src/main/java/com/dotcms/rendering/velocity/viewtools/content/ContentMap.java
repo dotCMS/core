@@ -7,6 +7,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
+import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
@@ -306,16 +307,11 @@ public class ContentMap implements Serializable {
                     return bm;
                 }
 			//if the property being served is URL and the ContentType is a page show URL using the identifier information
-			}else if("url".equalsIgnoreCase(fieldVariableName)
-			        && BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())){
-				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
-				if(InodeUtils.isSet(identifier.getId())){
-					return identifier.getURI();
-				}else{
-					Logger.debug(this, String.format("Value of URL field '%s' could not be retrieved from page with ID" +
-															 " '%s'. It might not exist in the 'identifier' table.",
-							fieldVariableName, this.content.getIdentifier()));
-				}
+			}else if("url".equalsIgnoreCase(fieldVariableName)){
+        Optional<String> url = ContentHelper.getInstance().getUrl(this.content);
+        if (url.isPresent()) {
+          return url;
+        }
 				return null;
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.TAG.toString())){
 
