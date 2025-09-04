@@ -196,7 +196,7 @@ public class ContentHelper {
 
       if(contentlet.isHTMLPage() || contentlet.isFileAsset()){
         //use identifier api to get the url
-        return this.getUrl(contentlet.getIdentifier());
+        return this.getWebAssetUrl(contentlet);
       }
       return contentlet.getStringProperty(URL_FIELD);
 
@@ -207,20 +207,19 @@ public class ContentHelper {
   /**
    * Gets if possible the url associated to this asset identifier
    *
-   * @param identifierStr {@link Object}
+   * @param contentlet {@link Object}
    * @return String the url, null if can not get
    */
-  public String getUrl(final String identifierStr) {
-
+  private String getWebAssetUrl(final Contentlet contentlet) {
     try {
 
-      final Identifier identifier = this.identifierAPI.find(identifierStr);
+      final Identifier identifier = this.identifierAPI.find(contentlet.getIdentifier());
       return UtilMethods.isSet(()->identifier.getId())
           ? identifier.getURI()
           : null;
     } catch (Exception e) {
       throw new DotRuntimeException(
-          "The identifierStr parameter is not valid ['" + identifierStr + "'], unable to get the url", e);
+          "The identifierStr parameter is not valid ['" + contentlet.getIdentifier() + "'], unable to get the url", e);
 
     }
 
