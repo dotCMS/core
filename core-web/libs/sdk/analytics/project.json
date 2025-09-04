@@ -16,23 +16,10 @@
             "executor": "@nx/vite:build",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "outputPath": "../../core/dotCMS/src/main/webapp/ext/analytics",
                 "main": "libs/sdk/analytics/src/lib/standalone.ts",
+                "outputPath": "dist/libs/sdk/analytics-standalone",
                 "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
-                "configFile": "libs/sdk/analytics/vite.standalone.config.mts",
-                "generatePackageJson": false
-            }
-        },
-        "build:standalone:clean": {
-            "executor": "nx:run-commands",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "commands": [
-                    "nx run sdk-analytics:build:standalone",
-                    "rm -f ../../core/dotCMS/src/main/webapp/ext/analytics/package.json"
-                ],
-                "parallel": false,
-                "outputPath": "../../core/dotCMS/src/main/webapp/ext/analytics"
+                "configFile": "libs/sdk/analytics/vite.standalone.config.mts"
             }
         }
     }

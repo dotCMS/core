@@ -140,7 +140,7 @@
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
                         <configuration>
-                            <arguments>nx run sdk-analytics:build:standalone:clean</arguments>
+                            <arguments>nx run sdk-analytics:build:standalone</arguments>
                         </configuration>
                     </execution>
 
@@ -205,6 +205,14 @@
                             <targetPath>dotcms-block-editor</targetPath>
                         </resource>
 
+                        <resource>
+                            <directory>${project.basedir}/dist/libs/sdk/analytics-standalone</directory>
+                            <filtering>false</filtering>
+                            <targetPath>ext/analytics</targetPath>
+                            <includes>
+                                <include>**/*.js</include>
+                            </includes>
+                        </resource>
                         <resource>
                             <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
                             <filtering>false</filtering>
