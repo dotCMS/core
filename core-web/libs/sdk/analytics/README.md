@@ -76,12 +76,12 @@ Track any user action as an event using `track('event-name', { payload })`.
 
 ## ⚙️ Configuration Options
 
-| Option         | Type      | Required | Default | Description                            |
-| -------------- | --------- | -------- | ------- | -------------------------------------- |
-| `siteKey`      | `string`  | ✅       | -       | Site key from dotCMS Analytics app     |
-| `server`       | `string`  | ✅       | -       | Your dotCMS server URL                 |
-| `debug`        | `boolean` | ❌       | `false` | Enable verbose logging                 |
-| `autoPageView` | `boolean` | ❌       | `false` | Auto track page views on route changes |
+| Option         | Type      | Required | Default                             | Description                            |
+| -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
+| `siteKey`      | `string`  | ✅       | -                                   | Site key from dotCMS Analytics app     |
+| `server`       | `string`  | ✅       | -                                   | Your dotCMS server URL                 |
+| `debug`        | `boolean` | ❌       | `false`                             | Enable verbose logging                 |
+| `autoPageView` | `boolean` | ❌       | React: `true` / Standalone: `false` | Auto track page views on route changes |
 
 ## 🛠️ Usage Examples
 
@@ -202,7 +202,7 @@ Analytics are disabled when inside the dotCMS editor.
 Standalone attributes to verify:
 
 -   `data-analytics-auth` (required)
--   `data-server` (optional, defaults to current origin)
+-   `data-analytics-server` (optional, defaults to current origin)
 -   `data-analytics-auto-page-view` (`true` to enable)
 -   `data-analytics-debug` (`true` to enable)
 
