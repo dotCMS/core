@@ -1,13 +1,14 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
-import { map, pluck } from 'rxjs/operators';
+import { map, pluck, tap } from 'rxjs/operators';
 
+import { GlobalStore } from '@dotcms/store';
 import { DotTreeFolderComponent } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -50,17 +51,22 @@ const ALL_FOLDER: TreeNodeItem = {
     imports: [DotTreeFolderComponent]
 })
 export class DotContentDriveSidebarComponent {
+    readonly #globalStore = inject(GlobalStore);
     readonly #store = inject(DotContentDriveStore);
     readonly #http = inject(HttpClient);
 
     $folders = signal<TreeNodeItem[]>([]);
-    $loading = signal<boolean>(false);
+    $selectedNode = signal<TreeNodeItem>(ALL_FOLDER);
+    $loading = signal<boolean>(true);
 
-    constructor() {
-        this.getFoldersTreeNode('demo.dotcms.com').subscribe((folders) => {
-            this.$folders.set([ALL_FOLDER, ...folders.folders]);
-        });
-    }
+    readonly getSiteFoldersEffect = effect(() => {
+        const currentSite = this.#globalStore.siteDetails();
+        if (currentSite) {
+            this.getFoldersTreeNode(`${currentSite.hostname}`).subscribe((folders) => {
+                this.$folders.set([ALL_FOLDER, ...folders.folders]);
+            });
+        }
+    });
 
     /**
      * Handles node selection events
@@ -162,6 +168,7 @@ export class DotContentDriveSidebarComponent {
         path: string
     ): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
         return this.getFolders(`//${path}`).pipe(
+            tap(() => this.$loading.set(false)),
             map((folders) => {
                 const [parent, ...childFolders] = folders;
 

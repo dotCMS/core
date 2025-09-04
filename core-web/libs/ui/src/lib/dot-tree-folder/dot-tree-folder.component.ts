@@ -2,10 +2,8 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    computed,
     inject,
     input,
-    model,
     output,
     signal
 } from '@angular/core';
@@ -42,6 +40,12 @@ export class DotTreeFolderComponent {
      * @type {boolean}
      */
     $loading = input.required<boolean>({ alias: 'loading' });
+    /**
+     * A signal that represents the selected node.
+     *
+     * @type {TreeNode | null}
+     */
+    $selectedNode = input.required<TreeNode>({ alias: 'selectedNode' });
 
     /**
      * Signal that generates an array of strings representing percentages.
@@ -51,11 +55,6 @@ export class DotTreeFolderComponent {
      * @returns {string[]} An array of 50 percentage strings.
      */
     $fakeColumns = signal<string[]>(Array.from({ length: 50 }).map((_) => this.getPercentage()));
-
-    /**
-     * Reactive model representing the currently selected file.
-     */
-    $selectedFile = model<TreeNode | null>(null);
 
     /**
      * Event emitter for when a tree node is expanded.
@@ -80,24 +79,6 @@ export class DotTreeFolderComponent {
      * @type {TreeNodeCollapseEvent}
      */
     onNodeCollapse = output<TreeNodeCollapseEvent>();
-
-    /**
-     * Computed property representing the component's state.
-     *
-     * @returns An object containing:
-     * - `folders`: An array of folders obtained from `$folders()`.
-     * - `selectedFile`: A signal of the selected file, initialized to the file whose `data.identifier` matches `SYSTEM_HOST_ID`.
-     */
-    $state = computed(() => {
-        const folders = this.$folders();
-
-        const selectedFile = folders.find((f) => f.data.identifier === SYSTEM_HOST_ID);
-
-        return {
-            folders,
-            selectedFile: signal(selectedFile)
-        };
-    });
 
     /**
      * Triggers change detection manually.

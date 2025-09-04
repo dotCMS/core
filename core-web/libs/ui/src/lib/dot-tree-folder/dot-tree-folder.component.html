@@ -1,15 +1,15 @@
-@let loading2 = $loading();
+@let loading = $loading();
 
-@if (!loading2) {
+@if (!loading) {
     <p-tree
-        [value]="$state().folders"
-        [loading]="loading2"
+        [value]="$folders()"
+        [loading]="loading"
         selectionMode="single"
-        [(selection)]="$state().selectedFile"
         loadingMode="icon"
         class="w-full h-full"
         styleClass="w-full h-full"
         loadingMode="icon"
+        [selection]="$selectedNode()"
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)"
         (onNodeCollapse)="onNodeCollapse.emit($event)">
