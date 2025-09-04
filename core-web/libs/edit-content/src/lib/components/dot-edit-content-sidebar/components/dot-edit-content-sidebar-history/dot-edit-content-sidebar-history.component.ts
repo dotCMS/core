@@ -2,31 +2,25 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
 
 import { AccordionModule } from 'primeng/accordion';
-import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
-import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
 import {
-    DotGravatarDirective,
     DotMessagePipe,
-    DotRelativeDatePipe,
     DotSidebarAccordionComponent,
     DotSidebarAccordionTabComponent
 } from '@dotcms/ui';
 
-/**
- * Interface for pagination data
- */
-export interface DotHistoryPagination {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
-}
+import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
+
+import {
+    DotHistoryTimelineItemAction,
+    DotHistoryTimelineItemActionType,
+    DotHistoryPagination
+} from '../../../../models/dot-edit-content.model';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -39,17 +33,13 @@ export interface DotHistoryPagination {
         CommonModule,
         AccordionModule,
         TimelineModule,
-        AvatarModule,
-        ButtonModule,
-        MenuModule,
         SkeletonModule,
+        ButtonModule,
         TooltipModule,
-        DotGravatarDirective,
         DotMessagePipe,
-        DotRelativeDatePipe,
-        ChipModule,
         DotSidebarAccordionComponent,
-        DotSidebarAccordionTabComponent
+        DotSidebarAccordionTabComponent,
+        DotHistoryTimelineItemComponent
     ],
     providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
@@ -57,8 +47,7 @@ export interface DotHistoryPagination {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarHistoryComponent {
-    private datePipe = inject(DatePipe);
-    private dotMessagePipe = inject(DotMessagePipe);
+    private readonly dotMessagePipe = inject(DotMessagePipe);
     /**
      * List of history items to display
      * @readonly
@@ -124,15 +113,6 @@ export class DotEditContentSidebarHistoryComponent {
     });
 
     /**
-     * Cached translations map for all labels used in the component
-     */
-    private readonly labels = {
-        preview: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.preview'),
-        restore: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.restore'),
-        compare: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.compare')
-    } as const;
-
-    /**
      * Gets the timeline marker color based on the content status
      */
     getTimelineMarkerClass(item: DotCMSContentletVersion | undefined): string {
@@ -151,48 +131,42 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
-     * Gets menu items for version actions
+     * Handle timeline item actions
      */
-    getVersionMenuItems(item: DotCMSContentletVersion | undefined) {
-        // Safety check for undefined item
-        if (!item) {
-            return [];
+    onTimelineItemAction(action: DotHistoryTimelineItemAction): void {
+        switch (action.type) {
+            case DotHistoryTimelineItemActionType.PREVIEW:
+                this.onPreviewVersion(action.item);
+                break;
+            case DotHistoryTimelineItemActionType.RESTORE:
+                this.onRestoreVersion(action.item);
+                break;
+            case DotHistoryTimelineItemActionType.COMPARE:
+                this.onCompareVersion(action.item);
+                break;
+            default:
+                console.warn('Unknown timeline item action type:', action.type);
         }
-
-        return [
-            {
-                label: this.labels.preview,
-                command: () => this.onPreviewVersion(item)
-            },
-            {
-                label: this.labels.restore,
-                command: () => this.onRestoreVersion(item)
-            },
-            {
-                label: this.labels.compare,
-                command: () => this.onCompareVersion(item)
-            }
-        ];
     }
 
     /**
      * Handle version preview action
      */
-    onPreviewVersion(_item: DotCMSContentletVersion): void {
+    private onPreviewVersion(_item: DotCMSContentletVersion): void {
         // TODO: Implement preview functionality
     }
 
     /**
      * Handle version restore action
      */
-    onRestoreVersion(_item: DotCMSContentletVersion): void {
+    private onRestoreVersion(_item: DotCMSContentletVersion): void {
         // TODO: Implement restore functionality
     }
 
     /**
      * Handle version compare action
      */
-    onCompareVersion(_item: DotCMSContentletVersion): void {
+    private onCompareVersion(_item: DotCMSContentletVersion): void {
         // TODO: Implement compare functionality
     }
 

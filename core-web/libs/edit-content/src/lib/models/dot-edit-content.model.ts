@@ -1,4 +1,8 @@
-import { DotCMSWorkflowAction, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
+import {
+    DotCMSWorkflowAction,
+    DotCMSWorkflowStatus,
+    DotCMSContentletVersion
+} from '@dotcms/dotcms-models';
 
 /**
  * Interface for workflow action parameters.
@@ -50,6 +54,9 @@ export interface UIState {
 
 /**
  * Interface representing an activity in the content sidebar
+ *
+ * @export
+ * @interface Activity
  */
 export interface Activity {
     commentDescription: string;
@@ -59,4 +66,47 @@ export interface Activity {
     roleId: string;
     taskId: string;
     type: string;
+}
+
+/**
+ * Enum for timeline item action types in the history sidebar.
+ * Defines the available actions that can be performed on a timeline item.
+ *
+ * @export
+ * @enum {string}
+ */
+export enum DotHistoryTimelineItemActionType {
+    PREVIEW = 'preview',
+    RESTORE = 'restore',
+    COMPARE = 'compare'
+}
+
+/**
+ * Interface for timeline item actions in the history sidebar.
+ * Represents an action triggered on a specific timeline item.
+ *
+ * @export
+ * @interface DotHistoryTimelineItemAction
+ */
+export interface DotHistoryTimelineItemAction {
+    /** The type of action being performed */
+    type: DotHistoryTimelineItemActionType;
+    /** The content version item the action is performed on */
+    item: DotCMSContentletVersion;
+}
+
+/**
+ * Interface for pagination data in history components.
+ * Used to control pagination state and navigation.
+ *
+ * @export
+ * @interface DotHistoryPagination
+ */
+export interface DotHistoryPagination {
+    /** Current page number (1-based) */
+    currentPage: number;
+    /** Number of items per page */
+    perPage: number;
+    /** Total number of entries available */
+    totalEntries: number;
 }

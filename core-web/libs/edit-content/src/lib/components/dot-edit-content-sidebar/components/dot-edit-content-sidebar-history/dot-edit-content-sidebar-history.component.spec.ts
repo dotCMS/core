@@ -19,6 +19,11 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarHistoryComponent } from './dot-edit-content-sidebar-history.component';
 
+import {
+    DotHistoryTimelineItemAction,
+    DotHistoryTimelineItemActionType
+} from '../../../../models/dot-edit-content.model';
+
 describe('DotEditContentSidebarHistoryComponent', () => {
     let spectator: Spectator<DotEditContentSidebarHistoryComponent>;
 
@@ -290,35 +295,23 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
     });
 
-    describe('Version Menu Functionality', () => {
+    describe('Timeline Item Actions', () => {
         beforeEach(() => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.setInput('historyItems', mockHistoryItems);
             spectator.detectChanges();
         });
 
-        it('should generate menu items for valid item', () => {
-            const item = mockHistoryItems[0];
-            const menuItems = spectator.component.getVersionMenuItems(item);
+        it('should handle timeline item actions correctly', () => {
+            const mockAction: DotHistoryTimelineItemAction = {
+                type: DotHistoryTimelineItemActionType.PREVIEW,
+                item: mockHistoryItems[0]
+            };
 
-            expect(menuItems).toHaveLength(3);
-            expect(menuItems[0].label).toBeDefined();
-            expect(menuItems[1].label).toBeDefined();
-            expect(menuItems[2].label).toBeDefined();
-        });
+            spyOn(spectator.component, 'onTimelineItemAction').and.callThrough();
+            spectator.component.onTimelineItemAction(mockAction);
 
-        it('should return empty array for undefined item', () => {
-            const menuItems = spectator.component.getVersionMenuItems(undefined);
-            expect(menuItems).toEqual([]);
-        });
-
-        it('should have command functions for each menu item', () => {
-            const item = mockHistoryItems[0];
-            const menuItems = spectator.component.getVersionMenuItems(item);
-
-            menuItems.forEach((menuItem) => {
-                expect(typeof menuItem.command).toBe('function');
-            });
+            expect(spectator.component.onTimelineItemAction).toHaveBeenCalledWith(mockAction);
         });
     });
 });

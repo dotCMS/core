@@ -35,103 +35,11 @@
                         </ng-template>
 
                         <ng-template pTemplate="content" let-item let-index="index">
-                            <div
-                                class="history__timeline-item"
-                                data-testid="history-item"
-                                [pTooltip]="tooltipContent"
-                                tooltipPosition="bottom"
-                                [tooltipOptions]="{
-                                    showDelay: 100,
-                                    hideDelay: 100,
-                                    tooltipStyleClass: 'history__tooltip',
-                                    escape: false,
-                                    positionStyle: 'absolute',
-                                    appendTo: 'body'
-                                }">
-                                <ng-template #tooltipContent>
-                                    <div class="history__overlay-content">
-                                        <h4
-                                            class="history__overlay-title"
-                                            data-testid="overlay-title">
-                                            {{ item.title }}
-                                        </h4>
-                                        <ul class="history__overlay-list">
-                                            <li>
-                                                {{ item.modDate | date: 'MMM d, yyyy - h:mm a' }}
-                                            </li>
-                                            <li>
-                                                {{ item.languageFlag }}
-                                            </li>
-                                            @if (item.experimentVariant) {
-                                                <li>
-                                                    {{
-                                                        'edit.content.sidebar.history.variant' | dm
-                                                    }}:
-                                                    {{ item.experimentVariant }}
-                                                </li>
-                                            }
-                                        </ul>
-                                    </div>
-                                </ng-template>
-                                <!-- Timeline item header -->
-                                <div class="history__item-header">
-                                    <div class="history__time-section">
-                                        <span
-                                            class="history__time-relative"
-                                            data-testid="time-display">
-                                            {{ item.modDate | dotRelativeDate }}
-                                        </span>
-
-                                        @if (item.live) {
-                                            <p-chip
-                                                styleClass="history__state history__state--live p-chip-sm p-chip-success"
-                                                [label]="
-                                                    'edit.content.sidebar.history.published' | dm
-                                                "
-                                                data-testid="state-live" />
-                                        } @else if (item.working) {
-                                            <p-chip
-                                                styleClass="history__state history__state--working p-chip-sm p-chip-warning"
-                                                [label]="'edit.content.sidebar.history.draft' | dm"
-                                                data-testid="state-draft" />
-                                        }
-
-                                        @if (item.experimentVariant) {
-                                            <p-chip
-                                                styleClass="history__state history__state--variant p-chip-sm p-chip-secondary"
-                                                [label]="
-                                                    'edit.content.sidebar.history.variant.tag' | dm
-                                                "
-                                                data-testid="state-variant" />
-                                        }
-                                    </div>
-
-                                    <div class="history__actions">
-                                        <p-button
-                                            icon="pi pi-ellipsis-v"
-                                            styleClass="p-button-rounded p-button-sm p-button-text history__menu-button p-button-tertiary"
-                                            (click)="versionMenu.toggle($event)"
-                                            data-testid="version-menu-button"></p-button>
-                                        <p-menu
-                                            #versionMenu
-                                            [appendTo]="'body'"
-                                            [model]="getVersionMenuItems(item)"
-                                            [popup]="true"></p-menu>
-                                    </div>
-                                </div>
-
-                                <!-- User info -->
-                                <div class="history__user-section">
-                                    <p-avatar
-                                        dotGravatar
-                                        [email]="item.modUser"
-                                        styleClass="history__avatar"
-                                        data-testid="user-avatar"></p-avatar>
-                                    <span class="history__user-name" data-testid="history-user">
-                                        {{ item.modUserName || item.modUser }}
-                                    </span>
-                                </div>
-                            </div>
+                            <dot-history-timeline-item
+                                [item]="item"
+                                (actionTriggered)="
+                                    onTimelineItemAction($event)
+                                "></dot-history-timeline-item>
                         </ng-template>
                     </p-timeline>
 
