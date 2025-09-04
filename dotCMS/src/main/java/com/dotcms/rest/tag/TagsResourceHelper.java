@@ -157,8 +157,8 @@ public class TagsResourceHelper {
      * Multipart common process function whatever specific needs be done in between has to take
      * place in the fileConsumer
      */
-    private void processMultipart(final FormDataMultiPart multipart,
-            final FileConsumer<File> consumer)
+    private <T> T processMultipart(final FormDataMultiPart multipart,
+            final FileConsumer<T> consumer)
             throws IOException, DotDataException, JSONException, DotSecurityException {
         final List<File> files = multiPartUtils.getBinariesFromMultipart(multipart);
         try {
@@ -174,11 +174,12 @@ public class TagsResourceHelper {
                     if (0 == file.length()) {
                         throw new IllegalArgumentException("Zero length file.");
                     }
-                    consumer.apply(file, bodyMapFromMultipart);
+                    return consumer.apply(file, bodyMapFromMultipart);
                 } finally {
                     file.delete();
                 }
             }
+            return null;
         } finally {
             removeTempFolder(files.get(0).getParentFile());
         }
@@ -219,14 +220,19 @@ public class TagsResourceHelper {
             final HttpServletRequest request)
             throws IOException, DotDataException, JSONException, DotSecurityException {
         
-        final TagImportResult[] result = new TagImportResult[1];
-        
-        processMultipart(multipart, (file, bodyMultipart) -> {
-            result[0] = importTagsInternal(file, user, request);
-            return file; // Keep returning File as required by FileConsumer interface
+        return processMultipart(multipart, (file, bodyMultipart) -> {
+            Logger.debug(TagsResourceHelper.class, String.format(
+                "Starting tag import for user '%s', file: %s (%.2f KB)", 
+                user.getUserId(), file.getName(), file.length() / 1024.0));
+            
+            final TagImportResult result = importTagsInternal(file, user, request);
+            
+            Logger.debug(TagsResourceHelper.class, String.format(
+                "Tag import processing completed. File: %s, Success: %d, Errors: %d", 
+                file.getName(), result.successCount, result.errors.size()));
+            
+            return result;
         });
-        
-        return result[0];
     }
 
     /**
@@ -268,9 +274,8 @@ public class TagsResourceHelper {
                 String tagName = tokens[0];
                 String siteId = tokens[1];
                 
-                // Skip header line but don't count it in totals
+                // Skip header line (consistent with content import - header is line 1)
                 if (isHeaderLine(tagName, siteId)) {
-                    lineNumber--; // Don't count header in line numbers
                     continue;
                 }
                 

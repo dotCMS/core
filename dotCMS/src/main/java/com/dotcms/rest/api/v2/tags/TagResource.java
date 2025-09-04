@@ -14,7 +14,6 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.tag.RestTag;
 import com.dotcms.rest.tag.TagsResourceHelper;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -751,7 +750,7 @@ public class TagResource {
         // Return a detailed response with statistics and errors
         return new ResponseEntityTagOperationView(
             stats,
-            ImmutableList.copyOf(result.errors)
+            List.copyOf(result.errors)
     );
     }
 
