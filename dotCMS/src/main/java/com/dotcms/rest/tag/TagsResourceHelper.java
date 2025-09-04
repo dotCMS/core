@@ -314,7 +314,7 @@ public class TagsResourceHelper {
         }
         
         // Handle SYSTEM_HOST literal
-        if ("SYSTEM_HOST".equals(site)) {
+        if (Host.SYSTEM_HOST.equalsIgnoreCase(site)) {
             return Host.SYSTEM_HOST;
         }
         

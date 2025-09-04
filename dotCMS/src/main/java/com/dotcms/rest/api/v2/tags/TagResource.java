@@ -9,8 +9,11 @@ import com.dotcms.rest.ResponseEntityRestTagListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
-import com.dotcms.rest.Pagination;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.TagsPaginator;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.tag.RestTag;
@@ -29,7 +32,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Config;
-import com.dotcms.rest.ErrorEntity;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -60,7 +62,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
@@ -77,7 +81,6 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 public class TagResource {
 
     public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags with Inode %s were found.";
-    private static final int MAX_ITEMS_PER_PAGE = 500;
     
     private final WebResource webResource;
     private final TagAPI tagAPI;
@@ -181,81 +184,40 @@ public class TagResource {
 
         final User user = initDataObject.getUser();
 
-        // 2. Validate parameters
-        validatePaginationParams(page, perPage);
-
-        // 3. Get effective per_page value
-        final int effectivePerPage = getEffectivePerPage(perPage);
-
-        // 4. Resolve site parameter
+        // 2. Resolve site parameter
         final String resolvedSiteId = helper.resolveSiteParameter(site, user, request);
 
-        // 5. Calculate pagination offset
-        final int offset = (page - 1) * effectivePerPage;
-
         Logger.debug(this, UtilMethods.isSet(filter)
-                ? String.format("Filtering Tag(s) '%s' from Site '%s', global=%s, page=%d, perPage=%d",
-                                filter, resolvedSiteId, global, page, effectivePerPage)
-                : String.format("Listing ALL Tags from Site '%s', global=%s, page=%d, perPage=%d",
-                                resolvedSiteId, global, page, effectivePerPage));
+                ? String.format("Filtering Tag(s) '%s' from Site '%s', global=%s, page=%d, perPage=%s",
+                                filter, resolvedSiteId, global, page, perPage)
+                : String.format("Listing ALL Tags from Site '%s', global=%s, page=%d, perPage=%s",
+                                resolvedSiteId, global, page, perPage));
 
-        // 6. Get filtered tags with length ordering when filter is provided
-        final List<Tag> tags = tagAPI.getFilteredTags(
-            UtilMethods.isSet(filter) ? filter : "",
-            resolvedSiteId,
-            global,
-            "DESC".equalsIgnoreCase(direction) ? "-" + orderBy : orderBy,
-            offset,
-            effectivePerPage
-        );
-
-        // 7. Get total count efficiently
-        final long totalCount = tagAPI.getFilteredTagsCount(
-            UtilMethods.isSet(filter) ? filter : "",
-            resolvedSiteId,
-            global
-        );
-
-        // 8. Convert to REST representation
-        final List<RestTag> restTags = tags.stream()
-            .map(TagsResourceHelper::toRestTag)
-            .collect(Collectors.toList());
-
-        // 9. Build pagination metadata
-        final Pagination pagination = new Pagination.Builder()
-            .currentPage(page)
-            .perPage(effectivePerPage)
-            .totalEntries(totalCount)
+        // 3. Use PaginationUtil with TagsPaginator
+        final PaginationUtil paginationUtil = new PaginationUtil(new TagsPaginator());
+        
+        // 4. Build extra parameters for site and global filtering  
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(TagsPaginator.FILTER_PARAM, filter);
+        extraParams.put(TagsPaginator.SITE_ID_PARAM, resolvedSiteId);
+        extraParams.put(TagsPaginator.GLOBAL_PARAM, global);
+        
+        // 5. Build pagination parameters - let PaginationUtil handle validation and defaults
+        final PaginationUtilParams<RestTag, List<RestTag>> params = new PaginationUtilParams.Builder<RestTag, List<RestTag>>()
+            .withRequest(request)
+            .withResponse(response)
+            .withUser(user)
+            .withFilter(filter)
+            .withPage(page != null ? page : 1)
+            .withPerPage(perPage != null ? perPage : 0)  // Let PaginationUtil apply config default
+            .withOrderBy(orderBy)
+            .withDirection("DESC".equalsIgnoreCase(direction) ? OrderDirection.DESC : OrderDirection.ASC)
+            .withExtraParams(extraParams)
             .build();
 
-        // 10. Return paginated response
-        return new ResponseEntityPaginatedDataView(restTags, pagination);
+        // 6. Return paginated response using standard pattern
+        return paginationUtil.getPageView(params);
     }
-
-    /**
-     * Validates pagination parameters.
-     */
-    private void validatePaginationParams(Integer page, Integer perPage) {
-        if (page < 1) {
-            throw new BadRequestException("Page number must be greater than 0");
-        }
-
-        if (perPage != null && (perPage < 1 || perPage > MAX_ITEMS_PER_PAGE)) {
-            throw new BadRequestException("Items per page must be between 1 and " + MAX_ITEMS_PER_PAGE);
-        }
-    }
-
-    /**
-     * Gets the effective per page value, using config default if not specified.
-     */
-    private int getEffectivePerPage(Integer perPage) {
-        if (perPage != null) {
-            return perPage;
-        }
-        // Use DOTCMS_PAGINATION_ROWS with fallback to 25
-        return Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 25);
-    }
-
 
     /**
      * Creates one or more tags. Accepts a list of tag objects for unified single and bulk operations.
