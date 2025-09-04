@@ -9,7 +9,7 @@ Lightweight JavaScript SDK for tracking content-aware events in dotCMS. Works in
 ```html
 <script
     src="ca.min.js"
-    data-server="https://demo.dotcms.com"
+    data-analytics-server="https://demo.dotcms.com"
     data-analytics-auth="SITE_KEY"
     data-analytics-auto-page-view="true"
     data-analytics-debug="false"></script>

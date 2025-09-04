@@ -212,7 +212,7 @@ export interface AnalyticsConfigResult {
 
 /**
  * Gets analytics configuration, always returns a config (with defaults if needed)
- * - If no data-server attribute is found, uses the current domain as the server endpoint
+ * - If no data-analytics-server attribute is found, uses the current domain as the server endpoint
  * - Both debug and autoPageView default to false (must be explicitly set to "true")
  */
 export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
@@ -223,7 +223,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
 
     if (script) {
         return {
-            server: script.getAttribute('data-server') || window.location.origin,
+            server: script.getAttribute('data-analytics-server') || window.location.origin,
             debug: script.getAttribute('data-analytics-debug') === 'true',
             autoPageView: script.getAttribute('data-analytics-auto-page-view') === 'true',
             siteKey: script.getAttribute('data-analytics-auth') || ''

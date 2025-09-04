@@ -48,7 +48,7 @@ describe('Analytics Utils', () => {
         beforeEach(() => {
             const script = document.createElement('script');
             script.setAttribute('src', `https://example.com/${ANALYTICS_MINIFIED_SCRIPT_NAME}`);
-            script.setAttribute('data-server', 'https://analytics.dotcms.com');
+            script.setAttribute('data-analytics-server', 'https://analytics.dotcms.com');
             script.setAttribute('data-analytics-auth', 'test-key');
             document.body.appendChild(script);
         });
@@ -108,14 +108,14 @@ describe('Analytics Utils', () => {
             });
         });
 
-        it('should use window.location.origin when data-server is missing', () => {
+        it('should use window.location.origin when data-analytics-server is missing', () => {
             // Clear existing scripts
             document.querySelectorAll('script').forEach((script) => script.remove());
 
             const script = document.createElement('script');
             script.setAttribute('src', `https://example.com/${ANALYTICS_MINIFIED_SCRIPT_NAME}`);
             script.setAttribute('data-analytics-auth', 'test-key');
-            // No data-server attribute
+            // No data-analytics-server attribute
             document.body.appendChild(script);
 
             const result = getAnalyticsConfig();
