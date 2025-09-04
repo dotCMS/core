@@ -1,133 +1,71 @@
 name: Defect
-description: I need to report a bug or issue with dotCMS.
-labels: ['Type : Defect',Triage]
-projects: ["dotCMS/7"]
+description: Report a bug or issue with existing functionality
+title: "[DEFECT] "
+labels: ["Triage"]
+type: bug
+assignees: []
 
 body:
   - type: markdown
     attributes:
       value: |
-        If you have any questions about how to use this form, check out [How dotCMS uses GitHub](https://docs.google.com/presentation/d/1C1oCESIL9Z84xXo1DPWQZh48c4BSGlVRAn1DYGEFMUw).
+        **Note: This template is intended for Engineering team use.**
 
   - type: textarea
     id: problem-statement
     attributes:
-      label: "Problem Statement"
-      description: "Explain the problem. How common is this issue? Who does it impact? How severely does it affect them? If this is a front-end issue, please include the Browser & OS."
-      placeholder:
-      value: 
+      label: Problem Statement
+      description: Explain the problem. How common is this issue? Who does it impact? How severely does it affect them? If this is a front-end issue, please include the Browser & OS.
+      placeholder: "Describe what happened and the impact..."
     validations:
       required: true
-      
+
   - type: textarea
     id: steps-to-reproduce
     attributes:
-      label: "Steps to Reproduce"
-      description: "How do we reproduce this bug? Ideally, please include a screencast link."
-      placeholder:
-      value: 
-    validations:
-      required: true
-
-  - type: textarea
-    id: acceptance-criteria 
-    attributes:
-      label: "Acceptance Criteria"
-      description: "What objective needs to be met in order to resolve this?"
-      placeholder: 
-      value: 
-    validations:
-      required: true
-
-  - type: textarea
-    id: dotCMS-version
-    attributes:
-      label: "dotCMS Version"
-      description: "What version, or environment, is this problem related to?"
-      placeholder:
-      value: 
-    validations:
-      required: true
-
-  - type: dropdown
-    id: proposed-objective
-    attributes:
-      label: "Proposed Objective"
-      description: 
-      options:
-        - "Please Select"
-        - "Application Performance"
-        - "Business"
-        - "Cloud Engineering"
-        - "Code Maintenance"
-        - "Core Features"
-        - "Customer Success"
-        - "Customer Support"
-        - "Documentation"
-        - "Integrations"
-        - "Marketing"
-        - "Quality Assurance"
-        - "Reliability"
-        - "Sales"
-        - "Security & Privacy"
-        - "Technical User Experience"
-        - "User Experience"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: proposed-prioritiy
-    attributes:
-      label: "Proposed Priority"
-      description: 
-      options:
-        - "Please Select"
-        - "Priority 1 - Show Stopper"
-        - "Priority 2 - Important"
-        - "Priority 3 - Average"
-        - "Priority 4 - Trivial"
-    validations:
-      required: true
-
-  - type: textarea
-    id: external-links 
-    attributes:
-      label: "External Links... Slack Conversations, Support Tickets, Figma Designs, etc."
-      description: "Provide links to any support tickets or Slack conversations that help explain the problem or desired outcome."
-      placeholder: 
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: assumptions
-    attributes:
-      label: "Assumptions & Initiation Needs"
-      description: "List relevant assumptions, pre-requisite steps, or issues that need to be completed before this issue can be worked on."
-      placeholder:
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: qa-note
-    attributes:
-      label: "Quality Assurance Notes & Workarounds"
-      description: "Add any additional notes for QA you would like; this field is also for use by the QA Team once the issue is in progress."
-      placeholder:
-      value:
-    validations:
-      required: false
-
-  - type: textarea
-    id: sub-tasks
-    attributes:
-      label: "Sub-Tasks & Estimates"
-      description: "Use a task-list format, and feel free to @ people responsible for completion."
+      label: Steps to Reproduce
+      description: Please provide a video screencast showing the issue. If video is not possible, provide detailed steps.
       placeholder: |
-        - [ ] Some Task Related to this Issue (4 points)
-        - [ ] Some Task for Damen (2 points) @damen-dotcms
-      value:
+        **Video screencast:** [Upload or link to video showing the issue]
+        
+        **Or detailed steps:**
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
     validations:
-      required: false
+      required: true
 
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What objective needs to be met in order to resolve this?
+      placeholder: |
+        - [ ] Criteria 1
+        - [ ] Criteria 2
+        - [ ] Criteria 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: dotcms-version
+    attributes:
+      label: dotCMS Version
+      description: What version, or environment, is this problem related to?
+      placeholder: "e.g., 23.10.1, Latest from main branch, Cloud environment"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this defect?
+      options:
+        - Critical - System unusable
+        - High - Major functionality broken
+        - Medium - Some functionality impacted
+        - Low - Minor issue or cosmetic
+    validations:
+      required: true
