@@ -1,9 +1,9 @@
-@let loading = $loading();
+@let loading2 = $loading();
 
-@if (!loading) {
+@if (!loading2) {
     <p-tree
         [value]="$state().folders"
-        [loading]="loading"
+        [loading]="loading2"
         selectionMode="single"
         [(selection)]="$state().selectedFile"
         loadingMode="icon"
@@ -11,14 +11,14 @@
         styleClass="w-full h-full"
         loadingMode="icon"
         (onNodeSelect)="onNodeSelect.emit($event)"
-        (onNodeExpand)="onNodeExpandFn($event)"
-        (onNodeCollapse)="onNodeCollapseFn($event)">
+        (onNodeExpand)="onNodeExpand.emit($event)"
+        (onNodeCollapse)="onNodeCollapse.emit($event)">
         <ng-template let-node pTemplate="default">
-            <span>{{ node.label }}</span>
+            <span>{{ node.label }} {{ node.loading }}</span>
         </ng-template>
-        <ng-template let-context let-node="rowData" pTemplate="togglericon">
-            <!-- Always show an icon, but different styles based on state -->
-            <i [class]="context ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
+        <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
+        <ng-template let-expanded pTemplate="togglericon">
+            <i [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
         </ng-template>
     </p-tree>
 } @else {

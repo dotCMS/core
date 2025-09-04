@@ -2,7 +2,14 @@ import { EMPTY, Observable } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    effect,
+    inject,
+    signal
+} from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, SortEvent, TreeNode } from 'primeng/api';
@@ -37,20 +44,6 @@ export type TreeNodeData = {
 
 export type TreeNodeItem = TreeNode<TreeNodeData>;
 
-const ALL_FOLDER_ITEM: TreeNodeItem = {
-    key: 'ALL_FOLDER',
-    label: 'All',
-    data: {
-        type: 'site',
-        path: '/',
-        hostname: SYSTEM_HOST.identifier,
-        id: ''
-    },
-    children: [],
-    leaf: false,
-    expanded: true
-};
-
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent, DotTreeFolderComponent],
@@ -66,6 +59,7 @@ export class DotContentDriveShellComponent {
     readonly #http = inject(HttpClient);
     readonly #router = inject(Router);
     readonly #location = inject(Location);
+    readonly #cd = inject(ChangeDetectorRef);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -134,7 +128,7 @@ export class DotContentDriveShellComponent {
 
     constructor() {
         this.getFoldersTreeNode(`demo.dotcms.com`).subscribe((folders) =>
-            this.$folders.set([ALL_FOLDER_ITEM, ...folders.folders])
+            this.$folders.set([...folders.folders])
         );
     }
 
@@ -197,6 +191,7 @@ export class DotContentDriveShellComponent {
                         return {
                             key: folder.id,
                             label,
+                            loading: true,
                             data: {
                                 id: folder.id,
                                 hostname: folder.hostName,
@@ -211,17 +206,25 @@ export class DotContentDriveShellComponent {
         );
     }
 
+    // onNodesSelect(event: TreeNodeSelectEvent) {
+    //     const { node } = event;
+    //     const { path } = node.data;
+
+    //     this.#store.setPath(path);
+    // }
+
     onNodeExpand(event: TreeNodeSelectEvent) {
         const { node } = event;
         const { hostname, path } = node.data;
 
         node.loading = true;
-
         const fullPath = `${hostname}${path}`;
 
-        this.getFoldersTreeNode(fullPath).subscribe(({ folders: children }) => {
+        this.getFoldersTreeNode(fullPath).subscribe(({ folders }) => {
             node.loading = false;
-            node.children = [...children];
+            node.expanded = true;
+            node.children = [...folders];
+            this.$folders.set([...this.$folders()]);
         });
     }
 

@@ -117,12 +117,4 @@ export class DotTreeFolderComponent {
 
         return `${number}%`;
     }
-
-    onNodeExpandFn(event: TreeNodeExpandEvent) {
-        this.onNodeExpand.emit(event);
-    }
-
-    onNodeCollapseFn(event: TreeNodeCollapseEvent) {
-        this.onNodeCollapse.emit(event);
-    }
 }
