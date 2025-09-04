@@ -10,7 +10,7 @@ const mockAnalyticsInstance = {
 
 const mockInitialize = jest.fn(() => mockAnalyticsInstance);
 
-jest.mock('../../dotAnalytics/dot-content-analytics', () => ({
+jest.mock('../../core/dot-content-analytics', () => ({
     initializeContentAnalytics: mockInitialize
 }));
 
