@@ -4,6 +4,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -85,11 +86,21 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
      */
     private boolean anySecrets (final Host host) {
 
-        return   Try.of(
-                        () ->
-                                this.appsAPI.getSecrets(
-                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
-                .getOrElseGet(e -> false);
+       Try.of(() -> this.appsAPI.getSecrets(
+               AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
+               .getOrElseGet(e -> {
+                   Logger.warn(this, "Error getting analytics secrets. Please check that the App Experiments is configured: " + e.getMessage(), e);
+                   return false;
+               });
+
+       Try.of(() -> this.appsAPI.getSecrets(
+               ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
+               .getOrElseGet(e -> {
+                   Logger.warn(this, "Error getting analytics secrets. Please check that the App Content Analytics is configured: " + e.getMessage(), e);
+                   return false;
+               });
+
+       return true;
     }
 
     @Override
