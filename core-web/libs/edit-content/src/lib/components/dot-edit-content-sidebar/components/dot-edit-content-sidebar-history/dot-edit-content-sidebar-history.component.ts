@@ -51,6 +51,9 @@ export interface DotHistoryPagination {
 export class DotEditContentSidebarHistoryComponent {
     private datePipe = inject(DatePipe);
     private dotMessagePipe = inject(DotMessagePipe);
+
+    // Estado del accordion personalizado
+    activeTab: 'versions' | 'push-publish' | null = 'versions';
     /**
      * List of history items to display
      * @readonly
@@ -206,5 +209,12 @@ export class DotEditContentSidebarHistoryComponent {
         if (pagination && this.$canGoNext()) {
             this.pageChange.emit(pagination.currentPage + 1);
         }
+    }
+
+    /**
+     * Toggle accordion tab
+     */
+    toggleTab(tab: 'versions' | 'push-publish'): void {
+        this.activeTab = this.activeTab === tab ? null : tab;
     }
 }
