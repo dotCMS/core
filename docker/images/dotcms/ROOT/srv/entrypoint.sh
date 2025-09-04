@@ -3,7 +3,8 @@
 set -e
 
 umask 007
-
+export JAVA_HOME=/usr/lib/jvm/java
+export PATH=$PATH:/usr/lib/jvm/java/bin
 source /srv/00-config-defaults.sh
 source /srv/20-copy-overriden-files.sh
 source /srv/40-custom-starter-zip.sh
@@ -32,5 +33,6 @@ fi
 
 
 [[ -n "${WAIT_FOR_DEPS}" ]] && echo "Waiting ${WAIT_FOR_DEPS} seconds for DotCMS dependencies to load..." && sleep ${WAIT_FOR_DEPS}
-
+export MIMALLOC_SHOW_STATS=1
+export LD_PRELOAD=/usr/lib64/libmimalloc.so.2
 exec -- ${TOMCAT_HOME}/bin/catalina.sh run

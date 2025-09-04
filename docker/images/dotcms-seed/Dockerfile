@@ -1,7 +1,7 @@
 # OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
 # Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
-FROM adoptopenjdk/openjdk8:ubuntu as dotcms-seed
+FROM dotcms/fedora-java-base:8-shenandoah
 
 LABEL com.dotcms.contact "info@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -16,10 +16,9 @@ ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
 
 # Build env dependencies
 # Installing basic packages 
-RUN apt update && \
-    apt upgrade -y && \
-    apt install -y bash grep openssl git sed nodejs
-
+RUN dnf update -y
+RUN dnf install grep openssl git sed -y --setopt=install_weak_deps=False
+    
 RUN mkdir -p /build/src \
     && echo "Pulling dotCMS src" \
     && cd /build/src && git clone https://github.com/dotCMS/core.git core 
