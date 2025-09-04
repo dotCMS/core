@@ -24,42 +24,18 @@
                 <div class="history__content">
                     <p-scroller
                         [items]="$historyItems()"
-                        [itemSize]="69"
+                        [itemSize]="80"
                         [lazy]="true"
                         scrollHeight="100%"
                         (onScrollIndexChange)="onScrollIndexChange($event)"
                         styleClass="history__scroller"
                         data-testid="history-timeline">
                         <ng-template pTemplate="item" let-item let-index="index">
-                            <div class="history__timeline-row" [attr.data-index]="index">
-                                <!-- Timeline structure replicating p-timeline -->
-                                <div class="history__timeline-event">
-                                    <!-- Marker and Connector Column -->
-                                    <div class="history__timeline-marker-column">
-                                        <!-- Marker -->
-                                        <div
-                                            class="history__marker"
-                                            [class]="getTimelineMarkerClass(item)"
-                                            data-testid="timeline-marker"></div>
-
-                                        <!-- Connector line -->
-                                        <div
-                                            class="history__timeline-connector"
-                                            [class.history__timeline-connector--last]="
-                                                index === $historyItems().length - 1
-                                            "></div>
-                                    </div>
-
-                                    <!-- Content -->
-                                    <div class="history__timeline-content">
-                                        <dot-history-timeline-item
-                                            [item]="item"
-                                            (actionTriggered)="
-                                                onTimelineItemAction($event)
-                                            "></dot-history-timeline-item>
-                                    </div>
-                                </div>
-                            </div>
+                            <dot-history-timeline-item
+                                [item]="item"
+                                (actionTriggered)="
+                                    onTimelineItemAction($event)
+                                "></dot-history-timeline-item>
                         </ng-template>
                     </p-scroller>
                 </div>

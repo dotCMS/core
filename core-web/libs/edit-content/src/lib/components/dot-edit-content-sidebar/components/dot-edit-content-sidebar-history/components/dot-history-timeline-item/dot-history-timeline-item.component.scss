@@ -3,10 +3,82 @@
 // Host component
 :host {
     display: block;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 }
 
-// Block
+// Block - Timeline Item Container
 .timeline-item {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: $spacing-0;
+}
+
+// Timeline Marker Column
+.timeline-item__marker-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    height: 100%; // Take full height of the timeline item
+    min-height: 80px; // Minimum height to ensure proper spacing
+    padding: 0 2px; // Add padding to prevent box-shadow clipping
+}
+
+// Timeline Marker
+.timeline-item__marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid $white;
+    position: relative;
+    z-index: 2; // Above connectors
+    background: $color-palette-gray-400;
+    flex-shrink: 0; // Don't shrink the marker
+}
+
+.timeline-item__marker--live {
+    background: $color-palette-green;
+    box-shadow: 0 0 0 2px $color-palette-green-op-20;
+}
+
+.timeline-item__marker--draft {
+    background: $color-palette-yellow;
+    box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
+}
+
+// Timeline Connectors
+.timeline-item__connector {
+    width: 2px;
+    background: $color-palette-gray-300;
+    flex-shrink: 0;
+}
+
+// Top connector - fixed height
+.timeline-item__connector--top {
+    height: 1rem; // Fixed height as requested
+}
+
+// Bottom connector - fills remaining space
+.timeline-item__connector--bottom {
+    flex: 1; // Takes all remaining space
+    min-height: 1rem; // Minimum height to ensure visibility
+}
+
+// Hide connectors for first and last items
+:host:first-child .timeline-item__connector--top {
+    visibility: hidden; // Hide but keep space
+}
+
+:host:last-child .timeline-item__connector--bottom {
+    visibility: hidden; // Hide but keep space
+}
+
+// Content Wrapper (replaces old .timeline-item)
+.timeline-item__content-wrapper {
     background: $color-palette-gray-100;
     border-radius: $border-radius-md;
     padding: $spacing-1;
@@ -16,6 +88,7 @@
     align-items: center;
     gap: $spacing-1;
     transition: background-color $basic-speed ease;
+    flex: 1;
 
     &:hover {
         background: $color-palette-primary-op-10;

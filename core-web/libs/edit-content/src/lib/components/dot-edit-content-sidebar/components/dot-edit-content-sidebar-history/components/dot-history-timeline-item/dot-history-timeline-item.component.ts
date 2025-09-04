@@ -118,4 +118,22 @@ export class DotHistoryTimelineItemComponent {
             }
         ];
     }
+
+    /**
+     * Gets the timeline marker CSS class based on the content status
+     */
+    getTimelineMarkerClass(item: DotCMSContentletVersion | undefined): string {
+        // Safety check for undefined item
+        if (!item) {
+            return '';
+        }
+
+        if (item.live) {
+            return 'timeline-item__marker--live';
+        } else if (item.working) {
+            return 'timeline-item__marker--draft';
+        }
+
+        return '';
+    }
 }

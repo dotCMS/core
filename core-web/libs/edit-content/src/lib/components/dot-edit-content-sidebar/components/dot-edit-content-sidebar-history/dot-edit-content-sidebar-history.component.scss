@@ -20,7 +20,7 @@
 .history__content {
     flex: 1;
     overflow-y: auto;
-    padding: $spacing-4;
+    padding: 0 0 0 $spacing-4;
     min-height: 0; // Importante para flexbox scroll
 
     // Custom timeline styles for PrimeNG Scroller
@@ -34,6 +34,10 @@
             }
         }
     }
+}
+
+::ng-deep .history__scroller .p-scroller-content {
+    padding-top: $spacing-2;
 }
 
 .history__loading {
@@ -60,71 +64,11 @@
     padding: $spacing-4;
 }
 
-// Timeline markers
-.history__marker {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid $white;
-    position: relative;
-    z-index: 1;
-    background: $color-palette-gray-400;
-}
-
-.history__marker--live {
-    background: $color-palette-green;
-    box-shadow: 0 0 0 2px $color-palette-green-op-20;
-}
-
-.history__marker--draft {
-    background: $color-palette-yellow;
-    box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
-}
-
-// Custom timeline structure styles - marker and connector in same column
-.history__timeline-row {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: $spacing-4;
-
-    &:last-child {
-        margin-bottom: 0;
-
-        .history__timeline-connector {
-            display: none;
-        }
+// Scroller styles
+.history__scroller {
+    :global(.p-scroller-viewport) {
+        padding-left: $spacing-3;
     }
-}
-
-.history__timeline-event {
-    display: flex;
-    align-items: flex-start;
-    width: 100%;
-    gap: $spacing-3;
-}
-
-.history__timeline-marker-column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-    margin-top: 8px; // Align marker with content top
-}
-
-.history__timeline-connector {
-    width: 2px;
-    height: $spacing-4;
-    background: $color-palette-gray-300;
-    margin-top: 4px;
-
-    &.history__timeline-connector--last {
-        display: none;
-    }
-}
-
-.history__timeline-content {
-    flex: 1;
-    min-width: 0; // Prevent flex item from overflowing
 }
 
 // Pagination styles
@@ -150,4 +94,8 @@
     &:not(:disabled):hover {
         background-color: var(--color-palette-gray-100);
     }
+}
+
+dot-history-timeline-item {
+    padding-right: $spacing-4;
 }

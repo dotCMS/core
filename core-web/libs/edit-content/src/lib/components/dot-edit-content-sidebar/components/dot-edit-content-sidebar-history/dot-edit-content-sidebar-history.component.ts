@@ -94,24 +94,6 @@ export class DotEditContentSidebarHistoryComponent {
     });
 
     /**
-     * Gets the timeline marker color based on the content status
-     */
-    getTimelineMarkerClass(item: DotCMSContentletVersion | undefined): string {
-        // Safety check for undefined item
-        if (!item) {
-            return '';
-        }
-
-        if (item.live) {
-            return 'history__marker--live';
-        } else if (item.working) {
-            return 'history__marker--draft';
-        }
-
-        return '';
-    }
-
-    /**
      * Handle timeline item actions
      */
     onTimelineItemAction(action: DotHistoryTimelineItemAction): void {

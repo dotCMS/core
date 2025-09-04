@@ -228,29 +228,9 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should return correct marker class for live content', () => {
-            const liveItem = mockHistoryItems[0]; // live: true
-            expect(spectator.component.getTimelineMarkerClass(liveItem)).toBe(
-                'history__marker--live'
-            );
-        });
-
-        it('should return correct marker class for working content', () => {
-            const workingItem = mockHistoryItems[1]; // working: true, live: false
-            expect(spectator.component.getTimelineMarkerClass(workingItem)).toBe(
-                'history__marker--draft'
-            );
-        });
-
-        it('should return correct marker class for live-only content', () => {
-            const liveOnlyItem = mockHistoryItems[2]; // live: true, working: false
-            expect(spectator.component.getTimelineMarkerClass(liveOnlyItem)).toBe(
-                'history__marker--live'
-            );
-        });
-
-        it('should return empty string for undefined item', () => {
-            expect(spectator.component.getTimelineMarkerClass(undefined)).toBe('');
+        it('should render timeline items correctly', () => {
+            const timelineItems = spectator.queryAll('dot-history-timeline-item');
+            expect(timelineItems).toHaveLength(mockHistoryItems.length);
         });
     });
 
