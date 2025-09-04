@@ -215,8 +215,14 @@ if (project.hasProperty('jarBaseName')) {
     archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
 }
 
+def tomcatDownloadUrl = uri("https://repo.maven.apache.org/maven2/org/apache/tomcat/tomcat/${tomcatInstallVersion}/tomcat-${tomcatInstallVersion}.zip")
+def tomcatDownloadZipFile = file("${buildDir}/tmp/apache-tomcat-${tomcatInstallVersion}.zip")
 def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
+
+def tomcatDistBaseFile = file(tomcatDistBase)
+def tomcatDistBinDir = new File(tomcatDistBaseFile, "bin")
+def tomcatDistConfDir = new File(tomcatDistBaseFile, "conf")
 
 // Compile Java.
 compileJava {
@@ -315,6 +321,10 @@ task testDev(type: Test) {
     reports.html.setDestination(file("$buildDir/test-results/unit-tests/html"))
 }
 
+compileIntegrationTestJava {
+    classpath += files(sourceSets.main.output)
+}
+
 integrationTest{
     doFirst
             {
@@ -336,8 +346,8 @@ undeployWarTomcat.mustRunAfter 'backupWarTomcatData'
 
 // Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: DeployWarTomcatTask) {
-    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
-    tomcatPath = tomcatInstallLocation
+    dependsOn 'war', 'unpackTomcatToInstallLocation', 'undeployWarTomcat'
+    tomcatPath = file(tomcatInstallLocation)
 }
 deployWarTomcat.group='dotCMS Development'
 deployWarTomcat.description='Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
@@ -347,8 +357,8 @@ deployWarTomcat.description='Will checkout the tomcat app server, generate a war
 //in order to restore them after the deploy.
 //This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
 task deployWarTomcatBackup(type: DeployWarTomcatTask){
-    dependsOn 'war', 'clonePullTomcat', 'backupWarTomcatData', 'undeployWarTomcat'
-    tomcatPath = tomcatInstallLocation
+    dependsOn 'war', 'unpackTomcatToInstallLocation', 'backupWarTomcatData', 'undeployWarTomcat'
+    tomcatPath = file(tomcatInstallLocation)
 }
 deployWarTomcatBackup.finalizedBy 'restoreBackupWarTomcatData'
 deployWarTomcatBackup.group='dotCMS Development'
@@ -357,16 +367,16 @@ deployWarTomcatBackup.description='Same as deployWarTomcat but will also backup 
 
 //Executes deployWarTomcat task compiling tests as well
 task deployWarTomcatTests(type: DeployWarTomcatTask){
-    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
-    tomcatPath = tomcatInstallLocation
+    dependsOn 'war', 'unpackTomcatToInstallLocation', 'undeployWarTomcat'
+    tomcatPath = file(tomcatInstallLocation)
 }
 deployWarTomcatTests.group='dotCMS Development'
 deployWarTomcatTests.description='Same as deployWarTomcat but also includes the junit tests.'
 
 //Executes deployWarTomcat task from dist version
 task deployWarTomcatDist(type: DeployWarTomcatTask) {
-    dependsOn 'war'
-    tomcatPath = tomcatDistBase
+    dependsOn 'war', 'prepareTomcatDist'
+    tomcatPath = file(tomcatDistBase)
 }
 deployWarTomcatDist.group='dotCMS Util'
 deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
@@ -394,50 +404,83 @@ task clonePullTomcatDist(type: ClonePullTomcatTask) {
 clonePullTomcatDist.group='dotCMS Util'
 clonePullTomcatDist.description='Clones or pull /tomcat8 folder to be used on on the distribution.'
 
+task downloadTomcatDist {
+    outputs.file tomcatDownloadZipFile
+    doLast {
+        if (!tomcatDownloadZipFile.exists()) {
+            println "Downloading Tomcat $tomcatInstallVersion..."
+            ant.get(
+                    src: tomcatDownloadUrl,
+                    dest: tomcatDownloadZipFile
+            )
+        } else {
+            println "Tomcat zip already exists: $tomcatDownloadZipFile"
+        }
+    }
+}
+
+task unpackTomcatDist(type: UnpackTomcatTask) {
+    dependsOn 'downloadTomcatDist'
+    tomcatZipFile = tomcatDownloadZipFile
+    destinationDir = tomcatDistBase
+}
+
+task unpackTomcatToInstallLocation(type: UnpackTomcatTask) {
+    dependsOn 'downloadTomcatDist'
+    tomcatZipFile = tomcatDownloadZipFile
+    destinationDir = tomcatInstallLocation
+}
+
+task prepareTomcatDist {
+    dependsOn 'unpackTomcatDist'
+    outputs.dir file(tomcatDistBaseFile)
+    outputs.upToDateWhen {
+        tomcatDistBinDir.exists() && tomcatDistBinDir.listFiles()?.length > 0 &&
+        tomcatDistConfDir.exists() && tomcatDistConfDir.listFiles()?.length > 0
+    }
+    doLast {
+        println "Tomcat is prepared at: $tomcatDistBase"
+    }
+}
+
 //Creates the final distribution files for dotCMS.
-task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
+task createDistPrep(type: Copy, dependsOn: ['prepareTomcatDist', 'deployWarTomcatDist']) {
+
+    into "$distLocation"
+
+    from("$rootDir/../bin") {
+        into "$distBinLocation"
+        filesMatching('build.con*') {
+            expand(project.properties)
+        }
+    }
+
+    from("$rootDir/../") {
+        into "$distBinLocation/ant"
+        include "build.xml"
+    }
+
+    from(sourceSets.main.resources) {
+        into "$confDistLocation"
+        exclude "com", "org", "release.properties"
+    }
+
+    from("src/main/plugins") {
+        into "$pluginsDistLocation"
+        exclude "**/.git"
+    }
+
+    from("$rootDir/../docs") {
+        into "$docsDistLocation"
+    }
 
     doLast {
-        copy {
-            from "$rootDir/../bin"
-            into "$distLocation$distBinLocation"
-            filesMatching('build.con*') {
-                expand(project.properties)
-            }
-        }
+        replaceText(file("$distLocation$distBinLocation/build.conf"), "#SERVER_FOLDER", "SERVER_FOLDER")
+        replaceText(file("$distLocation$distBinLocation/build.conf"), "#HOME_FOLDER", "HOME_FOLDER")
+        replaceText(file("$distLocation$distBinLocation/build.conf"), "#target.root", "target.root")
 
-        copy {
-            from "$rootDir/../"
-            into "$distLocation$distBinLocation/ant"
-            include "build.xml"
-        }
-
-        copy {
-            into "$distLocation$confDistLocation"
-            from sourceSets.main.resources
-            exclude "com", "org", "release.properties"
-        }
-
-        copy {
-            into "$distLocation$pluginsDistLocation"
-            from "src/main/plugins"
-            exclude "**/.git"
-        }
-
-        copy {
-            into "$distLocation$docsDistLocation"
-            from "$rootDir/../docs"
-        }
-
-        replaceText("$distLocation$distBinLocation/build.conf", "#SERVER_FOLDER", "SERVER_FOLDER")
-
-        replaceText("$distLocation$distBinLocation/build.conf", "#HOME_FOLDER", "HOME_FOLDER")
-
-        replaceText("$distLocation$distBinLocation/build.conf", "#target.root", "target.root")
-
-        replaceText("$distLocation$distBinLocation/build.conf.bat", "rem set", "set")
-
-        replaceText("$distLocation$distBinLocation/build.conf.bat", "/", "\\\\")
+        replaceText(file("$distLocation$distBinLocation/build.conf.bat"), "rem set", "set")
+        replaceText(file("$distLocation$distBinLocation/build.conf.bat"), "/", "\\\\")
 
         if ("$distUpdate".toBoolean()) {
             delete "$tomcatDistBase$webAppRootFolder/starter.zip"
@@ -791,10 +834,35 @@ def getDate() {
 }
 
 //Util method that replaces the occurrence of a string in a specified file
-static def replaceText(filePath, fromString, toString) {
-    def sourceFile = filePath
-    def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
-    new File(sourceFile).write(updatedContent, 'UTF-8')
+static def replaceText(File sourceFile, String fromString, String toString) {
+    if (!sourceFile.exists()) {
+        throw new GradleException("File not found: ${sourceFile.absolutePath}")
+    }
+    def updatedContent = sourceFile.getText('UTF-8').replaceAll(fromString, toString)
+    sourceFile.write(updatedContent, 'UTF-8')
+}
+
+// Append a line to a file only if it doesn't already exist
+static def appendLineIfMissing(File file, String lineToAdd) {
+    if (!file.exists()) {
+        throw new GradleException("File not found: ${file.absolutePath}")
+    }
+    def lines = file.readLines('UTF-8')
+    if (!lines.contains(lineToAdd)) {
+        file.append(System.lineSeparator() + lineToAdd, 'UTF-8')
+    }
+}
+
+// Configure TomcatPropertyDecoder in catalina.properties
+static def configureTomcatPropertyDecoder(String tomcatPath) {
+    File catalinaProps = new File(tomcatPath, "conf/catalina.properties")
+    if (catalinaProps.exists()) {
+        appendLineIfMissing(catalinaProps,
+                "org.apache.tomcat.util.digester.PROPERTY_SOURCE=com.dotcms.tomcat.context.TomcatPropertyDecoder")
+        println "Configured TomcatPropertyDecoder in ${catalinaProps.absolutePath}"
+    } else {
+        println "Warning: catalina.properties not found at ${catalinaProps.absolutePath}"
+    }
 }
 
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
@@ -827,15 +895,70 @@ class ClonePullTomcatTask extends DefaultTask{
 
 }
 
+// Parametrized task to unpack Tomcat to any destination directory
+class UnpackTomcatTask extends DefaultTask {
+    @InputFile
+    File tomcatZipFile
+
+    @Input
+    String destinationDir
+
+    @TaskAction
+    def unpack() {
+        def destDir = project.file(destinationDir)
+
+        // Skip if Tomcat dir already exists and is non-empty
+        def binDir = new File(destDir, "bin")
+        def confDir = new File(destDir, "conf")
+        def binOk = binDir.exists() && binDir.listFiles()?.length > 0
+        def confOk = confDir.exists() && confDir.listFiles()?.length > 0
+
+        if (binOk && confOk) {
+            println "Tomcat already exists at $destDir, skipping unpack"
+            return
+        }
+
+        project.copy {
+            from project.zipTree(tomcatZipFile)
+
+            // Remove first directory level (Gradle 4.10 compatible)
+            eachFile { fcd ->
+                def segments = fcd.relativePath.segments
+                if (segments.length > 1) {
+                    // Create a new RelativePath without the first segment
+                    fcd.relativePath = new RelativePath(
+                            fcd.relativePath.file,
+                            segments[1..segments.length-1] as String[]
+                    )
+                } else {
+                    fcd.exclude() // skip the top-level directory itself
+                }
+            }
+            includeEmptyDirs = false
+            into destDir
+        }
+
+        println "Unpacked Tomcat to $destDir"
+        if (tomcatZipFile.exists()) {
+            tomcatZipFile.delete()
+            println "Deleted Tomcat zip: ${tomcatZipFile}"
+        }
+    }
+}
+
 //Gradle Custom Task that contains the logic for deploying the app war in the application server
 //It works for dist and development versions
 //Also, copies specific libraries from /libs/buildlibs to tomcat/lib folder
 class DeployWarTomcatTask extends DefaultTask{
+    @InputDirectory
     String tomcatPath;
 
     @TaskAction
     def deploy(){
+        cleanWebapps(tomcatPath)
         copyBuildLibs(tomcatPath)
+        copyLocalTomcatFiles(tomcatPath, 'local-tomcat-bin', 'bin')
+        copyLocalTomcatFiles(tomcatPath, 'local-tomcat-conf', 'conf')
 
         def zipFile = project.file("$project.buildDir/libs/$project.archivesBaseName" + ".war")
         project.copy{
@@ -844,8 +967,28 @@ class DeployWarTomcatTask extends DefaultTask{
         }
 
         if (project.gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
-            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "<!-- TEST FRAMEWORK SERVLETS", "<!-- TEST FRAMEWORK SERVLETS -->")
-            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "END OF TEST FRAMEWORK SERVLETS -->", "<!-- END OF TEST FRAMEWORK SERVLETS -->")
+            project.replaceText(new File("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml"),
+                    "<!-- TEST FRAMEWORK SERVLETS", "<!-- TEST FRAMEWORK SERVLETS -->")
+            project.replaceText(new File("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml"),
+                    "END OF TEST FRAMEWORK SERVLETS -->", "<!-- END OF TEST FRAMEWORK SERVLETS -->")
+        }
+        
+        // Configure TomcatPropertyDecoder for local deployment
+        project.configureTomcatPropertyDecoder(tomcatPath)
+    }
+
+    // Remove all subfolders under webapps directory
+    def cleanWebapps(tomcatPath) {
+        def webappsDir = new File(tomcatPath, "webapps")
+        if (webappsDir.exists() && webappsDir.isDirectory()) {
+            webappsDir.listFiles().each { file ->
+                if (file.isDirectory()) {
+                    println "Removing webapps subdirectory: ${file.name}"
+                    project.delete file
+                }
+            }
+        } else {
+            println "Webapps directory not found or is not a directory: ${webappsDir.absolutePath}"
         }
     }
 
@@ -859,8 +1002,24 @@ class DeployWarTomcatTask extends DefaultTask{
             include 'mysql-connector-java-5.1.37-bin.jar'
             include 'postgresql-42.2.2.jar'
             include 'ojdbc5.jar'
+            include 'ContextPropertyDecoder.jar'
         }
 
+    }
+
+    // Unified function to copy files from local tomcat directories to tomcat subdirectories.
+    def copyLocalTomcatFiles(tomcatPath, localDirName, targetSubDir) {
+        def localDir = project.file("../${localDirName}")
+        if (localDir.exists() && localDir.isDirectory()) {
+            println "Copying files from ${localDir.absolutePath} to ${tomcatPath}/${targetSubDir}"
+            project.copy{
+                from localDir
+                into tomcatPath + "/${targetSubDir}"
+                include '**/*'
+            }
+        } else {
+            println "Local directory not found: ${localDir.absolutePath}"
+        }
     }
 }
 
@@ -913,8 +1072,6 @@ task downloadDependencies(type: Exec) {
 
     commandLine 'echo', 'Downloaded all dependencies'
 }
-
-
 
 // reference:  https://github.com/palantir/gradle-docker
 docker {
