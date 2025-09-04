@@ -147,7 +147,6 @@ export class DotContentDriveSidebarComponent {
         return {
             key: folder.id,
             label: this.getFolderLabel(folder.path),
-            loading: true,
             data: {
                 id: folder.id,
                 hostname: folder.hostName,

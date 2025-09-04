@@ -5,7 +5,8 @@ import {
     inject,
     input,
     output,
-    signal
+    signal,
+    computed
 } from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
@@ -46,6 +47,19 @@ export class DotTreeFolderComponent {
      * @type {TreeNode | null}
      */
     $selectedNode = input.required<TreeNode>({ alias: 'selectedNode' });
+
+    /**
+     * Controls whether the folder icon should be shown only on the first root node's toggler.
+     * When false, folder icons will be used for all togglers.
+     */
+    $showFolderIconOnFirstOnly = input<boolean>(false, { alias: 'showFolderIconOnFirstOnly' });
+
+    /**
+     * Computed style classes for the underlying p-tree component.
+     */
+    treeStyleClasses = computed(
+        () => `w-full h-full ${this.$showFolderIconOnFirstOnly() ? 'first-only' : 'folder-all'}`
+    );
 
     /**
      * Signal that generates an array of strings representing percentages.

@@ -17,3 +17,33 @@
         border: none;
     }
 }
+
+/* Modes for toggler icon rendering */
+:host ::ng-deep {
+    .p-tree {
+        /* First-only mode (show folder icon on first root node only) */
+        &.first-only {
+            .toggler-first {
+                display: none;
+            }
+            .p-tree-container > p-treenode:first-child {
+                .toggler-first {
+                    display: block;
+                }
+                .toggler-regular {
+                    display: none;
+                }
+            }
+        }
+
+        /* All-folder mode (show folder icon on all root nodes) */
+        &.folder-all {
+            .toggler-first {
+                display: block;
+            }
+            .toggler-regular {
+                display: none;
+            }
+        }
+    }
+}

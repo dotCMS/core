@@ -7,7 +7,7 @@
         selectionMode="single"
         loadingMode="icon"
         class="w-full h-full"
-        styleClass="w-full h-full"
+        [styleClass]="treeStyleClasses()"
         loadingMode="icon"
         [selection]="$selectedNode()"
         (onNodeSelect)="onNodeSelect.emit($event)"
@@ -17,8 +17,16 @@
             <span>{{ node.label }}</span>
         </ng-template>
         <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
-        <ng-template let-expanded pTemplate="togglericon">
-            <i [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
+        <ng-template pTemplate="togglericon" let-expanded>
+            <span class="toggler-regular">
+                <i
+                    class="pi"
+                    [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                    style="font-size: 0.875rem; color: #8d92a5"></i>
+            </span>
+            <span class="toggler-first">
+                <i class="pi" [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
+            </span>
         </ng-template>
     </p-tree>
 } @else {
