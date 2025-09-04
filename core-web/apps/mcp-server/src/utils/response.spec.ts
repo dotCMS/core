@@ -71,11 +71,21 @@ describe('Response Utils', () => {
             expect(result).toBe('Message');
         });
 
-        it('should use default options when not provided', () => {
+        it('should not truncate by default when no environment variable is set', () => {
+            // Ensure environment variable is not set for this test
+            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
+            delete process.env.MCP_RESPONSE_MAX_LENGTH;
+            
             const largeData = { data: 'x'.repeat(2000) };
             const result = formatResponse('Message', largeData);
 
-            expect(result).toContain('[truncated]');
+            expect(result).not.toContain('[truncated]');
+            expect(result).toContain('x'.repeat(2000));
+            
+            // Restore original environment variable
+            if (originalEnv !== undefined) {
+                process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+            }
         });
 
         it('should respect includeRawData option', () => {
@@ -85,6 +95,76 @@ describe('Response Utils', () => {
             expect(result).toContain('Message');
             expect(result).toContain('Details:');
             expect(result).toContain('"key": "value"');
+        });
+
+        describe('Environment variable MCP_RESPONSE_MAX_LENGTH', () => {
+            const originalEnv = process.env.MCP_RESPONSE_MAX_LENGTH;
+
+            afterEach(() => {
+                // Restore original environment variable
+                if (originalEnv !== undefined) {
+                    process.env.MCP_RESPONSE_MAX_LENGTH = originalEnv;
+                } else {
+                    delete process.env.MCP_RESPONSE_MAX_LENGTH;
+                }
+            });
+
+            it('should not truncate when environment variable is not set', () => {
+                delete process.env.MCP_RESPONSE_MAX_LENGTH;
+                const largeData = { data: 'x'.repeat(2000) };
+                const result = formatResponse('Message', largeData);
+
+                expect(result).not.toContain('[truncated]');
+                expect(result).toContain('x'.repeat(2000));
+            });
+
+            it('should truncate when environment variable is set', () => {
+                process.env.MCP_RESPONSE_MAX_LENGTH = '100';
+                const largeData = { data: 'x'.repeat(2000) };
+                const result = formatResponse('Message', largeData);
+
+                expect(result).toContain('[truncated]');
+                expect(result.length).toBeLessThan(200); // Should be truncated to ~100 chars plus message
+            });
+
+            it('should use environment variable value for truncation', () => {
+                process.env.MCP_RESPONSE_MAX_LENGTH = '50';
+                const data = { shortData: 'test' };
+                const longData = { data: 'x'.repeat(100) };
+                
+                const shortResult = formatResponse('Message', data);
+                const longResult = formatResponse('Message', longData);
+
+                expect(shortResult).not.toContain('[truncated]');
+                expect(longResult).toContain('[truncated]');
+            });
+
+            it('should handle invalid environment variable values gracefully', () => {
+                process.env.MCP_RESPONSE_MAX_LENGTH = 'invalid';
+                const largeData = { data: 'x'.repeat(2000) };
+                const result = formatResponse('Message', largeData);
+
+                // Should not truncate when env var is invalid (NaN becomes 0, which fails the check)
+                expect(result).not.toContain('[truncated]');
+            });
+
+            it('should handle empty environment variable', () => {
+                process.env.MCP_RESPONSE_MAX_LENGTH = '';
+                const largeData = { data: 'x'.repeat(2000) };
+                const result = formatResponse('Message', largeData);
+
+                // Should not truncate when env var is empty
+                expect(result).not.toContain('[truncated]');
+            });
+
+            it('should still respect explicit options over environment variable', () => {
+                process.env.MCP_RESPONSE_MAX_LENGTH = '1000';
+                const largeData = { data: 'x'.repeat(2000) };
+                const result = formatResponse('Message', largeData, { maxDataLength: 50 });
+
+                expect(result).toContain('[truncated]');
+                expect(result.length).toBeLessThan(150); // Should use the explicit option (50), not env var (1000)
+            });
         });
     });
 

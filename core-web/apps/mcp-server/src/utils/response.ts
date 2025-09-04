@@ -1,3 +1,5 @@
+import { Logger } from './logger.js';
+
 /**
  * Success response structure for MCP tools
  */
@@ -41,7 +43,11 @@ export function formatResponse(
         return message;
     }
 
-    const opts = { includeRawData: false, maxDataLength: 1000, ...options };
+    // Check for environment variable to control truncation
+    const envMaxLength = process.env.MCP_RESPONSE_MAX_LENGTH;
+    const defaultMaxLength = envMaxLength ? parseInt(envMaxLength, 10) : Number.MAX_SAFE_INTEGER;
+    
+    const opts = { includeRawData: false, maxDataLength: defaultMaxLength, ...options };
 
     // Handle different data types appropriately
     if (typeof data === 'string') {
@@ -51,10 +57,16 @@ export function formatResponse(
     if (typeof data === 'object') {
         // For objects, provide structured information
         const jsonStr = JSON.stringify(data, null, 2);
-        const truncated =
-            jsonStr.length > opts.maxDataLength
-                ? jsonStr.substring(0, opts.maxDataLength) + '...[truncated]'
-                : jsonStr;
+        
+        const shouldTruncate = jsonStr.length > opts.maxDataLength;
+        if (shouldTruncate) {
+            const logger = new Logger('formatResponse');
+            logger.log(`Response truncated from ${jsonStr.length} to ${opts.maxDataLength} characters`);
+        }
+        
+        const truncated = shouldTruncate
+            ? jsonStr.substring(0, opts.maxDataLength) + '...[truncated]'
+            : jsonStr;
 
         return `${message}\n\nDetails:\n${truncated}`;
     }

@@ -92,6 +92,7 @@ Before setting up the MCP server, you need these environment variables to connec
 | `DOTCMS_URL` | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
 | `VERBOSE`    | ❌       | Enable detailed logging for troubleshooting | `true` |
+| `MCP_RESPONSE_MAX_LENGTH` | ❌ | Maximum length for response truncation. When not set, responses are returned in full | `1000` |
 
 ## Quickstart
 
@@ -397,6 +398,34 @@ The MCP server includes comprehensive logging:
 -   **Error Tracking**: Detailed error information with stack traces
 -   **Request/Response Logging**: Full API interaction logging in verbose mode
 -   **Performance Monitoring**: Request timing and performance metrics
+
+### Response Truncation
+
+The MCP server supports configurable response truncation to manage large response sizes:
+
+-   **Environment Control**: Set `MCP_RESPONSE_MAX_LENGTH` to control maximum response length
+-   **Default Behavior**: When not set, responses are returned in full (no truncation)
+-   **Flexible Configuration**: Different deployment scenarios can use different limits
+-   **Truncation Logging**: When truncation occurs, it's logged with original and truncated lengths
+-   **Backwards Compatibility**: Existing deployments continue working without changes
+
+**Example configurations:**
+
+```bash
+# No truncation (default)
+# MCP_RESPONSE_MAX_LENGTH is not set
+
+# Limit responses to 1000 characters
+export MCP_RESPONSE_MAX_LENGTH=1000
+
+# Limit responses to 5000 characters for high-capacity clients
+export MCP_RESPONSE_MAX_LENGTH=5000
+```
+
+When responses are truncated, you'll see log messages like:
+```
+[2024-01-01T12:00:00.000Z] [formatResponse] Response truncated from 2500 to 1000 characters
+```
 
 ## dotCMS Support
 
