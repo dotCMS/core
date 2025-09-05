@@ -1,39 +1,42 @@
-<div class="timeline-item" data-testid="history-item">
+<div class="dot-history-timeline-item" data-testid="history-item">
     <!-- Timeline Marker Column -->
-    <div class="timeline-item__marker-column">
+    <div class="dot-history-timeline-item__marker-column">
         <!-- Connector line superior -->
-        <div class="timeline-item__connector timeline-item__connector--top"></div>
+        <div
+            class="dot-history-timeline-item__connector dot-history-timeline-item__connector--top"></div>
 
         <!-- Marker -->
         <div
-            class="timeline-item__marker"
-            [class]="getTimelineMarkerClass($item())"
+            class="dot-history-timeline-item__marker"
+            [class]="$timelineMarkerClass()"
             data-testid="timeline-marker"></div>
 
         <!-- Connector line inferior (fills remaining space) -->
-        <div class="timeline-item__connector timeline-item__connector--bottom"></div>
+        <div
+            class="dot-history-timeline-item__connector dot-history-timeline-item__connector--bottom"></div>
     </div>
 
     <!-- Timeline Item Content Wrapper -->
     <div
-        class="timeline-item__content-wrapper"
+        class="dot-history-timeline-item__content-wrapper"
+        data-testid="content-wrapper"
         [pTooltip]="tooltipContent"
         tooltipPosition="bottom"
         [tooltipOptions]="{
             showDelay: 100,
             hideDelay: 100,
-            tooltipStyleClass: 'timeline-item__tooltip',
+            tooltipStyleClass: 'dot-history-timeline-item__tooltip',
             escape: false,
             positionStyle: 'absolute',
             appendTo: 'body'
         }">
         <!-- Tooltip Content Template -->
         <ng-template #tooltipContent>
-            <div class="timeline-item__overlay-content">
-                <h4 class="timeline-item__overlay-title" data-testid="overlay-title">
+            <div class="dot-history-timeline-item__overlay-content">
+                <h4 class="dot-history-timeline-item__overlay-title" data-testid="overlay-title">
                     {{ $item().title }}
                 </h4>
-                <ul class="timeline-item__overlay-list">
+                <ul class="dot-history-timeline-item__overlay-list">
                     <li>
                         {{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}
                     </li>
@@ -51,29 +54,29 @@
         </ng-template>
 
         <!-- Timeline Item Content -->
-        <div class="timeline-item__content">
+        <div class="dot-history-timeline-item__content">
             <!-- Timeline Item Header -->
-            <div class="timeline-item__header">
-                <span class="timeline-item__time-relative" data-testid="time-display">
+            <div class="dot-history-timeline-item__header">
+                <span class="dot-history-timeline-item__time-relative" data-testid="time-display">
                     {{ $item().modDate | dotRelativeDate }}
                 </span>
 
-                <div class="timeline-item__time-section">
+                <div class="dot-history-timeline-item__time-section">
                     @if ($item().live) {
                         <p-chip
-                            styleClass="timeline-item__state timeline-item__state--live p-chip-sm p-chip-success"
+                            styleClass="dot-history-timeline-item__state dot-history-timeline-item__state--live p-chip-sm p-chip-success"
                             [label]="'edit.content.sidebar.history.published' | dm"
                             data-testid="state-live" />
                     } @else if ($item().working) {
                         <p-chip
-                            styleClass="timeline-item__state timeline-item__state--working p-chip-sm p-chip-warning"
+                            styleClass="dot-history-timeline-item__state dot-history-timeline-item__state--working p-chip-sm p-chip-warning"
                             [label]="'edit.content.sidebar.history.draft' | dm"
                             data-testid="state-draft" />
                     }
 
                     @if ($item().experimentVariant) {
                         <p-chip
-                            styleClass="timeline-item__state timeline-item__state--variant p-chip-sm p-chip-secondary"
+                            styleClass="dot-history-timeline-item__state dot-history-timeline-item__state--variant p-chip-sm p-chip-secondary"
                             [label]="'edit.content.sidebar.history.variant.tag' | dm"
                             data-testid="state-variant" />
                     }
@@ -81,30 +84,26 @@
             </div>
 
             <!-- User Information Section -->
-            <div class="timeline-item__user-section">
+            <div class="dot-history-timeline-item__user-section">
                 <p-avatar
                     dotGravatar
                     [email]="$item().modUser"
-                    styleClass="timeline-item__avatar"
+                    styleClass="dot-history-timeline-item__avatar"
                     data-testid="user-avatar"></p-avatar>
-                <span class="timeline-item__user-name" data-testid="history-user">
+                <span class="dot-history-timeline-item__user-name" data-testid="history-user">
                     {{ $item().modUser }}
                 </span>
             </div>
         </div>
 
         <!-- Actions Button - Positioned independently -->
-        <div class="timeline-item__actions">
+        <div class="dot-history-timeline-item__actions">
             <p-button
                 icon="pi pi-ellipsis-v"
-                styleClass="p-button-rounded p-button-sm p-button-text timeline-item__menu-button p-button-tertiary"
+                styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
                 (click)="versionMenu.toggle($event)"
                 data-testid="version-menu-button"></p-button>
-            <p-menu
-                #versionMenu
-                [appendTo]="'body'"
-                [model]="getVersionMenuItems($item())"
-                [popup]="true"></p-menu>
+            <p-menu #versionMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true"></p-menu>
         </div>
     </div>
 </div>

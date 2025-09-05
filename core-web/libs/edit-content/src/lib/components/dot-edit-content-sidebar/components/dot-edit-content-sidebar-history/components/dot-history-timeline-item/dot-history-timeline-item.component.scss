@@ -1,6 +1,5 @@
 @use "variables" as *;
 
-// Host component
 :host {
     display: block;
 
@@ -9,8 +8,7 @@
     }
 }
 
-// Block - Timeline Item Container
-.timeline-item {
+.dot-history-timeline-item {
     display: flex;
     align-items: stretch;
     width: 100%;
@@ -18,65 +16,58 @@
     min-height: 80px;
 }
 
-// Timeline Marker Column
-.timeline-item__marker-column {
+.dot-history-timeline-item__marker-column {
     display: flex;
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
-    padding: 0 2px; // Add padding to prevent box-shadow clipping
+    padding: 0 2px;
 }
 
-// Timeline Marker
-.timeline-item__marker {
+.dot-history-timeline-item__marker {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     border: 2px solid $white;
     position: relative;
-    z-index: 2; // Above connectors
+    z-index: 2;
     background: $color-palette-gray-400;
-    flex-shrink: 0; // Don't shrink the marker
+    flex-shrink: 0;
+
+    &--live {
+        background: $color-palette-green;
+        box-shadow: 0 0 0 2px $color-palette-green-op-20;
+    }
+
+    &--draft {
+        background: $color-palette-yellow;
+        box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
+    }
 }
 
-.timeline-item__marker--live {
-    background: $color-palette-green;
-    box-shadow: 0 0 0 2px $color-palette-green-op-20;
-}
-
-.timeline-item__marker--draft {
-    background: $color-palette-yellow;
-    box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
-}
-
-// Timeline Connectors
-.timeline-item__connector {
+.dot-history-timeline-item__connector {
     width: 2px;
     background: $color-palette-gray-300;
     flex-shrink: 0;
+
+    &--top {
+        height: $spacing-3 + $spacing-0;
+    }
+
+    &--bottom {
+        flex: 1;
+    }
 }
 
-// Top connector - fixed height
-.timeline-item__connector--top {
-    height: 1rem; // Fixed height as requested
+:host:first-child .dot-history-timeline-item__connector--top {
+    visibility: hidden;
 }
 
-// Bottom connector - fills remaining space
-.timeline-item__connector--bottom {
-    flex: 1; // Takes all remaining space dynamically
+:host:last-child .dot-history-timeline-item__connector--bottom {
+    visibility: hidden;
 }
 
-// Hide connectors for first and last items
-:host:first-child .timeline-item__connector--top {
-    visibility: hidden; // Hide but keep space
-}
-
-:host:last-child .timeline-item__connector--bottom {
-    visibility: hidden; // Hide but keep space
-}
-
-// Content Wrapper (replaces old .timeline-item)
-.timeline-item__content-wrapper {
+.dot-history-timeline-item__content-wrapper {
     background: $color-palette-gray-100;
     border-radius: $border-radius-md;
     padding: $spacing-1;
@@ -91,40 +82,39 @@
     &:hover {
         background: $color-palette-primary-op-10;
 
-        .timeline-item__actions {
+        .dot-history-timeline-item__actions {
             visibility: visible;
         }
     }
 }
 
-// Elements
-.timeline-item__content {
+.dot-history-timeline-item__content {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: $spacing-1;
 }
 
-.timeline-item__header {
+.dot-history-timeline-item__header {
     display: flex;
     gap: $spacing-1;
     align-items: center;
     line-height: $spacing-4;
 }
 
-.timeline-item__time-section {
+.dot-history-timeline-item__time-section {
     display: flex;
     align-items: center;
     gap: $spacing-2;
 }
 
-.timeline-item__time-relative {
+.dot-history-timeline-item__time-relative {
     font-weight: $font-weight-medium-bold;
     color: $black;
     font-size: $font-size-md;
 }
 
-.timeline-item__actions {
+.dot-history-timeline-item__actions {
     display: flex;
     visibility: hidden;
     align-items: center;
@@ -132,86 +122,50 @@
     flex-shrink: 0;
 }
 
-.timeline-item__user-section {
+.dot-history-timeline-item__user-section {
     display: flex;
     align-items: center;
     gap: $spacing-0;
 }
 
-// Avatar specific styles
-::ng-deep .timeline-item__avatar.p-avatar {
+::ng-deep .dot-history-timeline-item__avatar.p-avatar {
     width: 21px;
     height: 21px;
 }
 
-.timeline-item__user-name {
+.dot-history-timeline-item__user-name {
     color: $color-palette-gray-800;
     font-size: $font-size-md;
 }
 
-// State chips
-.timeline-item__state {
+.dot-history-timeline-item__state {
     padding: $spacing-1 $spacing-2;
     border-radius: $border-radius-sm;
     font-size: $font-size-xs;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+
+    &--working {
+        background: $color-palette-yellow-op-10;
+        color: $color-palette-yellow;
+    }
+
+    &--live {
+        background: $color-palette-green-op-10;
+        color: $color-palette-green;
+    }
+
+    &--variant {
+        background: $color-palette-gray-200;
+        color: $color-palette-gray-700;
+    }
 }
 
-.timeline-item__state--working {
-    background: $color-palette-yellow-op-10;
-    color: $color-palette-yellow;
-}
-
-.timeline-item__state--live {
-    background: $color-palette-green-op-10;
-    color: $color-palette-green;
-}
-
-.timeline-item__state--variant {
-    background: $color-palette-gray-200;
-    color: $color-palette-gray-700;
-}
-
-// Tooltip styles
-::ng-deep .timeline-item__tooltip.p-tooltip {
+::ng-deep .dot-history-timeline-item__tooltip.p-tooltip {
     &.p-tooltip-bottom {
         transform: translateX(-55px);
-    }
 
-    .p-tooltip-text {
-        background: $color-palette-primary-200;
-        padding: 0;
-        min-width: 220px;
-        max-width: 220px;
-
-        .timeline-item__overlay-content {
-            padding: $spacing-1;
-            display: flex;
-            flex-direction: column;
-            gap: $spacing-0;
-        }
-
-        .timeline-item__overlay-title {
-            margin: 0;
-            color: $color-palette-gray-800;
-            font-size: $font-size-sm;
-            font-weight: $font-weight-bold;
-            word-wrap: break-word;
-        }
-
-        .timeline-item__overlay-list {
-            padding-left: $spacing-3;
-            margin: 0;
-
-            li {
-                color: $color-palette-gray-700;
-            }
-        }
-    }
-
-    &.p-tooltip-bottom {
         .p-tooltip-arrow {
             border-bottom-color: $color-palette-primary-200;
             border-top-color: transparent;
@@ -219,5 +173,36 @@
             border-right-color: transparent;
             left: 20px;
         }
+    }
+
+    .p-tooltip-text {
+        background: $color-palette-primary-200;
+        padding: 0;
+        min-width: 220px;
+        max-width: 220px;
+    }
+}
+
+.dot-history-timeline-item__overlay-content {
+    padding: $spacing-1;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-0;
+}
+
+.dot-history-timeline-item__overlay-title {
+    margin: 0;
+    color: $color-palette-gray-800;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    word-wrap: break-word;
+}
+
+.dot-history-timeline-item__overlay-list {
+    padding-left: $spacing-3;
+    margin: 0;
+
+    li {
+        color: $color-palette-gray-700;
     }
 }

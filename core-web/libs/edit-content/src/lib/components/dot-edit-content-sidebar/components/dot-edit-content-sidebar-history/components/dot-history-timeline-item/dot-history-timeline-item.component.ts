@@ -62,9 +62,10 @@ export class DotHistoryTimelineItemComponent {
     actionTriggered = output<DotHistoryTimelineItemAction>();
 
     /**
-     * Cached translations map for all labels used in the component
+     * Computed signal for cached translations map
+     * Ensures reactive updates when language changes
      */
-    private readonly labels = computed(() => ({
+    private readonly $labels = computed(() => ({
         preview: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.preview'),
         restore: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.restore'),
         compare: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.compare'),
@@ -72,12 +73,12 @@ export class DotHistoryTimelineItemComponent {
     }));
 
     /**
-     * Gets menu items for version actions
-     * @param item - The version item to create menu for
-     * @returns Array of menu items with their respective commands
+     * Computed signal that generates menu items for version actions
+     * Uses reactive approach with computed signal for better performance
      */
-    getVersionMenuItems(item: DotCMSContentletVersion) {
-        const labels = this.labels();
+    readonly $menuItems = computed(() => {
+        const labels = this.$labels();
+        const item = this.$item();
 
         return [
             {
@@ -117,23 +118,21 @@ export class DotHistoryTimelineItemComponent {
                     })
             }
         ];
-    }
+    });
 
     /**
-     * Gets the timeline marker CSS class based on the content status
+     * Computed signal that determines the timeline marker CSS class based on content status
+     * Uses reactive approach for better performance and consistency
      */
-    getTimelineMarkerClass(item: DotCMSContentletVersion | undefined): string {
-        // Safety check for undefined item
-        if (!item) {
-            return '';
-        }
+    readonly $timelineMarkerClass = computed(() => {
+        const item = this.$item();
 
         if (item.live) {
-            return 'timeline-item__marker--live';
+            return 'dot-history-timeline-item__marker--live';
         } else if (item.working) {
-            return 'timeline-item__marker--draft';
+            return 'dot-history-timeline-item__marker--draft';
         }
 
         return '';
-    }
+    });
 }
