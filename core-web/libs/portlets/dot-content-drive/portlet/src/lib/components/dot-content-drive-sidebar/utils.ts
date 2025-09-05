@@ -70,6 +70,7 @@ export const createTreeNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNo
     return node;
 };
 
+// FUNCTION GENERATE BY CHATGPT
 export const buildTreeFromHierarchicalFolders = (
     folderHierarchyLevels: DotFolder[][]
 ): TreeNodeItem[] => {
@@ -133,4 +134,48 @@ export const buildTreeFromHierarchicalFolders = (
 
     // Return root nodes (nodes that were never marked as children)
     return [...nodeRegistry.values()].filter((node) => !childNodeKeys.has(node.key));
+};
+
+// FUNCTION GENERATE BY ME
+// SHOW THIS FUNCTION TO CHATGPT TO DISCUSS APPROACHES
+export const buildTreeFolderNodes = (
+    folderHierarchyLevels: DotFolder[][],
+    targetPath: string
+): { rootNodes: TreeNodeItem[]; selectedNode?: TreeNodeItem } => {
+    if (folderHierarchyLevels.length === 0) return { rootNodes: [], selectedNode: ALL_FOLDER };
+
+    const rootNodes: TreeNodeItem[] = [];
+    const expectedPaths = generateAllParentPaths(targetPath);
+    const parentsByLevel: Record<number, TreeNodeItem> = {};
+
+    folderHierarchyLevels.forEach((levelFolders, levelIndex) => {
+        const [, ...folders] = levelFolders; // Skip the parent placeholder
+        const parentNode = parentsByLevel[levelIndex];
+
+        folders.forEach((folder) => {
+            const node = createTreeNode(folder);
+            const isAParentPath = expectedPaths[levelIndex] === node.data.path;
+
+            if (levelIndex === 0) {
+                rootNodes.push(node);
+            } else if (parentNode) {
+                parentNode.children = parentNode.children || [];
+                parentNode.children.push(node);
+            }
+
+            if (isAParentPath) {
+                parentsByLevel[levelIndex + 1] = node;
+                node.children = [];
+                node.expanded = true;
+            }
+        });
+    });
+
+    // Last level parent is the selected node
+    const selectedNode = parentsByLevel[folderHierarchyLevels.length - 1] || ALL_FOLDER;
+
+    return {
+        rootNodes,
+        selectedNode
+    };
 };

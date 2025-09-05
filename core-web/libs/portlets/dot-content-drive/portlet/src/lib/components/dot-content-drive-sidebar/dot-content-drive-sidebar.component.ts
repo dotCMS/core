@@ -19,9 +19,9 @@ import { DotTreeFolderComponent } from '@dotcms/ui';
 
 import {
     ALL_FOLDER,
-    buildTreeFromHierarchicalFolders,
     createTreeNode,
     generateAllParentPaths,
+    buildTreeFolderNodes,
     TreeNodeItem
 } from './utils';
 
@@ -48,10 +48,13 @@ export class DotContentDriveSidebarComponent {
         if (!currentSite) {
             return;
         }
-        const path = untracked(() => `${currentSite.hostname}/${this.#store.path()}`);
+        const URLForlderPath = untracked(() => this.#store.path());
+        const fullPath = untracked(() => `${currentSite.hostname}${URLForlderPath}`);
 
-        this.getFolderHierarchyByPath(path).subscribe((folders) => {
-            this.$folders.set([ALL_FOLDER, ...buildTreeFromHierarchicalFolders(folders)]);
+        this.getFolderHierarchyByPath(fullPath).subscribe((folders) => {
+            const { rootNodes, selectedNode } = buildTreeFolderNodes(folders, URLForlderPath);
+            this.$folders.set([ALL_FOLDER, ...rootNodes]);
+            this.$selectedNode.set(selectedNode);
             this.$loading.set(false);
         });
     });
