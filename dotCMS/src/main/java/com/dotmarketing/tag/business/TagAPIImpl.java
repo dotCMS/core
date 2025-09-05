@@ -66,6 +66,12 @@ public class TagAPIImpl implements TagAPI {
         return tagFactory.getFilteredTags(tagName, hostFilter, globalTagsFilter, true, sort, start, count);
     }
 
+    @CloseDBIfOpened
+    @Override
+    public long getFilteredTagsCount(String tagName, String hostFilter, boolean globalTagsFilter) throws DotDataException {
+        return tagFactory.getFilteredTagsCount(tagName, hostFilter, globalTagsFilter, true);
+    }
+
     @Override
     public Tag getTagAndCreate ( String name, String hostId ) throws DotDataException, DotSecurityException {
         return getTagAndCreate(name, "", hostId, false, false);
