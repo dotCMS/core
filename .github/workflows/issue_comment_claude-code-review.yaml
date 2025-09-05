@@ -21,7 +21,7 @@ on:
 jobs:
   # Interactive Claude mentions (simplified using centralized logic)
   claude-interactive:
-    uses: dotCMS/claude-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
     with:
       trigger_mode: interactive
       allowed_tools: |
