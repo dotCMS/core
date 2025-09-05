@@ -499,38 +499,62 @@ public class TagResource {
     }
 
     /**
-     * Deletes a Tag based on its ID.
+     * Deletes one or more tags based on their IDs.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagId    The ID of the Tag to delete.
+     * @param deleteRequest The request body containing the tag IDs to delete.
      *
      * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
      */
+    @Operation(
+        summary = "Delete tags",
+        description = "Deletes one or more tags by their IDs"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Tags deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid request - tagIds field is required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
-    @Path("/{tagId}")
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityBooleanView delete(@Context final HttpServletRequest request,
                                             @Context final HttpServletResponse response,
-                                            @PathParam("tagId") final String tagId) throws DotDataException {
+                                            @RequestBody(description = "Tag IDs to delete", required = true,
+                                                       content = @Content(schema = @Schema(type = "object", 
+                                                                                         description = "Object containing array of tag IDs",
+                                                                                         example = "{\"tagIds\": [\"tag-123\", \"tag-456\", \"tag-789\"]}")))
+                                            final java.util.Map<String, Object> deleteRequest) throws DotDataException {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is deleting tags by ID '%s'",user.getUserId(), tagId));
-        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
-        if (null == tag) {
 
-            final String errorMessage = Try.of(() -> LanguageUtil
-                    .get(user.getLocale(), "tag.id.not.found", tagId))
-                    .getOrElse(String.format("Tag with id %s wasn't found.",
-                            tagId)); //fallback message
-            Logger.error(TagResource.class, errorMessage);
-            throw new DoesNotExistException(errorMessage);
+        // Extract tag IDs from JSON object
+        @SuppressWarnings("unchecked")
+        final java.util.List<String> tagIds = (java.util.List<String>) deleteRequest.get("tagIds");
+
+        if (tagIds == null || tagIds.isEmpty()) {
+            throw new BadRequestException("tagIds field is required and cannot be empty");
         }
 
-        tagAPI.deleteTag(tag);
+        Logger.debug(TagResource.class, () -> String.format(
+            "User '%s' is deleting %d tag(s): %s", 
+            user.getUserId(), tagIds.size(), tagIds
+        ));
+
+        // Perform bulk delete
+        tagAPI.deleteTags(tagIds.toArray(new String[0]));
+
         return new ResponseEntityBooleanView(true);
     }
 

@@ -218,6 +218,12 @@ public interface TagAPI {
 	 */
 	public void deleteTag ( String tagId ) throws DotDataException;
 
+	/**
+	 * Deletes multiple tags in a single batch operation
+	 * @param tagIds tag IDs of the tags to be deleted
+	 * @throws DotDataException
+	 */
+	public void deleteTags ( String... tagIds ) throws DotDataException;
 
 	/**
 	 * Renames a tag
