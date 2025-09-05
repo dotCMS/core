@@ -1,11 +1,10 @@
 <dot-content-drive-toolbar data-testid="toolbar" />
 
-<!-- Just placeholders for now.-->
 <div
     class="tree-selector center-content"
     [class.expanded]="$treeExpanded()"
     data-testid="tree-selector">
-    Tree selector works
+    <dot-content-drive-sidebar data-testid="sidebar" />
 </div>
 <dot-folder-list-view
     [items]="$items()"

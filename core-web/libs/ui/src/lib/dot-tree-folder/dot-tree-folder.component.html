@@ -1,0 +1,39 @@
+@let loading = $loading();
+
+@if (!loading) {
+    <p-tree
+        [value]="$folders()"
+        [loading]="loading"
+        selectionMode="single"
+        loadingMode="icon"
+        class="w-full h-full"
+        [styleClass]="treeStyleClasses()"
+        loadingMode="icon"
+        [selection]="$selectedNode()"
+        [scrollHeight]="'auto'"
+        (onNodeSelect)="onNodeSelect.emit($event)"
+        (onNodeExpand)="onNodeExpand.emit($event)"
+        (onNodeCollapse)="onNodeCollapse.emit($event)">
+        <ng-template let-node pTemplate="default">
+            <span>{{ node.label | folderName }}</span>
+        </ng-template>
+        <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
+        <ng-template pTemplate="togglericon" let-expanded>
+            <span class="toggler-regular">
+                <i
+                    class="pi"
+                    [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                    style="font-size: 0.875rem; color: #8d92a5"></i>
+            </span>
+            <span class="toggler-first">
+                <i class="pi" [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
+            </span>
+        </ng-template>
+    </p-tree>
+} @else {
+    <div class="flex w-full h-full flex-column p-2">
+        @for (col of $fakeColumns(); track $index) {
+            <p-skeleton styleClass="mb-3" [width]="col" />
+        }
+    </div>
+}

@@ -1,0 +1,50 @@
+:host {
+    width: 100%;
+    height: 100%;
+    ::ng-deep {
+        .p-treenode-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}
+
+:host ::ng-deep {
+    .p-tree {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+}
+
+/* Modes for toggler icon rendering */
+:host ::ng-deep {
+    .p-tree {
+        overflow-y: auto;
+        /* First-only mode (show folder icon on first root node only) */
+        &.first-only {
+            .toggler-first {
+                display: none;
+            }
+            .p-tree-container > p-treenode:first-child {
+                .toggler-first {
+                    display: block;
+                }
+                .toggler-regular {
+                    display: none;
+                }
+            }
+        }
+
+        /* All-folder mode (show folder icon on all root nodes) */
+        &.folder-all {
+            .toggler-first {
+                display: block;
+            }
+            .toggler-regular {
+                display: none;
+            }
+        }
+    }
+}

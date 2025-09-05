@@ -155,6 +155,9 @@ export const DotContentDriveStore = signalStore(
             },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
+            },
+            setPath(path: string) {
+                patchState(store, { path });
             }
         };
     }),

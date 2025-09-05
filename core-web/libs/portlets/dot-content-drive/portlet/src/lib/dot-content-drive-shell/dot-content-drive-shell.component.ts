@@ -12,6 +12,7 @@ import { DotContentSearchService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
+import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
@@ -20,7 +21,11 @@ import { encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
+    imports: [
+        DotFolderListViewComponent,
+        DotContentDriveToolbarComponent,
+        DotContentDriveSidebarComponent
+    ],
     providers: [DotContentDriveStore],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
@@ -37,7 +42,6 @@ export class DotContentDriveShellComponent {
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
-
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
     readonly itemsEffect = effect(() => {
