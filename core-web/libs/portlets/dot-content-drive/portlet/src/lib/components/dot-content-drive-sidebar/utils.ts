@@ -136,6 +136,7 @@ export const buildTreeFromHierarchicalFolders = (
     return [...nodeRegistry.values()].filter((node) => !childNodeKeys.has(node.key));
 };
 
+// Expected the Target Path without the host at the start, only the folder path
 // FUNCTION GENERATE BY ME
 // SHOW THIS FUNCTION TO CHATGPT TO DISCUSS APPROACHES
 export const buildTreeFolderNodes = (
