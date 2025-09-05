@@ -1,7 +1,14 @@
 import { forkJoin, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    signal,
+    untracked
+} from '@angular/core';
 
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
@@ -12,6 +19,7 @@ import { DotTreeFolderComponent } from '@dotcms/ui';
 
 import {
     ALL_FOLDER,
+    buildContentDriveFolderTree,
     createTreeNode,
     DotFolder,
     generateAllParentPaths,
@@ -38,30 +46,16 @@ export class DotContentDriveSidebarComponent {
 
     readonly getSiteFoldersEffect = effect(() => {
         const currentSite = this.#globalStore.siteDetails();
+        const path = untracked(() => this.#store.path());
         if (currentSite) {
-            this.getFoldersTreeNode(`${currentSite.hostname}`).subscribe((folders) => {
-                this.$folders.set([ALL_FOLDER, ...folders.folders]);
+            this.fetchAllParentFolders(`${currentSite.hostname}/${path}`).subscribe({
+                next: (folders) => {
+                    this.$folders.set([ALL_FOLDER, ...buildContentDriveFolderTree(folders)]);
+                    this.$loading.set(false);
+                }
             });
         }
     });
-
-    constructor() {
-        this.testFetchAllParentFolders();
-    }
-
-    /**
-     * Test method to demonstrate fetchAllParentFolders functionality
-     * Uncomment the call in getSiteFoldersEffect to test
-     */
-    private testFetchAllParentFolders(): void {
-        const testPath = 'demo.dotcms.com/application/apivtl/';
-
-        this.fetchAllParentFolders(testPath).subscribe({
-            next: (_allFolders) => {
-                // console.log(_allFolders);
-            }
-        });
-    }
 
     /**
      * Handles node selection events
