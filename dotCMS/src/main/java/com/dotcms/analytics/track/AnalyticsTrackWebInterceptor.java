@@ -44,8 +44,8 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private final AtomicBoolean isTurnedOn;
     private final Lazy<WebEventsCollectorServiceFactory> webEventsCollectorServiceFactory;
 
-    private static final String AUTO_INJECT_LIB_WEB_PATH = "/s/ca-lib.js";
-    private static final String AUTO_INJECT_LIB_CLASS_PATH = "/ca/ca-lib.js";
+    private static final String AUTO_INJECT_LIB_WEB_PATH = "/ext/analytics/ca.min.js";
+    private static final String AUTO_INJECT_LIB_CLASS_PATH = "/ext/analytics/ca.min.js";
     private final Lazy<String> caLib;
 
     public AnalyticsTrackWebInterceptor() {
@@ -139,7 +139,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
     private void injectCALib(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        Logger.debug(this, () -> "intercept, Matched: ca-lib.js request: " + request.getRequestURI());
+        Logger.debug(this, () -> "intercept, Matched: ca.min.js request: " + request.getRequestURI());
         response.addHeader(CONTENT_TYPE, "application/javascript; charset=utf-8");
         response.addHeader("access-control-allow-credentials", "true");
         response.addHeader("access-control-allow-headers",

@@ -51,3 +51,8 @@ export const USER_ID_KEY = 'dot_analytics_user_id';
  * - visibilitychange: Handled separately to detect tab changes
  */
 export const ACTIVITY_EVENTS = ['click'] as const;
+
+/**
+ * The name of the analytics minified script.
+ */
+export const ANALYTICS_MINIFIED_SCRIPT_NAME = 'ca.min.js';

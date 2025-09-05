@@ -5,7 +5,7 @@ import { getUVEState } from '@dotcms/uve';
 import {
     DotCMSAnalytics,
     DotCMSAnalyticsConfig
-} from '../../dotAnalytics/shared/dot-content-analytics.model';
+} from '../../core/shared/dot-content-analytics.model';
 import { initializeAnalytics } from '../internal';
 
 /**
