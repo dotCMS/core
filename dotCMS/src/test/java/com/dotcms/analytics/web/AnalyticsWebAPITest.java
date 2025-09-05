@@ -10,6 +10,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -50,7 +51,7 @@ public class AnalyticsWebAPITest {
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
 
         Assert.assertTrue(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
@@ -78,7 +79,7 @@ public class AnalyticsWebAPITest {
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
 
         Assert.assertFalse(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
@@ -105,7 +106,7 @@ public class AnalyticsWebAPITest {
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
 
         Assert.assertFalse(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
@@ -113,7 +114,10 @@ public class AnalyticsWebAPITest {
     /**
      * Method to test: {@link com.dotcms.analytics.web.AnalyticsWebAPIImpl#getCode(Host, HttpServletRequest)}
      * Given Scenario: The FF is on and no app secrets are configured, fallback analytics key is provided
-     * ExpectedResult: JavaScript code is generated with fallback analytics key and debug/auto-page-view attributes
+     * ExpectedResult: Returns processed HTML with placeholders replaced:
+     *   - ${site_auth} -> analytics key
+     *   - ${debug} -> "false" (default)
+     *   - ${auto_page_view} -> "true" (default)
      */
     @Test
     public void test_get_code() throws DotDataException, DotSecurityException {
@@ -140,6 +144,49 @@ public class AnalyticsWebAPITest {
 
         final Optional<String> codeOpt = analyticsWebAPI.getCode(host, request);
         Assert.assertTrue(codeOpt.isPresent());
-        Assert.assertEquals("<script src=\"/s/ca-lib.js\" data-analytics-key=\"12345678\"  data-analytics-debug data-analytics-auto-page-view></script>", codeOpt.get().trim());
+        Assert.assertEquals("<script src=\"/ext/analytics/ca.min.js\" data-analytics-auth=\"12345678\"  data-analytics-debug=\"false\" data-analytics-auto-page-view=\"true\" ></script>", codeOpt.get().trim());
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.analytics.web.AnalyticsWebAPIImpl#getCode(Host, HttpServletRequest)}
+     * Given Scenario: Verify all placeholders are correctly replaced
+     * ExpectedResult: Generated code contains correct values for all placeholders
+     */
+    @Test
+    public void test_get_code_placeholders_replacement() throws DotDataException, DotSecurityException {
+        final AtomicBoolean isAutoInjectTurnedOn = new AtomicBoolean(true);
+        final HostWebAPI hostWebAPI = Mockito.mock(HostWebAPI.class);
+        final AppsAPI appsAPI = Mockito.mock(AppsAPI.class);
+        final User systemUser = Mockito.mock(User.class);
+        final Host host = Mockito.mock(Host.class);
+        final Supplier<User> systemUserSupplier = () -> systemUser;
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final String testAnalyticsKey = "test-site-key-abc123";
+
+        Mockito.when(request.getScheme()).thenReturn("https");
+        Mockito.when(request.getLocalName()).thenReturn("localhost");
+        Mockito.when(request.getLocalPort()).thenReturn(8090);
+        Mockito.when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(host);
+
+        final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
+                isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
+                currentHost -> testAnalyticsKey);
+
+        final Optional<String> codeOpt = analyticsWebAPI.getCode(host, request);
+
+        Assert.assertTrue("Code should be present", codeOpt.isPresent());
+
+        final String generatedCode = codeOpt.get().trim();
+
+        // Verify all placeholders were replaced
+        Assert.assertFalse("Should not contain ${site_auth} placeholder", generatedCode.contains("${site_auth}"));
+        Assert.assertFalse("Should not contain ${debug} placeholder", generatedCode.contains("${debug}"));
+        Assert.assertFalse("Should not contain ${auto_page_view} placeholder", generatedCode.contains("${auto_page_view}"));
+
+        // Verify correct values
+        Assert.assertTrue("Should contain analytics auth", generatedCode.contains("data-analytics-auth=\"" + testAnalyticsKey + "\""));
+        Assert.assertTrue("Should contain debug=false", generatedCode.contains("data-analytics-debug=\"false\""));
+        Assert.assertTrue("Should contain auto-page-view=true", generatedCode.contains("data-analytics-auto-page-view=\"true\""));
+        Assert.assertTrue("Should contain correct script src", generatedCode.contains("src=\"/ext/analytics/ca.min.js\""));
     }
 }
