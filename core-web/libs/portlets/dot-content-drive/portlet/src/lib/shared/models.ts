@@ -59,6 +59,18 @@ export interface DotContentDriveInit {
 }
 
 /**
+ * The context menu data for the content drive.
+ *
+ * @export
+ * @interface DotContentDriveContextMenu
+ */
+export interface DotContentDriveContextMenu {
+    triggeredEvent: Event;
+    contentlet: DotContentDriveItem;
+    showAddToBundle: boolean;
+}
+
+/**
  * The state of the content drive.
  *
  * @export
@@ -70,6 +82,7 @@ export interface DotContentDriveState extends DotContentDriveInit {
     totalItems: number;
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
+    contextMenu?: DotContentDriveContextMenu;
 }
 
 /**

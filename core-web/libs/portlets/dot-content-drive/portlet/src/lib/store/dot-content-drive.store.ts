@@ -6,13 +6,19 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
+import { EMPTY } from 'rxjs';
 
 import { computed, effect, EffectRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { catchError, take } from 'rxjs/operators';
+
+import { DotContentSearchService } from '@dotcms/data-access';
+import { DotContentDriveItem, ESContent } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
+
+import { withContextMenu } from './features/withContextMenu';
 
 import {
     BASE_QUERY,
@@ -46,73 +52,69 @@ const initialState: DotContentDriveState = {
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite }) => {
+    withComputed(({ path, filters, currentSite, pagination, sort }) => {
         return {
-            $query: computed(() => {
-                const query = new QueryBuilder();
+            $searchParams: computed(() => ({
+                query: (() => {
+                    const query = new QueryBuilder();
+                    const baseQuery = query.raw(BASE_QUERY);
+                    let modifiedQuery = baseQuery;
 
-                const baseQuery = query.raw(BASE_QUERY);
+                    const pathValue = path();
+                    const currentSiteValue = currentSite();
+                    const filtersValue = filters();
+                    const filtersEntries = Object.entries(filtersValue ?? {});
 
-                let modifiedQuery = baseQuery;
+                    if (pathValue) {
+                        modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
+                    }
 
-                const pathValue = path();
-                const currentSiteValue = currentSite();
-                const filtersValue = filters();
-                const filtersEntries = Object.entries(filtersValue ?? {});
+                    modifiedQuery = modifiedQuery.raw(
+                        `+(conhost:${currentSiteValue?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    );
 
-                if (pathValue) {
-                    modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
-                }
+                    filtersEntries
+                        .filter(([_key, value]) => value !== undefined)
+                        .forEach(([key, value]) => {
+                            // Handle multiselectors
+                            if (Array.isArray(value)) {
+                                const orChain = value.join(' OR ');
+                                const orQuery =
+                                    value.length > 1
+                                        ? `+${key}:(${orChain})`
+                                        : `+${key}:${orChain}`;
+                                modifiedQuery = modifiedQuery.raw(orQuery);
+                                return;
+                            }
 
-                modifiedQuery = modifiedQuery.raw(
-                    `+(conhost:${currentSiteValue?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                );
+                            // Handle raw search for title
+                            if (key === 'title') {
+                                modifiedQuery = modifiedQuery.raw(
+                                    `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
+                                );
+                                value
+                                    .split(' ')
+                                    .filter((word) => word.trim().length > 0)
+                                    .forEach((word) => {
+                                        modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
+                                    });
+                                return;
+                            }
 
-                filtersEntries
-                    // Remove filters that are undefined
-                    .filter(([_key, value]) => value !== undefined)
-                    .forEach(([key, value]) => {
-                        // Handle multiselectors
-                        if (Array.isArray(value)) {
-                            // Chain with OR
-                            const orChain = value.join(' OR ');
+                            modifiedQuery = modifiedQuery.field(key).equals(value);
+                        });
 
-                            // Build the query, if the value is a single value, we don't need to wrap it in parentheses
-                            const orQuery =
-                                value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
-
-                            // Add the query to the modified query
-                            modifiedQuery = modifiedQuery.raw(orQuery);
-                            return;
-                        }
-
-                        // Handle raw search for title
-                        if (key === 'title') {
-                            // This is a indexed field, so we need to search by boosting terms https://dev.dotcms.com/docs/content-search-syntax#Boost
-                            // We search by catchall, title_dotraw boosting 5 and title boosting 15, giving more weight to the title
-                            modifiedQuery = modifiedQuery.raw(
-                                `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
-                            );
-
-                            // If the value has multiple words, we need to search for each word and boost them by 5
-                            value
-                                .split(' ')
-                                .filter((word) => word.trim().length > 0)
-                                .forEach((word) => {
-                                    modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
-                                });
-
-                            return;
-                        }
-
-                        modifiedQuery = modifiedQuery.field(key).equals(value);
-                    });
-
-                return modifiedQuery.build();
-            })
+                    return modifiedQuery.build();
+                })(),
+                pagination: pagination(),
+                sort: sort(),
+                currentSite: currentSite()
+            }))
         };
     }),
     withMethods((store) => {
+        const contentSearchService = inject(DotContentSearchService);
+
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
@@ -155,6 +157,43 @@ export const DotContentDriveStore = signalStore(
             },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
+            },
+            loadItems() {
+                const { query, pagination, sort, currentSite } = store.$searchParams();
+                const { limit, offset } = pagination;
+                const { field, order } = sort;
+
+                patchState(store, { status: DotContentDriveStatus.LOADING });
+
+                // Avoid fetching content for SYSTEM_HOST sites
+                if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                    return;
+                }
+
+                contentSearchService
+                    .get<ESContent>({
+                        query,
+                        limit,
+                        offset,
+                        sort: `score,${field} ${order}`
+                    })
+                    .pipe(
+                        take(1),
+                        catchError(() => {
+                            patchState(store, { status: DotContentDriveStatus.ERROR });
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((response) => {
+                        patchState(store, {
+                            items: response.jsonObjectView.contentlets,
+                            totalItems: response.resultsSize,
+                            status: DotContentDriveStatus.LOADED
+                        });
+                    });
+            },
+            reloadContentDrive() {
+                this.loadItems();
             }
         };
     }),
@@ -162,6 +201,7 @@ export const DotContentDriveStore = signalStore(
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
         let initEffect: EffectRef;
+        let searchEffect: EffectRef;
 
         return {
             onInit() {
@@ -180,10 +220,21 @@ export const DotContentDriveStore = signalStore(
                         isTreeExpanded: queryTreeExpanded == 'true'
                     });
                 });
+
+                /**
+                 * Effect that triggers a content reload when search parameters change.
+                 * loadItems internally uses $searchParams signal, so it will be triggered
+                 * whenever query, pagination or sort changes.
+                 */
+                searchEffect = effect(() => {
+                    store.loadItems();
+                });
             },
             onDestroy() {
                 initEffect?.destroy();
+                searchEffect?.destroy();
             }
         };
-    })
+    }),
+    withContextMenu()
 );

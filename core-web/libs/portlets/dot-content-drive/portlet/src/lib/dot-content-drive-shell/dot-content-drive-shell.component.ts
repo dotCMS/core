@@ -1,27 +1,33 @@
-import { EMPTY } from 'rxjs';
-
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LazyLoadEvent, SortEvent } from 'primeng/api';
+import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
-import { catchError, take } from 'rxjs/operators';
-
-import { DotContentSearchService } from '@dotcms/data-access';
-import { ESContent } from '@dotcms/dotcms-models';
+import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
-import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
+import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
+import { SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    imports: [DotFolderListViewComponent, DotContentDriveToolbarComponent],
-    providers: [DotContentDriveStore],
+    imports: [
+        DotFolderListViewComponent,
+        DotContentDriveToolbarComponent,
+        DotFolderListViewContextMenuComponent,
+        DotAddToBundleComponent,
+        ToastModule
+    ],
+    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -29,49 +35,17 @@ import { encodeFilters } from '../utils/functions';
 export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
-    readonly #contentSearchService = inject(DotContentSearchService);
     readonly #router = inject(Router);
     readonly #location = inject(Location);
+    readonly #navigationService = inject(DotContentDriveNavigationService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+    readonly $contextMenuData = this.#store.contextMenu;
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
-
-    readonly itemsEffect = effect(() => {
-        const query = this.#store.$query();
-        const currentSite = this.#store.currentSite();
-        const { limit, offset } = this.#store.pagination();
-        const { field, order } = this.#store.sort();
-
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
-
-        // Avoid fetching content for SYSTEM_HOST sites
-        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
-            return;
-        }
-
-        this.#contentSearchService
-            .get<ESContent>({
-                query,
-                limit,
-                offset,
-                sort: `${field} ${order}`
-            })
-            .pipe(
-                take(1),
-                catchError(() => {
-                    this.#store.setStatus(DotContentDriveStatus.ERROR);
-
-                    return EMPTY;
-                })
-            )
-            .subscribe((response) => {
-                this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
-            });
-    });
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -118,5 +92,30 @@ export class DotContentDriveShellComponent {
             field: event.field,
             order: SORT_ORDER[event.order] ?? DotContentDriveSortOrder.ASC
         });
+    }
+
+    /**
+     * Handles right-click context menu event on a content item
+     * @param event The mouse event that triggered the context menu
+     * @param contentlet The content item that was right-clicked
+     */
+    onContextMenu({ event, contentlet }: ContextMenuData) {
+        event.preventDefault();
+        this.#store.patchContextMenu({ triggeredEvent: event, contentlet });
+    }
+
+    /**
+     * Handles double click event on a content item
+     * @param contentlet The content item that was double clicked
+     */
+    onDoubleClick(contentlet: DotContentDriveItem) {
+        this.#navigationService.editContent(contentlet);
+    }
+
+    /**
+     * Cancels the "Add to Bundle" dialog by setting its visibility to false
+     */
+    cancelAddToBundle() {
+        this.#store.setShowAddToBundle(false);
     }
 }
