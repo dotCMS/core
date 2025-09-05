@@ -13,6 +13,10 @@ export class DotContentDriveNavigationService {
     readonly #router = inject(Router);
     readonly #dotContentTypeService = inject(DotContentTypeService);
 
+    /**
+     * Navigates to the appropriate editor based on the content type
+     * @param contentlet The content item to edit
+     */
     editContent(contentlet: DotContentDriveItem) {
         if (contentlet.contentType === 'htmlpageasset') {
             this.#editPage(contentlet);

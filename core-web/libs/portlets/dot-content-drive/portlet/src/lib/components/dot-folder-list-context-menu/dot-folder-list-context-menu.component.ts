@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, effect, inject, signal, viewChild } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
@@ -25,19 +24,25 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 })
 export class DotFolderListViewContextMenuComponent {
     contextMenu = viewChild<ContextMenu>('contextMenu');
+
     #dotMessageService = inject(DotMessageService);
     #workflowsActionsService = inject(DotWorkflowsActionsService);
     #workflowActionsFireService = inject(DotWorkflowActionsFireService);
     #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
-    #router = inject(Router);
     #store = inject(DotContentDriveStore);
     #navigationService = inject(DotContentDriveNavigationService);
     #messageService = inject(MessageService);
 
+    /** The menu items for the context menu. */
     $items = signal<MenuItem[]>([]);
+
+    /** The memoized menu items for the context menu.
+     * Helps to avoid fetching the menu items multiple times.
+     * */
     $memoizedMenuItems = signal<Record<string, MenuItem[]>>({});
+
+    /** The context menu data for the store. */
     $contextMenuData = this.#store.contextMenu;
-    $showAddToBundle = signal(false);
 
     /**
      * Effect that handles right-click context menu events.

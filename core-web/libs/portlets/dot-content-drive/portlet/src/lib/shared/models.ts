@@ -58,6 +58,12 @@ export interface DotContentDriveInit {
     isTreeExpanded: boolean;
 }
 
+/**
+ * The context menu data for the content drive.
+ *
+ * @export
+ * @interface DotContentDriveContextMenu
+ */
 export interface DotContentDriveContextMenu {
     triggeredEvent: Event;
     contentlet: DotContentDriveItem;

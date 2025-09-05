@@ -64,6 +64,10 @@ export class DotFolderListViewComponent {
      * Used by PrimeNG Table for pagination state management.
      */
     protected readonly $currentPageFirstRowIndex = signal<number>(0);
+
+    /**
+     * Effect that handles pagination state management
+     */
     protected readonly firstEffect = effect(() => {
         const showPagination = this.$showPagination();
         if (showPagination) {
@@ -71,24 +75,44 @@ export class DotFolderListViewComponent {
         }
     });
 
+    /**
+     * Handles right click on a content item to show context menu
+     * @param event The mouse event
+     * @param contentlet The content item that was right clicked
+     */
     onContextMenu(event: Event, contentlet: DotContentDriveItem) {
         event.preventDefault();
         this.rightClick.emit({ event, contentlet });
     }
 
+    /**
+     * Handles pagination events from the PrimeNG Table
+     * @param event The lazy load event containing pagination info
+     */
     onPage(event: LazyLoadEvent) {
         this.$currentPageFirstRowIndex.set(event.first);
         this.paginate.emit(event);
     }
 
+    /**
+     * Handles selection changes in the table and emits selected items
+     */
     onSelectionChange() {
         this.selectionChange.emit(this.selectedItems);
     }
 
+    /**
+     * Handles sort events from the PrimeNG Table
+     * @param event The sort event containing sort field and order
+     */
     onSort(event: SortEvent) {
         this.sort.emit(event);
     }
 
+    /**
+     * Handles double click on a content item
+     * @param contentlet The content item that was double clicked
+     */
     onDoubleClick(contentlet: DotContentDriveItem) {
         this.doubleClick.emit(contentlet);
     }

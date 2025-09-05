@@ -119,7 +119,10 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(DotWorkflowsActionsService),
                 mockProvider(DotWorkflowActionsFireService),
                 mockProvider(DotWorkflowEventHandlerService),
-                mockProvider(MessageService)
+                mockProvider(MessageService, {
+                    messageObserver: of({}),
+                    clearObserver: of({})
+                })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
