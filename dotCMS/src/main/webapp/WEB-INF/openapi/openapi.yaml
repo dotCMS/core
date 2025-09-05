@@ -6242,7 +6242,7 @@ paths:
         in: query
         name: type
         schema:
-          type: string
+          type: array
           enum:
           - ANY
           - CONTENT
@@ -6254,6 +6254,21 @@ paths:
           - VANITY_URL
           - KEY_VALUE
           - DOTASSET
+          items:
+            type: string
+            enum:
+            - ANY
+            - CONTENT
+            - WIDGET
+            - FORM
+            - FILEASSET
+            - HTMLPAGE
+            - PERSONA
+            - VANITY_URL
+            - KEY_VALUE
+            - DOTASSET
+          uniqueItems: true
+        style: form
       - description: Filter by site identifier.
         in: query
         name: host
