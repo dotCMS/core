@@ -93,13 +93,15 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
 							"});",
 							"",
 							"pm.test(\"Retrieve and save the Tag ID to update it later\", function () {",
 							"    const jsonData = pm.response.json();    ",
-							"    const tag = jsonData.entity['non-global-tag-v2'];",
+							"    const tags = jsonData.entity;",
+							"    const tag = tags.find(t => t.label === 'non-global-tag-v2');",
+							"    pm.expect(tag).to.not.be.undefined;",
 							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
 							"});",
 							""
@@ -144,18 +146,17 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"default-site-tag-1-v2\":{\n         \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n         \"persona\":false\n      },\n      \"global-tag-1-v2\":{\n         \"siteId\":\"SYSTEM_HOST\",\n         \"persona\":false\n      },\n      \"third-site-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"non-global-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+					"raw": "[\n   {\n      \"name\":\"default-site-tag-1-v2\",\n      \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"global-tag-1-v2\",\n      \"siteId\":\"SYSTEM_HOST\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"third-site-tag-v2\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"non-global-tag-v2\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/",
+					"raw": "{{serverURL}}/api/v2/tags",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"tags",
-						""
+						"tags"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -184,9 +185,27 @@
 							"",
 							"pm.test(\"Check that the updated Tag is being returned correctly\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData.entity);",
-							"    const tag = jsonData.entity['non-global-tag-v2-changed'];    ",
-							"    pm.expect(tag).not.eql(undefined);",
+							"    pm.expect(jsonData.entity).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.label).to.eql('non-global-tag-v2-changed');",
+							"    pm.expect(jsonData.entity.siteId).to.eql('8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"    pm.expect(jsonData.entity.id).to.eql(pm.collectionVariables.get('tagForUpdateId'));",
+							"});",
+							"",
+							"// Verify via GET request",
+							"pm.test(\"Verify tag update via GET request\", function () {",
+							"    const tagId = pm.collectionVariables.get('tagForUpdateId');",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"        method: 'GET',",
+							"        header: {",
+							"            'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"        }",
+							"    }, function (err, response) {",
+							"        pm.expect(response.code).to.eql(200);",
+							"        const tag = response.json().entity;",
+							"        pm.expect(tag.label).to.eql('non-global-tag-v2-changed');",
+							"        pm.expect(tag.siteId).to.eql('8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"    });",
 							"});",
 							""
 						],
@@ -230,10 +249,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-v2-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
+					"raw": "{\n   \"name\":\"non-global-tag-v2-changed\",\n   \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/",
+					"raw": "{{serverURL}}/api/v2/tags/{{tagForUpdateId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -241,7 +260,7 @@
 						"api",
 						"v2",
 						"tags",
-						""
+						"{{tagForUpdateId}}"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -756,12 +775,12 @@
 							"",
 							"pm.test(\"Return the expected Tag by name and save its ID\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    let size = Object.keys(jsonData.entity).length;",
-							"    pm.expect(size).to.be.greaterThan(0);",
-							"    const keys = Object.keys(jsonData.entity);",
-							"    const key = keys[0];",
-							"    const id = jsonData.entity[key].id;",
-							"    pm.collectionVariables.set(\"retrievedTagId\", id);",
+							"    pm.expect(jsonData.entity).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.id).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.label).to.equal('third-site-tag-v2');",
+							"    pm.expect(jsonData.entity.siteId).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.siteName).to.not.be.undefined;",
+							"    pm.collectionVariables.set(\"retrievedTagId\", jsonData.entity.id);",
 							"});",
 							""
 						],
@@ -848,11 +867,12 @@
 							"",
 							"pm.test(\"Return the expected Tag by ID\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    let size = Object.keys(jsonData.entity).length;",
-							"    pm.expect(size).to.be.greaterThan(0);",
-							"    const keys = Object.keys(jsonData.entity);",
-							"    const key = keys[0];",
-							"    pm.expect(key).equals(\"third-site-tag-v2\");",
+							"    pm.expect(jsonData.entity).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.id).to.equal(pm.collectionVariables.get(\"retrievedTagId\"));",
+							"    pm.expect(jsonData.entity.label).to.equal(\"third-site-tag-v2\");",
+							"    pm.expect(jsonData.entity.siteId).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.siteName).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.persona).to.be.a('boolean');",
 							"});",
 							""
 						],
@@ -918,6 +938,247 @@
 			"response": []
 		},
 		{
+			"name": "Get Tag with Site Disambiguation",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Create same tag name on different sites for disambiguation test",
+							"pm.collectionVariables.set(\"disambigTagName\", \"disambig-tag-\" + _.random(1000, 9999));",
+							"",
+							"// Create tag on default site first",
+							"pm.sendRequest({",
+							"    url: pm.variables.get(\"serverURL\") + \"/api/v2/tags\",",
+							"    method: 'POST',",
+							"    header: { ",
+							"        'Content-Type': 'application/json',",
+							"        'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin')",
+							"    },",
+							"    body: {",
+							"        mode: 'raw',",
+							"        raw: JSON.stringify([{",
+							"            name: pm.collectionVariables.get(\"disambigTagName\"),",
+							"            siteId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d'",
+							"        }])",
+							"    }",
+							"}, function (err, res) {",
+							"    pm.collectionVariables.set(\"defaultSiteTagId\", res.json().entity[0].id);",
+							"    ",
+							"    // Create same tag name on SYSTEM_HOST",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags\",",
+							"        method: 'POST',",
+							"        header: { ",
+							"            'Content-Type': 'application/json',",
+							"            'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin')",
+							"        },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify([{",
+							"                name: pm.collectionVariables.get(\"disambigTagName\"),",
+							"                siteId: 'SYSTEM_HOST'",
+							"            }])",
+							"        }",
+							"    }, function (err2, res2) {",
+							"        pm.collectionVariables.set(\"systemHostTagId\", res2.json().entity[0].id);",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Returns correct tag based on siteId disambiguation\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.id).to.equal(pm.collectionVariables.get(\"defaultSiteTagId\"));",
+							"    pm.expect(jsonData.entity.label).to.equal(pm.collectionVariables.get(\"disambigTagName\"));",
+							"    pm.expect(jsonData.entity.siteId).to.equal('8a7d5e23-da1e-420a-b4f0-471e7da8ea2d');",
+							"    pm.expect(jsonData.entity.siteName).to.equal('default');",
+							"});",
+							"",
+							"pm.test(\"Verify SYSTEM_HOST tag also works with explicit siteId\", function () {",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags/\" + pm.collectionVariables.get(\"disambigTagName\") + \"?siteId=SYSTEM_HOST\",",
+							"        method: 'GET',",
+							"        header: { 'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin') }",
+							"    }, function (err, res) {",
+							"        pm.expect(res.code).to.equal(200);",
+							"        const jsonData = res.json();",
+							"        pm.expect(jsonData.entity.id).to.equal(pm.collectionVariables.get(\"systemHostTagId\"));",
+							"        pm.expect(jsonData.entity.siteId).to.equal('SYSTEM_HOST');",
+							"        pm.expect(jsonData.entity.siteName).to.equal('System Host');",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags/{{disambigTagName}}?siteId=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags",
+						"{{disambigTagName}}"
+					],
+					"query": [
+						{
+							"key": "siteId",
+							"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+						}
+					]
+				},
+				"description": "Tests site disambiguation by creating tags with same name on different sites and retrieving specific one"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Tag - Site Context Fallback",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Create a tag on SYSTEM_HOST to test fallback behavior",
+							"pm.collectionVariables.set(\"fallbackTagName\", \"fallback-tag-\" + _.random(1000, 9999));",
+							"",
+							"pm.sendRequest({",
+							"    url: pm.variables.get(\"serverURL\") + \"/api/v2/tags\",",
+							"    method: 'POST',",
+							"    header: { ",
+							"        'Content-Type': 'application/json',",
+							"        'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin')",
+							"    },",
+							"    body: {",
+							"        mode: 'raw',",
+							"        raw: JSON.stringify([{",
+							"            name: pm.collectionVariables.get(\"fallbackTagName\"),",
+							"            siteId: 'SYSTEM_HOST'",
+							"        }])",
+							"    }",
+							"}, function (err, res) {",
+							"    pm.collectionVariables.set(\"fallbackTagId\", res.json().entity[0].id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Returns tag from SYSTEM_HOST when no siteId provided and not found on current site\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.not.be.undefined;",
+							"    pm.expect(jsonData.entity.id).to.equal(pm.collectionVariables.get(\"fallbackTagId\"));",
+							"    pm.expect(jsonData.entity.label).to.equal(pm.collectionVariables.get(\"fallbackTagName\"));",
+							"    pm.expect(jsonData.entity.siteId).to.equal('SYSTEM_HOST');",
+							"    pm.expect(jsonData.entity.siteName).to.equal('System Host');",
+							"});",
+							"",
+							"pm.test(\"Verify 404 when tag doesn't exist anywhere\", function () {",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags/nonexistent-tag-xyz-123\",",
+							"        method: 'GET',",
+							"        header: { 'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin') }",
+							"    }, function (err, res) {",
+							"        pm.expect(res.code).to.equal(404);",
+							"        const jsonData = res.json();",
+							"        pm.expect(jsonData.message).to.not.be.undefined;",
+							"        pm.expect(jsonData.message).to.include('Tag not found');",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags/{{fallbackTagName}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags",
+						"{{fallbackTagName}}"
+					]
+				},
+				"description": "Tests site context fallback - should find tag on SYSTEM_HOST when not found on current site"
+			},
+			"response": []
+		},
+		{
 			"name": "Delete a specific Tag",
 			"event": [
 				{
@@ -934,14 +1195,29 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200 OK\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"There must be no generated errors\", function () {",
+							"pm.test(\"Response body should contain boolean true\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    let errors = jsonData.errors.length;",
-							"    pm.expect(errors).to.be.eq(0);",
+							"    pm.expect(jsonData.entity).to.equal(true);",
+							"});",
+							"",
+							"// Verify deletion via GET request",
+							"pm.test(\"Verify tag deletion via GET request\", function () {",
+							"    const tagId = pm.collectionVariables.get('deleteTagCandidateId');",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"        method: 'GET',",
+							"        header: {",
+							"            'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"        }",
+							"    }, function (err, response) {",
+							"        pm.expect(response.code).to.eql(404);",
+							"        const jsonData = response.json();",
+							"        pm.expect(jsonData.errors[0].errorCode).to.eql('dotcms.api.error.not_found');",
+							"    });",
 							"});",
 							""
 						],
@@ -1025,8 +1301,8 @@
 							"",
 							"pm.test(\"The error message must be present\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    let errorMsg = jsonData.message;",
-							"    pm.expect(errorMsg).to.not.eql(undefined);",
+							"    pm.expect(jsonData.message).to.not.be.undefined;",
+							"    pm.expect(jsonData.message).to.include(\"was not found\");",
 							"});",
 							""
 						],
@@ -1262,6 +1538,756 @@
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag - Basic Success",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set(\"singleTagName\", \"single-tag-\" + _.random(1000, 9999));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Response contains created tag data in array\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
+							"    pm.expect(tag.id).to.not.be.undefined;",
+							"    pm.expect(tag.siteId).to.not.be.undefined;",
+							"    pm.expect(tag.persona).to.be.a('boolean');",
+							"    pm.expect(tag.siteName).to.not.be.undefined;",
+							"    pm.collectionVariables.set(\"createdSingleTagId\", tag.id);",
+							"});",
+							"",
+							"pm.test(\"Verify created tag by GET ID endpoint\", function () {",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags/\" + pm.collectionVariables.get(\"createdSingleTagId\"),",
+							"        method: 'GET',",
+							"        header: { 'Authorization': 'Bearer ' + pm.variables.get(\"jwt\") }",
+							"    }, function (err, res) {",
+							"        pm.expect(res.code).to.equal(200);",
+							"        const jsonData = res.json();",
+							"        const tagKey = pm.collectionVariables.get(\"singleTagName\");",
+							"        const tag = jsonData.entity;",
+							"        pm.expect(tag).to.not.be.undefined;",
+							"        pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
+							"        pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdSingleTagId\"));",
+							"        pm.expect(tag.siteName).to.not.be.undefined;",
+							"        pm.expect(tag.persona).to.be.a('boolean');",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"{{singleTagName}}\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates a single tag with basic name only"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag with Site ID",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set(\"siteTagName\", \"site-tag-\" + _.random(1000, 9999));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Tag created with correct site association in array format\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"siteTagName\"));",
+							"    // Site has tagStorage=SYSTEM_HOST, so tag is stored in SYSTEM_HOST",
+							"    pm.expect(tag.siteId).to.equal('SYSTEM_HOST');",
+							"    pm.expect(tag.siteName).to.equal('System Host');",
+							"    pm.collectionVariables.set(\"createdSiteTagId\", tag.id);",
+							"});",
+							"",
+							"pm.test(\"Verify site tag by GET ID endpoint\", function () {",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags/\" + pm.collectionVariables.get(\"createdSiteTagId\"),",
+							"        method: 'GET',",
+							"        header: { 'Authorization': 'Bearer ' + pm.variables.get(\"jwt\") }",
+							"    }, function (err, res) {",
+							"        pm.expect(res.code).to.equal(200);",
+							"        const jsonData = res.json();",
+							"        const tagKey = pm.collectionVariables.get(\"siteTagName\");",
+							"        const tag = jsonData.entity;",
+							"        pm.expect(tag).to.not.be.undefined;",
+							"        pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"siteTagName\"));",
+							"        pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdSiteTagId\"));",
+							"        pm.expect(tag.siteId).to.equal('SYSTEM_HOST');",
+							"        pm.expect(tag.siteName).to.not.be.undefined;",
+							"        pm.expect(tag.persona).to.be.a('boolean');",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"{{siteTagName}}\",\n    \"siteId\": \"{{tagsSiteId}}\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates a single tag associated with a specific site"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag with Owner ID",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set(\"ownerTagName\", \"owner-tag-\" + _.random(1000, 9999));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Tag created with owner binding in array format\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"ownerTagName\"));",
+							"    pm.expect(tag.id).to.not.be.undefined;",
+							"    pm.expect(tag.siteName).to.not.be.undefined;",
+							"    pm.collectionVariables.set(\"createdOwnerTagId\", tag.id);",
+							"});",
+							"",
+							"pm.test(\"Verify owner tag by GET ID endpoint\", function () {",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags/\" + pm.collectionVariables.get(\"createdOwnerTagId\"),",
+							"        method: 'GET',",
+							"        header: { 'Authorization': 'Bearer ' + pm.variables.get(\"jwt\") }",
+							"    }, function (err, res) {",
+							"        pm.expect(res.code).to.equal(200);",
+							"        const jsonData = res.json();",
+							"        const tagKey = pm.collectionVariables.get(\"ownerTagName\");",
+							"        const tag = jsonData.entity[tagKey];",
+							"        pm.expect(tag).to.not.be.undefined;",
+							"        pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"ownerTagName\"));",
+							"        pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdOwnerTagId\"));",
+							"        pm.expect(tag.siteName).to.not.be.undefined;",
+							"        pm.expect(tag.persona).to.be.a('boolean');",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"Verify tag appears in owner's tag list\", function () {",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags/user/dotcms.org.1\",",
+							"        method: 'GET',",
+							"        header: { 'Authorization': 'Bearer ' + pm.variables.get(\"jwt\") }",
+							"    }, function (err, res) {",
+							"        pm.expect(res.code).to.equal(200);",
+							"        const jsonData = res.json();",
+							"        const ownerTagName = pm.collectionVariables.get(\"ownerTagName\");",
+							"        const ownerTag = jsonData.entity[ownerTagName];",
+							"        pm.expect(ownerTag).to.not.be.undefined;",
+							"        pm.expect(ownerTag.id).to.equal(pm.collectionVariables.get(\"createdOwnerTagId\"));",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"{{ownerTagName}}\",\n    \"ownerId\": \"dotcms.org.1\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates a single tag with owner association"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag - Duplicate Returns Existing",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 201 Created (idempotent operation)\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Returns existing tag data in array\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
+							"    pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdSingleTagId\"));",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"{{singleTagName}}\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Attempts to create same tag again, idempotent operation returns 200 with existing tag"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag - Missing Name Error",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log(\"Missing Name Error - Status:\", pm.response.code);",
+							"console.log(\"Missing Name Error - Body:\", pm.response.text());",
+							"",
+							"pm.test(\"HTTP Status code must be 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Response contains validation error with indexed field name\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
+							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
+							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+							"    const error = jsonData[0];",
+							"    pm.expect(error.message).to.equal(\"Tag name is required\");",
+							"    pm.expect(error.fieldName).to.equal(\"name\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw", 
+					"raw": "[{}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Attempts to create tag without name field"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag - Empty Name Error",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Response contains validation error with indexed field name\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
+							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
+							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+							"    const error = jsonData[0];",
+							"    pm.expect(error.message).to.equal(\"Tag name must be between 1 and 255 characters\");",
+							"    pm.expect(error.fieldName).to.equal(\"name\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Attempts to create tag with empty string name"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag - Name with Comma Error",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log(\"Comma Error - Status:\", pm.response.code);",
+							"console.log(\"Comma Error - Body:\", pm.response.text());",
+							"",
+							"pm.test(\"HTTP Status code must be 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Response contains comma validation error with indexed field name\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
+							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
+							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+							"    const error = jsonData[0];",
+							"    pm.expect(error.message).to.equal(\"Tag name cannot contain commas\");",
+							"    pm.expect(error.fieldName).to.equal(\"name\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"tag,with,comma\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Attempts to create tag with comma in name"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag - Name Too Long Error",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Create a string longer than 255 characters",
+							"const longName = 'a'.repeat(256);",
+							"pm.collectionVariables.set('longTagName', longName);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Response contains length validation error with indexed field name\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    // BadRequestException with ErrorEntity list returns errors as direct array",
+							"    pm.expect(Array.isArray(jsonData)).to.be.true;",
+							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+							"    const error = jsonData[0];",
+							"    pm.expect(error.message).to.equal(\"Tag name must be between 1 and 255 characters\");",
+							"    pm.expect(error.fieldName).to.equal(\"name\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"{{longTagName}}\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Attempts to create tag with name longer than 255 characters"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Single Tag - Invalid Site ID",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set(\"invalidSiteTagName\", \"invalid-site-tag-\" + _.random(1000, 9999));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code is 201 Created (fallback behavior)\", function () {",
+							"    pm.expect(pm.response.code).to.equal(201);",
+							"});",
+							"",
+							"pm.test(\"Tag created with fallback to default site in array format\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.be.an('array');",
+							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity[0];",
+							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"invalidSiteTagName\"));",
+							"    pm.expect(tag.id).to.not.be.undefined;",
+							"    // Tag should be created in default site due to invalid site ID fallback",
+							"    pm.expect(tag.siteName).to.not.be.undefined;",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"name\": \"{{invalidSiteTagName}}\",\n    \"siteId\": \"invalid-site-id-12345\"\n}]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates tag with non-existent site ID (falls back to default site)"
 			},
 			"response": []
 		}

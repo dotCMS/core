@@ -310,4 +310,12 @@ public class TagsResourceHelper {
                         (restTag, restTag2) -> restTag));
     }
 
+    /**
+     * Takes a single Tag and transforms it into a RestTag representation
+     */
+    public static RestTag toRestTag(final Tag tag) {
+        final TagTransform transform = new TagTransform();
+        return transform.appToRest(tag);
+    }
+
 }

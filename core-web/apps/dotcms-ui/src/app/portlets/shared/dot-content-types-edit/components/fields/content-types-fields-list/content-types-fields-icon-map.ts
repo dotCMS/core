@@ -1,4 +1,4 @@
-import { FieldUtil } from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
 
 const COLUMN_BREAK = FieldUtil.createColumnBreak();
 

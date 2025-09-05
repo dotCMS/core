@@ -31,13 +31,6 @@ export interface DotCMSAnalyticsConfig {
      * The site key for authenticating with the Analytics service.
      */
     siteKey: string;
-
-    /**
-     * Custom redirect function handler.
-     * When provided, this function will be called instead of the default browser redirect
-     * for handling URL redirections.
-     */
-    redirectFn?: (url: string) => void;
 }
 
 /**

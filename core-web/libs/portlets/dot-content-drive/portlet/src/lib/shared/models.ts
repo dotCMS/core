@@ -101,21 +101,3 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  * @interface DotContentDriveDecodeFunction
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
-
-/**
- * The base types of the content drive.
- *
- * @export
- * @constant {Record<string, string>} BASE_TYPES
- */
-export const BASE_TYPES = {
-    content: 'CONTENT',
-    widget: 'WIDGET',
-    fileAsset: 'FILEASSET',
-    htmlPage: 'HTMLPAGE',
-    keyValue: 'KEY_VALUE',
-    vanityURL: 'VANITY_URL',
-    dotAsset: 'DOTASSET',
-    form: 'FORM',
-    persona: 'PERSONA'
-} as const;

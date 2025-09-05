@@ -4,6 +4,8 @@ import com.dotcms.ai.api.DotAIAPI;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsAPIImpl;
+import com.dotcms.analytics.attributes.CustomAttributeAPI;
+import com.dotcms.analytics.attributes.CustomAttributeAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.BayesianAPIImpl;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
@@ -315,7 +317,11 @@ public class APILocator extends Locator<APIIndex> {
 		return (StoryBlockAPI)getInstance(APIIndex.STORY_BLOCK_API);
 	}
 
-	@VisibleForTesting
+	public static CustomAttributeAPI getAnalyticsCustomAttribute() {
+		return (CustomAttributeAPI) getInstance(APIIndex.ANALYTICS_CUSTOM_ATTRIBUTE_API);
+	}
+
+    @VisibleForTesting
 	protected CompanyAPI getCompanyAPIImpl() {
 		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
 	}
@@ -1377,7 +1383,8 @@ enum APIIndex
 	SYSTEM_API,
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
-	JOB_QUEUE_MANAGER_API;
+	JOB_QUEUE_MANAGER_API,
+	ANALYTICS_CUSTOM_ATTRIBUTE_API;
 
 	Object create() {
 		switch(this) {
@@ -1472,6 +1479,7 @@ enum APIIndex
 			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: return CDIUtils.getBeanThrows(ContentAnalyticsAPI.class);
 			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBeanThrows(JobQueueManagerAPI.class);
+			case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

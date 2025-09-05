@@ -1,7 +1,8 @@
-import { DotCMSGraphQLParams, DotCMSPageRequestParams } from '@dotcms/types';
+import { DotCMSGraphQLParams } from '@dotcms/types';
 
-export const blogQuery = `
-    search(query: "+contenttype:Blog +live:true", limit: 3) {
+export const blogQuery = (limit: number) => {
+  return `
+    search(query: "+contenttype:Blog +live:true", limit: ${limit}) {
         title
         identifier
         ... on Blog {
@@ -24,25 +25,28 @@ export const blogQuery = `
         }
     }
 `;
+};
 
-export const destinationQuery = `
-    search(query: "+contenttype:Destination +live:true", limit: 3) {
-        title
-        identifier
-        ... on Destination {
-                inode
-                image {
-                fileName
-                fileAsset {
-                    versionPath
-                }
-                }
-                urlMap
-                modDate
-                url
-        }
-    }
-`;
+export const destinationQuery = (limit: number) => {
+  return `
+    search(query: "+contenttype:Destination +live:true", limit: ${limit}) {
+          title
+          identifier
+          ... on Destination {
+                  inode
+                  image {
+                  fileName
+                  fileAsset {
+                      versionPath
+                  }
+                  }
+                  urlMap
+                  modDate
+                  url
+          }
+      }
+  `;
+};
 
 export const navigationQuery = `
 DotNavigation(uri: "/", depth: 2) {
@@ -68,16 +72,31 @@ fragment NavProps on DotNavigation {
 }
 `;
 
-export const BASE_EXTRA_QUERIES: DotCMSGraphQLParams = {
+export const logoQuery = `
+    FileAssetCollection(query: "+title:logo.png") {
+        fileAsset {
+            versionPath
+        }
+    }
+`;
+
+interface BaseExtraQueriesParams {
+  limitBlogs?: number;
+  limitDestinations?: number;
+}
+
+export const buildExtraQuery = (
+  params?: BaseExtraQueriesParams,
+): DotCMSGraphQLParams => {
+  const { limitBlogs = 3, limitDestinations = 3 } = params || {};
+
+  return {
     content: {
-        logoImage: `FileAssetCollection(query: "+title:logo.png") {
-  fileAsset {
-    versionPath
-  }
-}`,
-        blogs: blogQuery,
-        destinations: destinationQuery,
-        navigation: navigationQuery
+      logoImage: logoQuery,
+      blogs: blogQuery(limitBlogs),
+      destinations: destinationQuery(limitDestinations),
+      navigation: navigationQuery,
     },
-    fragments: [fragmentNav]
+    fragments: [fragmentNav],
+  };
 };

@@ -34,8 +34,7 @@ import {
     DotCMSWorkflow,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { isEqual } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { isEqual, FieldUtil } from '@dotcms/utils';
 
 /**
  * Form component to create or edit content types

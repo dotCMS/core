@@ -2,7 +2,7 @@ import { Observable, Subject, merge, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, switchMap, take, tap } from 'rxjs/operators';
+import { map, pluck, startWith, switchMap, take, tap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -108,7 +108,7 @@ export class SiteService {
      * @memberof SiteService
      */
     get switchSite$(): Observable<Site> {
-        return this._switchSite$.asObservable();
+        return this._switchSite$.asObservable().pipe(startWith(this.selectedSite));
     }
 
     /**

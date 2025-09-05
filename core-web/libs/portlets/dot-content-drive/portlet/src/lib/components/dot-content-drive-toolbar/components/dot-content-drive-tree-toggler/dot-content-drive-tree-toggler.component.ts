@@ -1,10 +1,6 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    HostBinding,
-    HostListener,
-    inject
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject } from '@angular/core';
+
+import { ButtonDirective } from 'primeng/button';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
@@ -12,7 +8,11 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     selector: 'dot-content-drive-tree-toggler',
     templateUrl: './dot-content-drive-tree-toggler.component.html',
     styleUrl: './dot-content-drive-tree-toggler.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    hostDirectives: [ButtonDirective],
+    host: {
+        class: 'p-button-icon-only p-button-rounded p-button-text p-button-sm'
+    }
 })
 export class DotContentDriveTreeTogglerComponent {
     #store = inject(DotContentDriveStore);
@@ -20,10 +20,5 @@ export class DotContentDriveTreeTogglerComponent {
     @HostListener('click')
     toggleTree(): void {
         this.#store.setIsTreeExpanded(!this.#store.isTreeExpanded());
-    }
-
-    @HostBinding('class.active')
-    get isActive(): boolean {
-        return this.#store.isTreeExpanded();
     }
 }

@@ -21,11 +21,11 @@ import { DotContentDriveShellComponent } from './dot-content-drive-shell.compone
 
 import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
 import {
-    MOCK_BASE_TYPES,
-    mockItems,
-    mockRoute,
-    mockSearchResponse,
-    mockSites
+    MOCK_ITEMS,
+    MOCK_ROUTE,
+    MOCK_SEARCH_RESPONSE,
+    MOCK_SITES,
+    MOCK_BASE_TYPES
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -43,12 +43,12 @@ describe('DotContentDriveShellComponent', () => {
         providers: [
             GlobalStore,
             mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(mockSites[0]))
+                getCurrentSite: jest.fn().mockReturnValue(of(MOCK_SITES[0]))
             }),
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(mockSearchResponse))
+                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
-            mockProvider(ActivatedRoute, mockRoute),
+            mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
@@ -71,7 +71,7 @@ describe('DotContentDriveShellComponent', () => {
                     removeFilter: jest.fn(),
                     getFilterValue: jest.fn(),
                     $query: jest.fn(),
-                    items: jest.fn().mockReturnValue(mockItems),
+                    items: jest.fn().mockReturnValue(MOCK_ITEMS),
                     pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
                     setIsTreeExpanded: jest.fn(),
                     path: jest.fn().mockReturnValue('/test/path'),
@@ -80,7 +80,7 @@ describe('DotContentDriveShellComponent', () => {
                     sort: jest
                         .fn()
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
-                    totalItems: jest.fn().mockReturnValue(mockItems.length),
+                    totalItems: jest.fn().mockReturnValue(MOCK_ITEMS.length),
                     setItems: jest.fn(),
                     setStatus: jest.fn(),
                     setPagination: jest.fn(),
@@ -99,10 +99,17 @@ describe('DotContentDriveShellComponent', () => {
                     go: jest.fn()
                 }),
                 mockProvider(DotContentTypeService, {
-                    getContentTypes: jest.fn().mockReturnValue(of())
-                }),
-                mockProvider(DotContentTypeService, {
-                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypesWithPagination: jest.fn().mockReturnValue(
+                        of({
+                            contentTypes: MOCK_BASE_TYPES,
+                            pagination: {
+                                currentPage: MOCK_BASE_TYPES.length,
+                                totalEntries: MOCK_BASE_TYPES.length * 2,
+                                totalPages: 1
+                            }
+                        })
+                    )
                 })
             ]
         });
@@ -131,7 +138,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should fetch content when store has a non-SYSTEM_HOST site', () => {
             // Setup store mock to simulate the effect running
-            store.currentSite.mockReturnValue(mockSites[0]);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
             store.$query.mockReturnValue('+testField:testValue');
 
             spectator.detectChanges();
@@ -140,15 +147,15 @@ describe('DotContentDriveShellComponent', () => {
                 query: '+testField:testValue',
                 limit: DEFAULT_PAGINATION.limit,
                 offset: DEFAULT_PAGINATION.offset,
-                sort: 'score,modDate asc'
+                sort: 'modDate asc'
             });
 
-            expect(store.setItems).toHaveBeenCalledWith(mockItems, mockItems.length);
+            expect(store.setItems).toHaveBeenCalledWith(MOCK_ITEMS, MOCK_ITEMS.length);
         });
 
         it('should handle errors from content search service', () => {
             // Setup store mock
-            store.currentSite.mockReturnValue(mockSites[0]);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
             store.$query.mockReturnValue('test query');
 
             // Mock error from content search
@@ -164,7 +171,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should handle sorting', () => {
             // Setup store mock
-            store.currentSite.mockReturnValue(mockSites[1]);
+            store.currentSite.mockReturnValue(MOCK_SITES[1]);
             store.sort.mockReturnValue({ field: 'baseType', order: DotContentDriveSortOrder.DESC });
             store.$query.mockReturnValue('+testField:testValue');
             spectator.detectChanges();
@@ -173,13 +180,13 @@ describe('DotContentDriveShellComponent', () => {
                 query: '+testField:testValue',
                 limit: DEFAULT_PAGINATION.limit,
                 offset: DEFAULT_PAGINATION.offset,
-                sort: 'score,baseType desc'
+                sort: 'baseType desc'
             });
         });
 
         it('should handle pagination', () => {
             // Setup store mock
-            store.currentSite.mockReturnValue(mockSites[0]);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
             store.pagination.mockReturnValue({ limit: 10, offset: 0 });
             store.$query.mockReturnValue('+testField:testValue');
             spectator.detectChanges();
@@ -188,7 +195,7 @@ describe('DotContentDriveShellComponent', () => {
                 query: '+testField:testValue',
                 limit: 10,
                 offset: 0,
-                sort: 'score,modDate asc'
+                sort: 'modDate asc'
             });
         });
     });
@@ -259,7 +266,7 @@ describe('DotContentDriveShellComponent', () => {
             const folderListView = spectator.query(DotFolderListViewComponent);
 
             expect(folderListView).toBeTruthy();
-            expect(folderListView?.$items()).toEqual(mockItems);
+            expect(folderListView?.$items()).toEqual(MOCK_ITEMS);
         });
 
         it('should have a dot-content-drive-toolbar with tree toggler', () => {

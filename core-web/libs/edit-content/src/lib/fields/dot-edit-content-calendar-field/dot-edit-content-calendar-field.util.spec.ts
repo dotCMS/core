@@ -1,7 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { DotSystemTimezone } from '@dotcms/dotcms-models';
-import { createFakeTextField } from '@dotcms/utils-testing';
+import {
+    createFakeDateField,
+    createFakeDateTimeField,
+    createFakeTimeField
+} from '@dotcms/utils-testing';
 
 import {
     CALENDAR_OPTIONS_PER_TYPE,
@@ -508,10 +512,9 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
     describe('processFieldDefaultValue - Complete Default Processing', () => {
         it('should process fixed datetime defaultValue correctly for Dubai timezone', () => {
             // Given: Field with fixed datetime default
-            const field = createFakeTextField({
+            const field = createFakeDateTimeField({
                 defaultValue: '2025-08-08 15:30:00',
-                variable: 'testField',
-                fieldType: FIELD_TYPES.DATE_AND_TIME
+                variable: 'testField'
             });
 
             // When: Processing default value
@@ -531,10 +534,9 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
 
         it('should handle "now" defaultValue correctly for datetime fields', () => {
             // Given: Datetime field with "now" default
-            const field = createFakeTextField({
+            const field = createFakeDateTimeField({
                 defaultValue: 'now',
-                variable: 'testField',
-                fieldType: FIELD_TYPES.DATE_AND_TIME
+                variable: 'testField'
             });
 
             // When: Processing default value
@@ -550,10 +552,9 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
 
         it('should handle "now" defaultValue correctly for TIME fields', () => {
             // Given: TIME field with "now" default
-            const field = createFakeTextField({
+            const field = createFakeTimeField({
                 defaultValue: 'now',
-                variable: 'testField',
-                fieldType: FIELD_TYPES.TIME
+                variable: 'testField'
             });
 
             // When: Processing default value
@@ -577,7 +578,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
 
         it('should handle "now" defaultValue correctly for DATE fields', () => {
             // Given: DATE field with "now" default
-            const field = createFakeTextField({
+            const field = createFakeDateField({
                 defaultValue: 'now',
                 variable: 'testField',
                 fieldType: FIELD_TYPES.DATE
@@ -610,9 +611,8 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
 
         it('should return null for empty defaultValue', () => {
             // Given: Field without default value
-            const field = createFakeTextField({
-                variable: 'testField',
-                fieldType: FIELD_TYPES.DATE_AND_TIME
+            const field = createFakeDateTimeField({
+                variable: 'testField'
             });
 
             // When: Processing default value

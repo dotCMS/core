@@ -10,7 +10,7 @@ import {
  * @param {string} value
  * @return {*}  {string[]}
  */
-const multiSelector: DotContentDriveDecodeFunction = (value: string): string[] =>
+const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
     value
         .split(',')
         .map((v) => v.trim())
@@ -22,7 +22,7 @@ const multiSelector: DotContentDriveDecodeFunction = (value: string): string[] =
  * @param {string} value
  * @return {*}  {string}
  */
-const singleSelector: DotContentDriveDecodeFunction = (value: string): string => value.trim();
+const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
 
 /**
  * Decodes the value by the key. This is a dictionary of functions that will be used to decode the value by the key.
@@ -46,6 +46,7 @@ export const decodeByFilterKey: Record<
     contentType: multiSelector,
     title: singleSelector
 };
+
 /**
  * Decodes the filters string into a record of key-value pairs.
  *

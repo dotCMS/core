@@ -8,7 +8,8 @@ import { TestBed } from '@angular/core/testing';
 import { filter, map } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { FieldDragDropService } from './field-drag-drop.service';
 

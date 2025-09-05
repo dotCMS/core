@@ -1,4 +1,4 @@
-import { Component, OnInit, Signal, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { ErrorComponent } from '../../shared/components/error/error.component';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
@@ -10,41 +10,36 @@ import { DotCMSLayoutBodyComponent } from '@dotcms/angular';
 import { DotCMSPageAsset } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
-import { BASE_EXTRA_QUERIES } from '../../shared/queries';
+import { buildExtraQuery } from '../../shared/queries';
 import { ExtraContent } from '../../shared/contentlet.model';
-import { PageState } from '../../shared/models';
 
 type DotCMSPage = {
-    pageAsset: DotCMSPageAsset;
-    content: ExtraContent;
+  pageAsset: DotCMSPageAsset;
+  content: ExtraContent;
 };
 
 @Component({
-    selector: 'app-dotcms-page',
-    standalone: true,
-    imports: [
-        DotCMSLayoutBodyComponent,
-        HeaderComponent,
-        NavigationComponent,
-        FooterComponent,
-        ErrorComponent,
-        LoadingComponent
-    ],
-    providers: [EditablePageService],
-    templateUrl: './dot-cms-page.component.html'
+  selector: 'app-dotcms-page',
+  imports: [
+    DotCMSLayoutBodyComponent,
+    HeaderComponent,
+    NavigationComponent,
+    FooterComponent,
+    ErrorComponent,
+    LoadingComponent,
+  ],
+  providers: [EditablePageService],
+  templateUrl: './dot-cms-page.component.html',
 })
-export class DotCMSPageComponent implements OnInit {
-    readonly #editablePageService = inject<EditablePageService<DotCMSPage>>(EditablePageService);
+export class DotCMSPageComponent {
+  readonly #editablePageService =
+    inject<EditablePageService<DotCMSPage>>(EditablePageService);
 
-    $pageState!: Signal<PageState<DotCMSPage>>;
+  readonly components = DYNAMIC_COMPONENTS;
 
-    readonly components = DYNAMIC_COMPONENTS;
-
-    ngOnInit() {
-        this.$pageState = this.#editablePageService.initializePage({
-            graphql: {
-                ...BASE_EXTRA_QUERIES
-            }
-        });
-    }
+  $pageState = this.#editablePageService.initializePage({
+    graphql: {
+      ...buildExtraQuery(),
+    },
+  });
 }

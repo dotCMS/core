@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.attributes.CustomAttributeFactory;
+import com.dotcms.analytics.attributes.CustomAttributeFactoryImpl;
 import com.dotcms.analytics.content.ContentAnalyticsFactory;
 import com.dotcms.business.SystemTableFactory;
 import com.dotcms.business.SystemTableFactoryImpl;
@@ -282,6 +284,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (LanguageVariableFactory) getInstance(FactoryIndex.LANGUAGE_VARIABLE_FACTORY);
     }
 
+    public static CustomAttributeFactory getAnalyticsCustomAttributeFactory() {
+        return (CustomAttributeFactory) getInstance(FactoryIndex.ANALYTICS_CUSTOM_ATTRIBUTES_FACTORY);
+    }
+
     /**
      * Returns the Factory object that handles operations related to {@link ContentAnalyticsFactory}
      * in dotCMS.
@@ -379,7 +385,8 @@ enum FactoryIndex
     EXPERIMENTS_FACTORY,
     SYSTEM_TABLE_FACTORY,
     LANGUAGE_VARIABLE_FACTORY,
-    PORTLET_FACTORY;
+    PORTLET_FACTORY,
+    ANALYTICS_CUSTOM_ATTRIBUTES_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -423,6 +430,7 @@ enum FactoryIndex
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
             case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
             case PORTLET_FACTORY: return new PortletFactoryImpl();
+            case ANALYTICS_CUSTOM_ATTRIBUTES_FACTORY: return new CustomAttributeFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

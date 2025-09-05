@@ -194,6 +194,20 @@ describe('Utility Functions', () => {
             expect(baseTypeResult).toEqual(['singleType']);
             expect(contentTypeResult).toEqual(['Blog']);
         });
+
+        it('should handle empty values for baseType and contentType', () => {
+            const baseTypeResult = decodeByFilterKey.baseType(undefined as unknown as string);
+            const contentTypeResult = decodeByFilterKey.contentType(undefined as unknown as string);
+
+            expect(baseTypeResult).toEqual([]);
+            expect(contentTypeResult).toEqual([]);
+        });
+
+        it('should handle undefined values for title', () => {
+            const titleResult = decodeByFilterKey.title(undefined as unknown as string);
+
+            expect(titleResult).toEqual('');
+        });
     });
 
     describe('encode and decode together', () => {

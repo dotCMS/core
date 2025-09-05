@@ -48,7 +48,7 @@ import {
     DotIconModule,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -56,7 +56,6 @@ import {
     dotcmsContentTypeFieldBasicMock,
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn,
-    FieldUtil,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 

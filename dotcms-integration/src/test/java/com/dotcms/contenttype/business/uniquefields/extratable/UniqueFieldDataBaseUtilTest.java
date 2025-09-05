@@ -30,7 +30,6 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import graphql.AssertException;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -709,7 +708,6 @@ public class UniqueFieldDataBaseUtilTest {
     @SuppressWarnings("unchecked")
     //TODO: WE'RE TEMPORARILY IGNORING THIS TEST BECAUSE IT DEPENDS ON THE CODE FIX
     // FOM TICKET https://github.com/dotCMS/core/issues/32309
-    @Ignore
     public void populateUniqueFieldsTableWithVariantWithSameValues() throws SQLException, DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
 
@@ -734,6 +732,7 @@ public class UniqueFieldDataBaseUtilTest {
         final Contentlet defaultContentlet = new ContentletDataGen(contentType)
                 .host(site)
                 .languageId(language.getId())
+                .variant(VariantAPI.DEFAULT_VARIANT)
                 .setProperty(uniqueTextField.variable(), uniqueValue)
                 .nextPersisted();
 

@@ -218,12 +218,13 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     field: WYSIWYG_MOCK
                 } as unknown
             });
+            initSpectator.component.disabledWYSIWYGField.setValue([WYSIWYG_MOCK.variable]);
             initSpectator.detectChanges();
 
             // Assert: Should initialize with Monaco editor
-            expect(initSpectator.component.$contentEditorUsed()).toBe(AvailableEditor.Monaco);
-            expect(initSpectator.component.$displayedEditor()).toBe(AvailableEditor.Monaco);
-            expect(initSpectator.component.$selectedEditorDropdown()).toBe(AvailableEditor.Monaco);
+            expect(initSpectator.component.$contentEditorUsed()).toBe(AvailableEditor.TinyMCE);
+            expect(initSpectator.component.$displayedEditor()).toBe(AvailableEditor.TinyMCE);
+            expect(initSpectator.component.$selectedEditorDropdown()).toBe(AvailableEditor.TinyMCE);
         });
 
         it('should preserve other field entries when updating current field editor preference', () => {
@@ -240,6 +241,10 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     field: WYSIWYG_MOCK
                 } as unknown
             });
+            preserveSpectator.component.disabledWYSIWYGField.setValue([
+                'otherField',
+                'textAreaField@ToggleEditor'
+            ]);
             preserveSpectator.detectChanges();
 
             // Spy on the output event
@@ -271,6 +276,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
                     field: WYSIWYG_MOCK
                 } as unknown
             });
+            workflowSpectator.component.disabledWYSIWYGField.setValue([]);
             workflowSpectator.detectChanges();
 
             const disabledWYSIWYGChangeSpy = jest.fn();

@@ -17,8 +17,12 @@
 
         p-table {
             .p-datatable.empty-table {
-                table {
-                    height: 100%;
+                .p-datatable-wrapper {
+                    overflow: hidden;
+
+                    table {
+                        height: 100%;
+                    }
                 }
             }
         }
@@ -36,6 +40,7 @@
 .empty-state {
     padding: $spacing-6 $spacing-4;
     text-align: center;
+    height: 100%;
     border: none;
 
     .empty-state-content {

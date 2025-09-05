@@ -175,6 +175,28 @@ public class ImportUtil {
         "EEEE, MMMM dd, yyyy", "MM/dd/yyyy", "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa", "yyyy-MM-dd" };
 
     /**
+     * European date formats to support international date parsing
+     */
+    protected static final String[] EUROPEAN_DATE_FORMATS = new String[] {
+        "d/M/y", "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy", "dd-MM-yyyy"
+    };
+
+    /**
+     * Combined date formats including both US and European patterns for comprehensive date parsing
+     */
+    protected static final String[] ALL_DATE_FORMATS = combineArrays(IMP_DATE_FORMATS, EUROPEAN_DATE_FORMATS);
+
+    /**
+     * Helper method to combine two string arrays
+     */
+    private static String[] combineArrays(String[] array1, String[] array2) {
+        String[] combined = new String[array1.length + array2.length];
+        System.arraycopy(array1, 0, combined, 0, array1.length);
+        System.arraycopy(array2, 0, combined, array1.length, array2.length);
+        return combined;
+    }
+
+    /**
      * Date format patterns for different field types
      */
     private static final String DATE_FIELD_FORMAT_PATTERN = "yyyyMMdd";
@@ -2449,7 +2471,11 @@ public class ImportUtil {
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
-                        .context(Map.of("errorHint","404 Not Found."))
+                        .context(Map.of(
+                                "errorHint", "The server responded with an error (e.g. 4xx or 5xx). " +
+                                   "This may indicate the resource was not found, access was denied, " +
+                                   "or the server is unavailable."
+                        ))
                         .build();
             }
         }
@@ -4841,7 +4867,7 @@ public class ImportUtil {
      * @throws ParseException
      */
     private static Date parseExcelDate ( String date ) throws ParseException {
-        return DateUtil.convertDate( date, IMP_DATE_FORMATS );
+        return DateUtil.convertDate( date, false, ALL_DATE_FORMATS );
     }
 
     /**

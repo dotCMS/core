@@ -1,25 +1,25 @@
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotContentDriveItem,
     SiteEntity,
     StructureTypeView
 } from '@dotcms/dotcms-models';
+import { createFakeContentType } from '@dotcms/utils-testing';
 
-import { BASE_TYPES } from './models';
-
-export const mockItems: DotContentDriveItem[] = [
+export const MOCK_ITEMS: DotContentDriveItem[] = [
     { identifier: '123', title: 'Test Content 1' } as DotContentDriveItem,
     { identifier: '456', title: 'Test Content 2' } as DotContentDriveItem
 ];
 
-export const mockSearchResponse = {
+export const MOCK_SEARCH_RESPONSE = {
     jsonObjectView: {
-        contentlets: mockItems
+        contentlets: MOCK_ITEMS
     },
     resultsSize: 2
 };
 
-export const mockRoute = {
+export const MOCK_ROUTE = {
     snapshot: {
         queryParams: {
             path: '/test/path',
@@ -28,7 +28,7 @@ export const mockRoute = {
     }
 };
 
-export const mockSites: SiteEntity[] = [
+export const MOCK_SITES: SiteEntity[] = [
     {
         aliases: 'demo.com,www.demo.com',
         archived: false,
@@ -207,35 +207,42 @@ export const mockSites: SiteEntity[] = [
     }
 ];
 
-export const mockContentTypes: DotCMSContentType[] = [
+export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
     {
         id: '1',
         name: 'Blog',
         variable: 'blog',
-        baseType: BASE_TYPES.content,
+        baseType: DotCMSBaseTypesContentTypes.CONTENT,
         system: false
-    } as DotCMSContentType,
+    },
     {
         id: '2',
         name: 'News',
         variable: 'news',
-        baseType: BASE_TYPES.content,
+        baseType: DotCMSBaseTypesContentTypes.CONTENT,
         system: false
-    } as DotCMSContentType,
+    },
     {
         id: '3',
         name: 'Contact Form',
         variable: 'contactForm',
-        baseType: BASE_TYPES.form,
+        baseType: DotCMSBaseTypesContentTypes.FORM,
         system: false
-    } as DotCMSContentType,
+    },
     {
         id: '4',
         name: 'System Content',
         variable: 'systemContent',
-        baseType: BASE_TYPES.content,
+        baseType: DotCMSBaseTypesContentTypes.CONTENT,
         system: true
-    } as DotCMSContentType
+    }
+].map(createFakeContentType);
+
+export const SELECTED_CONTENT_TYPES: DotCMSContentType[] = [
+    MOCK_CONTENT_TYPES[0],
+    MOCK_CONTENT_TYPES[1],
+    MOCK_CONTENT_TYPES[2],
+    MOCK_CONTENT_TYPES[3]
 ];
 
 export const MOCK_BASE_TYPES: StructureTypeView[] = [

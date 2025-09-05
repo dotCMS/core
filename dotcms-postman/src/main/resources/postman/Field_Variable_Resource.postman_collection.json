@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "0fcc8781-f629-4097-aee5-03b395e820f5",
+		"_postman_id": "f623872f-cd75-4e43-b2db-4832c9fe5dfd",
 		"name": "Field Variable Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-f623872f-cd75-4e43-b2db-4832c9fe5dfd?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
@@ -541,8 +542,10 @@
 											"    pm.expect(entity.summary.failCount).to.eql(1, \"The fail count must be 1\");",
 											"    pm.expect(entity.summary.successCount).to.eql(0, \"No content should have been created\");",
 											"",
+											"    const uniqueValue = pm.collectionVariables.get(\"uniqueValue\");",
+											"    const contentTypeVarName = pm.collectionVariables.get(\"contentTypeVarName\");",
 											"    const key = Object.keys(entity.results[0]);",
-											"    pm.expect(entity.results[0][key].errorMessage).to.contain(\"has invalid/missing field(s). - Fields: [UNIQUE]: Title (title)\");",
+											"    pm.expect(entity.results[0][key].errorMessage).to.contain(\"has invalid/missing field(s). The unique value '\" + uniqueValue + \"' for the field 'title' in the Content Type '\" + contentTypeVarName + \"' already exists - Fields: [UNIQUE]: Title (title)\");",
 											"});",
 											""
 										],

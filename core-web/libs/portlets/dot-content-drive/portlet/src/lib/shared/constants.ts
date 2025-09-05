@@ -1,6 +1,6 @@
-import { SiteEntity } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, SiteEntity } from '@dotcms/dotcms-models';
 
-import { BASE_TYPES, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
+import { DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: SiteEntity = {
@@ -76,16 +76,18 @@ export const DEFAULT_PATH = undefined;
 
 // Map numbers to base types, ticket: https://github.com/dotCMS/core/issues/32991
 export const MAP_NUMBERS_TO_BASE_TYPES = {
-    1: BASE_TYPES.content,
-    2: BASE_TYPES.widget,
-    3: BASE_TYPES.form,
-    4: BASE_TYPES.fileAsset,
-    5: BASE_TYPES.htmlPage,
-    6: BASE_TYPES.persona,
-    7: BASE_TYPES.vanityURL,
-    8: BASE_TYPES.keyValue,
-    9: BASE_TYPES.dotAsset
+    1: DotCMSBaseTypesContentTypes.CONTENT,
+    2: DotCMSBaseTypesContentTypes.WIDGET,
+    3: DotCMSBaseTypesContentTypes.FORM,
+    4: DotCMSBaseTypesContentTypes.FILEASSET,
+    5: DotCMSBaseTypesContentTypes.HTMLPAGE,
+    6: DotCMSBaseTypesContentTypes.PERSONA,
+    7: DotCMSBaseTypesContentTypes.VANITY_URL,
+    8: DotCMSBaseTypesContentTypes.KEY_VALUE,
+    9: DotCMSBaseTypesContentTypes.DOTASSET
 };
 
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
+
+export const PANEL_SCROLL_HEIGHT = '25rem';

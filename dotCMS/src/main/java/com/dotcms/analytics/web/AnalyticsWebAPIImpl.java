@@ -4,6 +4,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -43,7 +44,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     public AnalyticsWebAPIImpl() {
         this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)), // injection turn on by default
                 WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
-                APILocator::systemUser, currentHost->ConfigExperimentUtil.INSTANCE.getAnalyticsKey(currentHost));
+                APILocator::systemUser, currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
     }
 
     public AnalyticsWebAPIImpl(final AtomicBoolean isAutoInjectTurnedOn,
@@ -85,11 +86,12 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
      */
     private boolean anySecrets (final Host host) {
 
-        return   Try.of(
-                        () ->
-                                this.appsAPI.getSecrets(
-                                        AnalyticsApp.ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
-                .getOrElseGet(e -> false);
+        return Try.of(() -> this.appsAPI.getSecrets(
+                        ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, true, host, systemUserSupplier.get()).isPresent())
+                .getOrElseGet(e -> {
+                    Logger.warn(this, "Error getting analytics secrets. Please check that the App Content Analytics is configured: " + e.getMessage() + " for the site: " + host.getHostname(), e);
+                    return false;
+                });
     }
 
     @Override

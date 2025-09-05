@@ -72,11 +72,11 @@ $dot-table-cell-height: 1.25rem;
             }
 
             &:first-child {
-                padding-left: $spacing-4;
+                padding-left: $spacing-3;
             }
 
             &:last-child {
-                padding-right: $spacing-4;
+                padding-right: $spacing-3;
             }
 
             .error-message {
@@ -152,7 +152,6 @@ $dot-table-cell-height: 1.25rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 0;
                 line-height: $dot-table-cell-height;
 
                 span {
@@ -174,11 +173,11 @@ $dot-table-cell-height: 1.25rem;
                 }
 
                 &:first-child {
-                    padding-left: $spacing-4;
+                    padding-left: $spacing-3;
                 }
 
                 &:last-child {
-                    padding-right: $spacing-4;
+                    padding-right: $spacing-3;
                 }
 
                 .container-thumbnail {

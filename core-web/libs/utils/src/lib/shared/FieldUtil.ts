@@ -1,10 +1,8 @@
-import { faker } from '@faker-js/faker';
-
 import {
+    DotCMSClazzes,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
-    DotCMSClazzes
+    DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
 export const EMPTY_FIELD: DotCMSContentTypeField = {
@@ -52,190 +50,6 @@ const COLUMN_BREAK_FIELD = {
     clazz: DotCMSClazzes.COLUMN_BREAK,
     name: 'Column'
 };
-
-/**
- * Create a fake category field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeCategoryField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        id: faker.string.uuid(),
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'TEXT',
-        fieldType: 'Category',
-        fieldTypeLabel: 'Category',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        hint: faker.lorem.sentence(),
-        iDate: faker.date.recent().getTime(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        values: faker.lorem.sentence(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake host folder field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeHostFolderField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        id: faker.string.uuid(),
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'SYSTEM',
-        fieldType: 'Host-Folder',
-        fieldTypeLabel: 'Site or Folder',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        hint: faker.lorem.sentence(),
-        forceIncludeInApi: faker.datatype.boolean(),
-        iDate: faker.date.recent().getTime(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake text field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeTextField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'TEXT',
-        fieldType: 'Text',
-        fieldTypeLabel: 'Text',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        hint: faker.lorem.sentence(),
-        iDate: faker.date.recent().getTime(),
-        id: faker.string.uuid(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake line divider field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeLineDividerField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
-        contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
-        dataType: 'SYSTEM',
-        fieldType: 'Line_divider',
-        fieldTypeLabel: 'Line Divider',
-        fieldVariables: [],
-        fixed: false,
-        forceIncludeInApi: faker.datatype.boolean(),
-        iDate: faker.date.recent().getTime(),
-        id: faker.string.uuid(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake relationship field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeRelationshipField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'SYSTEM',
-        fieldType: 'Relationship',
-        fieldTypeLabel: 'Relationships Field',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        forceIncludeInApi: faker.datatype.boolean(),
-        iDate: faker.date.recent().getTime(),
-        id: faker.string.uuid(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: 'Relationship Field',
-        readOnly: false,
-        relationships: {
-            cardinality: 0,
-            isParentField: true,
-            velocityVar: 'AllTypes'
-        },
-        required: false,
-        searchable: false,
-        skipRelationshipCreation: false,
-        sortOrder: 6,
-        unique: false,
-        variable: 'relationshipField',
-        hint: 'Helper label to be displayed below the field',
-        ...overrides
-    };
-}
 
 export class FieldUtil {
     /**
@@ -456,7 +270,7 @@ export class FieldUtil {
      * @memberof FieldUtil
      */
     static isColumnBreak(clazz: string): boolean {
-        return clazz === COLUMN_BREAK_FIELD.clazz;
+        return clazz === DotCMSClazzes.COLUMN_BREAK;
     }
 
     static createColumnBreak(): { clazz: string; name: string } {

@@ -3,7 +3,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DisabledEditorType,
     getCurrentEditorFromDisabled,
-    getDisabledWYSIWYGFromContentlet,
     parseDisabledEditorEntry,
     updateDisabledWYSIWYGOnEditorSwitch
 } from './field-editor-preferences.util';
@@ -179,28 +178,6 @@ describe('field-editor-preferences.util', () => {
                 );
                 expect(result).toEqual(['otherField', 'myField']);
             });
-        });
-    });
-
-    describe('getDisabledWYSIWYGFromContentlet', () => {
-        it('should return array when contentlet has disabledWYSIWYG array', () => {
-            const contentlet: Partial<DotCMSContentlet> = {
-                disabledWYSIWYG: ['field1', 'field2@ToggleEditor']
-            };
-
-            const result = getDisabledWYSIWYGFromContentlet(contentlet);
-            expect(result).toEqual(['field1', 'field2@ToggleEditor']);
-        });
-
-        it('should return empty array when contentlet is null', () => {
-            const result = getDisabledWYSIWYGFromContentlet(null);
-            expect(result).toEqual([]);
-        });
-
-        it('should return empty array when disabledWYSIWYG is not present', () => {
-            const contentlet: Partial<DotCMSContentlet> = {};
-            const result = getDisabledWYSIWYGFromContentlet(contentlet);
-            expect(result).toEqual([]);
         });
     });
 
