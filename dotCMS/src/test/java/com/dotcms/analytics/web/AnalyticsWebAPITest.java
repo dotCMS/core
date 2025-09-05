@@ -10,6 +10,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -50,7 +51,7 @@ public class AnalyticsWebAPITest {
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
 
         Assert.assertTrue(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
@@ -78,7 +79,7 @@ public class AnalyticsWebAPITest {
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
 
         Assert.assertFalse(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }
@@ -105,7 +106,7 @@ public class AnalyticsWebAPITest {
 
         final AnalyticsWebAPI analyticsWebAPI = new AnalyticsWebAPIImpl(
                 isAutoInjectTurnedOn, hostWebAPI, appsAPI, systemUserSupplier,
-                currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
 
         Assert.assertFalse(analyticsWebAPI.isAutoJsInjectionEnabled(request));
     }

@@ -16,6 +16,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -44,7 +45,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     public AnalyticsWebAPIImpl() {
         this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)), // injection turn on by default
                 WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
-                APILocator::systemUser, currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                APILocator::systemUser, currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
     }
 
     public AnalyticsWebAPIImpl(final AtomicBoolean isAutoInjectTurnedOn,
