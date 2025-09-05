@@ -12,6 +12,10 @@ import { ChangeDetectionStrategy, Component, input, TemplateRef, ViewChild } fro
  * <dot-sidebar-accordion-tab id="versions" label="Versions">
  *   <div>Tab content here</div>
  * </dot-sidebar-accordion-tab>
+ *
+ * <dot-sidebar-accordion-tab id="settings" label="Settings" [disabled]="true">
+ *   <div>Disabled tab content</div>
+ * </dot-sidebar-accordion-tab>
  * ```
  */
 @Component({
@@ -44,6 +48,12 @@ export class DotSidebarAccordionTabComponent {
      * @readonly
      */
     $label = input.required<string>({ alias: 'label' });
+
+    /**
+     * Controls whether the tab is disabled
+     * @readonly
+     */
+    $disabled = input<boolean>(false, { alias: 'disabled' });
 
     /**
      * Template reference for the tab content

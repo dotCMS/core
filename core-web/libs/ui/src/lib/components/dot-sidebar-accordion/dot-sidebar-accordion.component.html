@@ -4,11 +4,14 @@
     [class.dot-sidebar-accordion--has-active]="$hasActiveTab()"
     [class.dot-sidebar-accordion--transitioning]="$isTransitioning()">
     @for (tab of $tabs(); track tab.$id()) {
-        <div class="accordion-tab" [class.active]="isTabActive(tab.$id())">
+        <div
+            class="accordion-tab"
+            [class.active]="isTabActive(tab.$id())"
+            [class.accordion-tab--disabled]="isTabDisabled(tab.$id())">
             <div
                 class="accordion-header"
                 (click)="toggleTab(tab.$id())"
-                [class.accordion-header--disabled]="$isTransitioning()">
+                [class.accordion-header--disabled]="$isTransitioning() || isTabDisabled(tab.$id())">
                 <span>{{ tab.$label() }}</span>
                 <i class="pi pi-chevron-down"></i>
             </div>

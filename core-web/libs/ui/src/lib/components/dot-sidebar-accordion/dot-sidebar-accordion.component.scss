@@ -30,6 +30,27 @@
     display: flex;
     flex-direction: column;
 
+    // Disabled tab styles
+    &--disabled {
+        .accordion-header {
+            cursor: not-allowed;
+            opacity: 0.5;
+            pointer-events: none;
+
+            &:hover {
+                background: transparent; // No hover effect for disabled tabs
+            }
+
+            span {
+                color: $color-palette-gray-500; // Muted text color
+            }
+
+            i {
+                color: $color-palette-gray-400; // Muted icon color
+            }
+        }
+    }
+
     &.active {
         flex: 1; // Active tab takes remaining space
         min-height: 0; // Prevent content from pushing other elements
@@ -82,7 +103,9 @@
     }
 
     &--disabled {
-        cursor: default;
+        cursor: not-allowed;
+        opacity: 0.5;
+        pointer-events: none;
     }
 
     span {
@@ -133,7 +156,7 @@
 .accordion-tab {
     // Last tab should NEVER have border-bottom on content, regardless of state
     &:last-child .accordion-content {
-        border-bottom: none !important;
+        border-bottom: none;
     }
 
     // When there's an expanded tab, last collapsed header should not have border-bottom

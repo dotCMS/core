@@ -2,11 +2,9 @@ import { trigger, state, style, transition, animate, AnimationEvent } from '@ang
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     computed,
     input,
-    inject,
     output,
     signal,
     contentChildren,
@@ -36,6 +34,10 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
  *     <div>Settings content</div>
  *   </dot-sidebar-accordion-tab>
  *
+ *   <dot-sidebar-accordion-tab id="disabled-tab" label="Disabled" [disabled]="true">
+ *     <div>This tab is disabled</div>
+ *   </dot-sidebar-accordion-tab>
+ *
  * </dot-sidebar-accordion>
  * ```
  *
@@ -46,6 +48,8 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
  * - Angular Animations with PrimeNG-compatible timing
  * - Automatic height calculation with `height: '*'`
  * - Customizable animation timing and curves
+ * - Individual tab disable/enable functionality
+ * - Visual feedback for disabled tabs with muted colors
  *
  * @since 1.0.0
  */
@@ -86,8 +90,6 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
     ]
 })
 export class DotSidebarAccordionComponent implements AfterViewInit {
-    private cdr = inject(ChangeDetectorRef);
-
     /**
      * Initial active tab ID
      * @readonly
@@ -136,7 +138,6 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
         const initial = this.$initialActiveTab();
         if (initial) {
             this.$activeTab.set(initial);
-            this.cdr.detectChanges();
         }
     }
 
@@ -150,6 +151,12 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
      * @public
      */
     toggleTab(tabId: string): void {
+        // Check if tab is disabled
+        const tab = this.$tabs().find((t) => t.$id() === tabId);
+        if (tab?.$disabled()) {
+            return; // Don't allow toggle if tab is disabled
+        }
+
         // If already transitioning this specific tab, ignore
         if (
             this.animationStates.get(tabId) !== 'idle' &&
@@ -216,8 +223,6 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
             this.animationStates.set(tabId, 'idle');
             this.$isTransitioning.set(false);
         }
-
-        this.cdr.detectChanges();
     }
 
     /**
@@ -240,6 +245,18 @@ export class DotSidebarAccordionComponent implements AfterViewInit {
      */
     isTabActive(tabId: string): boolean {
         return this.$activeTab() === tabId;
+    }
+
+    /**
+     * Check if a tab is disabled
+     *
+     * @param tabId - The unique identifier of the tab to check
+     * @returns True if the tab is currently disabled
+     * @public
+     */
+    isTabDisabled(tabId: string): boolean {
+        const tab = this.$tabs().find((t) => t.$id() === tabId);
+        return tab?.$disabled() ?? false;
     }
 
     /**
