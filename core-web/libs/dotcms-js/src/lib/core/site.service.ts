@@ -190,7 +190,6 @@ export class SiteService {
             })
             .pipe(
                 take(1),
-                filter((site) => !!site),
                 tap(() => this.setCurrentSite(site)),
                 map(() => site)
             );
