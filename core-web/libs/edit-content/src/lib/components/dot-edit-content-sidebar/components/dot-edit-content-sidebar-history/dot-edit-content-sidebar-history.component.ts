@@ -7,6 +7,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
 import {
+    DotEmptyContainerComponent,
     DotMessagePipe,
     DotSidebarAccordionComponent,
     DotSidebarAccordionTabComponent
@@ -32,6 +33,7 @@ import {
         ScrollerModule,
         SkeletonModule,
         TooltipModule,
+        DotEmptyContainerComponent,
         DotMessagePipe,
         DotSidebarAccordionComponent,
         DotSidebarAccordionTabComponent,
@@ -167,8 +169,6 @@ export class DotEditContentSidebarHistoryComponent {
      * Handle accordion tab change
      */
     onAccordionTabChange(_activeTab: string | null): void {
-        // Aquí puedes agregar lógica adicional si es necesaria
-        // Por ejemplo, tracking de analytics, etc.
-        // console.log('Active tab changed to:', activeTab);
+        // TODO: Here you can add additional logic if needed
     }
 }
