@@ -112,10 +112,10 @@
     @case (fieldTypes.CUSTOM_FIELD) {
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
-            <dot-edit-content-custom-field
+            <dot-edit-content-wc
+                [formControlName]="field.variable"
                 [field]="field"
-                [inode]="contentlet?.inode"
-                [contentType]="contentTypeVariable"
+                [contentlet]="contentlet"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }

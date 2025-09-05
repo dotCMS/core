@@ -38,9 +38,11 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
 import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-tag-field/dot-edit-content-tag-field.component';
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
+import { DotEditContentWcCompoment } from '../../fields/dot-edit-content-wc/dot-edit-content-wc.compoment';
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+
 
 @Component({
     selector: 'dot-edit-content-field',
@@ -75,6 +77,7 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentFileFieldComponent,
         DotEditContentRelationshipFieldComponent,
+        DotEditContentWcCompoment,
         DividerModule,
         NgTemplateOutlet
     ]
