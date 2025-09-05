@@ -21,6 +21,7 @@
 /* Modes for toggler icon rendering */
 :host ::ng-deep {
     .p-tree {
+        overflow-y: auto;
         /* First-only mode (show folder icon on first root node only) */
         &.first-only {
             .toggler-first {

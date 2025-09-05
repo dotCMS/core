@@ -13,11 +13,13 @@ import { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
+import { FolderNamePipe } from '../pipes/dot-folder-name/dot-folder-name.pipe';
+
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 
 @Component({
     selector: 'dot-tree-folder',
-    imports: [TreeModule, SkeletonModule],
+    imports: [TreeModule, SkeletonModule, FolderNamePipe],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

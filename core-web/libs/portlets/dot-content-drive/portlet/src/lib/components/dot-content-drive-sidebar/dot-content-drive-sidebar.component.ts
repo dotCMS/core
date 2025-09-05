@@ -1,6 +1,5 @@
 import { forkJoin, Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,8 +11,9 @@ import {
 
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
-import { map, pluck, tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
+import { DotFolderService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotTreeFolderComponent } from '@dotcms/ui';
 
@@ -38,7 +38,7 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 export class DotContentDriveSidebarComponent {
     readonly #globalStore = inject(GlobalStore);
     readonly #store = inject(DotContentDriveStore);
-    readonly #http = inject(HttpClient);
+    readonly #dotFolderService = inject(DotFolderService);
 
     $folders = signal<TreeNodeItem[]>([]);
     $selectedNode = signal<TreeNodeItem>(ALL_FOLDER);
@@ -126,26 +126,9 @@ export class DotContentDriveSidebarComponent {
      */
     fetchAllParentFolders(path: string): Observable<DotFolder[][]> {
         const paths = generateAllParentPaths(path);
-
-        // Create API calls for each path, prefixed with hostname
-        const folderRequests = paths.map((path) => {
-            const fullPath = `/${path}`;
-            return this.getFolders(fullPath);
-        });
+        const folderRequests = paths.map((path) => this.#dotFolderService.getFolders(path));
 
         return forkJoin(folderRequests);
-    }
-
-    /**
-     * Fetches folders by path from the API
-     *
-     * @param {string} path - The path to fetch folders from
-     * @returns {Observable<DotFolder[]>} Observable that emits an array of folders
-     */
-    private getFolders(path: string): Observable<DotFolder[]> {
-        return this.#http
-            .post<{ entity: DotFolder[] }>('/api/v1/folder/byPath', { path })
-            .pipe(pluck('entity'));
     }
 
     /**
@@ -157,7 +140,7 @@ export class DotContentDriveSidebarComponent {
     private getFoldersTreeNode(
         path: string
     ): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
-        return this.getFolders(`//${path}`).pipe(
+        return this.#dotFolderService.getFolders(path).pipe(
             tap(() => this.$loading.set(false)),
             map((folders) => {
                 const [parent, ...childFolders] = folders;
