@@ -257,7 +257,7 @@ import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
 import com.dotmarketing.startup.runonce.Task250603UpdateIdentifierParentPathCheckTrigger;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodes;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTable;
-import com.dotmarketing.startup.runonce.Task33063RemoveContentTypesLegacyPortletFromLayouts;
+import com.dotmarketing.startup.runonce.Task250829RemoveContentTypesLegacyPortletFromLayouts;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -590,7 +590,7 @@ public class TaskLocatorUtil {
         .add(Task250604UpdateFolderInodes.class)
         .add(Task250826AddIndexesToUniqueFieldsTable.class)
         .add(Task250828CreateCustomAttributeTable.class)
-        .add(Task33063RemoveContentTypesLegacyPortletFromLayouts.class)
+        .add(Task250829RemoveContentTypesLegacyPortletFromLayouts.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
