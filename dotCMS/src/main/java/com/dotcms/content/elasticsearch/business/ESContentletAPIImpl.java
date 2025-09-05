@@ -185,6 +185,7 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import javax.annotation.Nonnull;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -1388,6 +1389,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Logger.debug(this, "search - respectFrontendRoles: " + respectFrontendRoles);
         Logger.debug(this, "search - requiredPermission: " + requiredPermission);
 
+
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<>();
         ArrayList<String> inodes = new ArrayList<>();
 
@@ -1559,10 +1561,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    static Lazy<String[]> unboundStringReplacements = Lazy.of(()->Config.getStringArrayProperty("ELASTICSEARCH_UNBOUND_STRING_REPLACEMENTS", new String[]{
+        "live:",
+        "working:",
+        " + ",
+        " : ",
+        ":[]",
+        ":{}",
+        " :?",
+        ":*"
+    }));
+
+    @VisibleForTesting
+    boolean validateESQueryProperlyBound(@Nonnull String luceneQuery)  {
+        if(!Config.getBooleanProperty("ELASTICSEARCH_PREVENT_UNBOUNDED_QUERIES", true)) {
+            return true;
+        }
+
+        String testString = luceneQuery;
+        for(String unboundStringReplacement : unboundStringReplacements.get()){
+            testString=testString.replace(unboundStringReplacement, "");
+        }
+        return (testString.contains(":") && testString.contains("+"));
+
+    }
+
     @Override
     public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset,
             String sortBy, User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
+
+
+
+        if(!validateESQueryProperlyBound(luceneQuery)){
+            String message = "Unbound lucene query: " + luceneQuery;
+            Logger.warnEveryAndDebug(this.getClass(), new DotRuntimeException(message), 10*1000);
+            PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
+            return list;
+        }
+
+
+
         boolean isAdmin = false;
         List<Role> roles = new ArrayList<>();
         if (user == null && !respectFrontendRoles) {
@@ -9963,6 +10002,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         boolean isAdmin = false;
+        if(!validateESQueryProperlyBound(luceneQuery)){
+            return 0;
+        }
         List<Role> roles = new ArrayList<>();
         if (user == null && !respectFrontendRoles) {
             throw new DotSecurityException(
