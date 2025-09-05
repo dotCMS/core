@@ -81,33 +81,33 @@ export class DotHistoryTimelineItemComponent {
         const item = this.$item();
 
         return [
-            {
-                label: labels.preview,
-                disabled: true,
-                command: () =>
-                    this.actionTriggered.emit({
-                        type: DotHistoryTimelineItemActionType.PREVIEW,
-                        item
-                    })
-            },
-            {
-                label: labels.restore,
-                disabled: true,
-                command: () =>
-                    this.actionTriggered.emit({
-                        type: DotHistoryTimelineItemActionType.RESTORE,
-                        item
-                    })
-            },
-            {
-                label: labels.compare,
-                disabled: true,
-                command: () =>
-                    this.actionTriggered.emit({
-                        type: DotHistoryTimelineItemActionType.COMPARE,
-                        item
-                    })
-            },
+            // { // TODO: enable them as is implemented.
+            //     label: labels.preview,
+            //     disabled: true,
+            //     command: () =>
+            //         this.actionTriggered.emit({
+            //             type: DotHistoryTimelineItemActionType.PREVIEW,
+            //             item
+            //         })
+            // },
+            // {
+            //     label: labels.restore,
+            //     disabled: true,
+            //     command: () =>
+            //         this.actionTriggered.emit({
+            //             type: DotHistoryTimelineItemActionType.RESTORE,
+            //             item
+            //         })
+            // },
+            // {
+            //     label: labels.compare,
+            //     disabled: true,
+            //     command: () =>
+            //         this.actionTriggered.emit({
+            //             type: DotHistoryTimelineItemActionType.COMPARE,
+            //             item
+            //         })
+            // },
             {
                 label: labels.delete,
                 disabled: true,

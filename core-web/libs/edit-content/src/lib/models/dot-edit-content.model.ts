@@ -95,19 +95,3 @@ export interface DotHistoryTimelineItemAction {
     /** The content version item the action is performed on */
     item: DotCMSContentletVersion;
 }
-
-/**
- * Interface for pagination data in history components.
- * Used to control pagination state and navigation.
- *
- * @export
- * @interface DotHistoryPagination
- */
-export interface DotHistoryPagination {
-    /** Current page number (1-based) */
-    currentPage: number;
-    /** Number of items per page */
-    perPage: number;
-    /** Total number of entries available */
-    totalEntries: number;
-}

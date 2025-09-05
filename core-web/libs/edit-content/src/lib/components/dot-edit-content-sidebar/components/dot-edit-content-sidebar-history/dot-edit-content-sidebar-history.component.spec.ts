@@ -6,7 +6,7 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 import {
     DotEmptyContainerComponent,
     DotMessagePipe,
@@ -18,8 +18,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 import { DotEditContentSidebarHistoryComponent } from './dot-edit-content-sidebar-history.component';
-
-import { DotHistoryPagination } from '../../../../models/dot-edit-content.model';
 
 describe('DotEditContentSidebarHistoryComponent', () => {
     let spectator: Spectator<DotEditContentSidebarHistoryComponent>;
@@ -61,7 +59,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         }
     ];
 
-    const mockPagination: DotHistoryPagination = {
+    const mockPagination: DotPagination = {
         currentPage: 1,
         perPage: 10,
         totalEntries: 25
@@ -191,7 +189,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             spectator.setInput('pagination', mockPagination);
             expect(spectator.component.$hasMoreItems()).toBe(true);
 
-            const completePagination: DotHistoryPagination = {
+            const completePagination: DotPagination = {
                 currentPage: 3,
                 perPage: 10,
                 totalEntries: 25

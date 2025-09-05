@@ -6,7 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client/internal';
-import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
@@ -49,13 +49,7 @@ export interface GetPersonasParams {
 
 export interface GetPersonasResponse {
     data: DotPersona[];
-    pagination: PaginationData;
-}
-
-export interface PaginationData {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
+    pagination: DotPagination;
 }
 
 @Injectable()
@@ -111,8 +105,8 @@ export class DotPageApiService {
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
-            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+        return this.http.get<{ entity: DotPersona[]; pagination: DotPagination }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: DotPagination }) => ({
                 data: res.entity,
                 pagination: res.pagination
             }))

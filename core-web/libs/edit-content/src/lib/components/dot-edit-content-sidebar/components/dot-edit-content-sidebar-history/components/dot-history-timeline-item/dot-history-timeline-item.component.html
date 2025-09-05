@@ -64,19 +64,19 @@
                 <div class="dot-history-timeline-item__time-section">
                     @if ($item().live) {
                         <p-chip
-                            styleClass="dot-history-timeline-item__state dot-history-timeline-item__state--live p-chip-sm p-chip-success"
+                            styleClass="p-chip-sm p-chip-success"
                             [label]="'edit.content.sidebar.history.published' | dm"
                             data-testid="state-live" />
                     } @else if ($item().working) {
                         <p-chip
-                            styleClass="dot-history-timeline-item__state dot-history-timeline-item__state--working p-chip-sm p-chip-warning"
+                            styleClass="p-chip-sm p-chip-warning"
                             [label]="'edit.content.sidebar.history.draft' | dm"
                             data-testid="state-draft" />
                     }
 
                     @if ($item().experimentVariant) {
                         <p-chip
-                            styleClass="dot-history-timeline-item__state dot-history-timeline-item__state--variant p-chip-sm p-chip-secondary"
+                            styleClass="p-chip-sm p-chip-secondary"
                             [label]="'edit.content.sidebar.history.variant.tag' | dm"
                             data-testid="state-variant" />
                     }

@@ -138,30 +138,6 @@
     font-size: $font-size-md;
 }
 
-.dot-history-timeline-item__state {
-    padding: $spacing-1 $spacing-2;
-    border-radius: $border-radius-sm;
-    font-size: $font-size-xs;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-
-    &--working {
-        background: $color-palette-yellow-op-10;
-        color: $color-palette-yellow;
-    }
-
-    &--live {
-        background: $color-palette-green-op-10;
-        color: $color-palette-green;
-    }
-
-    &--variant {
-        background: $color-palette-gray-200;
-        color: $color-palette-gray-700;
-    }
-}
-
 ::ng-deep .dot-history-timeline-item__tooltip.p-tooltip {
     &.p-tooltip-bottom {
         transform: translateX(-55px);

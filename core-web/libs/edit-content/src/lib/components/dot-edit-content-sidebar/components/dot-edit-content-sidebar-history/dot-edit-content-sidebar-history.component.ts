@@ -5,7 +5,7 @@ import { ScrollerModule, ScrollerLazyLoadEvent } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 import {
     DotEmptyContainerComponent,
     DotMessagePipe,
@@ -17,8 +17,7 @@ import { DotHistoryTimelineItemComponent } from './components/dot-history-timeli
 
 import {
     DotHistoryTimelineItemAction,
-    DotHistoryTimelineItemActionType,
-    DotHistoryPagination
+    DotHistoryTimelineItemActionType
 } from '../../../../models/dot-edit-content.model';
 
 /**
@@ -70,7 +69,7 @@ export class DotEditContentSidebarHistoryComponent {
      * Pagination data for history items
      * @readonly
      */
-    $pagination = input<DotHistoryPagination | null>(null, { alias: 'pagination' });
+    $pagination = input<DotPagination | null>(null, { alias: 'pagination' });
 
     /**
      * Event emitted when page changes

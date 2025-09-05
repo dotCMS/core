@@ -2,8 +2,10 @@
 
 // Host component should take full height
 :host {
-    display: block;
-    height: 100%;
+    section {
+        display: block;
+        height: 100%;
+    }
 }
 
 // Block

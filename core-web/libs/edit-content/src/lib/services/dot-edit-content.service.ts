@@ -15,7 +15,8 @@ import {
     DotCMSContentlet,
     DotCMSContentletVersion,
     DotContentletDepth,
-    DotCMSResponse
+    DotCMSResponse,
+    DotPagination
 } from '@dotcms/dotcms-models';
 
 /**
@@ -39,11 +40,7 @@ export interface PagePaginationParams {
  */
 export interface PaginatedVersionsResponse {
     entity: DotCMSContentletVersion[];
-    pagination: {
-        currentPage: number;
-        perPage: number;
-        totalEntries: number;
-    };
+    pagination: DotPagination;
 }
 
 import {
@@ -366,11 +363,7 @@ export class DotEditContentService {
             .pipe(
                 map((response) => ({
                     entity: response.entity,
-                    pagination: response.pagination as {
-                        currentPage: number;
-                        perPage: number;
-                        totalEntries: number;
-                    }
+                    pagination: response.pagination as DotPagination
                 }))
             );
     }
