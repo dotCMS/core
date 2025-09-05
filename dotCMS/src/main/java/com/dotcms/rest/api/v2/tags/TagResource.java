@@ -8,7 +8,12 @@ import com.dotcms.rest.ResponseEntityListView;
 import com.dotcms.rest.ResponseEntityRestTagListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.TagsPaginator;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.tag.RestTag;
@@ -26,6 +31,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -50,16 +56,20 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
+import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
 /**
  * This REST Endpoint provide CRUD operations for Tags in dotCMS.
@@ -71,6 +81,7 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
 public class TagResource {
 
     public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags with Inode %s were found.";
+    
     private final WebResource webResource;
     private final TagAPI tagAPI;
 	private final TagsResourceHelper helper;
@@ -97,45 +108,116 @@ public class TagResource {
     }
 
     /**
-     * Lists all Tags based on the provided criteria. If a Tag name is provided, a search-by-name
-     * (like) operation will be performed instead. The search-by-name operation can be delimited by
-     * a Site ID as well. If no matches are found against the Site ID, the search-by-name operation
-     * will be performed against the global tags.
+     * Searches and lists tags with filtering, pagination, and sorting.
+     * The filter parameter performs a case-insensitive search with wildcards on both sides
+     * (e.g., "market" matches "Marketing", "marketplace", "supermarket").
+     * When using the filter, results are ordered by match length (shortest first) to prioritize exact matches.
+     * The site parameter accepts either a site ID or site name for filtering by specific sites.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagName  The name of the Tag to search for.
-     * @param siteId   The ID of the Site where the specified Tag lives, in case it was provided.
+     * @param filter   Tag name filter (LIKE search).
+     * @param global   Include system/global tags.
+     * @param site     Filter by site (ID, name, or SYSTEM_HOST).
+     * @param page     Page number.
+     * @param perPage  Items per page.
+     * @param orderBy  Sort field.
+     * @param direction Sort direction.
      *
-     * @return The {@link ResponseEntityTagMapView} containing the list of Tags that match the
-     * provided criteria.
+     * @return The {@link ResponseEntityPaginatedDataView} containing the paginated list of Tags.
      */
+    @Operation(
+        summary = "List/Search Tags",
+        description = "Searches and lists tags with filtering, pagination, and sorting. " +
+                      "The filter parameter performs a case-insensitive search with wildcards " +
+                      "on both sides (e.g., \"market\" matches \"Marketing\", \"marketplace\", \"supermarket\"). " +
+                      "When using the filter, results are ordered by match length " +
+                      "(shortest first) to prioritize exact matches. " +
+                      "The site parameter accepts either a site ID or site name for filtering by specific sites."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Tags retrieved successfully with pagination metadata",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad Request - Invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - Authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - Insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+                    description = "Internal Server Error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView list(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                         @QueryParam("name") final String tagName,
-                                         @QueryParam("siteId") final String siteId) {
-
-        final InitDataObject initDataObject =
-                new WebResource.InitBuilder(webResource)
-                        .requiredAnonAccess(AnonymousAccess.READ)
-                        .requestAndResponse(request, response).init();
+    public ResponseEntityPaginatedDataView list(
+        @Context final HttpServletRequest request,
+        @Context final HttpServletResponse response,
+        @Parameter(description = "Tag name filter (LIKE search)", example = "market")
+        @QueryParam("filter") final String filter,
+        @Parameter(description = "Include system/global tags", example = "true")
+        @QueryParam("global") @DefaultValue("false") final Boolean global,
+        @Parameter(description = "Filter by site (ID, name, or SYSTEM_HOST)",
+                   example = "48190c8c-42c4-46af-8d1a-0cd5db894797")
+        @QueryParam("site") final String site,
+        @Parameter(description = "Page number", example = "1")
+        @QueryParam("page") @DefaultValue("1") final Integer page,
+        @Parameter(description = "Items per page", example = "25")
+        @QueryParam("per_page") final Integer perPage,
+        @Parameter(description = "Sort field", example = "tagname")
+        @QueryParam("orderBy") @DefaultValue("tagname") final String orderBy,
+        @Parameter(description = "Sort direction", example = "ASC")
+        @QueryParam("direction") @DefaultValue("ASC") final String direction
+    ) throws DotDataException {
+        // 1. Initialize and validate
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredAnonAccess(AnonymousAccess.READ)
+                .requestAndResponse(request, response)
+                .init();
 
         final User user = initDataObject.getUser();
 
-        Logger.debug(this, UtilMethods.isSet(tagName)
-                ? String.format("Listing Tag(s) '%s' from Site '%s'", tagName, siteId)
-                : "Listing ALL Tags");
+        // 2. Resolve site parameter
+        final String resolvedSiteId = helper.resolveSiteParameter(site, user, request);
 
-        final List<Tag> tags = UtilMethods.isSet(tagName)
-                ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request, user))
-                : helper.getTagsInternal();
+        Logger.debug(this, UtilMethods.isSet(filter)
+                ? String.format("Filtering Tag(s) '%s' from Site '%s', global=%s, page=%d, perPage=%s",
+                                filter, resolvedSiteId, global, page, perPage)
+                : String.format("Listing ALL Tags from Site '%s', global=%s, page=%d, perPage=%s",
+                                resolvedSiteId, global, page, perPage));
 
-        return new ResponseEntityTagMapView(toRestTagMap(tags));
+        // 3. Use PaginationUtil with TagsPaginator
+        final PaginationUtil paginationUtil = new PaginationUtil(new TagsPaginator());
+        
+        // 4. Build extra parameters for site and global filtering  
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(TagsPaginator.FILTER_PARAM, filter);
+        extraParams.put(TagsPaginator.SITE_ID_PARAM, resolvedSiteId);
+        extraParams.put(TagsPaginator.GLOBAL_PARAM, global);
+        
+        // 5. Build pagination parameters - let PaginationUtil handle validation and defaults
+        final PaginationUtilParams<RestTag, List<RestTag>> params = new PaginationUtilParams.Builder<RestTag, List<RestTag>>()
+            .withRequest(request)
+            .withResponse(response)
+            .withUser(user)
+            .withFilter(filter)
+            .withPage(page != null ? page : 1)
+            .withPerPage(perPage != null ? perPage : 0)  // Let PaginationUtil apply config default
+            .withOrderBy(orderBy)
+            .withDirection("DESC".equalsIgnoreCase(direction) ? OrderDirection.DESC : OrderDirection.ASC)
+            .withExtraParams(extraParams)
+            .build();
+
+        // 6. Return paginated response using standard pattern
+        return paginationUtil.getPageView(params);
     }
-
 
     /**
      * Creates one or more tags. Accepts a list of tag objects for unified single and bulk operations.
@@ -222,38 +304,38 @@ public class TagResource {
     @WrapInTransaction
     private List<Tag> saveTags(final HttpServletRequest request,
                                final List<TagForm> tagForms,
-                               final User user) 
+                               final User user)
             throws DotDataException, DotSecurityException {
-        
+
         final List<Tag> savedTags = new ArrayList<>();
-        
+
         for (TagForm form : tagForms) {
             // Resolve site
             final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
-            
+
             // Create or get tag
             final boolean persona = (form.getPersona() != null) ? form.getPersona() : false;
             final Tag tag = tagAPI.getTagAndCreate(
-                form.getName(), 
-                form.getOwnerId(), 
+                form.getName(),
+                form.getOwnerId(),
                 siteId,
                 persona,
                 false
             );
-            
+
             Logger.debug(TagResource.class, String.format("Saving Tag '%s'", tag.getTagName()));
-            
+
             // Bind to owner if specified
             if (UtilMethods.isSet(form.getOwnerId())) {
                 tagAPI.addUserTagInode(tag, form.getOwnerId());
-                Logger.debug(TagResource.class, 
+                Logger.debug(TagResource.class,
                     String.format("Tag '%s' is now bound to user '%s'",
                         tag.getTagName(), form.getOwnerId()));
             }
-            
+
             savedTags.add(tag);
         }
-        
+
         return savedTags;
     }
 
