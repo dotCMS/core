@@ -13,15 +13,14 @@ import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 
 
 import { map, tap } from 'rxjs/operators';
 
-import { DotFolderService } from '@dotcms/data-access';
+import { DotFolderService, DotFolder } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotTreeFolderComponent } from '@dotcms/ui';
 
 import {
     ALL_FOLDER,
-    buildContentDriveFolderTree,
+    buildTreeFromHierarchicalFolders,
     createTreeNode,
-    DotFolder,
     generateAllParentPaths,
     TreeNodeItem
 } from './utils';
@@ -46,15 +45,15 @@ export class DotContentDriveSidebarComponent {
 
     readonly getSiteFoldersEffect = effect(() => {
         const currentSite = this.#globalStore.siteDetails();
-        const path = untracked(() => this.#store.path());
-        if (currentSite) {
-            this.fetchAllParentFolders(`${currentSite.hostname}/${path}`).subscribe({
-                next: (folders) => {
-                    this.$folders.set([ALL_FOLDER, ...buildContentDriveFolderTree(folders)]);
-                    this.$loading.set(false);
-                }
-            });
+        if (!currentSite) {
+            return;
         }
+        const path = untracked(() => `${currentSite.hostname}/${this.#store.path()}`);
+
+        this.getFolderHierarchyByPath(path).subscribe((folders) => {
+            this.$folders.set([ALL_FOLDER, ...buildTreeFromHierarchicalFolders(folders)]);
+            this.$loading.set(false);
+        });
     });
 
     /**
@@ -62,7 +61,7 @@ export class DotContentDriveSidebarComponent {
      *
      * @param {TreeNodeSelectEvent} event - The tree node select event
      */
-    onNodeSelect(event: TreeNodeSelectEvent): void {
+    protected onNodeSelect(event: TreeNodeSelectEvent): void {
         const { node } = event;
         const { path } = node.data;
 
@@ -74,20 +73,18 @@ export class DotContentDriveSidebarComponent {
      *
      * @param {TreeNodeExpandEvent} event - The tree node expand event
      */
-    onNodeExpand(event: TreeNodeExpandEvent): void {
+    protected onNodeExpand(event: TreeNodeExpandEvent): void {
         const { node } = event;
         const { hostname, path } = node.data;
-
-        node.loading = true;
         const fullPath = `${hostname}${path}`;
 
         if (node.children?.length > 0) {
-            node.loading = false;
             node.expanded = true;
             return;
         }
 
-        this.getFoldersTreeNode(fullPath).subscribe(({ folders }) => {
+        node.loading = true;
+        this.getFolderNodesByPath(fullPath).subscribe(({ folders }) => {
             node.loading = false;
             node.expanded = true;
             node.children = [...folders];
@@ -101,7 +98,7 @@ export class DotContentDriveSidebarComponent {
      *
      * @param {TreeNodeCollapseEvent} event - The tree node collapse event
      */
-    onNodeCollapse(event: TreeNodeCollapseEvent): void {
+    protected onNodeCollapse(event: TreeNodeCollapseEvent): void {
         const { node } = event;
 
         if (node.key === 'ALL_FOLDER') {
@@ -124,7 +121,7 @@ export class DotContentDriveSidebarComponent {
      * @param {string} targetPath - The full path to generate parent paths from
      * @returns {Observable<DotFolder[][]>} Observable that emits an array of folder arrays (one for each path level)
      */
-    fetchAllParentFolders(path: string): Observable<DotFolder[][]> {
+    getFolderHierarchyByPath(path: string): Observable<DotFolder[][]> {
         const paths = generateAllParentPaths(path);
         const folderRequests = paths.map((path) => this.#dotFolderService.getFolders(path));
 
@@ -137,7 +134,7 @@ export class DotContentDriveSidebarComponent {
      * @param {string} path - The path to fetch folders from
      * @returns {Observable<{ parent: DotFolder; folders: TreeNodeItem[] }>}
      */
-    private getFoldersTreeNode(
+    private getFolderNodesByPath(
         path: string
     ): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
         return this.#dotFolderService.getFolders(path).pipe(

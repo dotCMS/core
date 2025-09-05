@@ -1,11 +1,6 @@
 import { TreeNode } from 'primeng/api';
 
-export interface DotFolder {
-    id: string;
-    hostName: string;
-    path: string;
-    addChildrenAllowed: boolean;
-}
+import { DotFolder } from '@dotcms/data-access';
 
 export type TreeNodeData = {
     type: 'site' | 'folder';
@@ -75,32 +70,34 @@ export const createTreeNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNo
     return node;
 };
 
-export const buildContentDriveFolderTree = (allLevels: DotFolder[][]): TreeNodeItem[] => {
-    if (allLevels.length === 0) return [];
+export const buildTreeFromHierarchicalFolders = (
+    folderHierarchyLevels: DotFolder[][]
+): TreeNodeItem[] => {
+    if (folderHierarchyLevels.length === 0) return [];
 
-    const nodeMap = new Map<string, TreeNodeItem>(); // id → node
-    const allChildren = new Set<string>(); // track which nodes are children
+    const nodeRegistry = new Map<string, TreeNodeItem>(); // id → node
+    const childNodeKeys = new Set<string>(); // track which nodes are children
 
-    // --- Helpers ---
-    const getNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNodeItem => {
-        if (!nodeMap.has(folder.id)) {
-            nodeMap.set(folder.id, createTreeNode(folder, parent));
+    // --- Helper Functions ---
+    const getOrCreateTreeNode = (folder: DotFolder, parentNode?: TreeNodeItem): TreeNodeItem => {
+        if (!nodeRegistry.has(folder.id)) {
+            nodeRegistry.set(folder.id, createTreeNode(folder, parentNode));
         }
 
-        const node = nodeMap.get(folder.id);
+        const node = nodeRegistry.get(folder.id);
         if (!node) {
             throw new Error(`Node not found for folder ${folder.id}`);
         }
         return node;
     };
 
-    const attachChildren = (parentNode: TreeNodeItem, childFolders: DotFolder[]) => {
+    const attachChildrenToParent = (parentNode: TreeNodeItem, childFolders: DotFolder[]) => {
         parentNode.children = parentNode.children ?? [];
 
-        for (const folder of childFolders) {
-            const childNode = getNode(folder, parentNode);
+        for (const childFolder of childFolders) {
+            const childNode = getOrCreateTreeNode(childFolder, parentNode);
             parentNode.children.push(childNode);
-            allChildren.add(childNode.key);
+            childNodeKeys.add(childNode.key);
         }
 
         if (parentNode.children.length > 0) {
@@ -108,61 +105,32 @@ export const buildContentDriveFolderTree = (allLevels: DotFolder[][]): TreeNodeI
         }
     };
 
-    const processFirstLevel = (level: DotFolder[]) => {
-        if (level.length <= 1) return;
+    const processRootLevel = (rootLevelFolders: DotFolder[]) => {
+        if (rootLevelFolders.length <= 1) return;
 
         // Skip the first parent placeholder
-        const [, ...rootFolders] = level;
+        const [, ...actualRootFolders] = rootLevelFolders;
 
         // Each remaining folder becomes its own root node
-        rootFolders.forEach((folder) => getNode(folder));
+        actualRootFolders.forEach((folder) => getOrCreateTreeNode(folder));
     };
 
-    const processLevel = (level: DotFolder[]) => {
-        if (level.length === 0) return;
-        const [parentFolder, ...childFolders] = level;
-        const parentNode = getNode(parentFolder);
-        attachChildren(parentNode, childFolders);
+    const processHierarchyLevel = (levelFolders: DotFolder[]) => {
+        if (levelFolders.length === 0) return;
+        const [parentFolder, ...childFolders] = levelFolders;
+        const parentNode = getOrCreateTreeNode(parentFolder);
+        attachChildrenToParent(parentNode, childFolders);
     };
 
-    // --- Build the tree ---
-    allLevels.forEach((level, index) => {
-        if (index === 0) {
-            processFirstLevel(level);
+    // --- Build the tree structure ---
+    folderHierarchyLevels.forEach((levelFolders, levelIndex) => {
+        if (levelIndex === 0) {
+            processRootLevel(levelFolders);
         } else {
-            processLevel(level);
+            processHierarchyLevel(levelFolders);
         }
     });
 
-    // Roots = nodes that were never marked as children
-    return [...nodeMap.values()].filter((node) => !allChildren.has(node.key));
+    // Return root nodes (nodes that were never marked as children)
+    return [...nodeRegistry.values()].filter((node) => !childNodeKeys.has(node.key));
 };
-
-// export const buildTreeFromFlatList = (folders: DotFolder[]): TreeNodeItem[] => {
-//     if (folders.length === 0) return [];
-
-//     const nodeMap = new Map<string, TreeNodeItem>();
-//     const roots: TreeNodeItem[] = [];
-
-//     const getNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNodeItem => {
-//         if (!nodeMap.has(folder.id)) {
-//             nodeMap.set(folder.id, createTreeNode(folder, parent));
-//         }
-//         return nodeMap.get(folder.id)!;
-//     };
-
-//     for (const folder of folders) {
-//         const parentNode = folder.parentId ? getNode({ id: folder.parentId } as DotFolder) : null;
-//         const node = getNode(folder, parentNode);
-
-//         if (parentNode) {
-//             parentNode.children = parentNode.children ?? [];
-//             parentNode.children.push(node);
-//             parentNode.expanded = true; // expand since it has children
-//         } else {
-//             roots.push(node);
-//         }
-//     }
-
-//     return roots;
-// };
