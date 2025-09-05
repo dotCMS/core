@@ -25,10 +25,12 @@ import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.liferay.util.StringPool.BLANK;
@@ -85,38 +87,45 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     @SuppressWarnings("unchecked")
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
             final OrderDirection direction, final Map<String, Object> extraParams) {
-        final List<String> contentTypeList = Try.of(() -> (List<String>) extraParams.get(TYPES_PARAMETER_NAME)).getOrNull();
+        final List<String> varNamesList = Try.of(() -> (List<String>) extraParams.get(TYPES_PARAMETER_NAME)).getOrNull();
         final List<String> siteList = Try.of(() -> (List<String>) extraParams.get(SITES_PARAMETER_NAME)).getOrNull();
-        final String typeName = Try.of(() -> extraParams.get(TYPE_PARAMETER_NAME).toString().replace("[",BLANK).replace("]", BLANK))
-                .getOrElse(BaseContentType.ANY.name());
-        final BaseContentType type = BaseContentType.getBaseContentType(typeName);
         final String orderByParam = SQLUtil.getOrderByAndDirectionSql(orderBy, direction);
+        final String siteId = Try.of(() -> extraParams.get(HOST_PARAMETER_ID).toString()).getOrElse(BLANK);
+        final List<String> baseTypeNames = getBaseTypeNames(extraParams);
+        final Set<BaseContentType> types = BaseContentType.fromNames(baseTypeNames);
         try {
-            List<ContentType> contentTypes;
+            long totalRecords = 0L;
+            final Set<ContentType> collectedContentTypes = new LinkedHashSet<>();
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
-            if (UtilMethods.isSet(contentTypeList)) {
-                final Optional<List<ContentType>> optionalTypeList =
-                        this.contentTypeAPI.find(contentTypeList, filter, offset, limit, orderByParam);
-                contentTypes = optionalTypeList.orElseGet(ArrayList::new);
-                result.setTotalResults(contentTypeList.size());
-            } else if (UtilMethods.isSet(siteList)) {
-                contentTypes = this.contentTypeAPI.search(siteList, filter, type, orderByParam,
-                        limit, offset);
-                result.setTotalResults(this.getTotalRecords(BLANK, type, siteList));
-            } else {
-                final String siteId = Try.of(() -> extraParams.get(HOST_PARAMETER_ID).toString()).getOrElse(BLANK);
-                contentTypes = this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId);
-                result.setTotalResults(this.getTotalRecords(filter, type, List.of(siteId)));
+            for (final BaseContentType type : types) {
+                if (UtilMethods.isSet(varNamesList)) {
+                    final List<ContentType> optionalTypeList =
+                            this.contentTypeAPI.find(varNamesList, filter, offset, limit,
+                                    orderByParam);
+                    collectedContentTypes.addAll(optionalTypeList);
+                    totalRecords = varNamesList.size(); //Total records is the number of varNames passed that's the total.
+                } else if (UtilMethods.isSet(siteList)) {
+                    collectedContentTypes.addAll(this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit, offset));
+                    totalRecords += this.getTotalRecords(BLANK, type, siteList);
+                } else {
+                    collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId));
+                    totalRecords += getTotalRecords(BLANK, type, List.of(siteId));
+                }
             }
-            final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
-            setEntriesAttribute(user, contentTypesTransform,
-                    this.workflowAPI.findSchemesMapForContentType(contentTypes),
-                    this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
-                    extraParams);
+                final List<ContentType> contentTypes = new ArrayList<>(collectedContentTypes);
+                final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
+                setEntriesAttribute(user, contentTypesTransform,
+                        this.workflowAPI.findSchemesMapForContentType(contentTypes),
+                        this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
+                        extraParams);
 
-            result.addAll(Objects.nonNull(extraParams) && extraParams.containsKey(COMPARATOR)?
-                    contentTypesTransform.stream().sorted((Comparator<Map<String, Object>>) extraParams.get(COMPARATOR)).collect(Collectors.toList())
-                    :contentTypesTransform);
+                result.addAll(Objects.nonNull(extraParams) && extraParams.containsKey(COMPARATOR) ?
+                        contentTypesTransform.stream()
+                                .sorted((Comparator<Map<String, Object>>) extraParams.get(
+                                        COMPARATOR)).collect(Collectors.toList())
+                        : contentTypesTransform);
+
+            result.setTotalResults(totalRecords);
             return result;
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when retrieving paginated Content Types: " +
@@ -124,6 +133,24 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             Logger.error(this, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
+    }
+
+    /**
+     * Backwards compatibility method that guarantees we can get from the extraParams map a string or list as aList
+     * @param extraParams
+     * @return
+     */
+    private static List<String> getBaseTypeNames(final Map<String, Object> extraParams) {
+        return Try.of(() -> {
+            final Object o = extraParams.get(TYPE_PARAMETER_NAME);
+            if (o instanceof String) {
+                return List.of(o.toString());
+            }
+            if (o instanceof List) {
+                return (List<String>) o;
+            }
+            return List.of(BaseContentType.ANY.name());
+        }).getOrElse(() -> List.of(BaseContentType.ANY.name()));
     }
 
     /**
