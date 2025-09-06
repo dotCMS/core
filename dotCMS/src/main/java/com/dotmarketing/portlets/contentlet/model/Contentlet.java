@@ -898,7 +898,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotStateException
 	 */
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-		return InodeUtils.isSet(this.getIdentifier())?APILocator.getVersionableAPI().isDeleted(this):false;
+    return UtilMethods.isSet(this.getIdentifier()) ? APILocator.getVersionableAPI().isDeleted(this) : false;
 	}
 
 	/**
@@ -909,7 +909,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotStateException
 	 */
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
-		return APILocator.getVersionableAPI().isLive(this);
+    return UtilMethods.isSet(this.getIdentifier()) ? APILocator.getVersionableAPI().isLive(this) : false;
 	}
 
 	/**
@@ -920,7 +920,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotStateException
 	 */
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-		return APILocator.getVersionableAPI().isLocked(this);
+    return UtilMethods.isSet(this.getIdentifier()) ? APILocator.getVersionableAPI().isLocked(this) : false;
 	}
 
 	/**
@@ -947,7 +947,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotStateException
 	 */
 	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException {
-		return InodeUtils.isSet(this.getIdentifier()) && APILocator.getVersionableAPI()
+    return UtilMethods.isSet(this.getIdentifier()) && APILocator.getVersionableAPI()
 				.isWorking(this);
 	}
 
