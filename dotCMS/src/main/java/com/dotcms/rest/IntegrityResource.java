@@ -1028,14 +1028,14 @@ public class IntegrityResource {
      */
     public static void setStatus(final HttpSession session, final String endpointId, final ProcessStatus status, final String message ) {
         session.setAttribute( "integrityCheck_" + endpointId, status );
-        // Required when the Tomcat Redis Session Manager is enabled. This forces the session to be
-        // persisted to Redis and correctly update the Integrity Checker status
-        session.setAttribute( "__dot_session_persist_now__", true);
         if ( message != null ) {
             session.setAttribute( "integrityCheck_message_" + endpointId, message );
         } else {
             session.removeAttribute( "integrityCheck_message_" + endpointId );
         }
+        // Required when the Tomcat Redis Session Manager plugin is enabled. This forces the session
+        // to be persisted to Redis and correctly update the Integrity Checker status
+        session.setAttribute( "__dot_session_persist_now__", true);
     }
 
     /**
