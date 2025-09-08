@@ -83,7 +83,7 @@ export class DotContentDriveSidebarComponent {
         const { hostname, path } = node.data;
         const fullPath = `${hostname}${path}`;
 
-        if (node.children?.length > 0) {
+        if (node.children?.length > 0 || node.leaf) {
             node.expanded = true;
             return;
         }
@@ -92,6 +92,7 @@ export class DotContentDriveSidebarComponent {
         this.getFolderNodesByPath(fullPath).subscribe(({ folders }) => {
             node.loading = false;
             node.expanded = true;
+            node.leaf = folders.length === 0;
             node.children = [...folders];
             this.$folders.set([...this.$folders()]);
         });

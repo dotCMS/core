@@ -25,12 +25,25 @@ export class DotFolderService {
      * @returns {Observable<DotFolder[]>} Observable that emits an array of folders
      */
     getFolders(path: string): Observable<DotFolder[]> {
-        // Normalize the path that the backend expects
-        const folderPath = path.startsWith('//')
-            ? path
-            : `//${path.startsWith('/') ? path.slice(1) : path}`;
+        const folderPath = this.normalizePath(path);
+
         return this.#http
             .post<{ entity: DotFolder[] }>(`/api/v1/folder/byPath`, { path: folderPath })
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Normalize the path that the backend expects
+     * The backend expects a path that starts with //
+     *
+     * @param {string} path - The path to normalize
+     * @returns {string} The normalized path
+     */
+    private normalizePath(path: string): string {
+        if (path.startsWith('//')) {
+            return path;
+        }
+
+        return `//${path.startsWith('/') ? path.slice(1) : path}`;
     }
 }
