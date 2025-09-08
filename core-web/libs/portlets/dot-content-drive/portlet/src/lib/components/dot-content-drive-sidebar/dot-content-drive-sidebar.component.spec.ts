@@ -99,15 +99,18 @@ describe('DotContentDriveSidebarComponent', () => {
                 setSort: jest.fn(),
                 patchFilters: jest.fn(),
                 setPath: jest.fn()
-            }),
-            mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
             })
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            providers: [
+                mockProvider(DotFolderService, {
+                    getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                })
+            ]
+        });
         component = spectator.component;
         contentDriveStore = spectator.inject(DotContentDriveStore);
         folderService = spectator.inject(DotFolderService) as jest.Mocked<DotFolderService>;
