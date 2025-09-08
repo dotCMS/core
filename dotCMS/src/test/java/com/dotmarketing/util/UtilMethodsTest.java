@@ -486,7 +486,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String input = "Hello World";
       final String expected = Base64.getEncoder().encodeToString(input.getBytes());
 
-      final String result = UtilHTML.base64Encode(input);
+      final String result = UtilMethods.base64Encode(input);
 
       assertNotNull(result);
       assertEquals(expected, result);
@@ -503,7 +503,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String input = "";
       final String expected = Base64.getEncoder().encodeToString(input.getBytes());
 
-      final String result = UtilHTML.base64Encode(input);
+      final String result = UtilMethods.base64Encode(input);
 
       assertNotNull(result);
       assertEquals(expected, result);
@@ -517,7 +517,7 @@ public class UtilMethodsTest extends UnitTestBase {
     */
    @Test
    public void test_base64Encode_nullString() {
-      final String result = UtilHTML.base64Encode(null);
+      final String result = UtilMethods.base64Encode(null);
 
       assertNull(result);
    }
@@ -532,7 +532,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String input = "Test with special chars: !@#$%^&*()_+-=[]{}|;':,.<>?";
       final String expected = Base64.getEncoder().encodeToString(input.getBytes());
 
-      final String result = UtilHTML.base64Encode(input);
+      final String result = UtilMethods.base64Encode(input);
 
       assertNotNull(result);
       assertEquals(expected, result);
@@ -548,7 +548,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String input = "Unicode test: 你好世界 🌍 café résumé";
       final String expected = Base64.getEncoder().encodeToString(input.getBytes());
 
-      final String result = UtilHTML.base64Encode(input);
+      final String result = UtilMethods.base64Encode(input);
 
       assertNotNull(result);
       assertEquals(expected, result);
@@ -564,7 +564,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String input = "SGVsbG8gV29ybGQ=";
       final String expected = "Hello World";
 
-      final String result = UtilHTML.base64Decode(input);
+      final String result = UtilMethods.base64Decode(input);
 
       assertNotNull(result);
       assertEquals(expected, result);
@@ -580,7 +580,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String input = "";
       final String expected = "";
 
-      final String result = UtilHTML.base64Decode(input);
+      final String result = UtilMethods.base64Decode(input);
 
       assertNotNull(result);
       assertEquals(expected, result);
@@ -593,7 +593,7 @@ public class UtilMethodsTest extends UnitTestBase {
     */
    @Test
    public void test_base64Decode_nullString() {
-      final String result = UtilHTML.base64Decode(null);
+      final String result = UtilMethods.base64Decode(null);
 
       assertNull(result);
    }
@@ -608,7 +608,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String originalString = "Test with special chars: !@#$%^&*()_+-=[]{}|;':,.<>?";
       final String encodedString = Base64.getEncoder().encodeToString(originalString.getBytes());
 
-      final String result = UtilHTML.base64Decode(encodedString);
+      final String result = UtilMethods.base64Decode(encodedString);
 
       assertNotNull(result);
       assertEquals(originalString, result);
@@ -624,7 +624,7 @@ public class UtilMethodsTest extends UnitTestBase {
       final String originalString = "Unicode test: 你好世界 🌍 café résumé";
       final String encodedString = Base64.getEncoder().encodeToString(originalString.getBytes());
 
-      final String result = UtilHTML.base64Decode(encodedString);
+      final String result = UtilMethods.base64Decode(encodedString);
 
       assertNotNull(result);
       assertEquals(originalString, result);
@@ -649,8 +649,8 @@ public class UtilMethodsTest extends UnitTestBase {
       };
 
       for (String original : testStrings) {
-         final String encoded = UtilHTML.base64Encode(original);
-         final String decoded = UtilHTML.base64Decode(encoded);
+         final String encoded = UtilMethods.base64Encode(original);
+         final String decoded = UtilMethods.base64Decode(encoded);
 
          assertNotNull("Encoded string should not be null for: " + original, encoded);
          assertNotNull("Decoded string should not be null for: " + original, decoded);
@@ -666,6 +666,6 @@ public class UtilMethodsTest extends UnitTestBase {
    @Test(expected = IllegalArgumentException.class)
    public void test_base64Decode_invalidBase64String() {
       final String invalidBase64 = "This is not a valid base64 string!";
-      UtilHTML.base64Decode(invalidBase64);
+      UtilMethods.base64Decode(invalidBase64);
    }
 }

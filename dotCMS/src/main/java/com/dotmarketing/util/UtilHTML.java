@@ -1,7 +1,6 @@
 package com.dotmarketing.util;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -540,21 +539,6 @@ public class UtilHTML {
 		fixme = fixme.replaceAll("\"", "&quot;");
 		return fixme;
 	}
-
-
-   public static String base64Encode(String incomingString){
-      if(incomingString == null){
-         return null;
-      }
-      return Base64.getEncoder().encodeToString(incomingString.getBytes());
-   }
-
-   public static String base64Decode(String incomingString){
-      if(incomingString == null){
-         return null;
-      }
-      return new String(Base64.getDecoder().decode(incomingString));
-   }
 
 	public static CategoryAPI getCategoryAPI() {
 		return categoryAPI;
