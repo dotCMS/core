@@ -12,9 +12,7 @@ export interface DotFolder {
     addChildrenAllowed: boolean;
 }
 
-@Injectable({
-    providedIn: 'root'
-})
+@Injectable()
 export class DotFolderService {
     readonly #http = inject(HttpClient);
 

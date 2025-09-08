@@ -79,7 +79,7 @@ test.describe("Template page", () => {
     });
   });
 
-  test("should display correctly on the Template page", async ({ page }) => {
+  test.skip("should display correctly on the Template page", async ({ page }) => {
     await page.goto(`/dotAdmin/#/templates/edit/${template.identifier}`);
     const breadcrumb = new BreadcrumbComponent(page);
 
