@@ -1,27 +1,46 @@
+@use "variables" as *;
+
 :host {
     width: 100%;
     height: 100%;
-    ::ng-deep {
-        .p-treenode-label {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    }
 }
 
 :host ::ng-deep {
-    .p-tree {
-        width: 100%;
-        height: 100%;
-        border: none;
+    .p-treenode-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .p-treenode-content .p-tree-toggler {
+        .arrow-icon {
+            color: $color-palette-gray-600;
+        }
+
+        .folder-icon {
+            color: $color-palette-gray-800;
+        }
+    }
+
+    .p-treenode-content.p-highlight .p-tree-toggler {
+        .folder-icon {
+            color: $text-color-highlight;
+        }
+
+        .arrow-icon {
+            color: $text-color-highlight;
+        }
     }
 }
 
 /* Modes for toggler icon rendering */
 :host ::ng-deep {
     .p-tree {
+        width: 100%;
+        height: 100%;
+        border: none;
         overflow-y: auto;
+
         /* First-only mode (show folder icon on first root node only) */
         &.first-only {
             .toggler-first {

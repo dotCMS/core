@@ -21,12 +21,14 @@
         <ng-template pTemplate="togglericon" let-expanded>
             <span class="toggler-regular">
                 <i
-                    class="pi"
+                    class="pi arrow-icon"
                     [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                    style="font-size: 0.875rem; color: #8d92a5"></i>
+                    [style]="{ fontSize: '0.875rem' }"></i>
             </span>
             <span class="toggler-first">
-                <i class="pi" [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
+                <i
+                    class="pi folder-icon"
+                    [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
             </span>
         </ng-template>
     </p-tree>

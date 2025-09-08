@@ -38,12 +38,13 @@ export class DotContentDriveSidebarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotFolderService = inject(DotFolderService);
 
-    $folders = signal<TreeNodeItem[]>([]);
-    $selectedNode = signal<TreeNodeItem>(ALL_FOLDER);
-    $loading = signal<boolean>(true);
+    protected $folders = signal<TreeNodeItem[]>([]);
+    protected $selectedNode = signal<TreeNodeItem>(ALL_FOLDER);
+    protected $loading = signal<boolean>(true);
+    protected $currentSite = this.#globalStore.siteDetails;
 
     readonly getSiteFoldersEffect = effect(() => {
-        const currentSite = this.#globalStore.siteDetails();
+        const currentSite = this.$currentSite();
         if (!currentSite) {
             return;
         }
@@ -55,9 +56,9 @@ export class DotContentDriveSidebarComponent {
                 folders,
                 URLForlderPath || '/'
             );
+            this.$loading.set(false);
             this.$folders.set([ALL_FOLDER, ...rootNodes]);
             this.$selectedNode.set(selectedNode);
-            this.$loading.set(false);
         });
     });
 
