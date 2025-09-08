@@ -24,6 +24,7 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -92,24 +93,31 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         final String orderByParam = SQLUtil.getOrderByAndDirectionSql(orderBy, direction);
         final String siteId = Try.of(() -> extraParams.get(HOST_PARAMETER_ID).toString()).getOrElse(BLANK);
         final List<String> baseTypeNames = getBaseTypeNames(extraParams);
-        final Set<BaseContentType> types = BaseContentType.fromNames(baseTypeNames);
+        final Set<BaseContentType> types = BaseContentType.fromNames(baseTypeNames); //This will get me BaseType Any if none is passed
         try {
             long totalRecords = 0L;
             final Set<ContentType> collectedContentTypes = new LinkedHashSet<>();
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
-            for (final BaseContentType type : types) {
+            for (final BaseContentType type : types) { //We're going to iterate over all passed types
                 if (UtilMethods.isSet(varNamesList)) {
-                    final List<ContentType> optionalTypeList =
-                            this.contentTypeAPI.find(varNamesList, filter, offset, limit,
-                                    orderByParam);
-                    collectedContentTypes.addAll(optionalTypeList);
-                    totalRecords = varNamesList.size(); //Total records is the number of varNames passed that's the total.
+                    List<ContentType> optionalTypeList = this.contentTypeAPI.find(varNamesList, filter, offset, limit, orderByParam);
+                    if(!type.equals(BaseContentType.ANY)) { //If this is Any type, we don't need to filter'
+                        optionalTypeList = optionalTypeList.stream()
+                                .filter(contentType -> contentType.baseType().equals(type))
+                                .collect(Collectors.toList());
+                    }
+                    if(!optionalTypeList.isEmpty()){
+                        collectedContentTypes.addAll(optionalTypeList);
+                        //in this case our universe is the total number of varNames.
+                        //in case you're wondering, It's not accumulative
+                        totalRecords = varNamesList.size();
+                    }
                 } else if (UtilMethods.isSet(siteList)) {
                     collectedContentTypes.addAll(this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit, offset));
                     totalRecords += this.getTotalRecords(BLANK, type, siteList);
                 } else {
                     collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId));
-                    totalRecords += getTotalRecords(BLANK, type, List.of(siteId));
+                    totalRecords += getTotalRecords(filter, type, List.of(siteId));
                 }
             }
                 final List<ContentType> contentTypes = new ArrayList<>(collectedContentTypes);
@@ -146,8 +154,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             if (o instanceof String) {
                 return List.of(o.toString());
             }
-            if (o instanceof List) {
-                return (List<String>) o;
+            if (o instanceof Collection) {
+                return new ArrayList<>((Collection<String>) o);
             }
             return List.of(BaseContentType.ANY.name());
         }).getOrElse(() -> List.of(BaseContentType.ANY.name()));
