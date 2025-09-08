@@ -409,11 +409,6 @@ public class ContentTypesPaginatorTest {
         expected = Set.of(BaseContentType.FILEASSET, BaseContentType.HTMLPAGE, BaseContentType.FORM);
         assertEquals("Alternate names should work", expected, result);
 
-        // Test with invalid names (should be ignored)
-        result = BaseContentType.fromNames(List.of("CONTENT", "INVALID_TYPE", "FORM"));
-        expected = Set.of(BaseContentType.CONTENT, BaseContentType.FORM);
-        assertEquals("Invalid names should be ignored", expected, result);
-
         // Test with null and blank entries
         result = BaseContentType.fromNames(Arrays.asList("CONTENT", null, "", "  ", "FORM"));
         expected = Set.of(BaseContentType.CONTENT, BaseContentType.FORM);
@@ -423,10 +418,6 @@ public class ContentTypesPaginatorTest {
         result = BaseContentType.fromNames(List.of("  CONTENT  ", " FORM "));
         expected = Set.of(BaseContentType.CONTENT, BaseContentType.FORM);
         assertEquals("Names with whitespace should be trimmed", expected, result);
-
-        // Test with all invalid names
-        result = BaseContentType.fromNames(List.of("INVALID1", "INVALID2"));
-        assertTrue("All invalid names should return empty set", result.isEmpty());
 
         // Test with duplicate names
         result = BaseContentType.fromNames(List.of("CONTENT", "CONTENT", "FORM", "CONTENT"));
@@ -443,14 +434,27 @@ public class ContentTypesPaginatorTest {
                 .filter(type -> type != BaseContentType.ANY)
                 .collect(Collectors.toSet());
         assertEquals("All valid type names should return all types", allTypes, result);
+
     }
 
     /**
-     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
-     * Given Scenario: Create three Content Types with different Base Types and test filtering using Extra Params
-     * with both Variable Names (types parameter) and Base Types (type parameter)
-     * Expected Result: Validate that filtering works correctly for both parameters individually and combined
+     * Method to test: {@link BaseContentType#fromNames(List)}
+     * Given Scenario: Test various scenarios for converting a list of names to BaseContentType set
+     * Expected Result: Correct BaseContentType set based on valid names, ignoring invalid ones
      */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_BaseContentType_fromNames_InvalidTypes_Expect_Exception() {
+        // Test with invalid names (should throw an IllegalArgumentException)
+        BaseContentType.fromNames(List.of("CONTENT", "INVALID_TYPE", "FORM"));
+    }
+
+
+        /**
+         * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+         * Given Scenario: Create three Content Types with different Base Types and test filtering using Extra Params
+         * with both Variable Names (types parameter) and Base Types (type parameter)
+         * Expected Result: Validate that filtering works correctly for both parameters individually and combined
+         */
     @Test
     public void test_getItems_ExtraParamsFiltering_VariableNamesAndBaseTypes() throws DotSecurityException, DotDataException {
         ContentType contentType1 = null;
