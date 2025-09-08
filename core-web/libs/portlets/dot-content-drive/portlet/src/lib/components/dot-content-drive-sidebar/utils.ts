@@ -13,7 +13,7 @@ export type TreeNodeItem = TreeNode<TreeNodeData>;
 
 export const ALL_FOLDER: TreeNodeItem = {
     key: 'ALL_FOLDER',
-    label: 'All',
+    label: 'ROOT',
     loading: false,
     data: {
         type: 'folder',
@@ -70,113 +70,61 @@ export const createTreeNode = (folder: DotFolder, parent?: TreeNodeItem): TreeNo
     return node;
 };
 
-// FUNCTION GENERATE BY CHATGPT
-export const buildTreeFromHierarchicalFolders = (
-    folderHierarchyLevels: DotFolder[][]
-): TreeNodeItem[] => {
-    if (folderHierarchyLevels.length === 0) return [];
-
-    const nodeRegistry = new Map<string, TreeNodeItem>(); // id → node
-    const childNodeKeys = new Set<string>(); // track which nodes are children
-
-    // --- Helper Functions ---
-    const getOrCreateTreeNode = (folder: DotFolder, parentNode?: TreeNodeItem): TreeNodeItem => {
-        if (!nodeRegistry.has(folder.id)) {
-            nodeRegistry.set(folder.id, createTreeNode(folder, parentNode));
-        }
-
-        const node = nodeRegistry.get(folder.id);
-        if (!node) {
-            throw new Error(`Node not found for folder ${folder.id}`);
-        }
-        return node;
-    };
-
-    const attachChildrenToParent = (parentNode: TreeNodeItem, childFolders: DotFolder[]) => {
-        parentNode.children = parentNode.children ?? [];
-
-        for (const childFolder of childFolders) {
-            const childNode = getOrCreateTreeNode(childFolder, parentNode);
-            parentNode.children.push(childNode);
-            childNodeKeys.add(childNode.key);
-        }
-
-        if (parentNode.children.length > 0) {
-            parentNode.expanded = true;
-        }
-    };
-
-    const processRootLevel = (rootLevelFolders: DotFolder[]) => {
-        if (rootLevelFolders.length <= 1) return;
-
-        // Skip the first parent placeholder
-        const [, ...actualRootFolders] = rootLevelFolders;
-
-        // Each remaining folder becomes its own root node
-        actualRootFolders.forEach((folder) => getOrCreateTreeNode(folder));
-    };
-
-    const processHierarchyLevel = (levelFolders: DotFolder[]) => {
-        if (levelFolders.length === 0) return;
-        const [parentFolder, ...childFolders] = levelFolders;
-        const parentNode = getOrCreateTreeNode(parentFolder);
-        attachChildrenToParent(parentNode, childFolders);
-    };
-
-    // --- Build the tree structure ---
-    folderHierarchyLevels.forEach((levelFolders, levelIndex) => {
-        if (levelIndex === 0) {
-            processRootLevel(levelFolders);
-        } else {
-            processHierarchyLevel(levelFolders);
-        }
-    });
-
-    // Return root nodes (nodes that were never marked as children)
-    return [...nodeRegistry.values()].filter((node) => !childNodeKeys.has(node.key));
-};
-
-// Expected the Target Path without the host at the start, only the folder path
-// FUNCTION GENERATE BY ME
-// SHOW THIS FUNCTION TO CHATGPT TO DISCUSS APPROACHES
+/**
+ * Builds the tree folder nodes
+ *
+ * @param {DotFolder[][]} folderHierarchyLevels - The folder hierarchy levels
+ * @param {string} targetPath - The target path
+ * @returns {TreeNodeItem[]} The tree folder nodes
+ * @returns {TreeNodeItem} The selected node
+ */
 export const buildTreeFolderNodes = (
     folderHierarchyLevels: DotFolder[][],
     targetPath: string
 ): { rootNodes: TreeNodeItem[]; selectedNode?: TreeNodeItem } => {
-    if (folderHierarchyLevels.length === 0) return { rootNodes: [], selectedNode: ALL_FOLDER };
+    if (folderHierarchyLevels.length === 0) {
+        return { rootNodes: [], selectedNode: ALL_FOLDER };
+    }
 
     const rootNodes: TreeNodeItem[] = [];
     const expectedPaths = generateAllParentPaths(targetPath);
-    const parentsByLevel: Record<number, TreeNodeItem> = {};
+    const activeParents: Record<number, TreeNodeItem> = {};
+
+    /**
+     * Checks if a folder node belongs to the active target path
+     */
+    const isOnTargetPath = (levelIndex: number, node: TreeNodeItem) =>
+        expectedPaths[levelIndex] === node.data.path;
 
     folderHierarchyLevels.forEach((levelFolders, levelIndex) => {
-        const [, ...folders] = levelFolders; // Skip the parent placeholder
-        const parentNode = parentsByLevel[levelIndex];
+        // Each level starts with a placeholder parent we don't render
+        const [, ...folders] = levelFolders;
+        const parentNode = activeParents[levelIndex];
 
         folders.forEach((folder) => {
             const node = createTreeNode(folder);
-            const isAParentPath = expectedPaths[levelIndex] === node.data.path;
 
+            // Root level nodes are added directly
             if (levelIndex === 0) {
                 rootNodes.push(node);
-            } else if (parentNode) {
+            }
+            // Deeper levels get attached to the active parent
+            else if (parentNode) {
                 parentNode.children = parentNode.children || [];
                 parentNode.children.push(node);
             }
 
-            if (isAParentPath) {
-                parentsByLevel[levelIndex + 1] = node;
+            // If this node is along the target path, mark it as active parent for the next level
+            if (isOnTargetPath(levelIndex, node)) {
+                activeParents[levelIndex + 1] = node;
                 node.children = [];
                 node.expanded = true;
             }
         });
     });
 
-    // Last level parent is the selected node
-    const selectedNode = parentsByLevel[folderHierarchyLevels.length - 1] || ALL_FOLDER;
+    // The last expanded parent is the "selected" node
+    const selectedNode = activeParents[folderHierarchyLevels.length - 1] || ALL_FOLDER;
 
-    return {
-        rootNodes,
-        selectedNode
-    };
+    return { rootNodes, selectedNode };
 };
