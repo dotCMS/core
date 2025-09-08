@@ -31,7 +31,8 @@ import {
     templateUrl: './dot-content-drive-sidebar.component.html',
     styleUrl: './dot-content-drive-sidebar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent]
+    imports: [DotTreeFolderComponent],
+    providers: [DotFolderService]
 })
 export class DotContentDriveSidebarComponent {
     readonly #globalStore = inject(GlobalStore);
