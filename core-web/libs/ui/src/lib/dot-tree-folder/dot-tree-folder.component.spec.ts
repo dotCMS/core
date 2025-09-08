@@ -290,11 +290,6 @@ describe('DotTreeFolderComponent', () => {
     });
 
     describe('Component Methods', () => {
-        it('should call detectChanges method without throwing', () => {
-            // Since ChangeDetectorRef is injected privately, test the method exists and can be called
-            expect(() => component.detectChanges()).not.toThrow();
-        });
-
         it('should generate percentage between 75% and 100%', () => {
             const percentage = component.getPercentage();
             const numericValue = parseInt(percentage.replace('%', ''));

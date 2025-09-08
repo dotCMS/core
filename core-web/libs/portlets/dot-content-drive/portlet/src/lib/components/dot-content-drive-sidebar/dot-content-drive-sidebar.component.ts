@@ -17,15 +17,14 @@ import { DotFolderService, DotFolder } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotTreeFolderComponent } from '@dotcms/ui';
 
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import {
     ALL_FOLDER,
     createTreeNode,
     generateAllParentPaths,
     buildTreeFolderNodes,
     TreeNodeItem
-} from './utils';
-
-import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+} from '../../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-sidebar',
@@ -127,7 +126,7 @@ export class DotContentDriveSidebarComponent {
      * @param {string} targetPath - The full path to generate parent paths from
      * @returns {Observable<DotFolder[][]>} Observable that emits an array of folder arrays (one for each path level)
      */
-    getFolderHierarchyByPath(path: string): Observable<DotFolder[][]> {
+    private getFolderHierarchyByPath(path: string): Observable<DotFolder[][]> {
         const paths = generateAllParentPaths(path);
         const folderRequests = paths.map((path) => this.#dotFolderService.getFolders(path));
 

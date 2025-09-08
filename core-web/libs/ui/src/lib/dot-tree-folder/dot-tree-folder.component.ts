@@ -97,14 +97,6 @@ export class DotTreeFolderComponent {
     onNodeCollapse = output<TreeNodeCollapseEvent>();
 
     /**
-     * Triggers change detection manually.
-     * This method is used to ensure that the view is updated when the model changes.
-     * It calls the `detectChanges` method on the ChangeDetectorRef instance.
-     */
-    detectChanges() {
-        this.#cd.detectChanges();
-    }
-    /**
      * Generates a random percentage string between 75% and 100%.
      *
      * @returns {string} A string representing a percentage between 75% and 100%.
