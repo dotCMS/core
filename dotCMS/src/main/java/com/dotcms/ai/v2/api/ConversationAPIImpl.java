@@ -44,6 +44,7 @@ public class ConversationAPIImpl implements ConversationAPI {
                 .chatModel(chatModel)
                 .chatMemory(chatMemory)
                 .tools(this.contentTools, this.contentTypeTools)
+                .contentRetriever()
                 .build();
 
         return new ChatResponse(conversationId, aiChatService.chat(prompt));

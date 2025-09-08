@@ -2,6 +2,8 @@ package com.dotcms.ai.v2.api.provider;
 
 import com.dotcms.ai.v2.api.provider.config.ModelConfig;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.List;
@@ -40,5 +42,25 @@ public class ModelProviderFactory {
             throw new IllegalArgumentException("Unknown model provider: " + providerName);
         }
         return provider.create(config);
+    }
+
+    public StreamingChatModel getStreaming(final String providerName, final ModelConfig config) {
+
+        final ModelProvider provider = providers.get(providerName.toLowerCase());
+        if (provider == null) {
+            // todo: if eventually have a default one, by config on, use instead
+            throw new IllegalArgumentException("Unknown model provider: " + providerName);
+        }
+        return provider.createStreaming(config);
+    }
+
+    public EmbeddingModel getEmbedding(final String providerName, final ModelConfig config) {
+
+        final ModelProvider provider = providers.get(providerName.toLowerCase());
+        if (provider == null) {
+            // todo: if eventually have a default one, by config on, use instead
+            throw new IllegalArgumentException("Unknown model provider: " + providerName);
+        }
+        return provider.createEmbedding(config);
     }
 }

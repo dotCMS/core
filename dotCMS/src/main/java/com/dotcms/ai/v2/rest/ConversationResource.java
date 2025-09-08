@@ -22,7 +22,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 
-@Path("/v2/ai/conversation")
+@Path("/v2/ai/conversations")
 @Tag(name = "AI", description = "AI-powered chat/conversation")
 public class ConversationResource {
 

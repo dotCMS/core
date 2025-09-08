@@ -11,7 +11,6 @@ import com.liferay.portal.model.User;
 import dev.langchain4j.agent.tool.Tool;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;

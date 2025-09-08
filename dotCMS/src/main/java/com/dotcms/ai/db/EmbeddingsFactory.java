@@ -51,14 +51,14 @@ public class EmbeddingsFactory {
      * Initializes the PGVector extension in the database.
      */
     public void initVector() {
-        initVectorExtension();
+        initVectorExtension(); // todo: I do need this
         initVectorDbTable();
     }
 
     /**
      * This method renames the existing `dot_embeddings` table in the database to a new name that includes the current timestamp.
      * This is useful when the creation of the `dot_embeddings` table fails for some reason and you want to try again without losing the existing data.
-     */
+     */  // todo: analyze if this is may neeed
     public void moveVectorDbTable() {
         String newTableName = "dot_embeddings_" + System.currentTimeMillis();
         Logger.info(EmbeddingsFactory.class, "Create Table Failed : trying to rename:" + newTableName);
@@ -74,14 +74,14 @@ public class EmbeddingsFactory {
         runSQL(EmbeddingsSQL.CREATE_EMBEDDINGS_TABLE);
         Logger.info(EmbeddingsFactory.class, "Adding indexes to dot_embedding table");
         for (final String index : EmbeddingsSQL.CREATE_TABLE_INDEXES) {
-            runSQL(index);
+            runSQL(index); // todo: check if we need the indexes or not
         }
     }
 
     /**
      * Drops the database table for storing embeddings.
      * This method is used when you want to remove the embeddings table from the database.
-     */
+     */ // todo: this could be need in some way
     public void dropVectorDbTable() {
         Logger.info(EmbeddingsFactory.class, "Dropping table dot_embeddings from database");
         runSQL(EmbeddingsSQL.DROP_EMBEDDINGS_TABLE);
@@ -150,7 +150,7 @@ public class EmbeddingsFactory {
      *
      * @param extractedText the text to find embeddings for
      * @return a tuple containing the index name, token count, and list of embeddings
-     */
+     */ // todo: we need to see if this is needed when implement the rag approach,look for uses and see if make sense
     public Tuple3<String, Integer, List<Float>> searchExistingEmbeddings(final String extractedText) {
         try (final Connection conn = getPGVectorConnection(); PreparedStatement statement = conn.prepareStatement(EmbeddingsSQL.SELECT_EMBEDDING_BY_TEXT_HASH)) {
             final String hash = StringUtils.hashText(extractedText);
@@ -177,7 +177,7 @@ public class EmbeddingsFactory {
      * @param indexName the index name to check
      * @param extractedText the text to check
      * @return true if embeddings exist, false otherwise
-     */
+     */ // todo: we have to see if this make sense, and think the strategy to feet the rag
     public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
         try (final Connection conn = getPGVectorConnection();
              final PreparedStatement statement =

@@ -1,4 +1,4 @@
-package com.dotcms.ai.v2.api.aitools.dto;
+package com.dotcms.ai.v2.api.dto;
 
 import java.util.Map;
 
