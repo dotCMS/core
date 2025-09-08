@@ -9,7 +9,6 @@ import { Pipe, PipeTransform } from '@angular/core';
  */
 @Pipe({
     name: 'folderName',
-    standalone: true,
     pure: true
 })
 export class FolderNamePipe implements PipeTransform {

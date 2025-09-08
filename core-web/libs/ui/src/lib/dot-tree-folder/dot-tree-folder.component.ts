@@ -17,30 +17,32 @@ export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 })
 export class DotTreeFolderComponent {
     /**
-     * An observable that emits an array of TreeNode objects representing the folders.
+     * A signal that emits an array of TreeNode objects representing the folders.
      *
-     * @type {Observable<TreeNode[]>}
+     * @type {InputSignal<TreeNode[]>}
      * @alias folders
      */
     $folders = input.required<TreeNode[]>({ alias: 'folders' });
 
     /**
-     * A boolean observable that indicates the loading state.
+     * A boolean signal that indicates the loading state.
      *
-     * @type {boolean}
+     * @type {InputSignal<boolean>}
      */
     $loading = input.required<boolean>({ alias: 'loading' });
 
     /**
      * A signal that represents the selected node.
      *
-     * @type {TreeNode | null}
+     * @type {InputSignal<TreeNode | null>}
      */
     $selectedNode = input.required<TreeNode>({ alias: 'selectedNode' });
 
     /**
      * Controls whether the folder icon should be shown only on the first root node's toggler.
      * When false, folder icons will be used for all togglers.
+     *
+     * @type {InputSignal<boolean>}
      */
     $showFolderIconOnFirstOnly = input<boolean>(false, { alias: 'showFolderIconOnFirstOnly' });
 
