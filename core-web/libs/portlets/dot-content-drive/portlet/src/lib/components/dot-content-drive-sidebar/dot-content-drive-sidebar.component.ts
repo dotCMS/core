@@ -38,10 +38,10 @@ export class DotContentDriveSidebarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotFolderService = inject(DotFolderService);
 
-    protected $folders = signal<TreeNodeItem[]>([]);
-    protected $selectedNode = signal<TreeNodeItem>(ALL_FOLDER);
-    protected $loading = signal<boolean>(true);
-    protected $currentSite = this.#globalStore.siteDetails;
+    readonly $loading = signal<boolean>(true);
+    readonly $folders = signal<TreeNodeItem[]>([]);
+    readonly $selectedNode = signal<TreeNodeItem>(ALL_FOLDER);
+    readonly $currentSite = this.#globalStore.siteDetails;
 
     readonly getSiteFoldersEffect = effect(() => {
         const currentSite = this.$currentSite();

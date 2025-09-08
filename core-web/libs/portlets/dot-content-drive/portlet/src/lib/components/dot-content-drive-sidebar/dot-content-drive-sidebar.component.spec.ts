@@ -7,9 +7,10 @@ import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 
 
 import { delay } from 'rxjs/operators';
 
-import { DotFolder, DotFolderService } from '@dotcms/data-access';
+import { DotFolder, DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotTreeFolderComponent } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
@@ -79,6 +80,7 @@ describe('DotContentDriveSidebarComponent', () => {
         component: DotContentDriveSidebarComponent,
         imports: [DotTreeFolderComponent],
         providers: [
+            mockProvider(DotMessageService, new MockDotMessageService({})),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(mockSiteDetails)
             }),
