@@ -33,9 +33,11 @@
         </ng-template>
     </p-tree>
 } @else {
-    <div class="flex w-full h-full flex-column p-2">
-        @for (col of $fakeColumns(); track $index) {
-            <p-skeleton styleClass="mb-3" [width]="col" />
-        }
+    <div
+        class="loading-container flex flex-column align-items-center justify-content-center h-full w-full">
+        <div class="pulse-container">
+            <i class="pi pi-folder loading-icon"></i>
+        </div>
+        <span class="loading-text">{{ 'content.drive.loading.folders.title' | dm }}</span>
     </div>
 }

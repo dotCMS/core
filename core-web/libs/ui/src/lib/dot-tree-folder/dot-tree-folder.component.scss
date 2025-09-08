@@ -46,10 +46,12 @@
             .toggler-first {
                 display: none;
             }
+
             .p-tree-container > p-treenode:first-child {
                 .toggler-first {
                     display: block;
                 }
+
                 .toggler-regular {
                     display: none;
                 }
@@ -61,9 +63,57 @@
             .toggler-first {
                 display: block;
             }
+
             .toggler-regular {
                 display: none;
             }
         }
+    }
+}
+
+.loading-container {
+    gap: $spacing-4;
+    font-weight: normal;
+    user-select: none;
+    pointer-events: none;
+
+    .loading-icon {
+        font-size: $icon-xxl;
+        color: $color-palette-gray-400;
+        z-index: 1;
+    }
+
+    .loading-text {
+        font-size: $font-size-md;
+    }
+}
+
+.pulse-container {
+    position: relative;
+    display: inline-block;
+}
+
+.pulse-container::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6.5rem;
+    height: 6.5rem;
+    border-radius: 50%;
+    background-color: $color-palette-secondary-300;
+    animation: pulse 2s infinite cubic-bezier(0.66, 0, 0.34, 1);
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
     }
 }

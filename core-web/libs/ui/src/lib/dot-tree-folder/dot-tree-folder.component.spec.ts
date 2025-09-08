@@ -4,6 +4,9 @@ import { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Tree, TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotTreeFolderComponent, SYSTEM_HOST_ID } from './dot-tree-folder.component';
 
 import { FolderNamePipe } from '../pipes/dot-folder-name/dot-folder-name.pipe';
@@ -41,6 +44,14 @@ describe('DotTreeFolderComponent', () => {
     const createComponent = createComponentFactory({
         component: DotTreeFolderComponent,
         imports: [TreeModule, SkeletonModule, FolderNamePipe],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'content.drive.loading.folders.title': 'Loading folders...'
+                })
+            }
+        ],
         detectChanges: false
     });
 
@@ -262,14 +273,6 @@ describe('DotTreeFolderComponent', () => {
             expect(treeElement).toBeFalsy();
         });
 
-        it('should render skeleton elements when loading', () => {
-            spectator.fixture.componentRef.setInput('loading', true);
-            spectator.detectChanges();
-
-            const skeletonElements = spectator.queryAll('p-skeleton');
-            expect(skeletonElements.length).toBeGreaterThan(0);
-        });
-
         it('should render folder name through pipe in node template', () => {
             // The template is rendered by p-tree, check if p-tree exists
             const treeElement = spectator.query('p-tree');
@@ -286,37 +289,6 @@ describe('DotTreeFolderComponent', () => {
             // The templates are defined but rendered internally by p-tree
             const treeElement = spectator.query('p-tree');
             expect(treeElement).toBeTruthy();
-        });
-    });
-
-    describe('Component Methods', () => {
-        it('should generate percentage between 75% and 100%', () => {
-            const percentage = component.getPercentage();
-            const numericValue = parseInt(percentage.replace('%', ''));
-
-            expect(percentage).toMatch(/^\d{2,3}%$/);
-            expect(numericValue).toBeGreaterThanOrEqual(75);
-            expect(numericValue).toBeLessThanOrEqual(100);
-        });
-
-        it('should generate different percentages on multiple calls', () => {
-            const percentages = Array.from({ length: 10 }, () => component.getPercentage());
-            const uniquePercentages = new Set(percentages);
-
-            // With random generation, we should get some variety (not all the same)
-            // This test might occasionally fail due to randomness, but it's very unlikely
-            expect(uniquePercentages.size).toBeGreaterThan(1);
-        });
-    });
-
-    describe('Computed Properties', () => {
-        it('should have $fakeColumns signal with 50 elements', () => {
-            const fakeColumns = component.$fakeColumns();
-            expect(fakeColumns).toHaveLength(50);
-
-            fakeColumns.forEach((column) => {
-                expect(column).toMatch(/^\d{2,3}%$/);
-            });
         });
     });
 
