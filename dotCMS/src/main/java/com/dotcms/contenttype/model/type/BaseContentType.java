@@ -169,15 +169,7 @@ public enum BaseContentType {
 
         return names.stream()
                 .filter(name -> name != null && !name.isBlank())
-                .map(name -> {
-                    try {
-                        return BaseContentType.getBaseContentType(name.trim());
-                    } catch (IllegalArgumentException e) {
-                        Logger.warn(BaseContentType.class, "Ignoring invalid BaseContentType name: " + name);
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
+                .map(name -> BaseContentType.getBaseContentType(name.trim()))
                 .collect(Collectors.toSet());
     }
 
