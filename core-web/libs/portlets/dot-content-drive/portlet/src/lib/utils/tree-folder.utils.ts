@@ -96,6 +96,11 @@ export const buildTreeFolderNodes = (
     const isOnTargetPath = (levelIndex: number, node: TreeNodeItem) =>
         expectedPaths[levelIndex] === node.data.path;
 
+    /**
+     * Checks if a folder node is a leaf
+     */
+    const isLeaf = (levelIndex: number) => folderHierarchyLevels.length >= levelIndex + 1;
+
     folderHierarchyLevels.forEach((levelFolders, levelIndex) => {
         // Each level starts with a placeholder parent we don't render
         const [, ...folders] = levelFolders;
@@ -119,6 +124,7 @@ export const buildTreeFolderNodes = (
                 activeParents[levelIndex + 1] = node;
                 node.children = [];
                 node.expanded = true;
+                node.leaf = isLeaf(levelIndex);
             }
         });
     });

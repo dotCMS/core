@@ -319,7 +319,7 @@ describe('Sidebar Utils', () => {
                     path: '/test/',
                     type: 'folder'
                 },
-                leaf: false,
+                leaf: true,
                 children: [],
                 expanded: true
             });
@@ -545,6 +545,7 @@ describe('Sidebar Utils', () => {
             expect(result.rootNodes).toHaveLength(1);
             expect(result.rootNodes[0].key).toBe('folder-1');
             expect(result.rootNodes[0].expanded).toBe(true);
+            expect(result.rootNodes[0].leaf).toBe(true);
             expect(result.selectedNode?.key).toBe('ALL_FOLDER');
         });
     });
