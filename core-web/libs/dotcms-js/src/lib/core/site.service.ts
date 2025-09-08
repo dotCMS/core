@@ -2,7 +2,7 @@ import { Observable, Subject, merge, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, startWith, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, pluck, startWith, switchMap, take, tap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -26,7 +26,7 @@ export class SiteService {
     private loggerService = inject(LoggerService);
 
     private selectedSite: Site;
-    private urls: any;
+    private urls: { currentSiteUrl: string; sitesUrl: string; switchSiteUrl: string };
     private events: string[] = [
         'SAVE_SITE',
         'PUBLISH_SITE',
@@ -203,7 +203,7 @@ export class SiteService {
     getCurrentSite(): Observable<Site> {
         return merge(
             this.selectedSite ? of(this.selectedSite) : this.requestCurrentSite(),
-            this.switchSite$
+            this.switchSite$.pipe(filter((site) => !!site))
         );
     }
 
@@ -222,7 +222,10 @@ export class SiteService {
 
     private loadCurrentSite(): void {
         this.getCurrentSite()
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                filter((site) => !!site)
+            )
             .subscribe((currentSite: Site) => {
                 this.setCurrentSite(currentSite);
             });
