@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, input, AfterViewInit, viewChild, forwardRef, computed } from "@angular/core";
-import { ControlContainer, ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from "@angular/forms";
+import { ControlContainer, ControlValueAccessor, FormGroup, NG_VALUE_ACCESSOR, ReactiveFormsModule } from "@angular/forms";
 
 import { ButtonModule } from "primeng/button";
 import { DialogModule } from "primeng/dialog";
@@ -13,6 +13,7 @@ import { DotIconModule } from "@dotcms/ui";
  */
 interface DotWCElement extends HTMLElement {
     context?: Record<string, unknown>;
+    form?: any;
     variableId?: string;
 }
 
@@ -86,7 +87,7 @@ export class DotEditContentWcCompoment implements ControlValueAccessor, AfterVie
 
     async #loadAndCreateComponent() {
         try {
-            await this.#loadScript('http://localhost:4173/assets/index-CCLX0u0r.js');
+            await this.#loadScript('http://localhost:4173/assets/index-DgGtroc6.js');
 
             const componentTag = 'dot-youtube-search';
             this.#webComponentInstance = document.createElement(componentTag) as DotWCElement;
@@ -103,6 +104,7 @@ export class DotEditContentWcCompoment implements ControlValueAccessor, AfterVie
                 console.log(event);
                 this.#controlContainer.control.patchValue(event.detail.value, { emitEvent: false });
             });
+            this.#assignFormToComponent();
 
             this.$container().nativeElement.appendChild(this.#webComponentInstance);
 
@@ -114,6 +116,14 @@ export class DotEditContentWcCompoment implements ControlValueAccessor, AfterVie
     #updateComponentContext(context: Record<string, unknown>) {
         if (!this.#webComponentInstance) return;
         this.#webComponentInstance.context = context;
+        this.#webComponentInstance.form = (this.#controlContainer as any).form;
+    }
+
+    #assignFormToComponent() {
+        console.log((this.#controlContainer as any).form);
+        if (!this.#webComponentInstance) return;
+        this.#webComponentInstance.context = this.form.value;
+        this.#webComponentInstance.form = (this.#controlContainer as any).form;
         this.#webComponentInstance.variableId = this.$variableId();
     }
 
