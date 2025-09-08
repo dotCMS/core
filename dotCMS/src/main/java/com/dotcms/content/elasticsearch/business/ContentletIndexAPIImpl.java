@@ -351,9 +351,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 final User currentUser = Try.of(() -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
                         .getOrNull();
                 if (currentUser != null) {
-                    Logger.info(this, "Full reindex started by user: " + currentUser.getUserId() + " (" + currentUser.getEmailAddress() + ")");
+                    Logger.info(this, "Full reindex started by user: " + currentUser.getUserId() + " (" + currentUser.getEmailAddress() + ") at " + new java.util.Date());
                 } else {
-                    Logger.info(this, "Full reindex started by system user");
+                    Logger.info(this, "Full reindex started by system user at " + new java.util.Date());
                 }
 
                 final IndiciesInfo info = builder.build();
@@ -1315,9 +1315,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final User currentUser = Try.of(() -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
                 .getOrNull();
         if (currentUser != null) {
-            Logger.info(this, "Index activation (" + indexName + ") performed by user: " + currentUser.getUserId() + " (" + currentUser.getEmailAddress() + ")");
+            Logger.info(this, "Index activation (" + indexName + ") performed by user: " + currentUser.getUserId() + " (" + currentUser.getEmailAddress() + ") at " + new java.util.Date());
         } else {
-            Logger.info(this, "Index activation (" + indexName + ") performed by system user");
+            Logger.info(this, "Index activation (" + indexName + ") performed by system user at " + new java.util.Date());
         }
 
         APILocator.getIndiciesAPI().point(builder.build());
