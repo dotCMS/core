@@ -133,8 +133,8 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     describe('events', () => {
         beforeEach(() => {
-            spyOn(component.switch, 'emit');
-            spyOn(component.delete, 'emit');
+            jest.spyOn(component.switch, 'emit');
+            jest.spyOn(component.delete, 'emit');
             fixture.detectChanges();
         });
 

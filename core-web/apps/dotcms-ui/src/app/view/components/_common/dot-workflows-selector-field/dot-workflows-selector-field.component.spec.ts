@@ -78,8 +78,8 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
             component = fixture.componentInstance;
             de = fixture.debugElement;
             dotWorkflowService = de.injector.get(DotWorkflowService);
-            spyOn(dotWorkflowService, 'get').and.callThrough();
-            spyOn(component, 'propagateChange');
+            jest.spyOn(dotWorkflowService, 'get');
+            jest.spyOn(component, 'propagateChange');
         }));
 
         describe('no params', () => {

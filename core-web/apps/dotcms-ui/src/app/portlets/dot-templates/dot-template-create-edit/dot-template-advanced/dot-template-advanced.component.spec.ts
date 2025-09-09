@@ -131,7 +131,7 @@ describe('DotTemplateAdvancedComponent', () => {
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
             name: 'testEditor',
-            editor: { executeEdits: jasmine.createSpy(), getSelection: () => 100 }
+            editor: { executeEdits: jest.fn(), getSelection: () => 100 }
         });
     });
 
@@ -176,14 +176,14 @@ describe('DotTemplateAdvancedComponent', () => {
 
     describe('events', () => {
         it('should emit updateTemplate event when the form changes', () => {
-            const updateTemplate = spyOn(component.updateTemplate, 'emit');
+            const updateTemplate = jest.spyOn(component.updateTemplate, 'emit');
             component.form.get('body').setValue('<body></body>');
 
             expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
         });
 
         it('should have form and fields', () => {
-            spyOn(Date, 'now').and.returnValue(1111111);
+            jest.spyOn(Date, 'now').mockReturnValue(1111111);
             const container = de.query(By.css('dot-container-selector'));
 
             container.triggerEventHandler('swap', {

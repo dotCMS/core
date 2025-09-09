@@ -45,7 +45,7 @@ class ActivatedRouteMock {
 
 @Injectable()
 class MockDotContentletEditorService {
-    edit = jasmine.createSpy('edit');
+    edit = jest.fn();
 }
 
 @Injectable()
@@ -185,7 +185,7 @@ describe('DotEditPageNavComponent', () => {
                 new DotPageRender(noLayoutPage)
             );
             component.model = undefined;
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
             fixture.detectChanges();
             const menuListItemsUpdated = fixture.debugElement.queryAll(
                 By.css('.edit-page-nav__item')
@@ -234,7 +234,7 @@ describe('DotEditPageNavComponent', () => {
 
         describe('disabled option', () => {
             it('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
 
                 component.model = undefined;
                 fixture.componentInstance.pageState = new DotPageRenderState(
@@ -253,7 +253,7 @@ describe('DotEditPageNavComponent', () => {
             });
 
             it('should have layout option disabled when is on a variant of a running experiment', () => {
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
 
                 component.model = undefined;
 
@@ -347,7 +347,7 @@ describe('DotEditPageNavComponent', () => {
         describe('license enterprise', () => {
             beforeEach(() => {
                 dotLicenseService = de.injector.get(DotLicenseService);
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(true));
                 fixture.detectChanges();
             });
 
@@ -362,7 +362,7 @@ describe('DotEditPageNavComponent', () => {
         it('should has Experiments nav item', () => {
             const MATERIAL_ICON_NAME = 'science';
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {
@@ -393,7 +393,7 @@ describe('DotEditPageNavComponent', () => {
     describe('experiments feature flag false', () => {
         it('should not has Experiments item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {
@@ -413,7 +413,7 @@ describe('DotEditPageNavComponent', () => {
     describe('Page tools feature flag', () => {
         it('Should has Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {
@@ -431,7 +431,7 @@ describe('DotEditPageNavComponent', () => {
 
         it('Should not have Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {

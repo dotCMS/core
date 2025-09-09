@@ -95,7 +95,7 @@ describe('DotPortletToolbarComponent', () => {
     describe('action buttons', () => {
         describe('primary', () => {
             it('should show one button and call function on click', () => {
-                const spy = jasmine.createSpy();
+                const spy = jest.fn();
                 component.actions = {
                     primary: [
                         {
@@ -150,7 +150,7 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should one button show and handle error', () => {
-                spyOn(console, 'error');
+                jest.spyOn(console, 'error');
 
                 component.actions = {
                     primary: [
@@ -220,7 +220,7 @@ describe('DotPortletToolbarComponent', () => {
 
         describe('cancel', () => {
             it('should show and call function on click', () => {
-                const spy = jasmine.createSpy();
+                const spy = jest.fn();
                 component.actions = {
                     primary: null,
                     cancel: spy
@@ -249,7 +249,7 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should show and handle error', () => {
-                spyOn(console, 'error');
+                jest.spyOn(console, 'error');
 
                 component.actions = {
                     primary: null,

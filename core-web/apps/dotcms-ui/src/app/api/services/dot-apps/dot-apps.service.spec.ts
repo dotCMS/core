@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -115,8 +115,8 @@ describe('DotAppsService', () => {
 
     it('should throw error on get apps and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.get().subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
@@ -139,15 +139,15 @@ describe('DotAppsService', () => {
 
     it('should throw error on get a specific app and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.getConfiguration('test', '1').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
     });
 
     it('should import apps', () => {
-        spyOn(coreWebService, 'requestView').and.callThrough();
+        jest.spyOn(coreWebService, 'requestView');
         const conf: DotAppsImportConfiguration = {
             file: null,
             json: { password: 'test' }
@@ -195,9 +195,9 @@ describe('DotAppsService', () => {
             }
         };
         const anchor: HTMLAnchorElement = document.createElement('a');
-        spyOn<any>(window, 'fetch').and.returnValue(Promise.resolve(mockResponse));
-        spyOn(anchor, 'click');
-        spyOn(dotUtils, 'getDownloadLink').and.returnValue(anchor);
+        spyOn<any>(window, 'fetch').mockReturnValue(Promise.resolve(mockResponse));
+        jest.spyOn(anchor, 'click');
+        jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
 
         const conf = {
             appKeysBySite: {},
@@ -221,7 +221,7 @@ describe('DotAppsService', () => {
     }));
 
     it('should throw error when export apps configuration', fakeAsync(() => {
-        spyOn<any>(window, 'fetch').and.returnValue(Promise.reject(new Error('error')));
+        spyOn<any>(window, 'fetch').mockReturnValue(Promise.reject(new Error('error')));
 
         const conf = {
             appKeysBySite: {},
@@ -262,8 +262,8 @@ describe('DotAppsService', () => {
             name: { hidden: false, value: 'test' }
         };
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.saveSiteConfiguration('test', '123', params).subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
@@ -287,8 +287,8 @@ describe('DotAppsService', () => {
 
     it('should throw error on delete a specific app and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.deleteConfiguration('test', '123').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
@@ -311,8 +311,8 @@ describe('DotAppsService', () => {
 
     it('should throw error on delete all configurations from an app and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.deleteAllConfigurations('test').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));

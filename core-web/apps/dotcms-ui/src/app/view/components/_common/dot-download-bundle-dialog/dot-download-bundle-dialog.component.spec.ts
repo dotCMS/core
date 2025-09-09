@@ -130,7 +130,7 @@ describe('DotDownloadBundleDialogComponent', () => {
         let selectButton: SelectButton;
 
         beforeEach(() => {
-            spyOn(dotPushPublishFiltersService, 'get').and.returnValue(of(mockFilters));
+            jest.spyOn(dotPushPublishFiltersService, 'get').mockReturnValue(of(mockFilters));
             dotDownloadBundleDialogService.open(BUNDLE_ID);
             fixture.detectChanges();
             selectButton = fixture.debugElement.query(By.css('p-selectButton')).componentInstance;
@@ -219,10 +219,10 @@ describe('DotDownloadBundleDialogComponent', () => {
                 let anchor: HTMLAnchorElement;
 
                 beforeEach(() => {
-                    spyOn<any>(window, 'fetch').and.returnValue(Promise.resolve(mockResponse));
+                    spyOn<any>(window, 'fetch').mockReturnValue(Promise.resolve(mockResponse));
                     anchor = document.createElement('a');
-                    spyOn(anchor, 'click');
-                    spyOn(dotUtils, 'getDownloadLink').and.returnValue(anchor);
+                    jest.spyOn(anchor, 'click');
+                    jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
                 });
                 it('should disable buttons and change to label to downloading...', () => {
                     downloadButton.click();
@@ -265,7 +265,7 @@ describe('DotDownloadBundleDialogComponent', () => {
 
             describe('on error', () => {
                 beforeEach(() => {
-                    spyOn<any>(window, 'fetch').and.returnValue(
+                    spyOn<any>(window, 'fetch').mockReturnValue(
                         Promise.resolve(throwError('error'))
                     );
                 });

@@ -15,7 +15,7 @@ import { DotContentTypeSelectorComponent } from './dot-content-type-selector.com
 
 @Injectable()
 class MockDotContentTypeService {
-    getContentTypes = jasmine.createSpy('getContentTypes').and.returnValue(
+    getContentTypes = jest.fn().mockReturnValue(
         observableOf([
             { name: 'FORM', variable: 'Form' },
             { name: 'WIDGET', variable: 'Widget' }
@@ -55,8 +55,8 @@ describe('DotContentTypeSelectorComponent', () => {
 
     it('should emit the selected content type', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
-        spyOn(component.selected, 'emit');
-        spyOn(component, 'change').and.callThrough();
+        jest.spyOn(component.selected, 'emit');
+        jest.spyOn(component, 'change');
         pDropDown.triggerEventHandler('onChange', allContentTypesItem);
 
         expect(component.change).toHaveBeenCalledWith(allContentTypesItem);

@@ -1,4 +1,4 @@
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -269,9 +269,9 @@ describe('ContainerListComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToEditContainer: jest.fn(),
+                        goToSiteBrowser: jest.fn()
                     }
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -310,7 +310,7 @@ describe('ContainerListComponent', () => {
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
         paginatorService = TestBed.inject(PaginatorService);
-        spyOn(paginatorService, 'get').and.returnValue(of(containersMock));
+        jest.spyOn(paginatorService, 'get').mockReturnValue(of(containersMock));
 
         fixture = TestBed.createComponent(ContainerListComponent);
         comp = fixture.componentInstance;
@@ -324,7 +324,7 @@ describe('ContainerListComponent', () => {
             tick(2);
             fixture.detectChanges();
 
-            spyOn(dotPushPublishDialogService, 'open');
+            jest.spyOn(dotPushPublishDialogService, 'open');
             table = fixture.debugElement.query(
                 By.css('[data-testId="container-list-table"]')
             ).componentInstance;
@@ -385,7 +385,9 @@ describe('ContainerListComponent', () => {
             const menu: Menu = fixture.debugElement.query(
                 By.css('.container-listing__header-options p-menu')
             ).componentInstance;
-            spyOn(dotContainersService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
+            jest.spyOn(dotContainersService, 'publish').mockReturnValue(
+                of(mockBulkResponseSuccess)
+            );
 
             comp.selectedContainers = containersMock;
 
@@ -417,7 +419,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should click on file container and move on Browser Screen', () => {
-            spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of(null));
+            jest.spyOn(dotSiteBrowserService, 'setSelectedFolder').mockReturnValue(of(null));
             fixture.debugElement
                 .query(By.css('[data-testrowid="FILE_CONTAINER"]'))
                 .triggerEventHandler('click', null);
@@ -429,7 +431,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers when content types selector changes', () => {
-            spyOn(store, 'getContainersByContentType');
+            jest.spyOn(store, 'getContainersByContentType');
             fixture.detectChanges();
 
             contentTypesSelector = fixture.debugElement.query(
@@ -442,7 +444,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers when archive state change', () => {
-            spyOn(store, 'getContainersByArchiveState');
+            jest.spyOn(store, 'getContainersByArchiveState');
 
             const headerCheckbox = fixture.debugElement.query(
                 By.css('[data-testId="archiveCheckbox"]')
@@ -454,7 +456,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers when query change', () => {
-            spyOn(store, 'getContainersByQuery');
+            jest.spyOn(store, 'getContainersByQuery');
 
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
@@ -469,7 +471,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers with offset when table emits onPage', () => {
-            spyOn(store, 'getContainersWithOffset');
+            jest.spyOn(store, 'getContainersWithOffset');
 
             table.onPage.emit({ first: 10, rows: 10 });
 
@@ -477,7 +479,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should update selectedContainers in store when actions button is clicked', () => {
-            spyOn(store, 'updateSelectedContainers');
+            jest.spyOn(store, 'updateSelectedContainers');
             comp.selectedContainers = [containersMock[0]];
             fixture.detectChanges();
 
@@ -491,7 +493,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should focus first row when you press arrow down in query input', () => {
-            spyOn(comp, 'focusFirstRow');
+            jest.spyOn(comp, 'focusFirstRow');
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
             ).nativeElement;
@@ -504,7 +506,7 @@ describe('ContainerListComponent', () => {
         });
 
         it("should fetch containers when site is changed and it's not the first time", () => {
-            spyOn(paginatorService, 'setExtraParams').and.callThrough();
+            jest.spyOn(paginatorService, 'setExtraParams');
 
             siteService.setFakeCurrentSite(mockSites[1]);
 

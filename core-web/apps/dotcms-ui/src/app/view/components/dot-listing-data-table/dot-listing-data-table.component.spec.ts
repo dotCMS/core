@@ -448,7 +448,7 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         const actionButton = de.query(By.css('dot-action-menu-button'));
 
-        const spy = spyOn(fakeActions[0].menuItem, 'command');
+        const spy = jest.spyOn(fakeActions[0].menuItem, 'command');
 
         actionButton.nativeElement.children[0].click();
 
@@ -479,7 +479,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should focus first row on arrowDown in Global Search Input', fakeAsync(() => {
-        spyOn(comp, 'focusFirstRow').and.callThrough();
+        jest.spyOn(comp, 'focusFirstRow');
         setRequestSpy(items);
         comp.loadFirstPage();
         hostFixture.detectChanges();
@@ -511,7 +511,7 @@ describe('DotListingDataTableComponent', () => {
 
     it('should emit when a row is clicked or enter', fakeAsync(() => {
         setRequestSpy(items);
-        spyOn(comp.rowWasClicked, 'emit');
+        jest.spyOn(comp.rowWasClicked, 'emit');
         comp.loadFirstPage();
         hostFixture.detectChanges();
         tick(1);
@@ -525,7 +525,7 @@ describe('DotListingDataTableComponent', () => {
 
     it('should never emit when a SYSTEM TEMPLATE row is clicked or enter', fakeAsync(() => {
         setRequestSpy(items);
-        spyOn(comp.rowWasClicked, 'emit');
+        jest.spyOn(comp.rowWasClicked, 'emit');
 
         comp.loadFirstPage();
 
@@ -542,7 +542,7 @@ describe('DotListingDataTableComponent', () => {
 
     it('should set pContextMenuRowDisabled correctly', fakeAsync(() => {
         setRequestSpy(items);
-        spyOn(comp.rowWasClicked, 'emit');
+        jest.spyOn(comp.rowWasClicked, 'emit');
         comp.loadFirstPage();
         hostFixture.detectChanges();
         tick(1);
@@ -605,7 +605,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     function setRequestSpy(response: any): void {
-        spyOn<any>(coreWebService, 'requestView').and.returnValue(
+        spyOn<any>(coreWebService, 'requestView').mockReturnValue(
             of({
                 entity: response,
                 header: (type) => (type === 'Link' ? 'test;test=test' : '10')

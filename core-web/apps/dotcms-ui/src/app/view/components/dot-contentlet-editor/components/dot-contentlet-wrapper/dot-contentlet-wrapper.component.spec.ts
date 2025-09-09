@@ -15,9 +15,9 @@ import {
     DotAlertConfirmService,
     DotEventsService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageService,
-    DotRouterService,
-    DotIframeService
+    DotRouterService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -82,7 +82,7 @@ describe('DotContentletWrapperComponent', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn().mockReturnValue(of({}))
                     }
                 },
                 {
@@ -128,14 +128,14 @@ describe('DotContentletWrapperComponent', () => {
         dotIframeService = de.injector.get(DotIframeService);
         dotEventsService = de.injector.get(DotEventsService);
 
-        spyOn(titleService, 'setTitle').and.callThrough();
-        spyOn(dotIframeService, 'reload');
-        spyOn(dotAddContentletService, 'clear');
-        spyOn(dotAddContentletService, 'load');
-        spyOn(dotAddContentletService, 'keyDown');
-        spyOn(dotEventsService, 'notify');
-        spyOn(component.shutdown, 'emit');
-        spyOn(component.custom, 'emit');
+        jest.spyOn(titleService, 'setTitle');
+        jest.spyOn(dotIframeService, 'reload');
+        jest.spyOn(dotAddContentletService, 'clear');
+        jest.spyOn(dotAddContentletService, 'load');
+        jest.spyOn(dotAddContentletService, 'keyDown');
+        jest.spyOn(dotEventsService, 'notify');
+        jest.spyOn(component.shutdown, 'emit');
+        jest.spyOn(component.custom, 'emit');
     });
 
     afterEach(() => {
@@ -220,7 +220,7 @@ describe('DotContentletWrapperComponent', () => {
             });
 
             it('should set last Page title on close', () => {
-                spyOn(titleService, 'getTitle').and.callThrough();
+                jest.spyOn(titleService, 'getTitle');
                 titleService.setTitle('TESTHOME - dotCMS platform');
 
                 const params = {
@@ -257,7 +257,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
 
                 it('should show confirmation dialog and handle accept', () => {
-                    spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                    jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.accept();
                     });
 
@@ -289,7 +289,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
 
                 it('should show confirmation dialog and handle reject', () => {
-                    spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                    jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.reject();
                     });
 
@@ -350,7 +350,7 @@ describe('DotContentletWrapperComponent', () => {
                         }
                     };
 
-                    spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
+                    jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
                         url: '/test/inode123',
                         id: '123'
                     });
@@ -369,7 +369,7 @@ describe('DotContentletWrapperComponent', () => {
                             }
                         }
                     };
-                    spyOn(titleService, 'getTitle').and.returnValue(' - dotCMS platform');
+                    jest.spyOn(titleService, 'getTitle').mockReturnValue(' - dotCMS platform');
                     dotIframeDialog.triggerEventHandler('custom', params);
 
                     expect(component.header).toBe('Blog');
@@ -386,7 +386,7 @@ describe('DotContentletWrapperComponent', () => {
                             }
                         }
                     };
-                    spyOn(titleService, 'getTitle').and.returnValue(' - dotCMS platform');
+                    jest.spyOn(titleService, 'getTitle').mockReturnValue(' - dotCMS platform');
                     dotIframeDialog.triggerEventHandler('custom', params);
 
                     expect(component.header).toBe('Blog');

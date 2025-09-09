@@ -78,7 +78,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should emit action for edit --> Site Item', () => {
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
@@ -87,7 +87,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should emit action for export --> Site Item', () => {
-            spyOn(component.export, 'emit');
+            jest.spyOn(component.export, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
@@ -96,7 +96,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should emit action for delete --> Site Item', () => {
-            spyOn(component.delete, 'emit');
+            jest.spyOn(component.delete, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
@@ -112,7 +112,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should Load More button emit action', () => {
-            spyOn(component.loadData, 'emit');
+            jest.spyOn(component.loadData, 'emit');
             const loadMore = fixture.debugElement.query(
                 By.css('.dot-apps-configuration-list__show-more')
             );

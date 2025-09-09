@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -168,10 +168,10 @@ describe('DotEditPageStateControllerComponent', () => {
         propertiesService = de.injector.get(DotPropertiesService);
         editContentletService = de.injector.get(DotContentletEditorService);
 
-        spyOn(component.modeChange, 'emit');
-        spyOn(dotPageStateService, 'setLock');
-        spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        featFlagMock = spyOn(propertiesService, 'getFeatureFlag').and.returnValue(of(false));
+        jest.spyOn(component.modeChange, 'emit');
+        jest.spyOn(dotPageStateService, 'setLock');
+        jest.spyOn(personalizeService, 'personalized').mockReturnValue(of(null));
+        featFlagMock = jest.spyOn(propertiesService, 'getFeatureFlag').mockReturnValue(of(false));
     });
 
     describe('elements', () => {
@@ -433,7 +433,7 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
@@ -456,7 +456,7 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it('should update LOCK and MODE when confirmation dialog Canceled', () => {
-            spyOn<any>(dialogService, 'confirm').and.callFake((conf) => {
+            spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.cancel();
             });
 
@@ -495,7 +495,7 @@ describe('DotEditPageStateControllerComponent', () => {
             );
 
             fixtureHost.componentInstance.pageState = pageRenderStateMocked;
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
@@ -533,7 +533,7 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
             fixtureHost.detectChanges();
@@ -554,7 +554,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            featFlagMock.and.returnValue(of(true));
+            featFlagMock.mockReturnValue(of(true));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '457' },
@@ -589,7 +589,7 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
-            spyOn(editContentletService, 'edit');
+            jest.spyOn(editContentletService, 'edit');
             component.menuItems[1].command({
                 originalEvent: createFakeEvent('click')
             });
@@ -605,7 +605,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 By.css('[data-testId="dot-tabs-buttons"]')
             ).componentInstance;
 
-            const resetMock = spyOn(dotTabButtons, 'resetDropdownById');
+            const resetMock = jest.spyOn(dotTabButtons, 'resetDropdownById');
 
             component.menu.onHide.emit();
             expect(resetMock).toHaveBeenCalledWith(DotPageMode.EDIT);

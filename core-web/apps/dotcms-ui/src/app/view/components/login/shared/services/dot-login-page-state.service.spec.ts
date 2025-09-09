@@ -23,7 +23,7 @@ describe('DotLoginPageStateServiceService', () => {
 
         dotloginPageStateService = testbed.get(DotLoginPageStateService);
         loginService = testbed.get(LoginService);
-        spyOn(loginService, 'getLoginFormInfo').and.returnValue(of(mockLoginFormResponse));
+        jest.spyOn(loginService, 'getLoginFormInfo').mockReturnValue(of(mockLoginFormResponse));
     });
 
     it('should set new value to dotLoginInformation$ and call service correctly', () => {

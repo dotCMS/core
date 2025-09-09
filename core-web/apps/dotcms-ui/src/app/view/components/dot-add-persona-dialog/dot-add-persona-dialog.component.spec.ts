@@ -128,7 +128,7 @@ describe('DotAddPersonaDialogComponent', () => {
         });
 
         it('should reset persona form, disable accept button and set visible to false on closeDialog', () => {
-            spyOn(component.personaForm, 'resetForm');
+            jest.spyOn(component.personaForm, 'resetForm');
             component.closeDialog();
 
             expect(component.personaForm.resetForm).toHaveBeenCalled();
@@ -137,7 +137,7 @@ describe('DotAddPersonaDialogComponent', () => {
         });
 
         it('should call closeDialog on dotDialog hide', () => {
-            spyOn(component, 'closeDialog');
+            jest.spyOn(component, 'closeDialog');
             dotDialog.componentInstance.hide.emit();
             expect(component.closeDialog).toHaveBeenCalled();
         });
@@ -166,17 +166,17 @@ describe('DotAddPersonaDialogComponent', () => {
                 de = fixture.debugElement;
                 dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
                 dotWorkflowActionsFireService = de.injector.get(DotWorkflowActionsFireService);
-                spyOn(component.createdPersona, 'emit');
-                spyOnProperty(component.personaForm.form, 'valid').and.returnValue(true);
+                jest.spyOn(component.createdPersona, 'emit');
+                jest.spyOn(component.personaForm.form, 'valid', 'get').mockReturnValue(true);
                 dialog = de.query(By.css('dot-dialog'));
             });
 
             it('should create and emit the new persona, disable accept button and close dialog if form is valid', () => {
-                spyOn(component, 'closeDialog');
-                spyOn(
+                jest.spyOn(component, 'closeDialog');
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(observableOf(mockDotPersona));
+                ).mockReturnValue(observableOf(mockDotPersona));
 
                 submitForm();
 
@@ -197,12 +197,12 @@ describe('DotAddPersonaDialogComponent', () => {
 
             it('should call dotHttpErrorManagerService if endpoint fails, since form is valid, accept button should not be enable', () => {
                 const fake500Response = mockResponseView(500);
-                spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+                jest.spyOn(dotHttpErrorManagerService, 'handle');
                 component.dialogActions.accept.disabled = true;
-                spyOn(
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(throwError(fake500Response));
+                ).mockReturnValue(throwError(fake500Response));
 
                 submitForm();
 

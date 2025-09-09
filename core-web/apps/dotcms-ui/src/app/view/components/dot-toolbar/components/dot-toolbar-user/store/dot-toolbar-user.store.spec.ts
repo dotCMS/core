@@ -91,14 +91,14 @@ describe('DotToolbarUserStore', () => {
     });
 
     it('should trigger loginService logoutAs, navigate to first portlet and reload the page when logoutAs is called', fakeAsync(() => {
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
+        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
 
-        spyOn(loginService, 'logoutAs').and.callThrough();
-        spyOn(locationService, 'reload');
+        jest.spyOn(loginService, 'logoutAs');
+        jest.spyOn(locationService, 'reload');
 
         store.logoutAs();
 

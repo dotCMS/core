@@ -94,7 +94,7 @@ class MockPaginatorService {
     }
 }
 
-const storeMock = jasmine.createSpyObj(
+const storeMock = jest.fn(
     'DotPaletteStore',
     [
         'getContentletsData',

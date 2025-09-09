@@ -44,7 +44,7 @@ describe('DotLegacyAdditionalActionsComponent', () => {
     it('should set additionalPropertiesURL right', () => {
         let urlResult;
         const dotMenuService: DotMenuService = fixture.debugElement.injector.get(DotMenuService);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('2'));
+        jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('2'));
 
         fixture.detectChanges();
 

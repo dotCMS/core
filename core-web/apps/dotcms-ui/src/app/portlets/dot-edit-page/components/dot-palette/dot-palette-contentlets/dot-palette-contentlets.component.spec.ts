@@ -80,7 +80,7 @@ class TestHostComponent {
 
 @Injectable()
 class MockDotContentletEditorService {
-    setDraggedContentType = jasmine.createSpy('setDraggedContentType');
+    setDraggedContentType = jest.fn();
 }
 
 @Component({
@@ -166,7 +166,7 @@ describe('DotPaletteContentletsComponent', () => {
     });
 
     it('should emit paginate event', async () => {
-        spyOn(component.paginate, 'emit').and.callThrough();
+        jest.spyOn(component.paginate, 'emit');
         const productsArray = [];
         for (let index = 0; index < 30; index++) {
             productsArray.push(contentletProductDataMock);
@@ -198,7 +198,7 @@ describe('DotPaletteContentletsComponent', () => {
     });
 
     it('should emit go back', async () => {
-        spyOn(component.back, 'emit').and.callThrough();
+        jest.spyOn(component.back, 'emit');
 
         fixtureHost.detectChanges();
         await fixtureHost.whenStable();
@@ -226,7 +226,7 @@ describe('DotPaletteContentletsComponent', () => {
     });
 
     it('should filter Product item', async () => {
-        spyOn(component.filter, 'emit').and.callThrough();
+        jest.spyOn(component.filter, 'emit');
         fixtureHost.detectChanges();
         await fixtureHost.whenStable();
 

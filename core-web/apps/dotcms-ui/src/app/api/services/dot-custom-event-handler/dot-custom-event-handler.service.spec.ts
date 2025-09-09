@@ -153,7 +153,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
-        spyOn(dotLoadingIndicatorService, 'show');
+        jest.spyOn(dotLoadingIndicatorService, 'show');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -177,7 +177,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should create a contentlet', () => {
-        spyOn(dotContentletEditorService, 'create');
+        jest.spyOn(dotContentletEditorService, 'create');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -196,7 +196,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should create a host', () => {
-        spyOn(dotContentletEditorService, 'create');
+        jest.spyOn(dotContentletEditorService, 'create');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -215,7 +215,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should create a contentlet from edit page', () => {
-        spyOn(dotContentletEditorService, 'create');
+        jest.spyOn(dotContentletEditorService, 'create');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -275,9 +275,9 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should set colors in the ui', () => {
-        spyOn(dotUiColorsService, 'setColors');
+        jest.spyOn(dotUiColorsService, 'setColors');
         const fakeHtmlEl = { hello: 'html' };
-        spyOn<any>(document, 'querySelector').and.returnValue(fakeHtmlEl);
+        spyOn<any>(document, 'querySelector').mockReturnValue(fakeHtmlEl);
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -305,7 +305,7 @@ describe('DotCustomEventHandlerService', () => {
             password: '123'
         };
 
-        spyOn(dotGenerateSecurePasswordService, 'open');
+        jest.spyOn(dotGenerateSecurePasswordService, 'open');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -326,7 +326,7 @@ describe('DotCustomEventHandlerService', () => {
             isBundle: false
         };
 
-        spyOn(dotPushPublishDialogService, 'open');
+        jest.spyOn(dotPushPublishDialogService, 'open');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -340,7 +340,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should notify to open download bundle dialog', () => {
-        spyOn(dotDownloadBundleDialogService, 'open');
+        jest.spyOn(dotDownloadBundleDialogService, 'open');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -353,7 +353,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should notify to open download bundle dialog', () => {
-        spyOn(dotWorkflowEventHandlerService, 'open');
+        jest.spyOn(dotWorkflowEventHandlerService, 'open');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -366,7 +366,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should notify to open contnt compare dialog', () => {
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(dotEventsService, 'notify');
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -379,7 +379,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it("should update license when 'license-changed' event is received", () => {
-        spyOn(dotLicenseService, 'updateLicense');
+        jest.spyOn(dotLicenseService, 'updateLicense');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -397,14 +397,14 @@ describe('DotCustomEventHandlerService', () => {
                 getKeys: () => of(createFeatureFlagResponse('true'))
             });
 
-            spyOn(router, 'navigate');
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(router, 'navigate');
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata } as DotCMSContentType)
             );
         });
 
         it('should create a contentlet', () => {
-            spyOn(dotContentletEditorService, 'create');
+            jest.spyOn(dotContentletEditorService, 'create');
 
             service.handle(
                 new CustomEvent('ng-event', {
@@ -456,14 +456,14 @@ describe('DotCustomEventHandlerService', () => {
                 getKeys: () => of(createFeatureFlagResponse('true', 'test,test2'))
             });
 
-            spyOn(router, 'navigate');
+            jest.spyOn(router, 'navigate');
         });
 
         it('should create a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata } as DotCMSContentType)
             );
-            spyOn(dotContentletEditorService, 'create');
+            jest.spyOn(dotContentletEditorService, 'create');
 
             service.handle(
                 new CustomEvent('ng-event', {
@@ -478,7 +478,7 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should edit a a workflow task', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata } as DotCMSContentType)
             );
             service.handle(
@@ -497,7 +497,7 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should edit a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata } as DotCMSContentType)
             );
             service.handle(
@@ -515,10 +515,10 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should not create a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata: metadata2 } as DotCMSContentType)
             );
-            spyOn(dotContentletEditorService, 'create');
+            jest.spyOn(dotContentletEditorService, 'create');
 
             service.handle(
                 new CustomEvent('ng-event', {
@@ -533,7 +533,7 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should not edit a a workflow task', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata: metadata2 } as DotCMSContentType)
             );
 
@@ -553,7 +553,7 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should not edit a contentlet', () => {
-            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata: metadata2 } as DotCMSContentType)
             );
             service.handle(

@@ -109,7 +109,7 @@ describe('ContainerSelectorComponent', () => {
     });
 
     it('should set onInit Pagination Service with right values', () => {
-        spyOn(paginatorService, 'setExtraParams');
+        jest.spyOn(paginatorService, 'setExtraParams');
         comp.ngOnInit();
         expect(paginatorService.setExtraParams).toHaveBeenCalled();
     });
@@ -141,7 +141,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
 
         fixture.detectChanges();
 
@@ -163,7 +163,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
 
         fixture.detectChanges();
 
@@ -176,7 +176,7 @@ describe('ContainerSelectorComponent', () => {
 
     it('should set container list replacing the identifier for the path, if needed', () => {
         fixture.detectChanges();
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(containers));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
         const searchable: SearchableDropdownComponent = de.query(
             By.css('[data-testId="searchableDropdown"]')
         ).componentInstance;

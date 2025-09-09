@@ -2,7 +2,7 @@
 
 import { of } from 'rxjs';
 
-import { Component, DebugElement, Input, inject as inject_1 } from '@angular/core';
+import { Component, DebugElement, inject as inject_1, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
     FormsModule,
@@ -48,7 +48,7 @@ class MockDotSiteSelectorComponent {
         }
     };
 
-    updateCurrentSite = jasmine.createSpy('updateCurrentSite');
+    updateCurrentSite = jest.fn();
 }
 
 @Component({
@@ -165,7 +165,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 {
                     provide: DotThemesService,
                     useValue: {
-                        get: jasmine.createSpy().and.returnValue(of(mockDotThemes[1]))
+                        get: jest.fn().mockReturnValue(of(mockDotThemes[1]))
                     }
                 }
             ],
@@ -190,8 +190,8 @@ describe('DotThemeSelectorDropdownComponent', () => {
             de = fixture.debugElement;
             paginationService = TestBed.inject(PaginatorService);
             component = fixture.componentInstance;
-            spyOn(component, 'propagateChange');
-            spyOn(paginationService, 'get').and.callThrough();
+            jest.spyOn(component, 'propagateChange');
+            jest.spyOn(paginationService, 'get');
             fixture.detectChanges();
         });
 
@@ -213,7 +213,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 //Paginator service is now called at least once at the beginning, that's why it has an url at the very beginning
                 component.currentSiteIdentifier = '123';
                 paginationService.url = '';
-                spyOn(paginationService, 'getWithOffset');
+                jest.spyOn(paginationService, 'getWithOffset');
                 component.searchableDropdown.pageChange.emit({ first: 0 } as PaginationEvent);
                 expect(paginationService.getWithOffset).not.toHaveBeenCalledTimes(1);
             });
@@ -221,7 +221,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             it('should call pagination service if the url is set', () => {
                 component.currentSiteIdentifier = '123';
                 component.paginatorService.url = 'v1/test';
-                spyOn(paginationService, 'getWithOffset').and.callThrough();
+                jest.spyOn(paginationService, 'getWithOffset');
                 component.searchableDropdown.pageChange.emit({ first: 10 } as PaginationEvent);
                 expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
             });
@@ -244,7 +244,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
         describe('events', () => {
             it('should set value propagate change and toggle the overlay', () => {
                 const searchable = de.query(By.css('dot-searchable-dropdown'));
-                spyOn(searchable.componentInstance, 'toggleOverlayPanel');
+                jest.spyOn(searchable.componentInstance, 'toggleOverlayPanel');
                 const value = mockDotThemes[0];
 
                 searchable.triggerEventHandler('switch', { ...value });
@@ -256,9 +256,9 @@ describe('DotThemeSelectorDropdownComponent', () => {
 
         describe('filters', () => {
             beforeEach(() => {
-                spyOn(paginationService, 'setExtraParams');
-                spyOn(paginationService, 'getWithOffset').and.returnValue(of(mockDotThemes));
-                spyOnProperty(paginationService, 'totalRecords').and.returnValue(3);
+                jest.spyOn(paginationService, 'setExtraParams');
+                jest.spyOn(paginationService, 'getWithOffset').mockReturnValue(of(mockDotThemes));
+                jest.spyOn(paginationService, 'totalRecords', 'get').mockReturnValue(3);
 
                 const searchableButton = de.query(By.css('dot-searchable-dropdown button'));
                 searchableButton.nativeElement.click();
@@ -318,7 +318,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             });
 
             it('should allow keyboad nav on filter Input - Enter', async () => {
-                spyOn(component, 'onChange');
+                jest.spyOn(component, 'onChange');
                 fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
@@ -341,7 +341,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             de = fixture.debugElement;
             dotThemesService = TestBed.inject(DotThemesService);
             siteService = TestBed.inject(SiteService);
-            spyOn(siteService, 'getSiteById').and.callThrough();
+            jest.spyOn(siteService, 'getSiteById');
             fixture.detectChanges();
 
             expect(dotThemesService.get).toHaveBeenCalledOnceWith('123');

@@ -175,14 +175,14 @@ describe('DotPagesListingPanelComponent', () => {
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
-            spyOn(store, 'getPages');
-            spyOn(store, 'getPageTypes');
-            spyOn(store, 'setKeyword');
-            spyOn(store, 'setLanguageId');
-            spyOn(store, 'setArchived');
-            spyOn(store, 'setSessionStorageFilterParams');
-            spyOn(component.goToUrl, 'emit');
-            spyOn(component.pageChange, 'emit');
+            jest.spyOn(store, 'getPages');
+            jest.spyOn(store, 'getPageTypes');
+            jest.spyOn(store, 'setKeyword');
+            jest.spyOn(store, 'setLanguageId');
+            jest.spyOn(store, 'setArchived');
+            jest.spyOn(store, 'setSessionStorageFilterParams');
+            jest.spyOn(component.goToUrl, 'emit');
+            jest.spyOn(component.pageChange, 'emit');
 
             fixture.detectChanges();
             await fixture.whenStable();

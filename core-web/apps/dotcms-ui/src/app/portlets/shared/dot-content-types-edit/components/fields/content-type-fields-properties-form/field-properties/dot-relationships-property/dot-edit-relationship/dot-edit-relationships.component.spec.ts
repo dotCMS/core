@@ -136,8 +136,8 @@ describe('DotEditRelationshipsComponent', () => {
         de = fixture.debugElement;
 
         paginatorService = de.injector.get(PaginatorService);
-        spyOn(paginatorService, 'setExtraParams').and.callThrough();
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockRelationships));
+        jest.spyOn(paginatorService, 'setExtraParams');
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of(mockRelationships));
 
         dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
     }));

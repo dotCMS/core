@@ -14,9 +14,9 @@ import { ConfirmationService } from 'primeng/api';
 import {
     DotAlertConfirmService,
     DotEventsService,
-    DotRouterService,
+    DotFormatDateService,
     DotIframeService,
-    DotFormatDateService
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
@@ -103,9 +103,9 @@ describe('DotCreateContentletComponent', () => {
         routeService = TestBed.inject(ActivatedRoute);
         routerService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
-        spyOn(component.shutdown, 'emit');
-        spyOn(component.custom, 'emit');
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(component.shutdown, 'emit');
+        jest.spyOn(component.custom, 'emit');
+        jest.spyOn(dotIframeService, 'reloadData');
     });
 
     it('should have dot-contentlet-wrapper', () => {
@@ -138,7 +138,7 @@ describe('DotCreateContentletComponent', () => {
     });
 
     it('should set url from service', () => {
-        spyOnProperty(dotContentletEditorServiceMock, 'createUrl$', 'get').and.returnValue(
+        jest.spyOn(dotContentletEditorServiceMock, 'createUrl$', 'get', 'get').mockReturnValue(
             of('hello.world.com')
         );
         fixture.detectChanges();
@@ -146,7 +146,7 @@ describe('DotCreateContentletComponent', () => {
     });
 
     it('should set url from resolver', () => {
-        spyOnProperty<any>(routeService, 'data').and.returnValue(of({ url: 'url.from.resolver' }));
+        spyOnProperty<any>(routeService, 'data').mockReturnValue(of({ url: 'url.from.resolver' }));
         fixture.detectChanges();
         expect(dotCreateContentletWrapperComponent.url).toEqual('url.from.resolver');
     });

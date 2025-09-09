@@ -264,10 +264,10 @@ describe('DotContainerPropertiesComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy(),
-                        goToURL: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToEditContainer: jest.fn(),
+                        goToSiteBrowser: jest.fn(),
+                        goToURL: jest.fn()
                     }
                 },
                 StringUtils,
@@ -320,7 +320,7 @@ describe('DotContainerPropertiesComponent', () => {
 
     describe('with data', () => {
         beforeEach(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+            spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: mockContentTypes,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
@@ -356,7 +356,7 @@ describe('DotContainerPropertiesComponent', () => {
         });
 
         it('should render content types when max-content greater then zero', fakeAsync(() => {
-            spyOn(fixture.componentInstance, 'showContentTypeAndCode');
+            jest.spyOn(fixture.componentInstance, 'showContentTypeAndCode');
             fixture.componentInstance.form.get('maxContentlets').setValue(0);
             fixture.componentInstance.form.get('maxContentlets').valueChanges.subscribe((value) => {
                 expect(value).toBe(5);
@@ -373,10 +373,10 @@ describe('DotContainerPropertiesComponent', () => {
         }));
 
         it('should clear the field', fakeAsync(() => {
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
-            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
+            jest.spyOn(comp, 'clearContentConfirmationModal');
             comp.form.get('maxContentlets').setValue(0);
             tick();
             fixture.detectChanges();
@@ -398,8 +398,8 @@ describe('DotContainerPropertiesComponent', () => {
             comp.form.get('maxContentlets').setValue(0);
             comp.form.get('maxContentlets').setValue(5);
             fixture.detectChanges();
-            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(comp, 'clearContentConfirmationModal');
+            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
             const clearBtn = de.query(By.css('[data-testId="clearContent"]'));

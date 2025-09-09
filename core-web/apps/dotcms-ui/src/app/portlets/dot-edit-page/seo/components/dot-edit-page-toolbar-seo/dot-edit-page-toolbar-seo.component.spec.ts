@@ -248,7 +248,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
+        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(true));
     });
 
     describe('elements', () => {
@@ -315,7 +315,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
         });
 
         it('should emit on click', () => {
-            spyOn(component.actionFired, 'emit');
+            jest.spyOn(component.actionFired, 'emit');
             fixtureHost.detectChanges();
             const dotEditWorkflowActions = de.query(By.css('dot-edit-page-workflows-actions'));
             dotEditWorkflowActions.triggerEventHandler('fired', {});
@@ -342,7 +342,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
     describe("what's change", () => {
         describe('no license', () => {
             beforeEach(() => {
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 fixtureHost.detectChanges();
             });
 
@@ -437,10 +437,10 @@ describe('DotEditPageToolbarSeoComponent', () => {
     describe('events', () => {
         let whatsChangedElem: DebugElement;
         beforeEach(() => {
-            spyOn(component.whatschange, 'emit');
-            spyOn(dotMessageDisplayService, 'push');
-            spyOn(dotDialogService, 'open');
-            spyOn(component.favoritePage, 'emit');
+            jest.spyOn(component.whatschange, 'emit');
+            jest.spyOn(dotMessageDisplayService, 'push');
+            jest.spyOn(dotDialogService, 'open');
+            jest.spyOn(component.favoritePage, 'emit');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;

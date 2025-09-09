@@ -26,8 +26,8 @@ describe('DotTemplateNewComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToURL: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToURL: jest.fn()
                     }
                 },
                 {
@@ -46,7 +46,7 @@ describe('DotTemplateNewComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
 
         dialogService = TestBed.inject(DialogService);
-        spyOn<any>(dialogService, 'open').and.returnValue({
+        spyOn<any>(dialogService, 'open').mockReturnValue({
             onClose: dialogRefClose
         });
 

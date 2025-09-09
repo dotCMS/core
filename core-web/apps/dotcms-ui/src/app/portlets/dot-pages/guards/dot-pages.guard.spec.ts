@@ -1,4 +1,4 @@
-import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator';
+import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
@@ -87,9 +87,9 @@ describe('Guards', () => {
 
     describe('newEditContentForContentTypeGuard', () => {
         it('should return true when CONTENT_EDITOR2_ENABLED is false', (done) => {
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK));
 
             spectator.detectChanges();
 
@@ -101,11 +101,11 @@ describe('Guards', () => {
         });
 
         it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', (done) => {
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK));
 
-            const spyRouter = spyOn(dotRouterService, 'goToURL');
+            const spyRouter = jest.spyOn(dotRouterService, 'goToURL');
 
             spectator.detectChanges();
 
@@ -120,13 +120,12 @@ describe('Guards', () => {
 
     describe('newEditContentForContentletGuard', () => {
         it('should return true when CONTENT_EDITOR2_ENABLED is false', (done) => {
-            const spyContentlet = spyOn(
-                dotContentletService,
-                'getContentletByInode'
-            ).and.returnValue(of(CONTENTLET_MOCK));
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+            const spyContentlet = jest
+                .spyOn(dotContentletService, 'getContentletByInode')
+                .mockReturnValue(of(CONTENTLET_MOCK));
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK));
 
             spectator.detectChanges();
 
@@ -139,15 +138,14 @@ describe('Guards', () => {
         });
 
         it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', (done) => {
-            const spyContentlet = spyOn(
-                dotContentletService,
-                'getContentletByInode'
-            ).and.returnValue(of(CONTENTLET_MOCK));
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+            const spyContentlet = jest
+                .spyOn(dotContentletService, 'getContentletByInode')
+                .mockReturnValue(of(CONTENTLET_MOCK));
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK));
 
-            const spyRouter = spyOn(dotRouterService, 'goToURL');
+            const spyRouter = jest.spyOn(dotRouterService, 'goToURL');
 
             spectator.detectChanges();
 

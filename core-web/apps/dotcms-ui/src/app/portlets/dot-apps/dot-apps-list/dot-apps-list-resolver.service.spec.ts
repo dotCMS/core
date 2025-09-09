@@ -18,14 +18,11 @@ class DotLicenseServicesMock {
     }
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
-
-const routerStateSnapshotMock = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
 ]);
+
+const routerStateSnapshotMock = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
 routerStateSnapshotMock.url = '/apps';
 
 describe('DotAppsListResolver', () => {
@@ -51,8 +48,10 @@ describe('DotAppsListResolver', () => {
     });
 
     it('should get if portlet can be accessed', () => {
-        spyOn(dotLicenseServices, 'canAccessEnterprisePortlet').and.returnValue(observableOf(true));
-        spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+        jest.spyOn(dotLicenseServices, 'canAccessEnterprisePortlet').mockReturnValue(
+            observableOf(true)
+        );
+        jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
 
         dotAppsListResolver
             .resolve(activatedRouteSnapshotMock, routerStateSnapshotMock)

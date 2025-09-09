@@ -169,9 +169,9 @@ describe('DotTemplateBuilderComponent', () => {
         de = fixture.debugElement;
         component = fixture.componentInstance;
 
-        spyOn(component.save, 'emit');
-        spyOn(component.updateTemplate, 'emit');
-        spyOn(component.cancel, 'emit');
+        jest.spyOn(component.save, 'emit');
+        jest.spyOn(component.updateTemplate, 'emit');
+        jest.spyOn(component.cancel, 'emit');
     });
 
     describe('design', () => {
@@ -224,7 +224,7 @@ describe('DotTemplateBuilderComponent', () => {
                 title: 'test'
             } as DotTemplateItem;
 
-            spyOn(component, 'onTemplateItemChange');
+            jest.spyOn(component, 'onTemplateItemChange');
 
             templateBuilder.triggerEventHandler('templateChange', template);
             expect(component.onTemplateItemChange).toHaveBeenCalledWith(template);
@@ -302,7 +302,7 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should handle custom event', () => {
-            spyOn(component.custom, 'emit');
+            jest.spyOn(component.custom, 'emit');
 
             fixture.whenStable().then(() => {
                 const permissions: IframeMockComponent = de.query(

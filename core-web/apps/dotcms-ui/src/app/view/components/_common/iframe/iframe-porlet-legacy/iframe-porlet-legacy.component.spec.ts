@@ -167,7 +167,7 @@ xdescribe('IframePortletLegacyComponent', () => {
         route.queryParams = of({});
         route.params = of({ id: 'portlet-id' });
 
-        spyOn(dotMenuService, 'getUrlById').and.returnValue(of('fake-url'));
+        jest.spyOn(dotMenuService, 'getUrlById').mockReturnValue(of('fake-url'));
 
         let src: string;
 
@@ -184,7 +184,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     it('should handle custom events', () => {
         route.queryParams = of({ url: 'hello/world' });
         route.params = of({ id: 'portlet-id' });
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle');
         fixture.detectChanges();
 
         dotIframe = de.query(By.css('dot-iframe'));
@@ -211,7 +211,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     it('should call reloadIframePortlet once', () => {
         fixture.detectChanges();
         comp.url.next('test');
-        spyOn(comp, 'reloadIframePortlet');
+        jest.spyOn(comp, 'reloadIframePortlet');
         siteServiceMock.setFakeCurrentSite({
             identifier: '1',
             hostname: 'Site 1',

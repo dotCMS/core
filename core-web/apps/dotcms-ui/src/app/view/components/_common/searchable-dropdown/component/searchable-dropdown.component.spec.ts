@@ -298,7 +298,7 @@ describe('SearchableDropdownComponent', () => {
         beforeEach(() => {
             hostComp.data = data;
             hostComp.labelPropertyName = 'name';
-            spyOn(comp.switch, 'emit');
+            jest.spyOn(comp.switch, 'emit');
 
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
@@ -551,7 +551,7 @@ describe('SearchableDropdownComponent', () => {
 
     it('should allow keyboad nav on filter Input - Enter', () => {
         comp.selectedOptionIndex = 3;
-        spyOn(comp, 'handleClick');
+        jest.spyOn(comp, 'handleClick');
 
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));

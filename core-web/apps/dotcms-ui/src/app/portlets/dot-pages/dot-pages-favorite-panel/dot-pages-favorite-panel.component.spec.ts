@@ -171,8 +171,8 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         it('should set panel collapsed state', () => {
-            spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
-            spyOn(store, 'setFavoritePages');
+            jest.spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
+            jest.spyOn(store, 'setFavoritePages');
             component.toggleFavoritePagesPanel(
                 new Event('myevent', {
                     bubbles: true,
@@ -267,10 +267,10 @@ describe('DotPagesFavoritePanelComponent', () => {
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
-            spyOn(store, 'getFavoritePages');
-            spyOn(dialogService, 'open');
-            spyOn(component.goToUrl, 'emit');
-            spyOn(component.showActionsMenu, 'emit');
+            jest.spyOn(store, 'getFavoritePages');
+            jest.spyOn(dialogService, 'open');
+            jest.spyOn(component.goToUrl, 'emit');
+            jest.spyOn(component.showActionsMenu, 'emit');
 
             fixture.detectChanges();
         });
@@ -305,7 +305,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         describe('Events', () => {
             it('should call edit method to open favorite page dialog', () => {
-                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+                jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
                 elem.triggerEventHandler('edit', {
@@ -328,8 +328,8 @@ describe('DotPagesFavoritePanelComponent', () => {
             });
 
             it('should throw error dialog when call edit method to open favorite page dialog and user does not have access', () => {
-                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(false));
-                spyOn(dotHttpErrorManagerService, 'handle');
+                jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(false));
+                jest.spyOn(dotHttpErrorManagerService, 'handle');
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
                 elem.triggerEventHandler('edit', {
@@ -350,7 +350,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
             it('should allow to open Favorite Page dialog when URL checked throws a 404 Error', () => {
                 const error404 = mockResponseView(404);
-                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(
+                jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(
                     throwError(error404)
                 );
                 fixture.detectChanges();

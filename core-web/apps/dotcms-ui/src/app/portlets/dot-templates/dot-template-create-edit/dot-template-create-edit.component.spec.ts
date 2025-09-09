@@ -193,7 +193,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotTempFileUploadService,
                     useValue: {
-                        upload: jasmine.createSpy().and.returnValue(
+                        upload: jest.fn().mockReturnValue(
                             of([
                                 {
                                     assetVersion: '',
@@ -207,7 +207,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotWorkflowActionsFireService,
                     useValue: {
-                        publishContentletAndWaitForIndex: jasmine.createSpy().and.returnValue(
+                        publishContentletAndWaitForIndex: jest.fn().mockReturnValue(
                             of({
                                 identifier: ''
                             })
@@ -217,7 +217,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotCrudService,
                     useValue: {
-                        getDataById: jasmine.createSpy().and.returnValue(
+                        getDataById: jest.fn().mockReturnValue(
                             of([
                                 {
                                     identifier: ''
@@ -238,7 +238,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         url: '',
                         paginationPerPage: '',
                         totalRecords: mockDotThemes.length,
-                        get: jasmine.createSpy().and.returnValue(of([...mockDotThemes])),
+                        get: jest.fn().mockReturnValue(of([...mockDotThemes])),
                         setExtraParams() {
                             //
                         },
@@ -254,7 +254,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotThemesService,
                     useValue: {
-                        get: jasmine.createSpy().and.returnValue(of(mockDotThemes[1]))
+                        get: jest.fn().mockReturnValue(of(mockDotThemes[1]))
                     }
                 },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService }
@@ -262,14 +262,14 @@ describe('DotTemplateCreateEditComponent', () => {
         });
 
         templateStoreValue = {
-            createTemplate: jasmine.createSpy(),
-            goToEditTemplate: jasmine.createSpy(),
-            goToTemplateList: jasmine.createSpy(),
-            saveTemplate: jasmine.createSpy(),
-            saveWorkingTemplate: jasmine.createSpy(),
-            saveAndPublishTemplate: jasmine.createSpy(),
-            updateTemplate: jasmine.createSpy(),
-            updateWorkingTemplate: jasmine.createSpy()
+            createTemplate: jest.fn(),
+            goToEditTemplate: jest.fn(),
+            goToTemplateList: jest.fn(),
+            saveTemplate: jest.fn(),
+            saveWorkingTemplate: jest.fn(),
+            saveAndPublishTemplate: jest.fn(),
+            updateTemplate: jest.fn(),
+            updateWorkingTemplate: jest.fn()
         };
     });
 
@@ -299,7 +299,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -399,7 +399,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -468,10 +468,10 @@ describe('DotTemplateCreateEditComponent', () => {
                 };
                 const storeMock = {
                     ...templateStoreValue,
-                    saveTemplate: jasmine.createSpy(),
-                    saveAndPublishTemplate: jasmine.createSpy(),
-                    goToTemplateList: jasmine.createSpy(),
-                    goToEditTemplate: jasmine.createSpy(),
+                    saveTemplate: jest.fn(),
+                    saveAndPublishTemplate: jest.fn(),
+                    goToTemplateList: jest.fn(),
+                    goToEditTemplate: jest.fn(),
                     vm$: of({
                         working: template,
                         original: template,
@@ -485,7 +485,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -702,7 +702,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -758,7 +758,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
             dialogService = fixture.debugElement.injector.get(DialogService);
             store = fixture.debugElement.injector.get(DotTemplateStore);
-            spyOn(dialogService, 'open').and.callThrough();
+            jest.spyOn(dialogService, 'open');
 
             subject.next({
                 working: EMPTY_TEMPLATE_ADVANCED,

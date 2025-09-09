@@ -45,8 +45,8 @@ const queryParams = new BehaviorSubject<Params>({});
 
 @Injectable()
 class MockDotLoginPageStateService {
-    update = jasmine.createSpy('update');
-    set = jasmine.createSpy('set').and.returnValue(of(mockLoginInfo));
+    update = jest.fn();
+    set = jest.fn().mockReturnValue(of(mockLoginInfo));
     get = () => subject;
 }
 
@@ -112,7 +112,7 @@ describe('DotLoginComponent', () => {
         dotFormatDateService = de.injector.get(DotFormatDateService);
         dotMessageService = de.injector.get(DotMessageService);
         loginPageStateService = de.injector.get(DotLoginPageStateService);
-        spyOn(dotMessageService, 'init');
+        jest.spyOn(dotMessageService, 'init');
     });
 
     describe('Functionality', () => {
@@ -176,9 +176,9 @@ describe('DotLoginComponent', () => {
 
         it('should make a login request correctly and redirect after login', () => {
             component.loginForm.setValue(credentials);
-            spyOn(dotFormatDateService, 'setLang');
-            spyOn(dotRouterService, 'goToMain');
-            spyOn<any>(loginService, 'loginUser').and.returnValue(
+            jest.spyOn(dotFormatDateService, 'setLang');
+            jest.spyOn(dotRouterService, 'goToMain');
+            spyOn<any>(loginService, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -195,8 +195,8 @@ describe('DotLoginComponent', () => {
 
         it('should disable fields while waiting login response', async () => {
             component.loginForm.setValue(credentials);
-            spyOn(dotRouterService, 'goToMain');
-            spyOn<any>(loginService, 'loginUser').and.returnValue(
+            jest.spyOn(dotRouterService, 'goToMain');
+            spyOn<any>(loginService, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -245,7 +245,7 @@ describe('DotLoginComponent', () => {
 
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
-            spyOn(loginService, 'loginUser').and.returnValue(
+            jest.spyOn(loginService, 'loginUser').mockReturnValue(
                 throwError({ status: 400, error: { errors: [{ message: 'error message' }] } })
             );
             signInButton.triggerEventHandler('click', {});

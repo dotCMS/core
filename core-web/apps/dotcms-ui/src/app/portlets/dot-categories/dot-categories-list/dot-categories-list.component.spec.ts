@@ -177,7 +177,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
     }));
 
     function setRequestSpy(response: any): void {
-        spyOn<any>(coreWebService, 'requestView').and.returnValue(
+        spyOn<any>(coreWebService, 'requestView').mockReturnValue(
             of({
                 entity: response,
                 header: (type) => (type === 'Link' ? 'test;test=test' : '40')

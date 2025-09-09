@@ -46,7 +46,7 @@ describe('DotTemplateDesignerService', () => {
                 {
                     provide: DotTemplatesService,
                     useValue: {
-                        getById: jasmine.createSpy().and.returnValue(
+                        getById: jest.fn().mockReturnValue(
                             of({
                                 this: {
                                     is: 'a page'
@@ -85,7 +85,7 @@ describe('DotTemplateDesignerService', () => {
     });
 
     it('should return page by inode from router', (done) => {
-        spyOn(templateService, 'getFiltered').and.returnValue(of([templateMock]));
+        jest.spyOn(templateService, 'getFiltered').mockReturnValue(of([templateMock]));
         service
             .resolve(
                 {
@@ -105,7 +105,7 @@ describe('DotTemplateDesignerService', () => {
     });
 
     it('should go to the main portlet if inode is invalid', (done) => {
-        spyOn(templateService, 'getFiltered').and.returnValue(of([]));
+        jest.spyOn(templateService, 'getFiltered').mockReturnValue(of([]));
         service
             .resolve(
                 {

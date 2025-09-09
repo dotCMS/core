@@ -18,7 +18,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
 
 @Injectable()
 class MockLoginPageStateService {
-    get = jasmine.createSpy('get').and.returnValue(of(mockLoginFormResponse));
+    get = jest.fn().mockReturnValue(of(mockLoginFormResponse));
 }
 
 describe('DotLoginPageComponent', () => {

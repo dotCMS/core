@@ -40,7 +40,7 @@ describe('DotLargeMessageDisplayComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(TestHostComponent);
         dotcmsEventsServiceMock = fixture.debugElement.injector.get(DotcmsEventsService);
-        spyOn(dotcmsEventsServiceMock, 'subscribeTo').and.callThrough();
+        jest.spyOn(dotcmsEventsServiceMock, 'subscribeTo');
 
         fixture.detectChanges();
     });

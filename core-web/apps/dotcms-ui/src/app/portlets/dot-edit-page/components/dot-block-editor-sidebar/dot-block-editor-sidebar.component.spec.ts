@@ -178,8 +178,8 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set inputs to the block editor', async () => {
-        spyOn(dotContentTypeService, 'getContentType').and.callThrough();
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+        jest.spyOn(dotContentTypeService, 'getContentType');
+        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('true'));
         dotEventsService.notify('edit-block-editor', clickEvent);
 
         await fixture.whenRenderingDone();
@@ -197,7 +197,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     it('should save changes in the editor', () => {
         dotEventsService.notify('edit-block-editor', clickEvent);
-        spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+        jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(of({}));
         fixture.detectChanges();
 
         const updateBtn = de.query(By.css('[data-testId="updateBtn"]'));
@@ -215,8 +215,8 @@ describe('DotBlockEditorSidebarComponent', () => {
         });
 
         dotEventsService.notify('edit-block-editor', clickEvent);
-        spyOn(dotAlertConfirmService, 'alert').and.callThrough();
-        spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+        jest.spyOn(dotAlertConfirmService, 'alert');
+        jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
             throwError(error404)
         );
         fixture.detectChanges();

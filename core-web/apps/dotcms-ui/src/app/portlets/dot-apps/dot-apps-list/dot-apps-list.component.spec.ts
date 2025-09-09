@@ -142,7 +142,7 @@ describe('DotAppsListComponent', () => {
 
     describe('With access to portlet', () => {
         beforeEach(() => {
-            spyOnProperty(route, 'data').and.returnValue(
+            jest.spyOn(route, 'data', 'get').mockReturnValue(
                 of({ dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true } })
             );
             fixture.detectChanges();
@@ -205,7 +205,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should reload apps data when resolve action from Import/Export dialog', () => {
-            spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+            jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
             const importExportDialog = fixture.debugElement.query(
                 By.css('dot-apps-import-export-dialog')
             );

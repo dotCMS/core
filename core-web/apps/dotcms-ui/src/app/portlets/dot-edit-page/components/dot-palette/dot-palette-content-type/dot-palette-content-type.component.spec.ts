@@ -74,7 +74,7 @@ class TestHostComponent {
 
 @Injectable()
 class MockDotContentletEditorService {
-    setDraggedContentType = jasmine.createSpy('setDraggedContentType');
+    setDraggedContentType = jest.fn();
 }
 
 describe('DotPaletteContentTypeComponent', () => {
@@ -150,7 +150,7 @@ describe('DotPaletteContentTypeComponent', () => {
     });
 
     it('should filter items on search', async () => {
-        spyOn(comp.filter, 'emit').and.callThrough();
+        jest.spyOn(comp.filter, 'emit');
         fixtureHost.detectChanges();
         await fixtureHost.whenStable();
 
@@ -174,7 +174,7 @@ describe('DotPaletteContentTypeComponent', () => {
 
     it('should emit event to show a specific contentlet', () => {
         componentHost.items = contentTypeDataMock;
-        spyOn(comp.selected, 'emit').and.callThrough();
+        jest.spyOn(comp.selected, 'emit');
         fixtureHost.detectChanges();
         const buttons = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
         const label = buttons[0].nativeElement.querySelector('p').innerText.trim();

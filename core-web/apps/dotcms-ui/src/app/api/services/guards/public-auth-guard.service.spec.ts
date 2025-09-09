@@ -37,18 +37,15 @@ describe('ValidPublicAuthGuardService', () => {
         publicAuthGuardService = TestBed.inject(PublicAuthGuardService);
         dotRouterService = TestBed.inject(DotRouterService);
         loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
             'toString'
         ]);
-        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-            'ActivatedRouteSnapshot',
-            ['toString']
-        );
     });
 
     it('should redirect to to Main Portlet if User is logged in', () => {
         let result: boolean;
-        spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(observableOf(true));
+        jest.spyOn(loginService, 'isLogin$', 'get', 'get').mockReturnValue(observableOf(true));
         publicAuthGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -58,7 +55,7 @@ describe('ValidPublicAuthGuardService', () => {
 
     it('should allow access to the requested route if User is NOT logged in', () => {
         let result: boolean;
-        spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(observableOf(false));
+        jest.spyOn(loginService, 'isLogin$', 'get', 'get').mockReturnValue(observableOf(false));
         publicAuthGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));

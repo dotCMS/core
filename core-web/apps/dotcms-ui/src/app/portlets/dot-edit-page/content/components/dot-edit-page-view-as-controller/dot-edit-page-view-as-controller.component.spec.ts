@@ -175,8 +175,8 @@ describe('DotEditPageViewAsControllerComponent', () => {
 
     describe('community license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
-            // spyOn(component.changeViewAs, 'emit');
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+            // jest.spyOn(component.changeViewAs, 'emit');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -193,10 +193,10 @@ describe('DotEditPageViewAsControllerComponent', () => {
 
     describe('enterprise license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-            spyOn(component, 'changePersonaHandler').and.callThrough();
-            spyOn(component, 'changeDeviceHandler').and.callThrough();
-            spyOn(component, 'changeLanguageHandler').and.callThrough();
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(component, 'changePersonaHandler');
+            jest.spyOn(component, 'changeDeviceHandler');
+            jest.spyOn(component, 'changeLanguageHandler');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 

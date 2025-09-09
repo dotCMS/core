@@ -4,7 +4,7 @@ import {
     createComponentFactory,
     mockProvider,
     createMouseEvent
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -96,7 +96,7 @@ describe('DotNavigationComponent collapsed', () => {
         it('should reload portlet and hide overlay', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -115,7 +115,7 @@ describe('DotNavigationComponent collapsed', () => {
         it('should NOT reload portlet', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -225,7 +225,7 @@ describe('DotNavigationComponent expanded', () => {
         it('should reload portlet and hide overlay', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -244,7 +244,7 @@ describe('DotNavigationComponent expanded', () => {
         it('should NOT reload portlet', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {

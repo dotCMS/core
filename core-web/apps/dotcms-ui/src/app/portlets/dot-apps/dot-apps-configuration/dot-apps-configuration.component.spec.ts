@@ -160,9 +160,9 @@ describe('DotAppsConfigurationComponent', () => {
 
     describe('With integrations count', () => {
         beforeEach(() => {
-            spyOn(paginationService, 'setExtraParams');
-            spyOn<any>(paginationService, 'getWithOffset').and.returnValue(of(appData));
-            spyOn(component.searchInput.nativeElement, 'focus');
+            jest.spyOn(paginationService, 'setExtraParams');
+            spyOn<any>(paginationService, 'getWithOffset').mockReturnValue(of(appData));
+            jest.spyOn(component.searchInput.nativeElement, 'focus');
             fixture.detectChanges();
         });
 
@@ -256,11 +256,11 @@ describe('DotAppsConfigurationComponent', () => {
                 By.css('.dot-apps-configuration__action_header button')
             )[1];
 
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
-            spyOn(appsServices, 'deleteAllConfigurations').and.returnValue(of(null));
+            jest.spyOn(appsServices, 'deleteAllConfigurations').mockReturnValue(of(null));
 
             deleteAllBtn.triggerEventHandler('click', null);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
@@ -277,7 +277,7 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should delete a specific configuration', () => {
-            spyOn(appsServices, 'deleteConfiguration').and.returnValue(of(null));
+            jest.spyOn(appsServices, 'deleteConfiguration').mockReturnValue(of(null));
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;

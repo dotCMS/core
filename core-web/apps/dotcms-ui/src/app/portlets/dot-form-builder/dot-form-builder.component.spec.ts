@@ -53,7 +53,7 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show unlicense portlet', () => {
-        spyOnProperty(router, 'data').and.returnValue(
+        jest.spyOn(router, 'data', 'get').mockReturnValue(
             of({
                 haveLicense: false
             })
@@ -66,7 +66,7 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show dot-content-types', () => {
-        spyOnProperty(router, 'data').and.returnValue(
+        jest.spyOn(router, 'data', 'get').mockReturnValue(
             of({
                 haveLicense: true
             })

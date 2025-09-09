@@ -58,8 +58,8 @@ describe('DotPagesCardComponent', () => {
             component.url = '/index';
             component.ownerPage = true;
 
-            spyOn(component.goTo, 'emit').and.callThrough();
-            spyOn(component.edit, 'emit').and.callThrough();
+            jest.spyOn(component.goTo, 'emit');
+            jest.spyOn(component.edit, 'emit');
 
             fixture.detectChanges();
         });

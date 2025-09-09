@@ -91,9 +91,9 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit change evt with onBlur & keyUp.enter', () => {
-        spyOn(comp.editTab, 'emit');
-        const preventDefaultSpy = jasmine.createSpy('spy');
-        const stopPropagationSpy = jasmine.createSpy('spy');
+        jest.spyOn(comp.editTab, 'emit');
+        const preventDefaultSpy = jest.fn();
+        const stopPropagationSpy = jest.fn();
         const labelInput = de.query(By.css('.tab__label'));
 
         labelInput.triggerEventHandler('keydown.enter', {
@@ -127,10 +127,10 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit delete evt', () => {
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        spyOn(comp.removeTab, 'emit');
+        jest.spyOn(comp.removeTab, 'emit');
         const deleteButton = de.query(By.css('p-button')).nativeElement;
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);

@@ -65,7 +65,7 @@ describe('FieldDragDropService', () => {
                 {
                     provide: DotAlertConfirmService,
                     useValue: {
-                        alert: jasmine.createSpy('alert')
+                        alert: jest.fn()
                     }
                 },
                 {
@@ -87,7 +87,7 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldBagOptions', () => {
         it('should set name', () => {
-            const findSpy = spyOn(dragulaService, 'find').and.returnValue(null);
+            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldBagOptions();
 
@@ -237,7 +237,7 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldRowBagOptions', () => {
         it('should set name', () => {
-            const findSpy = spyOn(dragulaService, 'find').and.returnValue(null);
+            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldRowBagOptions();
 
@@ -263,8 +263,8 @@ describe('FieldDragDropService', () => {
     });
 
     it('should set bag options for fields and rows', () => {
-        spyOn(fieldDragDropService, 'setFieldRowBagOptions');
-        spyOn(fieldDragDropService, 'setFieldBagOptions');
+        jest.spyOn(fieldDragDropService, 'setFieldRowBagOptions');
+        jest.spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         fieldDragDropService.setBagOptions();
 

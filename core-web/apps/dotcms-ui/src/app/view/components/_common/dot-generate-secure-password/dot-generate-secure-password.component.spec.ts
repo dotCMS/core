@@ -72,7 +72,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
     describe('dot-dialog', () => {
         let dialog: DotDialogComponent;
         beforeEach(() => {
-            spyOn(dotClipboardUtil, 'copy');
+            jest.spyOn(dotClipboardUtil, 'copy');
             dialog = fixture.debugElement.query(By.css('dot-dialog')).componentInstance;
             dotGenerateSecurePasswordService.open(passwordGenerateData);
             fixture.detectChanges();

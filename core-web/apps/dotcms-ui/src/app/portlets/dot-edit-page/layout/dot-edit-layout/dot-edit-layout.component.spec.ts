@@ -70,7 +70,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn().mockReturnValue(of({}))
                     }
                 },
                 {
@@ -80,9 +80,9 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotGlobalMessageService,
                     useValue: {
-                        loading: jasmine.createSpy(),
-                        success: jasmine.createSpy(),
-                        error: jasmine.createSpy()
+                        loading: jest.fn(),
+                        success: jest.fn(),
+                        error: jest.fn()
                     }
                 },
                 {
@@ -96,7 +96,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotTemplateContainersCacheService,
                     useValue: {
-                        set: jasmine.createSpy()
+                        set: jest.fn()
                     }
                 },
                 {
@@ -138,7 +138,7 @@ describe('DotEditLayoutComponent', () => {
                 themeId: '123'
             } as DotTemplateDesigner;
 
-            spyOn(component.updateTemplate, 'next');
+            jest.spyOn(component.updateTemplate, 'next');
 
             builder.triggerEventHandler('templateChange', template);
 

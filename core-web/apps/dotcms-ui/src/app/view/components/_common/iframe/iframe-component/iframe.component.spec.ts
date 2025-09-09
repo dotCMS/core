@@ -76,7 +76,7 @@ describe('IframeComponent', () => {
         dotIframeService = TestBed.inject(DotIframeService);
         dotUiColorsService = TestBed.inject(DotUiColorsService);
         dotRouterService = TestBed.inject(DotRouterService);
-        spyOn(dotUiColorsService, 'setColors');
+        jest.spyOn(dotUiColorsService, 'setColors');
 
         comp.isLoading = false;
         comp.src = 'etc/etc?hello=world';
@@ -88,20 +88,20 @@ describe('IframeComponent', () => {
         beforeEach(() => {
             comp.iframeElement.nativeElement = {
                 location: {
-                    reload: jasmine.createSpy('reload')
+                    reload: jest.fn()
                 },
                 contentWindow: {
-                    postMessage: jasmine.createSpy('postMessage'),
+                    postMessage: jest.fn(),
                     document: {
                         body: {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jasmine.createSpy('docAddEventListener'),
-                        removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                        addEventListener: jest.fn(),
+                        removeEventListener: jest.fn()
                     },
-                    addEventListener: jasmine.createSpy('docAddEventListener'),
-                    removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                    addEventListener: jest.fn(),
+                    removeEventListener: jest.fn()
                 }
             };
         });
@@ -142,7 +142,7 @@ describe('IframeComponent', () => {
                     }
                 },
                 location: {
-                    reload: jasmine.createSpy('reload')
+                    reload: jest.fn()
                 }
             }
         };
@@ -156,7 +156,7 @@ describe('IframeComponent', () => {
     it('should call function in the iframe window', () => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                fakeFunction: jasmine.createSpy('reload'),
+                fakeFunction: jest.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'
@@ -197,11 +197,11 @@ describe('IframeComponent', () => {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jasmine.createSpy('docAddEventListener'),
-                        removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                        addEventListener: jest.fn(),
+                        removeEventListener: jest.fn()
                     },
-                    addEventListener: jasmine.createSpy('addEventListener'),
-                    removeEventListener: jasmine.createSpy('removeEventListener')
+                    addEventListener: jest.fn(),
+                    removeEventListener: jest.fn()
                 }
             };
         });
@@ -275,7 +275,7 @@ describe('IframeComponent', () => {
 
         it('should hide on click and call hide event', () => {
             comp.showOverlay = true;
-            spyOn(iframeOverlayService, 'hide').and.callThrough();
+            jest.spyOn(iframeOverlayService, 'hide');
             fixture.detectChanges();
             let dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             dotOverlayMask.triggerEventHandler('click', {});
@@ -290,7 +290,7 @@ describe('IframeComponent', () => {
     it('should refresh OSGI Plugis list on OSGI_BUNDLES_LOADED websocket event', fakeAsync(() => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                getBundlesData: jasmine.createSpy('getBundlesData'),
+                getBundlesData: jest.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'

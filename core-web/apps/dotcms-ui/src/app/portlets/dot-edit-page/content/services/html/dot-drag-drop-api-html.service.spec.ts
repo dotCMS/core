@@ -22,8 +22,8 @@ describe('DotDragDropAPIHtmlService', () => {
 
         service = TestBed.inject(DotDragDropAPIHtmlService);
 
-        spyOn(doc.head, 'appendChild').and.callThrough();
-        spyOn(doc.body, 'appendChild').and.callThrough();
+        jest.spyOn(doc.head, 'appendChild');
+        jest.spyOn(doc.body, 'appendChild');
     }));
 
     it('should include drag and drop css and js', () => {
@@ -45,7 +45,7 @@ describe('DotDragDropAPIHtmlService', () => {
     });
 
     it('should include drag and drop css and js for DOJO', () => {
-        spyOn<any>(iframe.contentWindow, 'hasOwnProperty').and.returnValue(true);
+        spyOn<any>(iframe.contentWindow, 'hasOwnProperty').mockReturnValue(true);
         service.initDragAndDropContext(iframe);
 
         expect(doc.body.appendChild).toHaveBeenCalledWith(

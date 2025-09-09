@@ -139,7 +139,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                 describe('without license', () => {
                     beforeEach(() => {
                         const dotLicenseService = TestBed.inject(DotLicenseService);
-                        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(
+                        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(
                             observableOf(false)
                         );
                     });

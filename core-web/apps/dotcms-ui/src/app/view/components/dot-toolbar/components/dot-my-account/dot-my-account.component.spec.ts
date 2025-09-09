@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -96,7 +96,7 @@ describe('DotMyAccountComponent', () => {
         });
 
         it('should emit shutdown when dialog is closed', () => {
-            spyOn(component.shutdown, 'emit');
+            jest.spyOn(component.shutdown, 'emit');
             component.setVisible(true);
             spectator.detectChanges();
 
@@ -248,7 +248,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should call addStarterPage when checkbox is checked', () => {
             const accountService = spectator.inject(DotAccountService);
-            spyOn(accountService, 'addStarterPage').and.returnValue(of({}));
+            jest.spyOn(accountService, 'addStarterPage').mockReturnValue(of({}));
 
             // First set showStarter to false
             component.showStarter.set(false);
@@ -264,7 +264,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should call removeStarterPage when checkbox is unchecked', () => {
             const accountService = spectator.inject(DotAccountService);
-            spyOn(accountService, 'removeStarterPage').and.returnValue(of({}));
+            jest.spyOn(accountService, 'removeStarterPage').mockReturnValue(of({}));
 
             // First set showStarter to true
             component.showStarter.set(true);
@@ -291,10 +291,10 @@ describe('DotMyAccountComponent', () => {
             const loginService = spectator.inject(LoginService);
 
             // Spy on updateUser and setAuth methods
-            const updateUserSpy = spyOn(accountService, 'updateUser').and.returnValue(
-                of({ entity: { user: mockUser, reauthenticate: false } })
-            );
-            const setAuthSpy = spyOn(loginService, 'setAuth');
+            const updateUserSpy = jest
+                .spyOn(accountService, 'updateUser')
+                .mockReturnValue(of({ entity: { user: mockUser, reauthenticate: false } }));
+            const setAuthSpy = jest.spyOn(loginService, 'setAuth');
 
             // Fill form with valid data
             component.form.patchValue({
@@ -345,7 +345,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should handle current password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
-            spyOn(accountService, 'updateUser').and.returnValue(
+            jest.spyOn(accountService, 'updateUser').mockReturnValue(
                 throwError({
                     status: 400,
                     error: {
@@ -392,7 +392,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should handle new password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
-            spyOn(accountService, 'updateUser').and.returnValue(
+            jest.spyOn(accountService, 'updateUser').mockReturnValue(
                 throwError({
                     status: 400,
                     error: {
@@ -447,7 +447,7 @@ describe('DotMyAccountComponent', () => {
         it('should handle generic error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             const errorService = spectator.inject(DotHttpErrorManagerService);
-            spyOn(accountService, 'updateUser').and.returnValue(
+            jest.spyOn(accountService, 'updateUser').mockReturnValue(
                 throwError({
                     status: 500,
                     error: {
@@ -460,7 +460,7 @@ describe('DotMyAccountComponent', () => {
                     }
                 })
             );
-            spyOn(errorService, 'handle').and.returnValue(of({}));
+            jest.spyOn(errorService, 'handle').mockReturnValue(of({}));
 
             // Fill form with valid data
             component.form.patchValue({
@@ -495,10 +495,10 @@ describe('DotMyAccountComponent', () => {
         it('should handle reauthentication requirement', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             const routerService = spectator.inject(DotRouterService);
-            spyOn(accountService, 'updateUser').and.returnValue(
+            jest.spyOn(accountService, 'updateUser').mockReturnValue(
                 of({ entity: { user: mockUser, reauthenticate: true } })
             );
-            spyOn(routerService, 'doLogOut');
+            jest.spyOn(routerService, 'doLogOut');
 
             // Fill form with valid data
             component.form.patchValue({

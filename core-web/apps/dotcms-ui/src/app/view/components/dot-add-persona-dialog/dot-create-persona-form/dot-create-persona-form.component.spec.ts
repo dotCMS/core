@@ -197,7 +197,7 @@ describe('DotCreatePersonaFormComponent', () => {
 
         it('should emit isValid to false when the file upload starts', () => {
             const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-            spyOn(component.isValid, 'emit');
+            jest.spyOn(component.isValid, 'emit');
             fileUpload.triggerEventHandler('onBeforeUpload', {});
             fixture.detectChanges();
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
@@ -224,7 +224,7 @@ describe('DotCreatePersonaFormComponent', () => {
         });
 
         it('should emit if form is valid after changes', () => {
-            spyOn(component.isValid, 'emit');
+            jest.spyOn(component.isValid, 'emit');
             component.form.setValue({
                 photo: 'test',
                 name: 'test',
@@ -236,7 +236,7 @@ describe('DotCreatePersonaFormComponent', () => {
         });
 
         it('should emit if form is invalid after changes', () => {
-            spyOn(component.isValid, 'emit');
+            jest.spyOn(component.isValid, 'emit');
             component.form.get('photo').setValue('test');
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
         });

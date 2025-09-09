@@ -7,8 +7,6 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { TabViewInsertDirective } from './tab-view-insert.directive';
 
-import { MockResizeObserver } from '../../utils/mocks';
-
 // Mock component
 @Component({
     standalone: false,
@@ -41,7 +39,6 @@ describe('TabViewInsertDirective', () => {
     });
 
     beforeEach(() => {
-        window.ResizeObserver = MockResizeObserver;
         spectator = createComponent();
     });
     afterEach(() => {

@@ -18,9 +18,9 @@ export class MockDotLoginPageStateService {
         }
     });
 
-    set = jasmine.createSpy('set').and.returnValue(this.mockLoginInfo);
-    get = jasmine.createSpy('get').and.returnValue(this.mockLoginInfo);
-    update = jasmine.createSpy('update');
+    set = jest.fn().mockReturnValue(this.mockLoginInfo);
+    get = jest.fn().mockReturnValue(this.mockLoginInfo);
+    update = jest.fn();
 }
 
 describe('DotLoginPageResolver', () => {

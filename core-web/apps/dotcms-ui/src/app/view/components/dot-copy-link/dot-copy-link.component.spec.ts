@@ -44,7 +44,7 @@ describe('DotCopyLinkComponent', () => {
 
         dotClipboardUtil = de.injector.get(DotClipboardUtil);
 
-        spyOn(dotClipboardUtil, 'copy').and.callFake(() => {
+        jest.spyOn(dotClipboardUtil, 'copy').mockImplementation(() => {
             return new Promise((resolve) => {
                 resolve(true);
             });
@@ -76,7 +76,7 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should copy text to clipboard', () => {
-            const stopPropagation = jasmine.createSpy('stopPropagation');
+            const stopPropagation = jest.fn();
 
             button.triggerEventHandler('click', {
                 stopPropagation: stopPropagation

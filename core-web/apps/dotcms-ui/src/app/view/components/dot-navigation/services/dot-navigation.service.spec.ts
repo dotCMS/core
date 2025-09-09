@@ -199,7 +199,7 @@ describe('DotNavigationService', () => {
                 {
                     provide: DotIframeService,
                     useValue: {
-                        reload: jasmine.createSpy()
+                        reload: jest.fn()
                     }
                 },
                 {
@@ -208,10 +208,10 @@ describe('DotNavigationService', () => {
                         currentPortlet: {
                             id: '123-567'
                         },
-                        reloadCurrentPortlet: jasmine.createSpy(),
+                        reloadCurrentPortlet: jest.fn(),
                         gotoPortlet: jasmine
                             .createSpy()
-                            .and.returnValue(new Promise((resolve) => resolve(true)))
+                            .mockReturnValue(new Promise((resolve) => resolve(true)))
                     }
                 }
             ],
@@ -227,9 +227,9 @@ describe('DotNavigationService', () => {
         router = testbed.inject(Router);
         titleService = testbed.inject(Title);
 
-        spyOn(titleService, 'setTitle');
-        spyOn(dotEventService, 'notify');
-        spyOn(dotMenuService, 'reloadMenu').and.callThrough();
+        jest.spyOn(titleService, 'setTitle');
+        jest.spyOn(dotEventService, 'notify');
+        jest.spyOn(dotMenuService, 'reloadMenu');
         localStorage.clear();
     }));
 
@@ -271,7 +271,7 @@ describe('DotNavigationService', () => {
     describe('collapseMenu', () => {
         it('should collapse menu and call closeAllSections', () => {
             expect(service.collapsed$.getValue()).toBe(true);
-            spyOn(service, 'closeAllSections');
+            jest.spyOn(service, 'closeAllSections');
             service.collapseMenu();
             expect(service.collapsed$.getValue()).toBe(true);
             expect(service.closeAllSections).toHaveBeenCalledTimes(1);
@@ -348,7 +348,7 @@ describe('DotNavigationService', () => {
     it('should go to first portlet on auth change', () => {
         (loginService as unknown as LoginServiceMock).triggerNewAuth(baseMockAuth);
 
-        spyOn(dotMenuService, 'loadMenu').and.returnValue(
+        jest.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
             of([
                 {
                     active: false,

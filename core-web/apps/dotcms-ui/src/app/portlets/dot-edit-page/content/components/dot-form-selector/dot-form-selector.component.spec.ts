@@ -105,7 +105,7 @@ describe('DotFormSelectorComponent', () => {
 
     describe('show dialog', () => {
         beforeEach(() => {
-            spyOn(paginatorService, 'getWithOffset').and.callFake(getWithOffsetMock);
+            jest.spyOn(paginatorService, 'getWithOffset').mockImplementation(getWithOffsetMock);
 
             fixture.detectChanges();
             fixture.componentInstance.show = true;
@@ -149,8 +149,8 @@ describe('DotFormSelectorComponent', () => {
 
             describe('events', () => {
                 beforeEach(async () => {
-                    spyOn(component.pick, 'emit');
-                    spyOn(component.shutdown, 'emit');
+                    jest.spyOn(component.pick, 'emit');
+                    jest.spyOn(component.shutdown, 'emit');
 
                     fixture.componentInstance.show = true;
                     paginatorService.totalRecords = 1;

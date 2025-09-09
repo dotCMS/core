@@ -126,7 +126,7 @@ describe('DotAddToMenuComponent', () => {
         dotMenuService = TestBed.inject(DotMenuService);
 
         dotdialog = de.query(By.css('dot-dialog'));
-        spyOn(dotMenuService, 'loadMenu').and.callThrough();
+        jest.spyOn(dotMenuService, 'loadMenu');
 
         fixture.detectChanges();
     });
@@ -197,9 +197,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogAcceptAction"]')
         );
 
-        spyOn(dotAddToMenuService, 'createCustomTool').and.returnValue(of(''));
-        spyOn(dotAddToMenuService, 'addToLayout').and.returnValue(of(''));
-        spyOn(component.cancel, 'emit');
+        jest.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
+        jest.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
+        jest.spyOn(component.cancel, 'emit');
 
         addButton.nativeElement.click();
 
@@ -221,7 +221,7 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogCancelAction"]')
         );
 
-        spyOn(component.cancel, 'emit');
+        jest.spyOn(component.cancel, 'emit');
         cancelButton.nativeElement.click();
 
         expect(component.cancel.emit).toHaveBeenCalledTimes(1);

@@ -47,7 +47,7 @@ describe('DotWhatsChangedComponent', () => {
                     useValue: {
                         whatChange: jasmine
                             .createSpy()
-                            .and.returnValue(
+                            .mockReturnValue(
                                 of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
                             )
                     }
@@ -57,13 +57,13 @@ describe('DotWhatsChangedComponent', () => {
                     useValue: {
                         createStyleElement: jasmine
                             .createSpy()
-                            .and.returnValue(document.createElement('style'))
+                            .mockReturnValue(document.createElement('style'))
                     }
                 },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy()
+                        handle: jest.fn()
                     }
                 }
             ],

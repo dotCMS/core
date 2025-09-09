@@ -30,11 +30,9 @@ import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resol
 
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 
-const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
+const route: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', ['toString']);
 
-const state: any = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+const state: any = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
 
 route.queryParams = {};
 
@@ -77,7 +75,7 @@ describe('DotIframePorletLegacyResolver', () => {
         });
 
         dotPageStateService = testbed.get(DotPageStateService);
-        dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
+        dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
         resolver = testbed.get(DotIframePortletLegacyResolver);
         dotLicenseService = testbed.get(DotLicenseService);
         state.url = '/rules';
@@ -85,8 +83,8 @@ describe('DotIframePorletLegacyResolver', () => {
 
     it('should return if user can access url to be rendered with current license', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
-        dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
-        spyOn(dotLicenseService, 'canAccessEnterprisePortlet').and.returnValue(of(true));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
+        jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(true));
 
         resolver.resolve(route, state).subscribe((canAccess: boolean) => {
             expect(canAccess).toEqual(true);

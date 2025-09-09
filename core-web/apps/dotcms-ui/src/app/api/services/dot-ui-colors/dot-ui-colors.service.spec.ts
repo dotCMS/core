@@ -13,8 +13,8 @@ describe('DotUiColorsService', () => {
 
         service = TestBed.inject(DotUiColorsService);
 
-        setPropertySpy = jasmine.createSpy('setProperty');
-        spyOn(document as Document, 'querySelector').and.returnValue({
+        setPropertySpy = jest.fn();
+        jest.spyOn(document as Document, 'querySelector').mockReturnValue({
             style: {
                 setProperty: setPropertySpy
             }

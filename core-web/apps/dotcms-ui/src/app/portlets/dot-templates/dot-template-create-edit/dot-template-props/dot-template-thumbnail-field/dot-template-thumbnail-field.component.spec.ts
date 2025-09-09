@@ -97,7 +97,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             component = fixture.componentInstance;
             dotTempFileUploadService = TestBed.inject(DotTempFileUploadService);
             dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
-            spyOn(component, 'propagateChange').and.callThrough();
+            jest.spyOn(component, 'propagateChange');
         });
 
         it('should have basic attr', () => {
@@ -180,8 +180,8 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             });
 
             it('should show error for invalid image url', () => {
-                spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
-                spyOn(dotTempFileUploadService, 'upload').and.returnValue(
+                jest.spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
+                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -218,11 +218,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             });
 
             it('should show default error', () => {
-                spyOn(
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(throwError({}));
-                spyOn(dotTempFileUploadService, 'upload').and.returnValue(
+                ).mockReturnValue(throwError({}));
+                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -269,11 +269,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     name: 'Something',
                     identifier: '456'
                 };
-                spyOn(
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(of(mock));
-                spyOn(dotTempFileUploadService, 'upload').and.returnValue(
+                ).mockReturnValue(of(mock));
+                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -323,7 +323,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
         });
 
         it('should set asset', () => {
-            spyOn(dotCrudService, 'getDataById').and.returnValue(
+            jest.spyOn(dotCrudService, 'getDataById').mockReturnValue(
                 of([
                     {
                         ...dotcmsContentletMock,

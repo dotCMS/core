@@ -1,4 +1,4 @@
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -22,7 +22,7 @@ class MockDotMenuService {
 
 @Injectable()
 class MockDotNavigationService {
-    goToFirstPortlet = jasmine.createSpy('goToFirstPortlet');
+    goToFirstPortlet = jest.fn();
 }
 
 describe('ValidMenuGuardService', () => {
@@ -58,19 +58,16 @@ describe('ValidMenuGuardService', () => {
         dotMenuService = TestBed.inject(DotMenuService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
             'toString'
         ]);
-        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-            'ActivatedRouteSnapshot',
-            ['toString']
-        );
     });
 
     it('should allow access to Menu Portlets', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
-        spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(true));
+        jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -81,7 +78,7 @@ describe('ValidMenuGuardService', () => {
     it('should prevent access to Menu Portlets', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
-        spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(false));
+        jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -93,7 +90,7 @@ describe('ValidMenuGuardService', () => {
     it('should allow children access to Menu Portlets', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
-        spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(true));
+        jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -104,7 +101,7 @@ describe('ValidMenuGuardService', () => {
     it('should prevent children access to Menu Portlets', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
-        spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(false));
+        jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -115,14 +112,14 @@ describe('ValidMenuGuardService', () => {
 
     describe('JSPPortlet', () => {
         beforeEach(() => {
-            spyOn(dotRouterService, 'isJSPPortletURL').and.returnValue(true);
+            jest.spyOn(dotRouterService, 'isJSPPortletURL').mockReturnValue(true);
             mockRouterStateSnapshot.url = '/c/test';
         });
 
         it('should allow children access to Menu Portlets if JSPPortlet is in menu', (done) => {
-            const spy = spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(
-                observableOf(true)
-            );
+            const spy = jest
+                .spyOn(dotMenuService, 'isPortletInMenu')
+                .mockReturnValue(observableOf(true));
             menuGuardService
                 .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
                 .subscribe((res) => {
@@ -134,9 +131,9 @@ describe('ValidMenuGuardService', () => {
         });
 
         it('should prevent children access to Menu Portlets if JSPPortlet is in menu', (done) => {
-            const spy = spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(
-                observableOf(false)
-            );
+            const spy = jest
+                .spyOn(dotMenuService, 'isPortletInMenu')
+                .mockReturnValue(observableOf(false));
             menuGuardService
                 .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
                 .subscribe((res) => {

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -430,9 +430,9 @@ describe('DotTemplateListComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditTemplate: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToEditTemplate: jest.fn(),
+                        goToSiteBrowser: jest.fn()
                     }
                 },
                 {
@@ -498,7 +498,7 @@ describe('DotTemplateListComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<any>(coreWebService, 'requestView').and.returnValue(
+            spyOn<any>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: templatesMock,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
@@ -510,13 +510,13 @@ describe('DotTemplateListComponent', () => {
             dotListingDataTable = fixture.debugElement.query(
                 By.css('dot-listing-data-table')
             ).componentInstance;
-            spyOn(dotPushPublishDialogService, 'open');
+            jest.spyOn(dotPushPublishDialogService, 'open');
 
-            spyOn<any>(dialogService, 'open').and.returnValue({
+            spyOn<any>(dialogService, 'open').mockReturnValue({
                 onClose: dialogRefClose
             });
 
-            mockGoToFolder = spyOn(comp, 'goToFolder');
+            mockGoToFolder = jest.spyOn(comp, 'goToFolder');
         }));
 
         it('should reload portlet only when the site change', () => {
@@ -687,7 +687,7 @@ describe('DotTemplateListComponent', () => {
 
             it('should hide push-publish and Add to Bundle actions', () => {
                 const activatedRoute: ActivatedRoute = TestBed.inject(ActivatedRoute);
-                spyOnProperty(activatedRoute, 'data', 'get').and.returnValue(
+                jest.spyOn(activatedRoute, 'data', 'get', 'get').mockReturnValue(
                     of({
                         dotTemplateListResolverData: [false, false]
                     })
@@ -709,7 +709,9 @@ describe('DotTemplateListComponent', () => {
 
             describe('template as a file ', () => {
                 it('should go to site Broser when selected', () => {
-                    spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of(null));
+                    jest.spyOn(dotSiteBrowserService, 'setSelectedFolder').mockReturnValue(
+                        of(null)
+                    );
                     const rows: DebugElement[] = fixture.debugElement.queryAll(
                         By.css('.p-selectable-row')
                     );
@@ -732,8 +734,8 @@ describe('DotTemplateListComponent', () => {
 
         describe('row actions command', () => {
             beforeEach(() => {
-                spyOn(dotMessageDisplayService, 'push');
-                spyOn(dotListingDataTable, 'loadCurrentPage');
+                jest.spyOn(dotMessageDisplayService, 'push');
+                jest.spyOn(dotListingDataTable, 'loadCurrentPage');
                 publishTemplate = fixture.debugElement.query(
                     By.css('[data-testid="123Published"]')
                 ).componentInstance;
@@ -765,14 +767,16 @@ describe('DotTemplateListComponent', () => {
                 });
             });
             it('should call archive endpoint, send notification and reload current page', () => {
-                spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseSuccess));
+                jest.spyOn(dotTemplatesService, 'archive').mockReturnValue(
+                    of(mockBulkResponseSuccess)
+                );
                 unPublishTemplate.actions[4].menuItem.command();
 
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith(['123Unpublish']);
                 checkNotificationAndReLoadOfPage('Template archived');
             });
             it('should call unArchive api, send notification and reload current page', () => {
-                spyOn(dotTemplatesService, 'unArchive').and.returnValue(
+                jest.spyOn(dotTemplatesService, 'unArchive').mockReturnValue(
                     of(mockBulkResponseSuccess)
                 );
                 archivedTemplate.actions[0].menuItem.command();
@@ -781,14 +785,16 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Template unarchived');
             });
             it('should call publish api, send notification and reload current page', () => {
-                spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
+                jest.spyOn(dotTemplatesService, 'publish').mockReturnValue(
+                    of(mockBulkResponseSuccess)
+                );
                 unPublishTemplate.actions[1].menuItem.command();
 
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith(['123Unpublish']);
                 checkNotificationAndReLoadOfPage('Templates published');
             });
             it('should call unpublish api, send notification and reload current page', () => {
-                spyOn(dotTemplatesService, 'unPublish').and.returnValue(
+                jest.spyOn(dotTemplatesService, 'unPublish').mockReturnValue(
                     of(mockBulkResponseSuccess)
                 );
                 publishTemplate.actions[4].menuItem.command();
@@ -797,15 +803,17 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Template unpublished');
             });
             it('should call copy api, send notification and reload current page', () => {
-                spyOn(dotTemplatesService, 'copy').and.returnValue(of(templatesMock[0]));
+                jest.spyOn(dotTemplatesService, 'copy').mockReturnValue(of(templatesMock[0]));
                 publishTemplate.actions[5].menuItem.command();
 
                 expect(dotTemplatesService.copy).toHaveBeenCalledWith('123Published');
                 checkNotificationAndReLoadOfPage('Template copied');
             });
             it('should call delete api, send notification and reload current page', () => {
-                spyOn(dotTemplatesService, 'delete').and.returnValue(of(mockBulkResponseSuccess));
-                spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                jest.spyOn(dotTemplatesService, 'delete').mockReturnValue(
+                    of(mockBulkResponseSuccess)
+                );
+                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
                 archivedTemplate.actions[1].menuItem.command();
@@ -814,8 +822,10 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should handle error request', () => {
-                spyOn(dotTemplatesService, 'delete').and.returnValue(of(mockSingleResponseFail));
-                spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                jest.spyOn(dotTemplatesService, 'delete').mockReturnValue(
+                    of(mockSingleResponseFail)
+                );
+                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
                 archivedTemplate.actions[1].menuItem.command();
@@ -849,8 +859,8 @@ describe('DotTemplateListComponent', () => {
                 menu = fixture.debugElement.query(
                     By.css('.template-listing__header-options p-menu')
                 ).componentInstance;
-                spyOn(dotMessageDisplayService, 'push');
-                spyOn(dotListingDataTable, 'loadCurrentPage');
+                jest.spyOn(dotMessageDisplayService, 'push');
+                jest.spyOn(dotListingDataTable, 'loadCurrentPage');
             });
 
             it('should set labels', () => {
@@ -868,7 +878,9 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should execute Publish action', () => {
-                spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
+                jest.spyOn(dotTemplatesService, 'publish').mockReturnValue(
+                    of(mockBulkResponseSuccess)
+                );
                 menu.model[0].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith([
                     '123Published',
@@ -892,7 +904,7 @@ describe('DotTemplateListComponent', () => {
                 expect(addToBundleDialog.assetIdentifier).toEqual('123Published,123Locked');
             });
             it('should execute Unpublish action', () => {
-                spyOn(dotTemplatesService, 'unPublish').and.returnValue(
+                jest.spyOn(dotTemplatesService, 'unPublish').mockReturnValue(
                     of(mockBulkResponseSuccess)
                 );
                 menu.model[3].command({ originalEvent: createFakeEvent('click') });
@@ -903,7 +915,9 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Template unpublished');
             });
             it('should execute Archive action', () => {
-                spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseSuccess));
+                jest.spyOn(dotTemplatesService, 'archive').mockReturnValue(
+                    of(mockBulkResponseSuccess)
+                );
                 menu.model[4].command({ originalEvent: createFakeEvent('click') });
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith([
                     '123Published',
@@ -912,7 +926,7 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Template archived');
             });
             it('should execute UnArchive action', () => {
-                spyOn(dotTemplatesService, 'unArchive').and.returnValue(
+                jest.spyOn(dotTemplatesService, 'unArchive').mockReturnValue(
                     of(mockBulkResponseSuccess)
                 );
                 menu.model[5].command({ originalEvent: createFakeEvent('click') });
@@ -923,8 +937,10 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Template unarchived');
             });
             it('should execute Delete action', () => {
-                spyOn(dotTemplatesService, 'delete').and.returnValue(of(mockBulkResponseSuccess));
-                spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                jest.spyOn(dotTemplatesService, 'delete').mockReturnValue(
+                    of(mockBulkResponseSuccess)
+                );
+                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
                 menu.model[6].command({ originalEvent: createFakeEvent('click') });
@@ -946,32 +962,38 @@ describe('DotTemplateListComponent', () => {
 
             describe('error', () => {
                 it('should fire exception on publish', () => {
-                    spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseFail));
+                    jest.spyOn(dotTemplatesService, 'publish').mockReturnValue(
+                        of(mockBulkResponseFail)
+                    );
                     menu.model[0].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Templates published');
                 });
                 it('should fire exception on unPublish', () => {
-                    spyOn(dotTemplatesService, 'unPublish').and.returnValue(
+                    jest.spyOn(dotTemplatesService, 'unPublish').mockReturnValue(
                         of(mockBulkResponseFail)
                     );
                     menu.model[3].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template unpublished');
                 });
                 it('should fire exception on archive', () => {
-                    spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseFail));
+                    jest.spyOn(dotTemplatesService, 'archive').mockReturnValue(
+                        of(mockBulkResponseFail)
+                    );
                     menu.model[4].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template archived');
                 });
                 it('should fire exception on unArchive', () => {
-                    spyOn(dotTemplatesService, 'unArchive').and.returnValue(
+                    jest.spyOn(dotTemplatesService, 'unArchive').mockReturnValue(
                         of(mockBulkResponseFail)
                     );
                     menu.model[5].command({ originalEvent: createFakeEvent('click') });
                     checkOpenOfDialogService('Template unarchived');
                 });
                 it('should fire exception on delete', () => {
-                    spyOn(dotTemplatesService, 'delete').and.returnValue(of(mockBulkResponseFail));
-                    spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                    jest.spyOn(dotTemplatesService, 'delete').mockReturnValue(
+                        of(mockBulkResponseFail)
+                    );
+                    jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.accept();
                     });
                     menu.model[6].command({ originalEvent: createFakeEvent('click') });
@@ -983,7 +1005,7 @@ describe('DotTemplateListComponent', () => {
 
     describe('without data', () => {
         beforeEach(() => {
-            spyOn<any>(coreWebService, 'requestView').and.returnValue(
+            spyOn<any>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: [],
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')

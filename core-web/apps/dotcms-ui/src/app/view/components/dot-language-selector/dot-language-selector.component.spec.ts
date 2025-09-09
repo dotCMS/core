@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -32,7 +32,7 @@ describe('DotLanguageSelectorComponent', () => {
     beforeEach(() => {
         spectator = createComponent({ detectChanges: false });
         dotLanguagesService = spectator.inject(DotLanguagesService, true);
-        dotLanguagesService.getLanguagesUsedPage.and.returnValue(of(mockLanguageArray));
+        dotLanguagesService.getLanguagesUsedPage.mockReturnValue(of(mockLanguageArray));
 
         spectator.setInput('pageId', PAGE_ID);
         spectator.detectChanges();

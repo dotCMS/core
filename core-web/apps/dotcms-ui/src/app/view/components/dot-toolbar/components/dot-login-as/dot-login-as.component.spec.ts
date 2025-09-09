@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
-import { SpyObject } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import {
     from as observableFrom,
     of as observableOf,
@@ -89,7 +94,7 @@ describe('DotLoginAsComponent', () => {
                 useValue: {
                     getWithOffset: jasmine
                         .createSpy('getWithOffset')
-                        .and.returnValue(observableOf([...users])),
+                        .mockReturnValue(observableOf([...users])),
                     filter: '',
                     url: ''
                 }
@@ -108,7 +113,7 @@ describe('DotLoginAsComponent', () => {
         ) as SpyObject<DotNavigationService>;
 
         // Configure the spy for goToFirstPortlet to always return a promise
-        dotNavigationService.goToFirstPortlet.and.returnValue(Promise.resolve(true));
+        dotNavigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
     });
 
     it('should create component', () => {
@@ -145,10 +150,10 @@ describe('DotLoginAsComponent', () => {
             const testUser = mockUser();
             // Create a new spy for loginAs
             const loginServiceInstance = spectator.inject(LoginService);
-            spyOn(loginServiceInstance, 'loginAs').and.returnValue(observableOf(true));
+            jest.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(observableOf(true));
 
             // Make sure goToFirstPortlet returns a promise
-            dotNavigationService.goToFirstPortlet.and.returnValue(Promise.resolve(true));
+            dotNavigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
 
             spectator.setInput('visible', true);
             spectator.detectChanges();
@@ -189,7 +194,7 @@ describe('DotLoginAsComponent', () => {
             // Arrange
             // Create a new spy for loginAs
             const loginServiceInstance = spectator.inject(LoginService);
-            spyOn(loginServiceInstance, 'loginAs').and.returnValue(
+            jest.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(
                 observableThrowError({ message: 'Error' })
             );
 
@@ -205,7 +210,7 @@ describe('DotLoginAsComponent', () => {
             const passwordInputElem = spectator.query(
                 byTestId('dot-login-as-password-input')
             ) as HTMLElement;
-            spyOn(passwordInputElem, 'focus');
+            jest.spyOn(passwordInputElem, 'focus');
 
             // Act - Submit form
             component.doLoginAs();
@@ -233,19 +238,19 @@ describe('DotLoginAsComponent', () => {
             loginService = spectator.inject(LoginService);
 
             // Make sure goToFirstPortlet returns a promise
-            navigationService.goToFirstPortlet.and.returnValue(Promise.resolve(true));
+            navigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
         });
 
         it('should navigate to first portlet after successful login', async () => {
             // Arrange
             // Configure the spy that was already created by mockProvider
-            navigationService.goToFirstPortlet.and.returnValue(Promise.resolve(true));
+            navigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
 
             // Create a spy for the reload method of the location service
-            spyOn(locationService, 'reload');
+            jest.spyOn(locationService, 'reload');
 
             // Create a spy for the loginAs method of the login service
-            spyOn(loginService, 'loginAs').and.returnValue(observableOf(true));
+            jest.spyOn(loginService, 'loginAs').mockReturnValue(observableOf(true));
 
             // Set up the component
             spectator.setInput('visible', true);
@@ -268,14 +273,14 @@ describe('DotLoginAsComponent', () => {
         it('should set error message signal when login fails', fakeAsync(() => {
             // Arrange
             const mockDotMessageService = spectator.inject(DotMessageService);
-            spyOn(mockDotMessageService, 'get').and.returnValue('wrong password');
+            jest.spyOn(mockDotMessageService, 'get').mockReturnValue('wrong password');
 
             // Create a new spy for loginAs
             const loginServiceInstance = spectator.inject(LoginService);
-            spyOn(loginServiceInstance, 'loginAs').and.returnValue(observableThrowError({}));
+            jest.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(observableThrowError({}));
 
             // Make sure goToFirstPortlet returns a promise
-            dotNavigationService.goToFirstPortlet.and.returnValue(Promise.resolve(true));
+            dotNavigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
 
             // Set up the component
             spectator.setInput('visible', true);
@@ -331,7 +336,7 @@ describe('DotLoginAsComponent', () => {
     describe('Dialog interaction', () => {
         it('should close dialog when cancel button is clicked', () => {
             // Arrange
-            spyOn(component, 'close');
+            jest.spyOn(component, 'close');
             spectator.setInput('visible', true);
             spectator.detectChanges();
 

@@ -114,7 +114,7 @@ describe('ActionButtonComponent', () => {
         comp.model = model;
         fixture.detectChanges();
 
-        spyOn(comp.menu, 'toggle');
+        jest.spyOn(comp.menu, 'toggle');
 
         const button = fixture.debugElement.query(By.css('p-button'));
         button.nativeNode.click();

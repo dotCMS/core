@@ -153,13 +153,13 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should call "logoutAs" in "LoginService" on logout click', async () => {
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
+        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
-        spyOn(locationService, 'reload');
-        spyOn(loginService, 'logoutAs').and.callThrough();
+        jest.spyOn(locationService, 'reload');
+        jest.spyOn(loginService, 'logoutAs');
 
         fixture.detectChanges();
 
@@ -177,7 +177,7 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should hide login as link', () => {
-        spyOn(loginService, 'getCurrentUser').and.returnValue(
+        jest.spyOn(loginService, 'getCurrentUser').mockReturnValue(
             of({
                 email: 'admin@dotcms.com',
                 givenName: 'Admin',

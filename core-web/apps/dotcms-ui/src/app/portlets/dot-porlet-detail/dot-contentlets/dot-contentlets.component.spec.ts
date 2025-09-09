@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -54,7 +54,7 @@ import { DotContentletEditorService } from '../../../view/components/dot-content
 
 @Injectable()
 class MockDotContentletEditorService {
-    edit = jasmine.createSpy('edit');
+    edit = jest.fn();
 }
 
 describe('DotContentletsComponent', () => {
@@ -134,7 +134,7 @@ describe('DotContentletsComponent', () => {
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
 
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
 
@@ -158,7 +158,7 @@ describe('DotContentletsComponent', () => {
     });
 
     it('should call dotCustomEventHandlerService on customEvent', () => {
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle');
         const edit = de.query(By.css('dot-edit-contentlet'));
         edit.triggerEventHandler('custom', { data: 'test' });
         expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({

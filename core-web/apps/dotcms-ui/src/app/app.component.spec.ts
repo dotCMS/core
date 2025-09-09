@@ -52,7 +52,7 @@ describe('AppComponent', () => {
         dotMessageService = TestBed.inject(DotMessageService);
         dotLicenseService = TestBed.inject(DotLicenseService);
 
-        spyOn<any>(dotCmsConfigService, 'getConfig').and.returnValue(
+        spyOn<any>(dotCmsConfigService, 'getConfig').mockReturnValue(
             of({
                 colors: {
                     primary: '#123',
@@ -70,9 +70,9 @@ describe('AppComponent', () => {
                 }
             })
         );
-        spyOn(dotUiColorsService, 'setColors');
-        spyOn(dotMessageService, 'init');
-        spyOn(dotLicenseService, 'setLicense');
+        jest.spyOn(dotUiColorsService, 'setColors');
+        jest.spyOn(dotMessageService, 'init');
+        jest.spyOn(dotLicenseService, 'setLicense');
     });
 
     it('should init message service', () => {

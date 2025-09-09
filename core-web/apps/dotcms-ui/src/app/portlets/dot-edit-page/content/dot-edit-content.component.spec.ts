@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -398,19 +398,19 @@ describe('DotEditContentComponent', () => {
         dotSessionStorageService = de.injector.get(DotSessionStorageService);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
         router = de.injector.get(Router);
-        spyOn(dotPageStateService, 'reload');
+        jest.spyOn(dotPageStateService, 'reload');
 
-        spyOn(dotEditContentHtmlService, 'renderAddedForm');
+        jest.spyOn(dotEditContentHtmlService, 'renderAddedForm');
 
-        spyOn(component, 'reload').and.callThrough();
+        jest.spyOn(component, 'reload');
     });
 
     describe('elements', () => {
         beforeEach(() => {
-            spyOn<any>(dotEditPageService, 'save').and.returnValue(of({}));
+            spyOn<any>(dotEditPageService, 'save').mockReturnValue(of({}));
 
-            spyOn(dotConfigurationService, 'getKey').and.returnValue(of('false'));
-            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
+            jest.spyOn(dotConfigurationService, 'getKey').mockReturnValue(of('false'));
+            jest.spyOn(dotConfigurationService, 'getKeyAsList').mockReturnValue(
                 of(['host', 'vanityurl', 'persona', 'languagevariable'])
             );
         });
@@ -419,7 +419,7 @@ describe('DotEditContentComponent', () => {
             let dotFormSelector: DebugElement;
 
             beforeEach(() => {
-                spyOn(dotGlobalMessageService, 'success');
+                jest.spyOn(dotGlobalMessageService, 'success');
 
                 fixture.detectChanges();
                 dotFormSelector = de.query(By.css('dot-form-selector'));
@@ -457,7 +457,7 @@ describe('DotEditContentComponent', () => {
             let toolbarElement: DebugElement;
 
             beforeEach(() => {
-                spyOn(dialogService, 'open');
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
@@ -561,7 +561,7 @@ describe('DotEditContentComponent', () => {
             });
 
             it('should call dotCustomEventHandlerService on customEvent', () => {
-                spyOn(dotCustomEventHandlerService, 'handle');
+                jest.spyOn(dotCustomEventHandlerService, 'handle');
                 dotEditContentlet.triggerEventHandler('custom', { data: 'test' });
 
                 expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
@@ -591,7 +591,7 @@ describe('DotEditContentComponent', () => {
             });
 
             it('should call dotCustomEventHandlerService on customEvent', () => {
-                spyOn(dotCustomEventHandlerService, 'handle');
+                jest.spyOn(dotCustomEventHandlerService, 'handle');
                 dotCreateContentlet.triggerEventHandler('custom', { data: 'test' });
 
                 expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
@@ -612,7 +612,7 @@ describe('DotEditContentComponent', () => {
             });
 
             it('should remove Contentlet Placeholder on close', () => {
-                spyOn(dotEditContentHtmlService, 'removeContentletPlaceholder');
+                jest.spyOn(dotEditContentHtmlService, 'removeContentletPlaceholder');
                 dotCreateContentlet.triggerEventHandler('shutdown', {});
 
                 expect(dotEditContentHtmlService.removeContentletPlaceholder).toHaveBeenCalledTimes(
@@ -744,9 +744,9 @@ describe('DotEditContentComponent', () => {
 
             describe('render html ', () => {
                 beforeEach(() => {
-                    spyOn(dotEditContentHtmlService, 'renderPage');
-                    spyOn(dotEditContentHtmlService, 'initEditMode');
-                    spyOn(dotEditContentHtmlService, 'setCurrentPage');
+                    jest.spyOn(dotEditContentHtmlService, 'renderPage');
+                    jest.spyOn(dotEditContentHtmlService, 'initEditMode');
+                    jest.spyOn(dotEditContentHtmlService, 'setCurrentPage');
                 });
 
                 it('should render in preview mode', fakeAsync(() => {
@@ -767,7 +767,7 @@ describe('DotEditContentComponent', () => {
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
                     component.isEditMode = true;
                     const state = new DotPageRenderState(
                         mockUser(),
@@ -801,7 +801,7 @@ describe('DotEditContentComponent', () => {
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -844,7 +844,7 @@ describe('DotEditContentComponent', () => {
                 }));
 
                 it('should not display palette when is not enterprise', fakeAsync(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -872,7 +872,7 @@ describe('DotEditContentComponent', () => {
                 }));
 
                 it('should reload the page because of EMA', fakeAsync(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -905,7 +905,7 @@ describe('DotEditContentComponent', () => {
                 }));
 
                 it('should NOT reload the page', fakeAsync(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
                     const state = new DotPageRenderState(
                         mockUser(),
@@ -957,8 +957,8 @@ describe('DotEditContentComponent', () => {
                 });
 
                 it('should handle load', fakeAsync(() => {
-                    spyOn(dotLoadingIndicatorService, 'hide');
-                    spyOn(dotUiColorsService, 'setColors');
+                    jest.spyOn(dotLoadingIndicatorService, 'hide');
+                    jest.spyOn(dotUiColorsService, 'setColors');
                     detectChangesForIframeRender(fixture);
 
                     expect(dotLoadingIndicatorService.hide).toHaveBeenCalled();
@@ -1006,7 +1006,7 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
-                        spyOn(dotPageStateService, 'setLocalState').and.callFake(() => {
+                        jest.spyOn(dotPageStateService, 'setLocalState').mockImplementation(() => {
                             //
                         });
                         detectChangesForIframeRender(fixture);
@@ -1027,11 +1027,12 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
-                        spyOn(dotPageStateService, 'setInternalNavigationState').and.callFake(
-                            () => {
-                                //
-                            }
-                        );
+                        jest.spyOn(
+                            dotPageStateService,
+                            'setInternalNavigationState'
+                        ).mockImplementation(() => {
+                            //
+                        });
 
                         detectChangesForIframeRender(fixture);
 
@@ -1074,7 +1075,7 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle error-saving-menu-order', fakeAsync(() => {
-                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {
+                        jest.spyOn(dotGlobalMessageService, 'error').mockImplementation(() => {
                             //
                         });
 
@@ -1092,7 +1093,7 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle cancel-save-menu-order', fakeAsync(() => {
-                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {
+                        jest.spyOn(dotGlobalMessageService, 'error').mockImplementation(() => {
                             //
                         });
 
@@ -1111,7 +1112,7 @@ describe('DotEditContentComponent', () => {
 
                     it('should handle edit-block-editor', fakeAsync(() => {
                         detectChangesForIframeRender(fixture);
-                        spyOn(dotEventsService, 'notify');
+                        jest.spyOn(dotEventsService, 'notify');
 
                         triggerIframeCustomEvent({
                             name: 'edit-block-editor',
@@ -1128,20 +1129,22 @@ describe('DotEditContentComponent', () => {
 
                 describe('iframe events', () => {
                     it('should handle edit event', (done) => {
-                        spyOn(dotContentletEditorService, 'edit').and.callFake((param) => {
-                            expect(param.data.inode).toBe('test_inode');
+                        jest.spyOn(dotContentletEditorService, 'edit').mockImplementation(
+                            (param) => {
+                                expect(param.data.inode).toBe('test_inode');
 
-                            const event: any = {
-                                target: {
-                                    contentWindow: {}
-                                }
-                            };
-                            param.events.load(event);
-                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
-                                dotEditContentHtmlService.contentletEvents$
-                            );
-                            done();
-                        });
+                                const event: any = {
+                                    target: {
+                                        contentWindow: {}
+                                    }
+                                };
+                                param.events.load(event);
+                                expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                    dotEditContentHtmlService.contentletEvents$
+                                );
+                                done();
+                            }
+                        );
 
                         fixture.detectChanges();
 
@@ -1159,20 +1162,22 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should handle code event', (done) => {
-                        spyOn(dotContentletEditorService, 'edit').and.callFake((param) => {
-                            expect(param.data.inode).toBe('test_inode');
+                        jest.spyOn(dotContentletEditorService, 'edit').mockImplementation(
+                            (param) => {
+                                expect(param.data.inode).toBe('test_inode');
 
-                            const event: any = {
-                                target: {
-                                    contentWindow: {}
-                                }
-                            };
-                            param.events.load(event);
-                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
-                                dotEditContentHtmlService.contentletEvents$
-                            );
-                            done();
-                        });
+                                const event: any = {
+                                    target: {
+                                        contentWindow: {}
+                                    }
+                                };
+                                param.events.load(event);
+                                expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                    dotEditContentHtmlService.contentletEvents$
+                                );
+                                done();
+                            }
+                        );
 
                         fixture.detectChanges();
 
@@ -1191,10 +1196,10 @@ describe('DotEditContentComponent', () => {
 
                     it('should handle add form event', () => {
                         component.editForm = false;
-                        spyOn(
+                        jest.spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {
+                        ).mockImplementation(() => {
                             //
                         });
 
@@ -1221,31 +1226,33 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should handle add content event', (done) => {
-                        spyOn(
+                        jest.spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {
+                        ).mockImplementation(() => {
                             //
                         });
-                        spyOn(dotContentletEditorService, 'add').and.callFake((param) => {
-                            expect(param.data).toEqual({
-                                container: 'identifier',
-                                baseTypes: 'content'
-                            });
+                        jest.spyOn(dotContentletEditorService, 'add').mockImplementation(
+                            (param) => {
+                                expect(param.data).toEqual({
+                                    container: 'identifier',
+                                    baseTypes: 'content'
+                                });
 
-                            expect(param.header).toEqual('Content Search');
+                                expect(param.header).toEqual('Content Search');
 
-                            const event: any = {
-                                target: {
-                                    contentWindow: {}
-                                }
-                            };
-                            param.events.load(event);
-                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
-                                dotEditContentHtmlService.contentletEvents$
-                            );
-                            done();
-                        });
+                                const event: any = {
+                                    target: {
+                                        contentWindow: {}
+                                    }
+                                };
+                                param.events.load(event);
+                                expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                    dotEditContentHtmlService.contentletEvents$
+                                );
+                                done();
+                            }
+                        );
 
                         fixture.detectChanges();
 
@@ -1281,34 +1288,36 @@ describe('DotEditContentComponent', () => {
                             },
                             contentType: { variable: 'blog' }
                         };
-                        spyOn(
+                        jest.spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {
+                        ).mockImplementation(() => {
                             //
                         });
 
-                        spyOn(dotContentletEditorService, 'getActionUrl').and.returnValue(
+                        jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(
                             of('/url/test?_content_lang=23&test=random')
                         );
 
-                        spyOn(dotContentletEditorService, 'create').and.callFake((param) => {
-                            //checking the replace of lang.
-                            expect(param.data).toEqual({
-                                url: '/url/test?_content_lang=1&test=random'
-                            });
+                        jest.spyOn(dotContentletEditorService, 'create').mockImplementation(
+                            (param) => {
+                                //checking the replace of lang.
+                                expect(param.data).toEqual({
+                                    url: '/url/test?_content_lang=1&test=random'
+                                });
 
-                            const event: any = {
-                                target: {
-                                    contentWindow: {}
-                                }
-                            };
-                            param.events.load(event);
-                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
-                                dotEditContentHtmlService.contentletEvents$
-                            );
-                            done();
-                        });
+                                const event: any = {
+                                    target: {
+                                        contentWindow: {}
+                                    }
+                                };
+                                param.events.load(event);
+                                expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                    dotEditContentHtmlService.contentletEvents$
+                                );
+                                done();
+                            }
+                        );
 
                         fixture.detectChanges();
 
@@ -1332,19 +1341,19 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should display Form Selector when handle add content event of form Type', () => {
-                        spyOn(
+                        jest.spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {
+                        ).mockImplementation(() => {
                             /**/
                         });
-                        spyOn(
+                        jest.spyOn(
                             dotEditContentHtmlService,
                             'removeContentletPlaceholder'
-                        ).and.callFake(() => {
+                        ).mockImplementation(() => {
                             /**/
                         });
-                        spyOn(component, 'addFormContentType').and.callThrough();
+                        jest.spyOn(component, 'addFormContentType');
 
                         fixture.detectChanges();
 
@@ -1377,10 +1386,13 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should handle remove event', (done) => {
-                        spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {
+                        jest.spyOn(
+                            dotEditContentHtmlService,
+                            'removeContentlet'
+                        ).mockImplementation(() => {
                             //
                         });
-                        spyOn(dotDialogService, 'confirm').and.callFake((param) => {
+                        jest.spyOn(dotDialogService, 'confirm').mockImplementation((param) => {
                             expect(param.header).toEqual('header');
                             expect(param.message).toEqual('message');
 
@@ -1418,7 +1430,7 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should handle select event', () => {
-                        spyOn(dotContentletEditorService, 'clear').and.callFake(() => {
+                        jest.spyOn(dotContentletEditorService, 'clear').mockImplementation(() => {
                             //
                         });
 
@@ -1520,8 +1532,8 @@ describe('DotEditContentComponent', () => {
         let toolbarElement: DebugElement;
 
         beforeEach(() => {
-            spyOn(dialogService, 'open');
-            spyOn(dotConfigurationService, 'getKey').and.returnValue(of('true'));
+            jest.spyOn(dialogService, 'open');
+            jest.spyOn(dotConfigurationService, 'getKey').mockReturnValue(of('true'));
 
             fixture.detectChanges();
             toolbarElement = de.query(By.css('dot-edit-page-toolbar-seo'));
@@ -1534,7 +1546,7 @@ describe('DotEditContentComponent', () => {
 
     describe('errors', () => {
         beforeEach(() => {
-            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
+            jest.spyOn(dotConfigurationService, 'getKeyAsList').mockReturnValue(
                 of(['host', 'vanityurl', 'persona', 'languagevariable'])
             );
             fixture.detectChanges();
@@ -1555,8 +1567,8 @@ describe('DotEditContentComponent', () => {
     describe('allowedContent', () => {
         it('should set the allowedContent correctly', fakeAsync(() => {
             const blackList = ['host', 'vanityurl', 'persona', 'languagevariable'];
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(of(blackList));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(dotConfigurationService, 'getKeyAsList').mockReturnValue(of(blackList));
 
             const state = new DotPageRenderState(
                 mockUser(),
@@ -1601,14 +1613,14 @@ describe('DotEditContentComponent', () => {
     });
 
     it('should remove variant key from session storage on destoy', () => {
-        spyOn(dotSessionStorageService, 'removeVariantId');
+        jest.spyOn(dotSessionStorageService, 'removeVariantId');
         component.ngOnDestroy();
         expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(1);
     });
 
     it('should keep variant key from session storage if going to layout portlet', () => {
         router.routerState.snapshot.url = '/edit-page/layout';
-        spyOn(dotSessionStorageService, 'removeVariantId');
+        jest.spyOn(dotSessionStorageService, 'removeVariantId');
         component.ngOnDestroy();
         expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(0);
     });

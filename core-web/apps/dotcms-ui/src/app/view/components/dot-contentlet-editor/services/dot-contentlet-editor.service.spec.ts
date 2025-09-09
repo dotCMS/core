@@ -1,4 +1,4 @@
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -8,11 +8,11 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
-    DotRouterService,
-    DotFormatDateService
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
@@ -70,7 +70,7 @@ describe('DotContentletEditorService', () => {
         dotMenuService = injector.inject(DotMenuService);
         dotRouterService = injector.inject(DotRouterService);
         httpMock = injector.inject(HttpTestingController);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('456'));
+        jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
     });
 
     it('should get action url', () => {
@@ -121,7 +121,7 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit', () => {
-        spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
+        jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
             url: '/c/c_Test/123',
             id: 'c_Test'
         });
@@ -152,7 +152,7 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit when current portlet is edit-page', () => {
-        spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
+        jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
             url: '/#/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
             id: 'edit-page'
         });
@@ -183,7 +183,7 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit when current portlet is site-browser', () => {
-        spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
+        jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
             url: '/#/c/site-browser/ad5acc23-a466-4ac6-9c76-e6a3bc1d609e',
             id: 'site-browser'
         });

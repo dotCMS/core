@@ -119,15 +119,15 @@ const storeMock = {
     get pageTypes$() {
         return of([{ ...dotcmsContentTypeBasicMock }]);
     },
-    clearMenuActions: jasmine.createSpy(),
-    getFavoritePages: jasmine.createSpy(),
-    getPages: jasmine.createSpy(),
-    getPageTypes: jasmine.createSpy(),
-    showActionsMenu: jasmine.createSpy(),
-    setInitialStateData: jasmine.createSpy(),
-    limitFavoritePages: jasmine.createSpy(),
-    setPortletStatus: jasmine.createSpy(),
-    updateSinglePageData: jasmine.createSpy(),
+    clearMenuActions: jest.fn(),
+    getFavoritePages: jest.fn(),
+    getPages: jest.fn(),
+    getPageTypes: jest.fn(),
+    showActionsMenu: jest.fn(),
+    setInitialStateData: jest.fn(),
+    limitFavoritePages: jest.fn(),
+    setPortletStatus: jest.fn(),
+    updateSinglePageData: jest.fn(),
     vm$: of({
         favoritePages: {
             items: [],
@@ -252,11 +252,11 @@ describe('DotPagesComponent', () => {
         component = fixture.componentInstance;
 
         fixture.detectChanges();
-        spyOn(component.menu, 'hide');
-        spyOn(component, 'scrollToTop');
-        spyOn(dotMessageDisplayService, 'push');
-        spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
-        spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(component.menu, 'hide');
+        jest.spyOn(component, 'scrollToTop');
+        jest.spyOn(dotMessageDisplayService, 'push');
+        jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
     });
 
     it('should init store', () => {
@@ -285,7 +285,7 @@ describe('DotPagesComponent', () => {
     });
 
     it('should call goToUrl method from DotPagesFavoritePanel and throw User permission error', () => {
-        dotPageRenderService.checkPermission = jasmine.createSpy().and.returnValue(of(false));
+        dotPageRenderService.checkPermission = jest.fn().mockReturnValue(of(false));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
@@ -307,7 +307,7 @@ describe('DotPagesComponent', () => {
         const error404 = mockResponseView(404);
         dotPageRenderService.checkPermission = jasmine
             .createSpy()
-            .and.returnValue(throwError(error404));
+            .mockReturnValue(throwError(error404));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
@@ -383,7 +383,7 @@ describe('DotPagesComponent', () => {
     it('should call closedActionsMenu method from p-menu', () => {
         const elem = de.query(By.css('p-menu'));
 
-        component.closedActionsMenu = jasmine.createSpy('closedActionsMenu');
+        component.closedActionsMenu = jest.fn();
         elem.triggerEventHandler('onHide', {});
 
         expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);

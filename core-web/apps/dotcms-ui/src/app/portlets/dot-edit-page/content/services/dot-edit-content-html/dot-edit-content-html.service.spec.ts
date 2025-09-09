@@ -207,7 +207,7 @@ xdescribe('DotEditContentHtmlService', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn().mockReturnValue(of({}))
                     }
                 },
                 DotWorkflowActionsFireService,
@@ -308,7 +308,7 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should add contentlet', () => {
-        spyOn(service, 'renderAddedContentlet');
+        jest.spyOn(service, 'renderAddedContentlet');
         service.setContainterToAppendContentlet({
             identifier: '123',
             uuid: '456'
@@ -329,7 +329,7 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should add uploaded DotAsset', () => {
-        spyOn(service, 'renderAddedContentlet');
+        jest.spyOn(service, 'renderAddedContentlet');
         service.setContainterToAppendContentlet({
             identifier: '123',
             uuid: '456'
@@ -381,11 +381,11 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should render relocated contentlet', () => {
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+        jest.spyOn(dotContainerContentletService, 'getContentletToContainer').mockReturnValue(
             of('<h1>new container</h1>')
         );
-        const insertAdjacentElement = jasmine.createSpy('insertAdjacentElement');
-        const replaceChild = jasmine.createSpy('replaceChild');
+        const insertAdjacentElement = jest.fn();
+        const replaceChild = jest.fn();
 
         const pageState: DotPageRenderState = new DotPageRenderState(
             mockUser(),
@@ -490,7 +490,7 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should show loading indicator on relocate contentlet', () => {
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+        jest.spyOn(dotContainerContentletService, 'getContentletToContainer').mockReturnValue(
             of('<div></div>')
         );
 
@@ -518,7 +518,7 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should not render relocated contentlet', () => {
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+        jest.spyOn(dotContainerContentletService, 'getContentletToContainer').mockReturnValue(
             of('<h1>new container</h1>')
         );
 
@@ -577,7 +577,7 @@ xdescribe('DotEditContentHtmlService', () => {
 
         service.currentContainer = currentContainer;
 
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+        jest.spyOn(dotContainerContentletService, 'getContentletToContainer').mockReturnValue(
             of('<i>testing</i>')
         );
 
@@ -626,7 +626,7 @@ xdescribe('DotEditContentHtmlService', () => {
             uuid: '456'
         };
 
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+        jest.spyOn(dotContainerContentletService, 'getContentletToContainer').mockReturnValue(
             of(
                 '<div id="newContent" data-dot-object="contentlet" data-dot-identifier="zxc"><i>replaced contentlet</i></div>'
             )
@@ -671,7 +671,7 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should remove contentlet and update container toolbar', () => {
-        spyOn(dotEditContentToolbarHtmlService, 'updateContainerToolbar');
+        jest.spyOn(dotEditContentToolbarHtmlService, 'updateContainerToolbar');
 
         let currentModel;
 
@@ -711,9 +711,9 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should remove contentlet', () => {
-        const remove = jasmine.createSpy('deleted');
+        const remove = jest.fn();
 
-        spyOn<any>(fakeDocument, 'querySelectorAll').and.returnValue([
+        spyOn<any>(fakeDocument, 'querySelectorAll').mockReturnValue([
             {
                 remove: remove
             },
@@ -744,12 +744,12 @@ xdescribe('DotEditContentHtmlService', () => {
 
         service.currentContainer = currentContainer;
 
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+        jest.spyOn(dotContainerContentletService, 'getContentletToContainer').mockReturnValue(
             of('<i>testing</i>')
         );
 
         const dotDialogService = TestBed.inject(DotAlertConfirmService);
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert');
 
         const contentlet: DotPageContent = {
             identifier: '456',
@@ -793,7 +793,7 @@ xdescribe('DotEditContentHtmlService', () => {
             baseType: 'CONTENT'
         };
 
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+        jest.spyOn(dotContainerContentletService, 'getContentletToContainer').mockReturnValue(
             of(`
         <div data-dot-object="contentlet" data-dot-identifier="456">
             <script>
@@ -858,7 +858,7 @@ xdescribe('DotEditContentHtmlService', () => {
 
     describe('document click', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         });
 
         it('should open sub menu', () => {
@@ -961,7 +961,7 @@ xdescribe('DotEditContentHtmlService', () => {
             );
 
             const error404 = mockResponseView(404);
-            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+            jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
                 throwError(error404)
             );
 
@@ -988,8 +988,8 @@ xdescribe('DotEditContentHtmlService', () => {
         });
 
         it('should call saveContentlet and save the content', () => {
-            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
-            spyOn(dotGlobalMessageService, 'success');
+            jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(of({}));
+            jest.spyOn(dotGlobalMessageService, 'success');
             const fakeElem: HTMLElement = fakeDocument.querySelector(
                 '[data-test-id="inline-edit-element-title"]'
             );
@@ -1019,7 +1019,7 @@ xdescribe('DotEditContentHtmlService', () => {
         });
 
         it('should not call saveContentlet if isNotDirty is true', () => {
-            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+            jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(of({}));
             const fakeElem: HTMLElement = fakeDocument.querySelector(
                 '[data-test-id="inline-edit-element-title"]'
             );
@@ -1047,10 +1047,10 @@ xdescribe('DotEditContentHtmlService', () => {
             const error404 = mockResponseView(404, '', null, {
                 errors: [{ message: 'An error ocurred' }]
             });
-            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+            jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
                 throwError(error404)
             );
-            spyOn(dotGlobalMessageService, 'error').and.callThrough();
+            jest.spyOn(dotGlobalMessageService, 'error');
 
             const fakeElem: HTMLElement = fakeDocument.querySelector(
                 '[data-test-id="inline-edit-element-title"]'
@@ -1078,7 +1078,7 @@ xdescribe('DotEditContentHtmlService', () => {
 
     describe('edit contentlets', () => {
         beforeEach(() => {
-            spyOn(service, 'renderEditedContentlet');
+            jest.spyOn(service, 'renderEditedContentlet');
         });
 
         it('should render main contentlet edit', () => {
@@ -1233,14 +1233,14 @@ xdescribe('DotEditContentHtmlService', () => {
         let dotGlobalMessageService: DotGlobalMessageService;
 
         beforeEach(() => {
-            spyOn(service, 'renderEditedContentlet');
+            jest.spyOn(service, 'renderEditedContentlet');
 
             service.currentContainer = currentContainer;
             dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
         });
 
         it('should render added form', () => {
-            spyOn(dotContainerContentletService, 'getFormToContainer').and.returnValue(
+            jest.spyOn(dotContainerContentletService, 'getFormToContainer').mockReturnValue(
                 of({
                     render: '<i>testing</i>',
                     content: {
@@ -1273,7 +1273,7 @@ xdescribe('DotEditContentHtmlService', () => {
         });
 
         it('should show content added message', () => {
-            spyOn(dotContainerContentletService, 'getFormToContainer').and.returnValue(
+            jest.spyOn(dotContainerContentletService, 'getFormToContainer').mockReturnValue(
                 of({
                     render: '<i>testing</i>',
                     content: {
@@ -1298,8 +1298,8 @@ xdescribe('DotEditContentHtmlService', () => {
                 const errorResponse = {
                     error: { message: 'error' }
                 } as HttpErrorResponse;
-                spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
-                spyOn(httpErrorManagerService, 'handle');
+                jest.spyOn(dotEditPageService, 'save').mockReturnValue(throwError(errorResponse));
+                jest.spyOn(httpErrorManagerService, 'handle');
 
                 service.pageModel$.subscribe((model) => {
                     expect(model.type).toEqual(PageModelChangeEventType.SAVE_ERROR);

@@ -1,4 +1,4 @@
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -214,7 +214,7 @@ describe('DotContentEditorComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+            spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: mockContentTypes
                 })
@@ -267,7 +267,7 @@ describe('DotContentEditorComponent', () => {
                 code.triggerEventHandler('monacoInit', {
                     name: menu.model[0].label,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 hostFixture.detectChanges();
@@ -297,14 +297,14 @@ describe('DotContentEditorComponent', () => {
                 code.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[0].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
                 code2.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[1].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 hostFixture.detectChanges();
@@ -333,14 +333,14 @@ describe('DotContentEditorComponent', () => {
                 code.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[0].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
                 code2.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[1].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 hostFixture.detectChanges();

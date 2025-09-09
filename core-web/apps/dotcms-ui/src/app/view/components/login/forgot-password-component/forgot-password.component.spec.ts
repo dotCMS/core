@@ -90,8 +90,8 @@ describe('ForgotPasswordComponent', () => {
 
         const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
 
-        spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
-        spyOn(window, 'confirm').and.returnValue(true);
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
         fixture.detectChanges();
 
         expect(requestPasswordButton.nativeElement.disabled).toBeFalsy();
@@ -124,8 +124,8 @@ describe('ForgotPasswordComponent', () => {
 
     it('should show error message', () => {
         const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
-        spyOn(window, 'confirm').and.returnValue(true);
-        spyOn(loginService, 'recoverPassword').and.returnValue(
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(
             throwError({ error: { errors: [{ message: 'error message' }] } })
         );
         const input: HTMLInputElement = de.query(By.css('[data-testid="input"]')).nativeElement;
@@ -141,8 +141,8 @@ describe('ForgotPasswordComponent', () => {
     it('should show go to login if submit is success', () => {
         const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
 
-        spyOn(window, 'confirm').and.returnValue(true);
-        spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
         component.forgotPasswordForm.setValue({ login: 'test@test.com' });
         fixture.detectChanges();
         requestPasswordButton.triggerEventHandler('click', {});

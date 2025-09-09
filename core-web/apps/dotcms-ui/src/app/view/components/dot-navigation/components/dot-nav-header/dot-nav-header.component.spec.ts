@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 import { BehaviorSubject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
@@ -69,7 +69,7 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should emit toggle event when button is clicked', () => {
-            const spy = spyOn(component.toggle, 'emit');
+            const spy = jest.spyOn(component.toggle, 'emit');
 
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
             spectator.click(toggleButton);
@@ -78,7 +78,7 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should emit toggle event with no parameters', () => {
-            const spy = spyOn(component.toggle, 'emit');
+            const spy = jest.spyOn(component.toggle, 'emit');
 
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
             spectator.click(toggleButton);
@@ -308,7 +308,7 @@ describe('DotNavHeaderComponent', () => {
             dotNavLogoService.navBarLogo$.next(null);
             spectator.detectChanges();
 
-            const spy = spyOn(component.toggle, 'emit');
+            const spy = jest.spyOn(component.toggle, 'emit');
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
 
             // Click multiple times
@@ -324,7 +324,7 @@ describe('DotNavHeaderComponent', () => {
             dotNavLogoService.navBarLogo$.next(null);
             spectator.detectChanges();
 
-            const spy = spyOn(component.toggle, 'emit');
+            const spy = jest.spyOn(component.toggle, 'emit');
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
 
             spectator.click(toggleButton);
@@ -347,7 +347,7 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should maintain button functionality across logo changes', () => {
-            const spy = spyOn(component.toggle, 'emit');
+            const spy = jest.spyOn(component.toggle, 'emit');
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
 
             // Test with default logo

@@ -16,7 +16,7 @@ describe('DotTemplateGuard', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy()
+                        gotoPortlet: jest.fn()
                     }
                 }
             ]
