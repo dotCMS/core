@@ -375,30 +375,28 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @CloseDBIfOpened
   @Override
-  public Optional<List<ContentType>> find(final List<String> varNames, final String filter, final int offset, final int limit,
+  public List<ContentType> find(final List<String> varNames, final String filter, final int offset, final int limit,
                                           final String orderBy) throws DotSecurityException, DotDataException {
     if (UtilMethods.isNotSet(varNames)) {
-      return Optional.empty();
+      return List.of();
     }
     final int internalOffset = 0;
     final int internalLimit = 500;
     final List<ContentType> contentTypeList;
     final List<String> lowercaseVarNames =
-            varNames.stream().map(varName -> varName.toLowerCase()).collect(Collectors.toList());
+            varNames.stream().map(String::toLowerCase).collect(Collectors.toList());
     if (UtilMethods.isSet(filter)) {
       contentTypeList = this.contentTypeFactory.find(lowercaseVarNames, filter.toLowerCase(), offset, limit, orderBy);
     } else if (offset > 0 || limit > 0) {
       int adjustedLimit = offset + limit;
-      adjustedLimit = adjustedLimit > lowercaseVarNames.size() ? lowercaseVarNames.size() : adjustedLimit;
+      adjustedLimit = Math.min(adjustedLimit, lowercaseVarNames.size());
       final List<String> varNamesSubList = lowercaseVarNames.subList(offset, adjustedLimit);
       contentTypeList = this.contentTypeFactory.find(varNamesSubList, null, internalOffset, internalLimit, orderBy);
     } else {
       contentTypeList = this.contentTypeFactory.find(lowercaseVarNames, null, internalOffset, internalLimit, orderBy);
     }
     // Exclude inaccessible Content Types from result list
-    final List<ContentType> accessibleContentTypes =
-            contentTypeList.stream().filter(type -> hasReadPermission(type)).collect(Collectors.toList());
-    return Optional.of(accessibleContentTypes);
+      return contentTypeList.stream().filter(this::hasReadPermission).collect(Collectors.toList());
   }
 
   @CloseDBIfOpened

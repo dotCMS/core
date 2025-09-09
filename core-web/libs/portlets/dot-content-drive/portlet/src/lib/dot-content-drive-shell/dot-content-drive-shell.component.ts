@@ -10,6 +10,7 @@ import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import { SORT_ORDER } from '../shared/constants';
@@ -25,6 +26,7 @@ import { encodeFilters } from '../utils/functions';
         DotContentDriveToolbarComponent,
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
+        DotContentDriveSidebarComponent,
         ToastModule
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],

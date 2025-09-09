@@ -194,6 +194,9 @@ export const DotContentDriveStore = signalStore(
             },
             reloadContentDrive() {
                 this.loadItems();
+            },
+            setPath(path: string) {
+                patchState(store, { path });
             }
         };
     }),

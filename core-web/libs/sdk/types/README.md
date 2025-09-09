@@ -92,5 +92,5 @@ This package is maintained as part of the [dotCMS core repository](https://githu
 * dotcms
 * typescript
 * types
-* cms
+* cms 
 * content-management-system
