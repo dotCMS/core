@@ -52,7 +52,7 @@
             </tr>
         } @else {
             <tr
-                class="hover-actions-row"
+                class="actions"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)">
@@ -83,7 +83,7 @@
                 <td data-testId="item-base-type">{{ item.baseType | dm }}</td>
                 <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
-                <td data-testId="item-actions" class="text-center actions-column">
+                <td data-testId="item-actions" class="text-center">
                     <p-button
                         class="actions-button"
                         icon="pi pi-ellipsis-v"

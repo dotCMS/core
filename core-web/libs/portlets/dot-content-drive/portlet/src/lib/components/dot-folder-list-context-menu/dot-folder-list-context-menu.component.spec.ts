@@ -9,7 +9,6 @@ import { MenuItemCommandEvent, MessageService } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
 
 import {
-    DotContentSearchService,
     DotMessageService,
     DotRenderMode,
     DotSystemConfigService,
@@ -59,10 +58,6 @@ describe('DotFolderListViewContextMenuComponent', () => {
             }),
             mockProvider(DotWorkflowEventHandlerService, {
                 open: jest.fn()
-            }),
-            // TODO: Can remove this mocking the store
-            mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(ActivatedRoute, {
                 snapshot: {
@@ -147,7 +142,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             const items = component.$items();
-            expect(items[0].label).toBe('content-drive.context-menu.edit-contentlet');
+            expect(items[0].label).toBe('content-drive.context-menu.edit-content');
             expect(items[1].label).toBe('Assign Workflow');
             expect(items[2].label).toBe('Save');
             expect(items[3].label).toBe('Save / Publish');

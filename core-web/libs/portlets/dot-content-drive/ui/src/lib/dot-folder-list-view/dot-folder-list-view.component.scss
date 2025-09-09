@@ -87,19 +87,15 @@
     }
 }
 
-.hover-actions-row {
-    .actions-column {
-        .actions-button {
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-        }
+.actions {
+    .actions-button {
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
     }
 
     &:hover {
-        .actions-column {
-            .actions-button {
-                opacity: 1;
-            }
+        .actions-button {
+            opacity: 1;
         }
     }
 }

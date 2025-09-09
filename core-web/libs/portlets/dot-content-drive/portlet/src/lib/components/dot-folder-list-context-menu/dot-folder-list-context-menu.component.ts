@@ -103,21 +103,13 @@ export class DotFolderListViewContextMenuComponent {
 
         const actionsMenu = [];
 
-        if (contentlet.contentType === 'htmlpageasset') {
-            actionsMenu.push({
-                label: this.#dotMessageService.get('content-drive.context-menu.edit-page'),
-                command: () => {
-                    this.#navigationService.editContent(contentlet);
-                }
-            });
-        } else {
-            actionsMenu.push({
-                label: this.#dotMessageService.get('content-drive.context-menu.edit-contentlet'),
-                command: () => {
-                    this.#navigationService.editContent(contentlet);
-                }
-            });
-        }
+        const label = contentlet.contentType === 'htmlpageasset' ? 'page' : 'content';
+        actionsMenu.push({
+            label: this.#dotMessageService.get(`content-drive.context-menu.edit-${label}`),
+            command: () => {
+                this.#navigationService.editContent(contentlet);
+            }
+        });
 
         workflowActions.map((action) => {
             const menuItem = {
@@ -172,7 +164,7 @@ export class DotFolderListViewContextMenuComponent {
             },
             (error) => {
                 this.#messageService.add({
-                    severity: 'success',
+                    severity: 'error',
                     summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
                     life: 2000
                 });
