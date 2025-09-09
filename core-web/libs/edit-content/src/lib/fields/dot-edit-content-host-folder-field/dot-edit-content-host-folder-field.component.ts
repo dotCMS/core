@@ -62,14 +62,14 @@ export class DotEditContentHostFolderFieldComponent implements ControlValueAcces
     readonly store = inject(HostFolderFiledStore);
     readonly #controlContainer = inject(ControlContainer);
 
-    pathControl = new FormControl();
+    pathControl = new FormControl(null);
 
-    private onChange: ((value: string) => void) | null = null;
-    private onTouched: (() => void) | null = null;
+    onChange: ((value: string) => void) | null = null;
+    onTouched: (() => void) | null = null;
 
     constructor() {
         this.handleNodeExpanedChange(this.store.nodeExpaned);
-        this.handlNodeSelectedChange(this.store.nodeSelected);
+        this.handleNodeSelectedChange(this.store.nodeSelected);
         this.handlePathToSaveChange(this.store.pathToSave);
     }
 
@@ -107,6 +107,11 @@ export class DotEditContentHostFolderFieldComponent implements ControlValueAcces
         this.onTouched = fn;
     }
 
+    /**
+     * Sets the disabled state of the control.
+     *
+     * @param isDisabled The disabled state to set.
+     */
     setDisabledState(isDisabled: boolean): void {
         if (isDisabled) {
             this.pathControl.disable({ emitEvent: false });
@@ -122,7 +127,7 @@ export class DotEditContentHostFolderFieldComponent implements ControlValueAcces
         }
     });
 
-    readonly handlNodeSelectedChange = signalMethod<TreeNodeItem>((nodeSelected) => {
+    readonly handleNodeSelectedChange = signalMethod<TreeNodeItem>((nodeSelected) => {
         if (!nodeSelected) {
             return;
         }
