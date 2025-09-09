@@ -6267,7 +6267,6 @@ paths:
             - VANITY_URL
             - KEY_VALUE
             - DOTASSET
-          uniqueItems: true
         style: form
       - description: Filter by site identifier.
         in: query
