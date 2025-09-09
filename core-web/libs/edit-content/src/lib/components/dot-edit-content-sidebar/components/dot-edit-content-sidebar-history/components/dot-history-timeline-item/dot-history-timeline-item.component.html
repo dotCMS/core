@@ -1,0 +1,109 @@
+<div class="dot-history-timeline-item" data-testid="history-item">
+    <!-- Timeline Marker Column -->
+    <div class="dot-history-timeline-item__marker-column">
+        <!-- Top connector line -->
+        <div
+            class="dot-history-timeline-item__connector dot-history-timeline-item__connector--top"></div>
+
+        <!-- Marker -->
+        <div
+            class="dot-history-timeline-item__marker"
+            [class]="$timelineMarkerClass()"
+            data-testid="timeline-marker"></div>
+
+        <!-- Bottom connector line (fills remaining space) -->
+        <div
+            class="dot-history-timeline-item__connector dot-history-timeline-item__connector--bottom"></div>
+    </div>
+
+    <!-- Timeline Item Content Wrapper -->
+    <div
+        class="dot-history-timeline-item__content-wrapper"
+        data-testid="content-wrapper"
+        [pTooltip]="tooltipContent"
+        tooltipPosition="bottom"
+        [tooltipOptions]="{
+            showDelay: 100,
+            hideDelay: 100,
+            tooltipStyleClass: 'dot-history-timeline-item__tooltip',
+            escape: false,
+            positionStyle: 'absolute',
+            appendTo: 'body'
+        }">
+        <!-- Tooltip Content Template -->
+        <ng-template #tooltipContent>
+            <div class="dot-history-timeline-item__overlay-content">
+                <h4 class="dot-history-timeline-item__overlay-title" data-testid="overlay-title">
+                    {{ $item().title }}
+                </h4>
+                <ul class="dot-history-timeline-item__overlay-list">
+                    <li>
+                        {{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}
+                    </li>
+                    <li>
+                        {{ $item().languageFlag }}
+                    </li>
+                    @if ($item().experimentVariant) {
+                        <li>
+                            {{ 'edit.content.sidebar.history.variant' | dm }}:
+                            {{ $item().experimentVariant }}
+                        </li>
+                    }
+                </ul>
+            </div>
+        </ng-template>
+
+        <!-- Timeline Item Content -->
+        <div class="dot-history-timeline-item__content">
+            <!-- Timeline Item Header -->
+            <div class="dot-history-timeline-item__header">
+                <span class="dot-history-timeline-item__time-relative" data-testid="time-display">
+                    {{ $item().modDate | dotRelativeDate }}
+                </span>
+
+                <div class="dot-history-timeline-item__time-section">
+                    @if ($item().live) {
+                        <p-chip
+                            styleClass="p-chip-sm p-chip-success"
+                            [label]="'edit.content.sidebar.history.published' | dm"
+                            data-testid="state-live" />
+                    } @else if ($item().working) {
+                        <p-chip
+                            styleClass="p-chip-sm p-chip-warning"
+                            [label]="'edit.content.sidebar.history.draft' | dm"
+                            data-testid="state-draft" />
+                    }
+
+                    @if ($item().experimentVariant) {
+                        <p-chip
+                            styleClass="p-chip-sm p-chip-secondary"
+                            [label]="'edit.content.sidebar.history.variant.tag' | dm"
+                            data-testid="state-variant" />
+                    }
+                </div>
+            </div>
+
+            <!-- User Information Section -->
+            <div class="dot-history-timeline-item__user-section">
+                <p-avatar
+                    dotGravatar
+                    [email]="$item().modUser"
+                    styleClass="dot-history-timeline-item__avatar"
+                    data-testid="user-avatar"></p-avatar>
+                <span class="dot-history-timeline-item__user-name" data-testid="history-user">
+                    {{ $item().modUser }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Actions Button - Positioned independently -->
+        <div class="dot-history-timeline-item__actions">
+            <p-button
+                icon="pi pi-ellipsis-v"
+                styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
+                (click)="versionMenu.toggle($event)"
+                data-testid="version-menu-button"></p-button>
+            <p-menu #versionMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true"></p-menu>
+        </div>
+    </div>
+</div>
