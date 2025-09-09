@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
+import java.util.Base64;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -474,4 +475,197 @@ public class UtilMethodsTest extends UnitTestBase {
 				isValidDotCMSPath("/sites/default/application/themes/travel/images/banners/hero-banner.jpg"));
 	}
 
+
+   /**
+    * Method to test: base64Encode
+    * Given Scenario: Given a valid string to encode
+    * ExpectedResult: The string should be properly base64 encoded
+    */
+   @Test
+   public void test_base64Encode_validString() {
+      final String input = "Hello World";
+      final String expected = Base64.getEncoder().encodeToString(input.getBytes());
+
+      final String result = UtilMethods.base64Encode(input);
+
+      assertNotNull(result);
+      assertEquals(expected, result);
+      assertEquals("SGVsbG8gV29ybGQ=", result);
+   }
+
+   /**
+    * Method to test: base64Encode
+    * Given Scenario: Given an empty string to encode
+    * ExpectedResult: The empty string should be properly base64 encoded
+    */
+   @Test
+   public void test_base64Encode_emptyString() {
+      final String input = "";
+      final String expected = Base64.getEncoder().encodeToString(input.getBytes());
+
+      final String result = UtilMethods.base64Encode(input);
+
+      assertNotNull(result);
+      assertEquals(expected, result);
+      assertEquals("", result);
+   }
+
+   /**
+    * Method to test: base64Encode
+    * Given Scenario: Given a null string to encode
+    * ExpectedResult: The method should return null
+    */
+   @Test
+   public void test_base64Encode_nullString() {
+      final String result = UtilMethods.base64Encode(null);
+
+      assertNull(result);
+   }
+
+   /**
+    * Method to test: base64Encode
+    * Given Scenario: Given a string with special characters to encode
+    * ExpectedResult: The string should be properly base64 encoded
+    */
+   @Test
+   public void test_base64Encode_specialCharacters() {
+      final String input = "Test with special chars: !@#$%^&*()_+-=[]{}|;':,.<>?";
+      final String expected = Base64.getEncoder().encodeToString(input.getBytes());
+
+      final String result = UtilMethods.base64Encode(input);
+
+      assertNotNull(result);
+      assertEquals(expected, result);
+   }
+
+   /**
+    * Method to test: base64Encode
+    * Given Scenario: Given a string with unicode characters to encode
+    * ExpectedResult: The string should be properly base64 encoded
+    */
+   @Test
+   public void test_base64Encode_unicodeCharacters() {
+      final String input = "Unicode test: 你好世界 🌍 café résumé";
+      final String expected = Base64.getEncoder().encodeToString(input.getBytes());
+
+      final String result = UtilMethods.base64Encode(input);
+
+      assertNotNull(result);
+      assertEquals(expected, result);
+   }
+
+   /**
+    * Method to test: base64Decode
+    * Given Scenario: Given a valid base64 encoded string to decode
+    * ExpectedResult: The string should be properly decoded
+    */
+   @Test
+   public void test_base64Decode_validString() {
+      final String input = "SGVsbG8gV29ybGQ=";
+      final String expected = "Hello World";
+
+      final String result = UtilMethods.base64Decode(input);
+
+      assertNotNull(result);
+      assertEquals(expected, result);
+   }
+
+   /**
+    * Method to test: base64Decode
+    * Given Scenario: Given an empty base64 string to decode
+    * ExpectedResult: The empty string should be properly decoded
+    */
+   @Test
+   public void test_base64Decode_emptyString() {
+      final String input = "";
+      final String expected = "";
+
+      final String result = UtilMethods.base64Decode(input);
+
+      assertNotNull(result);
+      assertEquals(expected, result);
+   }
+
+   /**
+    * Method to test: base64Decode
+    * Given Scenario: Given a null string to decode
+    * ExpectedResult: The method should return null
+    */
+   @Test
+   public void test_base64Decode_nullString() {
+      final String result = UtilMethods.base64Decode(null);
+
+      assertNull(result);
+   }
+
+   /**
+    * Method to test: base64Decode
+    * Given Scenario: Given a base64 string with special characters to decode
+    * ExpectedResult: The string should be properly decoded
+    */
+   @Test
+   public void test_base64Decode_specialCharacters() {
+      final String originalString = "Test with special chars: !@#$%^&*()_+-=[]{}|;':,.<>?";
+      final String encodedString = Base64.getEncoder().encodeToString(originalString.getBytes());
+
+      final String result = UtilMethods.base64Decode(encodedString);
+
+      assertNotNull(result);
+      assertEquals(originalString, result);
+   }
+
+   /**
+    * Method to test: base64Decode
+    * Given Scenario: Given a base64 string with unicode characters to decode
+    * ExpectedResult: The string should be properly decoded
+    */
+   @Test
+   public void test_base64Decode_unicodeCharacters() {
+      final String originalString = "Unicode test: 你好世界 🌍 café résumé";
+      final String encodedString = Base64.getEncoder().encodeToString(originalString.getBytes());
+
+      final String result = UtilMethods.base64Decode(encodedString);
+
+      assertNotNull(result);
+      assertEquals(originalString, result);
+   }
+
+   /**
+    * Method to test: base64Encode and base64Decode
+    * Given Scenario: Round-trip test - encode then decode various strings
+    * ExpectedResult: The decoded string should match the original input
+    */
+   @Test
+   public void test_base64_roundTrip() {
+      final String[] testStrings = {
+              "Simple text",
+              "Text with spaces and numbers 123",
+              "Special chars: !@#$%^&*()",
+              "Unicode: 你好 🌍 café",
+              "Multi-line\ntext\nwith\ntabs\t",
+              "JSON-like: {\"key\": \"value\", \"number\": 42}",
+              "HTML: <div class=\"test\">Content</div>",
+              "Very long string that exceeds typical buffer sizes and contains various characters including numbers 1234567890 and symbols !@#$%^&*()_+-=[]{}|;':,.<>? and unicode characters like 你好世界 🌍 café résumé naïve"
+      };
+
+      for (String original : testStrings) {
+         final String encoded = UtilMethods.base64Encode(original);
+         final String decoded = UtilMethods.base64Decode(encoded);
+
+         assertNotNull("Encoded string should not be null for: " + original, encoded);
+         assertNotNull("Decoded string should not be null for: " + original, decoded);
+         assertEquals("Round-trip should preserve original string: " + original, original, decoded);
+      }
+   }
+
+   /**
+    * Method to test: base64Decode
+    * Given Scenario: Given an invalid base64 string (should throw exception)
+    * ExpectedResult: IllegalArgumentException should be thrown
+    */
+   @Test(expected = IllegalArgumentException.class)
+   public void test_base64Decode_invalidBase64String() {
+      final String invalidBase64 = "This is not a valid base64 string!";
+      UtilMethods.base64Decode(invalidBase64);
+   }
 }
