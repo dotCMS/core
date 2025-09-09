@@ -804,7 +804,6 @@ public class TagResource {
      *
      * @throws DotDataException     An error occurred when retrieving Tag data.
      * @throws DotSecurityException The specified user does not have the required permissions.
-     * @throws IOException          An error occurred during file generation.
      */
     @Operation(
         summary = "Export tags",
@@ -834,7 +833,7 @@ public class TagResource {
     @Path("/export")
     @NoCache
     @Produces({"text/csv", "application/json"})
-    public void exportTags(
+    public Response exportTags(
         @Context final HttpServletRequest request,
         @Context final HttpServletResponse response,
         @Parameter(description = "Export format", example = "csv",
@@ -846,14 +845,14 @@ public class TagResource {
         @QueryParam("siteId") final String siteId,
         @Parameter(description = "Tag name filter (LIKE search)", example = "market")
         @QueryParam("filter") final String filter
-    ) throws DotDataException, DotSecurityException, IOException {
+    ) throws DotDataException, DotSecurityException {
         
         // Initialize and validate
         final InitDataObject initData = getInitDataObject(request, response);
         final User user = initData.getUser();
         
         // Validate format parameter
-        if (!"csv".equals(format) && !"json".equals(format)) {
+        if (!"csv".equalsIgnoreCase(format) && !"json".equalsIgnoreCase(format)) {
             throw new BadRequestException("Export format must be either 'csv' or 'json'");
         }
         
@@ -862,7 +861,7 @@ public class TagResource {
             user.getUserId(), format, filter, siteId, global));
         
         // Delegate to helper with all parameters
-        helper.exportTags(request, response, format, global, siteId, filter, user);
+        return helper.exportTags(request, response, format, global, siteId, filter, user);
     }
 
     /**
@@ -871,8 +870,6 @@ public class TagResource {
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     *
-     * @throws IOException An error occurred during template file generation.
      */
     @Operation(
         summary = "Download tag import template",
@@ -896,10 +893,10 @@ public class TagResource {
     @Path("/export/template")
     @NoCache
     @Produces("text/csv")
-    public void downloadTemplate(
+    public Response downloadTemplate(
         @Context final HttpServletRequest request,
         @Context final HttpServletResponse response
-    ) throws IOException {
+    ) {
         
         // Ensure authenticated
         final InitDataObject initData = getInitDataObject(request, response);
@@ -908,7 +905,7 @@ public class TagResource {
         Logger.debug(this, () -> String.format(
             "User '%s' downloading tag import template", user.getUserId()));
         
-        helper.downloadImportTemplate(response);
+        return helper.downloadImportTemplate(response);
     }
 
 }
