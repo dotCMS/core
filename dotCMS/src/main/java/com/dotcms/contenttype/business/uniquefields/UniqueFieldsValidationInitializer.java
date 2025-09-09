@@ -9,10 +9,10 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-import io.vavr.control.Try;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
@@ -55,24 +55,27 @@ public class UniqueFieldsValidationInitializer  implements DotInitializer {
                 Logger.info(this, "Dropping the Unique Fields table as the validation via database has been disabled");
                 this.uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
             }
-        } catch (final DotDataException e) {
+        } catch (final DotRuntimeException | DotDataException e) {
+            Logger.warnAndDebug(this.getClass(), ExceptionUtil.getErrorMessage(e), e);
             try {
-                // Drop the table so that the process can run again the next restart
+                Logger.warn(this.getClass(), "Dropping 'unique_fields' table so that the process can run again the next time");
                 this.uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
             } catch (final DotDataException ex) {
-                // Failed to drop the unique_fields table, or doesn't exist yet
-            };
-            final String errorMsg = String.format("Failed to create and populate the Unique Fields table: " +
-                    "%s", ExceptionUtil.getErrorMessage(e));
-            Logger.warnAndDebug(this.getClass(), errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
+                Logger.error(this.getClass(), "Failed to drop the 'unique_fields' table. Please drop it manually before restarting dotCMS");
+            }
+            throw new DotRuntimeException(ExceptionUtil.getErrorMessage(e), e);
         }
     }
 
+    /**
+     * Checks if the {@code unique_fields} table exists in the database.
+     *
+     * @return If the table exists, returns {@code true}; otherwise, returns {@code false}.
+     */
     private boolean uniqueFieldsTableExists(){
-        try {
-            return dotDatabaseMetaData.tableExists(DbConnectionFactory.getConnection(), "unique_fields");
-        } catch (SQLException e) {
+        try (final Connection conn = DbConnectionFactory.getConnection()) {
+            return dotDatabaseMetaData.tableExists(conn, "unique_fields");
+        } catch (final SQLException e) {
             return false;
         }
     }
