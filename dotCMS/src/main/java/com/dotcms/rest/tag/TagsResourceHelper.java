@@ -17,6 +17,7 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -359,6 +360,56 @@ public class TagsResourceHelper {
     private String fallbackSiteId(final HttpServletRequest request) {
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         return host != null ? host.getIdentifier() : Host.SYSTEM_HOST;
+    }
+
+    /**
+     * Resolves site parameter accepting UUID, site name, or SYSTEM_HOST literal.
+     * If no site is provided, uses current site from request context.
+     * 
+     * @param site The site parameter (can be UUID, name, or "SYSTEM_HOST")
+     * @param user The user performing the request
+     * @param request The HTTP request
+     * @return The resolved site ID
+     * @throws BadRequestException if site parameter is invalid
+     */
+    public String resolveSiteParameter(final String site, final User user, final HttpServletRequest request) 
+            throws BadRequestException {
+        
+        // No site specified - use current context
+        if (!UtilMethods.isSet(site)) {
+            final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            return currentHost != null ? currentHost.getIdentifier() : Host.SYSTEM_HOST;
+        }
+        
+        // Handle SYSTEM_HOST literal
+        if (Host.SYSTEM_HOST.equalsIgnoreCase(site)) {
+            return Host.SYSTEM_HOST;
+        }
+        
+        // Try as UUID
+        if (UUIDUtil.isUUID(site)) {
+            try {
+                final Host host = hostAPI.find(site, user, false);
+                if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+                    return host.getIdentifier();
+                }
+            } catch (Exception e) {
+                // Fall through to error
+            }
+            throw new BadRequestException("Site with ID '" + site + "' does not exist");
+        }
+        
+        // Try as site name
+        try {
+            final Host host = hostAPI.findByName(site, user, false);
+            if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+                return host.getIdentifier();
+            }
+        } catch (Exception e) {
+            // Fall through to error
+        }
+        
+        throw new BadRequestException("Site '" + site + "' not found");
     }
 
     /**
