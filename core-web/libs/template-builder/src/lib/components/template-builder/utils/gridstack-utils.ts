@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayoutBody } from '@dotcms/dotcms-models';
 
 import {
     BOX_WIDTH,
@@ -14,33 +14,35 @@ const emptyChar = '_';
 const boxChar = '#';
 const currentBoxChar = '*';
 
-export const EMPTY_ROWS_VALUE = [
-    {
-        w: 12,
-        h: 1,
-        x: 0,
-        y: 0,
-        subGridOpts: {
-            children: [
-                {
-                    w: 3,
-                    h: 1,
-                    y: 0,
-                    x: 0,
-                    id: uuid(),
-                    styleClass: [],
-                    containers: [
-                        {
-                            identifier: SYSTEM_CONTAINER_IDENTIFIER
-                        }
-                    ]
-                }
-            ]
-        },
-        id: uuid(),
-        styleClass: []
-    }
-];
+export const EMPTY_ROWS_VALUE = (container?: DotContainer) => {
+    return [
+        {
+            w: 12,
+            h: 1,
+            x: 0,
+            y: 0,
+            subGridOpts: {
+                children: [
+                    {
+                        w: 3,
+                        h: 1,
+                        y: 0,
+                        x: 0,
+                        id: uuid(),
+                        styleClass: [],
+                        containers: [
+                            {
+                                identifier: container?.identifier || SYSTEM_CONTAINER_IDENTIFIER
+                            }
+                        ]
+                    }
+                ]
+            },
+            id: uuid(),
+            styleClass: []
+        }
+    ];
+};
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array
@@ -144,10 +146,11 @@ export function removeColumnByID(row: DotGridStackWidget, columnID: string): Dot
  * @returns
  */
 export function parseFromDotObjectToGridStack(
-    body: DotLayoutBody | undefined
+    body: DotLayoutBody | undefined,
+    container?: DotContainer
 ): DotGridStackWidget[] {
     if (!body || !body.rows?.length) {
-        return structuredClone(EMPTY_ROWS_VALUE);
+        return structuredClone(EMPTY_ROWS_VALUE(container));
     }
 
     return body.rows.map((row, i) => ({

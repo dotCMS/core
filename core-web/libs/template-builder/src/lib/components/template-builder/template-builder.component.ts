@@ -10,7 +10,6 @@ import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -33,7 +32,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainer,
     DotLayout,
@@ -79,10 +78,11 @@ import {
     providers: [DotTemplateBuilderStore],
     standalone: false
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
+export class TemplateBuilderComponent implements OnInit, OnDestroy, OnChanges {
     private store = inject(DotTemplateBuilderStore);
     private dialogService = inject(DialogService);
     private dotMessage = inject(DotMessageService);
+    private dotContainersService = inject(DotContainersService);
     private cd = inject(ChangeDetectorRef);
 
     @Input()
@@ -224,14 +224,19 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnInit(): void {
-        this.store.setState({
-            rows: parseFromDotObjectToGridStack(this.layout.body),
-            layoutProperties: this.layoutProperties,
-            resizingRowID: '',
-            containerMap: this.containerMap,
-            themeId: this.template.themeId,
-            templateIdentifier: this.template.identifier,
-            shouldEmit: true
+        this.dotContainersService.getContainerByTitle('Default').subscribe((defaultContainer) => {
+            this.store.setState({
+                rows: parseFromDotObjectToGridStack(this.layout.body),
+                layoutProperties: this.layoutProperties,
+                resizingRowID: '',
+                containerMap: this.getContainerMap(defaultContainer),
+                themeId: this.template.themeId,
+                templateIdentifier: this.template.identifier,
+                shouldEmit: true,
+                defaultContainer
+            });
+
+            requestAnimationFrame(() => this.setUpGridStack());
         });
     }
 
@@ -247,7 +252,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         }
     }
 
-    ngAfterViewInit() {
+    setUpGridStack() {
         setTimeout(() => {
             this.customStyles = {
                 opacity: '1'
@@ -535,5 +540,23 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.store.updateLayoutProperties({
             [section]: false
         } as Partial<DotTemplateLayoutProperties>);
+    }
+
+    /**
+     * @description This method returns the container map
+     *
+     * @param {DotContainer | null} defaultContainer
+     * @return {*}  {DotContainerMap}
+     * @memberof TemplateBuilderComponent
+     */
+    private getContainerMap(defaultContainer: DotContainer | null): DotContainerMap {
+        if (!defaultContainer) {
+            return this.containerMap;
+        }
+
+        return {
+            ...this.containerMap,
+            [defaultContainer.identifier]: { ...defaultContainer }
+        };
     }
 }

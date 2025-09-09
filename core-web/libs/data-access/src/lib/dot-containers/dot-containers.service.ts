@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map, pluck } from 'rxjs/operators';
 
 import { DotContainer } from '@dotcms/dotcms-models';
 
@@ -34,5 +34,21 @@ export class DotContainersService {
         const url = `${CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=${fetchSystemContainers}`;
 
         return this.http.get<{ entity: DotContainer[] }>(url).pipe(pluck('entity'));
+    }
+
+    /**
+     * Get the container filtered by title.
+     *
+     * @param {string} title
+     * @return {*}  {Observable<DotContainer>}
+     * @memberof DotContainersService
+     */
+    getContainerByTitle(title: string): Observable<DotContainer> {
+        const url = `${CONTAINER_API_URL}?filter=${title}&perPage=1`;
+
+        return this.http.get<{ entity: DotContainer[] }>(url).pipe(
+            pluck('entity'),
+            map((containers) => containers[0])
+        );
     }
 }
