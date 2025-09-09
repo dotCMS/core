@@ -1,6 +1,6 @@
 package com.dotcms.ai.v2.api.util;
 
-import com.dotcms.ai.v2.api.embeddings.RetrievedChunk;
+import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievedChunk;
 import com.liferay.util.StringPool;
 
 import java.util.List;

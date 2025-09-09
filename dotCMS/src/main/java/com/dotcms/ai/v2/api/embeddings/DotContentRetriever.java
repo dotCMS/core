@@ -1,5 +1,8 @@
 package com.dotcms.ai.v2.api.embeddings;
 
+import com.dotcms.ai.v2.api.embeddings.retrieval.EmbeddingStoreRetriever;
+import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievalQuery;
+import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievedChunk;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.rag.content.Content;
@@ -14,6 +17,7 @@ import java.util.stream.Collectors;
  * ContentRetriever for LangChain4j that delegates to an EmbeddingStore-backed Retriever.
  * @author jsanca
  */
+// todo: this could be used on a fresh desk rag strategy
 public final class DotContentRetriever implements ContentRetriever {
 
     private final EmbeddingStoreRetriever adapter; // el adapter que creamos antes

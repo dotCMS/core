@@ -1,4 +1,4 @@
-package com.dotcms.ai.v2.api.embeddings;
+package com.dotcms.ai.v2.api.embeddings.factory;
 
 import com.dotmarketing.exception.DotDataException;
 

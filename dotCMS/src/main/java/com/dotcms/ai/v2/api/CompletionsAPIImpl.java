@@ -2,12 +2,11 @@ package com.dotcms.ai.v2.api;
 
 import com.dotcms.ai.v2.api.aiservices.RAGCompletionsService;
 import com.dotcms.ai.v2.api.embeddings.DotPgVectorEmbeddingStore;
-import com.dotcms.ai.v2.api.embeddings.EmbeddingStoreRetriever;
-import com.dotcms.ai.v2.api.embeddings.RetrievalQuery;
-import com.dotcms.ai.v2.api.embeddings.RetrievedChunk;
-import com.dotcms.ai.v2.api.embeddings.Retriever;
+import com.dotcms.ai.v2.api.embeddings.retrieval.EmbeddingStoreRetriever;
+import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievalQuery;
+import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievedChunk;
+import com.dotcms.ai.v2.api.embeddings.retrieval.Retriever;
 import com.dotcms.ai.v2.api.provider.ModelProviderFactory;
-import com.dotcms.ai.v2.api.stream.Orchestrator;
 import com.dotcms.ai.v2.api.util.PromptComposer;
 import com.dotmarketing.util.Logger;
 import dev.langchain4j.data.message.ChatMessage;

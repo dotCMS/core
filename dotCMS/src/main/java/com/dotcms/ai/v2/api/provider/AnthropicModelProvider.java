@@ -1,6 +1,7 @@
 package com.dotcms.ai.v2.api.provider;
 
 import com.dotcms.ai.v2.api.provider.config.ModelConfig;
+import com.dotcms.cdi.CDIUtils;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.ChatModel;
@@ -42,7 +43,6 @@ public class AnthropicModelProvider implements ModelProvider {
     @Override
     public EmbeddingModel createEmbedding(final ModelConfig config) {
 
-
-        return new AllMiniLmL6V2EmbeddingModel(); // diay si
+        return CDIUtils.getBeanThrows(EmbeddingModel.class, "onnx");
     }
 }

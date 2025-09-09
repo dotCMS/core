@@ -1,4 +1,4 @@
-package com.dotcms.ai.v2.api.embeddings;
+package com.dotcms.ai.v2.api.embeddings.initializer;
 
 import com.dotcms.config.DotInitializer;
 import com.dotcms.util.ClasspathResourceLoader;
