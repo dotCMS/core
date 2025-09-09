@@ -87,7 +87,7 @@ public class GenericBundleActivatorIntegrationTest {
                     assertTrue(
                             String.format("Expected at least 4 bundles, but found %d",
                                     bundles.length),
-                            bundles.length > 4
+                            bundles.length >= 4
                     );
                 });
     }

@@ -31,6 +31,8 @@ export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
 export * from './lib/modules/dot-dialog/dot-dialog.component';
+export * from './lib/dot-tree-folder/dot-tree-folder.component';
+
 // Directives
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
 export * from './lib/directives/dot-avatar/dot-avatar.directive';
