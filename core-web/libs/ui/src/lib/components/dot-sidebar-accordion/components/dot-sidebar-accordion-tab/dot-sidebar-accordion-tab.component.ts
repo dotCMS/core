@@ -20,7 +20,6 @@ import { ChangeDetectionStrategy, Component, input, TemplateRef, ViewChild } fro
  */
 @Component({
     selector: 'dot-sidebar-accordion-tab',
-    standalone: true,
     imports: [CommonModule],
     template: `
         <ng-template #tabContent>

@@ -9,11 +9,16 @@ import { inject } from '@angular/core';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentletVersion } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 
 import { ContentletIdentifier } from '../../../models/dot-edit-content-field.type';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EditContentState } from '../../edit-content.store';
+
+/**
+ * Default number of items per page for versions pagination
+ */
+const DEFAULT_VERSIONS_PER_PAGE = 20;
 
 /**
  * Feature store for managing content versions state
@@ -56,7 +61,7 @@ export function withHistory() {
                         switchMap(({ identifier, page }) => {
                             const currentPagination = store.versionsPagination();
                             const currentVersions = store.versions();
-                            const limit = currentPagination?.perPage || 20;
+                            const limit = currentPagination?.perPage || DEFAULT_VERSIONS_PER_PAGE;
 
                             // Detect if we're switching content or starting fresh
                             const isNewContent =
@@ -84,7 +89,8 @@ export function withHistory() {
 
                                             patchState(store, {
                                                 versions: newVersions, // All accumulated items for display
-                                                versionsPagination: response.pagination,
+                                                versionsPagination:
+                                                    response.pagination as DotPagination,
                                                 versionsStatus: {
                                                     status: ComponentStatus.LOADED,
                                                     error: null

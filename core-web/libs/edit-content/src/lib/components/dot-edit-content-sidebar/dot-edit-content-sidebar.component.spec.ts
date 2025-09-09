@@ -114,7 +114,16 @@ describe('DotEditContentSidebarComponent', () => {
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
         dotEditContentService.getActivities.mockReturnValue(of([]));
-        dotEditContentService.getVersions.mockReturnValue(of({ entity: [], pagination: null }));
+        dotEditContentService.getVersions.mockReturnValue(
+            of({
+                entity: [],
+                pagination: null,
+                errors: [],
+                i18nMessagesMap: {},
+                messages: [],
+                permissions: []
+            })
+        );
         dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
         dotContentletService.canLock.mockReturnValue(of({ canLock: true } as DotContentletCanLock));
 

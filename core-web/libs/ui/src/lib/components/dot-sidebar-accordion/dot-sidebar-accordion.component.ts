@@ -55,7 +55,6 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
  */
 @Component({
     selector: 'dot-sidebar-accordion',
-    standalone: true,
     imports: [CommonModule],
     templateUrl: './dot-sidebar-accordion.component.html',
     styleUrls: ['./dot-sidebar-accordion.component.scss'],

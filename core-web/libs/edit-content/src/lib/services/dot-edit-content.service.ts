@@ -16,17 +16,8 @@ import {
     DotCMSContentletVersion,
     DotContentletDepth,
     DotCMSResponse,
-    DotPagination,
     PaginationParams
 } from '@dotcms/dotcms-models';
-
-/**
- * Interface for paginated versions response
- */
-export interface PaginatedVersionsResponse {
-    entity: DotCMSContentletVersion[];
-    pagination: DotPagination;
-}
 
 import {
     CustomTreeNode,
@@ -317,37 +308,43 @@ export class DotEditContentService {
     }
 
     /**
+     * Creates HTTP parameters for pagination requests.
+     * Handles the logic for setting offset and limit parameters with proper defaults.
+     *
+     * @private
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters
+     * @returns {HttpParams} Configured HTTP parameters
+     */
+    private buildPaginationParams(paginationParams?: PaginationParams): HttpParams {
+        let httpParams = new HttpParams();
+
+        if (paginationParams?.limit) {
+            const offset = paginationParams.offset || 1;
+            httpParams = httpParams
+                .set('offset', offset.toString())
+                .set('limit', paginationParams.limit.toString());
+        }
+
+        return httpParams;
+    }
+
+    /**
      * Retrieves the version history for a content item by its identifier.
      * Returns all versions of the content including live, working, and archived versions.
      *
      * @param {string} identifier - The unique identifier of the content item
      * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
-     * @returns {Observable<PaginatedVersionsResponse>} Observable that emits paginated contentlet version history
+     * @returns {Observable<DotCMSResponse<DotCMSContentletVersion[]>>} Observable that emits DotCMS response with contentlet version history
      */
     getVersions(
         identifier: string,
         paginationParams?: PaginationParams
-    ): Observable<PaginatedVersionsResponse> {
-        let httpParams = new HttpParams();
+    ): Observable<DotCMSResponse<DotCMSContentletVersion[]>> {
+        const httpParams = this.buildPaginationParams(paginationParams);
 
-        if (paginationParams?.offset && paginationParams?.limit) {
-            httpParams = httpParams.set('offset', paginationParams.offset.toString());
-            httpParams = httpParams.set('limit', paginationParams.limit.toString());
-        } else if (paginationParams?.limit) {
-            // Default to first page (offset 1) if only limit is provided
-            httpParams = httpParams.set('offset', '1');
-            httpParams = httpParams.set('limit', paginationParams.limit.toString());
-        }
-
-        return this.#http
-            .get<
-                DotCMSResponse<DotCMSContentletVersion[]>
-            >(`/api/v1/content/versions/id/${identifier}/history`, { params: httpParams })
-            .pipe(
-                map((response) => ({
-                    entity: response.entity,
-                    pagination: response.pagination as DotPagination
-                }))
-            );
+        return this.#http.get<DotCMSResponse<DotCMSContentletVersion[]>>(
+            `/api/v1/content/versions/id/${identifier}/history`,
+            { params: httpParams }
+        );
     }
 }

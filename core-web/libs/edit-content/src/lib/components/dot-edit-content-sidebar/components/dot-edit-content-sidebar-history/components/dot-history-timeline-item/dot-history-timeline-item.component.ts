@@ -1,5 +1,13 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    input,
+    inject,
+    output,
+    signal
+} from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -29,7 +37,6 @@ import {
  */
 @Component({
     selector: 'dot-history-timeline-item',
-    standalone: true,
     imports: [
         CommonModule,
         AvatarModule,
@@ -62,15 +69,15 @@ export class DotHistoryTimelineItemComponent {
     actionTriggered = output<DotHistoryTimelineItemAction>();
 
     /**
-     * Computed signal for cached translations map
-     * Ensures reactive updates when language changes
+     * Signal for cached translations map
+     * Contains static translations for menu labels
      */
-    private readonly $labels = computed(() => ({
+    private readonly $labels = signal({
         preview: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.preview'),
         restore: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.restore'),
         compare: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.compare'),
         delete: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.delete')
-    }));
+    });
 
     /**
      * Computed signal that generates menu items for version actions

@@ -26,7 +26,6 @@ import {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-history',
-    standalone: true,
     imports: [
         CommonModule,
         ScrollerModule,

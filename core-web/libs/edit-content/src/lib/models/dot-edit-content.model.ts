@@ -69,18 +69,28 @@ export interface Activity {
 }
 
 /**
- * Enum for timeline item action types in the history sidebar.
+ * Constants for timeline item action types in the history sidebar.
  * Defines the available actions that can be performed on a timeline item.
  *
  * @export
- * @enum {string}
+ * @const
  */
-export enum DotHistoryTimelineItemActionType {
-    PREVIEW = 'preview',
-    RESTORE = 'restore',
-    COMPARE = 'compare',
-    DELETE = 'delete'
-}
+export const DotHistoryTimelineItemActionType = {
+    PREVIEW: 'preview',
+    RESTORE: 'restore',
+    COMPARE: 'compare',
+    DELETE: 'delete'
+} as const;
+
+/**
+ * Type for timeline item action types in the history sidebar.
+ * Derived from the constants object for type safety.
+ *
+ * @export
+ * @type
+ */
+export type DotHistoryTimelineItemActionType =
+    (typeof DotHistoryTimelineItemActionType)[keyof typeof DotHistoryTimelineItemActionType];
 
 /**
  * Interface for timeline item actions in the history sidebar.
