@@ -20,7 +20,7 @@ export default [
             '/tinymce',
             '/ext'
         ],
-        target: 'http://localhost:8080',
+        target: 'https://demo.dotcms.com',
         secure: false,
         logLevel: 'debug',
         pathRewrite: {

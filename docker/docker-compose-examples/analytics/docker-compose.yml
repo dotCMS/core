@@ -1,7 +1,8 @@
 services:
 
-  postgres:
-    container_name: postgres
+  # Analytics Database (separate from dotCMS DB)
+  analytics-postgres:
+    container_name: analytics-postgres
     image: postgres:13.2
     restart: unless-stopped
     environment:
@@ -10,26 +11,144 @@ services:
       POSTGRES_PASSWORD: ${POSTGRESQL_PASS:-postgres}
     ports:
       - ${POSTGRESQL_HOST_PORT:-5432}:5432
+    networks:
+      - analytics-net
+    volumes:
+      - analytics-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USER:-postgres} -d ${POSTGRESQL_DB:-postgres} -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # dotCMS Database  
+  dotcms-db:
+    profiles: ["full"]
+    container_name: dotcms-db
+    image: pgvector/pgvector:pg16
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+      POSTGRES_USER: 'dotcmsdbuser'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'dotcms'
+    volumes:
+      - dotcms-db-data:/var/lib/postgresql/data
+    networks:
+      - dotcms-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # OpenSearch for dotCMS
+  opensearch:
+    profiles: ["full"]
+    container_name: opensearch
+    image: opensearchproject/opensearch:1
+    environment:
+      cluster.name: "elastic-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - dotcms-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
 
   keycloak:
     container_name: keycloak
     depends_on:
-      - postgres
+      - analytics-postgres
     environment:
       DB_VENDOR: postgres
-      DB_ADDR: postgres
+      DB_ADDR: analytics-postgres
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-keycloak}
       DB_DATABASE: ${POSTGRESQL_DB:-postgres}
       DB_USER: ${POSTGRESQL_USER:-postgres}
       DB_PASSWORD: ${POSTGRESQL_PASS:-postgres}
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HOSTNAME_STRICT: false
+      KC_HTTP_ENABLED: true
     image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-18.0.2}
     volumes:
       - ./setup/config/dev/keycloak/test-realm.json:/opt/keycloak/data/import/example-realm.json
-    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm"]
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm", "--hostname-strict-https=false", "--http-enabled=true"]
     ports:
       - "${KEYCLOAK_HOST_PORT:-61111}:8080"
+    networks:
+      - analytics-net
     restart: always
+
+  # dotCMS with Analytics Pre-configured
+  dotcms:
+    profiles: ["full"]
+    container_name: dotcms
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    environment:
+      # dotCMS Core Configuration
+      CMS_JAVA_OPTS: '-Xmx1g'
+      LANG: 'C.UTF-8'
+      TZ: 'UTC'
+      DB_BASE_URL: "jdbc:postgresql://dotcms-db/dotcms"
+      DB_USERNAME: 'dotcmsdbuser'
+      DB_PASSWORD: 'password'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+      DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+      DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+      DOT_DOTCMS_CLUSTER_ID: 'dotcms-analytics-cluster'
+      GLOWROOT_ENABLED: 'true'
+      GLOWROOT_WEB_UI_ENABLED: 'true'
+      DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
+
+      # Analytics Configuration (Environment Variables Override)
+      # Internal URLs (container-to-container communication)
+      DOT_FEATURE_FLAG_EXPERIMENTS: "true"
+      DOT_ENABLE_EXPERIMENTS_AUTO_JS_INJECTION: "true"
+      DOT_FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT: "true"
+      DOT_FEATURE_FLAG_CONTENT_ANALYTICS: "true"
+      DOT_ANALYTICS_IDP_URL: "http://keycloak:8080/realms/dotcms/protocol/openid-connect/token"
+      DOT_ANALYTICS_APP_CONFIG_URL: "http://dotcms-analytics:8080/c/customer1/cluster1/keys"
+      DOT_ANALYTICS_APP_WRITE_URL: "http://jitsu:8001/api/v1/event"
+      DOT_ANALYTICS_APP_READ_URL: "http://cube:4000"
+      
+      # Analytics Client Configuration (customer1:cluster1)
+      DOT_ANALYTICS_APP_CLIENT_ID: "analytics-customer-customer1"
+      DOT_ANALYTICS_APP_CLIENT_SECRET: "testsecret"
+      
+    depends_on:
+      dotcms-db:
+        condition: service_healthy
+      opensearch:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    volumes:
+      - cms-shared:/data/shared
+    networks:
+      - dotcms-net
+      - analytics-net  # Bridge to analytics network
+    ports:
+      - "8082:8082"   # HTTP
+      - "8443:8443"   # HTTPS
+      - "4000:4000"   # Glowroot web UI
 
   dotcms-analytics:
     container_name: dotcms-analytics
@@ -42,9 +161,9 @@ services:
       ## For local development ONLY. This forces events to be immediately persisted
       ## to ClickHouse. For PROD instances, this must be set to 'batch'
       - JITSU_DESTINATIONS_CLICKHOUSE_MODE=stream
-      - QUARKUS_OIDC_AUTH_SERVER_URL=${AUTH_SERVER_URL:-http://host.docker.internal:61111/realms/dotcms}
+      - QUARKUS_OIDC_AUTH_SERVER_URL=${AUTH_SERVER_URL:-http://keycloak:8080/realms/dotcms}
       - QUARKUS_DATASOURCE_DB_KIND=postgresql
-      - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://postgres:5432/${POSTGRESQL_DB:-postgres}
+      - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://analytics-postgres:5432/${POSTGRESQL_DB:-postgres}
       - QUARKUS_DATASOURCE_USERNAME=${POSTGRESQL_USER:-postgres}
       - QUARKUS_DATASOURCE_PASSWORD=${POSTGRESQL_PASS:-postgres}
       - QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=drop-and-create
@@ -56,18 +175,20 @@ services:
       - QUARKUS_PROFILE=prod
       - QUARKUS_KUBERNETES_CONFIG_ENABLED=false
       ## If not using the prod profid, the jwks url and issuer need to be set directly.
-      #- MP_JWT_VERIFY_PUBLICKEY_LOCATION=http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/certs
-      #- MP_JWT_VERIFY_ISSUER=http://host.docker.internal:61111/realms/dotcms
+      #- MP_JWT_VERIFY_PUBLICKEY_LOCATION=http://keycloak:8080/realms/dotcms/protocol/openid-connect/certs
+      #- MP_JWT_VERIFY_ISSUER=http://keycloak:8080/realms/dotcms
       ##  Or, for local testing only, you can set issuer to 'NONE' to not validate
       #- MP_JWT_VERIFY_ISSUER=NONE
       - ISSUER_URI=${ISSUER_URI:-NONE}
-      - JWKS_URI=${JWKS_URL:-http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/certs}
+      - JWKS_URI=${JWKS_URL:-http://keycloak:8080/realms/dotcms/protocol/openid-connect/certs}
       - CLICKHOUSE_URL=http://${CH_USER:-clickhouse_test_user}:${CH_PWD:-clickhouse_password}@ch_server:8123
     ports:
       - "${DOTCMS_ANALYTICS_HOST_PORT:-8088}:8080"
+    networks:
+      - analytics-net
     depends_on:
       - keycloak
-      - postgres
+      - analytics-postgres
       - jitsu
 
   jitsu:
@@ -76,7 +197,7 @@ services:
     environment:
       - CLUSTER_ADMIN_TOKEN=myadmin
       - REDIS_URL=redis://jitsu_redis:6379
-      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://host.docker.internal:8088}
+      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://dotcms-analytics:8080}
       - SERVER_PORT=8001
       - TERM=xterm-256color
       - TLS_SKIP_VERIFY=true
@@ -86,6 +207,8 @@ services:
     volumes:
       - ./setup/config/dev/jitsu/server/config:/home/eventnative/data/config
     restart: always
+    networks:
+      - analytics-net
     ports:
       - "${JITSU_HOST_PORT:-8081}:8001"
 
@@ -94,6 +217,8 @@ services:
     image: redis:6.2.6-bullseye
     volumes:
       - redis-data:/data
+    networks:
+      - analytics-net
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -h localhost -p 6379 PING"]
@@ -112,12 +237,13 @@ services:
       - CUBEJS_DB_NAME=${CH_DB:-clickhouse_test_db}
       - CUBEJS_DB_USER=${CH_USER:-clickhouse_test_user}
       - CUBEJS_DB_PASS=${CH_PWD:-clickhouse_password}
-      - CUBEJS_JWK_URL=${JWKS_URL:-http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/certs}
+      # Use internal network for JWT validation
+      - CUBEJS_JWK_URL=${JWKS_URL:-http://keycloak:8080/realms/dotcms/protocol/openid-connect/certs}
       - CUBEJS_JWT_AUDIENCE=api-dotcms-analytics-audience
-      #- CUBEJS_JWT_ISSUER=${AUTH_SERVER_URL:-http://host.docker.internal:61111/realms/dotcms}
+      #- CUBEJS_JWT_ISSUER=${AUTH_SERVER_URL:-http://keycloak:8080/realms/dotcms}
       - CUBEJS_JWT_ALGS=RS256
       - CUBEJS_JWT_CLAIMS_NAMESPACE=https://dotcms.com/analytics
-      - CUBEJS_LOG_LEVEL=debug
+      - CUBEJS_LOG_LEVEL=trace
       - CUBEJS_REFRESH_WORKER=true
       - CUBEJS_SCHEDULED_REFRESH_TIME=true
       - CUBEJS_OVERRIDE_CUSTOMER=customer1
@@ -126,6 +252,11 @@ services:
       - cube_metastore:/cube/conf/.cubestore
       - ./setup/config/dev/cube/schema:/cube/conf/schema
       - ./setup/config/dev/cube/cube.js:/cube/conf/cube.js
+    networks:
+      - analytics-net
+    depends_on:
+      - ch_server
+      - keycloak
 
   ch_server:
     container_name: ch_server
@@ -145,10 +276,25 @@ services:
     volumes:
       - ch_data:/var/lib/clickhouse
       - ./setup/db/clickhouse/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - analytics-net
+
+networks:
+  dotcms-net:
+    driver: bridge
+  analytics-net:
+    driver: bridge
 
 volumes:
-  workspace:
+  # dotCMS volumes
+  cms-shared:
+  dotcms-db-data:
+  opensearch-data:
+  
+  # Analytics volumes  
+  analytics-db-data:
   ch_data:
   redis-data:
   redis_ur_data:
   cube_metastore:
+  workspace:

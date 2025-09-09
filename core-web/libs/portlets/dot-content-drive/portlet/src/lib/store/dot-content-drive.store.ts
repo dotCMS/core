@@ -64,11 +64,9 @@ export const DotContentDriveStore = signalStore(
                     modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
                 }
 
-                modifiedQuery = modifiedQuery
-                    .field('conhost')
-                    .equals(currentSiteValue?.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier);
+                modifiedQuery = modifiedQuery.raw(
+                    `+(conhost:${currentSiteValue?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                );
 
                 filtersEntries
                     // Remove filters that are undefined

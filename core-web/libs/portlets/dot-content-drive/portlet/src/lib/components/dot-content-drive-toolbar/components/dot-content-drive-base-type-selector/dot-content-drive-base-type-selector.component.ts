@@ -12,7 +12,11 @@ import { debounceTime, distinctUntilChanged, map, take } from 'rxjs/operators';
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
+import {
+    DEBOUNCE_TIME,
+    MAP_NUMBERS_TO_BASE_TYPES,
+    PANEL_SCROLL_HEIGHT
+} from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 @Component({
@@ -31,6 +35,8 @@ export class DotContentDriveBaseTypeSelectorComponent {
     readonly $state = signalState({
         baseTypes: []
     });
+
+    protected readonly MULTISELECT_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
 
     ngOnInit() {
         this.getCurrentBaseTypes();
