@@ -1,7 +1,7 @@
 package com.dotcms.ai.v2.api.aitools;
 
-import com.dotcms.ai.v2.api.aitools.dto.ContentTypeDTO;
-import com.dotcms.ai.v2.api.aitools.dto.FieldDefinitionDTO;
+import com.dotcms.ai.v2.api.dto.ContentTypeDTO;
+import com.dotcms.ai.v2.api.dto.FieldDefinitionDTO;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;

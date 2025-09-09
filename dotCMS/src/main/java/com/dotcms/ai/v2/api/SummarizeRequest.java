@@ -104,6 +104,12 @@ public final class SummarizeRequest implements CompletionSpec {
     public Boolean getStream() { return stream; }
     public Long getLanguage() { return language; }
     public Map<String, Object> getResponseFormat() { return responseFormat; }
+
+    @Override
+    public String getEmbeddinModelProviderKey() {
+        return ""; // todo:
+    }
+
     public String getStyle() { return style; }
     public Integer getMaxChars() { return maxChars; }
     public Map<String, Object> getOptions() { return options; }

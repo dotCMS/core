@@ -105,6 +105,11 @@ public class EmbeddingsFactoryImpl implements EmbeddingsFactory {
         }
     }
 
+    @Override
+    public long upsert(Connection connection, EmbeddingInput embeddingInput) throws DotDataException {
+        return 0;
+    }
+
     /**
      * Deletes all embeddings for a metadata id (useful when reindexing).
      */

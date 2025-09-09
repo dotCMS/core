@@ -44,7 +44,7 @@ public class ConversationAPIImpl implements ConversationAPI {
                 .chatModel(chatModel)
                 .chatMemory(chatMemory)
                 .tools(this.contentTools, this.contentTypeTools)
-                .contentRetriever()
+                // .contentRetriever() // todo: we already have a content retriever but not sure if we need a one here, may be for freshdesk
                 .build();
 
         return new ChatResponse(conversationId, aiChatService.chat(prompt));

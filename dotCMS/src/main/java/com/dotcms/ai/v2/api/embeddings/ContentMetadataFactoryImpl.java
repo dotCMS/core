@@ -23,7 +23,7 @@ import java.util.Optional;
 public class ContentMetadataFactoryImpl implements ContentMetadataFactory {
 
     private static final String UPSERT_SQL =
-            "INSERT INTO dot_content_metadata " +
+            "INSERT INTO dot_ai_content_metadata " +
                     "(inode, identifier, language, host, variant, content_type, index_name, title, extracted_text, extracted_text_hash, token_count) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                     "ON CONFLICT (identifier, language, host, variant) DO UPDATE SET " +
@@ -38,10 +38,10 @@ public class ContentMetadataFactoryImpl implements ContentMetadataFactory {
 
     private static final String SELECT_UNIQUE_SQL =
             "SELECT id, inode, identifier, language, host, variant, content_type, index_name, title, extracted_text, extracted_text_hash, token_count " +
-                    "FROM dot_content_metadata WHERE identifier=? AND language=? AND host=? AND variant=?";
+                    "FROM dot_ai_content_metadata WHERE identifier=? AND language=? AND host=? AND variant=?";
 
     private static final String DELETE_BY_ID_SQL =
-            "DELETE FROM dot_content_metadata WHERE id=?";
+            "DELETE FROM dot_ai_content_metadata WHERE id=?";
 
     /**
      * Upserts a metadata row and returns the id (generated or existing).
@@ -73,6 +73,11 @@ public class ContentMetadataFactoryImpl implements ContentMetadataFactory {
             Logger.error(this, e.getMessage(), e);
             throw new DotDataException(e);
         }
+    }
+
+    @Override
+    public long upsert(Connection connection, ContentMetadataDTO contentMetadataDTO) throws DotDataException {
+        return 0;
     }
 
     /**

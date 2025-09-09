@@ -1,8 +1,8 @@
 package com.dotcms.ai.v2.api.aitools;
 
 import com.dotcms.ai.util.ContentToStringUtil;
-import com.dotcms.ai.v2.api.aitools.dto.ContentletDTO;
-import com.dotcms.ai.v2.api.aitools.dto.MinimalContentletDTO;
+import com.dotcms.ai.v2.api.dto.ContentletDTO;
+import com.dotcms.ai.v2.api.dto.MinimalContentletDTO;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;

@@ -16,8 +16,8 @@ import java.util.Objects;
  */
 public final class CompletionRequest implements CompletionSpec {
 
-    private final ModelConfig modelConfig;
-    private final String modelProviderKey;
+    private final ModelConfig modelConfig = null; // todo
+    private final String modelProviderKey = null;  //todo
 
     /** User instruction to the model. Keep it concise and specific. */
     @Size(min = 1, max = 4096)
@@ -31,7 +31,7 @@ public final class CompletionRequest implements CompletionSpec {
     private final Integer searchOffset;
 
     @Min(128)
-    public final int responseLengthTokens; // todo: this is not mapped
+    public final int responseLengthTokens = 0; // todo: this is not mapped
 
     // --- Localization / formatting ---
     /** Language ID or locale selector (implementation-specific). */
@@ -48,7 +48,7 @@ public final class CompletionRequest implements CompletionSpec {
     /** Content types to include in retrieval (e.g., Blog, Product). */
     private final List<String> contentType;
 
-    private final String indexName; // todo this is not here
+    private final String indexName = null; // todo this is not here
 
     /** Similarity operator to use when ranking retrieved chunks. */
     private final String operator; // "cosine" | "innerProduct" | "distance"
@@ -155,6 +155,11 @@ public final class CompletionRequest implements CompletionSpec {
     }
 
     @Override
+    public String getEmbeddinModelProviderKey() {
+        return ""; // todo:
+    }
+
+    @Override
     public String toString() {
         return "CompletionRequest{" +
                 "prompt='" + prompt + '\'' +
@@ -204,7 +209,7 @@ public final class CompletionRequest implements CompletionSpec {
     }
 
     public String getStreamingModelProviderKey() {
-
+        return null; //todo:
     }
 
     // --- Builder class ---

@@ -74,7 +74,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 .chatModel(model)
                 .build();
 
-        final String AiMessage message =  ragService.complete(system, context, user);
+        //final String AiMessage message =  ragService.complete(system, context, user);
 
         // todo: I have to see what the composer does, but I think the ChatMessage is the key, need to check the examples
         final List<ChatMessage> messages = new ArrayList<>();
@@ -117,7 +117,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         retrievalQueryBuilder.prompt(req.getPrompt());//  "Latest pet accessories for dogs";
         retrievalQueryBuilder.site(req.getSite()); // "www.mysite.com";
         retrievalQueryBuilder.contentTypes(req.getContentType()); // = new String[]{"Product", "Blog"};
-        retrievalQueryBuilder.languageId(req.getLanguage()); // = "1";
+        retrievalQueryBuilder.languageId(req.getLanguage().toString()); // = "1";
         //retrievalQueryBuilder.identifier() = null;
         retrievalQueryBuilder.limit(req.getSearchLimit());// = 5;
         retrievalQueryBuilder.offset(req.getSearchOffset()); // = 0;
@@ -140,7 +140,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         Logger.debug(this, ()-> "Doing a summarize on completions api, request: " + request);
         final SummarizeRequest normalizedCompletionRequest = CompletionNormalizer.normalize(request);
-        final String text = orchestrator.summarize(normalizedCompletionRequest, request.getStyle(), request.getMaxChars());
+        final String text = null; //orchestrator.summarize(normalizedCompletionRequest, request.getStyle(), request.getMaxChars());
         return CompletionResponse.of(text);
     }
 
@@ -149,6 +149,6 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         Logger.debug(this, ()-> "Doing a completeStream on completions api, request: " + request);
         final CompletionRequest normalizedCompletionRequest = CompletionNormalizer.normalize(request);
-        this.orchestrator.completeStream(normalizedCompletionRequest, output);
+        //this.orchestrator.completeStream(normalizedCompletionRequest, output);
     }
 }

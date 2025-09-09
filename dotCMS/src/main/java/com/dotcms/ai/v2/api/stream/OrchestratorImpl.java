@@ -1,6 +1,8 @@
 package com.dotcms.ai.v2.api.stream;
 
 import com.dotcms.ai.v2.api.CompletionRequest;
+import com.dotcms.ai.v2.api.SimilarityOperator;
+import com.dotcms.ai.v2.api.SummarizeRequest;
 import com.dotcms.ai.v2.api.embeddings.RetrievedChunk;
 import com.dotcms.ai.v2.api.embeddings.Retriever;
 import com.dotcms.ai.v2.api.provider.ModelProviderFactory;
@@ -11,7 +13,10 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,7 +102,7 @@ public class OrchestratorImpl implements Orchestrator {
                         .build()
         );*/
 
-        StreamingResponseHandler<String> handler = new StreamingResponseHandler<String>() {
+        /*StreamingResponseHandler<String> handler = new StreamingResponseHandler<String>() {
             @Override public void onNext(String token) {
                 writeSilently(out, token);
             }
@@ -109,12 +114,17 @@ public class OrchestratorImpl implements Orchestrator {
                 writeSilently(out, "");
             }
         };
-        streaming.generate(finalPrompt, handler);
+        streaming.generate(finalPrompt, handler);*/
     }
 
     @Override
+    public String summarize(SummarizeRequest request, String style, Integer maxChars) {
+        return "";
+    }
+
+    //@Override
     public String summarize(CompletionRequest request, String style, Integer maxChars) {
-        CompletionRequest req = CompletionNormalizer.normalize(request);
+        /*CompletionRequest req = CompletionNormalizer.normalize(request);
 
         List<RetrievedChunk> ctx = retrieveIfRequested(req);
 
@@ -122,8 +132,10 @@ public class OrchestratorImpl implements Orchestrator {
         String context = PromptComposer.contextBlock(ctx);
         String user = PromptComposer.summarizeUserBlock(req.prompt, style, maxChars, req.responseFormat);
         String finalPrompt = PromptComposer.combine(system, context, user);
+        */
 
-        ChatLanguageModel model = modelFactory.chatModel(
+
+        /*ChatLanguageModel model = modelFactory.chatModel(
                 req.model,
                 ModelParams.builder()
                         .temperature(req.temperature)
@@ -135,13 +147,13 @@ public class OrchestratorImpl implements Orchestrator {
         String text = resp.content();
         if (maxChars != null && maxChars > 0 && text != null && text.length() > maxChars) {
             text = text.substring(0, Math.max(0, maxChars - 3)) + "...";
-        }
-        return text;
+        }*/
+        return "text";
     }
 
     // todo: this may be the embeddings abstraction
     private List<RetrievedChunk> retrieveIfRequested(CompletionRequest req) {
-        boolean useRag = (req.searchLimit != null && req.searchLimit > 0)
+       /* boolean useRag = (req.searchLimit != null && req.searchLimit > 0)
                 || (req.contentType != null && req.contentType.length > 0)
                 || (req.fieldVar != null && !req.fieldVar.trim().isEmpty())
                 || (req.site != null && !req.site.trim().isEmpty());
@@ -160,7 +172,8 @@ public class OrchestratorImpl implements Orchestrator {
         q.operator = mapOperator(req.operator);
         // q.userId = ... // add if you enforce permission filtering
 
-        return retriever.search(q);
+        return retriever.search(q);*/
+        return null;
     }
 
     private static SimilarityOperator mapOperator(String op) {
