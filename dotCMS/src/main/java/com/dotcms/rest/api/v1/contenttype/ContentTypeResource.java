@@ -70,6 +70,7 @@ import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.util.LinkedHashSet;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1528,7 +1529,7 @@ public class ContentTypeResource implements Serializable {
 												  ),
                                                   style = ParameterStyle.FORM,
 												  description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
-										  ) Set<String> types,
+										  ) List<String> types,
 										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
 												  description = "Filter by site identifier."
 										  ) final String siteId,
@@ -1544,7 +1545,8 @@ public class ContentTypeResource implements Serializable {
 		try {
 			final Map<String, Object> extraParams = new HashMap<>();
 			if (null != types) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new ArrayList<>(types));
+                //Remove dupe and preserve order
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(types));
 			}
 			if (null != siteId) {
 				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);

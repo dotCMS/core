@@ -30,7 +30,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -84,6 +83,45 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         return Sneaky.sneak(() ->this.contentTypeAPI.countForSites(condition, type, siteIds));
     }
 
+    /**
+     * Safely applies pagination slice to a list, handling all edge cases without throwing range exceptions.
+     * 
+     * @param list   The source list to slice
+     * @param offset The starting position for pagination (0-based index)
+     * @param limit  The maximum number of items to return (-1 means no limit)
+     * @return A sublist with the requested slice, or the original list if limit is -1 or parameters exceed bounds
+     */
+    private <T> List<T> applySafeSlice(final List<T> list, final int offset, final int limit) {
+        // If the limit is -1, return all elements without slicing
+        if (limit == -1) {
+            return list;
+        }
+        
+        // If a list is empty, return an empty list
+        if (list.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // If the offset is beyond list size, return all elements in the list
+        if (offset >= list.size()) {
+            return list;
+        }
+        
+        // Calculate a safe start index (never negative, never beyond list size)
+        final int safeStartIndex = Math.max(0, Math.min(offset, list.size()));
+        
+        // Calculate a safe end index (start + limit, but never beyond list size)
+        final int safeEndIndex = Math.min(safeStartIndex + limit, list.size());
+        
+        // Apply subList only if we have a valid range
+        if (safeStartIndex < safeEndIndex) {
+            return list.subList(safeStartIndex, safeEndIndex);
+        }
+        
+        // Return empty list if no valid range
+        return new ArrayList<>();
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
@@ -120,7 +158,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                     totalRecords += getTotalRecords(filter, type, List.of(siteId));
                 }
             }
-                final List<ContentType> contentTypes = new ArrayList<>(collectedContentTypes);
+            //Since we're combining multiple types, we need to slice the result to remain consistent with pagination params
+                final List<ContentType> contentTypes = applySafeSlice(new ArrayList<>(collectedContentTypes), offset, limit);
                 final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
                 setEntriesAttribute(user, contentTypesTransform,
                         this.workflowAPI.findSchemesMapForContentType(contentTypes),
