@@ -13,3 +13,12 @@ export interface DotPagination {
     /** Total number of entries available */
     totalEntries: number;
 }
+
+/**
+ * Interface for pagination parameters
+ * Note: offset is equivalent to page number (offset 1 = page 1, offset 2 = page 2, etc.)
+ */
+export interface PaginationParams {
+    offset?: number;
+    limit?: number;
+}

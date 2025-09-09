@@ -63,7 +63,7 @@ export function withHistory() {
                                 currentPagination === null || currentVersions.length === 0;
 
                             return dotEditContentService
-                                .getVersions(identifier, { page, limit })
+                                .getVersions(identifier, { offset: page, limit })
                                 .pipe(
                                     tapResponse({
                                         next: (response) => {

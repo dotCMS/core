@@ -61,9 +61,10 @@ describe('DotHistoryTimelineItemComponent', () => {
         ],
         providers: [
             DatePipe,
-            mockProvider(
-                DotMessageService,
-                new MockDotMessageService({
+            DotMessagePipe,
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
                     'edit.content.sidebar.history.variant': 'Variant',
                     'edit.content.sidebar.history.menu.preview': 'Preview',
                     'edit.content.sidebar.history.menu.restore': 'Restore',
@@ -72,7 +73,7 @@ describe('DotHistoryTimelineItemComponent', () => {
                     'edit.content.sidebar.history.published': 'Published',
                     'edit.content.sidebar.history.draft': 'Draft'
                 })
-            ),
+            },
             mockProvider(DotFormatDateService)
         ]
     });
@@ -165,8 +166,9 @@ describe('DotHistoryTimelineItemComponent', () => {
         it('should compute menu items with correct actions', () => {
             const menuItems = spectator.component.$menuItems();
 
-            expect(menuItems).toHaveLength(4);
+            expect(menuItems).toHaveLength(1);
             expect(menuItems.every((item) => item.disabled)).toBe(true);
+            expect(menuItems[0].label).toBe('Delete');
         });
     });
 
@@ -175,17 +177,10 @@ describe('DotHistoryTimelineItemComponent', () => {
             const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
             const menuItems = spectator.component.$menuItems();
 
-            // Test preview action
+            // Test delete action (only available action)
             menuItems[0].command();
             expect(actionSpy).toHaveBeenCalledWith({
-                type: DotHistoryTimelineItemActionType.PREVIEW,
-                item: mockVersionItem
-            });
-
-            // Test restore action
-            menuItems[1].command();
-            expect(actionSpy).toHaveBeenCalledWith({
-                type: DotHistoryTimelineItemActionType.RESTORE,
+                type: DotHistoryTimelineItemActionType.DELETE,
                 item: mockVersionItem
             });
         });

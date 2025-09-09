@@ -16,24 +16,9 @@ import {
     DotCMSContentletVersion,
     DotContentletDepth,
     DotCMSResponse,
-    DotPagination
+    DotPagination,
+    PaginationParams
 } from '@dotcms/dotcms-models';
-
-/**
- * Interface for pagination parameters
- */
-export interface PaginationParams {
-    offset?: number;
-    limit?: number;
-}
-
-/**
- * Interface for page-based pagination (for component usage)
- */
-export interface PagePaginationParams {
-    page?: number;
-    limit?: number;
-}
 
 /**
  * Interface for paginated versions response
@@ -336,22 +321,20 @@ export class DotEditContentService {
      * Returns all versions of the content including live, working, and archived versions.
      *
      * @param {string} identifier - The unique identifier of the content item
-     * @param {PagePaginationParams} [paginationParams] - Optional pagination parameters (page-based)
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
      * @returns {Observable<PaginatedVersionsResponse>} Observable that emits paginated contentlet version history
      */
     getVersions(
         identifier: string,
-        paginationParams?: PagePaginationParams
+        paginationParams?: PaginationParams
     ): Observable<PaginatedVersionsResponse> {
         let httpParams = new HttpParams();
 
-        if (paginationParams?.page && paginationParams?.limit) {
-            // Calculate offset from page number (page 1 = offset 1, page 2 = offset 2, etc.)
-            const offset = paginationParams.page;
-            httpParams = httpParams.set('offset', offset.toString());
+        if (paginationParams?.offset && paginationParams?.limit) {
+            httpParams = httpParams.set('offset', paginationParams.offset.toString());
             httpParams = httpParams.set('limit', paginationParams.limit.toString());
         } else if (paginationParams?.limit) {
-            // Default to first page if only limit is provided
+            // Default to first page (offset 1) if only limit is provided
             httpParams = httpParams.set('offset', '1');
             httpParams = httpParams.set('limit', paginationParams.limit.toString());
         }
