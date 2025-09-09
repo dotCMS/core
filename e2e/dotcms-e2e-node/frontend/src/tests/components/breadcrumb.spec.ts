@@ -123,6 +123,8 @@ test.describe("Template page", () => {
     await expect(breadcrumbText).toHaveText("Site ManagerTemplates");
 
     const title = breadcrumb.getTitle();
+    // Wait for the title to be populated (it may be empty initially while template data loads)
+    await expect(title).not.toHaveText("", { timeout: 10000 });
     await expect(title).toHaveText(template.title);
   });
 
