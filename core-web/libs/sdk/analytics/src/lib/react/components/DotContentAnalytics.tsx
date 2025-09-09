@@ -2,7 +2,7 @@
 
 import { ReactElement, Suspense, useMemo } from 'react';
 
-import { DotCMSAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalyticsConfig } from '../../core/shared/dot-content-analytics.model';
 import { useRouterTracker } from '../hook/useRouterTracker';
 import { initializeAnalytics } from '../internal/utils';
 

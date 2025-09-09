@@ -95,7 +95,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         if (getIntegrityType().hasResultsTable()) {
             discardConflicts(endpointId, getIntegrityType());
         } else {
-            Logger.warn(this, "Results table not supported for integrity type = ["
+            Logger.warn(this, "Results table not defined for integrity type = ["
                     + getIntegrityType() + "], endpointId = [" + endpointId +"]");
         }
     }
@@ -142,7 +142,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
             csvFile = new File(outputFile);
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
-            // Query the new content pages pages
+            // Query the new content pages
             final String query = new StringBuilder("SELECT DISTINCT c.identifier, ")
                     .append("cvi.working_inode, cvi.live_inode, i.parent_path, i.asset_name, i.host_inode, c.language_id ")
                     .append("FROM contentlet_version_info cvi ")
@@ -252,7 +252,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 				contentFile.close();
 				final String assetId = UtilMethods.isSet(contentIdentifier) ? contentIdentifier
 						: "";
-                throw new DotDataException(String.format("An error occured when generating temp table for asset '%s':" +
+                throw new DotDataException(String.format("An error occurred when generating temp table for asset '%s':" +
                         " %s", assetId, e.getMessage()), e);
             }
         }
@@ -336,8 +336,8 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
             dc.addParam(endpointId);
 
             if (dc.loadObjectResults().isEmpty()) {
-                Logger.warn(this, "Results table not supported for integrity type = ["
-                        + getIntegrityType() + "]");
+                Logger.warn(this, "Results table [" + getIntegrityType() + "] reported no conflicts for endpoint ["
+                        + endpointId + "]");
             } else {
                 // At least one conflict found
                 exists = true;

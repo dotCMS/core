@@ -81,6 +81,17 @@ public interface TagFactory {
     public List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas, String sort, int start, int count);
 
     /**
+     * Gets the count of tags filtered by tag name and/or host name
+     * @param tagName tag name filter
+     * @param hostFilter host name or ID filter
+     * @param globalTagsFilter include global tags
+     * @param excludePersonas True if Persona Tags should be exclude from the count
+     * @return count of filtered tags
+     * @throws DotDataException
+     */
+    public long getFilteredTagsCount(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas) throws DotDataException;
+
+    /**
      * Update the specified tagInode related to a tag
      * @param tagInode Tag inode
      * @param tagId Tag id

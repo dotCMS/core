@@ -16983,26 +16983,86 @@ paths:
       tags:
       - Tags
     get:
+      description: "Searches and lists tags with filtering, pagination, and sorting.\
+        \ The filter parameter performs a case-insensitive search with wildcards on\
+        \ both sides (e.g., \"market\" matches \"Marketing\", \"marketplace\", \"\
+        supermarket\"). When using the filter, results are ordered by match length\
+        \ (shortest first) to prioritize exact matches. The site parameter accepts\
+        \ either a site ID or site name for filtering by specific sites."
       operationId: list_14
       parameters:
-      - in: query
-        name: name
+      - description: Tag name filter (LIKE search)
+        example: market
+        in: query
+        name: filter
         schema:
           type: string
-      - in: query
-        name: siteId
+      - description: Include system/global tags
+        example: true
+        in: query
+        name: global
+        schema:
+          type: boolean
+          default: false
+      - description: "Filter by site (ID, name, or SYSTEM_HOST)"
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: query
+        name: site
         schema:
           type: string
+      - description: Page number
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Items per page
+        example: 25
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+      - description: Sort field
+        example: tagname
+        in: query
+        name: orderBy
+        schema:
+          type: string
+          default: tagname
+      - description: Sort direction
+        example: ASC
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Tags retrieved successfully with pagination metadata
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - Insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error
+      summary: List/Search Tags
       tags:
       - Tags
     post:
