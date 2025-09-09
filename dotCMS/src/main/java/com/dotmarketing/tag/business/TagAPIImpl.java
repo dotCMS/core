@@ -69,6 +69,9 @@ public class TagAPIImpl implements TagAPI {
     @CloseDBIfOpened
     @Override
     public long getFilteredTagsCount(String tagName, String hostFilter, boolean globalTagsFilter) throws DotDataException {
+        Logger.debug(this, () -> String.format(
+            "Getting filtered tags count - tagName: '%s', hostFilter: '%s', globalTagsFilter: %s", 
+            tagName, hostFilter, globalTagsFilter));
         return tagFactory.getFilteredTagsCount(tagName, hostFilter, globalTagsFilter, true);
     }
 

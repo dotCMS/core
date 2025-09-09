@@ -1,6 +1,7 @@
 import { PageData } from 'analytics';
 
 import {
+    ANALYTICS_MINIFIED_SCRIPT_NAME,
     DEFAULT_SESSION_TIMEOUT_MINUTES,
     EXPECTED_UTM_KEYS,
     SESSION_STORAGE_KEY,
@@ -200,32 +201,42 @@ export const getAnalyticsContext = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
 };
 
 /**
- * Retrieves analytics attributes from a given script element.
+ * Configuration result with warnings for analytics setup
  */
-export const getDataAnalyticsAttributes = (): DotCMSAnalyticsConfig => {
-    const script = getAnalyticsScriptTag();
-
-    return {
-        server: script.getAttribute('data-server') || '',
-        debug: script.getAttribute('data-debug') === 'true',
-        autoPageView: script.getAttribute('data-auto-page-view') !== 'false',
-        siteKey: script.getAttribute('data-site-key') || ''
-    };
-};
+export interface AnalyticsConfigResult {
+    config: DotCMSAnalyticsConfig;
+    warnings?: string[];
+    missingAttributes?: string[];
+    hasIssues: boolean;
+}
 
 /**
- * Gets the analytics script tag from the DOM
+ * Gets analytics configuration, always returns a config (with defaults if needed)
+ * - If no data-analytics-server attribute is found, uses the current domain as the server endpoint
+ * - Both debug and autoPageView default to false (must be explicitly set to "true")
  */
-export const getAnalyticsScriptTag = (): HTMLScriptElement => {
+export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
+    // Try to find the analytics script with data-analytics-auth (required attribute)
     const script = document.querySelector(
-        'script[data-server][data-site-key]'
+        `script[src*="${ANALYTICS_MINIFIED_SCRIPT_NAME}"][data-analytics-auth]`
     ) as HTMLScriptElement;
 
-    if (!script) {
-        throw new Error('DotAnalytics: Analytics script tag not found');
+    if (script) {
+        return {
+            server: script.getAttribute('data-analytics-server') || window.location.origin,
+            debug: script.getAttribute('data-analytics-debug') === 'true',
+            autoPageView: script.getAttribute('data-analytics-auto-page-view') === 'true',
+            siteKey: script.getAttribute('data-analytics-auth') || ''
+        };
     }
 
-    return script;
+    // No script found, return defaults with current domain as server
+    return {
+        server: window.location.origin,
+        debug: false,
+        autoPageView: false,
+        siteKey: ''
+    };
 };
 
 /**

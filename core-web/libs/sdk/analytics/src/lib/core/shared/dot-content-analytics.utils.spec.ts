@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
+import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './dot-content-analytics.constants';
 import {
     cleanupActivityTracking,
     defaultRedirectFn,
     enrichPagePayloadOptimized,
     extractUTMParameters,
     generateSecureId,
+    getAnalyticsConfig,
     getAnalyticsContext,
-    getAnalyticsScriptTag,
     getBrowserEventData,
-    getDataAnalyticsAttributes,
     getDeviceData,
     getLocalTime,
     getPageData,
@@ -44,85 +44,137 @@ describe('Analytics Utils', () => {
         document.querySelectorAll('script').forEach((script) => script.remove());
     });
 
-    describe('getAnalyticsScriptTag', () => {
-        it('should return analytics script tag when present', () => {
-            const script = document.createElement('script');
-            script.setAttribute('data-server', 'https://analytics.dotcms.com');
-            script.setAttribute('data-site-key', 'test-key');
-            document.body.appendChild(script);
-
-            const result = getAnalyticsScriptTag();
-            expect(result).toBeTruthy();
-            expect(result.getAttribute('data-site-key')).toBe('test-key');
-        });
-
-        it('should throw error when analytics script tag is not found', () => {
-            expect(() => getAnalyticsScriptTag()).toThrow(
-                'DotAnalytics: Analytics script tag not found'
-            );
-        });
-    });
-
-    describe('getDataAnalyticsAttributes', () => {
+    describe('getAnalyticsConfig', () => {
         beforeEach(() => {
             const script = document.createElement('script');
-            script.setAttribute('data-server', 'https://analytics.dotcms.com');
-            script.setAttribute('data-site-key', 'test-key');
+            script.setAttribute('src', `https://example.com/${ANALYTICS_MINIFIED_SCRIPT_NAME}`);
+            script.setAttribute('data-analytics-server', 'https://analytics.dotcms.com');
+            script.setAttribute('data-analytics-auth', 'test-key');
             document.body.appendChild(script);
         });
 
         it('should return default values when attributes are not set', () => {
-            const result = getDataAnalyticsAttributes();
+            const result = getAnalyticsConfig();
 
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: true,
+                autoPageView: false,
                 siteKey: 'test-key'
             });
         });
 
         it('should enable debug when debug attribute is true', () => {
-            const script = document.querySelector('script[data-server][data-site-key]');
-            script?.setAttribute('data-debug', 'true');
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-debug', 'true');
 
-            const result = getDataAnalyticsAttributes();
+            const result = getAnalyticsConfig();
 
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: true,
+                autoPageView: false,
+                siteKey: 'test-key'
+            });
+        });
+
+        it('should enable autoPageView when auto-page-view attribute is true', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-auto-page-view', 'true');
+
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
                 autoPageView: true,
                 siteKey: 'test-key'
             });
         });
 
-        it('should disable autoPageView when auto-page-view attribute is false', () => {
-            const script = document.querySelector('script[data-server][data-site-key]');
-            script?.setAttribute('data-auto-page-view', 'false');
+        it('should handle all attributes together', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-debug', 'true');
+            script?.setAttribute('data-analytics-auto-page-view', 'true');
+            script?.setAttribute('data-analytics-auth', 'custom-site-key');
 
-            const result = getDataAnalyticsAttributes();
+            const result = getAnalyticsConfig();
 
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
+                debug: true,
+                autoPageView: true,
+                siteKey: 'custom-site-key'
+            });
+        });
+
+        it('should use window.location.origin when data-analytics-server is missing', () => {
+            // Clear existing scripts
+            document.querySelectorAll('script').forEach((script) => script.remove());
+
+            const script = document.createElement('script');
+            script.setAttribute('src', `https://example.com/${ANALYTICS_MINIFIED_SCRIPT_NAME}`);
+            script.setAttribute('data-analytics-auth', 'test-key');
+            // No data-analytics-server attribute
+            document.body.appendChild(script);
+
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: window.location.origin,
                 debug: false,
                 autoPageView: false,
                 siteKey: 'test-key'
             });
         });
 
-        it('should handle all attributes together', () => {
-            const script = document.querySelector('script[data-server][data-site-key]');
-            script?.setAttribute('data-debug', 'true');
-            script?.setAttribute('data-auto-page-view', 'false');
-            script?.setAttribute('data-site-key', 'custom-site-key');
+        it('should return defaults when no analytics script is found', () => {
+            // Clear all scripts
+            document.querySelectorAll('script').forEach((script) => script.remove());
 
-            const result = getDataAnalyticsAttributes();
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: window.location.origin,
+                debug: false,
+                autoPageView: false,
+                siteKey: ''
+            });
+        });
+
+        it('should ignore scripts without ca.min.js in src', () => {
+            // Clear existing scripts
+            document.querySelectorAll('script').forEach((script) => script.remove());
+
+            // Add a script without ca.min.js but with data-analytics-auth
+            const wrongScript = document.createElement('script');
+            wrongScript.setAttribute('src', 'https://example.com/other-script.js');
+            wrongScript.setAttribute('data-analytics-auth', 'wrong-key');
+            document.body.appendChild(wrongScript);
+
+            const result = getAnalyticsConfig();
+
+            // Should return defaults since no analytics script was found
+            expect(result).toEqual({
+                server: window.location.origin,
+                debug: false,
+                autoPageView: false,
+                siteKey: ''
+            });
+        });
+
+        it('should handle debug and autoPageView with non-true values', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-debug', 'false');
+            script?.setAttribute('data-analytics-auto-page-view', 'false');
+
+            const result = getAnalyticsConfig();
 
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
-                debug: true,
+                debug: false,
                 autoPageView: false,
-                siteKey: 'custom-site-key'
+                siteKey: 'test-key'
             });
         });
     });
@@ -245,11 +297,11 @@ describe('Analytics Utils', () => {
         beforeEach(() => {
             // Mock window.location
             delete (window as any).location;
-            window.location = { ...originalLocation };
+            (window as any).location = { ...originalLocation };
         });
 
         afterEach(() => {
-            window.location = originalLocation;
+            (window as any).location = originalLocation;
         });
 
         it('should update window.location.href with provided URL', () => {

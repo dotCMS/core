@@ -55,7 +55,7 @@
                 <td data-testId="item-checkbox">
                     <p-tableCheckbox [value]="item" />
                 </td>
-                <td class="list-view-title" style="max-width: 100%" data-testId="item-title">
+                <td class="list-view-title" data-testId="item-title">
                     <div class="container-thumbnail">
                         <dot-contentlet-thumbnail
                             [fieldVariable]="item?.contentType"
@@ -63,7 +63,9 @@
                             [contentlet]="item"
                             data-testId="contentlet-thumbnail" />
                     </div>
-                    {{ item.title }}
+                    <span data-testId="item-title-text" class="truncate-text">
+                        {{ item.title }}
+                    </span>
                 </td>
                 <td data-testId="item-status">
                     @if (status === 'Published') {
