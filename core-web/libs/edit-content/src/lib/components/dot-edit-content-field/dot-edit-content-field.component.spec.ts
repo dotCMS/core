@@ -249,12 +249,6 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         imports: [...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
-            }
-        ],
         providers: [
             FormGroupDirective,
             provideHttpClient(),
@@ -302,7 +296,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                 field: fieldMock,
                 ...(fieldTestBed?.props || {})
             },
-            providers: [...(fieldTestBed?.providers || [])]
+            providers: [
+                ...(fieldTestBed?.providers || []),
+                {
+                    provide: ControlContainer,
+                    useValue: createFormGroupDirectiveMock()
+                }
+            ]
         });
     });
 
