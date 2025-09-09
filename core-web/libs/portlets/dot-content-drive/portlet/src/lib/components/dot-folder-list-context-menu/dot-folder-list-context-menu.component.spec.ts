@@ -16,7 +16,7 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { createFakeContentlet, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
@@ -149,10 +149,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(items[4].label).toBe('contenttypes.content.add_to_bundle');
         });
 
-        it('should build correct menu items for htmlpageasset', async () => {
+        it('should build correct menu items for Pages contentlet', async () => {
             const pageContentlet = {
                 ...mockContentlet,
-                contentType: 'htmlpageasset'
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
             } as DotContentDriveItem;
             const pageContextMenuData = { ...mockContextMenuData, contentlet: pageContentlet };
 

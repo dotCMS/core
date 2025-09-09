@@ -11,7 +11,7 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
 
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
@@ -103,7 +103,9 @@ export class DotFolderListViewContextMenuComponent {
 
         const actionsMenu = [];
 
-        const label = contentlet.contentType === 'htmlpageasset' ? 'page' : 'content';
+        const label =
+            contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ? 'page' : 'content';
+
         actionsMenu.push({
             label: this.#dotMessageService.get(`content-drive.context-menu.edit-${label}`),
             command: () => {
