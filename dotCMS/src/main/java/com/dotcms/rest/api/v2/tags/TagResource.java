@@ -32,7 +32,6 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -64,14 +63,12 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
-import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
 /**
  * This REST Endpoint provide CRUD operations for Tags in dotCMS.
@@ -272,8 +269,7 @@ public class TagResource {
         Logger.debug(TagResource.class,()->String.format("User '%s' is adding %d tag(s)", user.getUserId(), tagForms.size()));
 
         // Validate all tags upfront - fail fast with structured error
-        for (int i = 0; i < tagForms.size(); i++) {
-            final TagForm form = tagForms.get(i);
+        for (final TagForm form : tagForms) {
             form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
         }
 
