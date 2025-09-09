@@ -7,6 +7,8 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 
+import { BaseFieldComponent } from '../shared/base-field.component';
+
 /**
  * Component to render a radio field.
  */
@@ -23,7 +25,7 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
         }
     ]
 })
-export class DotEditContentRadioFieldComponent {
+export class DotEditContentRadioFieldComponent extends BaseFieldComponent {
     /**
      * The field to render.
      */

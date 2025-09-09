@@ -23,6 +23,7 @@ import {
 import { CALENDAR_FIELD_TYPES_WITH_TIME } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FieldType } from '../../models/dot-edit-content-field.type';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 /**
  * DotEditContentCalendarFieldComponent
@@ -58,7 +59,10 @@ import { FieldType } from '../../models/dot-edit-content-field.type';
         }
     ]
 })
-export class DotEditContentCalendarFieldComponent implements ControlValueAccessor {
+export class DotEditContentCalendarFieldComponent
+    extends BaseFieldComponent
+    implements ControlValueAccessor
+{
     /**
      * The field configuration (required).
      * Determines the type of calendar field (date, time, datetime).
@@ -100,6 +104,7 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
     };
 
     constructor() {
+        super();
         // Reprocess existing values when timezone becomes available
         effect(() => {
             const systemTimezone = this.$systemTimezone();

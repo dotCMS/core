@@ -2,3 +2,24 @@
     height: fit-content;
     display: block;
 }
+
+.field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.error-message {
+    color: #e24c4c;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+:host ::ng-deep .p-inputtext.error {
+    border-color: #e24c4c;
+}
+
+:host ::ng-deep .p-inputtext.error:focus {
+    border-color: #e24c4c;
+    box-shadow: 0 0 0 0.2rem rgba(226, 76, 76, 0.2);
+}

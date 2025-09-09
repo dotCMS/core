@@ -1,5 +1,5 @@
 import { animate, style, transition, trigger } from '@angular/animations';
-import { NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -117,6 +117,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #document = inject(DOCUMENT);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -261,6 +262,12 @@ export class DotEditContentFormComponent implements OnInit {
         languageId,
         identifier
     }: DotWorkflowActionParams): void {
+        if (this.form.invalid) {
+            this.form.markAllAsTouched();
+            this.scrollToFirstError();
+            return;
+        }
+
         const contentlet = {
             ...this.processFormValue(this.form.value),
             contentType,
@@ -568,6 +575,29 @@ export class DotEditContentFormComponent implements OnInit {
     onDisabledWYSIWYGChange(disabledWYSIWYG: string[]) {
         if (this.form && this.form.get('disabledWYSIWYG')) {
             this.form.get('disabledWYSIWYG')?.setValue(disabledWYSIWYG, { emitEvent: true });
+        }
+    }
+
+    scrollToFirstError() {
+        const firstErrorField = this.#document.querySelector('.error-message');
+
+        console.log('firstErrorField', firstErrorField);
+
+        if (firstErrorField) {
+            const scrollContainer = this.#document.querySelector('.edit-content-layout__body');
+
+            if (scrollContainer) {
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const elementRect = firstErrorField.getBoundingClientRect();
+                const relativeTop = elementRect.top - containerRect.top;
+                const currentScrollTop = scrollContainer.scrollTop;
+                const targetScrollTop = currentScrollTop + relativeTop - 200;
+
+                scrollContainer.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+            }
         }
     }
 }

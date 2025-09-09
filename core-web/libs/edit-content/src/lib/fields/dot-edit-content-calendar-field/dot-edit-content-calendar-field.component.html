@@ -9,6 +9,8 @@
 @let internalValue = $internalValue();
 @let isDisabled = $isDisabled();
 
+<h1>{{ hasError ? 'true' : 'false' }}</h1>
+
 <div class="w-full" data-testid="calendar-field-container">
     <p-calendar
         class="w-full"
@@ -29,6 +31,8 @@
         [placeholder]="
             $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
         "
+        [class.ng-invalid]="hasError"
+        [class.ng-dirty]="hasError"
         [attr.aria-label]="name"
         [attr.aria-describedby]="field.hint ? 'hint-' + variable : null" />
 
@@ -58,3 +62,11 @@
         </div>
     }
 </div>
+
+@if (hasError) {
+    <div class="error-message">
+        @if (isRequired) {
+            <span class="required-message">{{ 'dot.edit.content.form.field.required' | dm }}</span>
+        }
+    </div>
+}
