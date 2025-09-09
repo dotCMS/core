@@ -1,9 +1,9 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
@@ -17,20 +17,50 @@ export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
 
     resolve(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<DotTemplate> {
         const inode = route.paramMap.get('inode');
+        const id = route.paramMap.get('id');
 
-        return inode
-            ? this.service.getFiltered(inode).pipe(
-                  map((templates: DotTemplate[]) => {
-                      if (templates.length) {
-                          const firstTemplate = templates.find((t) => t.inode === inode);
-                          if (firstTemplate) {
-                              return firstTemplate;
-                          }
-                      }
+        if (inode) {
+            return this.service.getFiltered(inode).pipe(
+                map((templates: DotTemplate[]) => {
+                    if (templates.length) {
+                        const firstTemplate = templates.find((t) => t.inode === inode);
+                        if (firstTemplate) {
+                            return firstTemplate;
+                        }
+                    }
 
-                      this.dotRouterService.gotoPortlet('templates');
-                  })
-              )
-            : this.service.getById(route.paramMap.get('id'));
+                    console.error(
+                        `DotTemplateCreateEditResolver: Template with inode ${inode} not found`
+                    );
+                    this.dotRouterService.gotoPortlet('templates');
+                    return null;
+                }),
+                catchError((error) => {
+                    console.error(
+                        `DotTemplateCreateEditResolver: Failed to get template by inode ${inode}`,
+                        error
+                    );
+                    this.dotRouterService.gotoPortlet('templates');
+                    return of(null);
+                })
+            );
+        } else if (id) {
+            return this.service.getById(id).pipe(
+                catchError((error) => {
+                    console.error(
+                        `DotTemplateCreateEditResolver: Failed to get template by id ${id}`,
+                        error
+                    );
+                    this.dotRouterService.gotoPortlet('templates');
+                    return of(null);
+                })
+            );
+        } else {
+            console.error(
+                'DotTemplateCreateEditResolver: No inode or id provided in route parameters'
+            );
+            this.dotRouterService.gotoPortlet('templates');
+            return of(null);
+        }
     }
 }

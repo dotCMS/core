@@ -30,7 +30,8 @@ export async function getTemplate(
   request: APIRequestContext,
   identifier: string,
 ) {
-  const endpoint = `/api/v1/templates/${identifier}`;
+  // Use working endpoint since newly created templates are in working state
+  const endpoint = `/api/v1/templates/${identifier}/working`;
   const response = await request.get(endpoint, {
     headers: {
       Authorization: generateBase64Credentials(
