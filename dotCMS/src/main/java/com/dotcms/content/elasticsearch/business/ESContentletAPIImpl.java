@@ -109,6 +109,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.Builder;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -8368,10 +8369,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final ContentType contentType = contentlet.getContentType();
         final List<Relationship> relationships = APILocator.getRelationshipAPI()
                 .byContentType(contentType);
-        final DotContentletValidationException cve = new DotContentletValidationException(
-                "Contentlet [" +
-                        contentletId + "] has invalid/missing relationships");
-
+        final Builder<DotContentletValidationException> builder = DotContentletValidationException.builder(
+                "Contentlet [" + contentletId + "] has invalid/missing relationships");
 
         // Check if any required relationships are missing from contentRelationships
         for (final Relationship rel : relationships) {
@@ -8412,7 +8411,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     hasError = true;
                     Logger.error(this, String.format("Required %s relationship [%s] is not present for contentlet [%s]", 
                             (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));
-                    cve.addRequiredRelationship(rel, new ArrayList<>());
+                    builder.addRequiredRelationship(rel, new ArrayList<>());
                 }
             }
         }
@@ -8429,7 +8428,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
                         .ordinal() && contentsInRelationship.size() > 0) {
-                    hasError |= !isValidOneToOneRelationship(contentlet, cve, relationship,
+                    hasError |= !isValidOneToOneRelationship(contentlet, builder, relationship,
                             contentsInRelationship);
 
                     if (hasError) {
@@ -8444,7 +8443,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
                         Logger.error(this, String.format("Cannot relate content [%s] to itself", contentletId));
                         hasError = true;
-                        cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+                        builder.addInvalidContentRelationship(relationship, contentsInRelationship);
                     }
                     if (!cr.isHasParent()) {
                         isRelationshipParent = false;
@@ -8458,7 +8457,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         Logger.error(this, String.format("Error in Contentlet [%s]: Child relationship [%s] is required.", 
                                 contentletId, relationship.getRelationTypeValue()));
-                        cve.addRequiredRelationship(relationship, contentsInRelationship);
+                        builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     for (final Contentlet contentInRelationship : contentsInRelationship) {
                         try {
@@ -8477,12 +8476,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     && !relatedContents.isEmpty()
                                     && !relatedContents.get(0).getIdentifier()
                                     .equals(contentlet.getIdentifier())) {
-                                final StringBuilder error = new StringBuilder();
                                 final String errorMessage = String.format("ERROR! Parent content [%s] cannot be related to child content [%s] because it is already related to parent content [%s]",
                                         contentletId, contentInRelationship.getIdentifier(), relatedContents.get(0).getIdentifier());
                                 Logger.error(this, errorMessage);
                                 hasError = true;
-                                cve.addBadCardinalityRelationship(relationship,
+                                builder.addBadCardinalityRelationship(relationship,
                                         contentsInRelationship);
                             }
 
@@ -8491,7 +8489,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 hasError = true;
                                 Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in child relationship [%s]",
                                         contentInRelationship.getIdentifier(), relationship.getRelationTypeValue()));
-                                cve.addInvalidContentRelationship(relationship,
+                                builder.addInvalidContentRelationship(relationship,
                                         contentsInRelationship);
                             }
                         } catch (final DotDataException e) {
@@ -8504,7 +8502,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         Logger.error(this, String.format("Error in Contentlet [%s]: Parent relationship [%s] is required.", 
                                 contentletId, relationship.getRelationTypeValue()));
-                        cve.addRequiredRelationship(relationship, contentsInRelationship);
+                        builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     //grouping by id to avoid duplicate contents due to different languages
                     List<Contentlet> contentsInRelationshipSameLanguage = new ArrayList<>(contentsInRelationship.stream()
@@ -8521,7 +8519,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (relationship.getCardinality()
                             == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
                             && contentsInRelationshipSameLanguage.size() > 1) {
-                        final StringBuilder error = new StringBuilder();
                         final String parentIds = contentsInRelationship.stream()
                                 .map(Contentlet::getIdentifier)
                                 .collect(java.util.stream.Collectors.joining(", "));
@@ -8529,14 +8526,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 contentletId, parentIds);
                         Logger.error(this, errorMessage);
                         hasError = true;
-                        cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+                        builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
                     }
 
                     for (final Contentlet contentInRelationship : contentsInRelationship) {
                         if (!UtilMethods.isSet(contentInRelationship.getContentTypeId())) {
                             hasError = true;
                             Logger.error(this, String.format("Contentlet with Identifier [%s] has an empty Content Type Inode", contentletId));
-                            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+                            builder.addInvalidContentRelationship(relationship, contentsInRelationship);
                             continue;
                         }
                         if (null != relationship.getParentStructureInode()
@@ -8545,38 +8542,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             hasError = true;
                             Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in relationship [%s]", 
                                     contentletId, relationship.getRelationTypeValue()));
-                            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+                            builder.addInvalidContentRelationship(relationship, contentsInRelationship);
                         }
                     }
                 } else {
                     hasError = true;
                     Logger.error(this, String.format("Relationship [%s] is neither parent nor child of Contentlet [%s]", 
                             relationship.getRelationTypeValue(), contentletId));
-                    cve.addBadRelationship(relationship, contentsInRelationship);
+                    builder.addBadRelationship(relationship, contentsInRelationship);
                 }
             }
         }
         if (hasError) {
-            throw cve;
+            throw builder.build();
         }
     }
 
     /**
      * @param contentlet
-     * @param cve
+     * @param builder
      * @param relationship
      * @param contentsInRelationship
      * @return
      */
     private boolean isValidOneToOneRelationship(final Contentlet contentlet,
-            final DotContentletValidationException cve, final Relationship relationship,
+            final DotContentletValidationException.Builder builder, final Relationship relationship,
             final List<Contentlet> contentsInRelationship) {
 
         //Trying to relate more than one piece of content
         if (contentsInRelationship.size() > 1) {
             Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One", 
                     contentlet.getIdentifier(), relationship.getRelationTypeValue()));
-            cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+            builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
             return false;
         }
 
@@ -8590,13 +8587,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .equals(contentlet.getIdentifier())) {
                 Logger.error(this, String.format("Error in related Contentlet [%s]: Relationship [%s] has been defined as One to One", 
                         relatedContents.get(0).getIdentifier(), relationship.getRelationTypeValue()));
-                cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+                builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
                 return false;
             }
         } catch (final DotDataException e) {
             Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]", 
                     contentsInRelationship.get(0).getIdentifier()), e);
-            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+            builder.addInvalidContentRelationship(relationship, contentsInRelationship);
             return false;
         }
         return true;
@@ -8947,7 +8944,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } catch (Exception e) {
             Logger.error(this,
-                    "Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "
+                    "Error occurred while retrieving binary file name : getBinaryFileName(). ContentletInode : "
                             + contentletInode
                             + "  velocityVaribleName : " + velocityVariableName
                             + "  path : " + binaryFilePath);

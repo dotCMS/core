@@ -1338,6 +1338,14 @@ public class FolderAPIImpl implements FolderAPI  {
 			+ "subquery.identifier =identifier.id;";
 
 	String UPDATE_ALL_FOLDERS = "update folder set identifier = inode where identifier <> inode;";
+	
+	// Template theme fix queries
+	String FIX_TEMPLATE_THEMES_QUERY = 
+		"UPDATE template SET theme = f.inode " +
+		"FROM folder f " +
+		"WHERE template.theme = f.identifier " +
+		"AND template.theme NOT IN (SELECT identifier FROM folder WHERE identifier = inode) " +
+		"AND template.theme != 'SYSTEM_THEME';";
 
 
 	@CloseDBIfOpened
@@ -1354,6 +1362,10 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			// defer folder/identifier constraint
 			conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
+
+			// Fix template themes before updating folder IDs to prevent broken references
+			Logger.info(this, "Fixing template themes that reference folder identifiers");
+			conn.createStatement().execute(FIX_TEMPLATE_THEMES_QUERY);
 
 			// update system folder identifier
 			conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_IDENTIFIER);
@@ -1374,6 +1386,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			// just in case
 			CacheLocator.getFolderCache().clearCache();
 			CacheLocator.getPermissionCache().clearCache();
+			CacheLocator.getTemplateCache().clearCache();
+			CacheLocator.getVeloctyResourceCache().clearCache();
 
 		} catch (Exception e) {
 			Logger.error(this, e);

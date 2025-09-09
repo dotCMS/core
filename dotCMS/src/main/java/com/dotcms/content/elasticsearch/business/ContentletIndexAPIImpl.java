@@ -9,6 +9,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -51,6 +52,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
@@ -343,6 +346,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 builder.setWorking(oldInfo.getWorking());
                 builder.setLive(oldInfo.getLive());
                 builder.setSiteSearch(oldInfo.getSiteSearch());
+
+
+                final User currentUser = Try.of(() -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                        .getOrNull();
+                if (currentUser != null) {
+                    Logger.info(this, "Full reindex started by user: " + currentUser.getUserId() + " (" + currentUser.getEmailAddress() + ") at " + new java.util.Date());
+                } else {
+                    Logger.info(this, "Full reindex started by system user at " + new java.util.Date());
+                }
 
                 final IndiciesInfo info = builder.build();
                 final String timeStamp = info.createNewIndiciesName(IndexType.REINDEX_WORKING,
@@ -1298,6 +1310,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             if (esIndexApi.getNameWithClusterIDPrefix(indexName).equals(info.getReindexLive())) {
                 builder.setReindexLive(null);
             }
+        }
+
+        final User currentUser = Try.of(() -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                .getOrNull();
+        if (currentUser != null) {
+            Logger.info(this, "Index activation (" + indexName + ") performed by user: " + currentUser.getUserId() + " (" + currentUser.getEmailAddress() + ") at " + new java.util.Date());
+        } else {
+            Logger.info(this, "Index activation (" + indexName + ") performed by system user at " + new java.util.Date());
         }
 
         APILocator.getIndiciesAPI().point(builder.build());

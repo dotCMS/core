@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business.uniquefields.extratable;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -13,6 +14,7 @@ import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -27,6 +29,7 @@ import io.vavr.control.Try;
 import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -417,6 +420,8 @@ public class UniqueFieldDataBaseUtil {
         this.handleDuplicateRecords();
         Logger.info(this, "---> Bringing primary key constraints back");
         this.addPrimaryKeyConstraintsBack();
+        Logger.info(this, "---> Create table indexes for performance improvement");
+        this.addTableIndexes();
     }
 
     /**
@@ -498,6 +503,64 @@ public class UniqueFieldDataBaseUtil {
         new DotConnect().setSQL(sqlQuery).loadObjectResults();
         sqlQuery = "ALTER TABLE unique_fields ADD PRIMARY KEY (unique_key_val)";
         new DotConnect().setSQL(sqlQuery).loadObjectResults();
+    }
+
+    /**
+     * Adds the necessary Indexes to the {@code unique_fields} table in order to improve its
+     * performance as much as possible.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @ExternalTransaction
+    public void addTableIndexes() throws DotDataException {
+        boolean defaultAutoCommit = false;
+        Connection connection = null;
+        try {
+            connection = DbConnectionFactory.getConnection();
+            defaultAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(true);
+            Logger.info(this, "(1/6) Adding GIN Index for the supporting_values->'contentletIds' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_contentlet_ids_gin ON unique_fields USING GIN ((supporting_values->'contentletIds'))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(2/6) Adding Functional Index for the supporting_values->'languageId' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_language_id ON unique_fields (((supporting_values->>'languageId')::BIGINT))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(3/6) Adding Functional Index for the supporting_values->'contentTypeId' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_content_type_id ON unique_fields (((supporting_values->>'contentTypeId')))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(4/6) Adding Functional Index for the supporting_values->'fieldVariableName' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_field_variable_name ON unique_fields (((supporting_values->>'fieldVariableName')))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(5/6) Adding Functional Index for the supporting_values->'variant' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_variant ON unique_fields (((supporting_values->>'variant')))")
+                    .loadResult(connection);
+
+            Logger.info(this, "(6/6) Adding Functional Index for the supporting_values->'live' JSONB attribute");
+            new DotConnect()
+                    .setSQL("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_unique_fields_live ON unique_fields (((supporting_values->>'live')::BOOLEAN))")
+                    .loadResult(connection);
+        } catch (final SQLException e) {
+            throw new DotRuntimeException(String.format("An error occurred when creating indexes on the 'unique_fields' table: " +
+                    "%s", ExceptionUtil.getErrorMessage(e)), e);
+        } finally {
+            if (null != connection) {
+                try {
+                    connection.setAutoCommit(defaultAutoCommit);
+                } catch (final SQLException e) {
+                    Logger.warn(this, String.format("Failed to set autocommit value back to its original value: " +
+                            "%s", ExceptionUtil.getErrorMessage(e)), e);
+                }
+            }
+        }
     }
 
     /**
@@ -630,15 +693,7 @@ public class UniqueFieldDataBaseUtil {
      */
     @WrapInTransaction
     public void dropUniqueFieldsValidationTable() throws DotDataException {
-        try {
-            new DotConnect().setSQL("DROP TABLE unique_fields").loadObjectResults();
-        } catch (final DotDataException e) {
-            final Throwable cause = e.getCause();
-            if (!(cause instanceof SQLException) ||
-                    !"ERROR: table \"unique_fields\" does not exist".equals(cause.getMessage())) {
-                throw e;
-            }
-        }
+        new DotConnect().setSQL("DROP TABLE IF EXISTS unique_fields").loadObjectResults();
     }
 
     /**

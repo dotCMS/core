@@ -1,5 +1,8 @@
 package com.dotmarketing.osgi;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -33,10 +36,23 @@ public class GenericBundleActivatorIntegrationTest {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        //LicenseTestUtil.getLicense();
-        OSGIUtil.getInstance().initializeFramework();
-    }
 
+        // ✅ Ensure OSGI framework is fully initialized
+        Framework framework = OSGIUtil.getInstance().initializeFramework();
+
+        // ✅ Wait for framework to be active
+        long timeout = System.currentTimeMillis() + 30000; // 30 seconds
+        while (framework.getState() != Framework.ACTIVE && System.currentTimeMillis() < timeout) {
+            Thread.sleep(100);
+        }
+
+        if (framework.getState() != Framework.ACTIVE) {
+            throw new IllegalStateException("OSGI Framework failed to start within 30 seconds");
+        }
+
+        // ✅ Give bundles additional time to load
+        Thread.sleep(2000);
+    }
     /**
      * Method to test: {@link OSGIUtil#initializeFramework()}
      * Given Scenario: The OSGI framework is initialized multiple times
@@ -58,15 +74,22 @@ public class GenericBundleActivatorIntegrationTest {
      * Expected Result: Default bundles are installed successfully
      */
     @Test
-    public void test_osgi_inits_properly()  {
+    public void test_osgi_inits_properly() {
+        final BundleContext context = HostActivator.instance().getBundleContext();
 
-        BundleContext context = HostActivator.instance().getBundleContext();
-        Bundle[] bundles = context.getBundles();
-
-        // assert that we have a bunch of installed bundles by default
-        assert (bundles.length > 4);
-
-
+        // ✅ Wait for bundles to be loaded with Awaitility
+        await()
+                .atMost(15, SECONDS)
+                .pollInterval(500, MILLISECONDS)
+                .untilAsserted(() -> {
+                    Bundle[] bundles = context.getBundles();
+                    assertNotNull("Bundles array should not be null", bundles);
+                    assertTrue(
+                            String.format("Expected at least 4 bundles, but found %d",
+                                    bundles.length),
+                            bundles.length > 4
+                    );
+                });
     }
 
     /**

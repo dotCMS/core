@@ -12,26 +12,26 @@ import { UVE_MODE } from '@dotcms/types';
  * @class ContentletsComponent
  */
 @Component({
-    selector: 'app-edit-contentlet-button',
-    standalone: true,
-    imports: [DotCMSShowWhenDirective],
-    template: `<ng-template [dotCMSShowWhen]="uveMode.EDIT">
-        <button
-            (click)="editContentlet(contentlet())"
-            class="bg-red-400 text-white text-sm rounded-md py-1 px-3 shadow-md hover:bg-red-500 cursor-pointer">
-            Edit
-        </button>
-    </ng-template> `
+  selector: 'app-edit-contentlet-button',
+  imports: [DotCMSShowWhenDirective],
+  template: `<ng-template [dotCMSShowWhen]="uveMode.EDIT">
+    <button
+      (click)="editContentlet(contentlet())"
+      class="bg-red-400 text-white text-sm rounded-md py-1 px-3 shadow-md hover:bg-red-500 cursor-pointer"
+    >
+      Edit
+    </button>
+  </ng-template> `,
 })
 export class EditContentletButtonComponent {
-    contentlet = input.required<Contentlet>();
+  contentlet = input.required<Contentlet>();
 
-    uveMode = UVE_MODE;
+  uveMode = UVE_MODE;
 
-    @HostBinding('class')
-    hostClass = 'absolute bottom-2 right-2 z-10';
+  @HostBinding('class')
+  hostClass = 'absolute bottom-2 right-2 z-10';
 
-    editContentlet(contentlet: Contentlet) {
-        editContentlet(contentlet);
-    }
+  editContentlet(contentlet: Contentlet) {
+    editContentlet(contentlet);
+  }
 }

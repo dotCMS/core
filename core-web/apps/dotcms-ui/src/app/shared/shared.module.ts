@@ -13,7 +13,6 @@ import {
     DotEventsSocketURL,
     LoggerService,
     LoginService,
-    SiteService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
@@ -51,7 +50,6 @@ export class SharedModule {
                 DotcmsEventsService,
                 LoggerService,
                 LoginService,
-                SiteService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotEventsSocket,
                 StringUtils,
