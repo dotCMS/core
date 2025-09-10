@@ -90,7 +90,6 @@ describe('DotContentDriveSidebarComponent', () => {
                 isTreeExpanded: jest.fn().mockReturnValue(true),
                 removeFilter: jest.fn(),
                 getFilterValue: jest.fn(),
-                $query: jest.fn(),
                 setIsTreeExpanded: jest.fn(),
                 path: jest.fn().mockReturnValue('/test/path'),
                 setItems: jest.fn(),
@@ -98,7 +97,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 setPagination: jest.fn(),
                 setSort: jest.fn(),
                 patchFilters: jest.fn(),
-                setPath: jest.fn()
+                setPath: jest.fn(),
+                $searchParams: jest.fn(),
+                contextMenu: jest.fn().mockReturnValue(null)
             })
         ]
     });
