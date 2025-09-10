@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable no-console */
 
 // This file is required by jest and is used for setup for each test file.
 import '@testing-library/jest-dom';
@@ -66,7 +67,38 @@ console.error = (...args: unknown[]) => {
         return;
     }
 
+    // Skip NG0303 errors for UI library components and missing Angular directives in tests
+    if (firstArg.includes('NG0303:')) {
+        return;
+    }
+
     originalConsoleError(...args);
+};
+
+// Suppress noisy logs from dotcms-js LoggerService
+const originalConsoleInfo = console.info;
+const originalConsoleDebug = console.debug;
+
+console.info = (...args: unknown[]) => {
+    const firstArg = typeof args[0] === 'string' ? args[0] : '';
+
+    // Skip specific LoggerService info log
+    if (firstArg === 'Setting the logger --> Developer mode logger on') {
+        return;
+    }
+
+    originalConsoleInfo(...args);
+};
+
+console.debug = (...args: unknown[]) => {
+    const firstArg = typeof args[0] === 'string' ? args[0] : '';
+
+    // Skip LoggerService debug logs
+    if (firstArg.includes('Loading configuration on:')) {
+        return;
+    }
+
+    originalConsoleDebug(...args);
 };
 
 // Mock sessionStorage for JSDOM

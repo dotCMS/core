@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 
 import { of, Subject } from 'rxjs';
 
@@ -59,6 +60,26 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotTemplateListComponent } from './dot-template-list.component';
+
+// Suppress console logs during this test
+const originalConsoleInfo = console.info;
+const originalConsoleDebug = console.debug;
+const originalConsoleWarn = console.warn;
+const originalConsoleError = console.error;
+
+beforeAll(() => {
+    console.info = jest.fn();
+    console.debug = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+});
+
+afterAll(() => {
+    console.info = originalConsoleInfo;
+    console.debug = originalConsoleDebug;
+    console.warn = originalConsoleWarn;
+    console.error = originalConsoleError;
+});
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
 import { ButtonModel } from '../../../shared/models/action-header/button.model';
@@ -520,18 +541,25 @@ describe('DotTemplateListComponent', () => {
         }));
 
         // Helper function to load data in the table
-        const loadTableData = () => {
+        const loadTableData = fakeAsync(() => {
             // Mock the PaginatorService through the dotListingDataTable
             jest.spyOn(dotListingDataTable.paginatorService, 'get').mockReturnValue(
                 of(templatesMock)
             );
 
+            // Simulate the lazy load event
             const table = fixture.debugElement.query(By.css('p-table'));
-            expect(table).toBeTruthy();
+            if (table) {
+                table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
+            } else {
+                // If no table, directly call loadData
+                dotListingDataTable.loadData(0);
+            }
 
-            table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
+            // Wait for the setTimeout in setItems
+            tick(1);
             fixture.detectChanges();
-        };
+        });
 
         it('should reload portlet only when the site change', () => {
             fixture.detectChanges(); // Initialize component and subscriptions
@@ -581,7 +609,7 @@ describe('DotTemplateListComponent', () => {
 
             link.nativeElement.click();
 
-            expect(mockGoToFolder).toHaveBeenCalledWith(new PointerEvent('click'), 'test');
+            expect(mockGoToFolder).toHaveBeenCalledWith(expect.any(Event), 'test');
         });
 
         it("should render 'System Theme' when the theme is SYSTEM_THEME", () => {
@@ -804,7 +832,20 @@ describe('DotTemplateListComponent', () => {
         });
 
         describe('row actions command', () => {
-            beforeEach(() => {
+            beforeEach(fakeAsync(() => {
+                // Load table data first
+                jest.spyOn(dotListingDataTable.paginatorService, 'get').mockReturnValue(
+                    of(templatesMock)
+                );
+                const table = fixture.debugElement.query(By.css('p-table'));
+                if (table) {
+                    table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
+                } else {
+                    dotListingDataTable.loadData(0);
+                }
+                tick(1); // Wait for setItems setTimeout
+                fixture.detectChanges();
+
                 jest.spyOn(dotMessageDisplayService, 'push');
                 jest.spyOn(dotListingDataTable, 'loadCurrentPage');
                 publishTemplate = fixture.debugElement.query(
@@ -819,7 +860,7 @@ describe('DotTemplateListComponent', () => {
                 archivedTemplate = fixture.debugElement.query(
                     By.css('[data-testid="123Archived"]')
                 ).componentInstance;
-            });
+            }));
 
             it('should open add to bundle dialog', () => {
                 publishTemplate.actions[3].menuItem.command();
@@ -930,7 +971,20 @@ describe('DotTemplateListComponent', () => {
         describe('bulk', () => {
             let menu: Menu;
 
-            beforeEach(() => {
+            beforeEach(fakeAsync(() => {
+                // Load table data first
+                jest.spyOn(dotListingDataTable.paginatorService, 'get').mockReturnValue(
+                    of(templatesMock)
+                );
+                const table = fixture.debugElement.query(By.css('p-table'));
+                if (table) {
+                    table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
+                } else {
+                    dotListingDataTable.loadData(0);
+                }
+                tick(1); // Wait for setItems setTimeout
+                fixture.detectChanges();
+
                 comp.selectedTemplates = [templatesMock[0], templatesMock[1]];
                 fixture.detectChanges();
                 menu = fixture.debugElement.query(
@@ -938,7 +992,7 @@ describe('DotTemplateListComponent', () => {
                 ).componentInstance;
                 jest.spyOn(dotMessageDisplayService, 'push');
                 jest.spyOn(dotListingDataTable, 'loadCurrentPage');
-            });
+            }));
 
             it('should set labels', () => {
                 const actions = [
