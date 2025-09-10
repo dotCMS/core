@@ -1,8 +1,11 @@
-<div class="dot-wysiwyg-monaco__container">
+<div
+    class="dot-wysiwyg-monaco__container"
+    [class.ng-invalid]="hasError"
+    [class.ng-dirty]="hasError">
     <ngx-monaco-editor
         (init)="onEditorInit($event)"
         [options]="$monacoOptions()"
         #editorRef
         data-testId="code-editor"
-        [formControlName]="$field().variable" />
+        [formControl]="$formControl()" />
 </div>

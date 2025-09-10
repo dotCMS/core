@@ -413,6 +413,9 @@ export class DotEditContentFormComponent implements OnInit {
         controls[DISABLED_WYSIWYG_FIELD] = this.#fb.control(disabledWYSIWYG);
 
         this.form = this.#fb.group(controls);
+        setTimeout(() => {
+            //this.form.disable();
+        }, 100);
     }
 
     /**

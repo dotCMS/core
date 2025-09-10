@@ -20,6 +20,7 @@
         @defer (on immediate) {
             <dot-edit-content-radio-field
                 [field]="field"
+                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
@@ -35,6 +36,7 @@
         @defer (on immediate) {
             <dot-edit-content-text-area
                 [field]="field"
+                [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
                 [attr.data-testId]="'field-' + field.variable" />
