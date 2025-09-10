@@ -1,5 +1,13 @@
 import { computed, inject } from '@angular/core';
-import { ControlContainer, FormControl, ValidationErrors } from '@angular/forms';
+import {
+    ControlValueAccessor,
+    FormControl,
+    NgControl,
+    ValidationErrors,
+    Validators
+} from '@angular/forms';
+
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 /**
  * Base class for all field components that provides common functionality
@@ -7,24 +15,27 @@ import { ControlContainer, FormControl, ValidationErrors } from '@angular/forms'
  *
  * Note: Child components must define the $field input property.
  */
-export abstract class BaseFieldComponent {
-    /**
-     * Control container for accessing form controls
-     */
-    readonly #controlContainer = inject(ControlContainer);
+export abstract class BaseFieldComponent implements ControlValueAccessor {
+    ngControl = inject(NgControl, { self: true, optional: true });
+    $formControl = computed(() => this.ngControl?.control as FormControl);
 
+    $showLabel = computed(() => {
+        const field = this.$field();
+        if (!field) return true;
+
+        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
+    });
+
+    constructor() {
+        if (this.ngControl !== null) {
+            this.ngControl.valueAccessor = this;
+        }
+    }
     /**
      * Abstract property that child components must implement
      * This should be the $field input property
      */
-    abstract $field: () => { variable: string };
-
-    /**
-     * Computed form control for the current field
-     */
-    $formControl = computed(
-        () => this.#controlContainer.control.get(this.$field().variable) as FormControl
-    );
+    abstract $field: () => DotCMSContentTypeField;
 
     /**
      * Checks if the field has validation errors and has been touched
@@ -48,7 +59,11 @@ export abstract class BaseFieldComponent {
      * @returns true if the field is required
      */
     get isRequired(): boolean {
-        return this.errors?.['required'] ? true : false;
+        const control = this.$formControl();
+        if (control.hasValidator(Validators.required)) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -59,48 +74,28 @@ export abstract class BaseFieldComponent {
         return this.$formControl().disabled;
     }
 
+    protected onChange: ((value: string) => void) | null = null;
+    protected onTouched: (() => void) | null = null;
+
     /**
-     * Sets the value of the form control
-     * @param value - The value to set
+     * Registers a callback function that is called when the control's value changes in the UI.
+     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
+     *
+     * @param fn The callback function to register.
      */
-    setValue(
-        value: string,
-        options?: {
-            onlySelf?: boolean;
-            emitEvent?: boolean;
-            emitModelToViewChange?: boolean;
-            emitViewToModelChange?: boolean;
-        }
-    ): void {
-        this.$formControl().setValue(value, options);
+    registerOnChange(fn: (value: string) => void) {
+        this.onChange = fn;
     }
 
     /**
-     * Gets the current value of the form control
-     * @returns The current value of the form control
+     * Registers a callback function that is called when the control is marked as touched in the UI.
+     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
+     *
+     * @param fn The callback function to register.
      */
-    getValue(): unknown {
-        return this.$formControl().value;
+    registerOnTouched(fn: () => void) {
+        this.onTouched = fn;
     }
 
-    /**
-     * Marks the field as touched
-     */
-    markAsTouched(): void {
-        this.$formControl().markAsTouched();
-    }
-
-    /**
-     * Marks the field as dirty
-     */
-    markAsDirty(): void {
-        this.$formControl().markAsDirty();
-    }
-
-    /**
-     * Resets the field to its initial state
-     */
-    reset(): void {
-        this.$formControl().reset();
-    }
+    abstract writeValue(value: unknown): void;
 }

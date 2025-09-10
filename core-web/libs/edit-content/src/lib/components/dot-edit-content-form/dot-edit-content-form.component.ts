@@ -264,7 +264,9 @@ export class DotEditContentFormComponent implements OnInit {
     }: DotWorkflowActionParams): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
-            this.scrollToFirstError();
+            requestAnimationFrame(() => {
+                this.scrollToFirstError();
+            });
             return;
         }
 
@@ -578,26 +580,51 @@ export class DotEditContentFormComponent implements OnInit {
         }
     }
 
-    scrollToFirstError() {
-        const firstErrorField = this.#document.querySelector('.error-message');
+    /**
+     * Scrolls to the first field with validation errors and focuses on it for better accessibility.
+     * Uses smooth scrolling with proper offset calculation and fallback mechanisms.
+     */
+    scrollToFirstError(): void {
+        const errorElements =
+            this.#document.querySelectorAll<HTMLDivElement>('.field-error-marker');
 
-        console.log('firstErrorField', firstErrorField);
-
-        if (firstErrorField) {
-            const scrollContainer = this.#document.querySelector('.edit-content-layout__body');
-
-            if (scrollContainer) {
-                const containerRect = scrollContainer.getBoundingClientRect();
-                const elementRect = firstErrorField.getBoundingClientRect();
-                const relativeTop = elementRect.top - containerRect.top;
-                const currentScrollTop = scrollContainer.scrollTop;
-                const targetScrollTop = currentScrollTop + relativeTop - 200;
-
-                scrollContainer.scrollTo({
-                    top: targetScrollTop,
-                    behavior: 'smooth'
-                });
-            }
+        if (errorElements.length === 0) {
+            return;
         }
+
+        const firstErrorField = errorElements[0];
+        if (!firstErrorField) {
+            return;
+        }
+
+        // Try multiple container selectors for better compatibility
+        const scrollContainer = this.#document.querySelector<HTMLElement>(
+            '.edit-content-layout__body'
+        );
+        if (!scrollContainer) {
+            return;
+        }
+
+        this.#scrollToElement(firstErrorField, scrollContainer);
+    }
+
+    /**
+     * Scrolls to the element within the specified container
+     */
+    #scrollToElement(element: HTMLElement, container: HTMLElement): void {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+
+        // Calculate the position relative to the container
+        const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+
+        // Add some offset to ensure the element is not at the very top
+        const offset = 80;
+        const scrollPosition = Math.max(0, relativeTop - offset);
+
+        container.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+        });
     }
 }

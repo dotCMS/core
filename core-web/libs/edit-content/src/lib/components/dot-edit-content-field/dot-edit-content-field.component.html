@@ -1,20 +1,7 @@
 @let field = $field();
 @let contentlet = $contentlet();
 @let contentType = $contentType();
-@let showLabel = $showLabel();
 @let contentTypeVariable = contentType?.variable;
-
-<ng-template #labelTemplate>
-    @if (showLabel) {
-        <label
-            [attr.data-testId]="'label-' + field.variable"
-            [checkIsRequiredControl]="field.variable"
-            [for]="field.variable"
-            dotFieldRequired>
-            {{ field.name }}
-        </label>
-    }
-</ng-template>
 
 @switch (field.fieldType) {
     @case (fieldTypes.LINE_DIVIDER) {
@@ -23,7 +10,6 @@
     }
     @case (fieldTypes.SELECT) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-select-field
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
@@ -31,7 +17,6 @@
     }
     @case (fieldTypes.RADIO) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-radio-field
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
@@ -39,15 +24,14 @@
     }
     @case (fieldTypes.TEXT) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-text-field
                 [field]="field"
+                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.TEXTAREA) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-text-area
                 [field]="field"
                 [contentlet]="contentlet"
@@ -57,7 +41,6 @@
     }
     @case (fieldTypes.CHECKBOX) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-checkbox-field
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
@@ -65,7 +48,6 @@
     }
     @case (fieldTypes.MULTI_SELECT) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-multi-select-field
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
@@ -73,7 +55,6 @@
     }
     @case (calendarTypes.includes(field.fieldType) ? field.fieldType : '') {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-calendar-field
                 [formControlName]="field.variable"
                 [contentType]="contentType"
@@ -84,7 +65,6 @@
     }
     @case (fieldTypes.TAG) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-tag-field
                 [formControlName]="field.variable"
                 [field]="field"
@@ -93,7 +73,6 @@
     }
     @case (fieldTypes.JSON) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-json-field
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
@@ -101,7 +80,6 @@
     }
     @case (fieldTypes.BINARY) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-binary-field
                 [formControlName]="field.variable"
                 [contentlet]="contentlet"
@@ -111,7 +89,6 @@
     }
     @case (fieldTypes.CUSTOM_FIELD) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-custom-field
                 [field]="field"
                 [inode]="contentlet?.inode"
@@ -121,7 +98,6 @@
     }
     @case (fieldTypes.BLOCK_EDITOR) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-block-editor
                 [formControlName]="field.variable"
                 [contentlet]="contentlet"
@@ -131,7 +107,6 @@
     }
     @case (fieldTypes.KEY_VALUE) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-key-value
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable" />
@@ -139,7 +114,6 @@
     }
     @case (fieldTypes.WYSIWYG) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-wysiwyg-field
                 [field]="field"
                 [contentlet]="contentlet"
@@ -149,7 +123,6 @@
     }
     @case (fieldTypes.HOST_FOLDER) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-host-folder-field
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
@@ -157,7 +130,6 @@
     }
     @case (fieldTypes.CATEGORY) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-category-field
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
@@ -167,7 +139,6 @@
     }
     @case (fieldTypes.FILE) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-file-field
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
@@ -176,7 +147,6 @@
     }
     @case (fieldTypes.IMAGE) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-file-field
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
@@ -185,7 +155,6 @@
     }
     @case (fieldTypes.RELATIONSHIP) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-relationship-field
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
@@ -193,13 +162,4 @@
                 [contentlet]="contentlet" />
         }
     }
-}
-@if (
-    field.hint &&
-    field.fieldType !== fieldTypes.RELATIONSHIP &&
-    !calendarTypes.includes(field.fieldType)
-) {
-    <small class="text-gray-700" [attr.data-testId]="'hint-' + field.variable">
-        {{ field.hint }}
-    </small>
 }

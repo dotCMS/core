@@ -573,6 +573,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             // formValue (UTC) might be different day due to timezone conversion, allow ±2 days
             const expectedFormDate = todayInServerTz.getDate();
             const actualFormDate = result?.formValue.getDate();
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             expect(Math.abs(actualFormDate! - expectedFormDate)).toBeLessThanOrEqual(2);
         });
 
