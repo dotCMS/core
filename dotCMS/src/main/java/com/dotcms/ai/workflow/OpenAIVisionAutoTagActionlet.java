@@ -1,7 +1,6 @@
 package com.dotcms.ai.workflow;
 
 import com.dotcms.ai.api.AIVisionAPI;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
@@ -13,7 +12,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import io.vavr.control.Try;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +28,7 @@ public class OpenAIVisionAutoTagActionlet extends WorkFlowActionlet {
 
     @Override
     public String getName() {
-        return "Open AI - Tag Images";
+       return "AI - Tag & Alt Descriptions for Images";
     }
 
     @Override

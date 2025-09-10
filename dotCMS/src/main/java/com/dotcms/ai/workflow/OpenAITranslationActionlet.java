@@ -1,22 +1,24 @@
 package com.dotcms.ai.workflow;
 
 
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.translate.TranslationException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -46,7 +48,7 @@ public class OpenAITranslationActionlet extends TranslationActionlet {
 
     @Override
     public String getName() {
-        return "Open AI - Translate Content";
+       return "AI - Translate Content";
     }
 
     @Override
@@ -94,7 +96,7 @@ public class OpenAITranslationActionlet extends TranslationActionlet {
                 params.get(IGNORE_FIELDS).getValue(),
                 params.get(TRANSLATE_FIELDS).getValue());
 
-        // our Translation Service interface does not have way to pass custom parameters so we add this value
+       // our Translation Service interface does not have a way to pass custom parameters, so we add this value
         // to the underlying content map
         translationKeyPrefix.ifPresent(s -> sourceContentlet.getMap().put(TRANSLATION_KEY_PREFIX, s));
 
@@ -189,53 +191,41 @@ public class OpenAITranslationActionlet extends TranslationActionlet {
         return fields;
     }
 
-    void copyBinariesAndTags(final User user, final Contentlet sourceContentlet, final Contentlet translatedContent)
-            throws DotDataException, DotSecurityException, TranslationException {
+   void copyBinariesAndTags(final User user, final Contentlet sourceContentlet, final Contentlet translatedContent)
+           throws DotDataException, DotSecurityException, TranslationException {
 
-        final Structure structure = translatedContent.getStructure();
-        final List<com.dotmarketing.portlets.structure.model.Field> list = FieldsCache.getFieldsByStructureInode(
-                structure.getInode());
+      final ContentType structure = translatedContent.getContentType();
 
-        for (final com.dotmarketing.portlets.structure.model.Field field : list) {
-            if (com.dotmarketing.portlets.structure.model.Field.FieldType.BINARY.toString()
-                    .equals(field.getFieldType())) {
+      for (Field field : structure.fields(BinaryField.class)) {
 
-                final java.io.File inputFile = APILocator
-                        .getContentletAPI()
-                        .getBinaryFile(sourceContentlet.getInode(), field.getVelocityVarName(), user);
-                if (inputFile != null) {
+         final java.io.File inputFile = APILocator
+                 .getContentletAPI()
+                 .getBinaryFile(sourceContentlet.getInode(), field.variable(), user);
+         if (inputFile != null) {
 
-                    final java.io.File acopyFolder = new java.io.File(
-                            APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                                    + java.io.File.separator + user.getUserId() + java.io.File.separator
-                                    + field.getFieldContentlet()
-                                    + java.io.File.separator + UUIDGenerator.generateUuid());
+            final java.io.File acopyFolder = new java.io.File(
+                    ConfigUtils.getAssetTempPath()
+                            + java.io.File.separator + UUIDGenerator.generateUuid());
 
-                    if (!acopyFolder.exists()) {
-                        acopyFolder.mkdir();
-                    }
-
-                    final String shortFileName = FileUtil.getShortFileName(inputFile.getAbsolutePath());
-                    final java.io.File binaryFile = new java.io.File(
-                            APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                                    + java.io.File.separator + user.getUserId() + java.io.File.separator
-                                    + field.getFieldContentlet()
-                                    + java.io.File.separator + shortFileName.trim());
-
-                    try {
-
-                        FileUtil.copyFile(inputFile, binaryFile);
-                        translatedContent.setBinary(field.getVelocityVarName(), binaryFile);
-                    } catch (IOException e) {
-                        throw new TranslationException(e);
-                    }
-                }
-            } else if (field.getFieldType()
-                    .equals(com.dotmarketing.portlets.structure.model.Field.FieldType.TAG.toString())) {
-
-                translatedContent.setStringProperty(field.getVelocityVarName(),
-                        sourceContentlet.getStringProperty(field.getVelocityVarName()));
+            if (!acopyFolder.exists()) {
+               acopyFolder.mkdirs();
             }
-        }
-    }
+
+            final String shortFileName = FileUtil.getShortFileName(inputFile.getAbsolutePath());
+            final java.io.File binaryFile = new java.io.File(acopyFolder, shortFileName.trim());
+
+            try {
+
+               FileUtil.copyFile(inputFile, binaryFile);
+               translatedContent.setBinary(field.variable(), binaryFile);
+            } catch (IOException e) {
+               throw new TranslationException(e);
+            }
+         }
+      }
+      for (Field field : structure.fields(TagField.class)) {
+         translatedContent.setStringProperty(field.variable(),
+                 sourceContentlet.getStringProperty(field.variable()));
+      }
+   }
 }
