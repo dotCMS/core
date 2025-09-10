@@ -45,7 +45,10 @@ describe('ValidPublicAuthGuardService', () => {
 
     it('should redirect to to Main Portlet if User is logged in', () => {
         let result: boolean;
-        jest.spyOn(loginService, 'isLogin$', 'get', 'get').mockReturnValue(observableOf(true));
+        Object.defineProperty(loginService, 'isLogin$', {
+            value: observableOf(true),
+            writable: true
+        });
         publicAuthGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -55,7 +58,10 @@ describe('ValidPublicAuthGuardService', () => {
 
     it('should allow access to the requested route if User is NOT logged in', () => {
         let result: boolean;
-        jest.spyOn(loginService, 'isLogin$', 'get', 'get').mockReturnValue(observableOf(false));
+        Object.defineProperty(loginService, 'isLogin$', {
+            value: observableOf(false),
+            writable: true
+        });
         publicAuthGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));

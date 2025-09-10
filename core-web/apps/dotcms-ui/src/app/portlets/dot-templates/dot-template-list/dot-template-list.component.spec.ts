@@ -519,6 +519,20 @@ describe('DotTemplateListComponent', () => {
             mockGoToFolder = jest.spyOn(comp, 'goToFolder');
         }));
 
+        // Helper function to load data in the table
+        const loadTableData = () => {
+            // Mock the PaginatorService through the dotListingDataTable
+            jest.spyOn(dotListingDataTable.paginatorService, 'get').mockReturnValue(
+                of(templatesMock)
+            );
+
+            const table = fixture.debugElement.query(By.css('p-table'));
+            expect(table).toBeTruthy();
+
+            table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
+            fixture.detectChanges();
+        };
+
         it('should reload portlet only when the site change', () => {
             fixture.detectChanges(); // Initialize component and subscriptions
             siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
@@ -538,6 +552,8 @@ describe('DotTemplateListComponent', () => {
         });
 
         it('should have links for theme folder', () => {
+            loadTableData();
+
             const links = fixture.debugElement.queryAll(
                 By.css('[data-testid="theme-folder-link"]')
             );
@@ -558,7 +574,10 @@ describe('DotTemplateListComponent', () => {
         });
 
         it('should trigger goToFolder whem clicking on a theme link', () => {
+            loadTableData();
+
             const link = fixture.debugElement.query(By.css('[data-testid="theme-folder-link"]'));
+            expect(link).toBeTruthy();
 
             link.nativeElement.click();
 
@@ -566,13 +585,19 @@ describe('DotTemplateListComponent', () => {
         });
 
         it("should render 'System Theme' when the theme is SYSTEM_THEME", () => {
+            loadTableData();
+
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+            expect(cells.length).toBeGreaterThan(1);
 
             expect(cells[1].nativeElement.textContent.trim()).toEqual('System Theme');
         });
 
         it('should not trigger goToFolder when the theme is SYSTEM_THEME', () => {
+            loadTableData();
+
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+            expect(cells.length).toBeGreaterThan(1);
 
             cells[1].nativeElement.click();
 
@@ -580,17 +605,25 @@ describe('DotTemplateListComponent', () => {
         });
 
         it('should render empty when the theme is undefined or null', () => {
+            loadTableData();
+
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+            expect(cells.length).toBeGreaterThan(0);
 
             const lastCell = cells.pop();
+            expect(lastCell).toBeTruthy();
 
             expect(lastCell.nativeElement.textContent.trim()).toEqual('');
         });
 
         it('should not trigger goToFolder when the theme is null or undefined', () => {
+            loadTableData();
+
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
+            expect(cells.length).toBeGreaterThan(0);
 
             const lastCell = cells.pop();
+            expect(lastCell).toBeTruthy();
 
             lastCell.nativeElement.click();
 
@@ -607,6 +640,8 @@ describe('DotTemplateListComponent', () => {
         });
 
         it('should pass data to the status elements', () => {
+            loadTableData();
+
             const state: DotContentState = {
                 live: true,
                 working: true,
@@ -620,10 +655,15 @@ describe('DotTemplateListComponent', () => {
                 revision: 'Revision',
                 draft: 'Draft'
             };
-            lockedTemplate = fixture.debugElement.query(
+
+            const lockedTemplateElement = fixture.debugElement.query(
                 By.css('[data-testid="123Locked"]')
-            ).componentInstance;
+            );
+            expect(lockedTemplateElement).toBeTruthy();
+            lockedTemplate = lockedTemplateElement.componentInstance;
+
             const stateIcon = fixture.debugElement.query(By.css('dot-state-icon'));
+            expect(stateIcon).toBeTruthy();
 
             expect(stateIcon.attributes['size']).toEqual('14px');
             expect(stateIcon.nativeNode.state).toEqual(state);
@@ -632,9 +672,14 @@ describe('DotTemplateListComponent', () => {
 
         describe('row', () => {
             it('should set actions to publish template', () => {
-                publishTemplate = fixture.debugElement.query(
+                loadTableData();
+
+                const publishTemplateElement = fixture.debugElement.query(
                     By.css('[data-testid="123Published"]')
-                ).componentInstance;
+                );
+                expect(publishTemplateElement).toBeTruthy();
+                publishTemplate = publishTemplateElement.componentInstance;
+
                 const actions = setBasicOptions();
                 actions.push({
                     menuItem: { label: 'Unpublish', command: expect.any(Function) }
@@ -647,9 +692,14 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should set actions to locked template', () => {
-                lockedTemplate = fixture.debugElement.query(
+                loadTableData();
+
+                const lockedTemplateElement = fixture.debugElement.query(
                     By.css('[data-testid="123Locked"]')
-                ).componentInstance;
+                );
+                expect(lockedTemplateElement).toBeTruthy();
+                lockedTemplate = lockedTemplateElement.componentInstance;
+
                 const actions = setBasicOptions();
                 actions.push({
                     menuItem: { label: 'Unpublish', command: expect.any(Function) }
@@ -662,9 +712,14 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should set actions to unPublish template', () => {
-                unPublishTemplate = fixture.debugElement.query(
+                loadTableData();
+
+                const unPublishTemplateElement = fixture.debugElement.query(
                     By.css('[data-testid="123Unpublish"]')
-                ).componentInstance;
+                );
+                expect(unPublishTemplateElement).toBeTruthy();
+                unPublishTemplate = unPublishTemplateElement.componentInstance;
+
                 const actions = setBasicOptions();
                 actions.push({
                     menuItem: { label: 'Archive', command: expect.any(Function) }
@@ -677,9 +732,14 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should set actions to archived template', () => {
-                archivedTemplate = fixture.debugElement.query(
+                loadTableData();
+
+                const archivedTemplateElement = fixture.debugElement.query(
                     By.css('[data-testid="123Archived"]')
-                ).componentInstance;
+                );
+                expect(archivedTemplateElement).toBeTruthy();
+                archivedTemplate = archivedTemplateElement.componentInstance;
+
                 const actions = [
                     { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
                     { menuItem: { label: 'Delete', command: expect.any(Function) } }
@@ -689,16 +749,22 @@ describe('DotTemplateListComponent', () => {
 
             it('should hide push-publish and Add to Bundle actions', () => {
                 const activatedRoute: ActivatedRoute = TestBed.inject(ActivatedRoute);
-                jest.spyOn(activatedRoute, 'data', 'get', 'get').mockReturnValue(
-                    of({
+                Object.defineProperty(activatedRoute, 'data', {
+                    value: of({
                         dotTemplateListResolverData: [false, false]
-                    })
-                );
+                    }),
+                    writable: true
+                });
                 comp.ngOnInit();
                 fixture.detectChanges();
-                publishTemplate = fixture.debugElement.query(
+                loadTableData();
+
+                const publishTemplateElement = fixture.debugElement.query(
                     By.css('[data-testid="123Published"]')
-                ).componentInstance;
+                );
+                expect(publishTemplateElement).toBeTruthy();
+                publishTemplate = publishTemplateElement.componentInstance;
+
                 const actions = [
                     { menuItem: { label: 'Edit', command: expect.any(Function) } },
                     { menuItem: { label: 'Publish', command: expect.any(Function) } },
@@ -714,10 +780,13 @@ describe('DotTemplateListComponent', () => {
                     jest.spyOn(dotSiteBrowserService, 'setSelectedFolder').mockReturnValue(
                         of(null)
                     );
+                    loadTableData();
+
                     const rows: DebugElement[] = fixture.debugElement.queryAll(
                         By.css('.p-selectable-row')
                     );
-                    fixture.detectChanges();
+                    expect(rows.length).toBeGreaterThan(0);
+
                     rows[rows.length - 1].nativeElement.click();
                     expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(
                         templatesMock[4].identifier

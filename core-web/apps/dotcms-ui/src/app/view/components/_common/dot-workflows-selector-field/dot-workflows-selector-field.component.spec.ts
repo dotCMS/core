@@ -85,7 +85,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
         describe('no params', () => {
             beforeEach(() => {
                 fixture.detectChanges();
-                multiselect = de.query(By.css('p-multiSelect')).componentInstance;
+                multiselect = de.query(By.css('p-multiselect')).componentInstance;
             });
 
             it('should have have a multiselect', () => {
@@ -180,7 +180,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
             component = deHost.query(By.css('dot-workflows-selector-field')).componentInstance;
             innerMultiselect = deHost
                 .query(By.css('dot-workflows-selector-field'))
-                .query(By.css('p-multiSelect'));
+                .query(By.css('p-multiselect'));
         }));
 
         it('should get value', () => {

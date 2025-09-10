@@ -159,10 +159,10 @@ describe('PushPublishEnvSelectorComponent', () => {
     });
 
     it('should populate the environments previously selected by the user', () => {
-        jest.spyOn(pushPublishServiceMock, 'lastEnvironmentPushed', 'get', 'get').mockReturnValue([
-            '22e332',
-            'joa08'
-        ]);
+        Object.defineProperty(pushPublishServiceMock, 'lastEnvironmentPushed', {
+            value: ['22e332', 'joa08'],
+            writable: true
+        });
         jest.spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual([

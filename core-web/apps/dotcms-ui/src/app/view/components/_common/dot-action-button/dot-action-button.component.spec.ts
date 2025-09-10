@@ -63,7 +63,7 @@ describe('ActionButtonComponent', () => {
         comp.label = 'Hello World';
         fixture.detectChanges();
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(label.nativeElement.textContent).toBe('Hello World');
+        expect(label.nativeElement.textContent.trim()).toBe('Hello World');
     });
 
     it('should have p-menu and pass the model to it', () => {

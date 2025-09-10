@@ -192,11 +192,16 @@ describe('DotThemeSelectorDropdownComponent', () => {
             component = fixture.componentInstance;
             jest.spyOn(component, 'propagateChange');
             jest.spyOn(paginationService, 'get');
-            fixture.detectChanges();
+            // Don't call detectChanges here to avoid ngOnInit calling propagateChange
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
         });
 
         describe('html', () => {
             it('should set themes if theme selector is open', fakeAsync(() => {
+                fixture.detectChanges();
                 component.searchableDropdown.display.emit();
                 tick();
                 expect(component.totalRecords).toEqual(3);
@@ -204,12 +209,14 @@ describe('DotThemeSelectorDropdownComponent', () => {
             }));
 
             it('should call paginatorService get method to System Host on init ', () => {
+                fixture.detectChanges();
                 expect(paginationService.url).toEqual('v1/themes');
                 expect(paginationService.extraParams.get('hostId')).toEqual('SYSTEM_HOST');
                 expect(paginationService.get).toHaveBeenCalled();
             });
 
             it('should not call pagination service if the url is not set', () => {
+                fixture.detectChanges();
                 //Paginator service is now called at least once at the beginning, that's why it has an url at the very beginning
                 component.currentSiteIdentifier = '123';
                 paginationService.url = '';
@@ -219,6 +226,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             });
 
             it('should call pagination service if the url is set', () => {
+                fixture.detectChanges();
                 component.currentSiteIdentifier = '123';
                 component.paginatorService.url = 'v1/test';
                 jest.spyOn(paginationService, 'getWithOffset');
@@ -228,6 +236,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             });
 
             it('should set the right attributes', () => {
+                fixture.detectChanges();
                 const element = de.query(By.css('dot-searchable-dropdown'));
 
                 const instance = element.componentInstance;
@@ -244,6 +253,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
 
         describe('events', () => {
             it('should set value propagate change and toggle the overlay', () => {
+                fixture.detectChanges();
                 const searchable = de.query(By.css('dot-searchable-dropdown'));
                 jest.spyOn(searchable.componentInstance, 'toggleOverlayPanel');
                 const value = mockDotThemes[0];
@@ -251,42 +261,47 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 searchable.triggerEventHandler('switch', { ...value });
                 expect(component.value).toEqual(value);
                 expect(component.propagateChange).toHaveBeenCalledWith(value.identifier);
-                expect(component.propagateChange).toHaveBeenCalledTimes(1);
+                expect(component.propagateChange).toHaveBeenCalledTimes(2); // Called once in ngOnInit and once in onChange
                 expect(searchable.componentInstance.toggleOverlayPanel).toHaveBeenCalledTimes(1);
             });
         });
 
         describe('filters', () => {
             beforeEach(() => {
+                fixture.detectChanges();
                 jest.spyOn(paginationService, 'setExtraParams');
                 jest.spyOn(paginationService, 'getWithOffset').mockReturnValue(of(mockDotThemes));
-                jest.spyOn(paginationService, 'totalRecords', 'get').mockReturnValue(3);
+                Object.defineProperty(paginationService, 'totalRecords', {
+                    value: 3,
+                    writable: true
+                });
 
+                // Open the dropdown to make filter elements available
                 const searchableButton = de.query(By.css('dot-searchable-dropdown button'));
-                searchableButton.nativeElement.click();
+                if (searchableButton) {
+                    searchableButton.nativeElement.click();
+                    fixture.detectChanges();
+                }
             });
 
             it('should system to true', () => {
-                fixture.detectChanges();
                 const siteSelector = de.query(By.css('[data-testId="siteSelector"]'));
                 expect(siteSelector.componentInstance.system).toEqual(true);
             });
 
             it('should update themes, totalRecords and call setExtraParams when site selector change', fakeAsync(() => {
-                fixture.detectChanges();
                 const siteSelector = de.query(By.css('[data-testId="siteSelector"]'));
                 siteSelector.triggerEventHandler('switch', {
                     identifier: '123'
                 });
                 tick();
                 expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123');
-                expect(paginationService.setExtraParams).toHaveBeenCalledTimes(1);
+                expect(paginationService.setExtraParams).toHaveBeenCalledTimes(2); // Called once in ngOnInit and once in siteChange
                 expect(component.themes).toEqual(mockDotThemes);
                 expect(component.totalRecords).toBe(3);
             }));
 
             it('should update themes, totalRecords and call setExtraParams when search input change', async () => {
-                fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
                 input.value = 'hello';
@@ -299,7 +314,6 @@ describe('DotThemeSelectorDropdownComponent', () => {
             });
 
             it('should allow keyboad nav on filter Input - ArrowDown', async () => {
-                fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
                 const event = new KeyboardEvent('keyup', { key: 'ArrowDown' });
@@ -310,7 +324,6 @@ describe('DotThemeSelectorDropdownComponent', () => {
             });
 
             it('should allow keyboad nav on filter Input - ArrowUp', async () => {
-                fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
                 const event = new KeyboardEvent('keyup', { key: 'ArrowUp' });
@@ -322,7 +335,6 @@ describe('DotThemeSelectorDropdownComponent', () => {
 
             it('should allow keyboad nav on filter Input - Enter', async () => {
                 jest.spyOn(component, 'onChange');
-                fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
                 const event = new KeyboardEvent('keyup', { key: 'Enter' });

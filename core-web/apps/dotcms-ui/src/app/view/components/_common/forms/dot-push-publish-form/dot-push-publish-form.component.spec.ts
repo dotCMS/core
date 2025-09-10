@@ -173,7 +173,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         pushPublishForm = fixture.debugElement.query(
             By.css('dot-push-publish-form')
         ).componentInstance;
-        pushActionsSelect = fixture.debugElement.query(By.css('p-selectButton')).componentInstance;
+        pushActionsSelect = fixture.debugElement.query(By.css('p-selectbutton')).componentInstance;
     });
 
     afterEach(() => {
@@ -270,7 +270,7 @@ xdescribe('DotPushPublishFormComponent', () => {
 
     describe('Push Action scenarios', () => {
         beforeEach(() => {
-            selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
+            selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         });
 
         it('should disable publish date on select remove', () => {
@@ -357,7 +357,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     it('should show error messages', () => {
-        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
+        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         selectActionButtons[2].triggerEventHandler('click', {});
         pushPublishForm.form.get('environment').setValue(null);
         pushPublishForm.form.get('environment').markAsDirty();

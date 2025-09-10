@@ -82,7 +82,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     it('should setup from value', () => {
         const value = ['orderList', 'unorderList', 'table'];
         fixture.detectChanges();
-        const selector = de.query(By.css('p-multiSelect'));
+        const selector = de.query(By.css('p-multiselect'));
         expect(component.form.get('allowedBlocks').value).toEqual(value);
         expect(selector).toBeTruthy();
     });
@@ -151,7 +151,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         beforeEach(() => {
             fixture.detectChanges();
-            multiselect = de.query(By.css('p-multiSelect')).componentInstance;
+            multiselect = de.query(By.css('p-multiselect')).componentInstance;
         });
 
         it('should have append to bobdy', () => {

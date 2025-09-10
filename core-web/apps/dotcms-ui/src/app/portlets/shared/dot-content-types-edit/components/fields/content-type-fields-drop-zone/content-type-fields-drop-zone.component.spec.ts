@@ -1062,7 +1062,7 @@ describe('Load fields and drag and drop', () => {
             });
 
             it('should create dot-block-editor-settings', () => {
-                const panels = de.queryAll(By.css('p-tabPanel'));
+                const panels = de.queryAll(By.css('p-tabpanel'));
                 expect(BLOCK_EDITOR_SETTINGS).toBeTruthy();
                 expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD);
                 expect(panels.length).toBe(3);
@@ -1162,7 +1162,7 @@ describe('Load fields and drag and drop', () => {
             });
 
             fixture.detectChanges();
-            const tabView = de.query(By.css('p-tabView'));
+            const tabView = de.query(By.css('p-tabview'));
             tabView.triggerEventHandler('onChange', { index: 1 });
 
             fixture.detectChanges();

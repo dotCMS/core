@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, ElementRef, EventEmitter, Input, Output } from '@angular/core';
@@ -296,10 +296,61 @@ describe('DotEditContentComponent', () => {
                 DotEditContentToolbarHtmlService,
                 DotDOMHtmlUtilService,
                 DotAlertConfirmService,
-                DotEditContentHtmlService,
+                {
+                    provide: DotEditContentHtmlService,
+                    useValue: {
+                        contentletEvents$: new Subject(),
+                        iframeActions$: new Subject(),
+                        pageModel$: new Subject(),
+                        currentContainer: null,
+                        currentContentlet: null,
+                        iframe: { nativeElement: document.createElement('iframe') },
+                        datasetMissing: [],
+                        renderPage: jest.fn(),
+                        setCurrentPage: jest.fn(),
+                        renderAddedForm: jest.fn(),
+                        getEditPageIframe: jest
+                            .fn()
+                            .mockReturnValue(document.createElement('iframe')),
+                        getEditPageDocument: jest.fn().mockReturnValue(document),
+                        addContentlet: jest.fn(),
+                        removeContentlet: jest.fn(),
+                        selectContentlet: jest.fn(),
+                        saveContentlet: jest.fn(),
+                        relocateContentlet: jest.fn(),
+                        reorderContentlet: jest.fn(),
+                        addContentType: jest.fn(),
+                        addAsset: jest.fn(),
+                        editBlockEditor: jest.fn(),
+                        showCopyModal: jest.fn(),
+                        hideCopyModal: jest.fn(),
+                        setCurrentPersona: jest.fn(),
+                        setContainterToAppendContentlet: jest.fn(),
+                        initEditMode: jest.fn(),
+                        removeContentletPlaceholder: jest.fn(),
+                        destroy: jest.fn()
+                    }
+                },
                 DotEditPageService,
                 DotGlobalMessageService,
-                DotPageStateService,
+                {
+                    provide: DotPageStateService,
+                    useValue: {
+                        state$: of(mockRenderedPageState),
+                        haveContent$: of(true),
+                        get: jest.fn().mockReturnValue(of(mockRenderedPageState)),
+                        reload: jest.fn(),
+                        setLock: jest.fn(),
+                        setDevice: jest.fn(),
+                        setLanguage: jest.fn(),
+                        setPersona: jest.fn(),
+                        setSeoMedia: jest.fn(),
+                        setInternalNavigationState: jest.fn(),
+                        setLocalState: jest.fn(),
+                        updatePageStateHaveContent: jest.fn(),
+                        currentState: mockRenderedPageState
+                    }
+                },
                 DotWorkflowActionsFireService,
                 DotGenerateSecurePasswordService,
                 DotCustomEventHandlerService,

@@ -186,7 +186,11 @@ describe('SiteSelectorComponent', () => {
 
     it('should call getSitesList', () => {
         // Mock the switchSite$ property directly instead of spying on it
-        siteService.switchSite$ = observableOf(sites[0]);
+        Object.defineProperty(siteService, 'switchSite$', {
+            value: observableOf(sites[0]),
+            writable: true,
+            configurable: true
+        });
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
 
         fixtureHost.detectChanges();
@@ -196,7 +200,11 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should call refresh if a event happen', () => {
-        jest.spyOn<any>(siteService, 'refreshSites$').mockReturnValue(observableOf(sites[0]));
+        Object.defineProperty(siteService, 'refreshSites$', {
+            value: observableOf(sites[0]),
+            writable: true,
+            configurable: true
+        });
         jest.spyOn(comp, 'handleSitesRefresh');
 
         fixtureHost.detectChanges();
@@ -211,7 +219,11 @@ describe('SiteSelectorComponent', () => {
         paginatorService.totalRecords = 2;
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
         // Mock the switchSite$ property directly instead of spying on it
-        siteService.switchSite$ = observableOf({});
+        Object.defineProperty(siteService, 'switchSite$', {
+            value: observableOf({}),
+            writable: true,
+            configurable: true
+        });
 
         fixtureHost.detectChanges();
 
@@ -238,7 +250,11 @@ describe('SiteSelectorComponent', () => {
 
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
         // Mock the switchSite$ property directly instead of spying on it
-        siteService.switchSite$ = observableOf({});
+        Object.defineProperty(siteService, 'switchSite$', {
+            value: observableOf({}),
+            writable: true,
+            configurable: true
+        });
 
         fixtureHost.detectChanges();
 
@@ -311,7 +327,10 @@ describe('SiteSelectorComponent', () => {
         paginatorService.totalRecords = 2;
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(mockSites));
         jest.spyOn(siteService, 'getSiteById').mockReturnValue(observableOf(mockSites[1]));
-        jest.spyOn(siteService, 'currentSite', 'get', 'get').mockReturnValue(mockSites[0]);
+        Object.defineProperty(siteService, 'currentSite', {
+            value: mockSites[0],
+            writable: true
+        });
         fixtureHost.detectChanges();
         componentHost.id = mockSites[1].identifier;
         fixtureHost.detectChanges();

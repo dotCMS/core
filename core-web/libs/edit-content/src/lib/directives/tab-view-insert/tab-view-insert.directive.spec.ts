@@ -11,14 +11,14 @@ import { TabViewInsertDirective } from './tab-view-insert.directive';
 @Component({
     standalone: false,
     template: `
-        <p-tabView>
+        <p-tabview>
             <ng-template
                 dotTabViewInsert
                 [dotTabViewPrepend]="prependContent"
                 [dotTabViewAppend]="appendContent"></ng-template>
-            <p-tabPanel header="Tab 1">Content 1</p-tabPanel>
-            <p-tabPanel header="Tab 2">Content 2</p-tabPanel>
-        </p-tabView>
+            <p-tabpanel header="Tab 1">Content 1</p-tabpanel>
+            <p-tabpanel header="Tab 2">Content 2</p-tabpanel>
+        </p-tabview>
 
         <ng-template #prependContent>
             <div data-testid="prepend-content">Prepend Content</div>

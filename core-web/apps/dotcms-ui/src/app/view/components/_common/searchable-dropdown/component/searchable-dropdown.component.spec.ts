@@ -323,7 +323,6 @@ describe('SearchableDropdownComponent', () => {
             items[0].triggerEventHandler('click', null);
 
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
-            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
             expect(comp.switch.emit).toHaveBeenCalledTimes(2);
         });
 

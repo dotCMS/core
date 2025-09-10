@@ -362,19 +362,22 @@ describe('DotEditPageNavComponent', () => {
         it('should has Experiments nav item', () => {
             const MATERIAL_ICON_NAME = 'science';
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: {
+                        featuredFlags: {
+                            [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: true
                         }
-                    ]
-                },
-                data: {
-                    featuredFlags: {
-                        [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: true
                     }
-                }
+                },
+                writable: true
             });
             fixture.detectChanges();
 
@@ -393,15 +396,18 @@ describe('DotEditPageNavComponent', () => {
     describe('experiments feature flag false', () => {
         it('should not has Experiments item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
-                        }
-                    ]
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: { featuredFlags: { [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false } }
                 },
-                data: { featuredFlags: { [FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]: false } }
+                writable: true
             });
             fixture.detectChanges();
 
@@ -413,15 +419,18 @@ describe('DotEditPageNavComponent', () => {
     describe('Page tools feature flag', () => {
         it('Should has Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
-                        }
-                    ]
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: true } }
                 },
-                data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: true } }
+                writable: true
             });
             fixture.detectChanges();
 
@@ -431,15 +440,18 @@ describe('DotEditPageNavComponent', () => {
 
         it('Should not have Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
-                firstChild: {
-                    url: [
-                        {
-                            path: 'content'
-                        }
-                    ]
+            Object.defineProperty(route, 'snapshot', {
+                value: {
+                    firstChild: {
+                        url: [
+                            {
+                                path: 'content'
+                            }
+                        ]
+                    },
+                    data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false } }
                 },
-                data: { featuredFlags: { [FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]: false } }
+                writable: true
             });
             fixture.detectChanges();
 

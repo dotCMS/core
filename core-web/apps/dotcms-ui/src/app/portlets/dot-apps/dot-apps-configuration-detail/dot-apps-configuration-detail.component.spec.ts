@@ -196,7 +196,10 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
     describe('Without dynamic params', () => {
         beforeEach(() => {
-            jest.spyOn(activatedRoute, 'data', 'get').mockReturnValue(of(routeDatamock));
+            Object.defineProperty(activatedRoute, 'data', {
+                value: of(routeDatamock),
+                writable: true
+            });
             fixture.detectChanges();
         });
 
@@ -328,7 +331,10 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 allowExtraParams: true,
                 sites: sitesDynamic
             };
-            jest.spyOn(activatedRoute, 'data', 'get').mockReturnValue(of(mockRoute));
+            Object.defineProperty(activatedRoute, 'data', {
+                value: of(mockRoute),
+                writable: true
+            });
 
             fixture.detectChanges();
         });

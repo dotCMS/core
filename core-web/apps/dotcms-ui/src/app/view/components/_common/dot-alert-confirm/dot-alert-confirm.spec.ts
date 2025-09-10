@@ -40,7 +40,7 @@ describe('DotAlertConfirmComponent', () => {
     });
 
     it('should have confirm and dialog null by default', () => {
-        const confirm = de.query(By.css('p-confirmDialog'));
+        const confirm = de.query(By.css('p-confirmdialog'));
         const alert = de.query(By.css('p-dialog'));
         expect(confirm === null).toBe(true);
         expect(alert === null).toBe(true);

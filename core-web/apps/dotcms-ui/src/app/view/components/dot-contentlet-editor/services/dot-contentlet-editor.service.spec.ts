@@ -121,9 +121,12 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit', () => {
-        jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
-            url: '/c/c_Test/123',
-            id: 'c_Test'
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                url: '/c/c_Test/123',
+                id: 'c_Test'
+            },
+            writable: true
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(
@@ -152,9 +155,12 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit when current portlet is edit-page', () => {
-        jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
-            url: '/#/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
-            id: 'edit-page'
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                url: '/#/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
+                id: 'edit-page'
+            },
+            writable: true
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(
@@ -183,9 +189,12 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to edit when current portlet is site-browser', () => {
-        jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
-            url: '/#/c/site-browser/ad5acc23-a466-4ac6-9c76-e6a3bc1d609e',
-            id: 'site-browser'
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                url: '/#/c/site-browser/ad5acc23-a466-4ac6-9c76-e6a3bc1d609e',
+                id: 'site-browser'
+            },
+            writable: true
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(

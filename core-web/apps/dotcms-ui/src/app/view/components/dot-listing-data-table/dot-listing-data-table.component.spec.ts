@@ -591,7 +591,7 @@ describe('DotListingDataTableComponent', () => {
         tick(de.componentInstance.filterDelay + 1);
         hostFixture.detectChanges();
         const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
-        expect(noResults.nativeElement.textContent).toEqual('No Results Found');
+        expect(noResults.nativeElement.textContent.trim()).toEqual('No Results Found');
     }));
 
     it('should hide entries for system content types', fakeAsync(() => {

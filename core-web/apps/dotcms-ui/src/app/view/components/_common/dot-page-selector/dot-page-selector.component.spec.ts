@@ -153,6 +153,21 @@ describe('DotPageSelectorComponent', () => {
     };
 
     beforeEach(waitForAsync(() => {
+        // Mock matchMedia for PrimeNG components - needs to be set before TestBed configuration
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: jest.fn().mockImplementation((query) => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: jest.fn(),
+                removeListener: jest.fn(),
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn(),
+                dispatchEvent: jest.fn()
+            }))
+        });
+
         TestBed.configureTestingModule({
             declarations: [FakeFormComponent, DotPageSelectorComponent],
             imports: [

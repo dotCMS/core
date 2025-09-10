@@ -53,11 +53,12 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show unlicense portlet', () => {
-        jest.spyOn(router, 'data', 'get').mockReturnValue(
-            of({
+        Object.defineProperty(router, 'data', {
+            value: of({
                 haveLicense: false
-            })
-        );
+            }),
+            writable: true
+        });
         fixture.detectChanges();
         const unlicensed = de.query(By.css('[data-testId="not-license"]'));
         const contentTypes = de.query(By.css('[data-testId="content-types"]'));
@@ -66,11 +67,12 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show dot-content-types', () => {
-        jest.spyOn(router, 'data', 'get').mockReturnValue(
-            of({
+        Object.defineProperty(router, 'data', {
+            value: of({
                 haveLicense: true
-            })
-        );
+            }),
+            writable: true
+        });
         fixture.detectChanges();
         const unlicensed = de.query(By.css('[data-testId="not-license"]'));
         const contentTypes = de.query(By.css('[data-testId="content-types"]'));

@@ -176,9 +176,12 @@ describe('DotToolbarComponent', () => {
     });
 
     it(`should go to site-browser when site change on edit page url`, () => {
-        jest.spyOn(dotRouterService, 'currentPortlet', 'get', 'get').mockReturnValue({
-            id: 'edit-page',
-            url: ''
+        Object.defineProperty(dotRouterService, 'currentPortlet', {
+            value: {
+                id: 'edit-page',
+                url: ''
+            },
+            writable: true
         });
         jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
         spectator.detectChanges();

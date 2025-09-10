@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -115,6 +115,7 @@ describe('DotAppsListComponent', () => {
                 MockDotIconComponent
             ],
             imports: [ButtonModule, DotMessagePipe],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -142,9 +143,12 @@ describe('DotAppsListComponent', () => {
 
     describe('With access to portlet', () => {
         beforeEach(() => {
-            jest.spyOn(route, 'data', 'get').mockReturnValue(
-                of({ dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true } })
-            );
+            Object.defineProperty(route, 'data', {
+                value: of({
+                    dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true }
+                }),
+                writable: true
+            });
             fixture.detectChanges();
         });
 

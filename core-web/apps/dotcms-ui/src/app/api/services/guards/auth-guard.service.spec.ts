@@ -42,7 +42,10 @@ describe('ValidAuthGuardService', () => {
 
     it('should allow access to the requested route, User is logged in', () => {
         let result: boolean;
-        jest.spyOn(loginService, 'isLogin$', 'get', 'get').mockReturnValue(observableOf(true));
+        Object.defineProperty(loginService, 'isLogin$', {
+            value: observableOf(true),
+            writable: true
+        });
         authGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -51,7 +54,10 @@ describe('ValidAuthGuardService', () => {
 
     it('should denied access to the requested route, User is NOT logged in', () => {
         let result: boolean;
-        jest.spyOn(loginService, 'isLogin$', 'get', 'get').mockReturnValue(observableOf(false));
+        Object.defineProperty(loginService, 'isLogin$', {
+            value: observableOf(false),
+            writable: true
+        });
         authGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));

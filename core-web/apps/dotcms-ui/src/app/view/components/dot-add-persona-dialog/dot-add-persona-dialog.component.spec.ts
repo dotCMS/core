@@ -167,7 +167,10 @@ describe('DotAddPersonaDialogComponent', () => {
                 dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
                 dotWorkflowActionsFireService = de.injector.get(DotWorkflowActionsFireService);
                 jest.spyOn(component.createdPersona, 'emit');
-                jest.spyOn(component.personaForm.form, 'valid', 'get').mockReturnValue(true);
+                Object.defineProperty(component.personaForm.form, 'valid', {
+                    value: true,
+                    writable: true
+                });
                 dialog = de.query(By.css('dot-dialog'));
             });
 

@@ -353,9 +353,12 @@ describe('DotContentletWrapperComponent', () => {
                         }
                     };
 
-                    jest.spyOn(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
-                        url: '/test/inode123',
-                        id: '123'
+                    Object.defineProperty(dotRouterService, 'currentPortlet', {
+                        value: {
+                            url: '/test/inode123',
+                            id: '123'
+                        },
+                        writable: true
                     });
 
                     dotIframeDialog.triggerEventHandler('custom', params);

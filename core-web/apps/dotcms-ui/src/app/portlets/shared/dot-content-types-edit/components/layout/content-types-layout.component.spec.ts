@@ -171,13 +171,13 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should have a tab-view', () => {
-        const pTabView = de.query(By.css('p-tabView'));
+        const pTabView = de.query(By.css('p-tabview'));
 
         expect(pTabView).not.toBeNull();
     });
 
     it('should have just one tab', () => {
-        const pTabPanels = fixture.debugElement.queryAll(By.css('p-tabPanel'));
+        const pTabPanels = fixture.debugElement.queryAll(By.css('p-tabpanel'));
         expect(pTabPanels.length).toBe(1);
     });
 
@@ -393,7 +393,7 @@ describe('ContentTypesLayoutComponent', () => {
 
                 beforeEach(() => {
                     splitButton = pTabPanel.query(
-                        By.css('.content-type__fields-sidebar p-splitButton')
+                        By.css('.content-type__fields-sidebar p-splitbutton')
                     );
                     dotEventsService = fixture.debugElement.injector.get(DotEventsService);
                     jest.spyOn(dotEventsService, 'notify');

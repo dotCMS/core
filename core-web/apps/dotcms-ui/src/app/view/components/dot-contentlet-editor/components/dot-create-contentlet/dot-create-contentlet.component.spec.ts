@@ -140,9 +140,10 @@ describe('DotCreateContentletComponent', () => {
     });
 
     it('should set url from service', () => {
-        jest.spyOn(dotContentletEditorServiceMock, 'createUrl$', 'get', 'get').mockReturnValue(
-            of('hello.world.com')
-        );
+        Object.defineProperty(dotContentletEditorServiceMock, 'createUrl$', {
+            value: of('hello.world.com'),
+            writable: true
+        });
         fixture.detectChanges();
         expect(dotCreateContentletWrapperComponent.url).toEqual('hello.world.com');
     });

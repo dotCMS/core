@@ -234,7 +234,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const lockerDe = de.query(By.css('p-inputSwitch'));
+                const lockerDe = de.query(By.css('p-inputswitch'));
                 const lockerContainerDe = de.query(By.css('[data-testId="lock-container"]'));
                 const locker = lockerDe.componentInstance;
 
