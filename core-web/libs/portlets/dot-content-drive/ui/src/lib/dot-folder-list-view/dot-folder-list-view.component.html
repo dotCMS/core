@@ -52,7 +52,7 @@
             </tr>
         } @else {
             <tr
-                class="actions"
+                class="content-drive-table__row"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)">
@@ -85,7 +85,7 @@
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
                 <td data-testId="item-actions" class="text-center">
                     <p-button
-                        class="actions-button"
+                        class="content-drive-table__actions-button"
                         icon="pi pi-ellipsis-v"
                         [text]="true"
                         [rounded]="true"

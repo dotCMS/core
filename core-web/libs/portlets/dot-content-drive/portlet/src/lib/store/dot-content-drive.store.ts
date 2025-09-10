@@ -15,13 +15,11 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService } from '@dotcms/data-access';
 import { DotContentDriveItem, ESContent } from '@dotcms/dotcms-models';
-import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/withContextMenu';
 
 import {
-    BASE_QUERY,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
@@ -36,7 +34,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { decodeFilters } from '../utils/functions';
+import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,
@@ -55,57 +53,11 @@ export const DotContentDriveStore = signalStore(
     withComputed(({ path, filters, currentSite, pagination, sort }) => {
         return {
             $searchParams: computed(() => ({
-                query: (() => {
-                    const query = new QueryBuilder();
-                    const baseQuery = query.raw(BASE_QUERY);
-                    let modifiedQuery = baseQuery;
-
-                    const pathValue = path();
-                    const currentSiteValue = currentSite();
-                    const filtersValue = filters();
-                    const filtersEntries = Object.entries(filtersValue ?? {});
-
-                    if (pathValue) {
-                        modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
-                    }
-
-                    modifiedQuery = modifiedQuery.raw(
-                        `+(conhost:${currentSiteValue?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    );
-
-                    filtersEntries
-                        .filter(([_key, value]) => value !== undefined)
-                        .forEach(([key, value]) => {
-                            // Handle multiselectors
-                            if (Array.isArray(value)) {
-                                const orChain = value.join(' OR ');
-                                const orQuery =
-                                    value.length > 1
-                                        ? `+${key}:(${orChain})`
-                                        : `+${key}:${orChain}`;
-                                modifiedQuery = modifiedQuery.raw(orQuery);
-                                return;
-                            }
-
-                            // Handle raw search for title
-                            if (key === 'title') {
-                                modifiedQuery = modifiedQuery.raw(
-                                    `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
-                                );
-                                value
-                                    .split(' ')
-                                    .filter((word) => word.trim().length > 0)
-                                    .forEach((word) => {
-                                        modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
-                                    });
-                                return;
-                            }
-
-                            modifiedQuery = modifiedQuery.field(key).equals(value);
-                        });
-
-                    return modifiedQuery.build();
-                })(),
+                query: buildContentDriveQuery({
+                    path: path(),
+                    currentSite: currentSite(),
+                    filters: filters()
+                }),
                 pagination: pagination(),
                 sort: sort(),
                 currentSite: currentSite()

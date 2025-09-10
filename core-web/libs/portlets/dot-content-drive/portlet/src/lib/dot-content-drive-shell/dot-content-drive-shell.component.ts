@@ -72,7 +72,7 @@ export class DotContentDriveShellComponent {
         this.#location.go(urlTree.toString());
     });
 
-    onPaginate(event: LazyLoadEvent) {
+    protected onPaginate(event: LazyLoadEvent) {
         // Explicit check because it can potentially be 0
         if (event.rows === undefined || event.first === undefined) {
             return;
@@ -84,7 +84,7 @@ export class DotContentDriveShellComponent {
         });
     }
 
-    onSort(event: SortEvent) {
+    protected onSort(event: SortEvent) {
         // Explicit check because it can potentially be 0
         if (event.order === undefined || !event.field) {
             return;
@@ -101,7 +101,7 @@ export class DotContentDriveShellComponent {
      * @param event The mouse event that triggered the context menu
      * @param contentlet The content item that was right-clicked
      */
-    onContextMenu({ event, contentlet }: ContextMenuData) {
+    protected onContextMenu({ event, contentlet }: ContextMenuData) {
         event.preventDefault();
         this.#store.patchContextMenu({ triggeredEvent: event, contentlet });
     }
@@ -110,14 +110,14 @@ export class DotContentDriveShellComponent {
      * Handles double click event on a content item
      * @param contentlet The content item that was double clicked
      */
-    onDoubleClick(contentlet: DotContentDriveItem) {
+    protected onDoubleClick(contentlet: DotContentDriveItem) {
         this.#navigationService.editContent(contentlet);
     }
 
     /**
      * Cancels the "Add to Bundle" dialog by setting its visibility to false
      */
-    cancelAddToBundle() {
+    protected cancelAddToBundle() {
         this.#store.setShowAddToBundle(false);
     }
 }

@@ -87,14 +87,14 @@
     }
 }
 
-.actions {
-    .actions-button {
+.content-drive-table__row {
+    .content-drive-table__actions-button {
         opacity: 0;
         transition: opacity 0.2s ease-in-out;
     }
 
     &:hover {
-        .actions-button {
+        .content-drive-table__actions-button {
             opacity: 1;
         }
     }
