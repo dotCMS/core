@@ -29,14 +29,12 @@ dot-content-drive-toolbar {
 }
 
 .tree-selector {
-    background-color: lightblue;
     grid-area: tree;
     overflow: hidden;
-    border-right: 1px solid $color-palette-gray-400;
-    width: 0;
-
     transition: all 0.3s ease-in-out;
     visibility: hidden;
+    width: 0;
+    border-right: 1px solid $color-palette-gray-300;
 
     &.expanded {
         /* This is the width according to figma */

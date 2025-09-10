@@ -15,7 +15,6 @@ import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -98,24 +97,24 @@ public interface ContentTypeAPI {
   ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException;
 
   /**
-   * Returns a list of Content Types based on the specified list of Velocity Variable Names. If one or more Velocity
-   * Variable Names don't exist in the content repository, or if current User doesn't have access to them, they will
-   * not be added to the result list.
+   * Returns a list of Content Types based on the specified list of Velocity Variable Names. If
+   * one or more Velocity Variable Names don't exist in the content repository, or if current User
+   * doesn't have access to them, they will not be added to the result list.
    *
    * @param varNames The list of Velocity Variable Names each corresponding to a Content Type.
-   * @param filter   Optional filtering parameter used to query for a specific Content Type name or Variable Name.
+   * @param filter   Optional filtering parameter used to query for a specific Content Type name
+   *                 or Variable Name.
    * @param offset   The specified offset in the result set, for pagination purposes.
    * @param limit    The specified limit in the result set, for pagination purposes.
-   * @param orderBy  The order-by clause, which is internally sanitized by the API. For more information, please refer
-   *                 to {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
-   *
+   * @param orderBy  The order-by clause, which is internally sanitized by the API. For more
+   *                 information, please refer to
+   *                 {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
    * @return The list of {@link ContentType} objects matching the specified variable names.
-   *
-   * @throws DotSecurityException The User accessing this API does not have the required permissions to perform this
-   *                              action.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
    * @throws DotDataException     An error occurred when interacting with the data source.
    */
-  Optional<List<ContentType>> find(final List<String> varNames, final String filter, final int offset, final int limit,
+  List<ContentType> find(final List<String> varNames, final String filter, final int offset, final int limit,
                                    final String orderBy) throws DotSecurityException, DotDataException;
 
   /**
