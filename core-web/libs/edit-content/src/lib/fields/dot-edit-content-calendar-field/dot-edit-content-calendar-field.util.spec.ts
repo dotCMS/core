@@ -573,7 +573,8 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             // formValue (UTC) might be different day due to timezone conversion, allow ±2 days
             const expectedFormDate = todayInServerTz.getDate();
             const actualFormDate = result?.formValue.getDate();
-            expect(Math.abs(actualFormDate! - expectedFormDate)).toBeLessThanOrEqual(2);
+            expect(actualFormDate).toBeDefined();
+            expect(Math.abs(actualFormDate - expectedFormDate)).toBeLessThanOrEqual(2);
         });
 
         it('should handle "now" defaultValue correctly for DATE fields', () => {
