@@ -10,6 +10,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCardFieldLabelComponent {
-    $for = input.required<string>({ alias: 'for' });
+    $for = input<string>(null, { alias: 'for' });
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
 }

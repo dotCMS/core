@@ -1,11 +1,5 @@
 import { computed, inject } from '@angular/core';
-import {
-    ControlValueAccessor,
-    FormControl,
-    NgControl,
-    ValidationErrors,
-    Validators
-} from '@angular/forms';
+import { ControlValueAccessor, FormControl, NgControl, Validators } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -37,44 +31,7 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
      */
     abstract $field: () => DotCMSContentTypeField;
 
-    /**
-     * Checks if the field has validation errors and has been touched
-     * @returns true if the field has errors and has been touched
-     */
-    get hasError(): boolean {
-        const control = this.$formControl();
-        return !!(control.invalid && control.touched);
-    }
-
-    /**
-     * Gets the validation errors for the current field
-     * @returns ValidationErrors object or null if no errors
-     */
-    get errors(): ValidationErrors | null {
-        return this.$formControl().errors;
-    }
-
-    /**
-     * Checks if the field is required based on validation errors
-     * @returns true if the field is required
-     */
-    get isRequired(): boolean {
-        const control = this.$formControl();
-        if (control.hasValidator(Validators.required)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks if the field is disabled
-     * @returns true if the field is disabled
-     */
-    get isDisabled(): boolean {
-        return this.$formControl().disabled;
-    }
-
-    protected onChange: ((value: string) => void) | null = null;
+    protected onChange: ((value: unknown) => void) | null = null;
     protected onTouched: (() => void) | null = null;
 
     /**
@@ -98,4 +55,21 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
     }
 
     abstract writeValue(value: unknown): void;
+
+    get hasError(): boolean {
+        const control = this.$formControl();
+        return !!(control.invalid && control.touched);
+    }
+
+    get isRequired(): boolean {
+        const control = this.$formControl();
+        if (control.hasValidator(Validators.required)) {
+            return true;
+        }
+        return false;
+    }
+
+    get isDisabled(): boolean {
+        return this.$formControl().disabled;
+    }
 }

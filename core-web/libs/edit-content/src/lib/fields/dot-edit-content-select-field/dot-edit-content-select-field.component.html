@@ -5,23 +5,18 @@
     @if (showLabel) {
         <dot-card-field-label
             [attr.data-testId]="'label-' + field.variable"
-            [isRequired]="isRequired"
-            [for]="field.variable">
+            [isRequired]="isRequired">
             {{ field.name }}
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        <input
-            [id]="field.variable"
-            [name]="field.variable"
+        <p-dropdown
             [formControl]="$formControl()"
-            [class.ng-invalid]="hasError"
-            [class.ng-dirty]="hasError"
-            [attr.data-testId]="field.variable"
-            [type]="inputTextOptions[field.dataType].type"
-            [attr.inputmode]="inputTextOptions[field.dataType].inputMode"
-            [attr.step]="inputTextOptions[field.dataType].step"
-            pInputText />
+            [name]="field.variable"
+            [options]="$options()"
+            [attr.aria-labelledby]="'field-' + $field().variable"
+            optionLabel="label"
+            optionValue="value" />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (hasError) {
@@ -31,7 +26,6 @@
                 }
             </div>
         }
-
         @if (!hasError && field.hint) {
             <div class="hint-message">
                 <small [attr.data-testId]="'hint-' + field.variable">

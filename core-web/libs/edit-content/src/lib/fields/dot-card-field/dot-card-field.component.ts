@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
     selector: 'dot-card-field',
     template: `
-        @if ($hasError) {
+        @if ($hasError()) {
             <div class="field-error-marker"></div>
         }
 
