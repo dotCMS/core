@@ -66,6 +66,21 @@
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
         </p-tabPanel>
+        <p-tabPanel class="h-full flex-column tab-panel tab-panel--history">
+            <ng-template pTemplate="header">
+                <i class="pi pi-history"></i>
+            </ng-template>
+            <ng-template pTemplate="content">
+                <!-- History section -->
+                <dot-edit-content-sidebar-history
+                    [historyItems]="$versionsItems()"
+                    [status]="$historyStatus()"
+                    [contentIdentifier]="$store.contentlet()?.identifier || ''"
+                    [pagination]="$versionsPagination()"
+                    (pageChange)="onVersionsPageChange($event)"
+                    data-testId="history" />
+            </ng-template>
+        </p-tabPanel>
 
         <p-tabPanel class="h-full flex-column tab-panel tab-panel--activities">
             <ng-template pTemplate="header">

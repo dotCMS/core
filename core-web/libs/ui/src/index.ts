@@ -23,6 +23,7 @@ export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
+export * from './lib/components/dot-sidebar-accordion';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
 export * from './lib/components/dot-temp-file-thumbnail/dot-temp-file-thumbnail.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
@@ -30,6 +31,8 @@ export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
 export * from './lib/modules/dot-dialog/dot-dialog.component';
+export * from './lib/dot-tree-folder/dot-tree-folder.component';
+
 // Directives
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
 export * from './lib/directives/dot-avatar/dot-avatar.directive';
