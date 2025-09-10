@@ -54,7 +54,8 @@ import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
     MockDotMessageService,
-    mockSites
+    mockSites,
+    SiteServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotTemplateListComponent } from './dot-template-list.component';
@@ -413,7 +414,7 @@ describe('DotTemplateListComponent', () => {
     const messageServiceMock = new MockDotMessageService(messages);
 
     const dialogRefClose = new Subject();
-    const switchSiteSubject = new Subject();
+    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -436,15 +437,7 @@ describe('DotTemplateListComponent', () => {
                 },
                 {
                     provide: SiteService,
-                    useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        }
-                    }
+                    useValue: siteServiceMock
                 },
                 StringUtils,
                 DotTemplatesService,
@@ -493,7 +486,7 @@ describe('DotTemplateListComponent', () => {
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
     });
 
-    it('should reload portlet only when the site change', () => {
+    it('should set archive checkbox as binary', () => {
         const checkbox = fixture.debugElement.query(
             By.css('[data-testId="archiveCheckbox"]')
         ).componentInstance;
@@ -527,8 +520,8 @@ describe('DotTemplateListComponent', () => {
         }));
 
         it('should reload portlet only when the site change', () => {
-            switchSiteSubject.next(mockSites[0]); // setting the site
-            switchSiteSubject.next(mockSites[1]); // switching the site
+            fixture.detectChanges(); // Initialize component and subscriptions
+            siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });

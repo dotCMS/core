@@ -6,7 +6,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
+import { filter, map, pluck, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -602,7 +602,7 @@ browse from the page internal links
     }
 
     private subscribeSwitchSite(): void {
-        this.siteService.switchSite$.pipe(skip(1), takeUntil(this.destroy$)).subscribe(() => {
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.reload(null);
         });
     }

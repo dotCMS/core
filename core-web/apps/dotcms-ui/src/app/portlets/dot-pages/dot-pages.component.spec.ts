@@ -1,4 +1,4 @@
-import { Observable, Subject, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -42,7 +42,8 @@ import {
     LoginServiceMock,
     MockDotHttpErrorManagerService,
     MockDotRouterService,
-    mockResponseView
+    mockResponseView,
+    SiteServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -170,7 +171,7 @@ describe('DotPagesComponent', () => {
     const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
         new DotContentletEditorServiceMock();
 
-    const switchSiteSubject = new Subject();
+    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -231,15 +232,7 @@ describe('DotPagesComponent', () => {
                 },
                 {
                     provide: SiteService,
-                    useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        }
-                    }
+                    useValue: siteServiceMock
                 }
             ]
         }).compileComponents();
@@ -442,9 +435,8 @@ describe('DotPagesComponent', () => {
     });
 
     it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
+        siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
         expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-        expect(component.scrollToTop).toHaveBeenCalled();
+        expect(component.scrollToTop).toHaveBeenCalledTimes(1);
     });
 });

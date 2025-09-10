@@ -14,7 +14,7 @@ import {
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotEventsService,
@@ -188,7 +188,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                 });
             });
 
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.#store.getPages({ offset: 0 });
             this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
         });
