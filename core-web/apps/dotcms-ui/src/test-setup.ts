@@ -58,3 +58,18 @@ console.error = (...args: unknown[]) => {
 
     originalConsoleError(...args);
 };
+
+// Mock sessionStorage for JSDOM
+const mockSessionStorage = {
+    getItem: jest.fn().mockReturnValue(null),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn(),
+    length: 0,
+    key: jest.fn()
+};
+
+Object.defineProperty(window, 'sessionStorage', {
+    value: mockSessionStorage,
+    writable: true
+});
