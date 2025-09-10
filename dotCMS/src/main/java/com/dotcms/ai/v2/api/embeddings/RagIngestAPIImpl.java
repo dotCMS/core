@@ -37,6 +37,13 @@ public class RagIngestAPIImpl implements RagIngestAPI {
 
     @Inject
     public RagIngestAPIImpl(final ContentExtractor contentExtractor,
+                            final ModelProviderFactory modelProviderFactory) {
+
+       this(contentExtractor, new FixedSizeChunker(1200, 200), // todo see this should be configurable)
+                        modelProviderFactory);
+    }
+
+    public RagIngestAPIImpl(final ContentExtractor contentExtractor,
                             final TextChunker textChunker,
                             final ModelProviderFactory modelProviderFactory) {
 

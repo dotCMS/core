@@ -34,15 +34,13 @@ import java.util.stream.Collectors;
 @Produces(MediaType.APPLICATION_JSON)
 public class RagResource {
 
-    private final Retriever retriever;
     private final RagIngestAPI ragIngestAPI;
 
     @Inject
-    public RagResource(final Retriever retriever,
-                       final RagIngestAPI ragIngestAPI) {
-        this.retriever = retriever;
+    public RagResource(final RagIngestAPI ragIngestAPI) {
         this.ragIngestAPI = ragIngestAPI;
     }
+
 
 
     @POST
@@ -107,6 +105,7 @@ public class RagResource {
             throw new BadRequestException("query is required");
         }
 
+        final Retriever retriever = null; // todo: build the retriever here
         final RetrievalQuery.Builder retrievalQueryBuilder = RetrievalQuery.builder();
         retrievalQueryBuilder.prompt(ragSearchRequest.getQuery());
         ragSearchRequest.getSite().ifPresent(retrievalQueryBuilder::site);

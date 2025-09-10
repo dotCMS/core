@@ -167,6 +167,18 @@ public final class RetrievalQuery {
             return this;
         }
 
+        /**
+         * minimum score threshold that a result must meet to be considered relevant.
+         *
+         * examples:
+         * Cosine similarity: Values close to 1.0 = very similar, close to 0 = slightly similar.
+         *
+         * Inner product: Large positive values = very similar.
+         *
+         * Euclidean distance: Small values = very similar (here we sometimes transform this to a score)
+         * @param threshold
+         * @return
+         */
         public Builder threshold(double threshold) {
             this.threshold = threshold;
             return this;

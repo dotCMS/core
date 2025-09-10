@@ -1,6 +1,5 @@
 package com.dotcms.ai.v2.api.embeddings;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

@@ -33,13 +33,11 @@ import java.util.List;
  * </ul>
  * @author jsanca
  */
-@ApplicationScoped
 public class OrchestratorImpl implements Orchestrator {
 
     private final ModelProviderFactory modelFactory;
     private final Retriever retriever;
 
-    @Inject
     public OrchestratorImpl(final ModelProviderFactory modelFactory, final Retriever retriever) {
         this.modelFactory = modelFactory;
         this.retriever = retriever;

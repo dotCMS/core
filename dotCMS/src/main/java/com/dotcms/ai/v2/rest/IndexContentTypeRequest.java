@@ -73,6 +73,14 @@ public final class IndexContentTypeRequest {
                 '}';
     }
 
+    public Optional<String> getIndexName() {
+        return Optional.empty();
+    }
+
+    public Optional<String> getEmbeddingProviderKey() {
+        return Optional.empty();
+    }
+
     // Builder Class
     public static final class Builder {
         private String host;
