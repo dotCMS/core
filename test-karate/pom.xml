@@ -22,10 +22,12 @@
         <postman.test.skip>true</postman.test.skip>
         <!-- Some tests e.g. in ApiToken_Resource.postman_collection currently fail unless docker external port is same as internal -->
         <tomcat.port>8080</tomcat.port>
+        <management.port>8090</management.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
         <karate.version>1.5.0</karate.version>
         <karate.test.skip>true</karate.test.skip>
         <karate.base.url>http://localhost:${tomcat.port}</karate.base.url>
+        <karate.management.url>http://localhost:${management.port}</karate.management.url>
         <it.test>KarateCITests#defaults</it.test>
     </properties>
 
@@ -127,6 +129,9 @@
                     <skip>${karate.test.skip}</skip>
                     <systemPropertyVariables>
                         <karate.base.url>${karate.base.url}</karate.base.url>
+                        <karate.management.url>${karate.management.url}</karate.management.url>
+                        <karate.regular.port>${tomcat.port}</karate.regular.port>
+                        <karate.management.port>${management.port}</karate.management.port>
                     </systemPropertyVariables>
                     <includes>
                         <include>**/*.java</include>

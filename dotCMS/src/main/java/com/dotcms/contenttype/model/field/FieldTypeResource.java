@@ -19,6 +19,7 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
@@ -26,6 +27,7 @@ import static com.dotcms.util.CollectionsUtils.toImmutableList;
  * This end-point provides access to information associated to dotCMS FieldType.
  */
 @Path("/v1/fieldTypes")
+@Tag(name = "Content Type Field", description = "Content type field definitions and configuration")
 public class FieldTypeResource {
 
     private final WebResource webResource;

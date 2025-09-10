@@ -4,6 +4,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Theme;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Logger;
 
 import java.util.Date;
@@ -38,6 +39,12 @@ public class SystemTemplate extends Template {
 		super.setFriendlyName(SYSTEM_TEMPLATE_NAME);
 		super.setDrawed(true);
     }
+
+	// we override it, in order to do the permissionable behind a template object
+	@Override
+	public String getPermissionType() {
+		return Template.class.getCanonicalName();
+	}
 
 	@Override
 	public void setIdentifier(String identifier) {

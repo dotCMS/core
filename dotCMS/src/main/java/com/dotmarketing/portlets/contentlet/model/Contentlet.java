@@ -118,7 +118,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String MOD_USER_KEY = "modUser";
 	public static final String MOD_USER_NAME_KEY = "modUserName";
 	public static final String OWNER_KEY = "owner";
-	public static final String OWNER_NAME_KEY = "ownerName";
+	public static final String OWNER_USER_NAME_KEY = "ownerUserName";
 	public static final String PUBLISH_DATE_KEY = "publishDate";
 	public static final String PUBLISH_USER_KEY = "publishUser";
 	public static final String PUBLISH_USER_NAME_KEY = "publishUserName";
@@ -132,6 +132,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private static final long serialVersionUID = 1L;
   public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
   public static final String VARIANT_ID = "variantId";
+  public static final String VARIANT = "variant";
   public static final String STRUCTURE_INODE_KEY = "stInode";
   public static final String STRUCTURE_NAME_KEY = "stName";
   public static final String CONTENT_TYPE_KEY = "contentType";
@@ -188,6 +189,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String HAS_LIVE_VERSION = "hasLiveVersion";
 
   public static final String SKIP_RELATIONSHIPS_VALIDATION = "__skipRelationshipValidation__";
+
+  public static final String EVENT_VAR_NAME = "calendarEvent";
 
   private transient ContentType contentType;
   protected Map<String, Object> map;
@@ -833,17 +836,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param objValue
 	 * @throws DotRuntimeException
 	 */
-	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
-	    if (fieldVarName!= null && isRelationshipField(fieldVarName)){
-	        setRelated(fieldVarName, (List<Contentlet>) objValue);
-        } else{
-            map.put(fieldVarName, objValue);
-			addRemoveNullProperty(fieldVarName, objValue);
-		}
-	}
+    public void setProperty(String fieldVarName, Object objValue) throws DotRuntimeException {
+        if (fieldVarName != null && isRelationshipField(fieldVarName)) {
+            if (objValue instanceof List) {
+                setRelated(fieldVarName, (List<Contentlet>) objValue);
+                return;
+            }
+            //When invoked from a copyContentlet action the relationship field value is a String representation of the identifier or a query
+            if (objValue instanceof String) {
+                //here we might have a query or an identifier, but this method can handle both cases
+                setRelatedByQuery(fieldVarName, objValue.toString(), null, APILocator.systemUser(),
+                        false);
+                return;
+            }
+        }
+        map.put(fieldVarName, objValue);
+        addRemoveNullProperty(fieldVarName, objValue);
+    }
 
 	private void addRemoveNullProperty(String fieldVarName, Object objValue) {
-		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property itself.
 			if (null == objValue) {
 				addNullProperty(fieldVarName);
 			} else {
@@ -1444,7 +1456,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     @JsonIgnore
 	public boolean isCalendarEvent() {
-		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
+		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  EVENT_VAR_NAME.equalsIgnoreCase(getStructure().getVelocityVarName()) ;
 	}
 
 	/**

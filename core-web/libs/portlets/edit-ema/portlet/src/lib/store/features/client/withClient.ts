@@ -1,19 +1,18 @@
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withComputed,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
-import { CustomClientParams } from '@dotcms/client';
+import { computed } from '@angular/core';
 
+import { DotCMSPageAsset } from '@dotcms/types';
+
+import { PERSONA_KEY } from '../../../shared/consts';
 import { UVEState } from '../../models';
-
-/**
- * Client request properties
- *
- * @export
- * @interface ClientRequestProps
- */
-export interface ClientRequestProps {
-    params?: CustomClientParams;
-    query?: string;
-}
 
 /**
  * Client configuration state
@@ -22,16 +21,23 @@ export interface ClientRequestProps {
  * @interface ClientConfigState
  */
 export interface ClientConfigState {
+    legacyGraphqlResponse: boolean;
     isClientReady: boolean;
-    clientRequestProps: ClientRequestProps;
+    graphql: {
+        query: string;
+        variables: Record<string, string>;
+    };
+    graphqlResponse: {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    };
 }
 
-const initialState: ClientConfigState = {
+const clientState: ClientConfigState = {
+    graphql: null,
+    graphqlResponse: null,
     isClientReady: false,
-    clientRequestProps: {
-        params: null,
-        query: ''
-    }
+    legacyGraphqlResponse: false
 };
 
 /**
@@ -47,25 +53,66 @@ export function withClient() {
         {
             state: type<UVEState>()
         },
-        withState<ClientConfigState>(initialState),
+        withState<ClientConfigState>(clientState),
         withMethods((store) => {
             return {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setClientConfiguration: ({ query, params }: ClientRequestProps) => {
+                setCustomGraphQL: ({ query, variables }, legacyGraphqlResponse) => {
                     patchState(store, {
-                        // Added this to avoid the client ready event to be triggered
-                        isClientReady: true,
-                        clientRequestProps: {
+                        legacyGraphqlResponse,
+                        graphql: {
                             query,
-                            params
+                            variables
                         }
                     });
                 },
+                setGraphqlResponse: (graphqlResponse) => {
+                    patchState(store, { graphqlResponse });
+                },
                 resetClientConfiguration: () => {
-                    patchState(store, { ...initialState });
+                    patchState(store, { ...clientState });
                 }
+            };
+        }),
+        withComputed((store) => {
+            return {
+                $customGraphqlResponse: computed(() => {
+                    if (!store.graphqlResponse()) {
+                        return null;
+                    }
+
+                    // Old customers using graphQL expect only the page.
+                    // We can remove this once we are in stable and tell the devs this won't work in new dotCMS versions.
+                    if (store.legacyGraphqlResponse()) {
+                        return store.graphqlResponse()?.pageAsset;
+                    }
+
+                    return {
+                        ...store.graphqlResponse(),
+                        grapql: store.graphql()
+                    };
+                }),
+                $graphqlWithParams: computed(() => {
+                    if (!store.graphql()) {
+                        return null;
+                    }
+
+                    const params = store.pageParams();
+                    const { mode, language_id, url } = params;
+
+                    return {
+                        ...store.graphql(),
+                        variables: {
+                            ...store.graphql().variables,
+                            url,
+                            mode,
+                            languageId: language_id,
+                            personaId: params[PERSONA_KEY]
+                        }
+                    };
+                })
             };
         })
     );

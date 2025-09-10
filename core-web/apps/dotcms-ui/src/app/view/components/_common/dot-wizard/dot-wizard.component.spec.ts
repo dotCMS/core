@@ -16,8 +16,6 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -41,6 +39,8 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotWizardComponent } from './dot-wizard.component';
 
+import { DotParseHtmlService } from '../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
 import { PushPublishServiceMock } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
@@ -65,7 +65,8 @@ const wizardInput: DotWizardInput = {
 @Component({
     selector: 'dot-form-one',
     template:
-        '<form><span>name: </span><input class="formOneFirst" /><br><span>last Name:</span><input/></form>'
+        '<form><span>name: </span><input class="formOneFirst" /><br><span>last Name:</span><input/></form>',
+    standalone: false
 })
 class FormOneComponent {
     @Input() data: DotPushPublishDialogData;
@@ -75,7 +76,8 @@ class FormOneComponent {
 
 @Component({
     selector: 'dot-form-two',
-    template: '<form><input class="formTwoFirst"/></form>'
+    template: '<form><input class="formTwoFirst"/></form>',
+    standalone: false
 })
 class FormTwoComponent {
     @Input() data: DotPushPublishDialogData;
@@ -160,6 +162,9 @@ describe('DotWizardComponent', () => {
     }));
 
     describe('multiple steps', () => {
+        let formOneFirst: DebugElement;
+        let formOneFirstSPy: jasmine.Spy;
+
         beforeEach(fakeAsync(() => {
             fixture = TestBed.createComponent(DotWizardComponent);
             component = fixture.componentInstance;
@@ -171,7 +176,10 @@ describe('DotWizardComponent', () => {
             dotWizardService.open(wizardInput);
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(2001); // interval time to focus first element.
+            tick(0); // interval time to render the elements.
+            formOneFirst = fixture.debugElement.query(By.css('.formOneFirst'));
+            formOneFirstSPy = spyOn(formOneFirst.nativeElement, 'focus');
+            tick(1001); // interval time to focus first element.
             fixture.detectChanges();
             acceptButton = fixture.debugElement.query(
                 By.css('[data-testid="dialog-accept-button"]')
@@ -188,11 +196,9 @@ describe('DotWizardComponent', () => {
         });
 
         it('should load steps and focus fist form element', () => {
-            const firstField = fixture.debugElement.query(By.css('.formOneFirst'));
-
             expect(component.formHosts.length).toEqual(2);
             expect(stepContainers.length).toEqual(2);
-            expect(firstField.nativeElement).toEqual(document.activeElement);
+            expect(formOneFirstSPy).toHaveBeenCalled();
         });
 
         it('should load buttons', () => {

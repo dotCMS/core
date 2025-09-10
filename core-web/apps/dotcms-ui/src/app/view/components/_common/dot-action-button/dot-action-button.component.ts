@@ -23,7 +23,8 @@ import { Menu } from 'primeng/menu';
 @Component({
     selector: 'dot-action-button',
     styleUrls: ['./dot-action-button.component.scss'],
-    templateUrl: 'dot-action-button.component.html'
+    templateUrl: 'dot-action-button.component.html',
+    standalone: false
 })
 export class DotActionButtonComponent implements OnInit, OnChanges {
     @ViewChild('menu')

@@ -4,19 +4,26 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityListView;
+import com.dotcms.rest.ResponseEntityRestTagListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.TagsPaginator;
+import com.dotcms.rest.ResponseEntityTagOperationView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.tag.RestTag;
-import com.dotcms.rest.tag.TagForm;
 import com.dotcms.rest.tag.TagsResourceHelper;
-import com.dotcms.rest.tag.UpdateTagForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.tag.business.TagAPI;
@@ -26,9 +33,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
@@ -43,13 +56,16 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
@@ -60,9 +76,11 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
  * @author jsanca
  */
 @Path("/v2/tags")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Tags", description = "Content tagging and labeling")
 public class TagResource {
 
     public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags with Inode %s were found.";
+
     private final WebResource webResource;
     private final TagAPI tagAPI;
 	private final TagsResourceHelper helper;
@@ -89,163 +107,360 @@ public class TagResource {
     }
 
     /**
-     * Lists all Tags based on the provided criteria. If a Tag name is provided, a search-by-name
-     * (like) operation will be performed instead. The search-by-name operation can be delimited by
-     * a Site ID as well. If no matches are found against the Site ID, the search-by-name operation
-     * will be performed against the global tags.
+     * Searches and lists tags with filtering, pagination, and sorting.
+     * The filter parameter performs a case-insensitive search with wildcards on both sides
+     * (e.g., "market" matches "Marketing", "marketplace", "supermarket").
+     * When using the filter, results are ordered by match length (shortest first) to prioritize exact matches.
+     * The site parameter accepts either a site ID or site name for filtering by specific sites.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagName  The name of the Tag to search for.
-     * @param siteId   The ID of the Site where the specified Tag lives, in case it was provided.
+     * @param filter   Tag name filter (LIKE search).
+     * @param global   Include system/global tags.
+     * @param site     Filter by site (ID, name, or SYSTEM_HOST).
+     * @param page     Page number.
+     * @param perPage  Items per page.
+     * @param orderBy  Sort field.
+     * @param direction Sort direction.
      *
-     * @return The {@link ResponseEntityTagMapView} containing the list of Tags that match the
-     * provided criteria.
+     * @return The {@link ResponseEntityPaginatedDataView} containing the paginated list of Tags.
      */
+    @Operation(
+        summary = "List/Search Tags",
+        description = "Searches and lists tags with filtering, pagination, and sorting. " +
+                      "The filter parameter performs a case-insensitive search with wildcards " +
+                      "on both sides (e.g., \"market\" matches \"Marketing\", \"marketplace\", \"supermarket\"). " +
+                      "When using the filter, results are ordered by match length " +
+                      "(shortest first) to prioritize exact matches. " +
+                      "The site parameter accepts either a site ID or site name for filtering by specific sites."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Tags retrieved successfully with pagination metadata",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad Request - Invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - Authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - Insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+                    description = "Internal Server Error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView list(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                         @QueryParam("name") final String tagName,
-                                         @QueryParam("siteId") final String siteId) {
-
-        final InitDataObject initDataObject =
-                new WebResource.InitBuilder(webResource)
-                        .requiredAnonAccess(AnonymousAccess.READ)
-                        .requestAndResponse(request, response).init();
+    public ResponseEntityPaginatedDataView list(
+        @Context final HttpServletRequest request,
+        @Context final HttpServletResponse response,
+        @Parameter(description = "Tag name filter (LIKE search)", example = "market")
+        @QueryParam("filter") final String filter,
+        @Parameter(description = "Include system/global tags", example = "true")
+        @QueryParam("global") @DefaultValue("false") final Boolean global,
+        @Parameter(description = "Filter by site (ID, name, or SYSTEM_HOST)",
+                   example = "48190c8c-42c4-46af-8d1a-0cd5db894797")
+        @QueryParam("site") final String site,
+        @Parameter(description = "Page number", example = "1")
+        @QueryParam("page") @DefaultValue("1") final Integer page,
+        @Parameter(description = "Items per page", example = "25")
+        @QueryParam("per_page") final Integer perPage,
+        @Parameter(description = "Sort field", example = "tagname")
+        @QueryParam("orderBy") @DefaultValue("tagname") final String orderBy,
+        @Parameter(description = "Sort direction", example = "ASC")
+        @QueryParam("direction") @DefaultValue("ASC") final String direction
+    ) throws DotDataException {
+        // 1. Initialize and validate
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredAnonAccess(AnonymousAccess.READ)
+                .requestAndResponse(request, response)
+                .init();
 
         final User user = initDataObject.getUser();
 
-        Logger.debug(this, UtilMethods.isSet(tagName)
-                ? String.format("Listing Tag(s) '%s' from Site '%s'", tagName, siteId)
-                : "Listing ALL Tags");
+        // 2. Resolve site parameter
+        final String resolvedSiteId = helper.resolveSiteParameter(site, user, request);
 
-        final List<Tag> tags = UtilMethods.isSet(tagName)
-                ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request, user))
-                : helper.getTagsInternal();
+        Logger.debug(this, UtilMethods.isSet(filter)
+                ? String.format("Filtering Tag(s) '%s' from Site '%s', global=%s, page=%d, perPage=%s",
+                                filter, resolvedSiteId, global, page, perPage)
+                : String.format("Listing ALL Tags from Site '%s', global=%s, page=%d, perPage=%s",
+                                resolvedSiteId, global, page, perPage));
 
-        return new ResponseEntityTagMapView(toRestTagMap(tags));
+        // 3. Use PaginationUtil with TagsPaginator
+        final PaginationUtil paginationUtil = new PaginationUtil(new TagsPaginator());
+
+        // 4. Build extra parameters for site and global filtering
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(TagsPaginator.FILTER_PARAM, filter);
+        extraParams.put(TagsPaginator.SITE_ID_PARAM, resolvedSiteId);
+        extraParams.put(TagsPaginator.GLOBAL_PARAM, global);
+
+        // 5. Build pagination parameters - let PaginationUtil handle validation and defaults
+        final PaginationUtilParams<RestTag, List<RestTag>> params = new PaginationUtilParams.Builder<RestTag, List<RestTag>>()
+            .withRequest(request)
+            .withResponse(response)
+            .withUser(user)
+            .withFilter(filter)
+            .withPage(page != null ? page : 1)
+            .withPerPage(perPage != null ? perPage : 0)  // Let PaginationUtil apply config default
+            .withOrderBy(orderBy)
+            .withDirection("DESC".equalsIgnoreCase(direction) ? OrderDirection.DESC : OrderDirection.ASC)
+            .withExtraParams(extraParams)
+            .build();
+
+        // 6. Return paginated response using standard pattern
+        return paginationUtil.getPageView(params);
     }
 
     /**
-     * Creates one or more Tags and link them to an owner/user, if provided.
+     * Creates one or more tags. Accepts a list of tag objects for unified single and bulk operations.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagForm  The {@link TagForm} containing the Tags to save.
+     * @param tagForms The list of {@link TagForm} objects containing the tags to create.
      *
-     * @return The {@link ResponseEntityTagMapView} containing the saved Tags.
+     * @return The {@link ResponseEntityListView} containing the created tags.
      */
+    @Operation(
+            summary = "Create tags",
+            description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201",
+                    description = "Tags created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityRestTagListView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad Request - Invalid tag data with field-level error details",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - User does not have access to Tags portlet",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal Server Error - Database or system error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView addTag(
+    public Response createTags(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final TagForm tagForm) throws DotDataException, DotSecurityException {
+            @RequestBody(description = "List of tag data to create. Single tag = list with one element, multiple tags = list with multiple elements.",
+                    required = true,
+                    content = @Content(schema = @Schema(type = "array", implementation = TagForm.class)))
+            final List<TagForm> tagForms) throws DotDataException, DotSecurityException {
 
+        // Initialize and check permissions
         final InitDataObject initDataObject = getInitDataObject(request, response);
-
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is adding tag(s): %s ", user.getUserId(), tagForm));
 
-        //We can assign tags to any user as long as we are admin.
-        final String userId = tagForm.getOwnerId();
-        final ImmutableList.Builder<Tag> savedTags = ImmutableList.builder();
-        final Map<String, RestTag> tags = tagForm.getTags();
+        Logger.debug(TagResource.class,()->String.format("User '%s' is adding %d tag(s)", user.getUserId(), tagForms.size()));
 
-        saveTags(request, tags, user, userId, savedTags);
+        // Validate all tags upfront - fail fast with structured error
+        for (final TagForm form : tagForms) {
+            form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
+        }
 
-        return new ResponseEntityTagMapView(toRestTagMap(savedTags.build()));
+        // Create all tags
+        final List<Tag> savedTags = saveTags(request, tagForms, user);
+
+        // Convert to RestTag list for response
+        final List<RestTag> resultList = savedTags.stream()
+            .map(TagsResourceHelper::toRestTag)
+            .collect(Collectors.toList());
+
+        return Response.status(Response.Status.CREATED)
+                .entity(new ResponseEntityRestTagListView(resultList))
+                .build();
     }
 
+
     /**
-     * Saves a Tag in dotCMS.
+     * Saves Tags in dotCMS using a list-based approach.
      *
      * @param request   The current instance of the {@link HttpServletRequest}.
-     * @param tags      The {@link Map} containing the Tags to save.
+     * @param tagForms  The {@link List} of {@link TagForm} containing the Tags to save.
      * @param user      The {@link User} performing the operation.
-     * @param userId    The ID of the User to link the Tag to.
-     * @param savedTags The {@link ImmutableList.Builder} containing the Tags that were saved.
      *
+     * @return List of created {@link Tag} objects.
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
     @WrapInTransaction
-    private void saveTags(final HttpServletRequest request,
-                          final Map<String, RestTag> tags,
-                          final User user, final String userId,
-                          final ImmutableList.Builder<Tag> savedTags)
+    private List<Tag> saveTags(final HttpServletRequest request,
+                               final List<TagForm> tagForms,
+                               final User user)
             throws DotDataException, DotSecurityException {
 
-        for (final Entry<String, RestTag> entry : tags.entrySet()) {
-            final String tagKey = entry.getKey();
-            final RestTag tag   = entry.getValue();
-            final String siteId = helper.getValidateSite(tag.siteId, user, request);
-            final Tag createdTag = tagAPI.getTagAndCreate(tagKey, userId, siteId);
-            Logger.debug(TagResource.class, String.format("Saving Tag '%s'", createdTag.getTagName()));
-            savedTags.add(createdTag);
-            if (UtilMethods.isSet(userId)) {
-                tagAPI.addUserTagInode(createdTag, userId);
-                Logger.debug(TagResource.class, String.format("Tag '%s' is now bound to user '%s'",createdTag.getTagName(), userId));
+        final List<Tag> savedTags = new ArrayList<>();
+
+        for (TagForm form : tagForms) {
+            // Resolve site
+            final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
+
+            // Create or get tag
+            final boolean persona = (form.getPersona() != null) ? form.getPersona() : false;
+            final Tag tag = tagAPI.getTagAndCreate(
+                form.getName(),
+                form.getOwnerId(),
+                siteId,
+                persona,
+                false
+            );
+
+            Logger.debug(TagResource.class, String.format("Saving Tag '%s'", tag.getTagName()));
+
+            // Bind to owner if specified
+            if (UtilMethods.isSet(form.getOwnerId())) {
+                tagAPI.addUserTagInode(tag, form.getOwnerId());
+                Logger.debug(TagResource.class,
+                    String.format("Tag '%s' is now bound to user '%s'",
+                        tag.getTagName(), form.getOwnerId()));
             }
+
+            savedTags.add(tag);
         }
+
+        return savedTags;
     }
 
     /**
-     * Updates the information belonging to a specific Tag.
+     * Updates a tag's name and/or site assignment.
+     * You can identify the tag by its UUID or by its name.
+     * When using a tag name, you must specify which site's tag you want to update via the siteId query parameter.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagForm  The {@link UpdateTagForm} containing the Tag information to update.
+     * @param idOrName The UUID or name of the tag to update.
+     * @param siteId   Required when idOrName is a tag name (for identification).
+     * @param tagForm  The {@link UpdateTagForm} containing the updated tag data.
      *
-     * @return The {@link ResponseEntityTagMapView} containing the updated Tag information.
+     * @return The {@link ResponseEntityRestTagView} containing the updated tag.
      */
+    @Operation(
+            summary = "Update tag",
+            description = "Updates a tag's name and site assignment. You can identify the tag by its UUID or by its name. When using a tag name, you must specify which site's tag you want to update via the siteId query parameter."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tag updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityRestTagView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad Request - Invalid input data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "Tag not found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409",
+                    description = "Conflict - Tag name already exists on target site",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - User does not have access to Tags portlet",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal Server Error - Database or system error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
+    @Path("/{idOrName}")
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView updateTag(
+    public ResponseEntityRestTagView updateTag(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final UpdateTagForm tagForm) throws DotDataException {
+            @Parameter(description = "Tag UUID or tag name", required = true)
+            @PathParam("idOrName") final String idOrName,
+            @Parameter(description = "Site ID for name-based lookups. Required when idOrName is a tag name")
+            @QueryParam("siteId") final String siteId,
+            @RequestBody(description = "Updated tag data",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = UpdateTagForm.class)))
+            final UpdateTagForm tagForm) throws DotDataException, DotSecurityException {
 
+        // 1. Validate form upfront (like CREATE does)
+        tagForm.checkValid();
+        
+        // 2. Initialize security context
         final InitDataObject initDataObject = getInitDataObject(request, response);
-
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is updating Tag %s", user.getUserId(), tagForm));
+        
+        Logger.debug(TagResource.class, () -> String.format(
+                "User '%s' is updating tag '%s' with data %s",
+                user.getUserId(), idOrName, tagForm));
 
-        if (UtilMethods.isNotSet(tagForm.tagId) || UtilMethods.isNotSet(tagForm.siteId)
-                || UtilMethods.isNotSet(tagForm.tagName)) {
-
-            Logger.error(TagResource.class,
-                    String.format("Data for Tag `%s` is invalid or incomplete", tagForm.tagId));
-            final String errorMessage = Try
-                    .of(() -> LanguageUtil.get(user.getLocale(), "tag.save.error.default", tagForm.tagId))
-                    .getOrElse(String.format("Data for Tag `%s` is invalid or incomplete",
-                            tagForm.tagId)); //fallback message
-            throw new BadRequestException(errorMessage);
+        // 3. Find the tag to update
+        Tag existingTag = null;
+        if (isUUID(idOrName)) {
+            // Update by UUID
+            existingTag = Try.of(() -> tagAPI.getTagByTagId(idOrName)).getOrNull();
+        } else {
+            // Update by name - require siteId query parameter
+            if (!UtilMethods.isSet(siteId)) {
+                throw new BadRequestException("siteId query parameter is required when updating tag by name");
+            }
+            // Use helper for FINDING the tag (with fallbacks)
+            final String resolvedSiteId = helper.getValidateSite(siteId, user, request);
+            existingTag = Try.of(() -> tagAPI.getTagByNameAndHost(idOrName, resolvedSiteId)).getOrNull();
+        }
+        
+        if (existingTag == null) {
+            throw new NotFoundException(String.format("Tag with id %s was not found", idOrName));
         }
 
-        //We can assign tags to any user as long as we are admin.
-        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
-        if (null == tag) {
+        // 4. Validate target site exists - STRICT validation, no fallback
+        final String targetSiteId;
+        final Host targetHost = APILocator.getHostAPI().find(tagForm.getSiteId(), user, false);
+        if (targetHost == null || UtilMethods.isNotSet(targetHost.getIdentifier())) {
+            throw new BadRequestException(
+                String.format("Site with ID '%s' does not exist", tagForm.getSiteId())
+            );
+        }
+        targetSiteId = targetHost.getIdentifier();
 
-            final String errorMessage = Try.of(() -> LanguageUtil
-                    .get(user.getLocale(), "tag.id.not.found", tagForm.tagId))
-                    .getOrElse(String.format("Tag with id %s wasn't found.",
-                            tagForm.tagId)); //fallback message
-            Logger.error(TagResource.class, errorMessage);
-            throw new DoesNotExistException(errorMessage);
+        // 5. Check for duplicate if name or site is changing
+        if (!existingTag.getTagName().equals(tagForm.getName()) ||
+                !existingTag.getHostId().equals(targetSiteId)) {
+            
+            final Tag duplicateCheck = Try.of(() ->
+                    tagAPI.getTagByNameAndHost(tagForm.getName(), targetSiteId)).getOrNull();
+            
+            if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
+                throw new BadRequestException(
+                    String.format("Tag '%s' already exists for site '%s'", 
+                        tagForm.getName(), targetSiteId)
+                );
+            }
         }
 
-        tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
+        // 6. Update the tag
+        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, targetSiteId);
 
-        return new ResponseEntityTagMapView(toRestTagMap(tagAPI.getTagByTagId(tagForm.tagId)));
+        // 7. Get updated tag and return
+        final Tag updatedTag = tagAPI.getTagByTagId(existingTag.getTagId());
+        final RestTag restTag = TagsResourceHelper.toRestTag(updatedTag);
+        
+        return new ResponseEntityRestTagView(restTag);
     }
+
 
     /**
      * Retrieves all Tags owned by a given User if an owner was provided when saving such Tags.
@@ -285,47 +500,83 @@ public class TagResource {
     }
 
     /**
-     * Retrieves Tags by name or ID. If the provided value is a valid UUID, a search-by-ID operation
-     * will be performed and will yield one single result.
+     * Retrieves a Tag by name or ID. If the provided value is a valid UUID, a search-by-ID operation
+     * will be performed. If it's a name, the tag will be searched within the specified site context.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
      * @param nameOrId The name or ID of the Tag to search for.
+     * @param siteId   Optional site ID for name-based searches. If not provided, uses current site context with SYSTEM_HOST fallback.
      *
-     * @return The {@link ResponseEntityTagMapView} containing the list of Tags that match the
-     * search criteria.
+     * @return The {@link Response} containing the found Tag or error information.
      */
+    @Operation(
+            summary = "Get tag by name or ID",
+            description = "Retrieves a single tag by its name or UUID. For name-based searches, uses site context for disambiguation."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tag found successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityRestTagView.class))),
+            @ApiResponse(responseCode = "404",
+                    description = "Tag not found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - User does not have access to Tags portlet",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal Server Error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("/{nameOrId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView getTagsByNameOrId(@Context final HttpServletRequest request,
-                                                      @Context final HttpServletResponse response,
-                                                      @PathParam("nameOrId") final String nameOrId) {
+    public ResponseEntityRestTagView getTagsByNameOrId(@Context final HttpServletRequest request,
+                                                       @Context final HttpServletResponse response,
+                                                       @Parameter(description = "Tag name or UUID", required = true)
+                                                       @PathParam("nameOrId") final String nameOrId,
+                                                       @Parameter(description = "Site ID for name-based searches. If not provided, uses current site context with SYSTEM_HOST fallback")
+                                                       @QueryParam("siteId") final String siteId) throws DotDataException {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is requesting tags by name or ID '%s'", user.getUserId(), nameOrId));
-        final ImmutableList.Builder<Tag> builder = ImmutableList.builder();
+        
+        Logger.debug(TagResource.class, () -> String.format(
+            "User '%s' is requesting tag by name or ID '%s' with siteId '%s'", 
+            user.getUserId(), nameOrId, siteId));
+        
+        Tag tag = null;
         if (isUUID(nameOrId)) {
-            final Tag tag = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
-            if(null != tag) {
-                builder.add(tag);
-            }
+            // Get by ID - no site resolution needed
+            tag = Try.of(() -> tagAPI.getTagByTagId(nameOrId)).getOrNull();
         } else {
-            final List<Tag> tagsByName = Try.of(()->tagAPI.getTagsByName(nameOrId)).getOrNull();
-            builder.addAll(tagsByName);
+            // Get by name with site resolution
+            final String resolvedSiteId = helper.getValidateSite(siteId, user, request);
+            tag = Try.of(() -> tagAPI.getTagByNameAndHost(nameOrId, resolvedSiteId)).getOrNull();
+            
+            // If tag is not found in current site and we're not already checking SYSTEM_HOST, try SYSTEM_HOST as fallback
+            if (tag == null && !Host.SYSTEM_HOST.equals(resolvedSiteId)) {
+                Logger.debug(TagResource.class, () -> String.format(
+                    "Tag '%s' not found in site '%s', trying SYSTEM_HOST fallback", nameOrId, resolvedSiteId));
+                tag = Try.of(() -> tagAPI.getTagByNameAndHost(nameOrId, Host.SYSTEM_HOST)).getOrNull();
+            }
         }
-        final List<Tag> foundTags = builder.build();
-        if(foundTags.isEmpty()) {
-
-           throw new NotFoundException(String.format("No tags were found by the name or ID '%s'", nameOrId));
+        
+        if (tag == null) {
+            Logger.warn(TagResource.class, String.format(
+                "Tag not found: nameOrId='%s', siteId='%s'", nameOrId, siteId));
+            throw new DoesNotExistException(String.format("Tag not found: %s", nameOrId));
         }
-
-        return new ResponseEntityTagMapView(toRestTagMap(foundTags));
+        
+        final RestTag restTag = TagsResourceHelper.toRestTag(tag);
+        return new ResponseEntityRestTagView(restTag);
     }
-
 
     /**
      * Deletes a Tag based on its ID.
@@ -505,37 +756,79 @@ public class TagResource {
     }
 
     /**
-     * Imports Tags from a CSV file.
+     * Imports Tags from a CSV file with detailed row-level error reporting.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
      * @param form     The {@link FormDataMultiPart} containing the CSV file.
      *
-     * @return A {@link ResponseEntityBooleanView} containing the result of the import operation.
+     * @return A {@link ResponseEntityTagOperationView} containing import statistics and detailed error information.
      *
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws IOException          An error occurred when reading the CSV file.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
+    @Operation(
+        summary = "Import tags from CSV file",
+        description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics and error information for each failed row."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                description = "Import completed with detailed results",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = ResponseEntityTagOperationView.class))),
+        @ApiResponse(responseCode = "400",
+                description = "Bad Request - Invalid file format or content",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                description = "Unauthorized - Authentication required",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                description = "Forbidden - User does not have access to Tags portlet",
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+                description = "Internal Server Error - Database or system error",
+                content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/import")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final ResponseEntityBooleanView importTags(
+    public final ResponseEntityTagOperationView importTags(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @RequestBody(description = "CSV file with tag data in format: tag_name,host_id",
+                    required = true)
             final FormDataMultiPart form
     ) throws DotDataException, IOException, DotSecurityException {
         final InitDataObject initDataObject = getInitDataObject(request, response);
 
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class, String.format("User '%s' is importing Tags form CSV file.",user.getUserId()));
-        helper.importTags(form, user, request);
+        Logger.debug(TagResource.class, String.format("User '%s' is importing Tags from CSV file.", user.getUserId()));
 
-        return new ResponseEntityBooleanView(true);
+        // Get detailed import results
+        final TagsResourceHelper.TagImportResult result = helper.importTags(form, user, request);
+
+        // Build statistics map
+        final Map<String, Object> stats = Map.of(
+            "totalRows", result.totalRows,
+            "successCount", result.successCount,
+            "failureCount", result.errors.size(),
+            "success", result.errors.isEmpty()
+        );
+
+        Logger.info(TagResource.class, String.format(
+            "Tag import completed for user '%s': %d total, %d success, %d errors",
+            user.getUserId(), result.totalRows, result.successCount, result.errors.size()));
+
+        // Return a detailed response with statistics and errors
+        return new ResponseEntityTagOperationView(
+            stats,
+            List.copyOf(result.errors)
+    );
     }
 
 }

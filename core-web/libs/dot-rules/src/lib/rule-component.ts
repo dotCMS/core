@@ -6,7 +6,8 @@ import {
     ElementRef,
     Input,
     Output,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    inject
 } from '@angular/core';
 import {
     UntypedFormControl,
@@ -209,9 +210,17 @@ const I8N_BASE = 'api.sites.ruleengine';
                 </div>
             </div>
         </form>
-    `
+    `,
+    standalone: false
 })
 class RuleComponent {
+    private _user = inject(UserModel);
+    elementRef = inject(ElementRef);
+    resources = inject(I18nService);
+    ruleService = inject(RuleService);
+    apiRoot = inject(ApiRoot);
+    private loggerService = inject(LoggerService);
+
     @Input() rule: RuleModel;
     @Input() saved: boolean;
     @Input() saving: boolean;
@@ -266,15 +275,10 @@ class RuleComponent {
 
     private _rsrcCache: { [key: string]: Observable<string> };
 
-    constructor(
-        private _user: UserModel,
-        public elementRef: ElementRef,
-        public resources: I18nService,
-        public ruleService: RuleService,
-        public apiRoot: ApiRoot,
-        fb: UntypedFormBuilder,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = this.apiRoot;
+        const fb = inject(UntypedFormBuilder);
+
         this._rsrcCache = {};
         this.hideFireOn = document.location.hash.includes('edit-page') || apiRoot.hideFireOn;
 

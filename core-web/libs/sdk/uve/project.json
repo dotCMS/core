@@ -25,10 +25,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "main": "libs/sdk/uve/src/index.ts",
-                "additionalEntryPoints": [
-                    "libs/sdk/uve/src/types.ts",
-                    "libs/sdk/uve/src/internal.ts"
-                ],
+                "additionalEntryPoints": ["libs/sdk/uve/src/internal.ts"],
                 "generateExportsField": true,
                 "outputPath": "dist/libs/sdk/uve",
                 "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
@@ -38,6 +35,32 @@
                 "format": ["esm", "cjs"],
                 "extractCss": false,
                 "assets": [{ "input": "libs/sdk/uve", "output": ".", "glob": "*.md" }]
+            }
+        },
+        "build:js": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "../dotCMS/src/main/webapp/ext/uve",
+                "outputFileName": "dot-uve",
+                "format": ["esm"],
+                "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
+                "project": "libs/sdk/uve/package.json",
+                "entryFile": "libs/sdk/uve/src/script/sdk-editor.ts",
+                "external": ["react/jsx-runtime"],
+                "compiler": "tsc",
+                "extractCss": false,
+                "minify": true,
+                "declaration": false,
+                "generatePackageJson": false,
+                "esbuildOptions": {
+                    "banner": {
+                        "js": "(function(){"
+                    },
+                    "footer": {
+                        "js": "})();"
+                    }
+                }
             }
         }
     }

@@ -1,23 +1,25 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotEventsService,
+    DotIframeService,
     DotLocalstorageService,
-    DotRouterService,
-    DotIframeService
+    DotRouterService
 } from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
+import { DotMenuService } from '../../../../api/services/dot-menu.service';
+
 export const replaceSectionsMap = {
-    'edit-page': 'site-browser'
+    'edit-page': 'site-browser',
+    analytics: 'analytics-dashboard'
 };
 
 const replaceIdForNonMenuSection = (id) => {
@@ -157,21 +159,21 @@ function getTheUrlId(url: string): string {
 
 @Injectable()
 export class DotNavigationService {
+    private dotEventsService = inject(DotEventsService);
+    private dotIframeService = inject(DotIframeService);
+    private dotMenuService = inject(DotMenuService);
+    private dotRouterService = inject(DotRouterService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private loginService = inject(LoginService);
+    private router = inject(Router);
+    private dotLocalstorageService = inject(DotLocalstorageService);
+    private titleService = inject(Title);
+
     private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
     private _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
     private _appMainTitle: string;
 
-    constructor(
-        private dotEventsService: DotEventsService,
-        private dotIframeService: DotIframeService,
-        private dotMenuService: DotMenuService,
-        private dotRouterService: DotRouterService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private loginService: LoginService,
-        private router: Router,
-        private dotLocalstorageService: DotLocalstorageService,
-        private titleService: Title
-    ) {
+    constructor() {
         this._appMainTitle = this.titleService.getTitle();
         const savedMenuStatus = this.dotLocalstorageService.getItem<boolean>(DOTCMS_MENU_STATUS);
         this._collapsed$.next(savedMenuStatus === false ? false : true);

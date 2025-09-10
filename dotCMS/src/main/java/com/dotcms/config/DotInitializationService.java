@@ -15,6 +15,7 @@ import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitial
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.variant.business.DefaultVariantInitializer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.folders.business.FolderInitializer;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -139,7 +140,8 @@ public class DotInitializationService implements Serializable {
                 new AIVisionInitializer(),
                 CDIUtils.getBeanThrows(UniqueFieldsTableCleanerInitializer.class),
                 CDIUtils.getBeanThrows(UniqueFieldsValidationInitializer.class),
-                new AnalyticsInitializer()
+                new AnalyticsInitializer(),
+                new FolderInitializer()
 
         );
     } // getInternalInitializers.

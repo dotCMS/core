@@ -4,23 +4,28 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotWizardComponent } from '@components/_common/dot-wizard/dot-wizard.component';
-import { DotCommentAndAssignFormModule } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.module';
-import { DotPushPublishFormModule } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.module';
-import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
 import { DotWizardService } from '@dotcms/data-access';
 import { DotDialogModule, DotSafeHtmlPipe } from '@dotcms/ui';
 
+import { DotWizardComponent } from './dot-wizard.component';
+
+import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
+import { DotCommentAndAssignFormModule } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.module';
+import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
+
+/**
+ * Show a Dialog with a wizard with differents steps
+ */
 @NgModule({
     imports: [
         CommonModule,
-        DotSafeHtmlPipe,
-        DotCommentAndAssignFormModule,
-        DotPushPublishFormModule,
-        DotDialogModule,
-        DotContainerReferenceModule,
         DialogModule,
-        ButtonModule
+        ButtonModule,
+        DotPushPublishFormModule,
+        DotCommentAndAssignFormModule,
+        DotContainerReferenceModule,
+        DotSafeHtmlPipe,
+        DotDialogModule
     ],
     declarations: [DotWizardComponent],
     exports: [DotWizardComponent],

@@ -7,7 +7,8 @@ import {
     Component,
     ElementRef,
     HostListener,
-    Input
+    Input,
+    inject
 } from '@angular/core';
 
 @Component({
@@ -18,13 +19,13 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddWidgetComponent implements AfterViewInit {
+    private el = inject(ElementRef);
+
     @Input() label = 'Add Widget';
     @Input() icon = '';
     @Input() gridstackOptions: GridStackWidget;
 
     protected imageError = false;
-
-    constructor(private el: ElementRef) {}
 
     ngAfterViewInit(): void {
         this.el.nativeElement.gridstackNode = {

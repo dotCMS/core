@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 @Component({
     selector: 'dot-experiments-configuration-items-count',
-    standalone: true,
     imports: [CommonModule],
     templateUrl: './dot-experiments-configuration-items-count.component.html',
     styleUrls: ['./dot-experiments-configuration-items-count.component.scss'],

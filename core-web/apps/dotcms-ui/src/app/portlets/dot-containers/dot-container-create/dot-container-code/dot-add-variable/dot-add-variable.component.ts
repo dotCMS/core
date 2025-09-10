@@ -4,18 +4,15 @@ import { Component, OnInit, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import {
-    DotAddVariableState,
-    DotAddVariableStore
-} from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
-
 import { DotFieldContent } from './dot-add-variable.models';
+import { DotAddVariableState, DotAddVariableStore } from './store/dot-add-variable.store';
 
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
     styleUrls: ['./dot-add-variable.component.scss'],
-    providers: [DotAddVariableStore]
+    providers: [DotAddVariableStore],
+    standalone: false
 })
 export class DotAddVariableComponent implements OnInit {
     private readonly store = inject(DotAddVariableStore);

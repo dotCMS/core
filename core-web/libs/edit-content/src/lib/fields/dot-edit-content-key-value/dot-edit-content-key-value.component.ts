@@ -1,11 +1,10 @@
-import { Component, forwardRef } from '@angular/core';
-import { NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, ChangeDetectionStrategy, signal } from '@angular/core';
+import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 
 import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-content-key-value',
-    standalone: true,
     imports: [DotKeyValueComponent],
     templateUrl: './dot-edit-content-key-value.component.html',
     styleUrl: './dot-edit-content-key-value.component.css',
@@ -15,10 +14,11 @@ import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
             useExisting: forwardRef(() => DotEditContentKeyValueComponent),
             multi: true
         }
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentKeyValueComponent {
-    protected initialValue: DotKeyValue[] = [];
+export class DotEditContentKeyValueComponent implements ControlValueAccessor {
+    $initialValue = signal<DotKeyValue[]>([]);
     private onChange: (value: Record<string, string>) => void;
 
     updateField(value: DotKeyValue[]): void {
@@ -33,7 +33,8 @@ export class DotEditContentKeyValueComponent {
     }
 
     writeValue(value: Record<string, string>): void {
-        this.initialValue = this.parseToDotKeyValue(value);
+        const initialValue = this.parseToDotKeyValue(value);
+        this.$initialValue.set(initialValue);
     }
 
     registerOnChange(fn: (value: Record<string, string>) => void) {

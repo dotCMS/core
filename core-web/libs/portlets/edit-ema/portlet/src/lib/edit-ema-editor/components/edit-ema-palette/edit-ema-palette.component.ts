@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 
 import { DotESContentService } from '@dotcms/data-access';
-import { DotPageContainerStructure } from '@dotcms/dotcms-models';
+import { DotCMSPageAssetContainers } from '@dotcms/types';
 
 import { EditEmaPaletteContentTypeComponent } from './components/edit-ema-palette-content-type/edit-ema-palette-content-type.component';
 import { EditEmaPaletteContentletsComponent } from './components/edit-ema-palette-contentlets/edit-ema-palette-contentlets.component';
@@ -19,7 +19,6 @@ import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
 
 @Component({
     selector: 'dot-edit-ema-palette',
-    standalone: true,
     templateUrl: './edit-ema-palette.component.html',
     styleUrls: ['./edit-ema-palette.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,7 +28,7 @@ import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
 export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     @Input() languageId: number;
     @Input() variantId: string;
-    @Input() containers: DotPageContainerStructure;
+    @Input() containers: DotCMSPageAssetContainers;
 
     private readonly store = inject(DotPaletteStore);
     private destroy$ = new Subject<void>();

@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "a4249121-11a9-4a38-877e-4ec21a7d08b8",
+		"_postman_id": "cb26d522-79ac-4555-ad8c-9f0122729670",
 		"name": "User Resource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -778,6 +778,574 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "ActiveDeactive",
+			"item": [
+				{
+					"name": "CreateTestUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE creation sucessfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"test-user@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"TestUser\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"userID\", jsonData.entity.userID);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\":\"userid-test-12345678\",\n    \"active\":true,\n    \"firstName\":\"TestUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"LastTestuser\",\n    \"nickName\":\"LastTestuser\",\n    \"email\":\"test-user@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "### Create User\n\nThis endpoint allows you to create a new user.\n\n#### Request Body\n\n- `userId` (string, optional): The unique identifier for the user.\n- `active` (boolean, required): Indicates if the user is active.\n- `firstName` (string, optional): The first name of the user.\n- `middleName` (string, optional): The middle name of the user.\n- `lastName` (string, optional): The last name of the user.\n- `nickName` (string, optional): The nickname of the user.\n- `email` (string, optional): The email address of the user.\n- `male` (boolean, required): Indicates the gender of the user.\n- `languageId` (string, optional): The language identifier for the user.\n- `password` (array, required): The password for the user.\n- `roles` (array, required): The roles assigned to the user.\n    \n\n#### Response Body (JSON Schema)\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"user\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"active\": { \"type\": \"boolean\" },\n            \"actualCompanyId\": { \"type\": \"string\" },\n            \"additionalInfo\": { \"type\": \"null\" },\n            \"admin\": { \"type\": \"boolean\" },\n            \"backendUser\": { \"type\": \"boolean\" },\n            \"birthday\": { \"type\": \"null\" },\n            \"comments\": { \"type\": \"null\" },\n            \"companyId\": { \"type\": \"string\" },\n            \"createDate\": { \"type\": \"number\" },\n            \"deleteDate\": { \"type\": \"null\" },\n            \"deleteInProgress\": { \"type\": \"boolean\" },\n            \"emailAddress\": { \"type\": \"string\" },\n            \"emailaddress\": { \"type\": \"string\" },\n            \"failedLoginAttempts\": { \"type\": \"number\" },\n            \"female\": { \"type\": \"boolean\" },\n            \"firstName\": { \"type\": \"string\" },\n            \"frontendUser\": { \"type\": \"boolean\" },\n            \"fullName\": { \"type\": \"string\" },\n            \"gravitar\": { \"type\": \"string\" },\n            \"hasConsoleAccess\": { \"type\": \"boolean\" },\n            \"id\": { \"type\": \"string\" },\n            \"languageId\": { \"type\": \"string\" },\n            \"lastLoginDate\": { \"type\": \"null\" },\n            \"lastLoginIP\": { \"type\": \"null\" },\n            \"lastName\": { \"type\": \"string\" },\n            \"male\": { \"type\": \"boolean\" },\n            \"middleName\": { \"type\": \"string\" },\n            \"modificationDate\": { \"type\": \"number\" },\n            \"name\": { \"type\": \"string\" },\n            \"nickname\": { \"type\": \"string\" },\n            \"passwordExpirationDate\": { \"type\": \"null\" },\n            \"passwordExpired\": { \"type\": \"boolean\" },\n            \"passwordReset\": { \"type\": \"boolean\" },\n            \"timeZoneId\": { \"type\": \"string\" },\n            \"type\": { \"type\": \"string\" },\n            \"userId\": { \"type\": \"string\" }\n          }\n        },\n        \"userID\": { \"type\": \"string\" }\n      }\n    },\n    \"errors\": { \"type\": \"array\" },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\" },\n    \"pagination\": { \"type\": \"null\" },\n    \"permissions\": { \"type\": \"array\" }\n  }\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let userID = pm.collectionVariables.get(\"userID\");",
+									"",
+									"pm.test(\"User FE creation sucessfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"    pm.expect(jsonData.entity.userID).to.eql(userID);",
+									"    pm.expect(jsonData.entity.user[\"active\"]).to.eql(false);",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"TestUser\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/deactivate/{{userID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"deactivate",
+								"{{userID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Activate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let userID = pm.collectionVariables.get(\"userID\");",
+									"",
+									"pm.test(\"User FE creation sucessfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"    pm.expect(jsonData.entity.userID).to.eql(userID);",
+									"    pm.expect(jsonData.entity.user[\"active\"]).to.eql(true);",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"TestUser\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/activate/{{userID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"activate",
+								"{{userID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deleteuser",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{userID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{userID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DeleteUser",
+			"item": [
+				{
+					"name": "CreateTestUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE creation sucessfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"test-user1@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"TestUser\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"userID\", jsonData.entity.userID);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\":\"userid-test-56789023\",\n    \"active\":true,\n    \"firstName\":\"TestUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"LastTestuser\",\n    \"nickName\":\"LastTestuser\",\n    \"email\":\"test-user1@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "### Create User\n\nThis endpoint allows you to create a new user.\n\n#### Request Body\n\n- `userId` (string, optional): The unique identifier for the user.\n- `active` (boolean, required): Indicates if the user is active.\n- `firstName` (string, optional): The first name of the user.\n- `middleName` (string, optional): The middle name of the user.\n- `lastName` (string, optional): The last name of the user.\n- `nickName` (string, optional): The nickname of the user.\n- `email` (string, optional): The email address of the user.\n- `male` (boolean, required): Indicates the gender of the user.\n- `languageId` (string, optional): The language identifier for the user.\n- `password` (array, required): The password for the user.\n- `roles` (array, required): The roles assigned to the user.\n    \n\n#### Response Body (JSON Schema)\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"user\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"active\": { \"type\": \"boolean\" },\n            \"actualCompanyId\": { \"type\": \"string\" },\n            \"additionalInfo\": { \"type\": \"null\" },\n            \"admin\": { \"type\": \"boolean\" },\n            \"backendUser\": { \"type\": \"boolean\" },\n            \"birthday\": { \"type\": \"null\" },\n            \"comments\": { \"type\": \"null\" },\n            \"companyId\": { \"type\": \"string\" },\n            \"createDate\": { \"type\": \"number\" },\n            \"deleteDate\": { \"type\": \"null\" },\n            \"deleteInProgress\": { \"type\": \"boolean\" },\n            \"emailAddress\": { \"type\": \"string\" },\n            \"emailaddress\": { \"type\": \"string\" },\n            \"failedLoginAttempts\": { \"type\": \"number\" },\n            \"female\": { \"type\": \"boolean\" },\n            \"firstName\": { \"type\": \"string\" },\n            \"frontendUser\": { \"type\": \"boolean\" },\n            \"fullName\": { \"type\": \"string\" },\n            \"gravitar\": { \"type\": \"string\" },\n            \"hasConsoleAccess\": { \"type\": \"boolean\" },\n            \"id\": { \"type\": \"string\" },\n            \"languageId\": { \"type\": \"string\" },\n            \"lastLoginDate\": { \"type\": \"null\" },\n            \"lastLoginIP\": { \"type\": \"null\" },\n            \"lastName\": { \"type\": \"string\" },\n            \"male\": { \"type\": \"boolean\" },\n            \"middleName\": { \"type\": \"string\" },\n            \"modificationDate\": { \"type\": \"number\" },\n            \"name\": { \"type\": \"string\" },\n            \"nickname\": { \"type\": \"string\" },\n            \"passwordExpirationDate\": { \"type\": \"null\" },\n            \"passwordExpired\": { \"type\": \"boolean\" },\n            \"passwordReset\": { \"type\": \"boolean\" },\n            \"timeZoneId\": { \"type\": \"string\" },\n            \"type\": { \"type\": \"string\" },\n            \"userId\": { \"type\": \"string\" }\n          }\n        },\n        \"userID\": { \"type\": \"string\" }\n      }\n    },\n    \"errors\": { \"type\": \"array\" },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\" },\n    \"pagination\": { \"type\": \"null\" },\n    \"permissions\": { \"type\": \"array\" }\n  }\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "CanNotDeleteTheirOwnUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcms.org.1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteNonExistingUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/xxxxxx",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"xxxxxx"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeletingExistingUserButReplacementIsInvalid",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{userID}}?replacementUserId=XXXXXXX",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{userID}}"
+							],
+							"query": [
+								{
+									"key": "replacementUserId",
+									"value": "XXXXXXX"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteSuccess",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{userID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{userID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CreateUserReturnRoleId",
+			"item": [
+				{
+					"name": "CreateUserWithRoleId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verifica que el status de la respuesta sea 200",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verifica que la respuesta sea un JSON válido",
+									"pm.test(\"Response is a valid JSON\", function () {",
+									"    pm.response.to.be.withBody;",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"// Parsear el body de la respuesta",
+									"let jsonData = pm.response.json();",
+									"",
+									"// Verifica que el objeto entity existe",
+									"pm.test(\"Entity object is present\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"});",
+									"",
+									"// Verifica que el user object existe dentro de entity",
+									"pm.test(\"User object is present\", function () {",
+									"    pm.expect(jsonData.entity).to.have.property(\"user\");",
+									"});",
+									"",
+									"// Verifica que el user tiene un email válido",
+									"pm.test(\"User has a valid email\", function () {",
+									"    let email = jsonData.entity.user.emailAddress || \"\";",
+									"    pm.expect(email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+									"});",
+									"",
+									"// Verifica que el user está activo",
+									"pm.test(\"User is active\", function () {",
+									"    pm.expect(jsonData.entity.user.active).to.be.true;",
+									"});",
+									"",
+									"// Verifica que el ID del usuario esté presente y tenga formato",
+									"pm.test(\"User ID is present\", function () {",
+									"    let userId = jsonData.entity.user.id;",
+									"    pm.expect(userId).to.be.a(\"string\");",
+									"    pm.expect(userId).to.match(/^userid-/);",
+									"});",
+									"",
+									"// Verifica que el roleId tenga un UUID válido",
+									"pm.test(\"Role ID is a valid UUID\", function () {",
+									"    let roleId = jsonData.entity.roleId;",
+									"    pm.expect(roleId).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+									"});",
+									"",
+									"// Verifica que no hay errores",
+									"pm.test(\"No errors present\", function () {",
+									"    pm.expect(jsonData.errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									"",
+									"// Verifica que la propiedad frontendUser sea true",
+									"pm.test(\"User is a frontendUser\", function () {",
+									"    pm.expect(jsonData.entity.user.frontendUser).to.be.true;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"victory123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
@@ -883,6 +1451,10 @@
 		},
 		{
 			"key": "frenchLanguageId",
+			"value": ""
+		},
+		{
+			"key": "userID",
 			"value": ""
 		}
 	]

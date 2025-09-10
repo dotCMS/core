@@ -1,5 +1,12 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
@@ -21,19 +28,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import org.postgresql.util.PGobject;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.postgresql.util.PGobject;
 
 /**
  * This implementation of the {@link UniqueFieldValidationStrategy} checks the uniqueness of a given
@@ -68,10 +71,46 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
             cleanUniqueFieldsUp(contentlet, field);
         }
 
+        final UniqueFieldCriteria uniqueFieldCriteria = this.buildUniqueFieldCriteria(contentlet, field, fieldValue, contentType);
+        this.insertUniqueValue(uniqueFieldCriteria, contentlet.getIdentifier());
+    }
+
+    @Override
+    @WrapInTransaction
+    @CloseDBIfOpened
+    public void innerValidateInPreview(final Contentlet contentlet, final Field field, final Object fieldValue,
+                                        final ContentType contentType)
+            throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
+        final UniqueFieldCriteria uniqueFieldCriteria = this.buildUniqueFieldCriteria(contentlet, field, fieldValue, contentType);
+        final Optional<UniqueFieldDataBaseUtil.UniqueFieldValue> uniqueFieldValueOptional =
+                uniqueFieldDataBaseUtil.get(uniqueFieldCriteria);
+        if (uniqueFieldValueOptional.isPresent()) {
+            this.checkUniqueFieldDuplication(contentlet, uniqueFieldCriteria, uniqueFieldValueOptional.get());
+        }
+    }
+
+    /**
+     * Creates a {@link UniqueFieldCriteria} object based on the provided {@link Contentlet},
+     * {@link Field}, field value, and {@link ContentType}. These criteria are used to check the
+     * uniqueness of the field value.
+     *
+     * @param contentlet  The {@link Contentlet} being validated.
+     * @param field       The {@link Field} that is being validated for uniqueness.
+     * @param fieldValue  The value of the field to be checked for uniqueness.
+     * @param contentType The {@link ContentType} of the Contentlet.
+     *
+     * @return A new instance of {@link UniqueFieldCriteria}.
+     *
+     * @throws DotDataException     If there is an error accessing the database.
+     * @throws DotSecurityException If there is a security issue accessing the host or language.
+     */
+    private UniqueFieldCriteria buildUniqueFieldCriteria(final Contentlet contentlet,
+                                                         final Field field, final Object fieldValue,
+                                                         final ContentType contentType) throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
         final Host site = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, DONT_RESPECT_FRONT_END_ROLES);
         final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
-        final UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
+        return new UniqueFieldCriteria.Builder()
                 .setSite(site)
                 .setLanguage(language)
                 .setField(field)
@@ -80,8 +119,36 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 .setVariantName(contentlet.getVariantId())
                 .setLive(isLive(contentlet))
                 .build();
+    }
 
-        insertUniqueValue(uniqueFieldCriteria, contentlet.getIdentifier());
+    /**
+     * Verifies that the Unique Field value of the Contentlet that is being validated in
+     * {@code Preview} via the Content Import Tool is NOT used by another Contentlet. This happens
+     * when inserting or updating an existing Contentlet that has a unique field value that matches
+     * one or more records in the CSV file.
+     * <p>If the Contentlet being validated is NOT in the list of Contentlets using this Unique
+     * Value set in the {@link UniqueFieldCriteria#CONTENTLET_IDS_ATTR} list, it means that there is
+     * a duplication, and an error will be thrown.</p>
+     *
+     * @param contentlet          The {@link Contentlet} to check.
+     * @param uniqueFieldCriteria The {@link UniqueFieldCriteria} used to check the value.
+     * @param uniqueFieldValue    The {@link UniqueFieldDataBaseUtil.UniqueFieldValue} that matches
+     *                            the unique field value.
+     *
+     * @throws UniqueFieldValueDuplicatedException The unique value already exists and belongs to
+     *                                             another Contentlet.
+     */
+    @SuppressWarnings("unchecked")
+    private void checkUniqueFieldDuplication(final Contentlet contentlet,
+                                             final UniqueFieldCriteria uniqueFieldCriteria,
+                                             final UniqueFieldDataBaseUtil.UniqueFieldValue uniqueFieldValue) throws UniqueFieldValueDuplicatedException {
+        if (null != uniqueFieldValue.getSupportingValues()) {
+            final Map<String, Object> supportingValuesMap = uniqueFieldValue.getSupportingValues();
+            final List<String> contentletIds = (List<String>) supportingValuesMap.getOrDefault(CONTENTLET_IDS_ATTR, List.of());
+            if (!contentletIds.contains(contentlet.getIdentifier())) {
+                throwsDuplicatedException(uniqueFieldCriteria);
+            }
+        }
     }
 
     /**
@@ -97,20 +164,24 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
     }
 
     /**
-     * When the {@link Contentlet} is being updated, this method removes its entry from the Unique
-     * Field table so that it can be safely re-generated later on.
+     * When the {@link Contentlet} is being updated, this method removes its existing entry from the
+     * Unique Fields table so that it can be safely re-generated after the update.
      * <p>If its associated hash belongs to more than one Contentlet, instead of removing the
-     * record, it will be updated in order to NOT include the ID of the updated Contentlet. The hash
-     * is not re-generated as the Contentlet ID is not used in it.</p>
+     * record, it will be updated in order to NOT include the ID of the updated Contentlet. Keep in
+     * mind that the hash is <b>NOT</b> re-generated at all, as the Contentlet ID is not used to
+     * create it.</p>
+     * <p>A unique value can be used by a LIVE or WORKING version of a Contentlet. If the value for
+     * the LIVE and WORKING versions are different, dotCMS will keep a record for each of them. But,
+     * if the value is the same, then it'll have just 1 record for both with the LIVE attribute set
+     * to {@code true}. When the table is cleaned up after the updating the unique value, we need to
+     * check if the records that already exists are LIVE or WORKING.</p>
      *
-     * @param contentlet The {@link Contentlet} being updated.
+     * @param contentlet The {@link Contentlet} whose unique field value is being updated.
      *
      * @throws DotDataException An error occurred when interacting with the database.
      */
-    @SuppressWarnings("unchecked")
     private  void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
-        List<Map<String, Object>> uniqueFields = uniqueFieldDataBaseUtil.get(contentlet, field);
-
+        final List<Map<String, Object>> uniqueFields = uniqueFieldDataBaseUtil.get(contentlet, field);
         if (UtilMethods.isSet(uniqueFields)) {
             final List<Map<String, Object>> workingUniqueFields = uniqueFields.stream()
                     .filter(uniqueValue -> Boolean.FALSE.equals(getSupportingValues(uniqueValue).get("live")))
@@ -118,7 +189,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
             if (!workingUniqueFields.isEmpty()) {
                 workingUniqueFields.forEach(uniqueField -> cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueField));
-            } else  {
+            } else {
                 uniqueFields.stream()
                         .filter(uniqueValue -> Boolean.TRUE.equals(getSupportingValues(uniqueValue).get("live")))
                         .limit(1)
@@ -126,30 +197,53 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                         .ifPresent(uniqueFieldValue -> {
                             final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldValue);
                             final String oldUniqueValue = supportingValues.get(FIELD_VALUE_ATTR).toString();
-                            final String newUniqueValue = contentlet.getStringProperty(field.variable());
-
+                            // All Unique Field values are stored in lower case. So, the incoming
+                            // value must be lower-cased to potentially match the existing one
+                            final String newUniqueValue = UtilMethods.isSet(contentlet.getStringProperty(field.variable()))
+                                    ? contentlet.getStringProperty(field.variable()).toLowerCase()
+                                    : BLANK;
                             if (oldUniqueValue.equals(newUniqueValue)) {
+                                // The unique value is the same. It must be removed so that it can
+                                // be added again later
                                 cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue);
                             }
                         });
             }
-
-
         }
     }
 
+    /**
+     * Transforms the JSONB value of the {@code supporting_values} column into a Java Map that can
+     * be easily traversed.
+     *
+     * @param uniqueField The raw record from the {@code unique_fields} table that belongs to a
+     *                    unique field value.
+     *
+     * @return The supporting values as a Java Map.
+     */
     private static Map<String, Object> getSupportingValues(Map<String, Object> uniqueField) {
         try {
             return JsonUtil.getJsonFromString(uniqueField.get("supporting_values").toString());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new DotRuntimeException(e);
         }
     }
 
+    /**
+     * Searches for all records that belong to the given Contentlet ID. For every record, if it
+     * matches only one Contentlet, this method deletes it from the table. Otherwise, it updates
+     * the record to remove the ID of the updated Contentlet, as such an attribute is an array of
+     * Contentlet IDs. This way, when the updated Contentlet is saved, it won't have a conflict with
+     * the hash.
+     *
+     * @param contentId The ID of the Contentlet whose unique field value must be temporarily removed.
+     * @param uniqueFields The records from the {@code unique_fields} table that belong to a unique
+     * field value.
+     */
+    @SuppressWarnings("unchecked")
     private void cleanUniqueFieldUp(final String contentId,
                                     final Map<String, Object> uniqueFields)  {
         try {
-
             final String hash = uniqueFields.get("unique_key_val").toString();
             final PGobject supportingValues = (PGobject) uniqueFields.get("supporting_values");
             final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
@@ -161,7 +255,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 contentletIds.remove(contentId);
                 uniqueFieldDataBaseUtil.updateContentListWithHash(hash, contentletIds);
             }
-        } catch (IOException | DotDataException e){
+        } catch (final IOException | DotDataException e) {
             throw new DotRuntimeException(e);
         }
     }
@@ -229,16 +323,9 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
             Logger.debug(DBUniqueFieldValidationStrategy.class, String.format("Including value of field '%s' in Contentlet " +
                     "'%s' in the unique_fields table", uniqueFieldCriteria.field().variable(), contentletId));
             uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
-
         } catch (final DotDataException e) {
             if (isDuplicatedKeyError(e)) {
-                final String duplicatedValueMessage = String.format("The unique value '%s' for the field '%s'" +
-                                " in the Content Type '%s' already exists",
-                        uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
-                        uniqueFieldCriteria.contentType().variable());
-
-                Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
-                throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
+                throwsDuplicatedException(uniqueFieldCriteria);
             } else {
                 final String errorMsg = String.format("Failed to insert unique value for Field '%s' in Contentlet " +
                         "'%s': %s", uniqueFieldCriteria.field().variable(), contentletId, ExceptionUtil.getErrorMessage(e));
@@ -246,6 +333,30 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 throw new DotRuntimeException(errorMsg);
             }
         }
+    }
+
+    /**
+     * Throws a duplicated exception with the right message
+     *
+     * @param uniqueFieldCriteria
+     * @throws UniqueFieldValueDuplicatedException
+     */
+    private static void throwsDuplicatedException(final UniqueFieldCriteria uniqueFieldCriteria)
+            throws UniqueFieldValueDuplicatedException {
+        final String duplicatedValueMessage = String.format("The unique value '%s' for the field '%s'" +
+                        " in the Content Type '%s' already exists",
+                uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
+                uniqueFieldCriteria.contentType().variable());
+
+        Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
+        
+        throw UniqueFieldValueDuplicatedException.builder(
+                duplicatedValueMessage,
+                uniqueFieldCriteria.field().variable(), 
+                uniqueFieldCriteria.value(), 
+                uniqueFieldCriteria.contentType().variable())
+                .fieldType(uniqueFieldCriteria.field().typeName())
+                .build();
     }
 
     @WrapInTransaction
@@ -265,7 +376,13 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                         "'%s': %s", field.variable(), field.contentTypeId(), ExceptionUtil.getErrorMessage(e));
                 Logger.error(this, errorMsg, e);
             }
-            throw new UniqueFieldValueDuplicatedException(errorMsg);
+            throw UniqueFieldValueDuplicatedException.builder(
+                    errorMsg,
+                    field.variable(), 
+                    "N/A",
+                    field.contentTypeId())
+                    .fieldType(field.typeName())
+                    .build();
         }
     }
 

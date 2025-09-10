@@ -7,7 +7,8 @@ import {
     Input,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
@@ -23,13 +24,14 @@ import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-p
 
 @Component({
     selector: 'dotcms-template-builder-actions',
-    standalone: true,
     imports: [ButtonModule, DotLayoutPropertiesModule, DotMessagePipe],
     templateUrl: './template-builder-actions.component.html',
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
+    private store = inject(DotTemplateBuilderStore);
+
     @Input() set layoutProperties(layoutProperties: DotTemplateLayoutProperties) {
         this.group?.patchValue(
             {
@@ -51,8 +53,6 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
     group: UntypedFormGroup;
 
     destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private store: DotTemplateBuilderStore) {}
 
     ngOnInit(): void {
         this.group = new UntypedFormGroup({

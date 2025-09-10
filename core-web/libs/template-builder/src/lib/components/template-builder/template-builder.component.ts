@@ -25,7 +25,8 @@ import {
     QueryList,
     SimpleChanges,
     ViewChild,
-    ViewChildren
+    ViewChildren,
+    inject
 } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -75,9 +76,15 @@ import {
     templateUrl: './template-builder.component.html',
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DotTemplateBuilderStore]
+    providers: [DotTemplateBuilderStore],
+    standalone: false
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
+    private store = inject(DotTemplateBuilderStore);
+    private dialogService = inject(DialogService);
+    private dotMessage = inject(DotMessageService);
+    private cd = inject(ChangeDetectorRef);
+
     @Input()
     layout!: DotLayout;
 
@@ -185,12 +192,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         return this.templateContainerRef.nativeElement;
     }
 
-    constructor(
-        private store: DotTemplateBuilderStore,
-        private dialogService: DialogService,
-        private dotMessage: DotMessageService,
-        private cd: ChangeDetectorRef
-    ) {
+    constructor() {
         this.rows$ = this.store.rows$.pipe(
             filter(({ shouldEmit }) => shouldEmit),
             map(({ rows }) => parseFromGridStackToDotObject(rows))

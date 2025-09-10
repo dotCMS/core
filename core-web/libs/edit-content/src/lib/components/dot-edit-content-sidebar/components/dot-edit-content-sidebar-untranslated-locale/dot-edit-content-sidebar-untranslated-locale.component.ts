@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -10,15 +9,7 @@ import { DotIsoCodePipe, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-content-sidebar-untranslated-locale',
-    standalone: true,
-    imports: [
-        CommonModule,
-        RadioButtonModule,
-        DotMessagePipe,
-        FormsModule,
-        ButtonDirective,
-        DotIsoCodePipe
-    ],
+    imports: [RadioButtonModule, DotMessagePipe, FormsModule, ButtonDirective, DotIsoCodePipe],
     templateUrl: './dot-edit-content-sidebar-untranslated-locale.component.html',
     styleUrl: './dot-edit-content-sidebar-untranslated-locale.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

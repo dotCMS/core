@@ -10,7 +10,7 @@ describe('DotDOMHtmlUtilService', () => {
             providers: [DotDOMHtmlUtilService]
         });
 
-        service = TestBed.get(DotDOMHtmlUtilService);
+        service = TestBed.inject(DotDOMHtmlUtilService);
     }));
 
     it('should create a link element', () => {

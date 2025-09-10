@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * Represents the response from a GraphQL query for a page.
- *
- * @interface GraphQLPageResponse
- * @property {Record<string, unknown>} page - The main page data.
- * @property {unknown} [key: string] - Additional properties that may be included in the response.
- */
-interface GraphQLPageResponse {
-    page: Record<string, unknown>;
-    [key: string]: unknown;
-}
+
+import {
+    DotCMSBasicContentlet,
+    DotCMSGraphQLPageContainer,
+    DotCMSGraphQLPageResponse,
+    DotCMSPageAssetContainers,
+    DotCMSPageContainerContentlets,
+    DotCMSPage,
+    DotCMSPageAsset,
+    DotCMSContainer,
+    DotCMSURLContentMap
+} from '@dotcms/types';
 
 /**
  * Transforms a GraphQL Page response to a Page Entity.
@@ -22,7 +23,9 @@ interface GraphQLPageResponse {
  * const pageEntity = graphqlToPageEntity(graphQLPageResponse);
  * ```
  */
-export const graphqlToPageEntity = (graphQLPageResponse: GraphQLPageResponse) => {
+export const graphqlToPageEntity = (
+    graphQLPageResponse: DotCMSGraphQLPageResponse
+): DotCMSPageAsset | null => {
     const { page } = graphQLPageResponse;
 
     // If there is no page, return null
@@ -30,47 +33,82 @@ export const graphqlToPageEntity = (graphQLPageResponse: GraphQLPageResponse) =>
         return null;
     }
 
-    const { layout, template, containers, urlContentMap, viewAs, site, _map, ...pageAsset } = page;
+    const {
+        layout,
+        template,
+        containers,
+        urlContentMap,
+        viewAs,
+        host,
+        vanityUrl,
+        runningExperimentId,
+        _map,
+        ...pageAsset
+    } = page;
     const data = (_map || {}) as Record<string, unknown>;
+
+    const typedPageAsset = pageAsset as unknown as DotCMSPage;
+
+    // Merge all urlContentMap keys into _map, except _map itself
+    const mergedUrlContentMap = {
+        ...(urlContentMap?._map || {}),
+        ...Object.entries(urlContentMap || {}).reduce<Record<string, unknown>>(
+            (acc, [key, value]) => {
+                if (key !== '_map') {
+                    acc[key] = value;
+                }
+                return acc;
+            },
+            {}
+        )
+    } as DotCMSURLContentMap;
 
     return {
         layout,
         template,
         viewAs,
-        urlContentMap,
-        site,
+        vanityUrl,
+        runningExperimentId,
+        site: host,
+        urlContentMap: mergedUrlContentMap,
+        containers: parseContainers(containers as []),
         page: {
             ...data,
-            ...pageAsset
-        },
-        containers: parseContainers(containers as [])
-    } as any;
+            ...typedPageAsset
+        }
+    };
 };
 
 /**
  * Parses the containers from the GraphQL response.
  *
- * @param {Array<Record<string, unknown>>} [containers=[]] - The containers array from the GraphQL response.
- * @returns {Record<string, unknown>} The parsed containers.
+ * @param {DotCMSGraphQLPageContainer[]} [containers=[]] - The containers array from the GraphQL response.
+ * @returns {DotCMSPageAssetContainers} The parsed containers.
  */
-const parseContainers = (containers: Record<string, unknown>[] = []) => {
-    return containers.reduce((acc: Record<string, unknown>, container: Record<string, unknown>) => {
-        const { path, identifier, containerStructures, containerContentlets, ...rest } = container;
+const parseContainers = (
+    containers: DotCMSGraphQLPageContainer[] = []
+): DotCMSPageAssetContainers => {
+    return containers.reduce(
+        (acc: DotCMSPageAssetContainers, container: DotCMSGraphQLPageContainer) => {
+            const { path, identifier, containerStructures, containerContentlets, ...rest } =
+                container;
 
-        const key = (path || identifier) as string;
+            const key = (path || identifier) as string;
 
-        acc[key] = {
-            containerStructures,
-            container: {
-                path,
-                identifier,
-                ...rest
-            },
-            contentlets: parseContentletsToUuidMap(containerContentlets as [])
-        };
+            acc[key] = {
+                containerStructures,
+                container: {
+                    path,
+                    identifier,
+                    ...rest
+                } as DotCMSContainer,
+                contentlets: parseContentletsToUuidMap(containerContentlets as [])
+            };
 
-        return acc;
-    }, {});
+            return acc;
+        },
+        {}
+    );
 };
 
 /**
@@ -79,21 +117,21 @@ const parseContainers = (containers: Record<string, unknown>[] = []) => {
  * @param {Array<Record<string, unknown>>} containerContentlets - The contentlets array from the GraphQL response.
  * @returns {Record<string, Array<Record<string, unknown>>>} The parsed contentlets mapped by UUID.
  */
-const parseContentletsToUuidMap = (containerContentlets: Record<string, unknown>[] = []) => {
-    return containerContentlets.reduce((acc, containerContentlet) => {
-        const { uuid, contentlets } = containerContentlet as {
-            uuid: string;
-            contentlets: Record<string, unknown>[];
-        };
+const parseContentletsToUuidMap = (containerContentlets: DotCMSPageContainerContentlets[] = []) => {
+    return containerContentlets.reduce(
+        (acc, containerContentlet) => {
+            const { uuid, contentlets } = containerContentlet;
 
-        // TODO: This is a temporary solution, we need to find a better way to handle this.
-        acc[uuid] = contentlets.map(({ _map = {}, ...rest }) => {
-            return {
-                ...(_map as Record<string, unknown>),
-                ...rest
-            };
-        });
+            // TODO: This is a temporary solution, we need to find a better way to handle this.
+            acc[uuid] = contentlets.map(({ _map = {}, ...rest }) => {
+                return {
+                    ...(_map as Record<string, unknown>),
+                    ...rest
+                };
+            });
 
-        return acc;
-    }, {});
+            return acc;
+        },
+        {} as Record<string, DotCMSBasicContentlet[]>
+    );
 };

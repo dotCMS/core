@@ -1,0 +1,81 @@
+<tr class="dot-key-value__header">
+    @if ($dragAndDrop()) {
+        <th scope="col" class="w-3rem" data-testId="drag-column"></th>
+    }
+    <th>
+        <div class="flex flex-column">
+            <label for="key-value-input-row-key-input" class="mb-1">
+                {{ 'keyValue.key_header.label' | dm }}
+            </label>
+            <input
+                (keydown.escape)="onCancel($event)"
+                (keydown.enter)="handleKeyInputEnter($event)"
+                [formControl]="keyControl"
+                [placeholder]="'keyValue.key_input.placeholder' | dm"
+                class="dot-key-value-table-input-row__key-input"
+                #keyCell
+                id="key-value-input-row-key-input"
+                data-testId="key-input"
+                pInputText
+                type="text"
+                pSize="small"
+                autocomplete="false" />
+            @if (keyControl.dirty && keyControl.hasError('required')) {
+                <small class="error-message">{{ 'keyValue.key_input.required' | dm }}</small>
+            }
+            @if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
+                <small class="error-message">{{ 'keyValue.key_input.duplicated' | dm }}</small>
+            }
+        </div>
+    </th>
+    <th>
+        <div class="flex flex-column">
+            <label for="key-value-input-row-value-input" class="mb-1">
+                {{ 'keyValue.value_header.label' | dm }}
+            </label>
+            <input
+                (keydown.escape)="onCancel($event)"
+                (keydown.enter)="handleValueInputEnter($event)"
+                (keypress.enter)="handleValueInputEnter($event)"
+                [formControl]="valueControl"
+                [type]="hiddenControl.value ? 'password' : 'text'"
+                [placeholder]="'keyValue.value_input.placeholder' | dm"
+                class="dot-key-value-table-input-row__value-input"
+                id="key-value-input-row-value-input"
+                #valueCell
+                data-testId="value-input"
+                pInputText
+                pSize="small"
+                autocomplete="false" />
+            @if (valueControl.dirty && valueControl.hasError('required')) {
+                <small class="error-message">{{ 'keyValue.value_input.required' | dm }}</small>
+            }
+        </div>
+    </th>
+    @if ($showHiddenField()) {
+        <th class="dot-key-value-input__variables-hidden">
+            <div class="flex flex-column">
+                <label for="key-value-input-row-hidden-input" class="mb-1">
+                    {{ 'keyValue.hidden_header.label' | dm }}
+                </label>
+                <p-inputSwitch
+                    class="dot-key-value-input__hidden-switch"
+                    [formControl]="hiddenControl"
+                    id="key-value-input-row-hidden-input"
+                    data-testId="hidden-switch" />
+            </div>
+        </th>
+    }
+    <th class="relative w-4rem" scope="col" style="min-width: 3rem">
+        <button
+            (click)="saveVariable()"
+            icon="pi pi-plus"
+            [text]="true"
+            class="key-value-input__save-button"
+            #saveButton
+            size="small"
+            data-testId="save-button"
+            type="button"
+            pButton></button>
+    </th>
+</tr>

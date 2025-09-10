@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -35,6 +36,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
+import org.elasticsearch.action.search.SearchResponse;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -44,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.elasticsearch.action.search.SearchResponse;
 
 /**
  * This interceptor class allows developers to execute Java <b>code</b> before
@@ -884,6 +886,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
+
+    @Override
+    public List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException, DotStateException {
+        for (final ContentletAPIPreHook preHook : preHooks) {
+            final boolean preResult = preHook.findAllVersions(searchCriteria);
+            if (!preResult) {
+                final String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, preHook.getClass().getName());
+                Logger.error(this, errorMessage);
+                throw new DotRuntimeException(errorMessage);
+            }
+        }
+        final List<Contentlet> contentlets = conAPI.findAllVersions(searchCriteria);
+        for (final ContentletAPIPostHook postHook : postHooks) {
+            postHook.findAllVersions(searchCriteria, contentlets);
+        }
+        return contentlets;
+    }
 
 	@Override
 	public List<Contentlet> findByStructure(Structure structure, User user,	boolean respectFrontendRoles, int limit, int offset)	throws DotDataException, DotSecurityException {
@@ -2171,6 +2190,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.setContentletProperty(contentlet, field, value);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		conAPI.setContentletProperty(contentlet, field, value);
+		for(ContentletAPIPostHook post : postHooks){
+			post.setContentletProperty(contentlet, field, value);
+		}
+	}
+
+	@Override
 	public void unarchive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unarchive(contentlets, user, respectFrontendRoles);
@@ -2312,6 +2347,40 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.validateContentletNoRels(contentlet, cats);
 		}
+	}
+
+	@Override
+	public void validateContentlet(Contentlet contentlet,
+			ContentletRelationships contentRelationships, List<Category> cats, boolean preview ) throws DotContentletValidationException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		conAPI.validateContentlet(contentlet, contentRelationships, cats, preview);
+		for(ContentletAPIPostHook post : postHooks){
+			post.validateContentletNoRels(contentlet, cats);
+		}
+	}
+
+	@Override
+	public void validateContentletNoRels(Contentlet contentlet,
+										   List<Category> cats, boolean preview) throws DotContentletValidationException {
+			for(ContentletAPIPreHook pre : preHooks){
+				boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+				if(!preResult){
+					String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+					Logger.error(this, errorMessage);
+					throw new DotRuntimeException(errorMessage);
+				}
+			}
+			conAPI.validateContentletNoRels(contentlet, cats, preview);
+			for(ContentletAPIPostHook post : postHooks){
+				post.validateContentletNoRels(contentlet, cats);
+			}
 	}
 
 	@Override
@@ -3242,6 +3311,26 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
         return savedContentlet;
     }
+
+	@Override
+	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+																	 boolean respectFrontendRoles, String variantName) {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		Optional<Contentlet> savedContentlet =
+				conAPI.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+		}
+
+		return savedContentlet;
+	}
 
 	@Override
 	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, long incomingLangId,

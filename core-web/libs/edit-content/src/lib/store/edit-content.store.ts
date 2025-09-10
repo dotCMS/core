@@ -1,28 +1,194 @@
-import { signalStore, withHooks, withState } from '@ngrx/signals';
+import { signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { ComponentStatus, DotContentletDepths } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentletVersion,
+    DotCMSContentType,
+    DotCMSWorkflow,
+    DotCMSWorkflowAction,
+    DotContentletDepths,
+    DotCurrentUser,
+    DotLanguage,
+    WorkflowStep,
+    WorkflowTask
+} from '@dotcms/dotcms-models';
 
-import { withContent } from './features/content.feature';
-import { withForm } from './features/form.feature';
-import { withInformation } from './features/information.feature';
-import { withLocales } from './features/locales.feature';
-import { withLock } from './features/lock.feature';
-import { withSidebar } from './features/sidebar.feature';
-import { withUI } from './features/ui.feature';
-import { withUser } from './features/user.feature';
-import { withWorkflow } from './features/workflow.feature';
+import { withActivities } from './features/activities/activities.feature';
+import { withContent, DialogInitializationOptions } from './features/content/content.feature';
+import { withForm } from './features/form/form.feature';
+import { withHistory } from './features/history/history.feature';
+import { withInformation } from './features/information/information.feature';
+import { withLocales } from './features/locales/locales.feature';
+import { withLock } from './features/lock/lock.feature';
+import { withSidebar } from './features/sidebar/sidebar.feature';
+import { withUI } from './features/ui/ui.feature';
+import { withUser } from './features/user/user.feature';
+import { withWorkflow } from './features/workflow/workflow.feature';
 
-export interface EditContentRootState {
+import { CurrentContentActionsWithScheme } from '../models/dot-edit-content-field.type';
+import { FormValues } from '../models/dot-edit-content-form.interface';
+import { Activity, DotContentletState, UIState } from '../models/dot-edit-content.model';
+
+export interface EditContentState {
+    // Root state
     state: ComponentStatus;
     error: string | null;
+    isDialogMode: boolean;
+
+    // Content state
+    contentType: DotCMSContentType | null;
+    contentlet: DotCMSContentlet | null;
+    schemes: Record<
+        string,
+        {
+            scheme: DotCMSWorkflow;
+            actions: DotCMSWorkflowAction[];
+            firstStep: WorkflowStep;
+        }
+    >;
+    initialContentletState: DotContentletState;
+
+    // Workflow state
+    currentSchemeId: string | null;
+    currentContentActions: CurrentContentActionsWithScheme;
+    currentStep: WorkflowStep | null;
+    lastTask: WorkflowTask | null;
+    workflow: {
+        status: ComponentStatus;
+        error: string | null;
+    };
+    workflowActionSuccess: DotCMSContentlet | null;
+
+    // User state
+    currentUser: DotCurrentUser;
+
+    // UI state
+    uiState: UIState;
+
+    // Information state
+    information: {
+        status: ComponentStatus;
+        error: string | null;
+        relatedContent: string;
+    };
+
+    // Lock state
+    lockError: string | null;
+    canLock: boolean;
+    lockSwitchLabel: string;
+
+    // Form state
+    formValues: FormValues;
+
+    // Locales state
+    locales: DotLanguage[] | null;
+    systemDefaultLocale: DotLanguage | null;
+    currentLocale: DotLanguage | null;
+    currentIdentifier: string | null;
+    localesStatus: {
+        status: ComponentStatus;
+        error: string;
+    };
+
+    // Activities state
+    activities: Activity[];
+    activityViewState: 'idle' | 'create';
+    activitiesStatus: {
+        status: ComponentStatus;
+        error: string | null;
+    };
+
+    // Versions state
+    versions: DotCMSContentletVersion[]; // All accumulated versions for infinite scroll
+    versionsPagination: {
+        currentPage: number;
+        perPage: number;
+        totalEntries: number;
+    } | null;
+    versionsStatus: {
+        status: ComponentStatus;
+        error: string | null;
+    };
 }
 
-export const initialRootState: EditContentRootState = {
+export const initialRootState: EditContentState = {
+    // Root state
     state: ComponentStatus.INIT,
-    error: null
+    error: null,
+    isDialogMode: false,
+
+    // Content state
+    contentType: null,
+    contentlet: null,
+    schemes: {},
+    initialContentletState: 'new',
+
+    // Workflow state
+    currentSchemeId: null,
+    currentContentActions: {},
+    currentStep: null,
+    lastTask: null,
+    workflow: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
+    workflowActionSuccess: null,
+
+    // User state
+    currentUser: null,
+
+    // UI state
+    uiState: {
+        activeTab: 0,
+        isSidebarOpen: true,
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true
+    },
+
+    // Information state
+    information: {
+        status: ComponentStatus.INIT,
+        error: null,
+        relatedContent: '0'
+    },
+
+    // Lock state
+    lockError: null,
+    canLock: false,
+    lockSwitchLabel: 'edit.content.unlocked',
+
+    // Form state
+    formValues: {},
+
+    // Locales state
+    locales: null,
+    systemDefaultLocale: null,
+    currentLocale: null,
+    currentIdentifier: null,
+    localesStatus: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
+
+    // Activities state
+    activities: [],
+    activityViewState: 'idle',
+    activitiesStatus: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
+
+    // Versions state
+    versions: [], // All accumulated versions for infinite scroll
+    versionsPagination: null,
+    versionsStatus: {
+        status: ComponentStatus.INIT,
+        error: null
+    }
 };
 
 /**
@@ -31,35 +197,85 @@ export const initialRootState: EditContentRootState = {
  * related to content editing and workflow actions.
  */
 export const DotEditContentStore = signalStore(
-    withState(initialRootState),
-    withContent(),
+    withState<EditContentState>(initialRootState),
     withUser(),
     withUI(),
+    withContent(),
+    withWorkflow(),
     withSidebar(),
     withInformation(),
     withLock(),
-    withWorkflow(),
     withForm(),
     withLocales(),
+    withActivities(),
+    withHistory(),
     withHooks({
         onInit(store) {
-            const activatedRoute = inject(ActivatedRoute);
-            const params = activatedRoute.snapshot?.params;
-
-            // Load the current user
+            // Always load the current user
             store.loadCurrentUser();
+        }
+    }),
+    // Add methods after all features to have access to all store methods
+    // Now that withUI comes before withContent, this method can access both UI and content methods
+    withMethods((store) => {
+        // Inject ActivatedRoute in the proper injection context (within the factory function)
+        const activatedRoute = inject(ActivatedRoute);
 
-            if (params) {
-                const contentType = params['contentType'];
-                const inode = params['id'];
+        return {
+            /**
+             * Initializes the store for dialog mode with the provided parameters.
+             * This method handles all the logic for dialog initialization including:
+             * - Enabling dialog mode
+             * - Initializing content based on provided parameters
+             * - Handling both new content creation and existing content editing
+             *
+             * @param options - The dialog initialization options
+             * @param options.contentTypeId - Content type ID for creating new content
+             * @param options.contentletInode - Contentlet inode for editing existing content
+             */
+            initializeDialogMode(options: DialogInitializationOptions): void {
+                const { contentTypeId, contentletInode } = options;
 
-                // TODO: refactor this when we will use EditContent as sidebar
-                if (inode) {
-                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
-                } else if (contentType) {
-                    store.initializeNewContent(contentType);
+                // Enable dialog mode to prevent route-based initialization
+                store.enableDialogMode();
+
+                // Initialize based on provided parameters
+                if (contentTypeId) {
+                    store.initializeNewContent(contentTypeId);
+                } else if (contentletInode) {
+                    store.initializeExistingContent({
+                        inode: contentletInode,
+                        depth: DotContentletDepths.TWO
+                    });
+                }
+            },
+
+            /**
+             * Initializes the store for route-based mode using ActivatedRoute parameters.
+             * This method should be called by route-based components after the store is created.
+             * It will only initialize if dialog mode is not enabled.
+             */
+            initializeAsPortlet(): void {
+                // Skip route-based initialization if in dialog mode
+                if (store.isDialogMode()) {
+                    return;
+                }
+
+                // Use the ActivatedRoute that was injected in the closure
+                const params = activatedRoute.snapshot?.params;
+
+                if (params) {
+                    const contentType = params['contentType'];
+                    const inode = params['id'];
+
+                    // TODO: refactor this when we will use EditContent as sidebar
+                    if (inode) {
+                        store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+                    } else if (contentType) {
+                        store.initializeNewContent(contentType);
+                    }
                 }
             }
-        }
+        };
     })
 );

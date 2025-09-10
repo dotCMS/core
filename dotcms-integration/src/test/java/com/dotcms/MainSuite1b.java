@@ -59,6 +59,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.services.HTMLPageAssetRenderedTest.class,
         com.dotcms.uuid.shorty.ShortyIdApiTest.class,
         DotGraphQLHttpServletTest.class,
+        com.dotcms.graphql.datafetcher.page.VanityURLFetcherTest.class,
+        com.dotcms.graphql.datafetcher.page.RunningExperimentFetcherTest.class,
+        com.dotcms.graphql.datafetcher.CategoryFieldDataFetcherTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
@@ -85,7 +88,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
-        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class
+        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
+        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
 })
 
 public class MainSuite1b {

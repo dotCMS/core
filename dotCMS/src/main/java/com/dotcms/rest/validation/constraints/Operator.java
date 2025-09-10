@@ -1,7 +1,7 @@
 package com.dotcms.rest.validation.constraints;
 
-import com.dotcms.repackage.javax.validation.Constraint;
-import com.dotcms.repackage.javax.validation.Payload;
+import javax.validation.Constraint;
+import javax.validation.Payload;
 import com.dotcms.rest.validation.FireOnValidator;
 import com.dotcms.rest.validation.OperatorValidator;
 

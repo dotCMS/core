@@ -2,7 +2,7 @@ import { patchState, signalStoreFeature, type, withComputed, withMethods } from 
 
 import { computed } from '@angular/core';
 
-import { DotLayout } from '@dotcms/dotcms-models';
+import { DotCMSLayout } from '@dotcms/types';
 
 import { LayoutProps } from './models';
 
@@ -30,9 +30,9 @@ export function withLayout() {
                     ),
                     layout: response?.layout,
                     template: {
-                        identifier: response?.template.identifier,
+                        identifier: response?.template?.identifier,
                         // The themeId should be here, in the old store we had a bad reference and we were saving all the templates with themeId undefined
-                        themeId: response?.template.theme,
+                        themeId: response?.template?.theme,
                         anonymous: response?.template?.anonymous || false
                     },
                     pageId: response?.page.identifier
@@ -46,7 +46,7 @@ export function withLayout() {
         })),
         withMethods((store) => {
             return {
-                updateLayout: (layout: DotLayout) => {
+                updateLayout: (layout: DotCMSLayout) => {
                     patchState(store, {
                         pageAPIResponse: {
                             ...store.pageAPIResponse(),

@@ -98,10 +98,10 @@ dot-contentlet-thumbnail {
 }
 
 .preview-resource-links__actions {
-    position: relative;
+    position: absolute;
     top: 0;
     right: 0;
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: $spacing-0;
     padding-top: $spacing-1;
@@ -125,6 +125,7 @@ dot-contentlet-thumbnail {
     display: flex;
     flex-direction: column;
     gap: $spacing-1;
+    z-index: 100;
 }
 
 code {
@@ -182,7 +183,7 @@ code {
     gap: $spacing-0;
 }
 
-@container preview (min-width: 376px) {
+@container preview (min-width: 500px) {
     .preview-metadata__container,
     .preview-metadata__actions {
         display: flex;

@@ -23,11 +23,11 @@ import { take } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
     DotCMSWorkflowActionEvent,
     DotContentCompareEvent
 } from '@dotcms/dotcms-models';
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSPage, DotCMSURLContentMap } from '@dotcms/types';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -39,7 +39,6 @@ import {
     CreateContentletAction,
     CreateFromPaletteAction,
     DialogAction,
-    DotPage,
     EditContentletPayload,
     VTLFile
 } from '../../shared/models';
@@ -47,7 +46,6 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
 
 @Component({
     selector: 'dot-edit-ema-dialog',
-    standalone: true,
     templateUrl: './dot-ema-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
@@ -89,6 +87,10 @@ export class DotEmaDialogComponent {
      */
     resetDialog() {
         this.store.resetDialog();
+    }
+
+    resetActionPayload() {
+        this.store.resetActionPayload();
     }
 
     /**
@@ -160,17 +162,17 @@ export class DotEmaDialogComponent {
      * @param {({ page: DotPage; newLanguage: number | string })} { page, newLanguage }
      * @memberof DotEmaDialogComponent
      */
-    translatePage({ page, newLanguage }: { page: DotPage; newLanguage: number | string }) {
+    translatePage({ page, newLanguage }: { page: DotCMSPage; newLanguage: number | string }) {
         this.store.translatePage({ page, newLanguage });
     }
 
     /**
      * Edit URL Content Map Contentlet
      *
-     * @param {DotCMSContentlet} { inode, title }
+     * @param {DotCMSURLContentMap} { inode, title }
      * @memberof DotEmaDialogComponent
      */
-    editUrlContentMapContentlet({ inode, title }: DotCMSContentlet) {
+    editUrlContentMapContentlet({ inode, title }: DotCMSURLContentMap) {
         this.store.editUrlContentMapContentlet({
             inode,
             title

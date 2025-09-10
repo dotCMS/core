@@ -51,6 +51,7 @@
     <div class="preview-resource-links__actions">
         <p-button
             (click)="toggleShowDialog()"
+            [disabled]="$disabled()"
             styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="info-btn"
             icon="pi pi-info" />
@@ -58,6 +59,7 @@
         @if (fileInfo.downloadLink) {
             <p-button
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
+                [disabled]="$disabled()"
                 data-testId="download-btn"
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
@@ -66,6 +68,7 @@
     <div class="preview-metadata__actions">
         <p-button
             (click)="removeFile.emit()"
+            [disabled]="$disabled()"
             [label]="'dot.common.remove' | dm"
             styleClass="p-button-link p-button-sm"
             data-testId="remove-button"
@@ -75,19 +78,22 @@
     <div class="preview-metadata__action--responsive">
         <p-button
             (click)="toggleShowDialog()"
-            styleClass="p-button-rounded"
+            [disabled]="$disabled()"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="info-btn-responsive"
             icon="pi pi-info" />
         @if (fileInfo.downloadLink) {
             <p-button
-                styleClass="p-button-rounded"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
+                [disabled]="$disabled()"
                 data-testId="download-btn-responsive"
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
         <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded "
+            [disabled]="$disabled()"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="remove-button-responsive"
             icon="pi pi-trash" />
     </div>
@@ -131,6 +137,7 @@
     <ng-template pTemplate="footer">
         <p-button
             (click)="$showDialog.set(false)"
+            [disabled]="$disabled()"
             [label]="'Cancel' | dm"
             styleClass="p-button-outlined"
             data-testId="dialog-cancel" />

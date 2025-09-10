@@ -1,6 +1,8 @@
+import { DotPageAssetLayoutRow } from '@dotcms/types';
+import { combineClasses } from '@dotcms/uve/internal';
+
 import styles from './Row.module.css';
 
-import { DotPageAssetLayoutRow } from '../../types';
 import { Column } from '../Column/Column';
 
 /**
@@ -22,7 +24,7 @@ type DotCMSRowRendererProps = {
  * @return {JSX.Element} Rendered rows with columns
  */
 export const Row = ({ row }: DotCMSRowRendererProps) => {
-    const customRowClass = `${row.styleClass || ''} ${styles.row}`;
+    const customRowClass = combineClasses([row.styleClass || '', styles.row]);
 
     return (
         <div className="dot-row-container">

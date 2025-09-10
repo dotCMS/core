@@ -3,7 +3,7 @@ package com.dotcms.rest.tag;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 @JsonDeserialize(builder = UpdateTagForm.Builder.class)

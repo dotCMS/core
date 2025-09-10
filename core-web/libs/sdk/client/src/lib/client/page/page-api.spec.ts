@@ -1,14 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GraphQLPageOptions, PageClient } from './page-api';
+jest.mock('consola');
+
+import * as consola from 'consola';
+
+import {
+    DotCMSClientConfig,
+    DotCMSPageRequestParams,
+    RequestOptions,
+    DotCMSGraphQLPageResponse,
+    DotCMSPageResponse
+} from '@dotcms/types';
+
+import { PageClient } from './page-api';
 import * as utils from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
-import { DotCMSClientConfig, RequestOptions } from '../client';
-import { ErrorMessages } from '../models';
 
 describe('PageClient', () => {
-    const mockFetch = jest.fn();
-    const originalFetch = global.fetch;
     const mockFetchGraphQL = jest.fn();
 
     const validConfig: DotCMSClientConfig = {
@@ -20,19 +28,6 @@ describe('PageClient', () => {
     const requestOptions: RequestOptions = {
         headers: {
             Authorization: 'Bearer test-token'
-        }
-    };
-
-    const mockPageData = {
-        entity: {
-            title: 'Test Page',
-            url: '/test-page',
-            contentType: 'htmlpage',
-            layout: {
-                body: {
-                    rows: []
-                }
-            }
         }
     };
 
@@ -53,15 +48,8 @@ describe('PageClient', () => {
     };
 
     beforeEach(() => {
-        mockFetch.mockReset();
         mockFetchGraphQL.mockReset();
-        global.fetch = mockFetch;
         global.console.error = jest.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
-
-        mockFetch.mockResolvedValue({
-            ok: true,
-            json: async () => mockPageData
-        });
 
         jest.spyOn(utils, 'fetchGraphQL').mockImplementation(mockFetchGraphQL);
         mockFetchGraphQL.mockResolvedValue(mockGraphQLResponse);
@@ -79,104 +67,25 @@ describe('PageClient', () => {
         });
     });
 
-    afterAll(() => {
-        global.fetch = originalFetch;
+    afterEach(() => {
         jest.restoreAllMocks();
-    });
-
-    describe('REST API', () => {
-        it('should fetch page successfully using REST API', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-            const result = await pageClient.get('/test-page');
-
-            expect(mockFetch).toHaveBeenCalledWith(
-                'https://demo.dotcms.com/api/v1/page/json/test-page?hostId=test-site',
-                requestOptions
-            );
-
-            expect(result).toEqual(mockPageData.entity);
-        });
-
-        it('should throw error when path is not provided', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-
-            await expect(pageClient.get('')).rejects.toThrow(
-                "The 'path' parameter is required for the Page API"
-            );
-        });
-
-        it('should include all provided parameters in the request URL', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-            const params = {
-                siteId: 'custom-site',
-                languageId: 2,
-                mode: 'PREVIEW_MODE' as const,
-                personaId: 'test-persona',
-                fireRules: true,
-                depth: 2 as const,
-                publishDate: '2023-01-01'
-            };
-
-            await pageClient.get('/test-page', params);
-
-            expect(mockFetch).toHaveBeenCalledWith(
-                expect.stringContaining('https://demo.dotcms.com/api/v1/page/json/test-page?'),
-                requestOptions
-            );
-
-            const url = mockFetch.mock.calls[0][0];
-            expect(url).toContain('hostId=custom-site');
-            expect(url).toContain('mode=PREVIEW_MODE');
-            expect(url).toContain('language_id=2');
-            expect(url).toContain('com.dotmarketing.persona.id=test-persona');
-            expect(url).toContain('fireRules=true');
-            expect(url).toContain('depth=2');
-            expect(url).toContain('publishDate=2023-01-01');
-        });
-
-        it('should call the correct URL when path starts with a slash', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-            await pageClient.get('/test-page');
-
-            expect(mockFetch).toHaveBeenCalledWith(
-                'https://demo.dotcms.com/api/v1/page/json/test-page?hostId=test-site',
-                requestOptions
-            );
-        });
-
-        it('should call the correct URL when path starts is `/`', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-            await pageClient.get('/');
-
-            expect(mockFetch).toHaveBeenCalledWith(
-                'https://demo.dotcms.com/api/v1/page/json/?hostId=test-site',
-                requestOptions
-            );
-        });
-
-        it('should handle API error responses', async () => {
-            mockFetch.mockResolvedValue({
-                ok: false,
-                status: 404,
-                statusText: 'Not Found'
-            });
-
-            const pageClient = new PageClient(validConfig, requestOptions);
-
-            await expect(pageClient.get('/not-found')).rejects.toEqual({
-                status: 404,
-                message: ErrorMessages[404]
-            });
-        });
     });
 
     describe('GraphQL API', () => {
         it('should fetch page using GraphQL when query option is provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
 
-            const graphQLOptions: GraphQLPageOptions = {
+            const graphQLOptions: DotCMSPageRequestParams = {
                 graphql: {
-                    page: 'fragment PageFields on Page { title url }',
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }
+      }
+    }`,
                     content: { content: 'query Content { items { title } }' }
                 },
                 languageId: '1',
@@ -193,18 +102,139 @@ describe('PageClient', () => {
                 baseURL: 'https://demo.dotcms.com'
             });
 
-            // const pageResponse = graphqlToPageEntity(mockGraphQLResponse |  );
             expect(result).toEqual({
-                page: graphqlToPageEntity(mockGraphQLResponse.data),
+                pageAsset: graphqlToPageEntity(
+                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
+                ),
                 content: { content: mockGraphQLResponse.data.testContent },
-                errors: null
+                graphql: {
+                    query: expect.any(String),
+                    variables: expect.any(Object)
+                },
+                vanityUrl: undefined,
+                runningExperimentId: undefined
+            });
+        });
+
+        it('should print graphql errors ', async () => {
+            const consolaSpy = jest.spyOn(consola, 'error');
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockFetchGraphQL.mockResolvedValue({
+                data: {
+                    page: {
+                        title: 'GraphQL Page'
+                    }
+                },
+                errors: [{ message: 'Some internal server error' }]
+            });
+
+            await pageClient.get('/graphql-page', graphQLOptions);
+
+            expect(consolaSpy).toHaveBeenCalledWith(
+                '[DotCMS GraphQL Error]: ',
+                'Some internal server error'
+            );
+        });
+
+        it('should return an error if the page is not found', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockFetchGraphQL.mockResolvedValue({
+                data: {
+                    page: null
+                },
+                errors: [{ message: 'No page data found' }]
+            });
+
+            try {
+                await pageClient.get('/graphql-page', graphQLOptions);
+            } catch (response: unknown) {
+                const responseData = response as DotCMSPageResponse;
+
+                expect(responseData.error?.message).toBe('No page data found');
+            }
+        });
+
+        it('should add leading slash to url if it does not have it', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            // No leading slash
+            const result = await pageClient.get('graphql-page', graphQLOptions as any);
+
+            expect(result).toEqual({
+                pageAsset: graphqlToPageEntity(
+                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
+                ),
+                content: { content: mockGraphQLResponse.data.testContent },
+                graphql: {
+                    query: expect.any(String),
+                    variables: expect.objectContaining({
+                        url: '/graphql-page'
+                    })
+                },
+                vanityUrl: undefined,
+                runningExperimentId: undefined
             });
         });
 
         it('should pass correct variables to GraphQL query', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' },
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }
+      }
+    }`,
+                    content: { content: 'query Content { items { title } }' }
+                },
                 languageId: '2',
                 mode: 'PREVIEW_MODE'
             };
@@ -215,7 +245,9 @@ describe('PageClient', () => {
             expect(requestBody.variables).toEqual({
                 url: '/custom-page',
                 mode: 'PREVIEW_MODE',
-                languageId: '2'
+                languageId: '2',
+                fireRules: false,
+                siteId: 'test-site'
             });
         });
 
@@ -224,7 +256,18 @@ describe('PageClient', () => {
 
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' }
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }
+      }
+    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
             };
             try {
                 await pageClient.get('/page', graphQLOptions);
@@ -240,9 +283,17 @@ describe('PageClient', () => {
 
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' }
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
             };
-
             try {
                 await pageClient.get('/page', graphQLOptions);
             } catch (error: any) {
@@ -253,16 +304,41 @@ describe('PageClient', () => {
         it('should use default values for languageId and mode if not provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' }
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
             };
-
             await pageClient.get('/default-page', graphQLOptions);
 
             const requestBody = JSON.parse(mockFetchGraphQL.mock.calls[0][0].body);
             expect(requestBody.variables).toEqual({
                 url: '/default-page',
                 mode: 'LIVE',
-                languageId: '1'
+                languageId: '1',
+                fireRules: false,
+                siteId: 'test-site'
+            });
+        });
+
+        it('should fetch using graphQL even if there is no graphql option', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+
+            await pageClient.get('/why-obi-wan-had-the-high-ground');
+
+            expect(mockFetchGraphQL).toHaveBeenCalled();
+            expect(utils.buildPageQuery).toHaveBeenCalled();
+            expect(utils.buildQuery).toHaveBeenCalledTimes(1);
+            expect(utils.fetchGraphQL).toHaveBeenCalledWith({
+                body: expect.stringContaining('"url":"/why-obi-wan-had-the-high-ground"'),
+                headers: requestOptions.headers,
+                baseURL: 'https://demo.dotcms.com'
             });
         });
     });
@@ -273,10 +349,11 @@ describe('PageClient', () => {
 
             await pageClient.get('/test-page');
 
-            expect(mockFetch).toHaveBeenCalledWith(
-                'https://demo.dotcms.com/api/v1/page/json/test-page?hostId=test-site',
-                requestOptions
-            );
+            expect(mockFetchGraphQL).toHaveBeenCalledWith({
+                baseURL: 'https://demo.dotcms.com',
+                body: expect.stringContaining('"siteId":"test-site"'),
+                headers: requestOptions.headers
+            });
         });
     });
 });

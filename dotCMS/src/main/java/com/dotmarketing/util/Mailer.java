@@ -4,6 +4,8 @@ package com.dotmarketing.util;
  *  Sends an email and writes the email to a file
  */
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
@@ -17,6 +19,7 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 import com.dotmarketing.business.APILocator;
+
 /**
  * 
  * Description of the Class
@@ -41,6 +44,8 @@ public class Mailer {
 	String toName;
 	String recipientId;
 	String encoding = "UTF-8";
+	private Map<String, String> customHeaders = new HashMap<>();
+
 	public Mailer() {
 		result = null;
 		sendingAttachments = new MimeMultipart();
@@ -293,6 +298,11 @@ public class Mailer {
 			}
 		}
 	}
+	public void addHeader(String headerName, String headerValue) {
+		if (UtilMethods.isSet(headerName) && UtilMethods.isSet(headerValue)) {
+			customHeaders.put(headerName, headerValue);
+		}
+	}
 	/**
 	 * 
 	 * Description of the Method
@@ -325,7 +335,9 @@ public class Mailer {
 			Session session = APILocator.getMailApi().getMailSession();
 			Logger.debug(this, "Delivering mail using: " + session.getProperty("mail.smtp.host") + " as server.");
 			MimeMessage message = new MimeMessage(session);
-			message.addHeader("X-RecipientId", String.valueOf(getRecipientId()));
+
+			applyHeaders(message);
+
 			if ((fromEmail != null) && (fromName != null) && (0 < fromEmail.trim().length())) {
 				message.setFrom(new InternetAddress(fromEmail, fromName));
 			} else if ((fromEmail != null) && (0 < fromEmail.trim().length())) {
@@ -386,6 +398,33 @@ public class Mailer {
 			result = "Failed:" + error;
 			Logger.error(Mailer.class, f.toString(), f);
 			return false;
+		}
+	}
+
+	/**
+	 * Applies email headers to the provided MimeMessage.
+	 * <p>
+	 * This method determines which headers to apply based on whether any custom headers
+	 * have been set. If custom headers are present, they will be used exclusively.
+	 * Otherwise, the system-wide default email headers (DEFAULT_EMAIL_HEADERS) will be applied.
+	 * Additionally, it always adds the "X-RecipientId" header.
+	 * </p>
+	 *
+	 * @param message the MimeMessage to which the headers should be added
+	 * @throws MessagingException if an error occurs while adding headers to the message
+	 */
+	private void applyHeaders(MimeMessage message) throws MessagingException {
+		Map<String, String> headersToApply;
+		if (customHeaders.isEmpty()) {
+			headersToApply = ConfigUtils.getDefaultEmailHeaders();
+		} else {
+			headersToApply = customHeaders;
+		}
+		// Always add the recipient ID header.
+		message.addHeader("X-RecipientId", String.valueOf(getRecipientId()));
+		// Add all headers.
+		for (Map.Entry<String, String> entry : headersToApply.entrySet()) {
+			message.addHeader(entry.getKey(), entry.getValue());
 		}
 	}
 }

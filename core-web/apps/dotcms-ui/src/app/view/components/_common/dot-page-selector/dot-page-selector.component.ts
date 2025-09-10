@@ -1,6 +1,14 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { Component, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    forwardRef,
+    Input,
+    Output,
+    ViewChild,
+    inject
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteSelectEvent } from 'primeng/autocomplete';
@@ -46,9 +54,13 @@ enum SearchType {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotPageSelectorComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
+    private dotPageSelectorService = inject(DotPageSelectorService);
+    private dotMessageService = inject(DotMessageService);
+
     @Output() selected = new EventEmitter<DotPageAsset | string>();
     @Input() folderSearch = false;
 
@@ -61,11 +73,6 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     isError = false;
     private currentHost: Site;
     private invalidHost = false;
-
-    constructor(
-        private dotPageSelectorService: DotPageSelectorService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     propagateChange = (_: unknown) => {
         /* */

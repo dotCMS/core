@@ -7,6 +7,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -41,6 +42,12 @@ public class FileAssetTemplate extends Template {
         this.metaDataMap = new HashMap<>();
     }
 
+    // we override it, in order to do the permissionable behind a contentlet object
+    @Override
+    public String getPermissionType() {
+        return Contentlet.class.getCanonicalName();
+    }
+    
     @JsonIgnore
     public FileAsset getBodyAsset() {
         return body;

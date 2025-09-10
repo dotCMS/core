@@ -9,21 +9,17 @@ import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotAddLanguage, DotLanguage, DotLanguagesISO } from '@dotcms/dotcms-models';
 
 export const LANGUAGE_API_URL = '/api/v2/languages';
-
 export const LANGUAGE_API_URL_WITH_VARS = '/api/v2/languages?countLangVars=true';
-
 export interface DotLanguageVariables {
     total: number;
     variables: Record<string, DotLanguageVariableEntry>;
 }
-
 export interface DotLanguageVariableEntry {
     [languageCode: string]: {
         identifier: string;
         value: string;
     };
 }
-
 /**
  * Provide util methods to get Languages available in the system.
  * @export

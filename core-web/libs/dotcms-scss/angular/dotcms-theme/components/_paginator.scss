@@ -42,15 +42,6 @@
     border-bottom-right-radius: $border-radius-xs;
 }
 
-.p-paginator .p-dropdown {
-    margin-left: $spacing-1;
-    height: $spacing-7;
-}
-
-.p-paginator .p-dropdown .p-dropdown-label {
-    padding-right: 0;
-}
-
 .p-paginator .p-paginator-current {
     background-color: transparent;
     border: 0 none;

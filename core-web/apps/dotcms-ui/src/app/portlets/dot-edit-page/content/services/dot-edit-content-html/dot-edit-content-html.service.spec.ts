@@ -21,6 +21,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotPageContainer,
     DotPageContent,
@@ -1211,7 +1212,7 @@ xdescribe('DotEditContentHtmlService', () => {
     describe('render Form', () => {
         const form: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
-            clazz: 'clazz',
+            clazz: DotCMSClazzes.TEXT,
             defaultType: true,
             fixed: true,
             folder: 'folder',
@@ -1235,7 +1236,7 @@ xdescribe('DotEditContentHtmlService', () => {
             spyOn(service, 'renderEditedContentlet');
 
             service.currentContainer = currentContainer;
-            dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
+            dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
         });
 
         it('should render added form', () => {

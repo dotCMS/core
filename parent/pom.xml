@@ -32,7 +32,7 @@
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
         <java.module.args>
-            --add-modules java.se
+            --add-modules java.se,jdk.management.agent
             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
             --add-opens java.base/java.lang=ALL-UNNAMED
             --add-opens java.base/java.nio=ALL-UNNAMED
@@ -61,7 +61,7 @@
         </java.module.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
-        <tomcat.version>9.0.85</tomcat.version>
+        <tomcat.version>9.0.108</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>
@@ -76,7 +76,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20241105</starter.deploy.version>
+        <starter.deploy.version>empty_20250714</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -127,6 +127,7 @@
         <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.failsafe.plugin>${version.surefire.plugin}</version.failsafe.plugin>
         <version.findbugs.plugin>3.0.5</version.findbugs.plugin>
+        <version.swagger-maven.plugin>2.2.34</version.swagger-maven.plugin>
         <version.gpg.plugin>3.1.0</version.gpg.plugin>
         <version.help.plugin>3.4.0</version.help.plugin>
         <version.install.plugin>3.1.1</version.install.plugin>
@@ -143,7 +144,6 @@
         <version.rewrite-maven-plugin>5.21.0</version.rewrite-maven-plugin>
         <version.shade.plugin>3.2.1</version.shade.plugin>
         <version.site.plugin>4.0.0-M8</version.site.plugin>
-        <version.sonar.plugin>3.10.0.2594</version.sonar.plugin>
         <version.source.plugin>3.1.0</version.source.plugin>
         <version.frontend.plugin>1.12.1</version.frontend.plugin>
         <version.properties.plugin>1.2.1</version.properties.plugin>
@@ -154,16 +154,6 @@
         <version.docker-maven.plugin>0.43.4</version.docker-maven.plugin>
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
-        <sonar.projectKey>core-maven:${project.groupId}:${project.artifactId}</sonar.projectKey>
-        <sonar.projectName>core-maven</sonar.projectName>
-        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/reports/target/**/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <!--<sonar.java.checkstyle.reportPaths>target/checkstyle-result.xml</sonar.java.checkstyle.reportPaths>
-        <sonar.java.pmd.reportPaths>target/pmd.xml,target/cpd.xml</sonar.java.pmd.reportPaths> -->
-        <sonar.exclusions>.idea/**</sonar.exclusions>
-
 
         <surefireArgline/>
         <integrationTestCoverageAgent/>
@@ -185,8 +175,16 @@
         <docker.data.shared.volume>${docker.run.context}_data-shared</docker.data.shared.volume>
         <docker.data.shared.volume.internal>/data/shared</docker.data.shared.volume.internal>
         <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
-        <license.user.path>${user.home}/.dotcms/license/license.dat</license.user.path>
+        <user.dotcms.folder>${user.home}/.dotcms</user.dotcms.folder>
+        <license.user.path>${user.dotcms.folder}/license/license.dat</license.user.path>
         <license.use>false</license.use>
+        <cert.folder.path>${user.dotcms.folder}/certs</cert.folder.path>
+        <cert.prefix>localhost</cert.prefix>
+        <cert.name>${cert.prefix}.pem</cert.name>
+        <cert.key.name>${cert.prefix}-key.pem</cert.key.name>
+        <cert.file.path>${cert.folder.path}/${cert.name}</cert.file.path>
+        <cert.key.file.path>${cert.folder.path}/${cert.key.name}</cert.key.file.path>
+        <docker.cert.volume.internal>/certs</docker.cert.volume.internal>
         <dotcms.startup.timeout>300000</dotcms.startup.timeout>
         <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
@@ -202,6 +200,15 @@
         <debug.args/>
         <docker.debug.args/>
         <docker.debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</docker.debug.args.default>
+        
+        <!-- JMX Configuration -->
+        <jmx.port>9999</jmx.port>
+        <jmx.rmi.port>9998</jmx.rmi.port>
+        <jmx.args.default>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=${jmx.port} -Dcom.sun.management.jmxremote.rmi.port=${jmx.rmi.port} -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost</jmx.args.default>
+        <jmx.args/>
+        <docker.jmx.args/>
+        <docker.jmx.args.default>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=${jmx.port} -Dcom.sun.management.jmxremote.rmi.port=${jmx.rmi.port} -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=${docker.host.address}</docker.jmx.args.default>
+        <docker.debug.jmx.args.default>${docker.debug.args.default} ${docker.jmx.args.default}</docker.debug.jmx.args.default>
         <disable.custom.properties>false</disable.custom.properties>
         <config.environment>dev</config.environment>
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
@@ -367,6 +374,8 @@
                                 <run>
                                     <ports combine.children="append">
                                         <port>tomcat.port:8080</port>
+                                        <port>tomcat.ssl.port:8443</port>
+                                        <port>management.port:8090</port>
                                     </ports>
                                     <env>
                                         <CMS_JAVA_OPTS>${docker.debug.args}</CMS_JAVA_OPTS>
@@ -929,11 +938,6 @@
                     <version>${version.license.plugin}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.sonarsource.scanner.maven</groupId>
-                    <artifactId>sonar-maven-plugin</artifactId>
-                    <version>${version.sonar.plugin}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
                     <version>${version.versions.plugin}</version>
@@ -968,6 +972,11 @@
                     <groupId>${quarkus.platform.group-id}</groupId>
                     <artifactId>quarkus-maven-plugin</artifactId>
                     <version>${quarkus.platform.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-maven-plugin</artifactId>
+                    <version>${version.swagger-maven.plugin}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1253,6 +1262,40 @@
             </build>
         </profile>
         <profile>
+            <id>use-cert</id>
+            <activation>
+                <file>
+                    <exists>${cert.file.path}</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${version.docker-maven.plugin}</version>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <volumes>
+                                            <bind combine.children="append">
+                                                <volume>${cert.folder.path}:${docker.cert.volume.internal}</volume>
+                                            </bind>
+                                        </volumes>
+                                        <env>
+                                            <CMS_SSL_CERTIFICATE_FILE>${docker.cert.volume.internal}/${cert.name}</CMS_SSL_CERTIFICATE_FILE>
+                                            <CMS_SSL_CERTIFICATE_KEY_FILE>${docker.cert.volume.internal}/${cert.key.name}</CMS_SSL_CERTIFICATE_KEY_FILE>
+                                        </env>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>rewrite</id>
             <activation>
             </activation>
@@ -1389,6 +1432,73 @@
             </build>
         </profile>
         <profile>
+            <id>jmx</id>
+            <activation>
+                <property>
+                    <name>jmx.enable</name>
+                </property>
+            </activation>
+            <properties>
+                <jmx.args>${jmx.args.default}</jmx.args>
+                <docker.debug.args>${docker.jmx.args.default}</docker.debug.args>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>${jmx.port}:${jmx.port}</port>
+                                            <port>${jmx.rmi.port}:${jmx.rmi.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jmx-debug</id>
+            <activation>
+                <property>
+                    <name>jmx.debug.enable</name>
+                </property>
+            </activation>
+            <properties>
+                <jmx.args>${jmx.args.default}</jmx.args>
+                <debug.args>${debug.args.default}</debug.args>
+                <docker.debug.args>${docker.debug.jmx.args.default}</docker.debug.args>
+                <dotcms.startup.timeout>7200000</dotcms.startup.timeout>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>debug.port:${debug.port}</port>
+                                            <port>${jmx.port}:${jmx.port}</port>
+                                            <port>${jmx.rmi.port}:${jmx.rmi.port}</port>
+                                        </ports>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>debug-suspend-e2e-docker</id>
             <!-- Adjust the debug.suspend.flag if debug.suspend is specifically set to true -->
             <activation>
@@ -1490,6 +1600,10 @@
                                         <!-- Here is where you define your Ant tasks -->
                                         <!--suppress UnresolvedMavenProperty -->
                                         <echo message="DotCMS started on (use fixed with -Dtomcat.port=8080)    : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="DotCMS Management Port started on (use fixed with -Dmanagement.port=8090)    : http://localhost:${management.port}/dotmgt/livez"/>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="DotCMS SSL started on (use fixed with -Dtomcat.ssl.port=8443)    : https://localhost:${tomcat.ssl.port}/dotAdmin"/>
 
                                         <!--suppress UnresolvedMavenProperty -->
                                         <echo message="Postgres started on  (use fixed with -Ddb.port=5423) : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
@@ -1501,6 +1615,7 @@
                                         <ac:if>
                                             <ac:isset property="glowroot.port"/>
                                             <then>
+                                                <!--suppress UnresolvedMavenProperty -->
                                                 <echo message="Glowroot started on (use fixed with -Dglowroot.port=4000) : http://localhost:${glowroot.port}"/>
                                             </then>
                                         </ac:if>

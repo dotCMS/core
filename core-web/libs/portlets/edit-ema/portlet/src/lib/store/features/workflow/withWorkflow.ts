@@ -41,16 +41,14 @@ export function withWorkflow() {
                 /**
                  * Load workflow actions
                  */
-                getWorkflowActions: rxMethod<void | string>(
+                getWorkflowActions: rxMethod<string>(
                     pipe(
                         tap(() => {
                             patchState(store, {
                                 workflowLoading: true
                             });
                         }),
-                        switchMap((inode) => {
-                            const pageInode = inode || store.pageAPIResponse()?.page.inode;
-
+                        switchMap((pageInode) => {
                             return dotWorkflowsActionsService.getByInode(pageInode).pipe(
                                 tapResponse({
                                     next: (workflowActions = []) => {
@@ -70,10 +68,8 @@ export function withWorkflow() {
                         })
                     )
                 ),
-                setWorkflowActionLoading: (loading: boolean) => {
-                    patchState(store, {
-                        workflowLoading: loading
-                    });
+                setWorkflowActionLoading: (workflowLoading: boolean) => {
+                    patchState(store, { workflowLoading });
                 }
             };
         })

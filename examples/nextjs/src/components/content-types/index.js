@@ -1,14 +1,33 @@
-import WebPageContent from './webPageContent';
-import Banner from './banner';
-import Activity from './activity';
-import Product from './product';
-import ImageComponent from './image';
+import { CustomNoComponent } from "./Empty";
+import Activity from "./Activity";
+import Banner from "./Banner";
+import BannerCarousel from "./BannerCarousel";
+import CalendarEvent from "./CalendarEvent";
+import CallToAction from "./CallToAction";
+import CategoryFilter from "./CategoryFilter";
+import SimpleWidget from "./SimpleWidget";
+import ImageComponent from "./Image";
+import PageForm from "./PageForm";
+import Product from "./Product";
+import StoreProductList from "./StoreProductList";
+import VtlInclude from "./VtlInclude";
+import WebPageContent from "./WebPageContent";
+import YouTube from "./YouTube";
 
-// Provide a component for each content type
-export const contentComponents = {
-    webPageContent: WebPageContent,
-    Banner: Banner,
+export const pageComponents = {
     Activity: Activity,
+    Banner: Banner,
+    BannerCarousel: BannerCarousel,
+    calendarEvent: CalendarEvent,
+    CallToAction: CallToAction,
+    CategoryFilter: CategoryFilter,
+    CustomNoComponent: CustomNoComponent,
+    Image: ImageComponent,
+    PageForm: PageForm,
     Product: Product,
-    Image: ImageComponent
+    SimpleWidget: SimpleWidget,
+    StoreProductList: StoreProductList,
+    VtlInclude: VtlInclude,
+    webPageContent: WebPageContent,
+    YouTube: YouTube,
 };

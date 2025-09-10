@@ -181,6 +181,22 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     @Override
     public void validate(final Map<String, Object> parameters) throws JobValidationException {
 
+        // Validating the import file was set
+        Optional<DotTempFile> tempFile = JobUtil.retrieveTempFile(parameters);
+        if (tempFile.isEmpty()) {
+            Logger.error(this.getClass(), "Unable to retrieve the import file.");
+            throw new JobValidationException("Unable to retrieve the import file.");
+        }
+
+        // And that it is not empty
+        final var fileToImport = tempFile.get().file;
+        final long totalLines = totalLines(fileToImport);
+        if (totalLines <= 1) {
+            final var errorMessage = "The import file is empty.";
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobValidationException(errorMessage);
+        }
+
         // Validating the language (will throw an exception if it doesn't)
         final Language language = findLanguage(parameters);
 
@@ -594,6 +610,16 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * @param dotTempFile temporary file
      * @return the number of lines in the file
      */
+    private Long totalLines(final File dotTempFile) {
+        return totalLines(null, dotTempFile);
+    }
+
+    /**
+     * Count the number of lines in the file
+     *
+     * @param dotTempFile temporary file
+     * @return the number of lines in the file
+     */
     private Long totalLines(final Job job, final File dotTempFile) {
 
         long totalCount;
@@ -604,10 +630,14 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                         "No lines in CSV import file: " + dotTempFile.getName());
             }
         } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    "Error calculating total lines in CSV import file: " + e.getMessage());
-            throw new JobProcessingException(job.id(),
-                    "Error calculating total lines in CSV import file", e);
+
+            final var message = "Error calculating total lines in CSV import file";
+            Logger.error(this.getClass(), String.format("%s: %s", message, e.getMessage()));
+            if (null != job) {
+                throw new JobProcessingException(job.id(), message, e);
+            } else {
+                throw new JobProcessingException(message, e);
+            }
         }
 
         return totalCount;

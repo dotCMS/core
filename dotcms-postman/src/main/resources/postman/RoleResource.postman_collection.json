@@ -1,12 +1,146 @@
 {
 	"info": {
-		"_postman_id": "f43d586b-9bff-4328-8455-5c645408c9c8",
+		"_postman_id": "4377cf5a-1887-4c88-b860-42b55e5dfcb7",
 		"name": "RoleResource",
 		"description": "Contains test for role resources",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
 	},
 	"item": [
+		{
+			"name": "UserRoles",
+			"item": [
+				{
+					"name": "UserRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"",
+									"let body;",
+									"pm.test(\"Body es JSON válido\", () => {",
+									"  body = pm.response.json();",
+									"  pm.expect(body).to.be.an(\"object\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"No ERRORS\", () => {",
+									"  pm.expect(body.errors).to.have.length(0);",
+									"  pm.expect(body.messages).to.have.length(0);",
+									"  pm.expect(body.permissions).to.have.length(0);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Greater than\", () => {",
+									"  pm.expect(body.entity.length).to.be.above(0);",
+									"  body.entity.forEach((e, idx) => {",
+									"    pm.expect(e, `entity[${idx}]`).to.be.an(\"object\");",
+									"",
+									"    [\"dbfqn\",\"description\",\"editLayouts\",\"editPermissions\",\"editUsers\",",
+									"     \"fqn\",\"id\",\"locked\",\"name\",\"parent\",\"roleChildren\",\"roleKey\",\"system\"]",
+									"     .forEach(k => pm.expect(e, `entity[${idx}].${k}`).to.have.property(k));",
+									"",
+									"    ",
+									"  });",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"victory123\"\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/users/dotcms.org.1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"users",
+								"dotcms.org.1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UserRoles400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 400 OK\", () => pm.response.to.have.status(400));",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"victory123\"\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/users/xxxx",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"users",
+								"xxxx"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "loadUsersAndRolesByRoleId",
 			"event": [

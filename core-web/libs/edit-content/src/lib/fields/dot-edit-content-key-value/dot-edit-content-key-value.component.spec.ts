@@ -10,6 +10,7 @@ import { DotKeyValueComponent } from '@dotcms/ui';
 import { DotEditContentKeyValueComponent } from './dot-edit-content-key-value.component';
 
 @Component({
+    standalone: false,
     selector: 'dot-custom-host',
     template: ''
 })
@@ -33,18 +34,15 @@ describe('DotEditContentKeyValueComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(` <form [formGroup]="form">
-            <dot-edit-content-key-value formControlName="keyValue" ></dot-edit-content-key-value>
+            <dot-edit-content-key-value formControlName="keyValue" />
         </form>`);
     });
 
-    it('should set the correct input to the dot-key-value-ng', () => {
-        const dotKeyValue = spectator.query(DotKeyValueComponent);
-        expect(dotKeyValue.variables).toEqual([
+    it('should set the correct initial value', () => {
+        expect(spectator.component.$initialValue()).toEqual([
             { key: 'key1', value: 'value1' },
             { key: 'key2', value: 'value2' }
         ]);
-        expect(dotKeyValue.autoFocus).toBeFalsy();
-        expect(dotKeyValue.showHiddenField).toBeFalsy();
     });
 
     it('should set the correct value in the form', (done) => {

@@ -24,16 +24,16 @@ import {
     DotFileMetadata
 } from '@dotcms/dotcms-models';
 import {
-    DotPreviewResourceLink,
-    UploadedFile
-} from '@dotcms/edit-content/models/dot-edit-content-file.model';
-import {
     DotTempFileThumbnailComponent,
     DotFileSizeFormatPipe,
     DotMessagePipe,
     DotCopyButtonComponent
 } from '@dotcms/ui';
 
+import {
+    DotPreviewResourceLink,
+    UploadedFile
+} from '../../../../models/dot-edit-content-file.model';
 import { CONTENT_TYPES, DEFAULT_CONTENT_TYPE } from '../../dot-edit-content-file-field.const';
 import { getFileMetadata } from '../../utils';
 
@@ -46,7 +46,6 @@ type FileInfo = UploadedFile & {
 
 @Component({
     selector: 'dot-file-field-preview',
-    standalone: true,
     imports: [
         DotTempFileThumbnailComponent,
         DotFileSizeFormatPipe,
@@ -69,6 +68,14 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     $previewFile = input.required<UploadedFile>({ alias: 'previewFile' });
+
+    /**
+     * Whether the component is disabled
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    $disabled = input<boolean>(false, { alias: 'disabled' });
+
     /**
      * Remove file
      *
@@ -142,6 +149,10 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     toggleShowDialog() {
+        if (this.$disabled()) {
+            return;
+        }
+
         this.$showDialog.update((value) => !value);
     }
 
@@ -153,6 +164,10 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     downloadAsset(link: string): void {
+        if (this.$disabled()) {
+            return;
+        }
+
         window.open(link, '_self');
     }
 

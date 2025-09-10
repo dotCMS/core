@@ -3,12 +3,11 @@ package com.dotcms.rendering.velocity.directive;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotmarketing.business.CacheLocator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
@@ -29,7 +28,6 @@ import com.dotmarketing.util.Logger;
 
 
 abstract class DotDirective extends InputBase {
-
 
   private static final long serialVersionUID = 1L;
 
@@ -95,8 +93,10 @@ abstract class DotDirective extends InputBase {
         Object value = node.jjtGetChild(i).value(context);
         arguments[i]= (value == null) ? null : value.toString();
     }
-    
-    final Optional<String> fromCache = getFromCache(arguments);
+
+    final boolean dontCache = VelocityUtil.getDontUseDirectiveCache(context);
+    final Optional<String> fromCache = dontCache ?
+            Optional.empty() : getFromCache(arguments);
 
     if (fromCache.isPresent()) {
       writer.write(fromCache.get());
@@ -110,11 +110,16 @@ abstract class DotDirective extends InputBase {
       if(null ==templatePath) {
           throw new ResourceNotFoundException("null template");
       }
+      final boolean loadAndRender = shouldLoadAndRenderTemplate(context, arguments);
+      if (!loadAndRender) {
+        afterRender(StringUtils.EMPTY, arguments, context);
+        return true;
+      }
       Template t = loadTemplate(context, templatePath);
 
       final Writer innerWriter = new StringWriter();
       final boolean result = this.renderTemplate(context, innerWriter, t, templatePath);
-      this.afterRender(innerWriter.toString(), arguments);
+      this.afterRender(innerWriter.toString(), arguments, context);
       writer.write(innerWriter.toString());
 
       return result;
@@ -127,13 +132,27 @@ abstract class DotDirective extends InputBase {
   }
 
   /**
+   * Call before render the Template, it allows to check if the Template should be loaded and rendered
+   * before the execution of {@link DotDirective#render(InternalContextAdapter, Writer, Node)}
+   * By default, it returns true, meaning the template will be loaded and rendered.
+   *
+   * @param context The context in which the directive is executed
+   * @param arguments The arguments passed to the directive
+   * @return True if the template should be loaded and rendered, false otherwise.
+   */
+  boolean shouldLoadAndRenderTemplate(final Context context, final String[] arguments) {
+    return true;
+  }
+
+  /**
    * Call after render the Template, it allow you to do something before the return of
    * the {@link DotDirective#render(InternalContextAdapter, Writer, Node)}
    *
    * @param render    Template content after render
-   * @param arguments
+   * @param arguments Arguments passed to the directive
+   * @param context   The context in which the directive is executed
    */
-  void afterRender(final String render, String[] arguments) {
+  void afterRender(final String render, final String[] arguments, final Context context) {
 
   }
 
@@ -185,8 +204,5 @@ abstract class DotDirective extends InputBase {
 
     return true;
   }
-
-
-
 
 }

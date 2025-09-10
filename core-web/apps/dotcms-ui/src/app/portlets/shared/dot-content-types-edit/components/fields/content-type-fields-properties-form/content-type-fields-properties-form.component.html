@@ -3,16 +3,19 @@
     [formGroup]="form"
     class="content-type-fields__properties-form p-fluid"
     novalidate>
-    <div *ngFor="let property of fieldProperties" #properties>
-        <ng-container
-            [propertyName]="property"
-            [field]="formFieldData"
-            [group]="form"
-            dotDynamicFieldProperty></ng-container>
-    </div>
-    <dot-relationship-tree
-        *ngIf="formFieldData?.relationships"
-        [contentType]="contentType"
-        [isParentField]="formFieldData.relationships.isParentField"
-        [velocityVar]="formFieldData.relationships.velocityVar"></dot-relationship-tree>
+    @for (property of fieldProperties; track property) {
+        <div #properties>
+            <ng-container
+                [propertyName]="property"
+                [field]="formFieldData"
+                [group]="form"
+                dotDynamicFieldProperty></ng-container>
+        </div>
+    }
+    @if (formFieldData?.relationships) {
+        <dot-relationship-tree
+            [contentType]="contentType"
+            [isParentField]="formFieldData.relationships.isParentField"
+            [velocityVar]="formFieldData.relationships.velocityVar"></dot-relationship-tree>
+    }
 </form>

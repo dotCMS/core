@@ -4,6 +4,8 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -24,6 +26,7 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -38,11 +41,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -52,6 +58,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
@@ -77,6 +84,8 @@ import static com.dotcms.util.CollectionsUtils.list;
  *
  */
 @Path("/v1/roles")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Roles")
 @SuppressWarnings("serial")
 public class RoleResource implements Serializable {
 
@@ -122,12 +131,34 @@ public class RoleResource implements Serializable {
 	 *         {@link Response} with {@code true}. Otherwise, returns a
 	 *         {@link Response} with {@code false}.
 	 */
+	@Operation(
+		operationId = "checkUserRoles",
+		summary = "Check user roles",
+		description = "Verifies that a user is assigned to one of the specified role IDs"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Role check completed successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/checkuserroles/userid/{userId}/roleids/{roleIds}")
 	@Produces("application/json")
 	public Response checkRoles(final @Context HttpServletRequest request,
 							   final @Context HttpServletResponse response,
+							   @Parameter(description = "User ID to check", required = true)
 							   final @PathParam("userId") String userId,
+							   @Parameter(description = "Comma-separated list of role IDs", required = true)
 							   final @PathParam("roleIds") String roleIds) {
 
 		final InitDataObject init = new WebResource.InitBuilder(webResource)
@@ -146,19 +177,45 @@ public class RoleResource implements Serializable {
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
-		return Response.ok(new ResponseEntityView(Map.of("checkRoles", hasUserRole))).build();
+		return Response.ok(new ResponseEntityRoleOperationView(Map.of("checkRoles", hasUserRole))).build();
 	}
 
 	/**
 	 * Deletes a set of layouts into a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */
+	@Operation(
+		operationId = "deleteRoleLayouts",
+		summary = "Delete role layouts",
+		description = "Deletes a set of layouts from a role"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Layouts deleted successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid role or layout data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@Path("/layouts")
-	@Produces("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response deleteRoleLayouts(
 			final @Context HttpServletRequest request,
 			final @Context HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Role and layout information", 
+				required = true,
+				content = @Content(schema = @Schema(implementation = RoleLayoutForm.class))
+			)
 			final RoleLayoutForm roleLayoutForm) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initDataObject = new WebResource.InitBuilder()
@@ -175,7 +232,7 @@ public class RoleResource implements Serializable {
 
 			Logger.debug(this, ()-> "Deleting the layouts : " + layoutIds + " to the role: " + roleId);
 
-			return Response.ok(new ResponseEntityView(Map.of("deletedLayouts",
+			return Response.ok(new ResponseEntityRoleOperationView(Map.of("deletedLayouts",
 					this.roleHelper.deleteRoleLayouts(role, layoutIds, layoutAPI,
 							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
 		} else {
@@ -191,11 +248,37 @@ public class RoleResource implements Serializable {
 	 * Add a new role
 	 * Only admins can add roles.
 	 */
+	@Operation(
+		operationId = "createRole",
+		summary = "Create new role",
+		description = "Creates a new role in the system. Only admins can add roles."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Role created successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = RoleResponseEntityView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid role data or role name failed",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@POST
-	@Produces("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response addNewRole(
 			final @Context HttpServletRequest request,
 			final @Context HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Role information", 
+				required = true,
+				content = @Content(schema = @Schema(implementation = RoleForm.class))
+			)
 			final RoleForm roleForm) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
@@ -258,12 +341,38 @@ public class RoleResource implements Serializable {
 	 * Saves set of layout into a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */
+	@Operation(
+		operationId = "saveRoleLayouts",
+		summary = "Save role layouts",
+		description = "Saves a set of layouts to a role"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Layouts saved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid role or layout data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@Path("/layouts")
-	@Produces("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response saveRoleLayouts(
 			final @Context HttpServletRequest request,
 			final @Context HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Role and layout information", 
+				required = true,
+				content = @Content(schema = @Schema(implementation = RoleLayoutForm.class))
+			)
 			final RoleLayoutForm roleLayoutForm) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
@@ -280,7 +389,7 @@ public class RoleResource implements Serializable {
 
 			Logger.debug(this, ()-> "Saving the layouts : " + layoutIds + " to the role: " + roleId);
 
-			return Response.ok(new ResponseEntityView(Map.of("savedLayouts",
+			return Response.ok(new ResponseEntityRoleOperationView(Map.of("savedLayouts",
 					this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
 							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
 		}
@@ -295,12 +404,33 @@ public class RoleResource implements Serializable {
 	 * Returns a collection of layouts associated to a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */
+	@Operation(
+		operationId = "findRoleLayouts",
+		summary = "Find role layouts",
+		description = "Returns a collection of layouts associated to a role"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Role layouts retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityLayoutList.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid role ID",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - roles portlet access required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/{roleId}/layouts")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response findRoleLayouts(
 			final @Context HttpServletRequest request,
 			final @Context HttpServletResponse response,
+			@Parameter(description = "Role ID", required = true)
 			final @PathParam("roleId") String roleId) throws DotDataException {
 
 		new WebResource.InitBuilder(this.webResource)
@@ -312,9 +442,8 @@ public class RoleResource implements Serializable {
 		final Role role              = roleAPI.loadRoleById(roleId);
 		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
 
-		return Response.ok(new ResponseEntityView<>(
-				layoutAPI.loadLayoutsForRole(role)
-		)).build();
+        return Response.ok(new ResponseEntityLayoutList(layoutAPI.loadLayoutsForRole(role)))
+                .build();
 	}
 
 	/**
@@ -328,14 +457,40 @@ public class RoleResource implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Operation(
+		operationId = "loadUsersAndRolesByRoleId",
+		summary = "Load users and roles by role ID",
+		description = "Load the user and roles by role id with optional hierarchy and filtering"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Users and roles retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleListView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid role ID",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - backend user required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/{roleid}/rolehierarchyanduserroles")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@SuppressWarnings("unchecked")
 	public Response loadUsersAndRolesByRoleId(@Context final HttpServletRequest request,
 											  @Context final HttpServletResponse response,
+											  @Parameter(description = "Role ID", required = true)
 											  @PathParam   ("roleid") final String roleId,
+											  @Parameter(description = "Include role hierarchy", required = false)
 											  @DefaultValue("false") @QueryParam("roleHierarchyForAssign") final boolean roleHierarchyForAssign,
+											  @Parameter(description = "Role name filter prefix", required = false)
 											  @QueryParam  ("name") final String roleNameToFilter) throws DotDataException, DotSecurityException {
 
 		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
@@ -372,7 +527,7 @@ public class RoleResource implements Serializable {
 			}
 		}
 
-		return Response.ok(new ResponseEntityView<List<Role>>(
+		return Response.ok(new ResponseEntityRoleListView(
 				null != roleNameToFilter? this.filterRoleList(roleNameToFilter, roleList):roleList)).build();
 	}
 
@@ -396,12 +551,37 @@ public class RoleResource implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Operation(
+		operationId = "loadRoleByRoleId",
+		summary = "Load role by role ID",
+		description = "Load role based on the role id with optional children roles"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Role retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid role ID",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - backend user required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/{roleid}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response loadRoleByRoleId(@Context final HttpServletRequest request,
 									 @Context final HttpServletResponse response,
+									 @Parameter(description = "Role ID", required = true)
 									 @PathParam   ("roleid") final String roleId,
+									 @Parameter(description = "Load children roles", required = false)
 									 @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
 			throws DotDataException, DotSecurityException {
 
@@ -424,7 +604,7 @@ public class RoleResource implements Serializable {
 			}
 		}
 
-		return Response.ok(new ResponseEntityView(new RoleView(role,childrenRoles))).build();
+		return Response.ok(new ResponseEntityRoleDetailView(new RoleView(role,childrenRoles))).build();
 
 	}
 
@@ -437,10 +617,28 @@ public class RoleResource implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Operation(
+		operationId = "loadRootRoles",
+		summary = "Load root roles",
+		description = "Loads the root roles with optional children roles"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Root roles retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleViewListView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - backend user required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response loadRootRoles(@Context final HttpServletRequest request,
 								  @Context final HttpServletResponse response,
+								  @Parameter(description = "Load children roles", required = false)
 								  @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
 			throws DotDataException, DotSecurityException {
 
@@ -467,7 +665,7 @@ public class RoleResource implements Serializable {
 					.forEach(role -> rootRolesView.add(new RoleView(role, new ArrayList<>())));
 		}
 
-		return Response.ok(new ResponseEntityView<>(rootRolesView)).build();
+		return Response.ok(new ResponseEntityRoleViewListView(rootRolesView)).build();
 	}
 
 	/**
@@ -500,8 +698,11 @@ public class RoleResource implements Serializable {
 	@Path("_search")
 	@GET
 	@Produces("application/json")
-	@Operation(summary = "Search Roles",
-			responses = {
+	@Operation(
+		operationId = "searchRoles",
+		summary = "Search Roles",
+		description = "Search and filter roles by name, key, or ID with pagination support. Includes options to filter by workflow roles.",
+		responses = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
@@ -569,9 +770,26 @@ public class RoleResource implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@Operation(
+		operationId = "getAllLayouts",
+		summary = "Get all layouts",
+		description = "Get all layouts in the system"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Layouts retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = LayoutMapResponseEntityView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/layouts")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response getAllLayouts(@Context final HttpServletRequest request,
 								  @Context final HttpServletResponse response)
 			throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException {
@@ -587,6 +805,82 @@ public class RoleResource implements Serializable {
 		}
 
 		return Response.ok(new LayoutMapResponseEntityView(layoutsMap)).build();
+	}
+
+	/**
+	 * Given an id (user id or email), if the user exist will retrieve the user roles assigned
+	 * This endpoint is only available for Admin Clients or CLients with User|Roles Layout
+	 *
+	 * @param id String could be the user id or email
+	 * @return list of {@link RoleView}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Operation(
+			operationId = "loadUserRoles",
+			summary = "Load user roles",
+			description = "Loads the user roles"
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+					description = "User roles retrieved successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(implementation = ResponseEntityRoleViewListView.class))),
+			@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "403",
+					description = "Forbidden - backend user required",
+					content = @Content(mediaType = "application/json"))
+	})
+	@GET
+	@Path("/users/{userIdOrEmail}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleViewListView loadUserRoles(@Context final HttpServletRequest request,
+								  @Context final HttpServletResponse response,
+								  @Parameter(description = "User id or email", required = true)
+								  @DefaultValue("true") @PathParam("userIdOrEmail") final String userIdOrEmail)
+			throws DotDataException {
+
+		final User modUser = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init().getUser();
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				(
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+				);
+
+		Logger.debug(this, ()-> "Loading the user roles for: " + modUser);
+
+		if (isRoleAdministrator) {
+
+			User userRecover = Try.of(()->this.userAPI.loadUserById(userIdOrEmail)).getOrNull();
+			if (userRecover == null) {
+				userRecover = Try.of(()->this.userAPI.loadUserById(userIdOrEmail)).getOrNull();
+			}
+
+			if (userRecover == null) {
+				userRecover = Try.of(()->this.userAPI.loadByUserByEmail(userIdOrEmail, modUser, false)).getOrNull();
+			}
+
+			if (userRecover == null) {
+				throw new com.dotmarketing.business.NoSuchUserException("No user found with id: " + userIdOrEmail);
+			}
+
+			final List<RoleView> userRolesView = new ArrayList<>();
+			final List<Role> userRoles = this.roleAPI.loadRolesForUser(userRecover.getUserId());
+
+			userRoles.stream()
+					.forEach(role -> userRolesView.add(new RoleView(role, new ArrayList<>())));
+
+			return new ResponseEntityRoleViewListView(userRolesView);
+		}
+
+		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";
+		Logger.error(this, forbiddenMessage);
+		throw new ForbiddenException(forbiddenMessage);
 	}
 
 	private List<String> getPorletTitlesFromLayout (final Layout layout,

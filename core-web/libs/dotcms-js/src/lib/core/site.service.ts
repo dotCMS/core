@@ -1,8 +1,8 @@
-import { Observable, Subject, of, merge } from 'rxjs';
+import { Observable, Subject, merge, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
-import { pluck, map, take, switchMap, tap } from 'rxjs/operators';
+import { filter, map, pluck, startWith, switchMap, take, tap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -22,8 +22,11 @@ import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper'
     providedIn: 'root'
 })
 export class SiteService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     private selectedSite: Site;
-    private urls: any;
+    private urls: { currentSiteUrl: string; sitesUrl: string; switchSiteUrl: string };
     private events: string[] = [
         'SAVE_SITE',
         'PUBLISH_SITE',
@@ -35,12 +38,10 @@ export class SiteService {
     private _switchSite$: Subject<Site> = new Subject<Site>();
     private _refreshSites$: Subject<Site> = new Subject<Site>();
 
-    constructor(
-        loginService: LoginService,
-        dotcmsEventsService: DotcmsEventsService,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const loginService = inject(LoginService);
+        const dotcmsEventsService = inject(DotcmsEventsService);
+
         this.urls = {
             currentSiteUrl: 'v1/site/currentSite',
             sitesUrl: 'v1/site',
@@ -107,7 +108,7 @@ export class SiteService {
      * @memberof SiteService
      */
     get switchSite$(): Observable<Site> {
-        return this._switchSite$.asObservable();
+        return this._switchSite$.asObservable().pipe(startWith(this.selectedSite));
     }
 
     /**
@@ -202,7 +203,7 @@ export class SiteService {
     getCurrentSite(): Observable<Site> {
         return merge(
             this.selectedSite ? of(this.selectedSite) : this.requestCurrentSite(),
-            this.switchSite$
+            this.switchSite$.pipe(filter((site) => !!site))
         );
     }
 
@@ -221,13 +222,24 @@ export class SiteService {
 
     private loadCurrentSite(): void {
         this.getCurrentSite()
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                filter((site) => !!site)
+            )
             .subscribe((currentSite: Site) => {
                 this.setCurrentSite(currentSite);
             });
     }
 }
 
+/**
+ * @deprecated
+ * This interface is deprecated do not use it in new code.
+ * If you need to interact with the sites use the DotSiteService from @dotcms/data-access.
+ *
+ * @export
+ * @interface Site
+ */
 export interface Site {
     hostname: string;
     type: string;

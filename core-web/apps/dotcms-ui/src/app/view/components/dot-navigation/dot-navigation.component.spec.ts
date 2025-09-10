@@ -1,4 +1,10 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider,
+    createMouseEvent
+} from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -6,12 +12,9 @@ import { provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
@@ -19,6 +22,10 @@ import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.compone
 import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavigationService } from './services/dot-navigation.service';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
+
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotRandomIconPipeModule } from '../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 describe('DotNavigationComponent collapsed', () => {
     let spectator: Spectator<DotNavigationComponent>;
@@ -256,6 +263,52 @@ describe('DotNavigationComponent expanded', () => {
             spectator.detectChanges();
 
             expect(spectator.debugElement.styles.cssText).toEqual('overflow-y: auto;');
+        });
+    });
+
+    describe('menuClick event expanded', () => {
+        it('should navigate and set open when menu is closed', () => {
+            spectator.detectChanges();
+
+            const mockMenu = {
+                ...dotMenuMock(),
+                isOpen: false
+            };
+
+            spectator.component.onMenuClick({
+                originalEvent: createMouseEvent('click'),
+                data: mockMenu
+            });
+
+            expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
+            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+        });
+
+        it('should only set open when menu is already open', () => {
+            spectator.detectChanges();
+
+            const mockMenu = {
+                ...dotMenuMock(),
+                isOpen: true
+            };
+
+            spectator.component.onMenuClick({
+                originalEvent: createMouseEvent('click'),
+                data: mockMenu
+            });
+
+            expect(navigationService.goTo).not.toHaveBeenCalled();
+            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+        });
+    });
+
+    describe('collapse button', () => {
+        it('should toggle navigation when collapse button is clicked', () => {
+            spectator.detectChanges();
+
+            spectator.component.handleCollapseButtonClick();
+
+            expect(navigationService.toggle).toHaveBeenCalledTimes(1);
         });
     });
 });

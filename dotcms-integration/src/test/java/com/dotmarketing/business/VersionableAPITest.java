@@ -14,7 +14,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -23,7 +22,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
@@ -36,6 +34,7 @@ import graphql.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+
 import java.util.Optional;
 
 import static org.junit.Assert.*;
@@ -47,7 +46,6 @@ public class VersionableAPITest {
 	
 	private static User user;
 	private static Host host;
-	
 	@BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment

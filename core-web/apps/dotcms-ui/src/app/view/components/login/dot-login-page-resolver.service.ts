@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Resolve } from '@angular/router';
 
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+
+import { DotLoginPageStateService } from './shared/services/dot-login-page-state.service';
 
 /**
  *
@@ -14,7 +15,7 @@ import { DotLoginInformation } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotLoginPageResolver implements Resolve<DotLoginInformation> {
-    constructor(private dotLoginPageStateService: DotLoginPageStateService) {}
+    private dotLoginPageStateService = inject(DotLoginPageStateService);
 
     resolve(): Observable<DotLoginInformation> {
         return this.dotLoginPageStateService.set('');

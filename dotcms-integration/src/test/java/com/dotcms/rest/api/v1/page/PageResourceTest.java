@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.page;
 
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.extractPageViewFromResponse;
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateAllContentletTitlesContaining;
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateContentletTitlesContainingInternal;
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateNoContentlets;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -45,6 +49,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.page.PageScenarioUtils.ContentConfig;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -92,6 +97,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
@@ -108,6 +114,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -1664,12 +1671,21 @@ public class PageResourceTest {
         final String pageUri;
         final String identifier;
         final Set<String> inodes;
+        final Set<String> expiredInodes;
+        final Set<String> validInodes;
 
         PageInfo(String pageUri, final String identifier, Set<String> inodes) {
+           this(pageUri, identifier, inodes, new HashSet<>(), new HashSet<>());
+        }
+
+        PageInfo(String pageUri, final String identifier, Set<String> inodes, Set<String> expiredInodes, Set<String> validInodes) {
             this.pageUri = pageUri;
             this.identifier = identifier;
             this.inodes = inodes;
+            this.expiredInodes = expiredInodes;
+            this.validInodes = validInodes;
         }
+
     }
 
     /**
@@ -1957,5 +1973,322 @@ public class PageResourceTest {
         }
 
     }
+
+
+
+    /**
+     * Create a test page with expired and valid content using configurable date ranges
+     * Each content configuration determines if content will be expired or valid relative to reference date
+     *
+     * @param contentConfigs List of content configurations
+     * @param referenceDate The reference date to calculate all other dates from (usually current date)
+     * @return PageInfo with detailed information about created content
+     * @throws DotDataException if there is an error creating the page
+     * @throws DotSecurityException if there is an error creating the page
+     * @throws WebAssetException if there is an error creating the page
+     */
+    PageInfo createTestPageWithContentConfigs(final List<ContentConfig> contentConfigs,
+            final Date referenceDate)
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+        final ContentType blogLikeContentType = TestDataUtils.getBlogLikeContentType();
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container myContainer = new ContainerDataGen()
+                .withStructure(structure, "")
+                .friendlyName("container-friendly-name" + System.currentTimeMillis())
+                .title("container-title")
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(myContainer);
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(myContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(myContainer.getIdentifier())
+                .nextPersisted();
+
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
+
+        final String myFolderName = "folder-" + System.currentTimeMillis();
+        final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
+        final String myPageName = "my-content-config-test-page-" + System.currentTimeMillis();
+        final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
+                .languageId(languageId)
+                .pageURL(myPageName)
+                .title(myPageName)
+                .nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI.publish(myPage, systemUser, false);
+
+        // Verify required fields
+        assertNotNull(blogLikeContentType.publishDateVar());
+        assertNotNull(blogLikeContentType.expireDateVar());
+
+        final Set<String> allInodes = new HashSet<>();
+        final Set<String> expiredInodes = new HashSet<>();
+        final Set<String> validInodes = new HashSet<>();
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final Calendar calendar = Calendar.getInstance();
+        String identifier = null;
+        Contentlet blog = null;
+        int orderPosition = 1;
+
+        // Process all content configurations
+        for (ContentConfig config : contentConfigs) {
+            // Calculate publishDate
+            calendar.setTime(referenceDate);
+            calendar.add(Calendar.DAY_OF_MONTH, -config.daysBeforeCurrentForPublish);
+            final Date publishDate = calendar.getTime();
+
+            // Calculate expireDate based on configuration
+            Date expireDate = null;
+            if (config.daysBeforeCurrentForExpire != null) {
+                // Content that expires before reference date (expired content)
+                calendar.setTime(referenceDate);
+                calendar.add(Calendar.DAY_OF_MONTH, -config.daysBeforeCurrentForExpire);
+                expireDate = calendar.getTime();
+
+                // Ensure expireDate is after publishDate for expired content
+                if (expireDate.before(publishDate)) {
+                    throw new IllegalArgumentException(
+                            String.format("Expire date (%d days before current) must be after publish date (%d days before current) for content: %s",
+                                    config.daysBeforeCurrentForExpire, config.daysBeforeCurrentForPublish, config.title));
+                }
+            } else if (config.daysAfterCurrentForExpire != null) {
+                // Content that expires after reference date (valid content)
+                calendar.setTime(referenceDate);
+                calendar.add(Calendar.DAY_OF_MONTH, config.daysAfterCurrentForExpire);
+                expireDate = calendar.getTime();
+            }
+            // If both are null, content never expires
+
+            // Create contentlet
+            final ContentletDataGen blogsDataGen = new ContentletDataGen(blogLikeContentType.id())
+                    .languageId(languageId)
+                    .host(host)
+                    .setProperty("title", config.title)
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .setProperty("publishDate", publishDate)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .languageId(languageId)
+                    .setProperty(Contentlet.IS_TEST_MODE, true);
+
+            // Set expireDate only if specified
+            if (expireDate != null) {
+                blogsDataGen.setProperty("expireDate", expireDate);
+            }
+
+            blog = blogsDataGen.nextPersistedAndPublish();
+
+            allInodes.add(blog.getInode());
+
+            // Classify content based on whether it's expired or valid
+            if (config.isExpiredContent()) {
+                expiredInodes.add(blog.getInode());
+                Logger.info(this, String.format("Created EXPIRED content: '%s' | Published: %s | Expired: %s",
+                        config.title, publishDate, expireDate));
+            } else {
+                validInodes.add(blog.getInode());
+                String expireInfo = (expireDate != null) ? expireDate.toString() : "NEVER";
+                Logger.info(this, String.format("Created VALID content: '%s' | Published: %s | Expires: %s",
+                        config.title, publishDate, expireInfo));
+            }
+
+            assertNotNull(blog.getIdentifier());
+            identifier = blog.getIdentifier();
+
+            // Add each blog to the container and page
+            final MultiTree multiTree = new MultiTree(myPage.getIdentifier(),
+                    myContainer.getIdentifier(), blog.getIdentifier(), UUIDUtil.uuid(), orderPosition++);
+            multiTreeAPI.saveMultiTree(multiTree);
+        }
+
+        // Count expired and valid content
+        final long expiredCount = contentConfigs.stream().filter(ContentConfig::isExpiredContent).count();
+        final long validCount = contentConfigs.size() - expiredCount;
+
+        assertEquals(contentConfigs.size(), allInodes.size());
+        assertEquals(expiredCount, expiredInodes.size());
+        assertEquals(validCount, validInodes.size());
+
+        final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
+        Logger.info(this, "Page Path: " + myPagePath);
+        Logger.info(this, "Reference Date: " + referenceDate);
+        Logger.info(this, "Total content created: " + allInodes.size());
+        Logger.info(this, "Expired content: " + expiredInodes.size());
+        Logger.info(this, "Valid content: " + validInodes.size());
+
+        return new PageInfo(myPagePath, identifier, allInodes, expiredInodes, validInodes);
+    }
+
+    /**
+     * Convenience method with predefined common scenarios using unified ContentConfig
+     * Creates content with typical expiration patterns for testing
+     */
+    PageInfo createTestPageWithTypicalExpiredContent(final Date referenceDate)
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final List<ContentConfig> contentConfigs = Arrays.asList(
+                // Expired content
+                ContentConfig.expired("Expired Blog 1 - Old", 30, 7),      // Published 30 days ago, expired 7 days ago
+                ContentConfig.expired("Expired Blog 2 - Recent", 14, 2),   // Published 14 days ago, expired 2 days ago
+                ContentConfig.expired("Expired Blog 3 - Yesterday", 5, 1), // Published 5 days ago, expired yesterday
+
+                // Valid content
+                ContentConfig.neverExpires("Valid Blog 1 - No Expiration", 10),           // Published 10 days ago, never expires
+                ContentConfig.validWithExpiration("Valid Blog 2 - Future Expiration", 7, 30), // Published 7 days ago, expires in 30 days
+                ContentConfig.validWithExpiration("Valid Blog 3 - Recent", 3, 60)        // Published 3 days ago, expires in 60 days
+        );
+
+        return createTestPageWithContentConfigs(contentConfigs, referenceDate);
+    }
+
+    /**
+     * Creates content with overlapping time ranges for comprehensive testing
+     * This method creates various scenarios to test content visibility at different dates
+     *
+     * @param referenceDate The reference date (usually current date for testing)
+     * @return PageInfo with content that has overlapping time ranges
+     * @throws DotDataException if there is an error creating the page
+     * @throws DotSecurityException if there is an error creating the page
+     * @throws WebAssetException if there is an error creating the page
+     */
+    PageInfo createTestPageWithOverlappingTimeRanges(final Date referenceDate)
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final List<ContentConfig> contentConfigs = Arrays.asList(
+                // Content published in the past and already expired (should NOT appear on reference date)
+                ContentConfig.expired("Past Published - Already Expired", 20, 5),
+
+                // Content published in the past, expires today (should appear on reference date but expire today)
+                ContentConfig.expired("Past Published - Expires Today", 15, 0),
+
+                // Content published in the past, expires in the future (should appear on reference date)
+                ContentConfig.validWithExpiration("Past Published - Future Expiration", 10, 30),
+
+                // Content published in the past, never expires (should appear on reference date)
+                ContentConfig.neverExpires("Past Published - Never Expires", 12),
+
+                // Content published today, expires in the future (should appear on reference date)
+                ContentConfig.validWithExpiration("Published Today - Future Expiration", 0, 15),
+
+                // Content published today, never expires (should appear on reference date)
+                ContentConfig.neverExpires("Published Today - Never Expires", 0),
+
+                // Edge case: Published yesterday, expired yesterday (should NOT appear)
+                ContentConfig.expired("Yesterday Published - Yesterday Expired", 1, 1)
+        );
+
+        return createTestPageWithContentConfigs(contentConfigs, referenceDate);
+    }
+
+
+    /**
+     * Given scenario: A page with a container and a contentlet is created. The contentlet is set to be published in the future.
+     * Expected result: When no publish date is passed, the contentlet should not be shown.
+     * @throws Exception
+     */
+    @Test
+    public void TestPageWithExpiredContentNotShowing() throws Exception{
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+            //Let's start by creating a content that will be published or expired one year from now, cuz the API does not allow me to create it using past dates
+            final Instant instant = LocalDateTime.now().plusDays(365).atZone(utc.toZoneId()).toInstant();
+            final String matchingFutureIso8601 = instant.toString();
+            final Date publishDate = Date.from(instant);
+            final PageInfo pageInfo = createTestPageWithTypicalExpiredContent(publishDate);
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+            //This param is required to be live to behave correctly when building the query
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+            addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+            final Response noPublishDateResponse = pageResource
+                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                            "1", null, null);
+
+            //When no publish date is passed, we should get all contentlets that are valid!
+            assertTrue("No contentlets should be present as they're all set to publish in the future ",
+                    validateNoContentlets(noPublishDateResponse));
+
+            final Response withFutureDatePassed = pageResource
+                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                            "1", null, matchingFutureIso8601);
+
+            //When publish date is passed, we should still get only valid content since the base case only created expired content in the past, so we should only get valid content
+            assertTrue("All content returned should be the valid - publish date provided",
+                    validateAllContentletTitlesContaining(withFutureDatePassed, "Valid"));
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
+
+    /**
+     * Given scenario: A page with a container and a contentlet is created. The contentlet has overlapping time ranges.
+     * Expected result: The contentlet should be rendered in the page when the current date is used.
+     * @throws Exception
+     */
+    @Test
+    public void TestPageWithOverlappingTimeRanges() throws Exception{
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+
+            // Use current day + 365 days in the future as reference to avoid API throwing errors for past dates
+            final Instant instant = LocalDateTime.now().plusDays(365).atZone(utc.toZoneId()).toInstant();
+            final String matchingFutureIso8601 = instant.toString();
+            final Date publishDate = Date.from(instant);
+            final PageInfo pageInfo = createTestPageWithOverlappingTimeRanges(publishDate);
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+            addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+            // Test with current date - should only show valid content
+            final Response currentDateResponse = pageResource
+                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                            "1", null, matchingFutureIso8601);
+
+            final PageView pageView = extractPageViewFromResponse(currentDateResponse);
+            //Already expired content should not be present
+            assertEquals(0, validateContentletTitlesContainingInternal(pageView, "Past Published - Already Expired").matched);
+            //Expires today but still makes the cut
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Past Published - Expires Today").matched);
+            //This one should make the cut as it has a future expiration date
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Past Published - Future Expiration").matched);
+            // This one should make the cut as it has no expiration date
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Past Published - Never Expires").matched);
+            // This one should make the cut as it has a future expiration date and was published today
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Published Today - Future Expiration").matched);
+            // This one should make the cut as it has no expiration date and was published today
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Published Today - Never Expires").matched);
+            // Edge case: Published yesterday, expired yesterday should not be present
+            assertEquals(0, validateContentletTitlesContainingInternal(pageView, "Yesterday Published - Yesterday Expired").matched);
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
+
 
 }

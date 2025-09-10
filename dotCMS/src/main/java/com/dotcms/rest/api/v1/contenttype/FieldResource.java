@@ -37,12 +37,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * @deprecated {@link com.dotcms.rest.api.v2.contenttype.FieldResource} should be used instead. Path:/v2/contenttype/{typeId}/fields
  */
 @Deprecated
 @Path("/v1/contenttype/{typeId}/fields")
+@Tag(name = "Content Type Field", description = "Content type field management and configuration")
 public class FieldResource implements Serializable {
 	private final WebResource webResource;
 	private final FieldAPI fieldAPI;

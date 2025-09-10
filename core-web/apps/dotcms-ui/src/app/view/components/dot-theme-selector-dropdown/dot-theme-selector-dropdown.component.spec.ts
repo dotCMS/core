@@ -2,7 +2,7 @@
 
 import { of } from 'rxjs';
 
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, Input, inject as inject_1 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
     FormsModule,
@@ -13,17 +13,18 @@ import {
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import {
-    PaginationEvent,
-    SearchableDropdownComponent
-} from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
+
+import {
+    PaginationEvent,
+    SearchableDropdownComponent
+} from '../_common/searchable-dropdown/component/searchable-dropdown.component';
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',
@@ -36,7 +37,8 @@ const messageServiceMock = new MockDotMessageService({
         <select>
             <option>Fake site selector</option>
         </select>
-    `
+    `,
+    standalone: false
 })
 class MockDotSiteSelectorComponent {
     @Input() system;
@@ -55,12 +57,15 @@ class MockDotSiteSelectorComponent {
         <form [formGroup]="form">
             <dot-theme-selector-dropdown formControlName="theme"></dot-theme-selector-dropdown>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostFilledComponent {
+    private fb = inject_1(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             theme: '123'
         });
@@ -73,12 +78,15 @@ class TestHostFilledComponent {
         <form [formGroup]="form">
             <dot-theme-selector-dropdown formControlName="theme"></dot-theme-selector-dropdown>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostEmtpyComponent {
+    private fb = inject_1(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             theme: ''
         });

@@ -2,23 +2,22 @@ import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
-  OnInit,
 } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
-import { DotCMSContentlet } from '@dotcms/angular';
+import { Product } from '../../shared/contentlet.model';
 
 @Component({
   selector: 'app-product',
-  standalone: true,
   imports: [RouterLink, NgOptimizedImage],
-  template: ` <div class="overflow-hidden bg-white rounded shadow-lg">
+  template: ` <div class="overflow-hidden bg-white rounded shadow-lg my-2">
     <div class="p-4">
-      @if (contentlet().image; as image) {
+      @if (contentlet().image.versionPath; as imageVersionPath) {
         <img
           class="w-full"
-          [ngSrc]="image"
+          [ngSrc]="imageVersionPath"
           width="100"
           height="100"
           alt="Product Image"
@@ -27,16 +26,16 @@ import { DotCMSContentlet } from '@dotcms/angular';
     </div>
     <div class="px-6 py-4 bg-slate-100">
       <div class="mb-2 text-xl font-bold">{{ contentlet().title }}</div>
-      @if (contentlet()['retailPrice'] && contentlet()['salePrice']) {
-        <div class="text-gray-500 line-through">{{ retailPrice }}</div>
-        <div class="text-3xl font-bold">{{ salePrice }}</div>
+      @if (contentlet().retailPrice && contentlet().salePrice) {
+        <div class="text-gray-500 line-through">{{ $retailPrice() }}</div>
+        <div class="text-3xl font-bold">{{ $salePrice() }}</div>
       } @else {
         <div class="text-3xl font-bold">
-          {{ contentlet()['retailPrice'] ? retailPrice : salePrice }}
+          {{ contentlet()['retailPrice'] ? $retailPrice() : $salePrice() }}
         </div>
       }
       <a
-        [routerLink]="'/store/products/' + contentlet()['urlTitle'] || '#'"
+        [routerLink]="'/store/products/' + contentlet().urlTitle || '#'"
         class="inline-block px-4 py-2 mt-4 text-white bg-green-500 rounded hover:bg-green-600"
       >
         Buy Now
@@ -46,15 +45,17 @@ import { DotCMSContentlet } from '@dotcms/angular';
   styleUrl: './product.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductComponent implements OnInit {
-  contentlet = input.required<DotCMSContentlet>();
+export class ProductComponent {
+  contentlet = input.required<Product>();
 
-  protected salePrice!: string;
-  protected retailPrice!: string;
+  $salePrice = computed(() => this.formatPrice(this.contentlet().salePrice));
 
-  ngOnInit() {
-    this.salePrice = this.formatPrice(this.contentlet()['salePrice']);
-    this.retailPrice = this.formatPrice(this.contentlet()['retailPrice']);
+  $retailPrice = computed(() =>
+    this.formatPrice(this.contentlet().retailPrice),
+  );
+
+  protected get retailPrice() {
+    return this.formatPrice(this.contentlet().retailPrice);
   }
 
   formatPrice(price: number) {

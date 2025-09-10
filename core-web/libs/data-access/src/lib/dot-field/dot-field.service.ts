@@ -13,7 +13,6 @@ export type DotFieldFilter =
     | 'USER_SEARCHABLE'
     | 'SYSTEM_INDEXED'
     | 'UNIQUE';
-
 @Injectable({
     providedIn: 'root'
 })

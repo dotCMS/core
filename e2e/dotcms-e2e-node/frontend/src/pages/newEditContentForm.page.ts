@@ -24,19 +24,19 @@ export class NewEditContentFormPage {
   }
 
   async save() {
-    const saveButtonLocator = this.page.getByRole("button", { name: "Save" });
-    await saveButtonLocator.click();
-    await this.page.waitForResponse((response) => {
+    const saveButtonLocator = this.page.getByRole("button", {
+      name: "Save",
+    });
+    await expect(saveButtonLocator).toBeVisible();
+
+    const responsePromise = this.page.waitForResponse((response) => {
       return (
         response.status() === 200 &&
         response.url().includes("/api/v1/workflow/actions/")
       );
     });
-  }
-
-  async goToBack() {
-    const backButtonLocator = this.page.getByTestId("back-button");
-    await backButtonLocator.click();
+    await saveButtonLocator.click();
+    await responsePromise;
   }
 
   async goToContent(id: string) {

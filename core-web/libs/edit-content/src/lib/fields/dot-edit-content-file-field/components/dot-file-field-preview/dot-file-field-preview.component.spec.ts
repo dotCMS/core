@@ -175,4 +175,165 @@ describe('DotFileFieldPreviewComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
     });
+
+    describe('Disabled State Management', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    previewFile: {
+                        source: 'contentlet',
+                        file: NEW_FILE_MOCK.entity
+                    },
+                    disabled: true
+                } as unknown
+            });
+            dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
+            spectator.detectChanges();
+        });
+
+        it('should disable info button when disabled', () => {
+            const infoBtnComponent = spectator.query(byTestId('info-btn'));
+            const actualButton = infoBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(infoBtnComponent).toBeTruthy();
+            expect(actualButton.disabled).toBe(true);
+        });
+
+        it('should disable download button when disabled', () => {
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const actualButton = downloadBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(downloadBtnComponent).toBeTruthy();
+            expect(actualButton.disabled).toBe(true);
+        });
+
+        it('should disable responsive buttons when disabled', () => {
+            const infoResponsiveBtnComponent = spectator.query(byTestId('info-btn-responsive'));
+            const downloadResponsiveBtnComponent = spectator.query(
+                byTestId('download-btn-responsive')
+            );
+
+            expect(infoResponsiveBtnComponent?.querySelector('button').disabled).toBe(true);
+            expect(downloadResponsiveBtnComponent?.querySelector('button').disabled).toBe(true);
+        });
+
+        it('should prevent download action when disabled', () => {
+            // Clean up any existing spies and create a fresh one
+            jest.restoreAllMocks();
+            const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+            // Try to trigger download through the component method indirectly
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const actualDownloadBtn = downloadBtnComponent.querySelector('button');
+
+            // Since button is disabled, clicking should not trigger download
+            spectator.click(actualDownloadBtn);
+
+            expect(spyWindowOpen).not.toHaveBeenCalled();
+            spyWindowOpen.mockRestore();
+        });
+
+        it('should not trigger download when clicking disabled button', () => {
+            const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+            // Get the actual button element inside the PrimeNG component
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const actualDownloadBtn = downloadBtnComponent.querySelector('button');
+
+            // Verify button is actually disabled
+            expect(actualDownloadBtn.disabled).toBe(true);
+
+            // Try to click the disabled button - clicks on disabled buttons should not trigger handlers
+            spectator.click(actualDownloadBtn);
+
+            // Since button is disabled, download should not be triggered
+            expect(spyWindowOpen).not.toHaveBeenCalled();
+
+            spyWindowOpen.mockRestore();
+        });
+
+        it('should not open dialog when clicking disabled info button', () => {
+            const infoBtnComponent = spectator.query(byTestId('info-btn'));
+            const actualButton = infoBtnComponent.querySelector('button') as HTMLButtonElement;
+            const dialogComponent = spectator.query(Dialog);
+
+            // Verify button is actually disabled
+            expect(actualButton.disabled).toBe(true);
+
+            // Try to click the disabled button
+            spectator.click(actualButton);
+
+            // Dialog should not open when button is disabled
+            expect(dialogComponent.visible).toBeFalsy();
+        });
+
+        it('should not open dialog when clicking disabled responsive info button', () => {
+            const infoResponsiveBtnComponent = spectator.query(byTestId('info-btn-responsive'));
+            const actualButton = infoResponsiveBtnComponent?.querySelector(
+                'button'
+            ) as HTMLButtonElement;
+            const dialogComponent = spectator.query(Dialog);
+
+            // Verify button is actually disabled
+            expect(actualButton?.disabled).toBe(true);
+
+            // Try to click the disabled button
+            if (actualButton) {
+                spectator.click(actualButton);
+            }
+
+            // Dialog should not open when button is disabled
+            expect(dialogComponent.visible).toBeFalsy();
+        });
+
+        describe('with temp file', () => {
+            let tempFileSpectator: Spectator<DotFileFieldPreviewComponent>;
+
+            beforeEach(() => {
+                // Create a fresh component instance with temp file
+                tempFileSpectator = createComponent({
+                    props: {
+                        previewFile: {
+                            source: 'temp',
+                            file: TEMP_FILE_MOCK
+                        },
+                        disabled: true
+                    } as unknown
+                });
+                tempFileSpectator.detectChanges();
+            });
+
+            it('should disable info button for temp files', () => {
+                const infoBtnComponent = tempFileSpectator.query(byTestId('info-btn'));
+                const actualButton = infoBtnComponent?.querySelector('button') as HTMLButtonElement;
+                expect(actualButton?.disabled).toBe(true);
+            });
+
+            it('should disable responsive info button for temp files', () => {
+                const infoResponsiveBtnComponent = tempFileSpectator.query(
+                    byTestId('info-btn-responsive')
+                );
+                const actualButton = infoResponsiveBtnComponent?.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton?.disabled).toBe(true);
+            });
+        });
+
+        describe('responsive actions when disabled', () => {
+            // Note: disabled state is already set in parent beforeEach
+
+            it('should show responsive info button as disabled', () => {
+                const infoBtnComponent = spectator.query(byTestId('info-btn-responsive'));
+                const actualButton = infoBtnComponent?.querySelector('button') as HTMLButtonElement;
+                expect(actualButton?.disabled).toBe(true);
+            });
+
+            it('should show responsive download button as disabled', () => {
+                const downloadBtnComponent = spectator.query(byTestId('download-btn-responsive'));
+                const actualButton = downloadBtnComponent?.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton?.disabled).toBe(true);
+            });
+        });
+    });
 });

@@ -1,0 +1,87 @@
+@use "variables" as *;
+
+tiptap-editor {
+    display: block;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+
+tiptap-editor ::ng-deep .ProseMirror {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    display: block;
+    min-height: 100%;
+    outline: none;
+    padding: $dot-editor-size (4 * $dot-editor-size);
+    font-size: $dot-editor-size;
+
+    .ProseMirror-selectednode {
+        &.dot-image,
+        .dot-image {
+            outline: 2px solid $color-palette-primary;
+
+            &:hover {
+                outline: 2px solid $color-palette-primary;
+            }
+        }
+    }
+
+    .dot-image:hover {
+        outline: 2px solid $color-palette-primary-400;
+    }
+
+    .is-empty::before {
+        color: $color-palette-gray-500;
+        content: attr(data-placeholder);
+        float: left;
+        position: absolute;
+        pointer-events: none;
+    }
+
+    pre.is-empty::before {
+        position: unset;
+    }
+
+    .is-empty {
+        position: relative;
+    }
+
+    .ai-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 100%;
+        padding: $spacing-1;
+        border-radius: $spacing-1;
+        border: 1px solid $color-palette-gray-400;
+        color: $color-palette-primary;
+    }
+
+    // Import table styles from separate file
+    @import "tables";
+}
+
+tiptap-editor ::ng-deep {
+    &.editor-disabled .ProseMirror {
+        color: $color-palette-gray-600;
+        background-color: $color-palette-gray-100;
+        cursor: not-allowed;
+        user-select: none;
+        pointer-events: none;
+
+        // Disabled placeholder styling
+        .is-empty::before {
+            color: $color-palette-gray-400;
+        }
+
+        // Disabled button styling
+        .add-button {
+            cursor: not-allowed;
+            opacity: $field-disabled-opacity;
+            pointer-events: none;
+        }
+    }
+}

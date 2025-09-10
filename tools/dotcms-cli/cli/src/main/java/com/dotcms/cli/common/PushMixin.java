@@ -10,7 +10,7 @@ import picocli.CommandLine;
  * failure occurrences, and error retries. Adopting this class as a mixin allows different push
  * commands to share this common set of options.
  */
-public class PushMixin {
+public class PushMixin extends GlobalMixin {
 
     @CommandLine.Parameters(index = "0", arity = "0..1", paramLabel = "path",
             description = "local directory or file to push")
@@ -62,16 +62,6 @@ public class PushMixin {
             }
     )
     public Integer interval;
-
-
-    @CommandLine.Option(names = {"--noValidateUnmatchedArguments"},
-            description = {
-                  "Allows skipping the the validation of the unmatched arguments. ",
-                  "Useful for internal use when a push sub-command is called from the global push."
-            },
-            hidden = true,
-            defaultValue = "false")
-    public boolean noValidateUnmatchedArguments;
 
     /**
      * Returns the path of the file. If no path is provided, it will return current working directory.

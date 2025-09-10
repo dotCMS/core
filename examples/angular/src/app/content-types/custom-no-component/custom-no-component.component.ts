@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { DotCMSContentlet } from '@dotcms/angular';
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
 @Component({
   selector: 'app-custom-no-component',
@@ -8,11 +8,12 @@ import { DotCMSContentlet } from '@dotcms/angular';
     <div
       class="relative w-full bg-gray-200 h-12 flex justify-center items-center overflow-hidden"
     >
-      No component for this "{{contentlet().contentType}}" contentlet or widget
+      No component for this "{{ contentlet().contentType }}" contentlet or
+      widget
     </div>
   `,
   styles: '',
 })
 export class CustomNoComponent {
-  contentlet = input.required<DotCMSContentlet>();
+  contentlet = input.required<DotCMSBasicContentlet>();
 }

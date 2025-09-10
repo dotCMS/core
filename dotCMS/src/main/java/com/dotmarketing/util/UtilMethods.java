@@ -24,6 +24,11 @@ import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.Base64;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.Term;
@@ -243,18 +248,38 @@ public class UtilMethods {
     }
 
     /**
-     * Takes the file name and attempts to determine whether it belongs to an image or not based on
-     * its extension.
+     * Checks if a file path corresponds to an image based on its extension.
+     * If the input appears to be a URL, query parameters are removed before checking the extension.
      *
-     * @param fileName The name of the file to check.
-     *
-     * @return If the file is an image, returns {@code true}.
+     * @param fileName The file path or name to check
+     * @return true if the file has an image extension, false otherwise
      */
     public static boolean isImage(final String fileName) {
         if (UtilMethods.isEmpty(fileName)) {
             return false;
         }
-        final String imageName = fileName.toLowerCase();
+
+        String cleanFileName = fileName;
+
+        // Check if fileName appears to be a URL
+        boolean isLikelyUrl = cleanFileName.matches("^(https?://|www\\.).+") ||
+                (cleanFileName.contains("/") && cleanFileName.contains("."));
+
+        // Remove query parameters only if it looks like a URL
+        if (isLikelyUrl) {
+            int queryIndex = cleanFileName.indexOf('?');
+            if (queryIndex > 0) {
+                cleanFileName = cleanFileName.substring(0, queryIndex);
+            }
+
+            // Also remove URL fragments as they're not part of the file
+            int fragmentIndex = cleanFileName.indexOf('#');
+            if (fragmentIndex > 0) {
+                cleanFileName = cleanFileName.substring(0, fragmentIndex);
+            }
+        }
+
+        final String imageName = cleanFileName.toLowerCase();
         for (final String ext : FileUtil.IMAGE_EXTENSIONS.get()) {
             if (imageName.endsWith(ext)) {
                 return true;
@@ -416,8 +441,12 @@ public class UtilMethods {
         return (x != null);
     }
 
-    public static final boolean isSet(Object x) {
+    public static boolean isSet(Object x) {
         return (x != null);
+    }
+
+    public static boolean isNotSet(Object x) {
+        return !isSet(x);
     }
 
     public static final boolean isSetCrumb(String x) {
@@ -488,6 +517,95 @@ public class UtilMethods {
                 .matches(
                         "((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-z0-9\\._\\-,]+)*[a-z0-9\\-_\\.\\s\\%]+(\\?[a-z0-9=%&\\.\\-,#]+)?",
                         url);
+    }
+
+    public static boolean isValidStrictURL(String urlString) {
+        try {
+            URI uri = new URI(urlString);
+            return uri.getScheme() != null && uri.getHost() != null;
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    public static String fileName(URI uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        try {
+            return Paths.get(uri).getFileName().toString();
+        } catch (Exception e) {
+            // Fallback to manual extraction
+            String path = uri.getPath();
+            return path != null ? path.substring(path.lastIndexOf('/') + 1) : null;
+        }
+    }
+
+
+    /**
+     * Validates if a string follows dotCMS internal path notation: /folder/asset or /asset
+     * Rules:
+     * - Must start with /
+     * - Can have multiple folder levels separated by /
+     * - No empty segments (no //)
+     * - No trailing / unless it's root
+     * - Valid characters for folder/asset names
+     */
+    public static boolean isValidDotCMSPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+
+        // Must start with /
+        if (!path.startsWith("/")) {
+            return false;
+        }
+
+        // Root path is valid
+        if (path.equals("/")) {
+            return true;
+        }
+
+        // Cannot end with / (except root)
+        if (path.endsWith("/")) {
+            return false;
+        }
+
+        // Cannot contain // (double slashes)
+        if (path.contains("//")) {
+            return false;
+        }
+
+        // Split and validate each segment
+        String[] segments = path.split("/");
+
+        // First segment is always empty (because of leading /)
+        for (int i = 1; i < segments.length; i++) {
+            String segment = segments[i];
+
+            // No empty segments
+            if (segment.isEmpty()) {
+                return false;
+            }
+
+            // Validate segment characters (adjust regex as needed for dotCMS rules)
+            if (!isValidPathSegment(segment)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates individual path segment (folder or asset name)
+     * Adjust this regex based on dotCMS naming rules
+     */
+    private static boolean isValidPathSegment(String segment) {
+        // Basic validation - adjust based on dotCMS requirements
+        // This allows alphanumeric, dots, dashes, underscores
+        return segment.matches("^[a-zA-Z0-9._-]+$");
     }
 
     public static final boolean isValidEmail(Object email) {
@@ -1048,13 +1166,31 @@ public class UtilMethods {
         return sb.toString();
     }
 
-    public static String getFileExtension(String x) {
-    	String r = "";
+    /**
+     * This method returns the extension of the file 
+     * */
+    public static String getFileExtension(String fileName) {
+    	String result = "";
         try {
-            if (x.lastIndexOf(".") != -1) {
-                return x.substring(x.lastIndexOf(".") + 1).toLowerCase();
+            if (fileName.lastIndexOf(StringPool.PERIOD) != -1) {
+                return fileName.substring(fileName.lastIndexOf(StringPool.PERIOD) + 1).toLowerCase();
             } else {
-                return r;
+                return result;
+            }
+        } catch (Exception e) {
+            return "ukn";
+        }
+    }
+    /**
+     * This method returns the extension of the file ignoring the case of the extension
+     * */
+    public static String getFileExtensionIgnoreCase(String fileName){
+        String result = "";
+        try {
+            if (fileName.lastIndexOf(StringPool.PERIOD) != -1) {
+                return fileName.substring(fileName.lastIndexOf(StringPool.PERIOD) + 1);
+            } else {
+                return result;
             }
         } catch (Exception e) {
             return "ukn";
@@ -3713,7 +3849,7 @@ public class UtilMethods {
     *  Additionally the method includes a check to ensure that a simple term query (just a simple string) is not considered valid
     *  @param query String to be checked
     */
-    public static final boolean isLuceneQuery(String query) {
+    public static boolean isLuceneQuery(String query) {
         try {
             final QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
             // Allow wildcards in the query
@@ -3731,5 +3867,20 @@ public class UtilMethods {
             return false; // If parsing fails, it's not a valid Lucene query
         }
     }
+
+
+   public static String base64Encode(String incomingString){
+      if(incomingString == null){
+         return null;
+      }
+      return Base64.getEncoder().encodeToString(incomingString.getBytes());
+   }
+
+   public static String base64Decode(String incomingString){
+      if(incomingString == null){
+         return null;
+      }
+      return new String(Base64.getDecoder().decode(incomingString));
+   }
 
 }

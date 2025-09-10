@@ -13,20 +13,15 @@ import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocompl
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
+const UNIQUE_CLASSES = true;
+
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
-    standalone: true,
-    imports: [
-        AutoCompleteModule,
-        FormsModule,
-        ButtonModule,
-        DotMessagePipe,
-        DotSelectItemDirective
-    ],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
@@ -66,7 +61,14 @@ export class AddStyleClassesDialogComponent implements OnInit {
      */
     $filteredSuggestions = signal<string[]>(this.$classes());
 
+    /**
+     * Check if the JSON file has classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     $hasClasses = computed(() => this.$classes().length > 0);
+
+    protected readonly UNIQUE_CLASSES = UNIQUE_CLASSES;
 
     /**
      * Set the selected classes
@@ -101,5 +103,25 @@ export class AddStyleClassesDialogComponent implements OnInit {
      */
     save() {
         this.#dialogRef.close(this.$selectedClasses());
+    }
+
+    /**
+     * Add the current input value to selected classes when Enter is pressed
+     *
+     * @param {Event} event
+     * @memberof AddStyleClassesDialogComponent
+     */
+    onEnterKey(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value) {
+            const currentClasses = this.$selectedClasses();
+            if (!UNIQUE_CLASSES || !currentClasses.includes(value)) {
+                this.$selectedClasses.update((classes) => [...classes, value]);
+            }
+
+            input.value = '';
+        }
     }
 }

@@ -1,133 +1,142 @@
-<dot-portlet-base *ngIf="vm$ | async as vm">
-    <dot-action-header [options]="vm.actionHeaderOptions">
-        <dot-content-type-selector
-            (selected)="changeContentTypeSelector($event)"></dot-content-type-selector>
-        <input
-            (keydown.arrowdown)="focusFirstRow()"
-            #gf
-            (input)="handleQueryFilter(gf.value)"
-            pInputText
-            placeholder="{{ 'Type-to-filter' | dm }}"
-            type="text"
-            data-testId="query-input" />
-        <div class="container-listing__header-options">
-            <div class="container-listing__filter-controls">
-                <p-checkbox
-                    (onChange)="handleArchivedFilter($event.checked)"
-                    [label]="'Show-Archived' | dm"
-                    [binary]="true"
-                    data-testId="archiveCheckbox"></p-checkbox>
+@if (vm$ | async; as vm) {
+    <dot-portlet-base>
+        <dot-action-header [options]="vm.actionHeaderOptions">
+            <dot-content-type-selector
+                (selected)="changeContentTypeSelector($event)"></dot-content-type-selector>
+            <input
+                (keydown.arrowdown)="focusFirstRow()"
+                #gf
+                (input)="handleQueryFilter(gf.value)"
+                pInputText
+                placeholder="{{ 'Type-to-filter' | dm }}"
+                type="text"
+                data-testId="query-input" />
+            <div class="container-listing__header-options">
+                <div class="container-listing__filter-controls">
+                    <p-checkbox
+                        (onChange)="handleArchivedFilter($event.checked)"
+                        [label]="'Show-Archived' | dm"
+                        [binary]="true"
+                        data-testId="archiveCheckbox"></p-checkbox>
+                </div>
+                <div>
+                    <button
+                        (click)="handleActionMenuOpen($event)"
+                        [label]="'Actions' | dm"
+                        [disabled]="!selectedContainers.length"
+                        class="p-button-outlined p-button"
+                        type="button"
+                        pButton
+                        icon="pi pi-ellipsis-v"
+                        data-testId="bulkActions"></button>
+                    <p-menu
+                        [popup]="true"
+                        [model]="vm.containerBulkActions"
+                        #actionsMenu
+                        appendTo="body"></p-menu>
+                </div>
             </div>
-
-            <div>
-                <button
-                    (click)="handleActionMenuOpen($event)"
-                    [label]="'Actions' | dm"
-                    [disabled]="!selectedContainers.length"
-                    class="p-button-outlined p-button"
-                    type="button"
-                    pButton
-                    icon="pi pi-ellipsis-v"
-                    data-testId="bulkActions"></button>
-
-                <p-menu
-                    [popup]="true"
-                    [model]="vm.containerBulkActions"
-                    #actionsMenu
-                    appendTo="body"></p-menu>
-            </div>
-        </div>
-    </dot-action-header>
-    <p-table
-        *ngIf="vm.tableColumns && vm.actionHeaderOptions"
-        (onPage)="loadDataPaginationEvent($event)"
-        [(selection)]="selectedContainers"
-        [columns]="vm.tableColumns"
-        [value]="vm.containers"
-        [rows]="40"
-        [paginator]="true"
-        [pageLinks]="vm.maxPageLinks"
-        [totalRecords]="vm.totalRecords"
-        [responsiveLayout]="'scroll'"
-        selectionMode="multiple"
-        loadingIcon="pi pi-spin pi-spinner"
-        dataKey="inode"
-        data-testId="container-list-table">
-        <ng-template let-columns pTemplate="header">
-            <tr *ngIf="vm.containers?.length">
-                <th style="width: 5%">
-                    <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-                </th>
-                <th
-                    *ngFor="let col of columns"
-                    [ngStyle]="{ width: col.width, 'text-align': col.textAlign }"
-                    [pSortableColumnDisabled]="!col.sortable"
-                    [pSortableColumn]="col.fieldName">
-                    {{ col.header }}
-                    <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
-                </th>
-                <th style="width: 5%"></th>
-            </tr>
-        </ng-template>
-        <ng-template let-columns="columns" let-rowData pTemplate="body">
-            <tr
-                (click)="handleRowClick(rowData)"
-                (keyup.enter)="handleRowClick(rowData)"
-                [ngClass]="{ 'disabled-row': rowData.disableInteraction }"
-                [pSelectableRowDisabled]="rowData.disableInteraction"
-                [pContextMenuRowDisabled]="rowData.disableInteraction"
-                [attr.data-testRowId]="rowData.identifier"
-                [pContextMenuRow]="rowData"
-                [pSelectableRow]="rowData"
-                [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
-                [attr.data-disabled]="rowData.disableInteraction"
-                #tableRow
-                data-testClass="testTableRow">
-                <td (click)="$event.stopPropagation()">
-                    <p-tableCheckbox
-                        *ngIf="!rowData.disableInteraction"
-                        (click)="$event.stopPropagation()"
-                        [value]="rowData"
-                        [attr.test-id]="rowData.friendlyName"></p-tableCheckbox>
-                </td>
-                <td [ngStyle]="{ 'text-align': vm.tableColumns[0].textAlign }">
-                    {{ rowData.name }}
-                    <ng-container *ngIf="rowData.path">
-                        -
-                        <span class="container-listing__path">{{ rowData.path }}</span>
-                    </ng-container>
-                </td>
-                <td [ngStyle]="{ 'text-align': vm.tableColumns[1].textAlign }">
-                    <dot-state-icon
-                        [labels]="vm.stateLabels"
-                        [state]="getContainerState(rowData)"
-                        size="14px"></dot-state-icon>
-                </td>
-                <td [ngStyle]="{ 'text-align': vm.tableColumns[2].textAlign }">
-                    {{ rowData.friendlyName }}
-                </td>
-                <td [ngStyle]="{ 'text-align': vm.tableColumns[3].textAlign }">
-                    {{ rowData.modDate | dotRelativeDate }}
-                </td>
-                <td style="width: 5%">
-                    <dot-action-menu-button
-                        *ngIf="!rowData.disableInteraction"
-                        [attr.data-testid]="rowData.identifier"
-                        [actions]="setContainerActions(rowData)"
-                        [item]="rowData"
-                        class="listing-datatable__action-button"></dot-action-menu-button>
-                </td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-            <div class="listing-datatable__empty" data-testId="listing-datatable__empty">
-                {{ 'No-Results-Found' | dm }}
-            </div>
-        </ng-template>
-    </p-table>
-
-    <dot-add-to-bundle
-        *ngIf="vm.addToBundleIdentifier"
-        (cancel)="resetBundleIdentifier()"
-        [assetIdentifier]="vm.addToBundleIdentifier"></dot-add-to-bundle>
-</dot-portlet-base>
+        </dot-action-header>
+        @if (vm.tableColumns && vm.actionHeaderOptions) {
+            <p-table
+                (onPage)="loadDataPaginationEvent($event)"
+                [(selection)]="selectedContainers"
+                [columns]="vm.tableColumns"
+                [value]="vm.containers"
+                [rows]="40"
+                [paginator]="true"
+                [pageLinks]="vm.maxPageLinks"
+                [totalRecords]="vm.totalRecords"
+                [responsiveLayout]="'scroll'"
+                [lazy]="true"
+                selectionMode="multiple"
+                loadingIcon="pi pi-spin pi-spinner"
+                dataKey="inode"
+                data-testId="container-list-table">
+                <ng-template let-columns pTemplate="header">
+                    @if (vm.containers?.length) {
+                        <tr>
+                            <th style="width: 5%">
+                                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                            </th>
+                            @for (col of columns; track col) {
+                                <th
+                                    [ngStyle]="{ width: col.width, 'text-align': col.textAlign }"
+                                    [pSortableColumnDisabled]="!col.sortable"
+                                    [pSortableColumn]="col.fieldName">
+                                    {{ col.header }}
+                                    @if (col.sortable) {
+                                        <p-sortIcon [field]="col.fieldName"></p-sortIcon>
+                                    }
+                                </th>
+                            }
+                            <th style="width: 5%"></th>
+                        </tr>
+                    }
+                </ng-template>
+                <ng-template let-columns="columns" let-rowData pTemplate="body">
+                    <tr
+                        (click)="handleRowClick(rowData)"
+                        (keyup.enter)="handleRowClick(rowData)"
+                        [ngClass]="{ 'disabled-row': rowData.disableInteraction }"
+                        [pSelectableRowDisabled]="rowData.disableInteraction"
+                        [pContextMenuRowDisabled]="rowData.disableInteraction"
+                        [attr.data-testRowId]="rowData.identifier"
+                        [pContextMenuRow]="rowData"
+                        [pSelectableRow]="rowData"
+                        [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
+                        [attr.data-disabled]="rowData.disableInteraction"
+                        #tableRow
+                        data-testClass="testTableRow">
+                        <td (click)="$event.stopPropagation()">
+                            @if (!rowData.disableInteraction) {
+                                <p-tableCheckbox
+                                    (click)="$event.stopPropagation()"
+                                    [value]="rowData"
+                                    [attr.test-id]="rowData.friendlyName"></p-tableCheckbox>
+                            }
+                        </td>
+                        <td [ngStyle]="{ 'text-align': vm.tableColumns[0].textAlign }">
+                            {{ rowData.name }}
+                            @if (rowData.path) {
+                                -
+                                <span class="container-listing__path">{{ rowData.path }}</span>
+                            }
+                        </td>
+                        <td [ngStyle]="{ 'text-align': vm.tableColumns[1].textAlign }">
+                            <dot-state-icon
+                                [labels]="vm.stateLabels"
+                                [state]="getContainerState(rowData)"
+                                size="14px"></dot-state-icon>
+                        </td>
+                        <td [ngStyle]="{ 'text-align': vm.tableColumns[2].textAlign }">
+                            {{ rowData.friendlyName }}
+                        </td>
+                        <td [ngStyle]="{ 'text-align': vm.tableColumns[3].textAlign }">
+                            {{ rowData.modDate | dotRelativeDate }}
+                        </td>
+                        <td style="width: 5%">
+                            @if (!rowData.disableInteraction) {
+                                <dot-action-menu-button
+                                    [attr.data-testid]="rowData.identifier"
+                                    [actions]="setContainerActions(rowData)"
+                                    [item]="rowData"
+                                    class="listing-datatable__action-button"></dot-action-menu-button>
+                            }
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="emptymessage">
+                    <div class="listing-datatable__empty" data-testId="listing-datatable__empty">
+                        {{ 'No-Results-Found' | dm }}
+                    </div>
+                </ng-template>
+            </p-table>
+        }
+        @if (vm.addToBundleIdentifier) {
+            <dot-add-to-bundle
+                (cancel)="resetBundleIdentifier()"
+                [assetIdentifier]="vm.addToBundleIdentifier"></dot-add-to-bundle>
+        }
+    </dot-portlet-base>
+}

@@ -1,0 +1,34 @@
+---
+import "@/styles/global.css";
+import Layout from "@/components/common/Layout.astro";
+import Error from "@/components/common/Error.astro";
+import { getDotCMSPage } from "@/dotcms-integration";
+import { BlogListingPage } from "@/views/BlogListingPage";
+
+const pageResponse = await getDotCMSPage("/blog");
+
+const pageAsset = pageResponse?.pageAsset;
+const errors = pageResponse?.error;
+const { vanityUrl } = pageAsset ?? {};
+
+if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
+  return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+}
+
+const title = pageAsset ? pageAsset.page.title : "Error";
+---
+{
+    (
+      <Layout title={title}>
+        {errors ? (
+          <Error error={errors} />
+        ) : (
+          <BlogListingPage
+            client:only="react"
+            pageResponse={pageResponse}
+          />
+        )}
+      </Layout>
+    )
+  }
+  

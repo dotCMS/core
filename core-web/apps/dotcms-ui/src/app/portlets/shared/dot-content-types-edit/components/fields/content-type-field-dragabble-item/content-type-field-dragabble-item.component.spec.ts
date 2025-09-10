@@ -7,7 +7,6 @@ import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -16,6 +15,7 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 
+import { DotCopyLinkModule } from '../../../../../../view/components/dot-copy-link/dot-copy-link.module';
 import { FieldService } from '../service';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {

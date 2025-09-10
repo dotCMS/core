@@ -11,8 +11,8 @@ This image takes all the normal dotCMS docker config switches - keep in mind tha
 - `DOTCMS_API_TOKEN` : A valid dotCMS API Token from an admin user in the source environment.
 - `DOTCMS_USERNAME_PASSWORD` :  The username:password for an admin user in the source environment.
 - `DOTCMS_DEBUG` :  Run dotCMS in debug mode and listen for a remote debugger on port 8000, defaults to `false`.
-- `ALL_ASSETS` : Controls whether old versions of assets are included in the download, defaults to false, which means only the current live and working versions of assets will be downloaded.
-
+- `ALL_ASSETS` : Controls whether old versions of assets are included in the download, defaults to `false`, which means only the current live and working versions of assets will be downloaded.
+- `MAX_ASSET_SIZE` : Controls the max size of assets to download.  It can take raw bytes or it can take shorthand like 500k (or kb), 10m or 1g. A value of 0 means no limit.  Defaults to 100mb.
 
 
 ## Cloning a dotCMS Environment
@@ -52,7 +52,7 @@ docker run --rm \
 ```
 
 
-#### Clone demo using a starter.zip 
+#### Clone environment using the starter functionality 
 This asks the source server to generate a starter.zip, which can be time-consuming to generate AND to import initially.  
 ```
 docker run --rm \
@@ -65,6 +65,17 @@ docker run --rm \
 dotcms/dotcms-dev:nightly
 ```
 
+#### Start a new environment by downloading a fresh starter
+This will download a clean demo starter.zip from the dotCMS artifactory repo and import it into the new environment.  This is useful for starting a new dev instance with a clean slate.
+```
+docker run --rm \
+--pull always \
+-p 8443:8443 \
+-v $PWD/data:/data \
+-e DOTCMS_STARTER_URL=https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250613/starter-20250613.zip \
+dotcms/dotcms-dev:nightly
+
+```
 
 #### DEV DEBUG - with Postgres port exposed.  
 In this case dotCMS java waits to start up until a debugger is connected to it on port 8000.
@@ -88,7 +99,9 @@ dotCMS offers two admin only endpoints to download your data and assets
 - `/api/v1/maintenance/_downloadAssets`
 - `/api/v1/maintenance/_downloadDb`
 
-When downloading assets, you can specify `?oldAssets=false`, and dotCMS will only include the assets for live and working versions of your content, thus hopefully generating a MUCH smaller download
+When downloading assets, you can specify:
+ -  `?oldAssets=false` - only include the assets for live and working versions of your content, thus hopefully generating a MUCH smaller download
+ - `maxSize=20m` - only include files less than 20mb.  `maxSize` allows you to specify the max file size to include in the download, takes shorthand like 10m, 512k or 1g.
 
 #### Example wget to download assets
 ```

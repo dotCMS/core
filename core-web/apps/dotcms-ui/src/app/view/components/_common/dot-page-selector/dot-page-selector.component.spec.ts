@@ -2,7 +2,7 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Injectable } from '@angular/core';
+import { Component, DebugElement, Injectable, inject } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     FormsModule,
@@ -15,24 +15,22 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
-import {
-    DotFolder,
-    DotPageSelectorItem
-} from '@components/_common/dot-page-selector/models/dot-page-selector.models';
-import {
-    expectedFolderMap,
-    expectedPagesMap,
-    expectedSitesMap
-} from '@components/_common/dot-page-selector/service/dot-page-selector.service.spec';
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
+import { DotFolder, DotPageSelectorItem } from './models/dot-page-selector.models';
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
+import {
+    expectedFolderMap,
+    expectedPagesMap,
+    expectedSitesMap
+} from './service/dot-page-selector.service.spec';
+
+import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
+import { DotFieldHelperModule } from '../../dot-field-helper/dot-field-helper.module';
 
 export const mockDotPageSelectorResults = {
     type: 'page',
@@ -96,12 +94,15 @@ class MockDotPageSelectorService {
                 [style]="{ width: '100%' }"
                 formControlName="page"></dot-page-selector>
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         /*
         This should go in the ngOnInit but I don't want to detectChanges everytime for
         this fake test component

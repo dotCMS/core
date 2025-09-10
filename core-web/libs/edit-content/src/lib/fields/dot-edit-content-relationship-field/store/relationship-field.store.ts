@@ -1,16 +1,35 @@
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
 
-import { computed } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { computed, inject } from '@angular/core';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { switchMap, tap } from 'rxjs/operators';
 
-import { SelectionMode } from '../models/relationship.models';
-import { getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
+
+import { RelationshipFieldService } from './relationship-field.service';
+
+import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
+import { SelectionMode, TableColumn } from '../models/relationship.models';
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
+    field: DotCMSContentTypeField | null;
     selectionMode: SelectionMode | null;
+    contentType: DotCMSContentType | null;
+    isNewEditorEnabled: boolean;
+    staticColumns: number;
+    columns: TableColumn[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -21,7 +40,12 @@ export interface RelationshipFieldState {
 const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
+    field: null,
+    columns: [],
     selectionMode: null,
+    contentType: null,
+    isNewEditorEnabled: false,
+    staticColumns: STATIC_COLUMNS,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -67,8 +91,12 @@ export const RelationshipFieldStore = signalStore(
             return `${identifiers}`;
         })
     })),
-    withMethods((store) => {
-        return {
+    withMethods(
+        (
+            store,
+            relationshipFieldService = inject(RelationshipFieldService),
+            dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
+        ) => ({
             /**
              * Sets the data in the state.
              * @param {RelationshipFieldItem[]} data - The data to be set.
@@ -77,24 +105,46 @@ export const RelationshipFieldStore = signalStore(
                 patchState(store, { data: [...data] });
             },
             /**
-             * Sets the cardinality of the relationship field.
-             * @param {number} cardinality - The cardinality of the relationship field.
+             * Initializes the relationship field with the provided parameters.
+             * @param {object} params - The initialization parameters.
+             * @param {number} params.cardinality - The cardinality of the relationship field.
+             * @param {DotCMSContentlet} params.contentlet - The contentlet containing the relationship data.
+             * @param {string} params.variable - The variable name for the relationship field.
+             * @param {string} params.contentTypeId - The ID of the content type to load.
              */
-            initialize(params: {
-                cardinality: number;
+            initialize: rxMethod<{
+                field: DotCMSContentTypeField;
                 contentlet: DotCMSContentlet;
-                variable: string;
-            }) {
-                const { cardinality, contentlet, variable } = params;
-
-                const data = getRelationshipFromContentlet({ contentlet, variable });
-                const selectionMode = getSelectionModeByCardinality(cardinality);
-
-                patchState(store, {
-                    selectionMode,
-                    data
-                });
-            },
+            }>(
+                pipe(
+                    tap(() => patchState(store, initialState)),
+                    switchMap(({ field, contentlet }) => {
+                        return relationshipFieldService.prepareField({ field, contentlet }).pipe(
+                            tapResponse({
+                                next: (newState) => {
+                                    patchState(store, {
+                                        status: ComponentStatus.LOADED,
+                                        contentType: newState.contentType,
+                                        isNewEditorEnabled: newState.isNewEditorEnabled,
+                                        selectionMode: newState.selectionMode,
+                                        columns: newState.columns,
+                                        data: newState.data,
+                                        field
+                                    });
+                                },
+                                error: (error) => {
+                                    if (error instanceof HttpErrorResponse) {
+                                        dotHttpErrorManagerService.handle(error);
+                                    }
+                                    patchState(store, {
+                                        status: ComponentStatus.ERROR
+                                    });
+                                }
+                            })
+                        );
+                    })
+                )
+            ),
             /**
              * Deletes an item from the store at the specified index.
              * @param index - The index of the item to delete.
@@ -128,6 +178,6 @@ export const RelationshipFieldStore = signalStore(
                     }
                 });
             }
-        };
-    })
+        })
+    )
 );

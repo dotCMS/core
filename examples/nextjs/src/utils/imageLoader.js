@@ -1,15 +1,8 @@
-import { useDotcmsPageContext } from '@dotcms/react';
-
-const ImageLoader = ({ src, width }) => {
+const ImageLoader = ({ src, width = 250 }) => {
     const dotcmsURL = new URL(process.env.NEXT_PUBLIC_DOTCMS_HOST).origin;
+    const imageSRC = src.includes("/dA/") ? src : `/dA/${src}`;
 
-    const context = useDotcmsPageContext();
-
-    const languageId = context?.pageAsset.viewAs.language.id ?? 1;
-
-    const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`; // Check if the image is a DotCMS asset or a file asset
-
-    return `${dotcmsURL}${imageSRC}/${width}w?language_id=${languageId}`;
+    return `${dotcmsURL}${imageSRC}/${width}w`;
 };
 
 export default ImageLoader;

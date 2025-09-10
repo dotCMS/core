@@ -2,10 +2,11 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
+import { getDotContentletAttributes } from '@dotcms/uve/internal';
+
 import { Contentlet } from '../../components/Contentlet/Contentlet';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
-import { getDotContentletAttributes } from '../../utils';
 
 jest.mock('../../components/FallbackComponent/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (
@@ -18,8 +19,10 @@ jest.mock('../../hooks/useCheckVisibleContent', () => ({
     useCheckVisibleContent: jest.fn(() => false)
 }));
 
-jest.mock('../../utils', () => ({
-    getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' }))
+jest.mock('@dotcms/uve/internal', () => ({
+    getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' })),
+    DEVELOPMENT_MODE: 'development',
+    PRODUCTION_MODE: 'production'
 }));
 
 describe('Contentlet', () => {

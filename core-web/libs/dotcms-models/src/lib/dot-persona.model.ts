@@ -5,7 +5,7 @@ export interface DotPersona extends DotCMSContentlet {
     hostFolder?: string;
     keyTag: string;
     name: string;
-    personalized: boolean;
+    personalized?: boolean;
     photo?: string;
     photoContentAsset?: string;
     photoVersion?: string;

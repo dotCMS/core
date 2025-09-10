@@ -3,7 +3,7 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { fakeAsync } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ControlContainer, FormControl, FormGroup } from '@angular/forms';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -85,10 +85,16 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 expect(spectator.query(byTestId('category-chip-list'))).not.toBeNull();
             });
 
-            it('should categoryFieldControl has the values loaded on the store', () => {
-                const categoryValue = spectator.component.categoryFieldControl.value;
+            it('should form control has the values loaded on the store via ControlValueAccessor', () => {
+                // Simulate ControlValueAccessor behavior - writeValue would be called with existing data
                 const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
-                expect(categoryValue).toEqual(expectedInodes);
+
+                // Manually call writeValue to simulate Angular forms integration
+                spectator.component.writeValue(expectedInodes);
+                spectator.detectChanges();
+
+                // Verify the store has the correct selected categories
+                expect(spectator.component.store.selected().length).toBe(2);
             });
         });
 
@@ -128,6 +134,10 @@ describe('DotEditContentCategoryFieldComponent', () => {
             });
 
             store = spectator.inject(CategoryFieldStore, true);
+
+            // Initialize form control with mock data
+            const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
+            FAKE_FORM_GROUP.get(CATEGORY_FIELD_VARIABLE_NAME)?.setValue(expectedInodes);
 
             spectator.detectChanges();
         });
@@ -185,13 +195,14 @@ describe('DotEditContentCategoryFieldComponent', () => {
             // Check if the button is enabled again
             expect(selectBtn.disabled).toBe(false);
 
-            // Check if the form has the correct value
-            const categoryValue = spectator.component.categoryFieldControl.value;
+            // Check if the form has the correct value - should maintain the initial values
+            const formControl = FAKE_FORM_GROUP.get(CATEGORY_FIELD_VARIABLE_NAME);
+            const categoryValue = formControl?.value;
             const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
             expect(categoryValue).toEqual(expectedInodes);
         }));
 
-        it('should set categoryFieldControl value when adding a new category', () => {
+        it('should set form control value when adding a new category', fakeAsync(() => {
             const newItem: DotCategoryFieldKeyValueObj = {
                 key: CATEGORY_LEVEL_2[0].key,
                 value: CATEGORY_LEVEL_2[0].categoryName,
@@ -199,31 +210,53 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 path: CATEGORY_LEVEL_2[0].categoryName
             };
 
+            // Spy on the onChange callback to verify it gets called
+            const onChangeSpy = jest.fn();
+            spectator.component.registerOnChange(onChangeSpy);
+
             store.openDialog();
             store.addSelected(newItem);
             store.applyDialogSelection();
             spectator.detectChanges();
 
-            const categoryValues = spectator.component.categoryFieldControl.value;
-            const expectedInodes = [...MOCK_SELECTED_CATEGORIES_OBJECT, newItem].map(
-                (cat) => cat.inode
-            );
+            // Wait for effects to run
+            tick();
+            spectator.detectChanges();
 
-            expect(categoryValues).toEqual(expectedInodes);
-        });
+            // Verify the store has the correct selected categories
+            const expectedSelectedCategories = [...MOCK_SELECTED_CATEGORIES_OBJECT, newItem];
+            expect(store.selected().length).toBe(expectedSelectedCategories.length);
 
-        it('should set categoryFieldControl value when removing a category', () => {
-            const initialValue = spectator.component.categoryFieldControl.value;
-            const expectedInodes = [initialValue[0]];
+            // Verify the onChange callback was called with the correct values
+            const expectedInodes = expectedSelectedCategories.map((cat) => cat.inode);
+            expect(onChangeSpy).toHaveBeenCalledWith(expectedInodes);
+        }));
+
+        it('should set form control value when removing a category', fakeAsync(() => {
+            // Spy on the onChange callback to verify it gets called
+            const onChangeSpy = jest.fn();
+            spectator.component.registerOnChange(onChangeSpy);
+
+            // Get the current store selected items
+            const initialSelectedItems = store.selected();
+            expect(initialSelectedItems.length).toBe(2);
 
             store.openDialog();
             store.removeSelected(MOCK_SELECTED_CATEGORIES_OBJECT[1].key);
             store.applyDialogSelection();
             spectator.detectChanges();
 
-            const newCategoryValue = spectator.component.categoryFieldControl.value;
-            expect(newCategoryValue).toEqual(expectedInodes);
-            expect(newCategoryValue.length).toBe(1);
-        });
+            // Wait for effects to run
+            tick();
+            spectator.detectChanges();
+
+            // Verify the store has one less selected category
+            const updatedSelectedItems = store.selected();
+            expect(updatedSelectedItems.length).toBe(1);
+
+            // Verify the onChange callback was called with the correct values
+            const expectedInodes = updatedSelectedItems.map((cat) => cat.inode);
+            expect(onChangeSpy).toHaveBeenCalledWith(expectedInodes);
+        }));
     });
 });

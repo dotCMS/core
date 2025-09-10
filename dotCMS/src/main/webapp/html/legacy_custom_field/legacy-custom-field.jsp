@@ -13,7 +13,13 @@
 <%@page import="com.liferay.portal.util.ReleaseInfo"%>
 <%@page import="com.dotmarketing.cms.factories.PublicCompanyFactory"%>
 <%@page import="com.liferay.portal.model.*" %>
-
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
+<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
+<%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.Map" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
 <%
@@ -36,12 +42,12 @@
 
   <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
   <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
-  
+
   <%
 	HttpSession sess = request.getSession(false);
 	Locale locale = null;
 	User user = PortalUtil.getUser(request);
-	
+
 
 	if(sess != null){
 	 	locale = (Locale) sess.getAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY);
@@ -74,7 +80,7 @@
      modulePaths: {
          dotcms: "/html/js/dotcms",
      }
-};	   
+};
 
     function isInodeSet(x){
      return (x && x != undefined && x!="" && x.length>15);
@@ -98,12 +104,22 @@
 <script type="text/javascript" src="/dwr/interface/BrowserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/dwr/interface/UserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+<%
+    // Cache busting for development - use timestamp
+    String cacheBuster = String.valueOf(System.currentTimeMillis());
+%>
+
+<script type="text/javascript" src="/html/js/util.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
+<script type="text/javascript" src="/html/legacy_custom_field/shared-logger.js?v=<%=  cacheBuster %>"></script>
+<script type="text/javascript" src="/html/legacy_custom_field/iframe-height-manager.js?v=<%=  cacheBuster %>"></script>
+<script type="text/javascript" src="/html/legacy_custom_field/field-interceptors.js?v=<%=  cacheBuster %>"></script>
 
 <script type="text/javascript">
     dojo.require("dojo.data.ItemFileReadStore");
 
     dojo.require("dotcms.dijit.image.ImageEditor");
     dojo.require("dotcms.dojo.data.UsersReadStore");
+    dojo.require("dijit.form.TextBox");
 
     dojo.addOnLoad(function () {
         dojo.global.DWRUtil = dwr.util;
@@ -197,36 +213,32 @@
 
     body {background: white}
 
+    .dijitTextBox, .dijitSelect{
+        max-width: initial;
+    }
+
   </style>
+</head>
+
+<%
+    String contentTypeVarName = request.getParameter("variable");
+    String fieldName = request.getParameter("field");
+    String isModal = request.getParameter("modal"); // Check if opened as modal
+    boolean modalMode = "true".equals(isModal);
+
+    // Use DotObjectMapperProvider to get properly configured ObjectMapper
+    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+%>
+
 
 <script>
-  (function() {
-      /**
-       * @namespace DotCustomFieldApi
-       * @description Bridge API for DotCMS Custom Fields that enables communication between the custom field iframe and the parent form.
-       * This API allows custom fields to get/set values and listen to changes in the parent form.
-       * 
-       * @example
-       * // Wait for API to be ready and use it
-       * DotCustomFieldApi.ready(() => {
-       *     // Get field value
-       *     const value = DotCustomFieldApi.get('fieldId');
-       * 
-       *     // Set field value
-       *     DotCustomFieldApi.set('fieldId', 'new value');
-       * 
-       *     // Listen to field changes
-       *     DotCustomFieldApi.onChangeField('fieldId', (newValue) => {
-       *         console.log('Field changed:', newValue);
-       *     });
-       * });
-       * 
-       * @property {Function} ready - Callback executed when the API is ready to use
-       * @property {Function} get - Get a field value by ID
-       * @property {Function} set - Set a field value by ID
-       * @property {Function} onChangeField - Listen to field changes
-       */
-       window.DotCustomFieldApi = {
+/**
+ * @namespace DotCustomFieldApi
+ * @description Bridge API for DotCMS Custom Fields that enables communication between the custom field iframe and the parent form.
+ * This API allows custom fields to get/set values and listen to changes in the parent form.
+ */
+(function() {
+    window.DotCustomFieldApi = {
         ready(callback) {
             if (window.DotCustomFieldApi.get) {
                 callback(window.DotCustomFieldApi);
@@ -241,35 +253,48 @@
             });
         }
     };
-  })();
+})();
 </script>
 
-</head>
-
 <%
-    String contentTypeVarName = request.getParameter("variable");
-    String fieldName = request.getParameter("field");
 
     if (null != contentTypeVarName && null != fieldName) {
 
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-
         ContentType contentType = contentTypeAPI.find(contentTypeVarName);
+
+        // GET CURRENT CONTENTLET OBJECT
+        String inode = request.getParameter("inode") != null ? request.getParameter("inode") : null;
+        ContentletAPI conAPI = APILocator.getContentletAPI();
+        Contentlet contentlet =  (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
+        String contentletObj = "{}";
+
+        if(contentlet != null){
+            try{
+                Map con = contentlet.getMap();
+                contentletObj = mapper.writeValueAsString(con);
+            } catch(Exception e){
+                Logger.error("legacy-custom-field.jsp", "Error serializing contentlet: " + e.getMessage(), e);
+            }
+        }
 
         if (null != contentType) {
 
             Field field = contentType.fieldMap().get(fieldName);
-            System.out.println(field);
+
+            String fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+
+
             if (null != field) {
-               
+
                 String HTMLString = "";
-                Object value = null; //TODO: Investigate how to set this value
+                Object value = null;
                 String defaultValue = field.defaultValue() != null ? field.defaultValue().trim() : "";
                 String textValue = field.values();
 
                 if(UtilMethods.isSet(textValue)){
                     org.apache.velocity.context.Context velocityContext =  com.dotmarketing.util.web.VelocityWebUtil.getVelocityContext(request,response);
-                    // set the velocity variable for use in the code (if it has not already been set
+                    // Set velocity variable if not already set
                     if(!UtilMethods.isSet(velocityContext.get(field.variable()))){
                         if(UtilMethods.isSet(value)){
                             velocityContext.put(field.variable(), value);
@@ -284,6 +309,43 @@
                     <body id="legacy-custom-field-body">
                         <%= HTMLString %>
                     </body>
+
+                    <script>
+                        /**
+                         * Legacy Custom Field Integration Module
+                         *
+                         * This module handles the integration between legacy custom fields in iframes
+                         * and the parent Angular application. It provides:
+                         * 1. Automatic iframe height adjustment (via external module)
+                         * 2. Two-way data binding between Angular and legacy fields
+                         * 3. Support for dynamic field creation and updates
+                         *
+                         * === INTEGRATION MODULE ===
+                         * Handles iframe integration and field synchronization automatically
+                         */
+                        (() => {
+                            // Initialize the height manager using the external module
+                            const iframeId = '<%= field.variable() %>';
+                            const inode = '<%= inode != null ? inode : "new" %>';
+                            const modalMode = <%= modalMode %>;
+
+                            if (window.DotIframeHeightManager) {
+                                window.DotIframeHeightManager.initializeHeightManager(iframeId, inode, modalMode);
+                            }
+
+
+                            const allFields = Object.values(<%= fieldJson %>)
+                                .filter(field => field.dataType !== 'SYSTEM');
+
+
+                            const contentlet = <%= contentletObj %>;
+
+                            if (window.DotFieldInterceptors) {
+                                window.DotFieldInterceptors.initializeFieldInterceptors(allFields, contentlet);
+                            }
+
+                        })();
+                    </script>
 <%
             }
         }

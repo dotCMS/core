@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -44,10 +44,11 @@ const mockBulkResponseFail: DotActionBulkResult = {
 @Component({
     template: `
         <div class="TestDynamicDialog"></div>
-    `
+    `,
+    standalone: false
 })
 export class TestDynamicDialogComponent {
-    constructor(public dialogService: DialogService) {}
+    dialogService = inject(DialogService);
 
     show() {
         this.dialogService.open(DotBulkInformationComponent, {

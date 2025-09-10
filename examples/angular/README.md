@@ -33,6 +33,7 @@ Before you begin, ensure you have the following:
 You can get the code in two ways:
 
 1. Direct download:
+
    ```
    https://github.com/dotCMS/core/tree/main/examples/angular
    ```
@@ -60,8 +61,8 @@ To configure the Angular app to use your dotCMS instance:
    ```typescript
    export const environment = {
      production: false,
-     authToken: 'YOUR_AUTH_TOKEN_HERE',
-     dotcmsUrl: 'https://demo.dotcms.com',
+     authToken: "YOUR_AUTH_TOKEN_HERE",
+     dotcmsUrl: "https://demo.dotcms.com",
    };
    ```
 
@@ -96,7 +97,7 @@ Note: When accessing `localhost:4200/about`, ensure that the `/about` page exist
         │   └── services
         └── shared/
             └── contentlets-wrapper/
-                └── contentlet/  
+                └── contentlet/
 ```
 
 - `content-types/`: Components for rendering specific dotCMS content types
@@ -106,6 +107,18 @@ Note: When accessing `localhost:4200/about`, ensure that the `/about` page exist
     - `contentlet/`: Component for rendering individual Contentlets
 
 ## Key Features
+
+### How dotCMS Routes Pages
+
+dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Angular application needs to handle these variations.
+
+To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Angular.
+
+How to Implement in Angular:
+
+Configure a wildcard route `(**)` as the last route in your Angular application's routing configuration. This route will capture any undefined paths, allowing you to fetch content from dotCMS based on the full URL.
+
+You can learn more about Angular routing strategies [here](https://angular.dev/guide/routing/common-router-tasks)
 
 ### Handling Vanity URLs
 
@@ -147,7 +160,8 @@ If you encounter issues while setting up or running the dotCMS Angular example, 
 
 This often occurs when the environment variables are not set correctly.
 
-**Solution:** 
+**Solution:**
+
 - Double-check that you've updated the `authToken` in `src/environments/environment.development.ts` with a valid token.
 - Ensure the token has the necessary permissions (at least read access) for the content you're trying to fetch.
 - Verify that the token hasn't expired. If it has, generate a new one in the dotCMS UI.
@@ -159,6 +173,7 @@ This often occurs when the environment variables are not set correctly.
 If you're having trouble connecting to the dotCMS instance:
 
 **Solution:**
+
 - Verify that the `dotcmsUrl` in `src/environments/environment.development.ts` is correct.
 - Check if you can access the dotCMS instance directly through a web browser.
 - If using `https://demo.dotcms.com`, remember it restarts every 24 hours. You might need to wait or try again later.
@@ -171,6 +186,7 @@ If you're having trouble connecting to the dotCMS instance:
 If you're getting 404 errors for pages that should exist:
 
 **Solution:**
+
 - Ensure the page exists in your dotCMS instance. For example, if you're trying to access `/about`, make sure an "about" page exists in dotCMS.
 - Check if the content types used in the example match those in your dotCMS instance.
 - Verify that the content has been published and is not in draft status.
@@ -182,18 +198,23 @@ If you're getting 404 errors for pages that should exist:
 If you're experiencing unexpected behavior or errors related to dependencies:
 
 **Solution:** Perform a clean reinstall of all dependencies by running:
+
 ```bash
 rm -rf node_modules && rm package-lock.json && npm install
 ```
+
 This command will:
+
 1. Remove the `node_modules` directory
 2. Delete the `package-lock.json` file
 3. Perform a fresh install of all dependencies
 
 After this, restart your development server:
+
 ```bash
 ng serve
 ```
+
 </details>
 
 <details>
@@ -202,17 +223,21 @@ ng serve
 If you're experiencing build errors or changes aren't reflected in the running application:
 
 **Solution:** Clear the Angular build cache and rebuild the project:
+
 ```bash
 ng cache clean
 ng build --configuration=development
 ng serve
 ```
+
 This sequence of commands will:
+
 1. Clear the Angular build cache
 2. Rebuild the project with development configuration
 3. Start the development server
 
 This is recommended when:
+
 - You've made significant changes to your project configuration
 - You're experiencing unexplainable build errors
 - Your changes aren't reflected in the running application despite saving and restarting the dev server
@@ -225,6 +250,7 @@ This is recommended when:
 If the Universal Visual Editor is not functioning as expected:
 
 **Solution:**
+
 - Ensure you've correctly configured the UVE in your dotCMS instance as described in the [Universal Visual Editor](#universal-visual-editor) section.
 - Verify that your Angular application is running on `http://localhost:4200` (or update the UVE configuration if using a different port).
 - Check that you're accessing the dotCMS edit mode from the correct URL.

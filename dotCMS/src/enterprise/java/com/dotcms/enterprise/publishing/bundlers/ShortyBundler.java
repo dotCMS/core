@@ -348,6 +348,8 @@ public class ShortyBundler implements IBundler {
             request = new FakeHttpRequest(binFile.host.getHostname(), path).request();
             request = new MockServletPathRequest(request, "/contentAsset").request();
 
+            //Every Static Push call to the BinaryServlet must be executed using system user instead of anonymous
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER, APILocator.getUserAPI().getSystemUser());
             try (final OutputStream outputStream = bundleOutput.addFile(binFile.binFile)) {
 
                 response = new MockHttpCaptureResponse(response, outputStream).response();

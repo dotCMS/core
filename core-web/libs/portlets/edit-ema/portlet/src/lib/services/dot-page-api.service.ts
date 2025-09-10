@@ -1,56 +1,31 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
-import { Site } from '@dotcms/dotcms-js';
-import {
-    DEFAULT_VARIANT_ID,
-    DotCMSContentlet,
-    DotLanguage,
-    DotLayout,
-    DotPageContainerStructure,
-    DotPersona,
-    DotTemplate,
-    VanityUrl
-} from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { graphqlToPageEntity } from '@dotcms/client/internal';
+import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
+import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
-import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
-import { ClientRequestProps } from '../store/features/client/withClient';
+import { DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { getFullPageURL } from '../utils';
-
-export interface DotPageApiResponse {
-    page: DotPage;
-    site: Site;
-    viewAs: {
-        language: DotLanguage;
-        persona?: DotPersona;
-        variantId?: string;
-    };
-    layout: DotLayout;
-    template: DotTemplate;
-    containers: DotPageContainerStructure;
-    urlContentMap?: DotCMSContentlet;
-    vanityUrl?: VanityUrl;
-    runningExperimentId?: string;
-    numberContents: number;
-}
 
 export interface DotPageApiParams {
     url: string;
+    depth?: string;
+    mode?: UVE_MODE;
     language_id: string;
     [PERSONA_KEY]: string;
     variantName?: string;
     experimentId?: string;
-    mode?: UVE_MODE;
     clientHost?: string;
-    depth?: string;
     publishDate?: string;
+    // We need this to allow any other query param to be passed by the user
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [x: string]: any;
 }
 
 export enum DotPageAssetKeys {
@@ -74,34 +49,28 @@ export interface GetPersonasParams {
 
 export interface GetPersonasResponse {
     data: DotPersona[];
-    pagination: PaginationData;
-}
-
-export interface PaginationData {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
+    pagination: DotPagination;
 }
 
 @Injectable()
 export class DotPageApiService {
-    constructor(private http: HttpClient) {}
+    private http = inject(HttpClient);
 
     /**
      * Get a page from the Page API
      *
      * @param {DotPageApiParams} { url, language_id }
-     * @return {*}  {Observable<DotPageApiResponse>}
+     * @return {*}  {Observable<DotCMSPageAsset>}
      * @memberof DotPageApiService
      */
-    get(queryParams: DotPageAssetParams): Observable<DotPageApiResponse> {
+    get(queryParams: DotPageAssetParams): Observable<DotCMSPageAsset> {
         const { clientHost, ...params } = queryParams;
         const pageType = clientHost ? 'json' : 'render';
         const pageURL = getFullPageURL({ url: params.url, params });
 
         return this.http
             .get<{
-                entity: DotPageApiResponse;
+                entity: DotCMSPageAsset;
             }>(`/api/v1/page/${pageType}/${pageURL}`)
             .pipe(pluck('entity'));
     }
@@ -136,8 +105,8 @@ export class DotPageApiService {
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
-            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+        return this.http.get<{ entity: DotPersona[]; pagination: DotPagination }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: DotPagination }) => ({
                 data: res.entity,
                 pagination: res.pagination
             }))
@@ -158,26 +127,6 @@ export class DotPageApiService {
                 entity: { content: { idenfitier: string } };
             }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
             .pipe(pluck('entity', 'content', 'identifier'));
-    }
-
-    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
-        const apiUrl = `/api/v1/page/${pageId}/personas?`;
-
-        const queryParams = new URLSearchParams({
-            perper_page: perPage.toString(),
-            respectFrontEndRoles: 'true',
-            variantName: 'DEFAULT'
-        });
-
-        if (filter) {
-            queryParams.set('filter', filter);
-        }
-
-        if (page) {
-            queryParams.set('page', page.toString());
-        }
-
-        return apiUrl + queryParams.toString();
     }
 
     /**
@@ -202,41 +151,51 @@ export class DotPageApiService {
      * @return {*}  {Observable<T>}
      * @memberof DotPageApiService
      */
-    getGraphQLPage(query: string): Observable<DotPageApiResponse> {
+    getGraphQLPage({
+        query,
+        variables
+    }: {
+        query: string;
+        variables: Record<string, string>;
+    }): Observable<{
+        pageAsset: DotCMSPageAsset;
+        content: Record<string, unknown>;
+    }> {
         const headers = {
             'Content-Type': 'application/json',
-            dotcachettl: '0' // Bypasses GraphQL cache
+            dotcachettl: '0'
         };
 
-        return this.http
-            .post<{
-                data: { page: Record<string, unknown> };
-            }>('/api/v1/graphql', { query }, { headers })
-            .pipe(
-                pluck('data'),
-                map((data) => graphqlToPageEntity(data) as DotPageApiResponse)
-            );
+        return this.http.post<{ data }>('/api/v1/graphql', { query, variables }, { headers }).pipe(
+            pluck('data'),
+            map(({ page, ...content }) => {
+                const pageEntity = graphqlToPageEntity({ page } as DotCMSGraphQLPageResponse);
+
+                return {
+                    pageAsset: pageEntity,
+                    content
+                };
+            })
+        );
     }
 
-    /**
-     *
-     * @description Get Client Page from the Page API or GraphQL
-     * @return {*}  {Observable<DotPageApiResponse>}
-     * @memberof DotPageApiService
-     */
-    getClientPage(
-        params: DotPageApiParams,
-        clientProps: ClientRequestProps
-    ): Observable<DotPageApiResponse> {
-        const { query, params: clientParams } = clientProps;
+    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
+        const apiUrl = `/api/v1/page/${pageId}/personas?`;
 
-        if (!query) {
-            return this.get({
-                ...(clientParams || {}),
-                ...params
-            });
+        const queryParams = new URLSearchParams({
+            perper_page: perPage.toString(),
+            respectFrontEndRoles: 'true',
+            variantName: 'DEFAULT'
+        });
+
+        if (filter) {
+            queryParams.set('filter', filter);
         }
 
-        return this.getGraphQLPage(query);
+        if (page) {
+            queryParams.set('page', page.toString());
+        }
+
+        return apiUrl + queryParams.toString();
     }
 }

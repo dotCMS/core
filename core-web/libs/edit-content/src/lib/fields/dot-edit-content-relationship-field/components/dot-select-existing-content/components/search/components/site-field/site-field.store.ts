@@ -8,11 +8,12 @@ import { computed, inject } from '@angular/core';
 import { tap, exhaustMap, switchMap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import {
     TreeNodeItem,
     TreeNodeSelectItem
-} from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
+} from '../../../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '../../../../../../../../services/dot-edit-content.service';
 
 /** Maximum number of items to fetch per page */
 export const PEER_PAGE_LIMIT = 7000;
@@ -53,8 +54,8 @@ export const SiteFieldStore = signalStore(
         valueToSave: computed(() => {
             const node = nodeSelected();
 
-            if (node?.data?.id) {
-                return node.data.id;
+            if (node?.data?.id && node?.data?.type) {
+                return `${node.data.type}:${node.data.id}`;
             }
 
             return null;
@@ -133,6 +134,13 @@ export const SiteFieldStore = signalStore(
                 }
 
                 patchState(store, { nodeSelected });
+            },
+            /**
+             * Clears the selected node when a node is deselected
+             * @method clearSelection
+             */
+            clearSelection: () => {
+                patchState(store, { nodeSelected: null });
             }
         };
     })

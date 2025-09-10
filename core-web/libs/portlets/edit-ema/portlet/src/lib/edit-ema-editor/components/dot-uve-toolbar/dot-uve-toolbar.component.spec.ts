@@ -20,6 +20,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { UVE_MODE } from '@dotcms/types';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -27,7 +28,6 @@ import {
     getRunningExperimentMock,
     mockDotDevices
 } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -46,7 +46,13 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { getFullPageURL, createFavoritePagesURL, createFullURL, sanitizeURL } from '../../../utils';
+import {
+    getFullPageURL,
+    createFavoritePagesURL,
+    createFullURL,
+    sanitizeURL,
+    convertLocalTimeToUTC
+} from '../../../utils';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -125,7 +131,6 @@ const personaEventMock = {
     hasLiveVersion: false,
     hasTitleImage: false,
     host: 'SYSTEM_HOST',
-    hostFolder: 'SYSTEM_HOST',
     hostName: 'System Host',
     inode: '',
     keyTag: 'dot:persona',
@@ -396,7 +401,6 @@ describe('DotUveToolbarComponent', () => {
 
             it('should have attrs', () => {
                 expect(button.attributes).toEqual({
-                    class: 'ng-star-inserted',
                     icon: 'pi pi-copy',
                     'data-testId': 'uve-toolbar-copy-url',
                     'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
@@ -443,7 +447,6 @@ describe('DotUveToolbarComponent', () => {
                     hasLiveVersion: false,
                     hasTitleImage: false,
                     host: 'SYSTEM_HOST',
-                    hostFolder: 'SYSTEM_HOST',
                     hostName: 'System Host',
                     identifier: 'modes.persona.no.persona',
                     inode: '',
@@ -585,6 +588,18 @@ describe('DotUveToolbarComponent', () => {
             store = spectator.inject(UVEStore, true);
         });
 
+        it('should have a dot-ema-bookmarks component', () => {
+            expect(spectator.query(DotEmaBookmarksComponent)).toBeTruthy();
+        });
+
+        it('should have a copy url button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-copy-url'))).toBeTruthy();
+        });
+
+        it('should have a api link button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
+        });
+
         it('should have a device selector', () => {
             expect(spectator.query(byTestId('uve-toolbar-device-selector'))).toBeTruthy();
         });
@@ -626,6 +641,18 @@ describe('DotUveToolbarComponent', () => {
             store = spectator.inject(UVEStore, true);
         });
 
+        it('should have a dot-ema-bookmarks component', () => {
+            expect(spectator.query(DotEmaBookmarksComponent)).toBeTruthy();
+        });
+
+        it('should have a copy url button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-copy-url'))).toBeTruthy();
+        });
+
+        it('should have a api link button', () => {
+            expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
+        });
+
         it('should have a device selector', () => {
             expect(spectator.query(byTestId('uve-toolbar-device-selector'))).toBeTruthy();
         });
@@ -645,6 +672,35 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('calendar', () => {
+            const originalHasInstance = Object.getOwnPropertyDescriptor(Date, Symbol.hasInstance);
+            const originalUTC = Object.getOwnPropertyDescriptor(Date, 'UTC');
+
+            // We need to mock Date instanceof check and Date.UTC to avoid jest errors when running the tests
+            // More info here: https://github.com/jestjs/jest/issues/11808
+            Object.defineProperty(Date, Symbol.hasInstance, {
+                value: function () {
+                    return true;
+                }
+            });
+
+            Object.defineProperty(Date, 'UTC', {
+                value: function (_args) {
+                    return new Date();
+                }
+            });
+
+            afterAll(() => {
+                // Restore original instanceof behavior
+                if (originalHasInstance) {
+                    Object.defineProperty(Date, Symbol.hasInstance, originalHasInstance);
+                }
+
+                // Restore original UTC behavior
+                if (originalUTC) {
+                    Object.defineProperty(Date, 'UTC', originalUTC);
+                }
+            });
+
             it('should show calendar when in live mode', () => {
                 expect(spectator.query('p-calendar')).toBeTruthy();
             });
@@ -702,8 +758,17 @@ describe('DotUveToolbarComponent', () => {
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
                     mode: UVE_MODE.LIVE,
-                    publishDate: date.toISOString()
+                    publishDate: convertLocalTimeToUTC(date)
                 });
+            });
+
+            it('should change the date to today when button "Today" is clicked', () => {
+                const calendar = spectator.query('p-calendar');
+
+                spectator.triggerEventHandler('p-calendar', 'click', new Event('click'));
+
+                expect(calendar.getAttribute('ng-reflect-model')).toBeDefined();
+                expect(new Date(calendar.getAttribute('ng-reflect-model'))).toEqual(new Date());
             });
 
             it('should track event on date when date is selected', () => {
@@ -721,7 +786,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.triggerEventHandler(calendar, 'ngModelChange', date);
 
                 expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
-                    selectedDate: date.toISOString()
+                    selectedDate: convertLocalTimeToUTC(date)
                 });
             });
 

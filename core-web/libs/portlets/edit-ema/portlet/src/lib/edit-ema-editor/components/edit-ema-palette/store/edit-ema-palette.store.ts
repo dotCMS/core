@@ -17,9 +17,9 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotConfigurationVariables,
-    DotContainerStructure,
-    DotPageContainerStructure
+    DotContainerStructure
 } from '@dotcms/dotcms-models';
+import { DotCMSPageAssetContainers } from '@dotcms/types';
 
 export enum PALETTE_TYPES {
     CONTENTTYPE = 'CONTENTTYPE',
@@ -56,12 +56,12 @@ export interface DotPaletteState {
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotESContentService = inject(DotESContentService);
+
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotESContentService: DotESContentService
-    ) {
+    constructor() {
         super({
             contentlets: {
                 items: [],
@@ -199,7 +199,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      * @memberof DotPaletteStore
      */
     loadAllowedContentTypes = this.effect(
-        (data$: Observable<{ containers: DotPageContainerStructure }>) => {
+        (data$: Observable<{ containers: DotCMSPageAssetContainers }>) => {
             return data$.pipe(
                 switchMap(({ containers }) => {
                     return this.dotConfigurationService
@@ -268,7 +268,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     }
 
     private filterAllowedContentTypes(
-        containers: DotPageContainerStructure,
+        containers: DotCMSPageAssetContainers,
         blackList: string[] = []
     ): string[] {
         const allowedContent = new Set();

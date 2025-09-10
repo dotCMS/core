@@ -30,7 +30,6 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
 
 @Component({
     selector: 'dot-binary-settings',
-    standalone: true,
     imports: [
         FormsModule,
         ReactiveFormsModule,

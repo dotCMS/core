@@ -26,7 +26,7 @@ on:
       update_github_labels:
         description: 'Update GitHub labels'
         type: boolean
-        default: false
+        default: true
         required: false
       notify_slack:
         description: 'Notify Slack'
@@ -116,6 +116,16 @@ jobs:
           echo "-Dchangelist=" >> .mvn/maven.config
           
           git add .mvn/maven.config
+          
+          # Update LICENSE file Change Date
+          chmod +x .github/actions/update-license-date.sh
+          .github/actions/update-license-date.sh
+          
+          # Add LICENSE file if it was modified
+          if ! git diff --quiet HEAD -- LICENSE; then
+            echo "LICENSE file was updated, adding to commit"
+            git add LICENSE
+          fi
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"

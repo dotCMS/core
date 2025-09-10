@@ -14,6 +14,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
+import com.dotcms.enterprise.publishing.bundlers.FileAssetWrapper;
 import com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest.TestCase.Condition;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
@@ -22,14 +23,14 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.publishing.IBundler;
-import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.*;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -221,6 +222,37 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
                     break;
                 }
             }
+
+    }
+
+    /**
+     * Given Scenario: A FileAsset with an uppercase extension is created and published
+     * Expected Result: It should be possible to generate a bundle with the file asset without errors
+     */
+    @Test
+    public void Test_Static_Publish_File_With_Uppercase_Extension()
+            throws Exception {
+
+        Contentlet contentlet = FileAssetDataGen.createFileAsset(folder, "example", ".PNG");
+        ContentletDataGen.publish(contentlet);
+
+
+        final String contentletIdentifier = contentlet.getIdentifier();
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        //Create bundle with DefaultFilter
+        final Bundle bundleWithDefaultFilter = createBundle(
+                "TestBundle" + System.currentTimeMillis(), false, defaultFilterKey);
+        //Add assets to the bundle
+
+        final List<String> identifiers = ImmutableList.of(contentletIdentifier);
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        publisherAPI.saveBundleAssets(identifiers, bundleWithDefaultFilter.getId(), systemUser);
+
+
+        generateBundle(systemUser, bundleWithDefaultFilter.getId(), FileAssetBundler.class, null, null);
+
 
     }
 

@@ -1,0 +1,9 @@
+{
+    "rewrites": [
+      {
+        "source": "/dA/:path*",
+        "destination": "https://dotcms-qa-master.dotcms.site/dA/:path*"
+      }
+    ]
+  }
+  

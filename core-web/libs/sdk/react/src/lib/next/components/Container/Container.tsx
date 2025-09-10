@@ -1,14 +1,15 @@
 import { useContext, useMemo } from 'react';
 
-import { ContainerNoFound, EmptyContainer } from './ContainerFallbakcs';
-
-import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
-import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
+import { DotCMSBasicContentlet, DotCMSColumnContainer } from '@dotcms/types';
 import {
     getContainersData,
-    getContentletsInContainer,
-    getDotContainerAttributes
-} from '../../utils';
+    getDotContainerAttributes,
+    getContentletsInContainer
+} from '@dotcms/uve/internal';
+
+import { ContainerNotFound, EmptyContainer } from './ContainerFallbacks';
+
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { Contentlet } from '../Contentlet/Contentlet';
 
 /**
@@ -54,7 +55,7 @@ export function Container({ container }: DotCMSContainerRendererProps) {
     );
 
     if (!containerData) {
-        return <ContainerNoFound identifier={container.identifier} />;
+        return <ContainerNotFound identifier={container.identifier} />;
     }
 
     const isEmpty = contentlets.length === 0;
@@ -66,7 +67,7 @@ export function Container({ container }: DotCMSContainerRendererProps) {
 
     return (
         <div {...dotAttributes}>
-            {contentlets.map((contentlet: DotCMSContentlet) => (
+            {contentlets.map((contentlet: DotCMSBasicContentlet) => (
                 <Contentlet
                     key={contentlet.identifier}
                     contentlet={contentlet}

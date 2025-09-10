@@ -1,10 +1,10 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import com.dotcms.repackage.javax.validation.constraints.Size;
+import org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 
 public class AddVariantForm extends Validated {
-    @Size(min=1, max = 255)
+    @Length(min=1, max = 255)
     private String description ="";
 
     public AddVariantForm() {

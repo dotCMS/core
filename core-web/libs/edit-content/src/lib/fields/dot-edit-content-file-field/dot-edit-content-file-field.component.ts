@@ -8,7 +8,8 @@ import {
     OnInit,
     OnDestroy,
     DestroyRef,
-    computed
+    computed,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -21,11 +22,6 @@ import { filter, map } from 'rxjs/operators';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
-import {
-    INPUT_TYPE,
-    INPUT_TYPES,
-    UploadedFile
-} from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -44,9 +40,10 @@ import { DotFileFieldUploadService } from './services/upload-file/upload-file.se
 import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
 
+import { INPUT_TYPE, INPUT_TYPES, UploadedFile } from '../../models/dot-edit-content-file.model';
+
 @Component({
     selector: 'dot-edit-content-file-field',
-    standalone: true,
     imports: [
         ButtonModule,
         DotMessagePipe,
@@ -123,6 +120,16 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
         initialValue: false
     });
+
+    /**
+     * Signal that tracks whether the form control is disabled.
+     * This is used to disable file upload, buttons and other interactive elements.
+     *
+     * @type {boolean}
+     * @default false
+     */
+    readonly $disabled = signal<boolean>(false);
+
     /**
      * Computed property that returns the tooltip text for the AI button.
      * If the AI plugin is not installed, it retrieves the tooltip message from the dotMessageService.
@@ -203,8 +210,19 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     }
 
     /**
+     * Sets the disabled state of the form control.
+     * This method is called by Angular when the form control's disabled state changes.
+     *
+     * @param isDisabled Whether the control should be disabled.
+     */
+    setDisabledState(isDisabled: boolean): void {
+        this.$disabled.set(isDisabled);
+    }
+
+    /**
      * Handle file drop event.
      *
+     * If the field is disabled, nothing happens.
      * If the file is invalid, show an error message.
      * If the file is valid, call the store to handle the upload file.
      *
@@ -213,7 +231,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @return {void}
      */
     handleFileDrop({ validity, file }: DropZoneFileEvent): void {
-        if (!file) {
+        if (this.$disabled() || !file) {
             return;
         }
 
@@ -229,7 +247,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     /**
      * Handles the file input change event.
      *
-     * If the file is empty, nothing happens.
+     * If the field is disabled or file is empty, nothing happens.
      * If the file is not empty, the store is called to handle the upload file.
      *
      * @param files The file list from the input change event.
@@ -237,7 +255,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @return {void}
      */
     fileSelected(files: FileList | null) {
-        if (!files || files.length === 0) {
+        if (this.$disabled() || !files || files.length === 0) {
             return;
         }
 
@@ -269,6 +287,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     /**
      * Shows the import from URL dialog.
      *
+     * If the field is disabled, nothing happens.
      * Opens the dialog with the `DotFormImportUrlComponent` component
      * and passes the field type as data to the component.
      *
@@ -278,6 +297,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @return {void}
      */
     showImportUrlDialog() {
+        if (this.$disabled()) {
+            return;
+        }
+
         const header = this.#dotMessageService.get('dot.file.field.dialog.import.from.url.header');
 
         this.#dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
@@ -308,6 +331,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     /**
      * Opens a dialog for generating AI images using the `DotAIImagePromptComponent`.
      *
+     * If the field is disabled, nothing happens.
      * The dialog is configured with specific properties such as header, appendTo,
      * closeOnEscape, draggable, keepInViewport, maskStyleClass, resizable, modal,
      * width, and style.
@@ -318,6 +342,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @private
      */
     showAIImagePromptDialog() {
+        if (this.$disabled()) {
+            return;
+        }
+
         const header = this.#dotMessageService.get('dot.file.field.action.generate.dialog-title');
 
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
@@ -354,6 +382,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     /**
      * Opens the file editor dialog with specific configurations and handles the file upload process.
      *
+     * If the field is disabled, nothing happens.
      * This method performs the following actions:
      * - Retrieves the header message for the dialog.
      * - Opens the `DotFormFileEditorComponent` dialog with various options such as header, appendTo, closeOnEscape, draggable, keepInViewport, maskStyleClass, resizable, modal, width, and style.
@@ -362,6 +391,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      *
      */
     showFileEditorDialog() {
+        if (this.$disabled()) {
+            return;
+        }
+
         const header = this.#dotMessageService.get('dot.file.field.dialog.create.new.file.header');
 
         this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
@@ -393,6 +426,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     /**
      * Shows the select existing file dialog.
      *
+     * If the field is disabled, nothing happens.
      * Opens the dialog with the `DotSelectExistingFileComponent` component
      * and passes the field type and accepted files as data to the component.
      *
@@ -402,6 +436,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
      * @memberof DotEditContentFileFieldComponent
      */
     showSelectExistingFileDialog() {
+        if (this.$disabled()) {
+            return;
+        }
+
         const fieldType = this.$field().fieldType;
         const title =
             fieldType === INPUT_TYPES.Image

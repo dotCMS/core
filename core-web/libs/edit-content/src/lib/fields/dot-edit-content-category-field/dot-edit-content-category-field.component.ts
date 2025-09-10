@@ -3,12 +3,14 @@ import {
     Component,
     computed,
     effect,
+    forwardRef,
     inject,
     Injector,
     input,
-    OnInit
+    OnInit,
+    signal
 } from '@angular/core';
-import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -30,7 +32,6 @@ import { CategoryFieldStore } from './store/content-category-field.store';
  */
 @Component({
     selector: 'dot-edit-content-category-field',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         ButtonModule,
@@ -43,19 +44,21 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[class.dot-category-field__container--has-categories]': '$hasSelectedCategories()',
-        '[class.dot-category-field__container]': '!$hasSelectedCategories()'
+        '[class.dot-category-field__container]': '!$hasSelectedCategories()',
+        '[class.dot-category-field__container--disabled]': '$isDisabled()'
     },
-    viewProviders: [
+    providers: [
+        CategoriesService,
+        CategoryFieldStore,
         {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentCategoryFieldComponent),
+            multi: true
         }
-    ],
-    providers: [CategoriesService, CategoryFieldStore]
+    ]
 })
-export class DotEditContentCategoryFieldComponent implements OnInit {
+export class DotEditContentCategoryFieldComponent implements OnInit, ControlValueAccessor {
     readonly store = inject(CategoryFieldStore);
-    readonly #form = inject(ControlContainer).control as FormGroup;
     readonly #injector = inject(Injector);
 
     /**
@@ -68,6 +71,16 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
     contentlet = input.required<DotCMSContentlet>();
+
+    // ControlValueAccessor callbacks
+    private onChange: (value: string[]) => void = () => {
+        // Callback will be set by registerOnChange
+    };
+    private onTouched: () => void = () => {
+        // Callback will be set by registerOnTouched
+    };
+    protected $isDisabled = signal(false);
+
     /**
      * The `$hasConfirmedCategories` variable is a computed property that returns a boolean value.
      *
@@ -76,43 +89,93 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     $hasSelectedCategories = computed(() => this.store.selected().length > 0);
 
     /**
-     * Getter to retrieve the category field control.
-     *
-     * @return {FormControl} The category field control.
-     */
-    get categoryFieldControl(): FormControl {
-        return this.#form.get(this.store.fieldVariableName()) as FormControl;
-    }
-    /**
      * Initialize the component.
      *
      * @memberof DotEditContentCategoryFieldComponent
      */
     ngOnInit(): void {
+        // Initialize the store with field information only
+        // The contentlet data will come through ControlValueAccessor's writeValue
         this.store.load({
             field: this.field(),
             contentlet: this.contentlet()
         });
+
+        // Effect to sync selected categories with form control
         effect(
             () => {
                 const categoryValues = this.store.selected();
+                const inodes = categoryValues?.map((category) => category.inode) ?? [];
 
-                if (this.categoryFieldControl) {
-                    const inodes = categoryValues?.map((category) => category.inode) ?? [];
-                    this.categoryFieldControl.setValue(inodes);
-                }
+                // Notify form control of value change
+                this.onChange(inodes);
             },
             {
                 injector: this.#injector
             }
         );
     }
+
     /**
      * Open the categories dialog.
      *
      * @memberof DotEditContentCategoryFieldComponent
      */
     openCategoriesDialog(): void {
+        if (this.$isDisabled()) {
+            return;
+        }
+
         this.store.openDialog();
+        this.onTouched();
+    }
+
+    /**
+     * Sets the value in the component when the form control value changes.
+     * This method is called by Angular's forms system.
+     *
+     * @param value - Array of category inode strings
+     */
+    writeValue(value: string[]): void {
+        if (!value) {
+            this.store.setSelectedFromInodes([]);
+
+            return;
+        }
+
+        if (!Array.isArray(value)) {
+            return;
+        }
+
+        // Update store with the new value
+        this.store.setSelectedFromInodes(value);
+    }
+
+    /**
+     * Registers a callback function that is called when the control's value changes in the UI.
+     *
+     * @param fn - The callback function to register
+     */
+    registerOnChange(fn: (value: string[]) => void): void {
+        this.onChange = fn;
+    }
+
+    /**
+     * Registers a callback function that is called when the control is marked as touched in the UI.
+     *
+     * @param fn - The callback function to register
+     */
+    registerOnTouched(fn: () => void): void {
+        this.onTouched = fn;
+    }
+
+    /**
+     * Sets the disabled state of the component.
+     * This method is called by Angular when the form control's disabled state changes.
+     *
+     * @param isDisabled - Whether the component should be disabled
+     */
+    setDisabledState(isDisabled: boolean): void {
+        this.$isDisabled.set(isDisabled);
     }
 }

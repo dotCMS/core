@@ -94,4 +94,8 @@ public class DynamicTTLCache<K, V>  {
         return cache.asMap();
     }
 
+    public Map<K,V> copyAsMap() {
+        return cache.asMap().entrySet().stream().collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> (V)e.getValue().value));
+    }
+
 }

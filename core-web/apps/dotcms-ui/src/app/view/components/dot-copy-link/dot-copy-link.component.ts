@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotClipboardUtil } from '@dotcms/ui';
@@ -14,17 +14,16 @@ import { DotClipboardUtil } from '@dotcms/ui';
 @Component({
     selector: 'dot-copy-link',
     templateUrl: './dot-copy-link.component.html',
-    styleUrls: ['./dot-copy-link.component.scss']
+    styleUrls: ['./dot-copy-link.component.scss'],
+    standalone: false
 })
 export class DotCopyLinkComponent implements OnInit {
+    private dotClipboardUtil = inject(DotClipboardUtil);
+    private dotMessageService = inject(DotMessageService);
+
     @Input() copy = '';
     @Input() label: string;
     @Input() tooltipText: string;
-
-    constructor(
-        private dotClipboardUtil: DotClipboardUtil,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit() {
         this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');

@@ -1,16 +1,17 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
 import { filter, take } from 'rxjs/operators';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotMessageService } from '@dotcms/data-access';
 import { Auth, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
+
+import { LOCATION_TOKEN } from '../../../../../../providers';
+import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
 interface DotToolbarUserState {
     items: MenuItem[];
@@ -34,19 +35,18 @@ const INITIAL_STATE: DotToolbarUserState = {
 
 @Injectable()
 export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
-    private readonly FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
+    readonly #loginService = inject(LoginService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotNavigationService = inject(DotNavigationService);
+    readonly #loggerService = inject(LoggerService);
+    readonly #location = inject<Location>(LOCATION_TOKEN);
+    readonly #FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
 
     readonly vm$: Observable<DotToolbarUserState> = this.select((state) => state).pipe(
         filter((vm) => !!vm.userData.email)
     );
 
-    constructor(
-        private loginService: LoginService,
-        private dotMessageService: DotMessageService,
-        private dotNavigationService: DotNavigationService,
-        private loggerService: LoggerService,
-        @Inject(LOCATION_TOKEN) private location: Location
-    ) {
+    constructor() {
         super(INITIAL_STATE);
     }
 
@@ -69,7 +69,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
         // There's an error were you always get redirected to first portlet
         // this patches that error, I tried different options to avoid the use of this method and use a regular observable
         // but all the options I tried didn't work, the redirect kept happening
-        this.loginService.watchUser((auth: Auth) => {
+        this.#loginService.watchUser((auth: Auth) => {
             const userData = auth.loginAsUser || auth.user;
 
             this.patchState({
@@ -88,17 +88,17 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
      * @memberof DotToolbarUserStore
      */
     logoutAs() {
-        this.loginService
+        this.#loginService
             .logoutAs()
             .pipe(take(1))
             .subscribe(
                 () => {
-                    this.dotNavigationService.goToFirstPortlet().then(() => {
-                        this.location.reload();
+                    this.#dotNavigationService.goToFirstPortlet().then(() => {
+                        this.#location.reload();
                     });
                 },
                 (error) => {
-                    this.loggerService.error(error);
+                    this.#loggerService.error(error);
                 }
             );
     }
@@ -120,14 +120,14 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
             { separator: true },
             {
                 id: 'dot-toolbar-user-link-my-account',
-                label: this.dotMessageService.get('my-account'),
+                label: this.#dotMessageService.get('my-account'),
                 icon: 'pi pi-user',
                 visible: !auth.isLoginAs,
                 command: () => this.showMyAccount(true)
             },
             {
                 id: 'dot-toolbar-user-link-login-as',
-                label: this.dotMessageService.get('login-as'),
+                label: this.#dotMessageService.get('login-as'),
                 icon: 'pi pi-users',
                 visible: !auth.isLoginAs,
                 command: () => this.showLoginAs(true)
@@ -135,16 +135,16 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
             { separator: true, visible: !auth.isLoginAs },
             {
                 id: 'dot-toolbar-user-link-logout',
-                label: this.dotMessageService.get('Logout'),
+                label: this.#dotMessageService.get('Logout'),
                 icon: 'pi pi-sign-out',
                 visible: !auth.isLoginAs,
-                url: this.FINAL_LOGOUT_URL,
+                url: this.#FINAL_LOGOUT_URL,
                 target: '_self',
                 styleClass: 'toolbar-user__logout'
             },
             {
                 id: 'dot-toolbar-user-link-logout-as',
-                label: this.dotMessageService.get('logout-as'),
+                label: this.#dotMessageService.get('logout-as'),
                 icon: 'pi pi-sign-out',
                 visible: !!auth.isLoginAs,
                 command: () => this.logoutAs(),

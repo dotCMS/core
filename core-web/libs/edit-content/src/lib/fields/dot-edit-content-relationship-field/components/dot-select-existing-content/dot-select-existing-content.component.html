@@ -1,60 +1,34 @@
-@let data = store.data();
+@let data = store.filteredData();
 @let columns = store.columns();
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
-@let totalItems = $items().length;
 
-<div class="flex flex-column gap-2 h-full justify-content-between">
+<div class="w-full h-full">
     @if (store.errorMessage()) {
         <div
             class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base">
             <p>{{ store.errorMessage() | dm }}</p>
-        </div>
-    } @else if (data.length === 0) {
-        <div
-            class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base gap-2">
-            <i class="pi pi-folder-open"></i>
-            <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
         </div>
     } @else {
         <p-table
             [columns]="columns"
             [value]="data"
             [selectionMode]="selectionMode"
-            [(selection)]="$selectedItems"
+            [(selection)]="$selectionItems"
             [loading]="store.isLoading()"
-            [paginator]="data.length > pagination.rowsPerPage"
+            [paginator]="true"
             [first]="pagination.offset"
             [rows]="pagination.rowsPerPage"
+            (onPage)="store.setOffset($event)"
             [scrollable]="true"
+            [rowHover]="false"
+            [reorderableColumns]="false"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{first} - {last} of {totalRecords}"
+            [showPageLinks]="false"
+            [showFirstLastIcon]="false"
+            scrollHeight="36rem"
             styleClass="dotTable p-datatable-existing-content w-full">
-            <ng-template pTemplate="caption">
-                <div class="flex justify-content-between align-items-center w-full">
-                    <div class="flex align-items-center gap-2">
-                        <div class="flex-none">
-                            <dot-search
-                                (onSearch)="store.search($event)"
-                                [isLoading]="store.isLoading()" />
-                        </div>
-                        <div class="flex-grow-1">
-                            <p class="text-primary-500">
-                                {{
-                                    'dot.file.relationship.dialog.per.page'
-                                        | dm: [pagination.rowsPerPage.toString()]
-                                }}
-                            </p>
-                        </div>
-                    </div>
-                    @if (data.length > pagination.rowsPerPage) {
-                        <dot-pagination
-                            [currentPageReportLayout]="'left'"
-                            (nextPage)="store.nextPage()"
-                            (previousPage)="store.previousPage()"
-                            [totalPages]="store.totalPages()"
-                            [currentPage]="pagination.currentPage" />
-                    }
-                </div>
-            </ng-template>
             <ng-template pTemplate="header" styleClass="relative" let-columns>
                 <tr>
                     <th
@@ -67,34 +41,44 @@
                             <p-tableHeaderCheckbox />
                         }
                     </th>
-                    <th scope="col" class="max-w-12rem" [pSortableColumn]="'title'">
+                    <th scope="col" [colSpan]="2" class="max-w-11rem" [pSortableColumn]="'title'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.title' | dm }}
                         </span>
                         <p-sortIcon [field]="'title'" />
                     </th>
                     @for (column of columns; track $index) {
-                        <th class="max-w-12rem" scope="col" [pSortableColumn]="column.field">
+                        <th class="max-w-11rem" scope="col" [pSortableColumn]="column.field">
                             <span class="capitalize">{{ column.header }}</span>
                             <p-sortIcon [field]="column.field" />
                         </th>
                     }
-                    <th scope="col" class="max-w-12rem" [pSortableColumn]="'language'">
+                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'language'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.language' | dm }}
                         </span>
                     </th>
-                    <th scope="col" class="max-w-12rem" [pSortableColumn]="'state'">
+                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'status'">
                         <span class="capitalize">
-                            {{ 'dot.file.relationship.dialog.table.state' | dm }}
+                            {{ 'dot.file.relationship.dialog.table.status' | dm }}
                         </span>
                     </th>
-                    <th scope="col" class="max-w-12rem" [pSortableColumn]="'modDate'">
+                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'modDate'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.last.modified' | dm }}
                         </span>
                         <p-sortIcon [field]="'modDate'" />
                     </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td [colSpan]="columns.length + $staticColumns()" class="border-none">
+                        <div class="flex justify-content-center p-6 text-base gap-2">
+                            <i class="pi pi-folder-open"></i>
+                            <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
+                        </div>
+                    </td>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">
@@ -106,49 +90,37 @@
                             <p-tableRadioButton [value]="item" />
                         }
                     </td>
-                    <td class="max-w-12rem">
+                    <td class="column-thumbnail">
+                        <div class="container-thumbnail">
+                            <dot-contentlet-thumbnail
+                                [iconSize]="'30px'"
+                                [contentlet]="item"
+                                [playableVideo]="false"
+                                data-testId="contentlet-thumbnail" />
+                        </div>
+                    </td>
+                    <td class="max-w-11rem">
                         <p class="truncate-text">{{ item.title }}</p>
                     </td>
                     @for (column of columns; track $index) {
-                        <td class="max-w-12rem">
+                        <td class="max-w-11rem">
                             <p class="truncate-text">{{ item[column.field] }}</p>
                         </td>
                     }
-                    <td class="max-w-12rem">
+                    <td class="max-w-11rem">
                         <p class="truncate-text">{{ item.language | language }}</p>
                     </td>
-                    <td class="max-w-12rem">
+                    <td class="max-w-11rem">
                         @let status = item | contentletStatus;
                         <p-chip
                             [styleClass]="'p-chip-sm ' + status.classes"
                             [label]="status.label" />
                     </td>
-                    <td class="max-w-12rem">
-                        <p class="truncate-text">{{ item.modDate | date: 'longDate' }}</p>
+                    <td class="max-w-11rem">
+                        <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>
                     </td>
                 </tr>
             </ng-template>
         </p-table>
     }
-    <div class="flex justify-content-between">
-        <div>
-            <p class="text-primary-500">
-                {{ 'dot.file.relationship.dialog.selected.items' | dm: [totalItems.toString()] }}
-            </p>
-        </div>
-        <div class="flex gap-2">
-            <p-button
-                [label]="'Cancel' | dm"
-                [outlined]="true"
-                (onClick)="closeDialog()"
-                [text]="true"
-                severity="primary"
-                data-testId="cancel-button" />
-            <p-button
-                [disabled]="totalItems === 0"
-                (onClick)="applyChanges()"
-                [label]="$applyLabel()"
-                data-testId="apply-button" />
-        </div>
-    </div>
 </div>

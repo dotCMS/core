@@ -5,9 +5,10 @@ import { of } from 'rxjs';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+
 class AppsServicesMock {
     getConfiguration(_appKey: string, _id: string) {
         return of({});
@@ -25,7 +26,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
     let dotAppsConfigurationDetailResolver: DotAppsConfigurationDetailResolver;
 
     beforeEach(waitForAsync(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotAppsConfigurationDetailResolver,
                 { provide: DotAppsService, useClass: AppsServicesMock },
@@ -35,8 +36,8 @@ describe('DotAppsConfigurationDetailResolver', () => {
                 }
             ]
         });
-        dotAppsServices = testbed.get(DotAppsService);
-        dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
+        dotAppsServices = TestBed.inject(DotAppsService);
+        dotAppsConfigurationDetailResolver = TestBed.inject(DotAppsConfigurationDetailResolver);
     }));
 
     it('should get and return app with configurations', () => {

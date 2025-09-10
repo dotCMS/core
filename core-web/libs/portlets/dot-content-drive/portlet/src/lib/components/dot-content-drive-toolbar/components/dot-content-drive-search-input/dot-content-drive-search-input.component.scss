@@ -1,0 +1,10 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+    &::ng-deep {
+        .p-inputtext {
+            width: 100%;
+        }
+    }
+}

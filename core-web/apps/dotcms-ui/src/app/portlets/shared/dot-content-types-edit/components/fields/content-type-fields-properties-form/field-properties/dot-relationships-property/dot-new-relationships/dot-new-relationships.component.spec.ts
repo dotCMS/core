@@ -15,16 +15,17 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { ControlValueAccessor, FormGroupDirective, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
+
+import { DOTTestBed } from '../../../../../../../../../test/dot-test-bed';
+import { PaginationEvent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
+import { DotRelationshipService } from '../services/dot-relationship.service';
 
 const cardinalities = [
     {
@@ -41,7 +42,7 @@ const cardinalities = [
 
 const contentTypeMock: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,
-    clazz: 'clazz',
+    clazz: DotCMSClazzes.TEXT,
     defaultType: false,
     fixed: false,
     folder: 'folder',
@@ -60,7 +61,8 @@ const contentTypeMock: DotCMSContentType = {
             [cardinality]="cardinalityIndex"
             [velocityVar]="velocityVar"
             [editing]="editing"></dot-new-relationships>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     cardinalityIndex: number;
@@ -77,7 +79,8 @@ class HostTestComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => MockSearchableDropdownComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 class MockSearchableDropdownComponent implements ControlValueAccessor {
     @Input() data: string[];
@@ -110,7 +113,8 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
 
 @Component({
     selector: 'dot-cardinality-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockCardinalitySelectorComponent {
     @Input() value: number;

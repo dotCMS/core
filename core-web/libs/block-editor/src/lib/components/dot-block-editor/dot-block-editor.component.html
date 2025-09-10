@@ -2,21 +2,38 @@
     <div
         [ngClass]="{
             'editor-wrapper--fullscreen': isFullscreen,
-            'editor-wrapper--default': !isFullscreen
+            'editor-wrapper--default': !isFullscreen,
+            'editor-wrapper--disabled': disabled
         }"
         [style]="customStyles"
-        class="editor-wrapper">
+        class="editor-wrapper"
+        data-testid="block-editor-wrapper">
         <tiptap-editor
             (keyup)="subject.next()"
             (ngModelChange)="onBlockEditorChange($event)"
             [editor]="editor"
-            [ngClass]="{ 'overflow-hidden': freezeScroll }"
-            [ngModel]="content" />
+            [ngClass]="{ 'overflow-hidden': freezeScroll, 'editor-disabled': disabled }"
+            [ngModel]="content"
+            data-testid="tiptap-editor" />
     </div>
+    <div
+        dotDragHandle
+        [editor]="editor"
+        [tippyOptions]="dotDragHandleOptions"
+        class="dot-drag-handle">
+        <i class="pi pi-ellipsis-v"></i>
+        <i class="pi pi-ellipsis-v"></i>
+    </div>
+
     @if (showCharData) {
         <dot-editor-count-bar
             [charLimit]="charLimit"
             [characterCount]="characterCount"
-            [readingTime]="readingTime" />
+            [readingTime]="readingTime"
+            data-testid="editor-count-bar" />
     }
+
+    <dot-editor-context-menu [editor]="editor" />
+    <dot-add-button [editor]="editor" />
+    <dot-bubble-menu [editor]="editor" />
 }

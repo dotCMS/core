@@ -6,6 +6,7 @@ import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +36,7 @@ import java.util.Map;
  * @version 3.7
  * @since Jul 22, 2016
  */
+@Tag(name = "System Configuration")
 @Path("/v1/appconfiguration")
 @SuppressWarnings("serial")
 public class AppContextInitResource implements Serializable {

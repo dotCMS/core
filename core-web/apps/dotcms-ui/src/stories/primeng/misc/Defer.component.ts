@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { DeferModule } from 'primeng/defer';
@@ -46,9 +46,9 @@ export interface Car {
     `
 })
 export class DeferComponent {
-    @Input() cars: Car[] = [];
+    private messageService = inject(MessageService);
 
-    constructor(private messageService: MessageService) {}
+    @Input() cars: Car[] = [];
 
     initData() {
         this.messageService.add({

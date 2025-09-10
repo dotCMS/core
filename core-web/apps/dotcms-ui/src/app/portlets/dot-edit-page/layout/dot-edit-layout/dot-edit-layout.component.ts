@@ -6,7 +6,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -26,14 +25,27 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+
 export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
-    styleUrls: ['./dot-edit-layout.component.scss']
+    styleUrls: ['./dot-edit-layout.component.scss'],
+    standalone: false
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotPageLayoutService = inject(DotPageLayoutService);
+    private dotMessageService = inject(DotMessageService);
+    private templateContainersCacheService = inject(DotTemplateContainersCacheService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+    private router = inject(Router);
+
     pageState: DotPageRender | DotPageRenderState;
     apiLink: string;
 
@@ -49,18 +61,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private pageStateStore = inject(DotPageStateService);
 
     templateIdentifier = signal('');
-
-    constructor(
-        private route: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotPageLayoutService: DotPageLayoutService,
-        private dotMessageService: DotMessageService,
-        private templateContainersCacheService: DotTemplateContainersCacheService,
-        private dotSessionStorageService: DotSessionStorageService,
-        private router: Router
-    ) {}
 
     ngOnInit() {
         this.route.parent.parent.data

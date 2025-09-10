@@ -46,6 +46,18 @@ build-quicker:
 build-prod:
     ./mvnw -DskipTests clean install -Pprod
 
+# Builds core-web module
+build-core-web:
+    ./mvnw clean install -pl :dotcms-core-web -am -DskipTests
+
+# Builds core-web module with Nx cache reset
+build-core-web-reset-nx:
+    ./mvnw clean install -pl :dotcms-core-web -am -DskipTests -Dnx.reset
+
+# Builds core-web module with Nx cache reset
+build-test-core-web:
+    ./mvnw clean install -pl :dotcms-core-web -am
+
 # Runs a comprehensive test suite including core integration and postman tests, suitable for final validation
 build-test-full:
     ./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false -Dkarate.test.skip=false
@@ -93,6 +105,22 @@ dev-tomcat-run port="8087":
 dev-tomcat-stop:
     ./mvnw -pl :dotcms-core -Ptomcat-stop -Dcontext.name=local-tomcat
 
+# Starts dotCMS with JMX monitoring enabled for connecting from localhost
+dev-run-jmx:
+    ./mvnw -pl :dotcms-core -Pdocker-start -Djmx.enable=true
+
+# Starts dotCMS with JMX monitoring on custom ports
+dev-run-jmx-ports jmx_port="9999" rmi_port="9998":
+    ./mvnw -pl :dotcms-core -Pdocker-start -Djmx.enable=true -Djmx.port={{ jmx_port }} -Djmx.rmi.port={{ rmi_port }}
+
+# Starts dotCMS with both JMX monitoring and debug enabled
+dev-run-jmx-debug:
+    ./mvnw -pl :dotcms-core -Pdocker-start,jmx-debug -Djmx.debug.enable=true
+
+# Starts dotCMS with JMX, debug, and Glowroot profiler enabled
+dev-run-jmx-debug-glowroot:
+    ./mvnw -pl :dotcms-core -Pdocker-start,jmx-debug,glowroot -Djmx.debug.enable=true -Ddocker.glowroot.enabled=true
+
 # Testing Commands
 
 # Executes a specified set of Postman tests
@@ -131,7 +159,7 @@ test-integration-stop:
     ./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
 
 test-postman-ide:
-    ./mvnw -pl :dotcms-test-karate pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
+    ./mvnw -pl :dotcms-test-postman pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
 
 test-karate-ide:
     ./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080

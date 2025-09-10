@@ -39,6 +39,7 @@ $dot-table-cell-height: 1.25rem;
         > .p-datatable-wrapper {
             border-radius: $border-radius-md;
             border: 1px solid $color-palette-gray-400;
+            border-width: 1px;
         }
 
         .p-paginator-top,
@@ -53,8 +54,8 @@ $dot-table-cell-height: 1.25rem;
             padding: $spacing-3;
         }
 
-        .p-datatable-thead > tr > th {
-            background-color: $color-palette-gray-200;
+        .p-datatable-thead tr > th {
+            background-color: $color-palette-gray-100;
             border: 1px solid $color-palette-gray-300;
             border-width: 0 0 1px 0;
             color: $black;
@@ -67,7 +68,7 @@ $dot-table-cell-height: 1.25rem;
             line-height: $dot-table-header-cell-height;
 
             &:has(p-tableHeaderCheckbox) {
-                width: 40px;
+                width: 2.5rem;
             }
 
             &:first-child {
@@ -76,6 +77,15 @@ $dot-table-cell-height: 1.25rem;
 
             &:last-child {
                 padding-right: $spacing-3;
+            }
+
+            .error-message {
+                font-weight: $font-weight-regular-bold;
+                color: $color-accessible-text-red;
+            }
+
+            p-button {
+                font-size: 0;
             }
         }
 
@@ -125,18 +135,14 @@ $dot-table-cell-height: 1.25rem;
             }
         }
 
-        .p-datatable-tbody > tr {
+        .p-datatable-tbody tr {
             background: $white;
             color: $black;
-            height: $field-height-md;
+            height: 4rem;
             transition: none;
             outline: 0 none;
             cursor: pointer;
             overflow-wrap: anywhere;
-
-            &:hover {
-                background-color: $color-palette-primary-200;
-            }
 
             > td {
                 text-align: left;
@@ -146,7 +152,6 @@ $dot-table-cell-height: 1.25rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 0;
                 line-height: $dot-table-cell-height;
 
                 span {
@@ -162,8 +167,6 @@ $dot-table-cell-height: 1.25rem;
                 }
 
                 &:first-child:not(:has(p-tableCheckbox)) {
-                    padding: $dot-table-cell-padding-first-child;
-
                     &.tag-padding {
                         padding: $dot-table-cell-with-tag-padding-first-child;
                     }
@@ -175,6 +178,15 @@ $dot-table-cell-height: 1.25rem;
 
                 &:last-child {
                     padding-right: $spacing-3;
+                }
+
+                .container-thumbnail {
+                    width: 85%;
+                    height: 3rem;
+                    max-height: 3rem;
+                    overflow: hidden;
+                    position: relative;
+                    padding: $spacing-0;
                 }
 
                 .p-row-toggler,
@@ -212,6 +224,10 @@ $dot-table-cell-height: 1.25rem;
                 .pi.pi-ellipsis-v {
                     color: $color-palette-primary-500;
                 }
+
+                p-button {
+                    font-size: 0;
+                }
             }
 
             &.p-highlight {
@@ -234,9 +250,9 @@ $dot-table-cell-height: 1.25rem;
             }
 
             &:not(.p-highlight):hover {
-                background: $color-palette-primary-100;
                 color: $text-color-hover;
                 transition: background-color ease-in $basic-speed;
+                cursor: default;
             }
 
             &.disabled-row:hover {
@@ -257,19 +273,6 @@ $dot-table-cell-height: 1.25rem;
         .p-datatable-loading-icon {
             font-size: $icon-xl;
             color: $color-palette-secondary;
-        }
-
-        &.p-datatable-hoverable-rows {
-            .p-datatable-tbody > tr:not(.p-highlight):hover {
-                background: $color-palette-primary-100;
-                color: $text-color-hover;
-                transition: background-color ease-in $basic-speed;
-            }
-
-            .p-datatable-tbody > tr.disabled-row:hover {
-                background: $color-palette-gray-200;
-                color: $color-palette-gray-700;
-            }
         }
 
         &.p-datatable-gridlines {

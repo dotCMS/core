@@ -44,6 +44,7 @@
     <div class="preview-resource-links__actions">
         <p-button
             (click)="visibility = !visibility"
+            [disabled]="disabled"
             styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="info-btn"
             icon="pi pi-info" />
@@ -51,6 +52,7 @@
         @if (contentlet) {
             <p-button
                 (click)="downloadAsset()"
+                [disabled]="disabled"
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 data-testId="download-btn"
                 icon="pi pi-download" />
@@ -60,6 +62,7 @@
     <div class="preview-metadata__actions">
         <p-button
             (click)="removeFile.emit()"
+            [disabled]="disabled"
             [label]="'dot.common.remove' | dm"
             styleClass="p-button-link p-button-sm"
             data-testId="remove-button"
@@ -67,9 +70,9 @@
         @if (isEditable) {
             <p-button
                 (click)="onEdit()"
+                [disabled]="disabled"
                 [label]="'dot.common.edit' | dm"
-                severity="secondary"
-                styleClass="p-button-outlined p-button-sm "
+                styleClass="p-button-outlined p-button-sm p-button-secondary"
                 data-testId="edit-button"
                 icon="pi pi-pencil"></p-button>
         }
@@ -79,23 +82,27 @@
         @if (isEditable) {
             <p-button
                 (click)="onEdit()"
-                styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+                [disabled]="disabled"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
                 data-testId="edit-button-responsive"
                 icon="pi pi-pencil"></p-button>
         }
         <p-button
             (click)="visibility = !visibility"
-            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            [disabled]="disabled"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="infor-button-responsive"
             icon="pi pi-info"></p-button>
         <p-button
             (click)="downloadAsset()"
-            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            [disabled]="disabled"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="download-btn-responsive"
             icon="pi pi-download" />
         <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            [disabled]="disabled"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="remove-button-responsive"
             icon="pi pi-trash"></p-button>
     </div>
@@ -154,6 +161,7 @@
     <ng-template pTemplate="footer">
         <p-button
             (click)="visibility = false"
+            [disabled]="disabled"
             [label]="'Cancel' | dm"
             styleClass="p-button-outlined"
             data-testId="dialog-cancel" />

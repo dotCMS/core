@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -19,17 +20,24 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 
 public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
@@ -234,22 +242,32 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         contentlet1.setStringProperty("txt",   "Test Save Text 2");
         contentlet1.setIndexPolicy(IndexPolicy.FORCE);
 
-        final Contentlet contentlet2  =
-                SaveContentActionletTest.workflowAPI.fireContentWorkflow(contentlet1,
-                        new ContentletDependencies.Builder().respectAnonymousPermissions(false)
-                        .modUser(user)
-                        .workflowActionId(this.schemeStepActionResult.getAction().getId())
-                        .generateSystemEvent(false).build());
+        try (MockedStatic<ContentPublishDateUtil> utilMock = mockStatic(ContentPublishDateUtil.class)) {
 
-        final Contentlet contentlet3  = SaveContentActionletTest.contentletAPI.findContentletByIdentifier
-                (SaveContentActionletTest.contentlet2.getIdentifier(),
-                        false, languageId, user, false);
+            final Contentlet contentlet2  =
+                    SaveContentActionletTest.workflowAPI.fireContentWorkflow(contentlet1,
+                            new ContentletDependencies.Builder().respectAnonymousPermissions(false)
+                                    .modUser(user)
+                                    .workflowActionId(this.schemeStepActionResult.getAction().getId())
+                                    .generateSystemEvent(false).build());
 
-        // the contentlet save by the action must be not null, should has a new version.
-        Assert.assertNotNull(contentlet3);
-        Assert.assertNotNull(contentlet3.getInode());
-        Assert.assertFalse  (contentlet3.getInode().equals(firstInode));
-        Assert.assertEquals ("Test Save 2",      contentlet3.getStringProperty("title"));
-        Assert.assertEquals ("Test Save Text 2", contentlet3.getStringProperty("txt"));
+            final Contentlet contentlet3  = SaveContentActionletTest.contentletAPI.findContentletByIdentifier
+                    (SaveContentActionletTest.contentlet2.getIdentifier(),
+                            false, languageId, user, false);
+
+            utilMock.verify(() ->
+                    ContentPublishDateUtil.notifyIfFuturePublishDate(
+                            eq(type2),
+                            any(Identifier.class),
+                            eq(contentlet2.getModUser())
+                    ), times(1)
+            );
+            // the contentlet save by the action must be not null, should has a new version.
+            Assert.assertNotNull(contentlet3);
+            Assert.assertNotNull(contentlet3.getInode());
+            Assert.assertFalse  (contentlet3.getInode().equals(firstInode));
+            Assert.assertEquals ("Test Save 2",      contentlet3.getStringProperty("title"));
+            Assert.assertEquals ("Test Save Text 2", contentlet3.getStringProperty("txt"));
+        }
     }
 }

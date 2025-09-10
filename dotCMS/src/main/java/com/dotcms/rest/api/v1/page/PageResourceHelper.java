@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -338,6 +339,7 @@ public class PageResourceHelper implements Serializable {
         final Contentlet checkout = APILocator.getContentletAPI()
                 .checkout(pageInode, user, false);
         checkout.setVariantId(currentVariantId);
+        checkout.setIndexPolicy(IndexPolicy.FORCE);
         final Contentlet checkin = APILocator.getContentletAPI()
                 .checkin(checkout, user, false);
 

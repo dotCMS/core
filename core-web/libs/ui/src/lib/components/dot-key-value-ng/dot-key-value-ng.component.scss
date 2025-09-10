@@ -1,37 +1,35 @@
 @use "variables" as *;
 
-:host {
-    display: block;
-
-    dot-action-button {
-        display: flex;
-        float: right;
-        position: relative;
-        right: $spacing-3;
-        top: -$spacing-4;
-        z-index: 1;
-    }
-
-    ::ng-deep .p-table .p-table-thead tr th {
-        padding-left: 0;
-        padding-right: 0;
-
-        &:first-child {
-            padding-left: $spacing-4;
+::ng-deep {
+    p-table {
+        .dotTable.p-datatable.p-datatable-key-value {
+            .p-datatable-header {
+                background-color: $color-palette-gray-100;
+                th {
+                    border: 0;
+                }
+            }
+            .p-datatable-footer {
+                padding-left: 0;
+                padding-right: 0;
+            }
+            .p-datatable-wrapper {
+                border: 1px solid $color-palette-gray-300;
+                border-radius: $border-radius-md;
+            }
+            .p-datatable-footer {
+                border: 0;
+                padding-left: 0;
+                padding-right: 0;
+                font-weight: lighter;
+            }
         }
     }
+}
 
-    .dot-key-value__header-keyValue-label {
-        text-align: left;
-    }
-
-    .dot-key-value__header-hidden-label {
-        text-align: center;
-    }
-
-    p-table .dot-key-value__header-actions-label {
-        padding-right: $spacing-9;
-        text-align: right;
-        width: 185px;
+.dot-key-value__header {
+    th {
+        font-weight: $font-weight-bold;
+        background-color: $color-palette-gray-100;
     }
 }

@@ -1,21 +1,24 @@
-<p-selectButton
-    *ngIf="selectOptions.length > 1"
-    [(ngModel)]="selected"
-    [options]="selectOptions"
-    class="textarea-content__select-field"></p-selectButton>
-<textarea
-    *ngIf="selected === 'plain'"
-    (keydown.enter)="onKeyEnter($event)"
-    (ngModelChange)="onModelChange($event)"
-    [ngModel]="value"
-    [ngStyle]="styles"
-    class="textarea-content__plain-field"></textarea>
-<ngx-monaco-editor
-    *ngIf="selected === 'code'"
-    (ngModelChange)="onModelChange($event)"
-    (keydown.enter)="onKeyEnter($event)"
-    (init)="onInit($event)"
-    [(ngModel)]="value"
-    [ngStyle]="styles"
-    [options]="editorOptions"
-    class="textarea-content__code-field"></ngx-monaco-editor>
+@if (selectOptions.length > 1) {
+    <p-selectButton
+        [(ngModel)]="selected"
+        [options]="selectOptions"
+        class="textarea-content__select-field"></p-selectButton>
+}
+@if (selected === 'plain') {
+    <textarea
+        (keydown.enter)="onKeyEnter($event)"
+        (ngModelChange)="onModelChange($event)"
+        [ngModel]="value"
+        [ngStyle]="styles"
+        class="textarea-content__plain-field"></textarea>
+}
+@if (selected === 'code') {
+    <ngx-monaco-editor
+        (ngModelChange)="onModelChange($event)"
+        (keydown.enter)="onKeyEnter($event)"
+        (init)="onInit($event)"
+        [(ngModel)]="value"
+        [ngStyle]="styles"
+        [options]="editorOptions"
+        class="textarea-content__code-field"></ngx-monaco-editor>
+}

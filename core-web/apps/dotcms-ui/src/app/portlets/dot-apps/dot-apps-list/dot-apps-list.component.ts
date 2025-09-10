@@ -1,22 +1,27 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
 
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-list',
     templateUrl: './dot-apps-list.component.html',
-    styleUrls: ['./dot-apps-list.component.scss']
+    styleUrls: ['./dot-apps-list.component.scss'],
+    standalone: false
 })
 export class DotAppsListComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotAppsService = inject(DotAppsService);
+
     @ViewChild('searchInput') searchInput: ElementRef;
     @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
     apps: DotApp[];
@@ -26,12 +31,6 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
     showDialog = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private route: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotAppsService: DotAppsService
-    ) {}
 
     ngOnInit() {
         this.route.data

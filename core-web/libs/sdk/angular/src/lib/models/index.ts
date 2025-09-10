@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export * from './dotcms.model';
 
 import { Type } from '@angular/core';
 
-import { DotCMSPageAsset } from './dotcms.model';
+import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 /**
  * Represents a dynamic component entity.
@@ -15,27 +14,27 @@ export type DynamicComponentEntity = Promise<Type<any>>;
 /**
  * Represents the context of a DotCMS page.
  */
-export interface DotCMSPageContext {
+export interface DotCMSPageStore {
     /**
      * Represents the DotCMS page asset.
      * @type {DotCMSPageAsset}
-     * @memberof DotCMSPageContext
+     * @memberof DotCMSPageStore
      */
-    pageAsset: DotCMSPageAsset;
+    page: DotCMSPageAsset;
 
     /**
      * Represents the dynamic components of the page for each Content Type.
      * @type {DotCMSPageComponent}
-     * @memberof DotCMSPageContext
+     * @memberof DotCMSPageStore
      */
     components: DotCMSPageComponent;
 
     /**
-     * Indicates whether the page is being viewed inside the editor.
-     * @type {boolean}
-     * @memberof DotCMSPageContext
+     * Indicates the renderer mode.
+     * @type {DotCMSPageRendererMode}
+     * @memberof DotCMSPageStore
      */
-    isInsideEditor: boolean;
+    mode: DotCMSPageRendererMode;
 }
 
 /**

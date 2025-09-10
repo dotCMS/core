@@ -7,15 +7,14 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ConfirmationService } from 'primeng/api';
 import { Paginator } from 'primeng/paginator';
 
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { EditEmaPersonaSelectorComponent } from './edit-ema-persona-selector.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../../../shared/consts';
 
-export const CUSTOM_PERSONA: DotPersona = {
-    hostFolder: 'CUSTOM_HOST',
+export const CUSTOM_PERSONA: DotCMSViewAsPersona = {
     inode: 'unique-inode-id',
     host: 'CUSTOM_HOST',
     locked: true,
@@ -44,6 +43,12 @@ export const CUSTOM_PERSONA: DotPersona = {
     modUser: 'customAdmin'
 };
 
+const TEST_DEFAULT_PERSONA: DotCMSViewAsPersona = {
+    ...DEFAULT_PERSONA,
+    photo: { versionPath: '/dA/198-23423-234' },
+    url: 'example.defaultsite.com'
+};
+
 describe('EditEmaPersonaSelectorComponent', () => {
     let spectator: Spectator<EditEmaPersonaSelectorComponent>;
     let component: EditEmaPersonaSelectorComponent;
@@ -60,7 +65,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
                 useValue: {
                     getPersonas() {
                         return of({
-                            data: [DEFAULT_PERSONA, CUSTOM_PERSONA],
+                            data: [TEST_DEFAULT_PERSONA, CUSTOM_PERSONA],
                             pagination: {
                                 totalEntries: 1,
                                 page: 1,
@@ -76,9 +81,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                value: {
-                    ...DEFAULT_PERSONA
-                },
+                value: TEST_DEFAULT_PERSONA,
                 pageId: '123'
             }
         });
@@ -116,7 +119,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should set the value to the listbox', () => {
-            expect(component.listbox.value).toEqual(DEFAULT_PERSONA);
+            expect(component.listbox.value).toEqual(TEST_DEFAULT_PERSONA);
         });
 
         it('should add the chip to the personalized persona', () => {

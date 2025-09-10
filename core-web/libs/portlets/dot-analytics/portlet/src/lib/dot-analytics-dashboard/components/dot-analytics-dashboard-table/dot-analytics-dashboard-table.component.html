@@ -1,0 +1,164 @@
+@let isLoadingState = $isLoading();
+@let isErrorState = $isError();
+@let isEmptyState = $isEmpty();
+@let tableData = $data();
+
+@let columnsConfig = $columnConfigs();
+@let hasData = tableData && tableData.length > 0;
+@let showRealTable = !isLoadingState && !isErrorState && !isEmptyState && hasData;
+
+@if (isLoadingState) {
+    <div class="table-loading-state h-full">
+        <p-card class="h-full">
+            <ng-template pTemplate="header">
+                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
+            </ng-template>
+            <!-- Loading State -->
+            <div class="flex flex-column gap-3 h-full">
+                <!-- Custom Table Skeleton -->
+                <div class="p-datatable p-datatable-sm">
+                    <!-- Skeleton Header -->
+                    <div class="p-datatable-header-row flex p-3">
+                        @for (
+                            columnConfig of columnsConfig;
+                            track trackByField($index, columnConfig)
+                        ) {
+                            <div
+                                [class]="columnConfig.cssClass"
+                                class="flex-1"
+                                [style.width]="columnConfig.width">
+                                <p-skeleton height="1.2rem" width="80%"></p-skeleton>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Skeleton Rows -->
+                    @for (row of skeletonRows; track trackByIndex($index)) {
+                        <div class="flex p-3 hover:bg-gray-50">
+                            @for (
+                                columnConfig of columnsConfig;
+                                track trackByField($index, columnConfig)
+                            ) {
+                                <div
+                                    [class]="columnConfig.cssClass"
+                                    class="flex-1"
+                                    [style.width]="columnConfig.width">
+                                    <p-skeleton
+                                        height="1rem"
+                                        [width]="columnConfig.skeletonWidth"></p-skeleton>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <!-- Skeleton Pagination -->
+                    <div class="flex justify-content-center align-items-center p-3">
+                        <p-skeleton height="1.5rem" width="15.625rem"></p-skeleton>
+                    </div>
+                </div>
+            </div>
+        </p-card>
+    </div>
+} @else if (isErrorState) {
+    <div class="table-error-state h-full">
+        <p-card class="h-full">
+            <ng-template pTemplate="header">
+                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
+            </ng-template>
+            <!-- Error State -->
+            <div class="flex flex-column gap-3 h-full">
+                <dot-analytics-state-message
+                    message="analytics.error.loading.top-pages-table"
+                    icon="pi-exclamation-triangle" />
+            </div>
+        </p-card>
+    </div>
+} @else if (isEmptyState) {
+    <div class="table-empty-state h-full" data-testid="empty-table-state">
+        <p-card class="h-full">
+            <ng-template pTemplate="header">
+                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
+            </ng-template>
+            <!-- Empty State -->
+            <div class="flex flex-column gap-3 h-full">
+                <dot-analytics-state-message
+                    message="analytics.table.empty.description"
+                    icon="pi-info-circle" />
+            </div>
+        </p-card>
+    </div>
+} @else if (showRealTable) {
+    <p-card class="h-full">
+        <ng-template pTemplate="header">
+            <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
+        </ng-template>
+        <!-- Loaded State -->
+        <div class="flex flex-column gap-3 h-full">
+            <!-- Real Table -->
+            <p-table
+                [value]="tableData"
+                [columns]="columnsConfig"
+                [attr.data-testid]="'analytics-top-pages-table'"
+                class="p-datatable-sm"
+                [scrollable]="true"
+                [scrollHeight]="tableConfig.SCROLL_HEIGHT"
+                [virtualScroll]="true"
+                [virtualScrollItemSize]="tableConfig.VIRTUAL_SCROLL_ITEM_SIZE"
+                [dataKey]="tableConfig.DATA_KEY"
+                [sortMode]="tableConfig.SORT_MODE">
+                <ng-template pTemplate="header" let-columns>
+                    <tr>
+                        @for (
+                            columnConfig of columnsConfig;
+                            track trackByField($index, columnConfig)
+                        ) {
+                            <th
+                                [class]="columnConfig.cssClass"
+                                [pSortableColumn]="
+                                    columnConfig.sortable ? columnConfig.field : undefined
+                                "
+                                [style.width]="columnConfig.width">
+                                {{ columnConfig.header | dm }}
+                                @if (columnConfig.sortable) {
+                                    <p-sortIcon [field]="columnConfig.field"></p-sortIcon>
+                                }
+                            </th>
+                        }
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row let-rowIndex="rowIndex" let-columns="columns">
+                    <tr [style.height.px]="tableConfig.VIRTUAL_SCROLL_ITEM_SIZE">
+                        @for (
+                            columnConfig of columnsConfig;
+                            track trackByField($index, columnConfig)
+                        ) {
+                            <td [class]="columnConfig.cssClass">
+                                @switch (columnConfig.type) {
+                                    @case ('link') {
+                                        <span>
+                                            {{ row[columnConfig.field] }}
+                                        </span>
+                                    }
+                                    @case ('number') {
+                                        <span class="font-semibold">
+                                            {{ row[columnConfig.field] | number }}
+                                        </span>
+                                    }
+                                    @case ('percentage') {
+                                        <span class="text-600 font-medium">
+                                            {{ row[columnConfig.field] }}%
+                                        </span>
+                                    }
+                                    @default {
+                                        {{ row[columnConfig.field] }}
+                                    }
+                                }
+                            </td>
+                        }
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+    </p-card>
+}

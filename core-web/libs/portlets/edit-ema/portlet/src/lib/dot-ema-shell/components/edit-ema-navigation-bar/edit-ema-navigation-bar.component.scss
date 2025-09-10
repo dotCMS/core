@@ -14,6 +14,76 @@
     border-left: 1px solid $color-palette-primary-300;
 }
 
+.edit-ema-nav-bar__item-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 5.5rem;
+    width: 100%;
+    gap: $spacing-0;
+    padding: 0 $spacing-0;
+    text-decoration: none;
+    color: $black;
+    position: relative;
+
+    &:not(:has(.edit-ema-nav-bar__item--active)) {
+        .p-button.p-button-outlined.toggle-palette {
+            display: none; // Hide when we are not on content edit portlet
+        }
+    }
+}
+
+.p-button.p-button-outlined.toggle-palette {
+    align-self: flex-start;
+    border: 1px solid $color-palette-primary-300;
+    background-color: $white;
+    border-radius: 0;
+    height: 5.5rem;
+    z-index: 10;
+    position: absolute;
+    transition: all $basic-speed ease-in-out;
+
+    &:active,
+    &:focus {
+        outline: none;
+    }
+
+    &:hover {
+        background-color: $color-palette-primary-200;
+    }
+
+    ::ng-deep {
+        .p-button-icon {
+            transition: all $basic-speed ease-in-out;
+        }
+    }
+
+    &.closed {
+        left: -2rem;
+        border-right: none; // To make the blending illusion with the nav bar
+        ::ng-deep {
+            .p-button-icon,
+            .pi {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    &.open {
+        left: -17.5rem;
+        border: 1px solid $color-palette-gray-200; // Same as the border of the palette to create a blending illusion
+        border-right: 1px solid $white;
+        ::ng-deep {
+            .p-button-icon,
+            .pi {
+                transform: rotate(0deg);
+            }
+        }
+    }
+}
+
 .edit-ema-nav-bar__item {
     display: flex;
     flex-direction: column;
@@ -62,7 +132,7 @@ use {
     font-size: $font-size-sm;
 }
 
-.edit-ema-nav-bar__item--active {
+.edit-ema-nav-bar__item-container:has(.edit-ema-nav-bar__item--active) {
     background-color: $white;
     border: 1px solid $color-palette-primary-300;
     border-left: none;

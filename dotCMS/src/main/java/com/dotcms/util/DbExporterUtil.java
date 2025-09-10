@@ -4,7 +4,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RuntimeUtils;
 import com.dotmarketing.util.StringUtils;
@@ -135,72 +134,6 @@ public class DbExporterUtil {
      */
     private DbExporterUtil() {}
 
-    /**
-     * Executes pg_dump binary and stores its output in a generated SQL gzipped file.
-     *
-     * @return file with DB dump
-     */
-    public static File exportToFile() {
-        if (!DbConnectionFactory.isPostgres()) {
-            Logger.error(
-                    DbExporterUtil.class,
-                    "Database export through pg_dump detected in an installation other than Postgres");
-            throw new DotRuntimeException("Attempting to run Postgres database dump in a non-Postgres installation");
-        }
-
-        final String hostName = Try.of(() ->
-                        APILocator.getHostAPI()
-                                .findDefaultHost(
-                                        APILocator.systemUser(),
-                                        false)
-                                .getHostname())
-                .getOrElse("dotcms");
-        final String fileName = StringUtils.sanitizeFileName(hostName)
-                + "_db_"
-                + DateUtil.EXPORTING_DATE_FORMAT.format(new Date())
-                + ".sql.gz";
-        final File file = Paths
-                .get(
-                        ConfigUtils.getAbsoluteAssetsRootPath(),
-                        "server",
-                        "sql_backups",
-                        fileName)
-                .toFile();
-        final long starter = System.currentTimeMillis();
-
-        Logger.info(DbExporterUtil.class, "DB Dumping database to  : " + file);
-        if (file.exists()) {
-            throw new DotRuntimeException("DB Dump already exists: " + file);
-        }
-
-        try {
-            Files.createDirectories(file.toPath());
-        } catch (IOException e) {
-            Logger.error(
-                    DbExporterUtil.class,
-                    String.format("Error creating directories %s", file.getAbsolutePath()),
-                    e);
-            throw new DotRuntimeException(e);
-        }
-        file.delete();
-
-        try (final InputStream input = exportSql();
-             final OutputStream output = Files.newOutputStream(file.toPath())) {
-            IOUtils.copy(input, output);
-        } catch (Exception e) {
-            Logger.error(DbExporterUtil.class, String.format("Error exporting to file %s", file.getName()), e);
-            throw e instanceof DotRuntimeException ? (DotRuntimeException) e : new DotRuntimeException(e);
-        }
-
-        Logger.info(DbExporterUtil.class, "Database Dump Complete : " + file);
-        Logger.info(
-                DbExporterUtil.class,
-                "- took: " + DateUtil.humanReadableFormat(
-                        Duration.of(
-                                System.currentTimeMillis() -starter,
-                                ChronoUnit.MILLIS)));
-        return file;
-    }
 
     /**
      * Copies pg_dumb binary to a defined folder for it to called later.
@@ -243,12 +176,136 @@ public class DbExporterUtil {
 
     /**
      * Calls the pg_dumb binary with necessary arguments and redirects standard output to {@link InputStream}.
+     * Now includes proper error handling to detect pg_dump failures while preserving binary output integrity.
      *
      * @return input stream with commands output
      * @throws IOException
      */
     public static InputStream exportSql() throws IOException {
-        return RuntimeUtils.getRunProcessStream(getCommandAndArgs(PG_DUMP_PATH.get(), getDatasource().getDbUrl()));
+        final String dbUrl = getDatasource().getDbUrl();
+        final String[] commandAndArgs = getCommandAndArgs(PG_DUMP_PATH.get(), dbUrl);
+        
+        Logger.info(DbExporterUtil.class, "Executing pg_dump with connection: " + 
+                   dbUrl.replaceAll(":[^:@]*@", ":****@") + " (password masked)");
+        
+        // Create ProcessBuilder to have full control over process execution
+        final ProcessBuilder processBuilder = new ProcessBuilder(commandAndArgs);
+        
+        try {
+            final Process process = processBuilder.start();
+            
+            // Create a custom InputStream that wraps the process InputStream
+            // and monitors the process for completion and errors
+            return new ProcessInputStream(process);
+            
+        } catch (Exception e) {
+            Logger.error(DbExporterUtil.class, "Failed to start pg_dump process: " + e.getMessage(), e);
+            throw new DotRuntimeException("Database export failed to start: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Custom InputStream that wraps a Process InputStream and monitors for process completion and errors.
+     * This preserves binary data integrity while still providing error detection.
+     */
+    private static class ProcessInputStream extends InputStream {
+        private final Process process;
+        private final InputStream processInputStream;
+        private boolean processChecked = false;
+        
+        public ProcessInputStream(Process process) {
+            this.process = process;
+            this.processInputStream = new java.io.BufferedInputStream(process.getInputStream());
+        }
+        
+        @Override
+        public int read() throws IOException {
+            int result = processInputStream.read();
+            
+            // If we've reached end of stream, check process exit status
+            if (result == -1 && !processChecked) {
+                checkProcessCompletion();
+            }
+            
+            return result;
+        }
+        
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int result = processInputStream.read(b, off, len);
+            
+            // If we've reached end of stream, check process exit status
+            if (result == -1 && !processChecked) {
+                checkProcessCompletion();
+            }
+            
+            return result;
+        }
+        
+        @Override
+        public void close() throws IOException {
+            try {
+                processInputStream.close();
+                if (!processChecked) {
+                    checkProcessCompletion();
+                }
+            } finally {
+                process.destroyForcibly();
+            }
+        }
+        
+        private void checkProcessCompletion() throws IOException {
+            processChecked = true;
+            
+            try {
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    // Read error stream to get failure details
+                    String errorOutput = "";
+                    try (InputStream errorStream = process.getErrorStream()) {
+                        errorOutput = IOUtils.toString(errorStream, java.nio.charset.StandardCharsets.UTF_8);
+                    } catch (Exception e) {
+                        Logger.warn(DbExporterUtil.class, "Could not read pg_dump error output: " + e.getMessage());
+                    }
+                    
+                    String errorMessage = "pg_dump failed with exit code " + exitCode;
+                    if (!errorOutput.trim().isEmpty()) {
+                        errorMessage += ": " + errorOutput.trim();
+                    }
+                    
+                    Logger.error(DbExporterUtil.class, errorMessage);
+                    throw new IOException("Database export failed: " + errorMessage);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("pg_dump process was interrupted", e);
+            }
+        }
+        
+        @Override
+        public int available() throws IOException {
+            return processInputStream.available();
+        }
+        
+        @Override
+        public long skip(long n) throws IOException {
+            return processInputStream.skip(n);
+        }
+        
+        @Override
+        public boolean markSupported() {
+            return processInputStream.markSupported();
+        }
+        
+        @Override
+        public synchronized void mark(int readlimit) {
+            processInputStream.mark(readlimit);
+        }
+        
+        @Override
+        public synchronized void reset() throws IOException {
+            processInputStream.reset();
+        }
     }
 
     /**
@@ -301,5 +358,6 @@ public class DbExporterUtil {
             throw new DotRuntimeException(e);
         }
     }
+
 
 }

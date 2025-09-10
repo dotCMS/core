@@ -1,0 +1,30 @@
+@use "variables" as *;
+
+:host {
+    ::ng-deep {
+        .p-toolbar {
+            padding: $spacing-1 $spacing-3;
+        }
+
+        .dot-content-drive-toolbar {
+            height: 100%;
+            background-color: $color-palette-gray-100;
+            border: none;
+            border-bottom: 1px solid $color-palette-gray-300;
+            gap: $spacing-1;
+        }
+    }
+}
+
+.p-toolbar-group-start {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: min-content repeat(3, minmax(4.5rem, 14rem));
+    align-items: center;
+}
+
+.p-toolbar-group-start,
+.p-toolbar-group-end,
+.p-toolbar-group-center {
+    gap: $spacing-1;
+}

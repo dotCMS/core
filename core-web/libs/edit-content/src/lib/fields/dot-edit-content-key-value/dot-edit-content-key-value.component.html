@@ -1,5 +1,5 @@
 <dot-key-value-ng
     (updatedList)="updateField($event)"
-    [variables]="initialValue"
-    [autoFocus]="false"
+    [variables]="$initialValue()"
+    [dragAndDrop]="true"
     [showHiddenField]="false" />

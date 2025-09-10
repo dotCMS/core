@@ -75,6 +75,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
@@ -92,12 +93,7 @@ import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
 import java.net.ConnectException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.util.CollectionsUtils.list;
@@ -106,59 +102,61 @@ import static com.liferay.util.StringPool.BLANK;
 
 public class FieldAPIImpl implements FieldAPI {
 
-  private final List<Class<? extends Field>> baseFieldTypes = ImmutableList.of(BinaryField.class, StoryBlockField.class,
-          CategoryField.class, ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
-      DateTimeField.class, FileField.class, HiddenField.class, HostFolderField.class,
-      ImageField.class, KeyValueField.class, LineDividerField.class, MultiSelectField.class,
-      PermissionTabField.class, RadioField.class, RelationshipField.class, RelationshipsTabField.class, SelectField.class,
-      TabDividerField.class, TagField.class, TextAreaField.class, TimeField.class,
-      WysiwygField.class);
+    private final List<Class<? extends Field>> baseFieldTypes = ImmutableList.of(BinaryField.class, StoryBlockField.class,
+            CategoryField.class, ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
+            DateTimeField.class, FileField.class, HiddenField.class, HostFolderField.class,
+            ImageField.class, KeyValueField.class, LineDividerField.class, MultiSelectField.class,
+            PermissionTabField.class, RadioField.class, RelationshipField.class, RelationshipsTabField.class, SelectField.class,
+            TabDividerField.class, TagField.class, TextAreaField.class, TimeField.class,
+            WysiwygField.class);
 
-  private final PermissionAPI permissionAPI;
-  private final ContentletAPI contentletAPI;
-  private final UserAPI userAPI;
-  private final RelationshipAPI relationshipAPI;
-  private final LocalSystemEventsAPI localSystemEventsAPI;
-  private final LanguageVariableAPI languageVariableAPI;
-  private final FieldFactory fieldFactory;
+    private final PermissionAPI permissionAPI;
+    private final ContentletAPI contentletAPI;
+    private final UserAPI userAPI;
+    private final RelationshipAPI relationshipAPI;
+    private final LocalSystemEventsAPI localSystemEventsAPI;
+    private final LanguageVariableAPI languageVariableAPI;
+    private final FieldFactory fieldFactory;
 
-  public FieldAPIImpl() {
-      this(APILocator.getPermissionAPI(),
-          APILocator.getContentletAPI(),
-          APILocator.getUserAPI(),
-          APILocator.getRelationshipAPI(),
-          APILocator.getLocalSystemEventsAPI(),
-          APILocator.getLanguageVariableAPI(),
-          FactoryLocator.getFieldFactory());
-  }
+    public FieldAPIImpl() {
+        this(APILocator.getPermissionAPI(),
+                APILocator.getContentletAPI(),
+                APILocator.getUserAPI(),
+                APILocator.getRelationshipAPI(),
+                APILocator.getLocalSystemEventsAPI(),
+                APILocator.getLanguageVariableAPI(),
+                FactoryLocator.getFieldFactory());
+    }
 
-  @VisibleForTesting
-  public FieldAPIImpl(final PermissionAPI perAPI,
-                      final ContentletAPI conAPI,
-                      final UserAPI userAPI,
-                      final RelationshipAPI relationshipAPI,
-                      final LocalSystemEventsAPI localSystemEventsAPI,
-                      final LanguageVariableAPI languageVariableAPI,
-                      final FieldFactory fieldFactory) {
-      this.permissionAPI   = perAPI;
-      this.contentletAPI   = conAPI;
-      this.userAPI         = userAPI;
-      this.relationshipAPI = relationshipAPI;
-      this.localSystemEventsAPI = localSystemEventsAPI;
-      this.languageVariableAPI = languageVariableAPI;
-      this.fieldFactory = fieldFactory;
-  }
+    @VisibleForTesting
+    public FieldAPIImpl(final PermissionAPI perAPI,
+                        final ContentletAPI conAPI,
+                        final UserAPI userAPI,
+                        final RelationshipAPI relationshipAPI,
+                        final LocalSystemEventsAPI localSystemEventsAPI,
+                        final LanguageVariableAPI languageVariableAPI,
+                        final FieldFactory fieldFactory) {
+        this.permissionAPI   = perAPI;
+        this.contentletAPI   = conAPI;
+        this.userAPI         = userAPI;
+        this.relationshipAPI = relationshipAPI;
+        this.localSystemEventsAPI = localSystemEventsAPI;
+        this.languageVariableAPI = languageVariableAPI;
+        this.fieldFactory = fieldFactory;
+    }
 
-  @WrapInTransaction
-  @Override
-  public Field save(final Field field, final User user) throws DotDataException, DotSecurityException {
+    @WrapInTransaction
+    @Override
+    public Field save(final Field field, final User user) throws DotDataException, DotSecurityException {
         return save(field, user, true);
-  }
+    }
 
     @WrapInTransaction
     @Override
     public Field save(final Field field, final User user, final boolean reorder)
             throws DotDataException, DotSecurityException {
+
+
 
         if (!UtilMethods.isSet(field.contentTypeId())) {
             Logger.error(this, "ContentTypeId needs to be set to save the Field");
@@ -247,6 +245,7 @@ public class FieldAPIImpl implements FieldAPI {
         return result;
     }
 
+
     /**
      * Processes relationships for the given field. If the field is a {@link RelationshipField}, it
      * ensures that the relationship record is added or updated.
@@ -260,7 +259,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotSecurityException if a security violation occurs
      */
     private Field processRelationships(final Field field, final User user,
-            final ContentTypeAPI contentTypeAPI, final ContentType type)
+                                       final ContentTypeAPI contentTypeAPI, final ContentType type)
             throws DotDataException, DotSecurityException {
 
         //if RelationshipField, Relationship record must be added/updated
@@ -298,7 +297,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException if a data access error occurs
      */
     private void validateAndReorder(final String contentTypeId, final boolean reorder,
-            final Field field, final Field oldField) throws DotDataException {
+                                    final Field field, final Field oldField) throws DotDataException {
 
         if (null != oldField) {
 
@@ -481,7 +480,7 @@ public class FieldAPIImpl implements FieldAPI {
      */
     @VisibleForTesting
     Optional<Relationship> getRelationshipForField(final Field field, final ContentTypeAPI contentTypeAPI,
-            final ContentType type, final User user) throws DotDataException, DotSecurityException {
+                                                   final ContentType type, final User user) throws DotDataException, DotSecurityException {
         Relationship relationship;
         ContentType relatedContentType;
         try {
@@ -540,7 +539,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException
      */
     private void updateRelationshipObject(final Field field, final ContentType type, final ContentType relatedContentType,
-            final Relationship relationship, final int cardinality, final User user)
+                                          final Relationship relationship, final int cardinality, final User user)
             throws DotDataException {
 
         final boolean isChildField;
@@ -627,17 +626,17 @@ public class FieldAPIImpl implements FieldAPI {
 
         try {
             systemMessageEventUtil.pushMessage(
-                new SystemMessageBuilder()
-                    .setMessage(LanguageUtil.format(
-                            user.getLocale(),
-                            "contenttypes.field.properties.relationship.required.error",
-                            relationName)
-                    )
-                    .setSeverity(MessageSeverity.INFO)
-                    .setType(MessageType.SIMPLE_MESSAGE)
-                    .setLife(6000)
-                    .create(),
-                list(user.getUserId())
+                    new SystemMessageBuilder()
+                            .setMessage(LanguageUtil.format(
+                                    user.getLocale(),
+                                    "contenttypes.field.properties.relationship.required.error",
+                                    relationName)
+                            )
+                            .setSeverity(MessageSeverity.INFO)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(6000)
+                            .create(),
+                    list(user.getUserId())
             );
         } catch (LanguageException e) {
             throw new DotRuntimeException(e);
@@ -645,54 +644,54 @@ public class FieldAPIImpl implements FieldAPI {
     }
 
     @WrapInTransaction
-  @Override
-  public FieldVariable save(final FieldVariable var, final User user) throws DotDataException, DotSecurityException {
-      ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-      Field field = fieldFactory.byId(var.fieldId());
+    @Override
+    public FieldVariable save(final FieldVariable var, final User user) throws DotDataException, DotSecurityException {
+        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        Field field = fieldFactory.byId(var.fieldId());
 
-      ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
-      APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+        ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
+        APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
-      FieldVariable newFieldVariable = fieldFactory.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
-      
-      //update Content Type mod_date to detect the changes done on the field variables
-      contentTypeAPI.updateModDate(type);
+        FieldVariable newFieldVariable = fieldFactory.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
 
-      //Validates custom mapping format
-      if (var.key().equals(FieldVariable.ES_CUSTOM_MAPPING_KEY)){
-          try {
-              new JSONObject(var.value());
-          } catch (JSONException e) {
-              handleInvalidCustomMappingError(var, user, field, type, e);
-          }
+        //update Content Type mod_date to detect the changes done on the field variables
+        contentTypeAPI.updateModDate(type);
 
-          //Verifies the field is marked as System Indexed. In case it isn't, the field will be updated with this flag on
-          if (!field.indexed()) {
-              save(FieldBuilder.builder(field).indexed(true).build(), user);
-              Logger.info(this, "Field " + type.variable() + "." + field.variable()
-                      + " has been marked as System Indexed as it has defined a field variable with key "
-                      + FieldVariable.ES_CUSTOM_MAPPING_KEY);
-          }
-      } else if (var.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
-        final Optional<String> previousValueOpt = field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME);
-        if (previousValueOpt.isPresent() && previousValueOpt.get().equalsIgnoreCase(newFieldVariable.value())) {
-            // 'uniquePerSite' value was not changed, do not recalculate
-            return newFieldVariable;
+        //Validates custom mapping format
+        if (var.key().equals(FieldVariable.ES_CUSTOM_MAPPING_KEY)){
+            try {
+                new JSONObject(var.value());
+            } catch (JSONException e) {
+                handleInvalidCustomMappingError(var, user, field, type, e);
+            }
+
+            //Verifies the field is marked as System Indexed. In case it isn't, the field will be updated with this flag on
+            if (!field.indexed()) {
+                save(FieldBuilder.builder(field).indexed(true).build(), user);
+                Logger.info(this, "Field " + type.variable() + "." + field.variable()
+                        + " has been marked as System Indexed as it has defined a field variable with key "
+                        + FieldVariable.ES_CUSTOM_MAPPING_KEY);
+            }
+        } else if (var.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
+            final Optional<String> previousValueOpt = field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME);
+            if (previousValueOpt.isPresent() && previousValueOpt.get().equalsIgnoreCase(newFieldVariable.value())) {
+                // 'uniquePerSite' value was not changed, do not recalculate
+                return newFieldVariable;
+            }
+            final UniqueFieldValidationStrategyResolver resolver =
+                    CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
+            try {
+                this.sendStartRecalculationNotification(user, field);
+                resolver.get().recalculate(field, Boolean.parseBoolean(newFieldVariable.value()));
+                this.sendEndRecalculationNotification(user, field);
+            } catch (final UniqueFieldValueDuplicatedException e) {
+                this.sendFailedRecalculationNotification(user, field);
+                Logger.error(this, ExceptionUtil.getErrorMessage(e), e);
+                throw new DotDataException(e);
+            }
         }
-        final UniqueFieldValidationStrategyResolver resolver =
-                CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
-        try {
-            this.sendStartRecalculationNotification(user, field);
-            resolver.get().recalculate(field, Boolean.parseBoolean(newFieldVariable.value()));
-            this.sendEndRecalculationNotification(user, field);
-        } catch (final UniqueFieldValueDuplicatedException e) {
-            this.sendFailedRecalculationNotification(user, field);
-            Logger.error(this, ExceptionUtil.getErrorMessage(e), e);
-            throw new DotDataException(e);
-        }
-      }
-      return newFieldVariable;
-  }
+        return newFieldVariable;
+    }
 
     /**
      * Sends a system message (warning) when a custom mapping is invalid
@@ -703,7 +702,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @param exception
      */
     private void handleInvalidCustomMappingError(final FieldVariable fieldVariable, final User user,
-            final Field field, final ContentType type, final JSONException exception) {
+                                                 final Field field, final ContentType type, final JSONException exception) {
         final String message;
         try {
             message = "Invalid format on field variable value. Value should be a JSON object. Field variable: "
@@ -730,57 +729,60 @@ public class FieldAPIImpl implements FieldAPI {
     }
 
     @Override
-  public void delete(final Field field) throws DotDataException {
-	  try {
-		  this.delete(field, this.userAPI.getSystemUser());
-	  } catch (DotSecurityException e){
-		  throw new DotDataException(e);
-	  }
-  }
+    public void delete(final Field field) throws DotDataException {
+        try {
+            this.delete(field, this.userAPI.getSystemUser());
+        } catch (DotSecurityException e){
+            throw new DotDataException(e);
+        }
+    }
 
-  @WrapInTransaction
-  @Override
-  public void delete(final Field field, final User user) throws DotDataException, DotSecurityException {
+    @WrapInTransaction
+    @Override
+    public void delete(final Field field, final User user) throws DotDataException, DotSecurityException {
 
-      final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-      final ContentType type = contentTypeAPI.find(field.contentTypeId());
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final ContentType type = contentTypeAPI.find(field.contentTypeId());
 
-      permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+        permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
-      Field oldField = fieldFactory.byId(field.id());
-      if(oldField.fixed() || oldField.readOnly()){
-          throw new DotDataException("You cannot delete a fixed or read only field");
-      }
+        Field oldField = fieldFactory.byId(field.id());
+        if(oldField.fixed() || oldField.readOnly()){
+            throw new DotDataException("You cannot delete a fixed or read only field");
+        }
 
-      final Structure structure = new StructureTransformer(type).asStructure();
+        final Structure structure = new StructureTransformer(type).asStructure();
 
-      fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
+        fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
 
-      fieldFactory.delete(field);
+        fieldFactory.delete(field);
 
-      ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
-          String.format("User %s/%s deleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
-              field.name(), structure.getName()));
+        ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
+                String.format("User %s/%s deleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
+                        field.name(), structure.getName()));
 
-      //update Content Type mod_date to detect the changes done on the field
-      contentTypeAPI.updateModDate(type);
+        //update Content Type mod_date to detect the changes done on the field
+        contentTypeAPI.updateModDate(type);
 
-      CacheLocator.getContentTypeCache().remove(structure);
+        CacheLocator.getContentTypeCache().remove(structure);
 
-      //if RelationshipField, Relationship record must be updated/deleted
-      if (field instanceof RelationshipField) {
-          removeRelationshipLink(field, type, contentTypeAPI);
-      }
+        //if RelationshipField, Relationship record must be updated/deleted
+        if (field instanceof RelationshipField) {
+            removeRelationshipLink(field, type, contentTypeAPI);
+        }
 
-      // rebuild contentlets indexes
-      if(field.indexed()){
-          contentletAPI.reindex(structure);
-      }
+        // rebuild contentlets indexes
+        if(field.indexed()){
+            contentletAPI.reindex(structure);
+        }
 
-      CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
-      localSystemEventsAPI.notify(new FieldDeletedEvent(field));
+        CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
+        sendToast(user, "Starting job", "Starting cleanUpFieldReferencesJob for field '" + field.name() + "'");
+        final SystemMessageEventUtil messageEventUtil = SystemMessageEventUtil.getInstance();
+        sendLegacyNotification(user,messageEventUtil, "Starting cleanUpFieldReferencesJob for field '" + field.name() + "'");
+        localSystemEventsAPI.notify(new FieldDeletedEvent(field));
 
-  }
+    }
 
     /**
      * Given a field load and return its variables.
@@ -803,7 +805,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException
      */
     private void removeRelationshipLink(final Field field, final ContentType type,
-            final ContentTypeAPI contentTypeAPI)
+                                        final ContentTypeAPI contentTypeAPI)
             throws DotDataException, DotSecurityException {
 
         final Optional<Relationship> result = relationshipAPI
@@ -865,55 +867,55 @@ public class FieldAPIImpl implements FieldAPI {
     }
 
 
-  @CloseDBIfOpened
-  @Override
-  public List<Field> byContentTypeId(final String typeId) throws DotDataException {
-    return fieldFactory.byContentTypeId(typeId);
-  }
+    @CloseDBIfOpened
+    @Override
+    public List<Field> byContentTypeId(final String typeId) throws DotDataException {
+        return fieldFactory.byContentTypeId(typeId);
+    }
 
-  @CloseDBIfOpened
-  @Override
-  public String nextAvailableColumn(final Field field) throws DotDataException{
-      return fieldFactory.nextAvailableColumn(field);
-  }
+    @CloseDBIfOpened
+    @Override
+    public String nextAvailableColumn(final Field field) throws DotDataException{
+        return fieldFactory.nextAvailableColumn(field);
+    }
 
-  @CloseDBIfOpened
-  @Override
-  public Field find(final String id) throws DotDataException {
-    return fieldFactory.byId(id);
-  }
+    @CloseDBIfOpened
+    @Override
+    public Field find(final String id) throws DotDataException {
+        return fieldFactory.byId(id);
+    }
 
-  @CloseDBIfOpened
-  @Override
-  public Field byContentTypeAndVar(final ContentType type, final String fieldVar) throws DotDataException {
-    return fieldFactory.byContentTypeFieldVar(type, fieldVar);
-  }
+    @CloseDBIfOpened
+    @Override
+    public Field byContentTypeAndVar(final ContentType type, final String fieldVar) throws DotDataException {
+        return fieldFactory.byContentTypeFieldVar(type, fieldVar);
+    }
 
     @CloseDBIfOpened
     @Override
     public Optional<Field> byContentTypeAndFieldRelationType(final String id,
-            final String fieldRelationType) throws DotDataException {
+                                                             final String fieldRelationType) throws DotDataException {
         return fieldFactory.byContentTypeIdFieldRelationTypeInDb(id, fieldRelationType);
     }
 
-  @CloseDBIfOpened
-  @Override
-  public Field byContentTypeIdAndVar(final String id, final String fieldVar) throws DotDataException {
-    try {
-        return byContentTypeAndVar(APILocator.getContentTypeAPI(APILocator.systemUser()).find(id), fieldVar);
-    } catch (DotSecurityException e) {
-        throw new DotDataException(e);
+    @CloseDBIfOpened
+    @Override
+    public Field byContentTypeIdAndVar(final String id, final String fieldVar) throws DotDataException {
+        try {
+            return byContentTypeAndVar(APILocator.getContentTypeAPI(APILocator.systemUser()).find(id), fieldVar);
+        } catch (DotSecurityException e) {
+            throw new DotDataException(e);
+        }
     }
-  }
 
-  @WrapInTransaction
-  @Override
-  public void deleteFieldsByContentType(final ContentType type) throws DotDataException {
-      final List<Field> fields = byContentTypeId(type.id());
-      for (Field field : fields) {
-          delete(field);
-      }
-  }
+    @WrapInTransaction
+    @Override
+    public void deleteFieldsByContentType(final ContentType type) throws DotDataException {
+        final List<Field> fields = byContentTypeId(type.id());
+        for (Field field : fields) {
+            delete(field);
+        }
+    }
 
   @Override
   public List<Class<? extends Field>> fieldTypes() {

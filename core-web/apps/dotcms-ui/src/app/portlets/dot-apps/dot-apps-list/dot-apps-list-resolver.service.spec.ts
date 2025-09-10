@@ -5,11 +5,12 @@ import { of as observableOf, of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotLicenseService } from '@dotcms/data-access';
 
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 import { appsResponse, AppsServicesMock } from './dot-apps-list.component.spec';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 class DotLicenseServicesMock {
     canAccessEnterprisePortlet(_url: string) {
@@ -33,7 +34,7 @@ describe('DotAppsListResolver', () => {
     let dotAppsListResolver: DotAppsListResolver;
 
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotAppsListResolver,
                 { provide: DotLicenseService, useClass: DotLicenseServicesMock },
@@ -44,9 +45,9 @@ describe('DotAppsListResolver', () => {
                 }
             ]
         });
-        dotAppsService = testbed.get(DotAppsService);
-        dotLicenseServices = testbed.get(DotLicenseService);
-        dotAppsListResolver = testbed.get(DotAppsListResolver);
+        dotAppsService = TestBed.inject(DotAppsService);
+        dotLicenseServices = TestBed.inject(DotLicenseService);
+        dotAppsListResolver = TestBed.inject(DotAppsListResolver);
     });
 
     it('should get if portlet can be accessed', () => {

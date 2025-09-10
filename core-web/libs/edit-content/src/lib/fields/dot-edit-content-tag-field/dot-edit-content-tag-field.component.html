@@ -1,0 +1,24 @@
+@let field = $field();
+@let variable = field.variable;
+
+<p-autoComplete
+    #autocomplete
+    [attr.data-testid]="'tag-field-container-' + variable"
+    [id]="'tag-id-' + variable"
+    [inputId]="variable"
+    [suggestions]="$suggestions()"
+    [(ngModel)]="$values"
+    [ngModelOptions]="{ standalone: true }"
+    [multiple]="true"
+    [forceSelection]="false"
+    [unique]="AUTO_COMPLETE_UNIQUE"
+    [minLength]="AUTO_COMPLETE_MIN_LENGTH"
+    [delay]="AUTO_COMPLETE_DELAY"
+    [disabled]="$disabled()"
+    (ngModelChange)="onTagsChange($event)"
+    (completeMethod)="onSearch($event)"
+    (keydown.enter)="onEnterKey($event)">
+    <ng-template pTemplate="removetokenicon">
+        <i class="pi pi-times"></i>
+    </ng-template>
+</p-autoComplete>

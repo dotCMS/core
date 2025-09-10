@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 
@@ -13,10 +13,10 @@ const DEFAULT_TITLE_PLATFORM = 'dotCMS Content Management Platform';
  */
 @Injectable()
 export class DotTitleStrategy extends TitleStrategy {
-    constructor(
-        private readonly title: Title,
-        private readonly dotMessageService: DotMessageService
-    ) {
+    private readonly title = inject(Title);
+    private readonly dotMessageService = inject(DotMessageService);
+
+    constructor() {
         super();
     }
 

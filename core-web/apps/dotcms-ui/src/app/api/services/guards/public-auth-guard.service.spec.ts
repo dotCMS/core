@@ -4,11 +4,12 @@ import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 
 import { PublicAuthGuardService } from './public-auth-guard.service';
+
+import { DOTTestBed } from '../../../test/dot-test-bed';
 
 @Injectable()
 class MockLoginService {
@@ -33,9 +34,9 @@ describe('ValidPublicAuthGuardService', () => {
             ]
         });
 
-        publicAuthGuardService = TestBed.get(PublicAuthGuardService);
-        dotRouterService = TestBed.get(DotRouterService);
-        loginService = TestBed.get(LoginService);
+        publicAuthGuardService = TestBed.inject(PublicAuthGuardService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        loginService = TestBed.inject(LoginService);
         mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
             'toString'
         ]);

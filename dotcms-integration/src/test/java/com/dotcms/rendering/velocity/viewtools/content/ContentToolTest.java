@@ -905,4 +905,29 @@ public class ContentToolTest extends IntegrationTestBase {
 
         Assert.assertEquals(10, results.getTotalResults());
     }
+
+    /**
+     * Method to Test: {@link ContentTool#findHydrated(String)}
+     * When: Creates a Blog type and retrieves it as raw and hydrated
+     * Should: The hydrated should contain more properties
+     *
+     */
+    @Test
+    public void test_find_hydrated() {
+        final ContentType blogLikeType = TestDataUtils.getBlogLikeContentType();
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(blogLikeType.inode()).host(defaultHost);
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+        final ContentMap rawContentlet = contentTool.find(contentlet.getIdentifier());
+        final ContentMap hydratedContentlet = contentTool.findHydrated(contentlet.getIdentifier());
+
+        Assert.assertNotNull(rawContentlet);
+        Assert.assertNotNull(hydratedContentlet);
+        Assert.assertEquals(rawContentlet.getContentObject().getIdentifier(), hydratedContentlet.getContentObject().getIdentifier());
+        Assert.assertEquals(rawContentlet.getContentObject().getLanguageId(), hydratedContentlet.getContentObject().getLanguageId());
+        Assert.assertEquals(rawContentlet.getContentObject().getTitle(), hydratedContentlet.getContentObject().getTitle());
+        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
+        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().size() > rawContentlet.getContentObject().getMap().size());
+    }
 }

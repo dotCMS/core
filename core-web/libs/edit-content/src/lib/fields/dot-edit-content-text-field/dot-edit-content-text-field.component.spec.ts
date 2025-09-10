@@ -1,8 +1,8 @@
-import { test, describe } from '@jest/globals';
+import { describe, test } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, ControlContainer, FormGroupDirective } from '@angular/forms';
+import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -30,11 +30,12 @@ describe('DotEditContentTextFieldComponent', () => {
     });
     beforeEach(() => {
         spectator = createComponent({
+            detectChanges: false,
             props: {
                 field: TEXT_FIELD_MOCK
-            }
+            } as unknown
         });
-
+        spectator.detectChanges();
         textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
     });
 
@@ -68,7 +69,7 @@ describe('DotEditContentTextFieldComponent', () => {
             spectator = createComponent({
                 props: {
                     field: { ...TEXT_FIELD_MOCK, dataType }
-                }
+                } as unknown
             });
 
             textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));

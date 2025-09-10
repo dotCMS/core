@@ -92,6 +92,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -886,7 +887,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Method to test: {@link GraphqlAPI#getSchema()}
      * Given scenario: schema in cache
      * Expected result: cache hit, generation of the schema should not happen
      */
@@ -901,6 +902,42 @@ public class GraphqlAPITest extends IntegrationTestBase {
         final GraphQLSchema cachedSchema = api.getSchema(); // got from cache - generate schema is NOT called
         verify(api, times(1)).generateSchema(APILocator.systemUser());
         assertEquals(nonCachedSchema, cachedSchema);
+    }
+
+    /**
+     * This test makes sure that all our GraphQLTypesProviders include the Dot prefix to avoid conflicts
+     * with content type names. Exceptions: {@link QueryMetadataTypeProvider} and {@link PaginationTypeProvider}
+     * We are excluding these two providers for backward compatibility
+     * @throws Exception
+     */
+    @Test
+    public void testAllGraphQLTypesProviderTypesStartWithDotPrefix() throws Exception {
+        // List of allowed legacy/existing type names that do not start with 'Dot'
+        final Set<String> allowedNonDotTypes = Set.of(
+                "Pagination",
+                "QueryMetadata"
+        );
+
+        // All providers registered in GraphqlAPIImpl
+        Set<GraphQLTypesProvider> providers = new GraphqlAPIImpl().getRegisteredTypesProviders();
+
+        Set<String> offendingTypes = new java.util.HashSet<>();
+        for (GraphQLTypesProvider provider : providers) {
+            //Ignoring content type providers
+            if (!(provider instanceof ContentAPIGraphQLTypesProvider)){
+                for (graphql.schema.GraphQLType type : provider.getTypes()) {
+                    String typeName = com.dotcms.graphql.util.TypeUtil.getName(type);
+                    if (!typeName.startsWith("Dot") && !allowedNonDotTypes.contains(typeName)) {
+                        offendingTypes.add(typeName + " (from " + provider.getClass().getSimpleName() + ")");
+                    }
+                }
+            }
+        }
+        assertTrue(
+                "The following GraphQL types do not start with 'Dot':\n" +
+                        String.join("\n", offendingTypes),
+                offendingTypes.isEmpty()
+        );
     }
 
     @NotNull

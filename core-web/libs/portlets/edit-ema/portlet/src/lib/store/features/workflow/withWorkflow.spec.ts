@@ -1,9 +1,10 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotCMSPageAsset } from '@dotcms/types';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { withWorkflow } from './withWorkflow';
@@ -23,7 +24,7 @@ const pageParams: DotPageApiParams = {
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
+    pageAPIResponse: null,
     currentUser: null,
     experiment: null,
     errorCode: null,
@@ -35,7 +36,16 @@ const initialState: UVEState = {
     isClientReady: false
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withWorkflow());
+export const uveStoreMock = signalStore(
+    { protectedState: false },
+    withState<UVEState>(initialState),
+    withWorkflow(),
+    withMethods((store) => ({
+        setPageAPIResponse: (pageAPIResponse: DotCMSPageAsset) => {
+            patchState(store, { pageAPIResponse });
+        }
+    }))
+);
 
 describe('withLoad', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
@@ -65,16 +75,14 @@ describe('withLoad', () => {
         expect(store.workflowLoading()).toBe(true);
     });
 
+    it('should react to the pageAPIResponse', () => {
+        store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+        expect(store.workflowActions()).toEqual([]);
+        expect(store.workflowLoading()).toBe(true);
+    });
+
     describe('withMethods', () => {
         describe('getWorkflowActions', () => {
-            it('should call get workflow actions using store page inode', () => {
-                const spyWorkflowActions = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-                store.getWorkflowActions();
-                expect(store.workflowLoading()).toBe(false);
-                expect(store.workflowActions()).toEqual(mockWorkflowsActions);
-                expect(spyWorkflowActions).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
-            });
-
             it('should call get workflow actions using the provided inode', () => {
                 const spyWorkflowActions = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
                 store.getWorkflowActions('123');

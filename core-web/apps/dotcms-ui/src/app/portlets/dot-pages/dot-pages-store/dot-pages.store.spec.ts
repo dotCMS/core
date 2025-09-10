@@ -8,7 +8,6 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import {
     DotCurrentUserService,
     DotESContentService,
@@ -74,6 +73,7 @@ import {
     SESSION_STORAGE_FAVORITES_KEY
 } from './dot-pages.store';
 
+import { PushPublishServiceMock } from '../../../view/components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
 import {
     CurrentUserDataMock,
@@ -447,7 +447,7 @@ describe('DotPageStore', () => {
         dotPageStore.getPageTypes();
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pageTypes).toEqual(expectedInputArray);
+            expect(data.pageTypes).toEqual(expectedInputArray as unknown as DotCMSContentType[]);
         });
         expect(dotPageTypesService.getPages).toHaveBeenCalledTimes(1);
         expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {

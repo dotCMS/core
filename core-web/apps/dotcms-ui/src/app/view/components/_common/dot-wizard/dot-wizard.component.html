@@ -1,3 +1,5 @@
+@let data = $data();
+
 <p-dialog
     (visibleChange)="close()"
     [visible]="!!data"
@@ -6,6 +8,7 @@
     [resizable]="false"
     [maximizable]="false"
     [modal]="true"
+    [baseZIndex]="100"
     appendTo="body"
     data-testId="dot-wizard">
     @if (data?.steps?.length) {
@@ -15,13 +18,15 @@
                 class="dot-wizard__container"
                 (keydown.tab)="handleTab($event)">
                 @for (step of data.steps; track $index) {
-                    <div class="dot-wizard__step">
+                    <div
+                        class="dot-wizard__step"
+                        [class.dot-wizard__step--visible]="$stepsVisible()">
                         <ng-template dotContainerReference></ng-template>
                     </div>
                 }
             </div>
 
-            @if ($dialogActions()) {
+            @if ($dialogActions() && $stepsVisible()) {
                 <footer class="dot-wizard__footer">
                     @if ($dialogActions().cancel) {
                         <button

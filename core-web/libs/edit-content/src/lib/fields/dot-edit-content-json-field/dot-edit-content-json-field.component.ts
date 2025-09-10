@@ -1,95 +1,69 @@
-import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { Subject } from 'rxjs';
+import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
-import { JsonPipe } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    computed,
-    inject,
-    Input,
-    OnDestroy,
-    OnInit,
-    signal,
-    Signal
-} from '@angular/core';
-import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 
-import { takeUntil } from 'rxjs/operators';
+import { AvailableLanguageMonaco } from '../../models/dot-edit-content-field.constant';
+import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 
-import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
-
-import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
-import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
-
-export const DEFAULT_JSON_FIELD_EDITOR_CONFIG: MonacoEditorConstructionOptions = {
-    ...DEFAULT_MONACO_CONFIG,
-    language: 'json'
-};
-
+/**
+ * JSON field editor component that uses Monaco Editor for JSON content editing.
+ * Uses DotEditContentMonacoEditorControl for editor functionality with JSON language forced.
+ * Supports language variable insertion through DotLanguageVariableSelectorComponent.
+ */
 @Component({
     selector: 'dot-edit-content-json-field',
-    standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, MonacoEditorModule, JsonPipe],
+    imports: [
+        ReactiveFormsModule,
+        DotEditContentMonacoEditorControlComponent,
+        DotLanguageVariableSelectorComponent
+    ],
     templateUrl: './dot-edit-content-json-field.component.html',
     styleUrls: ['./dot-edit-content-json-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentJsonFieldComponent implements OnInit, OnDestroy {
-    contentTypeField = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
-    // Monaco options
-    monacoEditorOptions: Signal<MonacoEditorConstructionOptions> = computed(() => {
-        return {
-            ...DEFAULT_JSON_FIELD_EDITOR_CONFIG,
-            ...this.parseCustomMonacoOptions(this.contentTypeField().fieldVariables)
-        };
+export class DotEditContentJsonFieldComponent {
+    /**
+     * Input field DotCMSContentTypeField
+     */
+    $field = input<DotCMSContentTypeField | null>(null, {
+        alias: 'field'
     });
-    private readonly cd = inject(ChangeDetectorRef);
-    private readonly controlContainer = inject(ControlContainer);
-    private readonly destroy$: Subject<boolean> = new Subject<boolean>();
 
-    @Input({ required: true })
-    set field(contentTypeField: DotCMSContentTypeField) {
-        this.contentTypeField.set(contentTypeField);
-    }
+    /**
+     * Reference to the Monaco editor component
+     */
+    private readonly $monacoComponent =
+        viewChild.required<DotEditContentMonacoEditorControlComponent>('monaco');
 
-    ngOnInit(): void {
-        const form = this.controlContainer.control;
-        const control = form.get(this.contentTypeField().variable);
+    /**
+     * Available languages for Monaco editor
+     */
+    protected readonly languages = AvailableLanguageMonaco;
 
-        /*
-         * This is a workaround to force the change detection to run when the value of the control changes.
-         * This is needed because the Monaco Editor does not play well with the change detection strategy of the component.
-         */
-        control.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.cd.markForCheck());
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
+    /**
+     * Handler for language variable selection
+     * Inserts the selected language variable at current cursor position in Monaco editor
+     *
+     * @param languageVariable - The parsed language variable string to insert
+     */
+    onSelectLanguageVariable(languageVariable: string): void {
+        this.insertLanguageVariableInMonaco(languageVariable);
     }
 
     /**
-     * Parses the custom Monaco options for a given field of a DotCMSContentTypeField.
+     * Insert language variable at current cursor position in Monaco editor
      *
-     * @returns {Record<string, string>} Returns the parsed custom Monaco options as a key-value pair object.
+     * @param languageVariable - The parsed language variable string to insert
      * @private
-     * @param fieldVariables
      */
-    private parseCustomMonacoOptions(
-        fieldVariables: DotCMSContentTypeFieldVariable[]
-    ): Record<string, string> {
-        const { monacoOptions } = getFieldVariablesParsed<{ monacoOptions: string }>(
-            fieldVariables
-        );
-
-        return stringToJson(monacoOptions);
+    private insertLanguageVariableInMonaco(languageVariable: string): void {
+        const monaco = this.$monacoComponent();
+        if (monaco) {
+            monaco.insertContent(languageVariable);
+        } else {
+            console.warn('Monaco component is not available');
+        }
     }
 }

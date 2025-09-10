@@ -33,7 +33,7 @@
         </init-param>
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
-    
+
     <portlet>
         <portlet-name>content</portlet-name>
         <display-name>Contents Manager</display-name>
@@ -44,7 +44,7 @@
         </init-param>
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
-    
+
 
 
     <!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
@@ -460,7 +460,7 @@
         <display-name>Forms</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
-    
+
     <portlet>
         <portlet-name>starter</portlet-name>
         <display-name>Getting Started</display-name>
@@ -473,8 +473,8 @@
         <display-name>graphql</display-name>
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
-    
-    
+
+
 
     <portlet>
         <portlet-name>api_playground</portlet-name>
@@ -503,6 +503,12 @@
     <portlet>
         <portlet-name>analytics-search</portlet-name>
         <display-name>Analytics Search</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>analytics-dashboard</portlet-name>
+        <display-name>Analytics Dashboard</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 </portlet-app>

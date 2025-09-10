@@ -36,22 +36,27 @@ $tab-min-height: 52px;
 
 // Edit Content Actions
 .dot-edit-content-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    min-height: $tab-min-height;
+}
+
+.dot-edit-content-actions__left {
     gap: $spacing-4;
 }
 
+.dot-edit-content-actions__right {
+    gap: $spacing-4;
+    margin-left: auto;
+}
+
 .dot-edit-content-actions__sidebar-toggle {
-    padding: $spacing-1 $spacing-1 $spacing-1 $spacing-2;
     border-left: solid 1px $color-palette-gray-300;
     transition: all $basic-speed ease-in-out;
     opacity: 1;
     transform: translateX(0);
     overflow: hidden;
     min-height: $tab-min-height;
-    display: flex;
-    align-items: center;
+    min-width: 64px;
+    justify-content: center;
 }
 
 .dot-edit-content-actions__sidebar-toggle--hidden {
@@ -61,6 +66,7 @@ $tab-min-height: 52px;
     padding: 0;
     margin: 0;
     border-left: none;
+    min-width: 0;
 }
 
 .dot-edit-content-actions__sidebar-btn {
@@ -76,6 +82,9 @@ $tab-min-height: 52px;
 
 // PrimeNG Tabview Overrides
 ::ng-deep {
+    .p-tabview-nav {
+        flex: none;
+    }
     .tabview-append-content {
         min-height: $tab-min-height;
         display: flex;
@@ -83,20 +92,20 @@ $tab-min-height: 52px;
     }
     .dot-edit-content-tabview {
         .p-tabview-nav-container {
-            padding: 0 0 0 $spacing-4;
-            border: solid 1px $color-palette-gray-300;
+            padding: 0;
+            border-bottom: solid 1px $color-palette-gray-300;
             border-right: none;
             overflow: initial;
             position: sticky;
             top: 0;
             background-color: $white;
-            z-index: 1000;
+            z-index: 10;
         }
 
         .p-tabview-nav-content .p-tabview-nav {
             border: none;
             border-left: solid 1px $color-palette-gray-300;
-            padding-left: $spacing-3;
+            border-right: solid 1px $color-palette-gray-300;
             min-height: $tab-min-height;
             min-width: auto;
         }
@@ -107,12 +116,30 @@ $tab-min-height: 52px;
             width: 100%;
             gap: $spacing-3;
             overflow: visible;
+            flex-wrap: wrap;
         }
 
         &.dot-edit-content-tabview--single-tab {
-            .p-tabview-nav li:first-child {
+            ul.p-tabview-nav {
                 display: none;
             }
+
+            .tabview-append-content {
+                border-left: solid 1px $color-palette-gray-300;
+                padding-left: $spacing-3;
+            }
         }
+    }
+
+    .p-tabview-nav-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .tabview-append-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
     }
 }

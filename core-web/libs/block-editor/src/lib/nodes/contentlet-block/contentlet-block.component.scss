@@ -7,6 +7,15 @@
     box-sizing: border-box;
     margin-bottom: $spacing-3;
 
+    &.ProseMirror-selectednode {
+        &::ng-deep {
+            .p-card,
+            .p-card:hover {
+                outline: 2px solid $color-palette-primary;
+            }
+        }
+    }
+
     .spinner__container {
         height: 5.875rem;
         display: flex;
@@ -20,6 +29,10 @@
             border: 1px solid $input-border-color;
             color: $black;
             display: flex;
+
+            &:hover {
+                outline: 2px solid $color-palette-primary-400;
+            }
 
             .p-card-header {
                 box-sizing: border-box;

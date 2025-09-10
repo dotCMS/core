@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "5f91bf99-0010-4a9d-bb0d-8e0e4c53981f",
+		"_postman_id": "2a46e009-62aa-4844-883c-646ab8123846",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "30436704"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -1521,7 +1521,7 @@
 											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
+											"pm.test(\"HTTP Status code must be 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
@@ -1570,23 +1570,17 @@
 											"                        \"skiing\"",
 											"                    ];",
 											"",
-											"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitorPersona.tags]').equal(true);",
+											"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitor.persona.tags] Failed to validate expected tags').equal(true);",
+											"",
+											"    var tagCounter = 0;",
+											"    visitor[\"tags\"].forEach((element) => {",
+											"        if (element.tag == \"snowmobile\" || element.tag == \"snowboarding\" || element.tag == \"skiing\") {",
+											"            tagCounter++;",
+											"        }",
+											"    });",
 											"",
 											"    // visitor's tags",
-											"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
-											"                        {",
-											"                            \"tag\": \"snowmobile\",",
-											"                            \"count\": 2",
-											"                        },",
-											"                        {",
-											"                            \"tag\": \"skiing\",",
-											"                            \"count\": 2",
-											"                        },",
-											"                        {",
-											"                            \"tag\": \"snowboarding\",",
-											"                            \"count\": 2",
-											"                        }",
-											"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
+											"    pm.expect(tagCounter).to.equal(3, \"FAILED:[visitor.tags] Expected three Tags in array: 'snowmobile', 'snowboarding', and 'skiing'\");",
 											"",
 											"    var userAgent = visitor.userAgent;                ",
 											"    pm.expect(userAgent[\"operatingSystem\"], 'FAILED:[userAgent.operatingSystem]').equal(\"MAC_OS_X\");",
@@ -1603,9 +1597,7 @@
 											"                            \"persona\": \"WinterEnthusiast\",",
 											"                            \"count\": 1",
 											"                        }",
-											"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
-											"",
-											"",
+											"                    ]), 'FAILED:[visitor.personas] expected Persona not found').equal(true);",
 											"",
 											"});",
 											""
@@ -1812,7 +1804,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
 											"pm.test(\"Status code is 200\", function () {",
@@ -1821,18 +1812,22 @@
 											"",
 											"pm.test(\"'Page' includes all properties\", function () {",
 											"    var jsonData = pm.response.json();",
-											"    var urlmappedContent = jsonData.data.page.urlContentMap;",
-											"",
+											"    var page = jsonData.data.page;",
+											"    var urlmappedContent = page.urlContentMap;",
+											"    ",
+											"    // Validate properties 'page'",
+											"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/store/product-detail\");",
+											"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+											"    ",
+											"    // Validate 'urlContentMap' properties",
 											"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Eagles Nest Outfitters DoubleNest Hammock Patriot\");",
 											"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"46e52dc2-e72a-4641-8925-026abf2adccd\");",
 											"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
 											"    pm.expect(urlmappedContent.contentType, 'FAILED:[urlmappedContent.contentType]').equal(\"Product\");",
 											"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
-											"",
 											"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
 											"",
-											"});",
-											""
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -1872,7 +1867,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 										"variables": ""
 									}
 								},
@@ -1891,7 +1886,968 @@
 							"response": []
 						}
 					],
-					"description": "Veifies that the URL Map properties are present."
+					"description": "Verifies that the URL Map properties are present."
+				},
+				{
+					"name": "Checking VanityUrl resolution",
+					"item": [
+						{
+							"name": "Matching existing page uri",
+							"item": [
+								{
+									"name": "Create Forward Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"forwardVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 2\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckVanityUrlResolution_Forward",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(\"/destinations/costa-rica\");",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(200);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, 5000);"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Permanent Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Permanent Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"permanentRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/pp-test\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckVanityUrlResolution_PermanentRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Response does not contain GraphQL errors\", function () {",
+													"    pm.expect(jsonData.errors, 'FAILED: [errors] should not exist').to.be.undefined;",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"",
+													"    var template = page.template;",
+													"    var containers = page.containers;",
+													"    var layout = page.layout;",
+													"    var viewAs = page.viewAs;",
+													"",
+													"",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(301);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/pp-test\");",
+													"",
+													"    // Validate page custom fetchers",
+													"    pm.expect(template.identifier, 'FAILED:[template.identifier]').equal(null);",
+													"    pm.expect(containers, 'FAILED:[containers]').to.eql([]);",
+													"    pm.expect(layout, 'FAILED:[layout]').equal(null);",
+													"    pm.expect(viewAs, 'FAILED:[viewAs]').equal(null);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/pp-test\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n        template {\n      drawed\n      anonymous\n      theme\n      identifier\n    }\n    containers {\n      path\n      identifier\n      maxContentlets\n      containerStructures {\n        id\n        code\n        structureId\n        containerId\n        contentTypeVar\n        containerInode\n      }\n      containerContentlets {\n        uuid\n        contentlets {\n          _map\n        }\n      }\n    }\n    layout {\n      header\n      footer\n      body {\n        rows {\n          columns {\n            leftOffset\n            styleClass\n            width\n            left\n            containers {\n              identifier\n              uuid\n            }\n          }\n        }\n      }\n    }\n    viewAs {\n      visitor {\n        persona {\n          modDate\n          inode\n          name\n          identifier\n          keyTag\n          photo {\n            versionPath\n          }\n        }\n      }\n      persona {\n        modDate\n        inode\n        name\n        identifier\n        keyTag\n        photo {\n         versionPath\n        }\n      }\n      language {\n        id\n        languageCode\n        countryCode\n        language\n        country\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Temporary Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Temporary Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"temporaryRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/blog/index\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckVanityUrlResolution_TemporaryRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(302);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/blog/index\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/blog/index\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Clean Up Created VanityUrls",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"identifier\": \"{{forwardVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{permanentRedirectVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{temporaryRedirectVanityUrlId}}\"\n        }\n\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"UNPUBLISH"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Fantasy VanityUrls",
+							"item": [
+								{
+									"name": "Create Forward Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"forwardVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 2\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckFantasyVanityUrlResolution_Forward",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"    pm.test(\"Status code is 200\", function () {",
+													"        pm.response.to.have.status(200);",
+													"    });",
+													"",
+													"    pm.test(\"'Page' includes all properties\", function () {",
+													"        var jsonData = pm.response.json();",
+													"        var page = jsonData.data.page;",
+													"        var urlmappedContent = page.urlContentMap;",
+													"        var vanityUrlContent = page.vanityUrl;",
+													"",
+													"        // Validate properties 'page'",
+													"        pm.expect(page.url, 'FAILED:[page.url]').to.equal(\"/destinations/costa-rica\");",
+													"        pm.expect(page.pageURI, 'FAILED:[page.pageURI]').to.equal(\"/destinations/costa-rica\");",
+													"",
+													"        // Validate 'urlContentMap' properties",
+													"        pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').to.equal(null);",
+													"",
+													"        // Validate 'vanityUrl' properties",
+													"        pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').to.equal(200);",
+													"        pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').to.equal(1);",
+													"        pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').to.equal(\"/destinations/costa-rica\");",
+													"        pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').to.equal(\"/my-fantasy-url\");",
+													"    });"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/my-fantasy-url\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Permanent Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Permanent Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"permanentRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url2\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckFantasyVanityUrlResolution_PermanentRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(301);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url2\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/my-fantasy-url2\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Fantasy Temporary Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Temporary Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"temporaryRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url3\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckFantasyVanityUrlResolution_TemporaryRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(302);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url3\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/my-fantasy-url3\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Clean Up Created VanityUrls",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"identifier\": \"{{forwardVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{permanentRedirectVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{temporaryRedirectVanityUrlId}}\"\n        }\n\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"UNPUBLISH"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Test behavior of vanity URLs created with URIs that do not correspond to existing pages."
+						}
+					]
 				},
 				{
 					"name": "Checking Layout and Container Properties",
@@ -2104,7 +3060,7 @@
 											"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
 											"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
 											"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
-											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.contentlet.model.Contentlet\");",
 											"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
 											"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
 											"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
@@ -2273,7 +3229,7 @@
 											"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
 											"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
 											"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
-											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.contentlet.model.Contentlet\");",
 											"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
 											"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
 											"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
@@ -2827,6 +3783,561 @@
 									"mode": "graphql",
 									"graphql": {
 										"query": "{\n    page(url: \"/destinations/costa-rica\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "runningExperimentId",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Storing page for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"siteName\", jsonData.entity.siteName);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageInode\", jsonData.entity.inode);",
+											"    pm.collectionVariables.set(\"pageURL\", jsonData.entity.url);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"Page1 {{$timestamp}}\",\n        \"url\": \"page1-{{$timestamp}}\",\n        \"friendlyName\":\"page1-{{$timestamp}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"{{siteId}}\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create experiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing datra for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"experimentId\", jsonData.entity.id);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pageId\": \"{{pageId}}\",\n    \"name\": \"my experiment\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add variant to experiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"// Parse JSON response correctly",
+											"let response = pm.response.json();",
+											"",
+											"// Access second variant safely",
+											"let secondVariant = response.entity.trafficProportion.variants[1];",
+											"",
+											"// Extract variant name from the URL",
+											"let variantName = secondVariant.id;",
+											"",
+											"// Set as Postman environment variable",
+											"pm.collectionVariables.set(\"variantName\", variantName);",
+											"",
+											"// Optional: log to console",
+											"console.log(\"Extracted variantName:\", variantName);",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"description\": \"My first Variant\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/variants",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}",
+										"variants"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Start experiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Started Experiment with expected values\", function () {",
+											"",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.entity.status).equal(\"RUNNING\");",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"});",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/_start",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}",
+										"_start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check runningExperimentId",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const maxTimeout = 90000; // 90 seconds",
+											"const maxRetries = 30;    // Maximum number of retry attempts",
+											"const startTime = parseInt(pm.environment.get(\"startTime\"));",
+											"const retryCount = parseInt(pm.environment.get(\"retryCount\"));",
+											"const elapsedTime = Date.now() - startTime;",
+											"",
+											"console.log(`Attempt ${retryCount + 1}, Elapsed time: ${elapsedTime}ms`);",
+											"",
+											"const response = pm.response.json();",
+											"const page = response.data.page;",
+											"",
+											"const runningExperimentId = page.runningExperimentId;",
+											"const expectedEsperinmentId = pm.collectionVariables.get(\"experimentId\");",
+											"",
+											"const variantId = page.viewAs?.variantId;",
+											"pm.test(\"variantId should match the expected one\", function () {",
+											"    pm.expect(variantId).to.eql(pm.collectionVariables.get(\"variantName\"));",
+											"});",
+											"",
+											"// Check if the runningExperimentId attribute is present and matches the expected value",
+											"if (runningExperimentId === expectedEsperinmentId) {",
+											"    // Clear environment variables once done",
+											"    pm.environment.unset(\"startTime\");",
+											"    pm.environment.unset(\"retryCount\");",
+											"} else if (elapsedTime < maxTimeout && retryCount < maxRetries) {",
+											"    // Increment retry count",
+											"    pm.environment.set(\"retryCount\", retryCount + 1);",
+											"    ",
+											"    setTimeout(function(){",
+											"        console.log(\"Sleeping for 3 seconds before next request.\");",
+											"    }, 3000);",
+											"    postman.setNextRequest(\"Check runningExperimentId\");",
+											"    console.log(`runningExperimentId not available yet, retrying... (${maxTimeout - elapsedTime}ms remaining)`);",
+											"} else {",
+											"    // If we exceed the max timeout or max retries, fail the test",
+											"    const timeoutReason = elapsedTime >= maxTimeout ? \"timeout\" : \"max retries\";",
+											"    pm.environment.unset(\"startTime\");",
+											"    pm.environment.unset(\"retryCount\");",
+											"    pm.test(`runningExperimentId check failed due to ${timeoutReason}`, function () {",
+											"        pm.expect.fail(`${timeoutReason} reached after ${elapsedTime}ms. runningExperimentId still not available after ${retryCount} attempts`);",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Response is successful\", function () {",
+											"    pm.response.to.be.success;",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"if (!pm.environment.get(\"startTime\")) {",
+											"    pm.environment.set(\"startTime\", Date.now());",
+											"}",
+											"",
+											"if (!pm.environment.get(\"retryCount\")) {",
+											"    pm.environment.set(\"retryCount\", 0);",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n    page(url: \"{{pageURL}}\", site: \"{{siteName}}\", variantName: \"{{variantName}}\" ) {\n        identifier\n        title\n        url\n        runningExperimentId\n        viewAs {\n          variantId\n          mode\n        }\n    }\n}\n",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "runningExperimentId no experiment running",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Storing page for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"siteName\", jsonData.entity.siteName);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageInode\", jsonData.entity.inode);",
+											"    pm.collectionVariables.set(\"pageURL\", jsonData.entity.url);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"Page1 {{$timestamp}}\",\n        \"url\": \"page1-{{$timestamp}}\",\n        \"friendlyName\":\"page1-{{$timestamp}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"{{siteId}}\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check null runningExperimentId",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"'Page' runningExperimentId property is null\", function () {",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    var runningExperimentId = jsonData.data.page.runningExperimentId;",
+											"",
+											"    pm.expect(null).to.equal(runningExperimentId);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n    page(url: \"{{pageURL}}\", site: \"{{siteName}}\") {\n        identifier\n        title\n        url\n        runningExperimentId\n    }\n}\n",
 										"variables": ""
 									}
 								},
@@ -6320,6 +7831,280 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Page API - Testing 'page' field with inline fragments",
+			"item": [
+				{
+					"name": "Test Destination page with content-type-specific fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Destination page returns content-type-specific fields via inline fragments\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.page;",
+									"    ",
+									"    // Verify the page field exists and is the contentlet",
+									"    pm.expect(page.page, 'page field should exist').to.exist;",
+									"    pm.expect(page.page.contentType, 'should be Destination type').to.equal('Destination');",
+									"    ",
+									"    // Test DESTINATION-SPECIFIC fields (only available via inline fragment)",
+									"    pm.expect(page.page.activities, 'activities should exist').to.exist;",
+									"    pm.expect(page.page.activities.length, 'should have activity items').to.be.greaterThan(0);",
+									"    pm.expect(page.page.image, 'image should exist').to.exist;",
+									"    pm.expect(page.page.image.name, 'image name should exist').to.exist;",
+									"    ",
+									"    // Test page-level fields are accessible at root",
+									"    pm.expect(page.tags, 'page tags should exist').to.equal('diving');",
+									"    pm.expect(page.shortDescription, 'page shortDescription should exist').to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\") {\n    title\n    tags\n    shortDescription\n    page {\n      contentType\n      ... on Destination {\n        activities {\n          title\n          identifier\n        }\n        image {\n          name\n          idPath\n        }\n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test htmlpageasset page with SEO fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"htmlpageasset page returns SEO fields via inline fragments\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.page;",
+									"    ",
+									"    // Verify page field exists and correct content type",
+									"    pm.expect(page.page, 'page field should exist').to.exist;",
+									"    pm.expect(page.page.contentType, 'should be htmlpageasset type').to.equal('htmlpageasset');",
+									"    ",
+									"    // Test HTMLPAGEASSET-SPECIFIC fields",
+									"    pm.expect(page.page.seokeywords, 'seokeywords should exist').to.exist;",
+									"    pm.expect(page.page.seodescription, 'seodescription should exist').to.exist;",
+									"    pm.expect(page.page.seokeywords, 'seokeywords should have value').to.equal('Financial Blog');",
+									"    ",
+									"    // Test cachettl field (specific to htmlpageasset)",
+									"    pm.expect(page.page.cachettl, 'cachettl should exist').to.exist;",
+									"    ",
+									"    // pagemetadata can be null - that's valid",
+									"    pm.expect(page.page).to.have.property('pagemetadata');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/blog/index\") {\n    title\n    page {\n      contentType\n      ... on htmlpageasset {\n        seokeywords\n        seodescription\n        pagemetadata\n        cachettl\n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test different htmlpageasset page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Different htmlpageasset page works correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.page;",
+									"    ",
+									"    // Verify page field and content type",
+									"    pm.expect(page.page, 'page field should exist').to.exist;",
+									"    pm.expect(page.page.contentType, 'should be htmlpageasset type').to.equal('htmlpageasset');",
+									"    ",
+									"    // Test htmlpageasset-specific fields",
+									"    pm.expect(page.page.cachettl, 'cachettl should exist').to.exist;",
+									"    ",
+									"    // SEO fields may be null on this page - that's valid",
+									"    pm.expect(page.page.seokeywords, 'seokeywords should be null').to.be.null;",
+									"    pm.expect(page.page.seodescription, 'seodescription should be null').to.be.null;",
+									"    ",
+									"    // Verify basic page properties",
+									"    pm.expect(page.title, 'page title should exist').to.equal('mexico');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/mexico\") {\n    title\n    page {\n      contentType\n      ... on htmlpageasset {\n        seokeywords\n        seodescription\n        pagemetadata\n        cachettl\n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test content-type field isolation - negative test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Content-type-specific fields are NOT available at page level\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Should have GraphQL validation errors",
+									"    pm.expect(jsonData.errors, 'Should have GraphQL errors').to.exist;",
+									"    pm.expect(jsonData.errors.length, 'Should have errors').to.be.greaterThan(0);",
+									"    ",
+									"    // Check for specific field validation errors",
+									"    const errorMessages = jsonData.errors.map(err => err.message);",
+									"    const hasActivitiesError = errorMessages.some(msg => msg.includes('activities') && msg.includes('undefined'));",
+									"    ",
+									"    pm.expect(hasActivitiesError, 'Should have activities field undefined error').to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\") {\n    title\n    activities {\n      title\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for the new 'page' field that enables accessing content-type-specific fields through inline fragments"
 		},
 		{
 			"name": "PageAPI_TestMapSpecialField",
@@ -11316,8 +13101,449 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Nav",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContext",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contact-us-folder.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/octet-stream",
+								"type": "text"
+							},
+							{
+								"key": "Content-Disposition",
+								"value": "attachment",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/NavResource/contact-us-folder.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/sync",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"sync"
+							],
+							"query": [
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch Host",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Succes Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the response status is 200 OK",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test that the response has the expected JSON structure",
+									"pm.test(\"Response has expected structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('DotNavigation');",
+									"});",
+									"",
+									"// Test the main Navigation object properties",
+									"pm.test(\"DotNavigation has the expected properties\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation).to.have.property('children');",
+									"    pm.expect(navigation).to.have.property('folder');",
+									"    pm.expect(navigation).to.have.property('hash');",
+									"    pm.expect(navigation).to.have.property('host');",
+									"    pm.expect(navigation).to.have.property('href');",
+									"    pm.expect(navigation).to.have.property('languageId');",
+									"    pm.expect(navigation).to.have.property('order');",
+									"    pm.expect(navigation).to.have.property('target');",
+									"    pm.expect(navigation).to.have.property('title');",
+									"    pm.expect(navigation).to.have.property('type');",
+									"});",
+									"",
+									"// Test that the navigation title is 'Contact Us'",
+									"pm.test(\"Navigation title is 'Contact Us'\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.title).to.equal('Contact Us');",
+									"});",
+									"",
+									"// Test that the navigation href is '/contact-us'",
+									"pm.test(\"Navigation href is '/contact-us'\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.href).to.equal('/contact-us');",
+									"});",
+									"",
+									"// Test that folder ID is correct",
+									"pm.test(\"Navigation folder ID is correct\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.folder).to.equal('9c5e78a9-62ce-48e0-99ce-6817b0f5c2f3');",
+									"});",
+									"",
+									"// Test that the children array exists and has correct length",
+									"pm.test(\"Navigation has 2 children\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.children).to.be.an('array').with.lengthOf(2);",
+									"});",
+									"",
+									"// Test that the first child has the correct title and href",
+									"pm.test(\"First child has title 'Thank You' and correct href\", function () {",
+									"    const firstChild = pm.response.json().data.DotNavigation.children[0];",
+									"    pm.expect(firstChild.title).to.equal('Thank You');",
+									"    pm.expect(firstChild.href).to.equal('/contact-us/thank-you');",
+									"});",
+									"",
+									"// Test that the second child has the correct title and href",
+									"pm.test(\"Second child has title 'Contact Us' and correct href\", function () {",
+									"    const secondChild = pm.response.json().data.DotNavigation.children[1];",
+									"    pm.expect(secondChild.title).to.equal('Contact Us');",
+									"    pm.expect(secondChild.href).to.equal('/contact-us/index');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query NavTest {\n  DotNavigation(uri:\"/contact-us\"  depth:2){\n    children{\n        title\n        href\n    }\n    code\n    folder\n    hash\n    host\n    href        \n    languageId\n    order          \n    target            \n    title                \n    type                    \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidLanguageIdRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the response status is 200 (GraphQL usa 200 incluso para errores de aplicación)",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test que la respuesta tiene una estructura válida con errores",
+									"pm.test(\"Response contains errors and null data for Navigation\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('DotNavigation');",
+									"    pm.expect(jsonData.data.DotNavigation).to.be.null;",
+									"});",
+									"",
+									"// Test que tenemos exactamente un error",
+									"pm.test(\"Response has exactly one error\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors).to.be.an('array').with.lengthOf(1);",
+									"});",
+									"",
+									"// Test el mensaje de error",
+									"pm.test(\"Error message contains information about invalid language\", function () {",
+									"    const errorMessage = pm.response.json().errors[0].message;",
+									"    pm.expect(errorMessage).to.include('Invalid or unsupported language ID: 233');",
+									"});",
+									"",
+									"// Test la ruta del error",
+									"pm.test(\"Error path points to Navigation\", function () {",
+									"    const errorPath = pm.response.json().errors[0].path;",
+									"    pm.expect(errorPath).to.be.an('array').with.lengthOf(1);",
+									"    pm.expect(errorPath[0]).to.equal('DotNavigation');",
+									"});",
+									"",
+									"// Test las extensiones del error",
+									"pm.test(\"Error extensions have correct properties\", function () {",
+									"    const extensions = pm.response.json().errors[0].extensions;",
+									"    pm.expect(extensions).to.have.property('code').equal('INVALID_LANGUAGE');",
+									"    pm.expect(extensions).to.have.property('languageId').equal(233);",
+									"    pm.expect(extensions).to.have.property('status').equal(400);",
+									"    pm.expect(extensions).to.have.property('classification').equal('DataFetchingException');",
+									"});",
+									"",
+									"// Test la localización del error",
+									"pm.test(\"Error location is correct\", function () {",
+									"    const locations = pm.response.json().errors[0].locations;",
+									"    pm.expect(locations).to.be.an('array').with.lengthOf(1);",
+									"    pm.expect(locations[0]).to.have.property('line').equal(2);",
+									"    pm.expect(locations[0]).to.have.property('column').equal(3);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query NavTest {\n  DotNavigation(uri:\"/contact-us\"  depth:2 languageId:233){\n    title\n    folder\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "Succes Request Including Lang",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the response status is 200 OK",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test that the response has the expected JSON structure",
+									"pm.test(\"Response has expected structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('DotNavigation');",
+									"});",
+									"",
+									"// Test the main Navigation object properties",
+									"pm.test(\"Navigation has the expected properties\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation).to.have.property('children');",
+									"    pm.expect(navigation).to.have.property('folder');",
+									"    pm.expect(navigation).to.have.property('hash');",
+									"    pm.expect(navigation).to.have.property('host');",
+									"    pm.expect(navigation).to.have.property('href');",
+									"    pm.expect(navigation).to.have.property('languageId');",
+									"    pm.expect(navigation).to.have.property('order');",
+									"    pm.expect(navigation).to.have.property('target');",
+									"    pm.expect(navigation).to.have.property('title');",
+									"    pm.expect(navigation).to.have.property('type');",
+									"});",
+									"",
+									"// Test that the navigation title is 'Contact Us'",
+									"pm.test(\"Navigation title is 'Contact Us'\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.title).to.equal('Contact Us');",
+									"});",
+									"",
+									"// Test that the navigation href is '/contact-us'",
+									"pm.test(\"Navigation href is '/contact-us'\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.href).to.equal('/contact-us');",
+									"});",
+									"",
+									"// Test that folder ID is correct",
+									"pm.test(\"Navigation folder ID is correct\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.folder).to.equal('9c5e78a9-62ce-48e0-99ce-6817b0f5c2f3');",
+									"});",
+									"",
+									"// Test that the children array exists and has correct length",
+									"pm.test(\"Navigation has 2 children\", function () {",
+									"    const navigation = pm.response.json().data.DotNavigation;",
+									"    pm.expect(navigation.children).to.be.an('array').with.lengthOf(2);",
+									"});",
+									"",
+									"// Test that the first child has the correct title and href",
+									"pm.test(\"First child has title 'Thank You' and correct href\", function () {",
+									"    const firstChild = pm.response.json().data.DotNavigation.children[0];",
+									"    pm.expect(firstChild.title).to.equal('Thank You');",
+									"    pm.expect(firstChild.href).to.equal('/contact-us/thank-you');",
+									"});",
+									"",
+									"// Test that the second child has the correct title and href",
+									"pm.test(\"Second child has title 'Contact Us' and correct href\", function () {",
+									"    const secondChild = pm.response.json().data.DotNavigation.children[1];",
+									"    pm.expect(secondChild.title).to.equal('Contact Us');",
+									"    pm.expect(secondChild.href).to.equal('/contact-us/index');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query NavTest {\n  DotNavigation(uri:\"/contact-us\"  depth:2 languageId:1 ){\n    children{\n        title\n        href\n    }\n    code\n    folder\n    hash\n    host\n    href        \n    languageId\n    order          \n    target            \n    title                \n    type                    \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
+				}
+			]
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
@@ -11376,84 +13602,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "contentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "contentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "imageTypeInfo",
-			"value": ""
-		},
-		{
-			"key": "videoTypeInfo",
-			"value": ""
-		},
-		{
-			"key": "languageId",
-			"value": ""
-		},
-		{
-			"key": "fileImageContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "imageFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "fileFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "childContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "parentContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "relFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "childContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "parentContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentTypeID",
-			"value": ""
-		},
-		{
-			"key": "contentTypeVAR",
-			"value": ""
-		},
-		{
-			"key": "contentTypeFieldID",
-			"value": ""
-		},
-		{
-			"key": "dotAssetIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentTypeId",
-			"value": ""
-		},
-		{
-			"key": "contentCount",
-			"value": ""
 		}
 	]
 }

@@ -15,12 +15,12 @@ params:
     hint: "Your ChatGPT API key"
     required: true
   textModelNames:
-    value: "gpt-4o-mini"
+    value: "gpt-4o"
     hidden: false
     type: "STRING"
-    label: "Model Names"
-    hint: "Comma delimited list of models used to generate OpenAI API response (e.g. gpt-4o-mini)"
-    required: true
+    label: "Allowed Model Names"
+    hint: "Comma delimited list of models allowed to generate OpenAI API response (e.g. gpt-4o,gpt-4o-mini). If the list is empty, then all models are allowed."
+    required: false
   rolePrompt:
     value: "You are dotCMSbot, and AI assistant to help content creators generate and rewrite content in their content management system."
     hidden: false

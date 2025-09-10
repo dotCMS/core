@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -13,7 +13,7 @@ import { CoreWebService } from '@dotcms/dotcms-js';
  */
 @Injectable()
 export class DotCrudService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Will do a POST request and return the response to the url provide

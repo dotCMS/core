@@ -43,7 +43,8 @@ import static com.liferay.util.StringPool.BLANK;
  *             }
  *         },
  *         "systemSearchableFields": {
- *             "siteId": "{{STRING: When NOT set, and the 'systemHostContent' is NOT set either, the search will include contents under System Host}}",
+ *             "siteId": "{{STRING: The ID of the Site that contains the contents to look for. When NOT set, and the 'systemHostContent' is NOT set either, the search will include contents under System Host}}",
+ *             "folderId": "{{STRING}}: The ID of the Folder that contains the contents to look for. When set, the 'siteId' attribute is completely ignored",
  *             "languageId": {{INTEGER}},
  *             "workflowSchemeId": "{{STRING}}",
  *             "workflowStepId": "{{STRING}}",
@@ -171,6 +172,15 @@ public class ContentSearchForm implements Serializable {
     }
 
     /**
+     * Returns the ID of the Folder containing the contents that will be filtered.
+     *
+     * @return The folder ID to filter the content by.
+     */
+    public String folderId() {
+        return (String) this.systemSearchableFields().getOrDefault("folderId", BLANK);
+    }
+
+    /**
      * Returns the language ID to filter the content by.
      *
      * @return The language ID to filter the content by.
@@ -207,10 +217,10 @@ public class ContentSearchForm implements Serializable {
     }
 
     /**
-     * Returns a boolean indicating whether the generated Lucene query must look for content living
-     * under System host or not.
+     * Returns a boolean indicating whether the generated Lucene query must also look for content
+     * living under System Host or not.
      *
-     * @return If the generated Lucene query must look for content living under System host, returns
+     * @return If the generated Lucene query must look for content living under System Host, returns
      * {@code true}.
      */
     public boolean systemHostContent() {
@@ -239,19 +249,22 @@ public class ContentSearchForm implements Serializable {
     }
 
     /**
-     * Returns a boolean indicating whether the search results must include archived content or not.
+     * Returns a String indicating whether the search results must include archived content or not.
+     * This is an optional parameter, so it's being handled as a String to NOT add it to the Lucene
+     * query when it's not specified in the form.
      *
-     * @return If the search results must include archived content, returns {@code true}.
+     * @return If the search results must include archived content, returns {@code "true"}.
      */
     public String archivedContent() {
         return this.archivedContent;
     }
 
     /**
-     * Returns a boolean indicating whether the search results must include unpublished content or
-     * not.
+     * Returns a String indicating whether the search results must include unpublished content or
+     * not. This is an optional parameter, so it's being handled as a String to NOT add it to the
+     * Lucene query when it's not specified in the form.
      *
-     * @return If the search results must include unpublished content, returns {@code true}.
+     * @return If the search results must include unpublished content, returns {@code "true"}.
      */
     public String unpublishedContent() {
         return this.unpublishedContent;

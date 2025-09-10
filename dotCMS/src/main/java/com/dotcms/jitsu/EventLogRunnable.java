@@ -9,11 +9,13 @@ import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventsPayload.EventPayload;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpStatus;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -94,7 +96,12 @@ public class EventLogRunnable implements Runnable {
 
         for (EventPayload payload : eventPayload.get().payloads()) {
 
+            Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + payload);
+
             sendEvent(builder, payload).ifPresent(response -> {
+                Logger.debug(EventLogRunnable.class, "Jitsu Event Response: " + response.getStatusCode() +
+                 ", message: " + response.getResponse());
+
                 if (response.getStatusCode() != HttpStatus.SC_OK) {
                     Logger.warn(
                             this.getClass(),
@@ -122,9 +129,16 @@ public class EventLogRunnable implements Runnable {
 
 
     public Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
-        final CircuitBreakerUrl postLog = builder
-                .setRawData(payload.toString())
-                .build();
+        final String userAgent = payload.contains(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME) ?
+                payload.get(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME).toString() : null;
+
+        final CircuitBreakerUrlBuilder circuitBreakerUrlBuilder = builder.setRawData(payload.toString());
+
+        if (UtilMethods.isSet(userAgent)) {
+            circuitBreakerUrlBuilder.setHeaders(Map.of(HttpHeaders.USER_AGENT, userAgent));
+        }
+
+        final CircuitBreakerUrl postLog = circuitBreakerUrlBuilder.build();
 
         return Optional.ofNullable(
                         Try.of(postLog::doResponse)

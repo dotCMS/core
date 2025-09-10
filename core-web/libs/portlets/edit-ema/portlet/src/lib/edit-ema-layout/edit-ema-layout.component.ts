@@ -35,7 +35,6 @@ export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-ema-layout',
-    standalone: true,
     imports: [CommonModule, TemplateBuilderModule],
     templateUrl: './edit-ema-layout.component.html',
     styleUrls: ['./edit-ema-layout.component.scss'],
@@ -170,7 +169,8 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             summary: 'Success',
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
-        this.uveStore.reloadCurrentPage({ isClientReady: false });
+        this.uveStore.reloadCurrentPage();
+        this.uveStore.setIsClientReady(false);
     }
 
     /**

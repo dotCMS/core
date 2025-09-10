@@ -1,6 +1,6 @@
 import { Observable, Observer, of as observableOf } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot } from '@angular/router';
 
 import { DotAlertConfirmService } from '@dotcms/data-access';
@@ -9,7 +9,7 @@ import { OnSaveDeactivate } from './save-on-deactivate';
 
 @Injectable()
 export class DotSaveOnDeactivateService implements CanDeactivate<OnSaveDeactivate> {
-    constructor(private dotDialogService: DotAlertConfirmService) {}
+    private dotDialogService = inject(DotAlertConfirmService);
 
     canDeactivate(
         component: OnSaveDeactivate,

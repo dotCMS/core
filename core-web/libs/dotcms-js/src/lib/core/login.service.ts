@@ -1,7 +1,7 @@
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, pluck, tap } from 'rxjs/operators';
 
@@ -29,15 +29,17 @@ export const LOGOUT_URL = '/dotAdmin/logout';
     providedIn: 'root'
 })
 export class LoginService {
+    private coreWebService = inject(CoreWebService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+
     currentUserLanguageId = '';
     private country = '';
     private lang = '';
     private urls: Record<string, string>;
 
-    constructor(
-        private coreWebService: CoreWebService,
-        private dotcmsEventsService: DotcmsEventsService
-    ) {
+    constructor() {
+        const dotcmsEventsService = this.dotcmsEventsService;
+
         this._loginAsUsersList$ = new Subject<User[]>();
 
         this.urls = {

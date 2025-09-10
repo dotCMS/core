@@ -16,23 +16,23 @@ To reference the receiver service (`dotcms-receiver`), use the `HTTP` protocol w
 
 1. A local path to the license pack must be set here:
 
-    ```yaml
-    - {license_local_path}/license.zip:/data/shared/assets/license.zip
-    ```
+   ```yaml
+   - {license_local_path}/license.zip:/data/shared/assets/license.zip
+   ```
 
-    The license pack must contain at least two licenses (one for each node in the cluster).
+   The license pack must contain at least two licenses (one for each node in the cluster).
 
 2. A local path to access data in the instance can be set by uncommenting this line:
 
-    ```yaml
-    #- {local_data_path}:/data/shared
-    ```
+   ```yaml
+   #- {local_data_path}:/data/shared
+   ```
 
 3. A custom starter can be set through this line (uncomment and change the starter URL accordingly):
 
-    ```yaml
-    #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
-    ```
+   ```yaml
+   #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
+   ```
 
 ### Deploying Nodes
 
@@ -43,6 +43,7 @@ docker-compose up
 ```
 
 ### Undeploying Nodes
+
 To undeploy the sender and receiver nodes, use the following command:
 
 ```bash

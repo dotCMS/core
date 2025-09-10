@@ -89,7 +89,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			container = TransformerLocator.createContainerTransformer(containerResults).findFirst();
 
 			if(container != null && container.getInode() != null) {
-				containerCache.add(inode, container);
+				containerCache.add(container.getInode(), container);
 			}
 		}
 

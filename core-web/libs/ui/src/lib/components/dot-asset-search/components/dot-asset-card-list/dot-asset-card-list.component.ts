@@ -24,7 +24,6 @@ const squarePlus =
     selector: 'dot-asset-card-list',
     templateUrl: './dot-asset-card-list.component.html',
     styleUrls: ['./dot-asset-card-list.component.scss'],
-    standalone: true,
     imports: [ScrollerModule, DotAssetCardComponent, DotAssetCardSkeletonComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

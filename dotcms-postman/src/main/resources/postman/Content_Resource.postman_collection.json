@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "dd2afcb5-bb50-4718-acce-83a05dd215c6",
+		"_postman_id": "7d7888e2-37a5-47e3-9bbb-f6c890cc6ff1",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1724,8 +1724,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test content created successfully\", function () {",
+											"pm.test(\"Test Contentlet created successfully\", function () {",
 											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.summary.failCount).to.eql(0, \"An error occurred when creating the test Contentlet\");",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
 											"    var contentId = Object.keys(jsonData.entity.results[0]);",
 											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
@@ -1779,7 +1780,7 @@
 											"    ",
 											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
 											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
-											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.ownerUserName).to.not.equal(undefined, \"The 'ownerUserName' attribute must be present\");",
 											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
 											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
 											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",
@@ -3376,7 +3377,7 @@
 											"pm.test(\"Getting 'default' Site ID\", function () {",
 											"    const jsonData = pm.response.json();",
 											"    const entity = jsonData.entity;",
-											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the 'default' Site ID\");",
 											"    pm.collectionVariables.set(\"defaultSiteId\", entity.identifier);",
 											"});",
 											""
@@ -3408,6 +3409,64 @@
 										"v1",
 										"site",
 										"_byname"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Parent Folder",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Creating test Parent Folder\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity[0];",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the test Parent Folder\");",
+											"    pm.collectionVariables.set(\"testParentFolderId\", entity.identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "[\"/test-parent-folder-contentsearch\"]",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"folder",
+										"createfolders",
+										"default"
 									]
 								}
 							},
@@ -3567,7 +3626,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											""
+											"pm.test(\"HTTP Status code must be 201 for tag creation\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -3585,18 +3646,17 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+									"raw": "[\n   {\n      \"name\":\"{{testTagOne}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"{{testTagTwo}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v2/tags/",
+									"raw": "{{serverURL}}/api/v2/tags",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"v2",
-										"tags",
-										""
+										"tags"
 									]
 								},
 								"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -3930,6 +3990,65 @@
 								"description": "Creates a test Contentlet of the previously generated Content Type."
 							},
 							"response": []
+						},
+						{
+							"name": "Parent Content 3",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Third Parent Content was created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Third Parent Content\");",
+											"    pm.expect(jsonData.entity.summary.failCount).to.eql(0, \"An error occurred when creating the Test Third Parent Content\");",
+											"    pm.expect(jsonData.entity.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"    const testContentId = Object.keys(jsonData.entity.results[0])[0];",
+											"    pm.collectionVariables.set(\"testThirdParentContentId\", testContentId);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"contentHost\": \"{{testParentFolderId}}\",\n            \"title\": \"Test Contentlet in Folder\",\n            \"body\": \"This is a test Contentlet in Folder\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "### HTTP POST /api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR\n\nCreates a test Contentlet of Rich Text Content Type that lives under the Test Parent Folder.\n\n#### Request Body\n\n- { \"contentlets\": \\[ { \"contentType\": \"webPageContent\", \"contentHost\": \"{{testParentFolderId}}\", \"title\": \"Test Contentlet in Folder\", \"body\": \"This is a test Contentlet in Folder\" } \\]}\n    \n\n#### Response\n\n- Status: 200\n    \n- {\"entity\": { \"results\": \\[ { \"3bb07ba71470b6b12c13971d908fdf5f\": { \"AUTO_ASSIGN_WORKFLOW\": true, \"__IS_NEW_CONTENT__\": true, \"__icon__\": \"\", \"archived\": true, \"baseType\": \"\", \"body\": \"\", \"contentType\": \"\", \"contentTypeIcon\": \"\", \"creationDate\": 0, \"folder\": \"\", \"hasLiveVersion\": true, \"hasTitleImage\": true, \"host\": \"\", \"hostName\": \"\", \"identifier\": \"\", \"inode\": \"\", \"languageId\": 0, \"live\": true, \"locked\": true, \"modDate\": 0, \"modUser\": \"\", \"modUserName\": \"\", \"owner\": \"\", \"ownerName\": \"\", \"publishDate\": 0, \"publishUser\": \"\", \"publishUserName\": \"\", \"shortyId\": \"\", \"sortOrder\": 0, \"stInode\": \"\", \"title\": \"\", \"titleImage\": \"\", \"url\": \"\", \"variant\": \"\", \"working\": true } } \\], \"summary\": { \"affected\": 0, \"failCount\": 0, \"successCount\": 0, \"time\": 0 }},\"errors\": \\[\\],\"i18nMessagesMap\": {},\"messages\": \\[\\],\"permissions\": \\[\\]}"
+							},
+							"response": []
 						}
 					],
 					"description": "Generating test data for these tests. This part of the verification process includes:\n\n- Creating a parent Category and two child Categories for it.\n    \n- Creating two test Tags.\n    \n- Creating a test Content Type with absolutely ALL fields that can be flagged as \"User Searchable\".\n    \n- Creating two test child Contentlets of type \"Rich Text\" that will be used in the \"Relationships\" fields.\n    \n- Creating two test parent Contentlets that will be used to test the new REST Endpoint.",
@@ -3950,9 +4069,12 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"HTTP Status code must be successful\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
+									"// Skip status check for Tags endpoint since it correctly returns 201",
+									"if (!pm.request.url.toString().includes('/api/v2/tags')) {",
+									"    pm.test(\"HTTP Status code must be successful\", function () {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"}",
 									""
 								]
 							}
@@ -5307,7 +5429,7 @@
 													"    const jsonData = pm.response.json();",
 													"    const entity = jsonData.entity;",
 													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving all Contentlets under 'default'\");",
-													"    pm.expect(entity.resultsSize).to.be.greaterThan(1, \"At least one result should've been returned\");",
+													"    pm.expect(entity.resultsSize).to.be.greaterThanOrEqual(1, \"At least one result should've been returned\");",
 													"});",
 													""
 												],
@@ -5339,7 +5461,56 @@
 												"content",
 												"search"
 											]
+										},
+										"description": "### Content Search\n\nThis endpoint allows you to search for Contentlets of any type under a given Site.\n\n#### Request\n\n- Method: POST\n    \n- URL: `{{serverURL}}/api/v1/content/search`\n    \n- Body:\n    \n    - Type: JSON\n        \n    - Description: Payload for content search request\n        \n    - { \"systemSearchableFields\": { \"siteId\": \"{{defaultSiteId}}\" }, \"page\": 0, \"perPage\": 40}\n        \n\n#### Response\n\nThe response for this request is provided as a JSON schema."
+									},
+									"response": []
+								},
+								{
+									"name": "By Folder ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Returning ALL Contentlets under the Test Parent Folder successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving all Contentlets under the Test Parent Folder\");",
+													"    pm.expect(entity.resultsSize).to.be.greaterThanOrEqual(1, \"At least one result should've been returned\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
 										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"systemSearchableFields\": {\n        \"folderId\": \"{{testParentFolderId}}\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										},
+										"description": "### Search Content\n\nThis endpoint allows users to search for Contentlets of any type that live under a specific Folder.\n\n#### Request Body\n\n- `systemSearchableFields` (object, required): Defines the fields to be searched.\n    \n    - `siteId` (string): The ID of the site to search within.\n        \n- `page` (integer): The page number for paginated results.\n    \n- `perPage` (integer): The number of results to be displayed per page.\n    \n\n#### Response Body\n\nThe response will include the search results based on the specified criteria."
 									},
 									"response": []
 								}

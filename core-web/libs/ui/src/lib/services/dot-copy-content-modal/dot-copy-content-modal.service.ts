@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -19,6 +19,9 @@ export interface ModelCopyContentResponse {
 
 @Injectable()
 export class DotCopyContentModalService {
+    private dialogService = inject(DialogService);
+    private dotMessageService = inject(DotMessageService);
+
     private readonly CONTENT_EDIT_OPTIONS: BINARY_OPTION = {
         option1: {
             value: 'NotCopy',
@@ -35,11 +38,6 @@ export class DotCopyContentModalService {
             buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
         }
     };
-
-    constructor(
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Open a modal with two options to copy or not the content

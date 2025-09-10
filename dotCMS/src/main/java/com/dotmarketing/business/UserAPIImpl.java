@@ -90,7 +90,7 @@ public class UserAPIImpl implements UserAPI {
             throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
         }
         if(user!=null && user.getUserId().equals(u.getUserId())) {
-            return user;
+            return u;
         }
         if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
             return u;

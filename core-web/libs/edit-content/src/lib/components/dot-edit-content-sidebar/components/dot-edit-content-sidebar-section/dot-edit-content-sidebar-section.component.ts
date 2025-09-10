@@ -12,7 +12,6 @@ import {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-section',
-    standalone: true,
     imports: [CommonModule],
     templateUrl: './dot-edit-content-sidebar-section.component.html',
     styleUrl: './dot-edit-content-sidebar-section.component.scss',
@@ -22,7 +21,7 @@ export class DotEditContentSidebarSectionComponent {
     /**
      * The title of the section.
      */
-    $title = input.required<string>({ alias: 'title' });
+    $title = input<string | null>(null, { alias: 'title' });
 
     /**
      * The action template for the section.

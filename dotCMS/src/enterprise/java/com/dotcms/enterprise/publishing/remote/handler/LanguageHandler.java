@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.LanguageWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -50,7 +51,8 @@ import java.util.List;
  * @since Mar 7, 2013
  */
 public class LanguageHandler implements IHandler {
-	private PublisherConfig config;
+
+	private final PublisherConfig config;
 
 	public LanguageHandler(PublisherConfig config) {
 		this.config = config;
@@ -71,7 +73,7 @@ public class LanguageHandler implements IHandler {
 		handleLanguages(languages);
 	}
 
-	private void handleLanguages(Collection<File> languages) throws DotPublishingException, DotDataException {
+	private void handleLanguages(Collection<File> languages) throws DotPublishingException {
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			throw new RuntimeException("need an enterprise pro license to run this");
 		}
@@ -110,8 +112,8 @@ public class LanguageHandler implements IHandler {
 									Long.toString(localLanguage.getId()), null, localLanguage.getLanguage(), config.getId());
 	        		    } catch (final Exception ex) {
                             final String errorMsg = String.format("Failed to delete local Language '%s' (remote lang " +
-                                    "= '%s')as there are remaining content dependencies: %s", localLanguage,
-                                    remoteLanguage, ex.getMessage());
+                                    "= '%s') as there are remaining content dependencies: %s", localLanguage,
+                                    remoteLanguage, ExceptionUtil.getErrorMessage(ex));
                             Logger.error(this, errorMsg, ex);
 	        		        throw new DotPublishingException(errorMsg, ex);
 	        		    }
@@ -127,9 +129,9 @@ public class LanguageHandler implements IHandler {
 			}
 
     	} catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when processing Language in '%s' with ID '%s': %s",
+            final String errorMsg = String.format("An error occurred when processing Language in '%s' with ISO '%s' [%s]: %s",
                     workingOn, (null == remoteLanguage ? "(empty)" : remoteLanguage), (null == remoteLanguage ? "(empty)" : remoteLanguage
-                            .getId()), e.getMessage());
+                            .getId()), ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
     	}
@@ -170,7 +172,7 @@ public class LanguageHandler implements IHandler {
 				Logger.debug(this.getClass(), ()->
 						"No conflict was detected for language '" + remoteLanguage + "'. Language was added as it came in.");
 			} else {
-			    //The slot is taken.. This is very rare but still a possibility. So will just add a new Lang and move on.
+			    //The slot is taken. This is very rare but still a possibility. So will just add a new Lang and move on.
 				final Language newLang = newLanguageInstance(remoteLanguage);
                 languageAPI.saveLanguage(newLang);
 				config.mapRemoteLanguage(remoteLanguage.getId(), newLang);

@@ -6,5 +6,5 @@ export const environment = {
    * More info: https://www.dotcms.com/docs/latest/permissions
    */
   authToken: 'YOUR_AUTH_TOKEN',
-  siteId: 'true',
+  siteId: 'YOUR_SITE_ID',
 };

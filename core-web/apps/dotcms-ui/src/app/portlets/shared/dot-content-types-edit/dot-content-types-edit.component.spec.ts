@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFakeEvent } from '@ngneat/spectator';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -15,7 +15,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAlertConfirmService,
     DotContentTypesInfoService,
@@ -30,7 +29,8 @@ import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 import { DotDialogModule, DotIconModule } from '@dotcms/ui';
 import {
@@ -50,11 +50,14 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+
 // eslint-disable-next-line max-len
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsDropZoneComponent {
     @Input() layout: DotCMSContentTypeLayoutRow[];
@@ -68,7 +71,8 @@ class TestContentTypeFieldsDropZoneComponent {
 
 @Component({
     selector: 'dot-content-type-layout',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 class TestContentTypeLayoutComponent {
     @Input() contentType: DotCMSContentType;
@@ -78,7 +82,8 @@ class TestContentTypeLayoutComponent {
 
 @Component({
     selector: 'dot-content-types-form',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
@@ -92,7 +97,8 @@ class TestContentTypesFormComponent {
 
 @Component({
     selector: 'dot-menu',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class TestDotMenuComponent {
     @Input() icon: string;
@@ -387,6 +393,14 @@ describe('DotContentTypesEditComponent', () => {
                 expect(form.componentInstance.submitForm).toHaveBeenCalledTimes(1);
             });
         });
+
+        describe('checkAndOpenFormDialog', () => {
+            it('should open form dialog by default in create mode', () => {
+                const dialog = de.query(By.css('dot-dialog'));
+                expect(dialog).not.toBeNull();
+                expect(dialog.componentInstance.visible).toBeTruthy();
+            });
+        });
     });
 
     const currentFieldsInServer = [
@@ -394,14 +408,14 @@ describe('DotContentTypesEditComponent', () => {
             ...dotcmsContentTypeFieldBasicMock,
             name: 'fieldName',
             id: '4',
-            clazz: 'fieldClass',
+            clazz: DotCMSClazzes.TEXT,
             sortOrder: 1
         },
         {
             ...dotcmsContentTypeFieldBasicMock,
             name: 'field 3',
             id: '3',
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            clazz: DotCMSClazzes.COLUMN,
             sortOrder: 3
         }
     ];
@@ -439,22 +453,51 @@ describe('DotContentTypesEditComponent', () => {
         variable: 'helloVariable'
     };
 
-    const configEditMode = getConfig({
-        contentType: fakeContentType
-    });
-
     describe('edit mode', () => {
         let fieldService: FieldService;
+        let queryParams: Subject<any>;
 
         beforeEach(waitForAsync(() => {
-            TestBed.configureTestingModule(configEditMode);
+            queryParams = new Subject();
+            const testConfig = getConfig({
+                contentType: fakeContentType
+            });
+
+            TestBed.configureTestingModule({
+                declarations: testConfig.declarations,
+                imports: testConfig.imports,
+                providers: [
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            data: of({ contentType: fakeContentType }),
+                            queryParams: queryParams.asObservable()
+                        }
+                    },
+                    { provide: LoginService, useClass: LoginServiceMock },
+                    { provide: SiteService, useClass: SiteServiceMock },
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: DotRouterService, useClass: MockDotRouterService },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                    ConfirmationService,
+                    DotAlertConfirmService,
+                    DotContentTypesInfoService,
+                    DotCrudService,
+                    DotEditContentTypeCacheService,
+                    DotHttpErrorManagerService,
+                    DotMenuService,
+                    DotEventsService,
+                    FieldService,
+                    Location
+                ]
+            });
 
             fixture = TestBed.createComponent(DotContentTypesEditComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
 
             fieldService = de.injector.get(FieldService);
-
             crudService = fixture.debugElement.injector.get(DotCrudService);
             location = fixture.debugElement.injector.get(Location);
             dotRouterService = fixture.debugElement.injector.get(DotRouterService);
@@ -463,7 +506,6 @@ describe('DotContentTypesEditComponent', () => {
             );
 
             fixture.detectChanges();
-
             spyOn(comp, 'onDialogHide').and.callThrough();
         }));
 
@@ -809,7 +851,7 @@ describe('DotContentTypesEditComponent', () => {
                 contentTypeForm = de.query(By.css('dot-content-types-form'));
             });
 
-            it('should udpate content type', () => {
+            it('should update content type', () => {
                 const responseContentType = Object.assign({}, fakeContentType, {
                     fields: [{ hello: 'world' }]
                 });
@@ -841,6 +883,59 @@ describe('DotContentTypesEditComponent', () => {
                 contentTypeForm.triggerEventHandler('send', fakeContentType);
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('checkAndOpenFormDialog', () => {
+            beforeEach(() => {
+                spyOn(comp, 'startFormDialog').and.callThrough();
+            });
+
+            it('should open form dialog when open-config is true', (done) => {
+                queryParams.next({ 'open-config': 'true' });
+                fixture.detectChanges();
+
+                setTimeout(() => {
+                    expect(comp.startFormDialog).toHaveBeenCalled();
+                    done();
+                });
+            });
+
+            it('should not open form dialog when open-config is false', (done) => {
+                queryParams.next({ 'open-config': 'false' });
+                fixture.detectChanges();
+
+                setTimeout(() => {
+                    expect(comp.startFormDialog).not.toHaveBeenCalled();
+                    done();
+                });
+            });
+
+            it('should not open form dialog when open-config is not present', (done) => {
+                queryParams.next({});
+                fixture.detectChanges();
+
+                setTimeout(() => {
+                    expect(comp.startFormDialog).not.toHaveBeenCalled();
+                    done();
+                });
+            });
+
+            it('should only subscribe once to queryParams', (done) => {
+                queryParams.next({ 'open-config': 'true' });
+                fixture.detectChanges();
+
+                setTimeout(() => {
+                    expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+
+                    queryParams.next({ 'open-config': 'true' });
+                    fixture.detectChanges();
+
+                    setTimeout(() => {
+                        expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+                        done();
+                    });
+                });
             });
         });
     });

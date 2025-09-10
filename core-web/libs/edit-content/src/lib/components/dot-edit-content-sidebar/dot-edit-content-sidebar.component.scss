@@ -14,14 +14,17 @@
 
     ::ng-deep {
         .tabview-append-content {
-            min-height: 52px;
+            min-height: 50px;
             border-left: 1px solid $color-palette-black-op-10;
             display: flex;
             align-items: center;
+            justify-content: center;
+            flex: 0;
+            min-width: 64px;
         }
         .p-tabview-nav-container {
             padding: 0;
-            border: solid 1px $color-palette-gray-300;
+            border-bottom: solid 1px $color-palette-gray-300;
             border-right: none;
             overflow: initial;
             position: initial;
@@ -30,8 +33,13 @@
 
         .p-tabview-nav-content .p-tabview-nav {
             border: none;
-            min-height: 52px;
+            min-height: 50px;
+            max-height: 52px;
             min-width: auto;
+        }
+
+        .p-tabview-nav-content .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+            border-top: 2px solid transparent;
         }
 
         .p-tabview-nav-content {
@@ -40,6 +48,7 @@
             width: 100%;
             gap: $spacing-3;
             overflow: visible;
+            justify-content: space-between;
         }
 
         dot-copy-button button.p-button:not(.p-button-icon-only).p-button-sm {
@@ -52,11 +61,45 @@
         }
 
         .p-tabview {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+
             .p-tabview-nav-container {
                 position: sticky;
                 top: 0;
                 z-index: 2;
                 background-color: $color-palette-gray-100;
+            }
+
+            .p-tabview-panels {
+                height: calc(100% - 54px);
+                overflow: overlay;
+                transition: opacity 150ms ease-in-out;
+
+                &.p-tabview-panels-enter {
+                    opacity: 0;
+                }
+
+                &.p-tabview-panels-enter-active {
+                    opacity: 1;
+                }
+
+                &.p-tabview-panels-exit {
+                    opacity: 1;
+                }
+
+                &.p-tabview-panels-exit-active {
+                    opacity: 0;
+                }
+
+                .p-tabview-panel {
+                    height: 100%;
+
+                    dot-edit-content-sidebar-section:last-of-type .dot-section {
+                        border-bottom: none;
+                    }
+                }
             }
         }
     }
@@ -75,7 +118,6 @@
 }
 
 .content-sidebar__close {
-    padding: $spacing-1 $spacing-1 $spacing-1 $spacing-2;
     button {
         rect {
             stroke: $color-palette-primary;

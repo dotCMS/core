@@ -1,0 +1,58 @@
+@use "variables" as *;
+
+.table-title {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-bold;
+    color: $black;
+    line-height: $line-height-relative;
+    margin: 0;
+}
+
+// Table wrapper to ensure full height
+.table-wrapper {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+// Full height for loading, empty and error states
+.table-loading-state,
+.table-empty-state,
+.table-error-state {
+    height: 100%;
+
+    ::ng-deep .p-card {
+        height: 100%;
+
+        .p-card-body {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .p-card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+    }
+}
+
+// Virtual scroll specific styles
+::ng-deep .p-datatable {
+    &.p-datatable-scrollable {
+        .p-datatable-scrollable-wrapper {
+            border-radius: $border-radius-md;
+        }
+
+        .p-datatable-scrollable-body {
+            border-radius: 0 0 $border-radius-md $border-radius-md;
+        }
+    }
+
+    // Ensure consistent row height for virtual scroll
+    .p-datatable-tbody > tr {
+        height: 46px;
+        box-sizing: border-box;
+    }
+}

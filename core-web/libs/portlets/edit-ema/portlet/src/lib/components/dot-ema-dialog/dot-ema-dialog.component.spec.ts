@@ -16,7 +16,6 @@ import { By } from '@angular/platform-browser';
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -27,8 +26,9 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
 import {
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
@@ -42,7 +42,6 @@ import { DotActionUrlService } from '../../services/dot-action-url/dot-action-ur
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, PAYLOAD_MOCK } from '../../shared/mocks';
-import { DotPage } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
 
 describe('DotEmaDialogComponent', () => {
@@ -194,7 +193,7 @@ describe('DotEmaDialogComponent', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
         });
 
@@ -217,7 +216,7 @@ describe('DotEmaDialogComponent', () => {
                     status: FormStatus.PRISTINE,
                     isTranslation: false
                 },
-                clientAction: CLIENT_ACTIONS.NOOP
+                clientAction: DotCMSUVEAction.NOOP
             });
         });
     });
@@ -375,7 +374,7 @@ describe('DotEmaDialogComponent', () => {
             component.translatePage({
                 page: {
                     title: 'test'
-                } as DotPage,
+                } as DotCMSPage,
                 newLanguage: '1'
             });
 
@@ -414,7 +413,9 @@ describe('DotEmaDialogComponent', () => {
         it('should trigger editContentlet in the store for url Map', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editUrlContentMapContentlet');
 
-            component.editUrlContentMapContentlet(PAYLOAD_MOCK.contentlet as DotCMSContentlet);
+            component.editUrlContentMapContentlet(
+                PAYLOAD_MOCK.contentlet as unknown as DotCMSURLContentMap
+            );
 
             expect(editContentletSpy).toHaveBeenCalledWith({
                 inode: PAYLOAD_MOCK.contentlet.inode,
@@ -482,6 +483,14 @@ describe('DotEmaDialogComponent', () => {
                 title: 'test',
                 url: 'https://demo.dotcms.com/jsp.jsp'
             });
+        });
+
+        it('should trigger resetActionPayload in the store', () => {
+            const resetActionPayloadSpy = jest.spyOn(storeSpy, 'resetActionPayload');
+
+            component.resetActionPayload();
+
+            expect(resetActionPayloadSpy).toHaveBeenCalled();
         });
     });
 

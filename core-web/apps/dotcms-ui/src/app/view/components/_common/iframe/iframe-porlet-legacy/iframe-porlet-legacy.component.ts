@@ -1,41 +1,41 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+
 @Component({
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
-    templateUrl: 'iframe-porlet-legacy.component.html'
+    templateUrl: 'iframe-porlet-legacy.component.html',
+    standalone: false
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
+    private contentletService = inject(DotContentTypeService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dotMenuService = inject(DotMenuService);
+    private dotRouterService = inject(DotRouterService);
+    private route = inject(ActivatedRoute);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    loggerService = inject(LoggerService);
+    siteService = inject(SiteService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private dotIframeService = inject(DotIframeService);
+
     canAccessPortlet: boolean;
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private contentletService: DotContentTypeService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotMenuService: DotMenuService,
-        private dotRouterService: DotRouterService,
-        private route: ActivatedRoute,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        public loggerService: LoggerService,
-        public siteService: SiteService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private dotIframeService: DotIframeService
-    ) {}
 
     ngOnInit(): void {
         this.dotRouterService.portletReload$.subscribe((portletId: string) => {

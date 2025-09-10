@@ -1,8 +1,6 @@
 import { createContext } from 'react';
 
-import { DotCMSContentlet, DotCMSPageAsset } from '../types';
-
-export type DotCMSPageRendererMode = 'production' | 'development';
+import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 /**
  * @internal
@@ -16,7 +14,7 @@ export type DotCMSPageRendererMode = 'production' | 'development';
 export interface DotCMSPageContextProps {
     pageAsset: DotCMSPageAsset;
     mode: DotCMSPageRendererMode;
-    userComponents: Record<string, React.ComponentType<DotCMSContentlet>>;
+    userComponents: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
 }
 
 /**

@@ -6,14 +6,13 @@ import { Injectable, inject } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, SiteEntity } from '@dotcms/dotcms-models';
 
 export interface SiteParams {
     archived: boolean;
     live: boolean;
     system: boolean;
 }
-
 export interface ContentByFolderParams {
     hostFolderId: string;
     showLinks?: boolean;
@@ -27,13 +26,9 @@ export interface ContentByFolderParams {
     extensions?: string[];
     mimeTypes?: string[];
 }
-
 export const BASE_SITE_URL = '/api/v1/site';
-
 export const DEFAULT_PER_PAGE = 10;
-
 export const DEFAULT_PAGE = 1;
-
 @Injectable({
     providedIn: 'root'
 })
@@ -83,9 +78,9 @@ export class DotSiteService {
      * @return {*}  {Observable<Site>}
      * @memberof DotSiteService
      */
-    getCurrentSite(): Observable<Site> {
+    getCurrentSite(): Observable<SiteEntity> {
         return this.#http
-            .get<{ entity: Site }>(`${BASE_SITE_URL}/currentSite`)
+            .get<{ entity: SiteEntity }>(`${BASE_SITE_URL}/currentSite`)
             .pipe(pluck('entity'));
     }
 

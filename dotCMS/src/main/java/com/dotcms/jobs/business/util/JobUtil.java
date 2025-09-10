@@ -71,6 +71,18 @@ public class JobUtil {
         }
 
         Map<String, Object> params = job.parameters();
+        return retrieveTempFile(params);
+    }
+
+    /**
+     * Retrieves the temporary file associated with the given job parameters.
+     *
+     * @param params The parameters containing the temporary file information.
+     * @return An Optional containing the DotTempFile if found, or an empty Optional if not found or
+     * if an error occurs.
+     */
+    public static Optional<DotTempFile> retrieveTempFile(final Map<String, Object> params) {
+
         if (params == null) {
             Logger.error(JobUtil.class, "Job parameters cannot be null");
             return Optional.empty();

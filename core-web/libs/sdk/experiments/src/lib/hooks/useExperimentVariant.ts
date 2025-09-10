@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { isInsideEditor } from '@dotcms/client';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
+import { getUVEState } from '@dotcms/uve';
 
 import DotExperimentsContext from '../contexts/DotExperimentsContext';
 
@@ -17,21 +18,20 @@ import DotExperimentsContext from '../contexts/DotExperimentsContext';
  * @param {Object} data - An object containing the runningExperimentId and viewAs (containing variantId).
  * @returns {Object} An object with a function `shouldWaitForVariant` that, when called, returns `true` if it should wait for the correct variant, `false` otherwise.
  */
-export const useExperimentVariant = (data: {
-    runningExperimentId?: string;
-    viewAs: { variantId: string };
-}): { shouldWaitForVariant: boolean } => {
+export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVariant: boolean } => {
     const dotExperimentInstance = useContext(DotExperimentsContext);
 
     const { runningExperimentId, viewAs } = data;
 
-    const { variantId } = viewAs;
+    const variantId = viewAs?.variantId;
 
     // By default, wait for the variant
     const [shouldWaitForVariant, setShouldWaitForVariant] = useState<boolean>(true);
 
     useEffect(() => {
-        if (isInsideEditor() || !runningExperimentId) {
+        const isInsideEditor = getUVEState()?.mode === UVE_MODE.EDIT;
+
+        if (isInsideEditor || !runningExperimentId) {
             setShouldWaitForVariant(false);
 
             return;
@@ -49,7 +49,7 @@ export const useExperimentVariant = (data: {
                 return;
             }
         }
-    }, [dotExperimentInstance, data]);
+    }, [dotExperimentInstance, data, variantId, runningExperimentId]);
 
     return { shouldWaitForVariant };
 };

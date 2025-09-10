@@ -5,6 +5,12 @@ $information-min-height: 60px;
 $information-row-min-height: 76px;
 $skeleton-min-height: 14px;
 
+:host {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+}
+
 .content-aside__information {
     display: flex;
     flex-direction: column;

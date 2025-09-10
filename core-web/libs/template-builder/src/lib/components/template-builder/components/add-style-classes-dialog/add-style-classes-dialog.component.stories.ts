@@ -10,7 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 import { JsonClassesService } from './services/json-classes.service';
@@ -34,8 +34,7 @@ const meta: Meta<AddStyleClassesDialogComponent> = {
                 FormsModule,
                 ButtonModule,
                 DotMessagePipe,
-                BrowserAnimationsModule,
-                DotSelectItemDirective
+                BrowserAnimationsModule
             ],
             providers: [
                 {

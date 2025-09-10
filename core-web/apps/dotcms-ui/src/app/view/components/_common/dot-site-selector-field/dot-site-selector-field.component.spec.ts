@@ -1,13 +1,14 @@
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, Input, inject } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { SiteService } from '@dotcms/dotcms-js';
 import { SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.component';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-fake-form',
@@ -16,12 +17,15 @@ import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.compone
             <dot-site-selector-field formControlName="site"></dot-site-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         /*
             This should go in the ngOnInit but I don't want to detectChanges everytime for
             this fake test component
@@ -34,7 +38,8 @@ class FakeFormComponent {
 
 @Component({
     selector: 'dot-site-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class SiteSelectorComponent {
     @Input()

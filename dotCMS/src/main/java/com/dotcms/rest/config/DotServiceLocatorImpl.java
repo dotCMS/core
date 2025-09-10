@@ -1,11 +1,9 @@
 package com.dotcms.rest.config;
 
-import com.dotmarketing.util.Logger;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.glassfish.hk2.api.ActiveDescriptor;
-import org.glassfish.hk2.api.Factory;
+import org.glassfish.hk2.api.Injectee;
 import org.glassfish.hk2.api.MultiException;
 import org.glassfish.hk2.api.ServiceHandle;
 import org.jvnet.hk2.internal.ServiceLocatorImpl;
@@ -68,7 +66,7 @@ public class DotServiceLocatorImpl extends ServiceLocatorImpl {
     public void inject(Object injectMe, String strategy) {
         //there's a bug in jersey that causes a IllegalStateException to be thrown when the container is reloading
         //This Bug Kills the container leaving it useless
-        //And the reason if the checkState Method in the super Class (which is private)
+        //And the reason is the checkState Method in the super Class (which is private)
         Utilities.justInject(injectMe, this, strategy);
     }
 
@@ -87,10 +85,27 @@ public class DotServiceLocatorImpl extends ServiceLocatorImpl {
             return super.getServiceHandle(activeDescriptor);
         } catch (IllegalStateException e) {
             if(isServiceShutDownException(e)) {
-                Logger.warn(this,
-                String.format("The Following Exception: \"%s\" was caught and ignored. %n This Exception is expected during a reload! ",
-                e.getMessage())
-                );
+                throw new QuietServiceShutdownException(e.getMessage());
+            }
+            //The exception still needs to be thrown so the container can restore itself
+            throw e;
+        }
+    }
+
+    /**
+     * This Method is overridden to ignore IllegalStateException during reload
+     * @param injectee The injectee for which to get the descriptor
+     * @return The descriptor for the given injectee
+     * @throws MultiException If there is an error getting the descriptor
+     */
+    @Override
+    public ActiveDescriptor<?> getInjecteeDescriptor(Injectee injectee)
+            throws MultiException {
+        try {
+            return super.getInjecteeDescriptor(injectee);
+        } catch (IllegalStateException e) {
+            if(isServiceShutDownException(e)) {
+                throw new QuietServiceShutdownException(e.getMessage());
             }
             //The exception still needs to be thrown so the container can restore itself
             throw e;
@@ -104,6 +119,22 @@ public class DotServiceLocatorImpl extends ServiceLocatorImpl {
     @Override
     public String toString() {
         return "DotServiceLocatorImpl(" + name + "," + super.getLocatorId() + "," + System.identityHashCode(this) + ")";
+    }
+
+    /**
+     * This exception is thrown when the service locator is shut down
+     * But we know that it is safe to ignore
+     */
+    public static class QuietServiceShutdownException extends IllegalStateException {
+
+        /**
+         * Constructs a new QuietServiceShutdownException with the specified detail message.
+         * @param message the detail message, which is saved for later retrieval by the {@link Throwable#getMessage()} method.
+         */
+        public QuietServiceShutdownException(String message) {
+            super(message);
+        }
+
     }
 
 }

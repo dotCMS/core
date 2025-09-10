@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import java.util.Date;
 import java.util.List;
@@ -11,6 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
 public interface VersionableAPI {

@@ -1337,8 +1337,10 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
                             showDotCMSSystemMessage(dataOrError, true);
                         } else {
                             var x = dataOrError.split(":");
+
                             var entry = {id:x[0], name:x[1], isOnlyBatch:x[2]};
-							var isOnlyBatch = x[2];
+
+							var isOnlyBatch = JSON.parse(x[2]);
                             actionClassAdmin.actionClasses.push(entry);
 
                             actionClassAdmin.refreshActionClasses();

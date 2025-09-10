@@ -8,11 +8,13 @@ import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
-import { MonacoEditor } from '@models/monaco-editor';
+
 import {
     DotContainerPropertiesState,
     DotContainerPropertiesStore
-} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
+} from './store/dot-container-properties.store';
+
+import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-editor.model';
 
 @Component({
     animations: [
@@ -23,9 +25,14 @@ import {
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     styleUrls: ['./dot-container-properties.component.scss'],
-    providers: [DotContainerPropertiesStore]
+    providers: [DotContainerPropertiesStore],
+    standalone: false
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
+    private dotMessageService = inject(DotMessageService);
+    private fb = inject(FormBuilder);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+
     readonly #store = inject(DotContainerPropertiesStore);
     readonly #dotRouterService = inject(DotRouterService);
 
@@ -33,12 +40,6 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     editor: MonacoEditor;
     form: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private fb: FormBuilder,
-        private dotAlertConfirmService: DotAlertConfirmService
-    ) {}
 
     ngOnInit(): void {
         this.#store.containerAndStructure$

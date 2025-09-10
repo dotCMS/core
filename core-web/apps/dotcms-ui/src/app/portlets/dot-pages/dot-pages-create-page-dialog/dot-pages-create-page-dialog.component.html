@@ -10,11 +10,12 @@
 </div>
 
 <div class="dot-pages-create-page-dialog__page-types-container">
-    <div
-        *ngFor="let item of pageTypes$ | async"
-        (click)="goToCreatePage(item.variable)"
-        class="dot-pages-create-page-dialog__page-item">
-        <dot-icon [name]="item.icon" size="18"></dot-icon>
-        {{ item.name }}
-    </div>
+    @for (item of pageTypes$ | async; track item) {
+        <div
+            (click)="goToCreatePage(item.variable)"
+            class="dot-pages-create-page-dialog__page-item">
+            <dot-icon [name]="item.icon" size="18"></dot-icon>
+            {{ item.name }}
+        </div>
+    }
 </div>

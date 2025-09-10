@@ -1,3 +1,5 @@
+import { DecorationSet, type DecorationSource } from 'prosemirror-view';
+
 import { Component, Injector, Input, Type } from '@angular/core';
 
 import {
@@ -13,24 +15,29 @@ import {
 import { AngularRenderer } from './AngularRenderer';
 
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
-import type { Decoration } from 'prosemirror-view';
 
 export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unknown>;
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export class AngularNodeViewComponent implements NodeViewProps {
     @Input() editor!: NodeViewProps['editor'];
     @Input() node!: NodeViewProps['node'];
-    @Input() decorations!: NodeViewProps['decorations'];
+    @Input() decorations!: readonly DecorationWithType[];
     @Input() selected!: NodeViewProps['selected'];
     @Input() extension!: NodeViewProps['extension'];
     @Input() getPos!: NodeViewProps['getPos'];
     @Input() updateAttributes!: NodeViewProps['updateAttributes'];
     @Input() deleteNode!: NodeViewProps['deleteNode'];
+    @Input() view!: NodeViewProps['view'];
+    @Input() innerDecorations!: DecorationSource;
+    @Input() HTMLAttributes!: NodeViewProps['HTMLAttributes'];
 }
 
 interface AngularNodeViewRendererOptions extends NodeViewRendererOptions {
-    update?: ((node: ProseMirrorNode, decorations: Decoration[]) => boolean) | null;
+    update?: ((node: ProseMirrorNode, decorations: DecorationWithType[]) => boolean) | null;
     toJSON?: toJSONFn;
     injector: Injector;
 }
@@ -42,6 +49,7 @@ class AngularNodeView extends NodeView<
 > {
     renderer!: AngularRenderer<AngularNodeViewComponent, NodeViewProps>;
     contentDOMElement!: HTMLElement | null;
+    override decorations!: readonly DecorationWithType[];
 
     override mount() {
         const injector = this.options.injector as Injector;
@@ -49,12 +57,15 @@ class AngularNodeView extends NodeView<
         const props: NodeViewProps = {
             editor: this.editor,
             node: this.node,
-            decorations: this.decorations,
+            decorations: this.decorations as readonly DecorationWithType[],
             selected: false,
             extension: this.extension,
             getPos: () => this.getPos(),
             updateAttributes: (attributes = {}) => this.updateAttributes(attributes),
-            deleteNode: () => this.deleteNode()
+            deleteNode: () => this.deleteNode(),
+            view: this.editor.view,
+            innerDecorations: DecorationSet.empty,
+            HTMLAttributes: {}
         };
 
         // create renderer
@@ -138,10 +149,13 @@ class AngularNodeView extends NodeView<
 
     selectNode() {
         this.renderer.updateProps({ selected: true });
+
+        this.renderer.elementRef.nativeElement.classList.add('ProseMirror-selectednode');
     }
 
     deselectNode() {
         this.renderer.updateProps({ selected: false });
+        this.renderer.elementRef.nativeElement.classList.remove('ProseMirror-selectednode');
     }
 
     destroy() {

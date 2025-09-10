@@ -11,4 +11,8 @@ public class ResponseEntityMapView  extends ResponseEntityView<Map<String, Objec
     public ResponseEntityMapView(final Map<String, Object> entity) {
         super(entity);
     }
+    
+    public ResponseEntityMapView(final Map<String, Object> entity, final Map<String, String> i18nMessagesMap) {
+        super(entity, i18nMessagesMap);
+    }
 }

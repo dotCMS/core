@@ -69,6 +69,10 @@
     font-family: $font-default;
     padding: revert;
     cursor: pointer;
+
+    &:disabled {
+        color: $button-text-color-disabled;
+    }
 }
 
 .file-field__drop-zone--active {

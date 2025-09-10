@@ -13,7 +13,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
@@ -27,6 +27,7 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireActionByNameForm;
 import com.dotcms.workflow.form.FireActionForm;
@@ -73,6 +74,7 @@ import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappi
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -2615,8 +2617,8 @@ public class WorkflowResource {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
             }
 
-            actionId = this.workflowHelper.getActionIdOnList
-                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
+            actionId = this.workflowHelper.getActionIdOnList // we do not want to do a double permission check here, since the WF API will check the permissions for the action later on
+                    (fireActionForm.getActionName(), contentlet, APILocator.systemUser());
 
             Logger.debug(this, "fire ActionByName Multipart with the actionid: " + actionId);
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
@@ -2789,8 +2791,8 @@ public class WorkflowResource {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
             }
 
-            actionId = this.workflowHelper.getActionIdOnList
-                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
+            actionId = this.workflowHelper.getActionIdOnList // we do not want to do a double permission check here, since the WF API will check the permissions for the action later on
+                    (fireActionForm.getActionName(), contentlet, APILocator.systemUser());
 
             Logger.debug(this, "fire ActionByName with the actionid: " + actionId);
 
@@ -2866,6 +2868,10 @@ public class WorkflowResource {
         final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
                 new DotTransformerBuilder().contentResourceOptions(false)
                     .content(basicContentlet).build().hydrate().get(0): basicContentlet;
+
+        if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
+            hydratedContentlet.setVariantId(basicContentlet.getVariantId());
+        }
         return Response.ok(
                 new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
         ).build(); // 200
@@ -2970,6 +2976,10 @@ public class WorkflowResource {
                                               description = "Language version of target content.",
                                               schema = @Schema(type = "string")
                                       ) final String language,
+                                      @DefaultValue("DEFAULT") @QueryParam("variantName") @Parameter(
+                                              description = "Variant name",
+                                              schema = @Schema(type = "string")
+                                      ) final String variantName,
                                       @PathParam("systemAction") @Parameter(
                                               required = true,
                                               schema = @Schema(
@@ -3065,7 +3075,7 @@ public class WorkflowResource {
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                            fireActionForm, initDataObject, mode);
+                            fireActionForm, initDataObject, mode, variantName);
 
             if (UtilMethods.isSet(indexPolicy)) {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
@@ -4558,6 +4568,17 @@ public class WorkflowResource {
                                      final InitDataObject initDataObject,
                                      final PageMode pageMode) throws DotDataException, DotSecurityException {
 
+        return getContentlet(inode, identifier, language, sessionLanguage, fireActionForm, initDataObject, pageMode, VariantAPI.DEFAULT_VARIANT.name());
+    }
+    private Contentlet getContentlet(final String inode,
+                                     final String identifier,
+                                     final long language,
+                                     final Supplier<Long> sessionLanguage,
+                                     final FireActionForm fireActionForm,
+                                     final InitDataObject initDataObject,
+                                     final PageMode pageMode,
+                                     final String variantName) throws DotDataException, DotSecurityException {
+
         Contentlet contentlet = null;
         PageMode mode = pageMode;
         final String finalInode      = UtilMethods.isSet(inode)? inode:
@@ -4582,9 +4603,11 @@ public class WorkflowResource {
 
             mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
             final Optional<Contentlet> currentContentlet =  language <= 0?
-                    this.workflowHelper.getContentletByIdentifier(finalIdentifier, mode, initDataObject.getUser(), sessionLanguage):
+                    this.workflowHelper.getContentletByIdentifier(finalIdentifier, mode, initDataObject.getUser(), variantName, sessionLanguage):
                     this.contentletAPI.findContentletByIdentifierOrFallback
-                            (finalIdentifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
+                            (finalIdentifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms, variantName);
+
+
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
@@ -4608,6 +4631,9 @@ public class WorkflowResource {
 
         Contentlet contentlet = new Contentlet();
         contentlet.getMap().putAll(currentContentlet.getMap());
+        if (Objects.nonNull(currentContentlet.getVariantId())) {
+            contentlet.setVariantId(currentContentlet.getVariantId());
+        }
 
         if (null != fireActionForm && null != fireActionForm.getContentletFormData() && null != contentlet) {
 
@@ -5630,9 +5656,30 @@ public class WorkflowResource {
 
     private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
 
+        final WorkflowStep step = wfTimeLine instanceof WorkflowHistory && UtilMethods.isSet(wfTimeLine.stepId())?
+                Try.of(()->this.workflowHelper.findStepById(wfTimeLine.stepId())).getOrNull():null;
+        final WorkflowAction action = wfTimeLine instanceof WorkflowHistory &&  UtilMethods.isSet(wfTimeLine.actionId())?
+                Try.of(()->this.workflowHelper.findAction(wfTimeLine.actionId(), APILocator.systemUser())).getOrNull():null;
+
+        final Map<String, String> minimalStepViewMap = new HashMap<>();
+        if (Objects.nonNull(step)) {
+
+            minimalStepViewMap.put("id",step.getId());
+            minimalStepViewMap.put("name",step.getName());
+            minimalStepViewMap.put("schemeId",step.getSchemeId());
+        }
+
+        final Map<String, String> minimalActionViewMap = new HashMap<>();
+        if (Objects.nonNull(action)) {
+
+            minimalActionViewMap.put("id",action.getId());
+            minimalActionViewMap.put("name",action.getName());
+            minimalActionViewMap.put("schemeId",action.getSchemeId());
+        }
+
         final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
         return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
-                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
+                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type(), minimalStepViewMap, minimalActionViewMap);
     }
 
     /**

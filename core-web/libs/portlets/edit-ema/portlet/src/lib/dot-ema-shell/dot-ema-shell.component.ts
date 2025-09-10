@@ -23,22 +23,22 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { PERSONA_KEY } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
-    getAllowedPageParams,
     getTargetUrl,
     normalizeQueryParams,
     sanitizeURL,
@@ -46,7 +46,6 @@ import {
 } from '../utils';
 @Component({
     selector: 'dot-ema-shell',
-    standalone: true,
     providers: [
         UVEStore,
         DotPageApiService,
@@ -131,7 +130,8 @@ export class DotEmaShellComponent implements OnInit {
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                this.uveStore.getWorkflowActions();
+                const pageAPIResponse = this.uveStore.pageAPIResponse();
+                this.uveStore.getWorkflowActions(pageAPIResponse.page.inode);
                 break;
             }
 
@@ -204,7 +204,7 @@ export class DotEmaShellComponent implements OnInit {
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
-        const params = getAllowedPageParams(queryParams);
+        const params = { ...queryParams };
         const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
 
         //Sanitize the url
@@ -225,15 +225,16 @@ export class DotEmaShellComponent implements OnInit {
             params.mode = UVE_MODE.EDIT;
         }
 
-        if (params.mode === UVE_MODE.LIVE) {
-            params.publishDate = params.publishDate || new Date().toISOString();
+        if (params.mode !== UVE_MODE.LIVE && params.publishDate) {
+            delete params?.['publishDate'];
         }
 
         if (queryParams['personaId']) {
-            params['com.dotmarketing.persona.id'] = queryParams['personaId'];
+            params[PERSONA_KEY] = queryParams['personaId'];
+            delete params['personaId'];
         }
 
-        return params;
+        return params as DotPageAssetParams;
     }
 
     #getViewParams(uveMode: UVE_MODE): DotUveViewParams {

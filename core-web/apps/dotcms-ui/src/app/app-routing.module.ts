@@ -1,4 +1,6 @@
-import { NgModule, inject } from '@angular/core';
+/* eslint-disable @nx/enforce-module-boundaries */
+
+import { inject, NgModule } from '@angular/core';
 import {
     ActivatedRouteSnapshot,
     Route,
@@ -7,16 +9,8 @@ import {
     Routes
 } from '@angular/router';
 
-import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
-import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
-import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
-import { DotLogOutContainerComponent } from '@components/login/dot-logout-container-component/dot-log-out-container';
-import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
-import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
-import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
 import { DotExperimentsService, EmaAppConfigurationService } from '@dotcms/data-access';
-import { dotAnalyticsHealthCheckResolver, DotEnterpriseLicenseResolver } from '@dotcms/ui';
-import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
+import { DotEnterpriseLicenseResolver } from '@dotcms/ui';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
@@ -26,6 +20,14 @@ import { editPageGuard } from './api/services/guards/ema-app/edit-page.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
+import { DotCustomReuseStrategyService } from './shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
+import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/iframe-porlet-legacy.component';
+import { DotIframePortletLegacyResolver } from './view/components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
+import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
+import { DotLogOutContainerComponent } from './view/components/login/dot-logout-container-component/dot-log-out-container';
+import { DotLoginPageComponent } from './view/components/login/main/dot-login-page.component';
+import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
+import { MainComponentLegacyComponent } from './view/components/main-legacy/main-legacy.component';
 
 const PORTLETS_ANGULAR: Route[] = [
     {
@@ -71,22 +73,26 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () =>
             import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
     },
+    // TODO: We need a fix from BE to remove those redirects
     {
         path: 'analytics-search',
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
+        redirectTo: 'analytics/search'
+    },
+    {
+        path: 'analytics-dashboard',
+        redirectTo: 'analytics/dashboard'
+    },
+    {
+        path: 'analytics',
         providers: [DotEnterpriseLicenseResolver, DotExperimentsService],
         resolve: {
-            isEnterprise: DotEnterpriseLicenseResolver,
-            healthCheck: dotAnalyticsHealthCheckResolver
+            isEnterprise: DotEnterpriseLicenseResolver
         },
         data: {
             reuseRoute: false
         },
-        loadComponent: () =>
-            import('@dotcms/portlets/dot-analytics-search/portlet').then(
-                (m) => m.DotAnalyticsSearchComponent
-            )
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-analytics/portlet').then((m) => m.DotAnalyticsRoutes)
     },
     {
         path: 'forms',
@@ -149,6 +155,11 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'pages',
         loadChildren: () =>
             import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
+    },
+    {
+        path: 'content-drive',
+        loadChildren: () =>
+            import('@dotcms/portlets/content-drive/portlet').then((m) => m.DotContentDriveRoutes)
     },
     {
         path: '',

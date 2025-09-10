@@ -32,10 +32,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static com.dotmarketing.util.NumberUtil.toInt;
 
 @Path("/es")
+@Tag(name = "Search", description = "Content search and query operations")
 public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	ContentletAPI esapi = APILocator.getContentletAPI();

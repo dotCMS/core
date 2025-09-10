@@ -1786,9 +1786,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         }
 
         function selectAllContentsMessage() {
-                var checkAll = document.getElementById("checkAll");
+                var checkAllDijit = dijit.byId("checkAll");
+                var isChecked = checkAllDijit.checked;
                 var table = $('tablemessage');
-                if (checkAll.checked) {
+                if (isChecked) {
                         var html = '' +
                                 '       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "all")) %> ' + cbContentInodeList.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contents-on-this-page-are-selected")) %>';
                                 if (perPage < totalContents) {

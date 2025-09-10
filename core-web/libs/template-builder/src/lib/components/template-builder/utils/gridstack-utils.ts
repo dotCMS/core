@@ -2,8 +2,6 @@ import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 
-import { EMPTY_ROWS_VALUE } from './mocks';
-
 import {
     BOX_WIDTH,
     DotGridStackNode,
@@ -15,6 +13,34 @@ import {
 const emptyChar = '_';
 const boxChar = '#';
 const currentBoxChar = '*';
+
+export const EMPTY_ROWS_VALUE = [
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 0,
+        subGridOpts: {
+            children: [
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: uuid(),
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: SYSTEM_CONTAINER_IDENTIFIER
+                        }
+                    ]
+                }
+            ]
+        },
+        id: uuid(),
+        styleClass: []
+    }
+];
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array

@@ -55,10 +55,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.io.IOUtils;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -73,6 +69,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.io.IOUtils;
 
 /**
  * This class is a bridge impl that will support the older
@@ -640,6 +639,20 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
 	/**
+	 * Returns the file on the filesystem that backup the fileAsset ignoring the case of the extension
+	 * @param inode
+	 * @param fileName generally speaking this method is expected to be called using the Underlying File Name property
+	 * e.g.   getRealAssetPathIgnoreExtensionCase(inode, fileAsset.getUnderlyingFileName())
+	 * @return
+	 */
+	@Override
+	public String getRealAssetPathIgnoreExtensionCase(String inode, String fileName) {
+		String extension = UtilMethods.getFileExtensionIgnoreCase(fileName);
+		String fileNameWOExtenstion  =  UtilMethods.getFileName(fileName);
+		return getRealAssetPath(inode, fileNameWOExtenstion, extension);
+	}
+
+	/**
 	 * This method returns the relative path for assets
      *
      * @return the relative folder of where assets are stored
@@ -770,12 +783,18 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @param contentlet
      */
     public void cleanThumbnailsFromContentlet(Contentlet contentlet) {
-        if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
-            this.cleanThumbnailsFromFileAsset(APILocator.getFileAssetAPI().fromContentlet(
-                    contentlet));
-            return;
-        }
+			Folder testFolder = Try.of(
+					() -> APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.systemUser(), false)).getOrNull();
+			if (UtilMethods.isEmpty(() -> testFolder.getInode())) {
+				return;
+			}
 
+			if (contentlet.isFileAsset() &&
+					Try.of(() -> APILocator.getIdentifierAPI().find(contentlet.getFolder()).getId() != null).getOrElse(false)) {
+				this.cleanThumbnailsFromFileAsset(APILocator.getFileAssetAPI().fromContentlet(
+						contentlet));
+				return;
+			}
         Logger.warn(this, "Contentlet parameter is NOT a fileasset.");
     }
 

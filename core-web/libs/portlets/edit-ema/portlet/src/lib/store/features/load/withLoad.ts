@@ -34,11 +34,23 @@ export function withLoad() {
         withClient(),
         withWorkflow(),
         withMethods((store) => {
+            return {
+                updatePageParams: (params: Partial<DotPageAssetParams>) => {
+                    patchState(store, {
+                        pageParams: {
+                            ...store.pageParams(),
+                            ...params
+                        }
+                    });
+                }
+            };
+        }),
+        withMethods((store) => {
             const router = inject(Router);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
-            const dotLicenseService = inject(DotLicenseService);
             const dotExperimentsService = inject(DotExperimentsService);
+            const dotLicenseService = inject(DotLicenseService);
             const loginService = inject(LoginService);
 
             return {
@@ -99,9 +111,12 @@ export function withLoad() {
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
                                 tap(({ pageAsset }) =>
-                                    store.getWorkflowActions(pageAsset.page.inode)
+                                    store.getWorkflowActions(pageAsset?.page?.inode)
                                 ),
-                                catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                catchError((err: HttpErrorResponse) => {
+                                    const errorStatus = err.status;
+                                    console.error('Error UVEStore', err);
+
                                     patchState(store, {
                                         errorCode: errorStatus,
                                         status: UVE_STATUS.ERROR
@@ -118,10 +133,13 @@ export function withLoad() {
                                             experimentId ?? DEFAULT_VARIANT_ID
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
-                                            pageAsset.page.identifier
+                                            pageAsset?.page?.identifier
                                         )
                                     }).pipe(
-                                        catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                        catchError((err: HttpErrorResponse) => {
+                                            const errorStatus = err.status;
+                                            console.error('Error UVEStore', err);
+
                                             patchState(store, {
                                                 errorCode: errorStatus,
                                                 status: UVE_STATUS.ERROR
@@ -168,58 +186,53 @@ export function withLoad() {
                  * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                reloadCurrentPage: rxMethod<Pick<UVEState, 'isClientReady'> | void>(
+                reloadCurrentPage: rxMethod<Partial<DotPageAssetParams> | void>(
                     pipe(
-                        tap(() => {
+                        tap((params) => {
                             patchState(store, {
                                 status: UVE_STATUS.LOADING
                             });
+
+                            if (params) {
+                                store.updatePageParams(params);
+                            }
                         }),
-                        switchMap((partialState: Pick<UVEState, 'isClientReady'>) => {
-                            return dotPageApiService
-                                .getClientPage(store.pageParams(), store.clientRequestProps())
-                                .pipe(
-                                    tap((pageAsset) => {
-                                        store.getWorkflowActions(pageAsset.page.inode);
-                                    }),
-                                    switchMap((pageAPIResponse) => {
-                                        return forkJoin({
-                                            pageAPIResponse: of(pageAPIResponse),
-                                            languages: dotLanguagesService.getLanguagesUsedPage(
-                                                pageAPIResponse.page.identifier
-                                            )
-                                        });
-                                    }),
-                                    catchError(({ status: errorStatus }: HttpErrorResponse) => {
-                                        patchState(store, {
-                                            errorCode: errorStatus,
-                                            status: UVE_STATUS.ERROR
-                                        });
+                        switchMap(() => {
+                            const pageRequest = !store.graphql()
+                                ? dotPageApiService.get(store.pageParams())
+                                : dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
+                                      tap((response) => store.setGraphqlResponse(response)),
+                                      map((response) => response.pageAsset)
+                                  );
 
-                                        return EMPTY;
-                                    }),
-                                    tap(({ pageAPIResponse, languages }) => {
-                                        const canEditPage = computeCanEditPage(
-                                            pageAPIResponse?.page,
-                                            store.currentUser(),
-                                            store.experiment()
-                                        );
+                            return pageRequest.pipe(
+                                tap((pageAPIResponse) => {
+                                    patchState(store, { pageAPIResponse });
+                                    store.getWorkflowActions(pageAPIResponse.page.inode);
+                                }),
+                                switchMap((pageAPIResponse) => {
+                                    return dotLanguagesService.getLanguagesUsedPage(
+                                        pageAPIResponse.page.identifier
+                                    );
+                                }),
+                                tap((languages) => {
+                                    patchState(store, {
+                                        languages,
+                                        status: UVE_STATUS.LOADED
+                                    });
+                                }),
+                                catchError((err: HttpErrorResponse) => {
+                                    const errorStatus = err.status;
+                                    console.error('Error UVEStore', err);
 
-                                        const pageIsLocked = computePageIsLocked(
-                                            pageAPIResponse?.page,
-                                            store.currentUser()
-                                        );
+                                    patchState(store, {
+                                        errorCode: errorStatus,
+                                        status: UVE_STATUS.ERROR
+                                    });
 
-                                        patchState(store, {
-                                            pageAPIResponse,
-                                            languages,
-                                            canEditPage,
-                                            pageIsLocked,
-                                            status: UVE_STATUS.LOADED,
-                                            isClientReady: partialState?.isClientReady ?? true
-                                        });
-                                    })
-                                );
+                                    return EMPTY;
+                                })
+                            );
                         })
                     )
                 )

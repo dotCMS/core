@@ -1,4 +1,4 @@
-<div class="p-inputgroup w-full">
+<p-inputGroup>
     <input
         [formControl]="searchControl"
         [placeholder]="'edit.content.category-field.search.input.placeholder' | dm"
@@ -6,25 +6,19 @@
         data-testId="search-input"
         pInputText
         type="text" />
-    @if (!searchControl.pristine && !$isLoading()) {
-        <span
-            data-testId="search-icon-clear"
-            (click)="clearInput()"
-            class="p-inputgroup-addon category-field__search-icon-clear">
-            <i class="pi pi-times cursor-pointer"></i>
-        </span>
-    }
-    @if ($isLoading()) {
-        <span
-            data-testId="search-icon-loading"
-            class="p-inputgroup-addon category-field__search-icon-loading">
-            <i class="pi pi-spin pi-spinner"></i>
-        </span>
-    }
 
-    <span
-        class="p-inputgroup-addon category-field__search--icon-search"
-        data-testId="search-icon-search">
-        <i class="pi pi-search"></i>
-    </span>
-</div>
+    <p-inputGroupAddon>
+        @if ($isLoading()) {
+            <i class="pi pi-spin pi-spinner" data-testId="search-icon-loading"></i>
+        } @else {
+            @if (searchControl.value) {
+                <i
+                    class="pi pi-times cursor-pointer"
+                    data-testId="search-icon-clear"
+                    (click)="clearInput()"></i>
+            } @else {
+                <i class="pi pi-search" data-testId="search-icon-search"></i>
+            }
+        }
+    </p-inputGroupAddon>
+</p-inputGroup>

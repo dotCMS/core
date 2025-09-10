@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "4e56a84e-ecc4-4072-8e09-e0acb5691fb5",
+		"_postman_id": "32c1be7f-c9b6-49ce-a10c-4110061f3bcb",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -9025,31 +9025,38 @@
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "Create a test Language Variable",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
+									"pm.test(\"HTTP Status code must be successful\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
+									"pm.test(\"Test Language Variable was created successfully\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"    pm.collectionVariables.set(\"fireActionLanguageKey\", jsonData.entity.key);",
 									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
-									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
-									"pm.collectionVariables.set(\"fireActionLanguageKey\", jsonData.entity.key);",
-									"// pm.collectionVariables.set(\"contentletIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));",
-									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomNumber = Math.trunc(Math.random() * 10000) + 1;",
+									"pm.collectionVariables.set(\"randomNumber\", randomNumber);"
+								],
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -9087,7 +9094,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"SucessRequest{{$timestamp}}\",\n  \"value\": \"SucessRequest{{$timestamp}}\"\n}\n}"
+							"raw": "{\n    \"contentlet\": {\n        \"stInode\": \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n        \"languageId\": 1,\n        \"key\": \"SucessRequest{{$randomNumber}}\",\n        \"value\": \"SucessRequest{{$randomNumber}}\"\n    }\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
@@ -12798,7 +12805,7 @@
 									"if (requestcounter <= 10) {",
 									"    ",
 									"    console.log(\"Calling AddMergeContentlet again #: \" + requestcounter)",
-									"    postman.setNextRequest(\"AddMergeContentlet\");",
+									"    pm.execution.setNextRequest(\"AddMergeContentlet\");",
 									"}",
 									"",
 									"",
@@ -13454,7 +13461,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg\"\n}",
+							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://dotcms-storage.b-cdn.net/Bocas2.jpg\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -17701,6 +17708,8 @@
 									"        pm.expect(item).to.have.property(\"roleId\");",
 									"        pm.expect(item).to.have.property(\"taskId\");",
 									"        pm.expect(item).to.have.property(\"type\");",
+									"        pm.expect(item).to.have.property(\"action\");",
+									"        pm.expect(item).to.have.property(\"step\");",
 									"        ",
 									"        // Verificación de tipo de dato para cada propiedad",
 									"        pm.expect(item.commentDescription).to.be.a(\"string\");",
@@ -17992,193 +18001,6 @@
 									"});",
 									"",
 									"// Test para verificar que \"errors\" es un array vacío",
-									"pm.test(\"Errors array is empty\", function () {",
-									"    const errors = pm.response.json().errors;",
-									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions?renderMode=EDITING",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"contentlet",
-								"{{contentletInode}}",
-								"actions"
-							],
-							"query": [
-								{
-									"key": "renderMode",
-									"value": "EDITING"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Resetable",
-			"item": [
-				{
-					"name": "CreateContentPreconditions",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
-									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
-									"",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"packages": {},
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\",\n        \"contentHost\": \"default\"\n    }\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						},
-						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
-					},
-					"response": []
-				},
-				{
-					"name": "CheckResetable",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Response has expected properties\", function () {",
-									"    const jsonData = pm.response.json();",
-									"    pm.expect(jsonData).to.have.property(\"entity\");",
-									"    pm.expect(jsonData).to.have.property(\"errors\");",
-									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
-									"    pm.expect(jsonData).to.have.property(\"messages\");",
-									"    pm.expect(jsonData).to.have.property(\"pagination\");",
-									"    pm.expect(jsonData).to.have.property(\"permissions\");",
-									"});",
-									"",
-									"pm.test(\"Entity is an array and contains items\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
-									"});",
-									"",
-									"pm.test(\"Each entity item has expected properties\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    entity.forEach(item => {",
-									"        pm.expect(item).to.have.property(\"actionInputs\").that.is.an(\"array\");",
-									"        pm.expect(item).to.have.property(\"assignable\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"commentable\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"condition\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"hasArchiveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasDeleteActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasDestroyActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasMoveActionletActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasMoveActionletHasPathActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasOnlyBatchActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasPublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasPushPublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasSaveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasUnarchiveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasUnpublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"icon\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"id\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"name\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextAssign\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextStep\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
-									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
-									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
-									"        ",
-									"        const allowedShowOnValues = [\"NEW\", \"LISTING\", \"PUBLISHED\", \"UNLOCKED\", \"ARCHIVED\", \"UNPUBLISHED\", \"EDITING\", \"LOCKED\"];",
-									"        item.showOn.forEach(status => {",
-									"            pm.expect(allowedShowOnValues).to.include(status);",
-									"        });",
-									"    });",
-									"});",
-									"",
 									"pm.test(\"Errors array is empty\", function () {",
 									"    const errors = pm.response.json().errors;",
 									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
@@ -19143,6 +18965,571 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "FireWorkflowWithVariant",
+			"item": [
+				{
+					"name": "CreateVariant",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"uuid\", guid());",
+									"",
+									"function guid() {",
+									"  function s4() {",
+									"    return Math.floor((1 + Math.random()) * 0x10000)",
+									"      .toString(16)",
+									"      .substring(1);",
+									"  }",
+									"  return 'variant-' + s4() + '-' + s4() + '-' + s4() + '-' +",
+									"    s4() + '-' + s4() + s4() + s4();",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"",
+									"pm.collectionVariables.set(\"variantName\", jsonData.entity.name);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\":\"{{uuid}}\",\n    \"description\":\"Generated Variant for testing\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/variants",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"variants"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateContentWithVariantDefault",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestVariant\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "EditContentWithNewVariant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let variantName = pm.collectionVariables.get(\"variantName\");",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check variant\", function () {",
+									"    pm.expect(jsonData.entity.variant).to.be.eql(variantName);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestVariant2\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\",\n        \"variantId\":\"{{variantName}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/EDIT?indexPolicy=WAIT_FOR&identifier={{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"EDIT"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								},
+								{
+									"key": "identifier",
+									"value": "{{identifier}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "EditContentWithExistingVariant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let variantName = pm.collectionVariables.get(\"variantName\");",
+									"let identifier = pm.collectionVariables.get(\"identifier\");",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check variant\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.identifier).to.be.eql(identifier);",
+									"    pm.expect(jsonData.entity.title).to.be.eql(\"TestVariant3\");",
+									"    pm.expect(jsonData.entity.variant).to.be.eql(variantName);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestVariant3\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/EDIT?indexPolicy=WAIT_FOR&identifier={{identifier}}&variantName={{variantName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"EDIT"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								},
+								{
+									"key": "identifier",
+									"value": "{{identifier}}"
+								},
+								{
+									"key": "variantName",
+									"value": "{{variantName}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckByContentAPI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let variantName = pm.collectionVariables.get(\"variantName\");",
+									"let identifier = pm.collectionVariables.get(\"identifier\");",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check variant\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.identifier).to.be.eql(identifier);",
+									"    pm.expect(jsonData.entity.title).to.be.eql(\"TestVariant3\");",
+									"    pm.expect(jsonData.entity.variant).to.be.eql(variantName);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/{{identifier}}?variantName={{variantName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{identifier}}"
+							],
+							"query": [
+								{
+									"key": "variantName",
+									"value": "{{variantName}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FireWithDefaultValue",
+			"item": [
+				{
+					"name": "CreateContentTypeWithDefaultValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"baseType\": \"CONTENT\",\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"fields-0\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"fields0\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"fields-1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"fields1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRadioField\",\n            \"dataType\": \"TEXT\",\n            \"defaultValue\": \"True\",\n            \"fieldType\": \"Radio\",\n            \"fieldTypeLabel\": \"Radio\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"TestRadio\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"values\": \"1|True\\r\\n0|False\",\n            \"variable\": \"testradio\"\n        }\n    ],\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"folderPath\": \"/\",\n    \"icon\": \"event_note\",\n    \"multilingualable\": false,\n    \"name\": \"TestContentType3\",\n    \"siteName\": \"demo.dotcms.com\",\n    \"system\": false,\n    \"systemActionMappings\": {},\n    \"variable\": \"TestContentType3\",\n    \"versionable\": true,\n    \"workflows\": [\n        {\n            \"archived\": false,\n            \"creationDate\": 1752786068588,\n            \"defaultScheme\": false,\n            \"description\": \"\",\n            \"entryActionId\": null,\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"mandatory\": false,\n            \"modDate\": 1752690077952,\n            \"name\": \"System Workflow\",\n            \"system\": true,\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FireTheTypeWithoutTheDefaultValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check testradio\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.testradio).to.be.eql(\"True\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost:8080",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"TestContentType3\",\n        \"title\": \"Test\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FireTheTypeWithTheDefaultValueOnBody",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check testradio\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.testradio).to.be.eql(\"False\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost:8080",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"TestContentType3\",\n        \"title\": \"Test\",\n        \"testradio\":\"False\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -19207,63 +19594,7 @@
 	],
 	"variable": [
 		{
-			"key": "italianLanguageId",
-			"value": ""
-		},
-		{
-			"key": "englishidentifier",
-			"value": ""
-		},
-		{
-			"key": "schemeId",
-			"value": ""
-		},
-		{
-			"key": "schemeIdShorty",
-			"value": ""
-		},
-		{
-			"key": "schemeVariableName",
-			"value": ""
-		},
-		{
-			"key": "temporalFileOneId",
-			"value": ""
-		},
-		{
-			"key": "contentletIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentletInode",
-			"value": ""
-		},
-		{
-			"key": "fireActionLanguageKey",
-			"value": ""
-		},
-		{
 			"key": "identifier",
-			"value": ""
-		},
-		{
-			"key": "frenchLanguageId",
-			"value": ""
-		},
-		{
-			"key": "stepId",
-			"value": ""
-		},
-		{
-			"key": "stepIdShorty",
-			"value": ""
-		},
-		{
-			"key": "actionId",
-			"value": ""
-		},
-		{
-			"key": "actionIdShorty",
 			"value": ""
 		}
 	]

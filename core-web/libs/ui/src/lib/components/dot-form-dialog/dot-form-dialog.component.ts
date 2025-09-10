@@ -7,7 +7,8 @@ import {
     Input,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -20,12 +21,14 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-form-dialog',
-    standalone: true,
     imports: [ButtonModule, FocusTrapModule, DotMessagePipe],
     templateUrl: './dot-form-dialog.component.html',
     styleUrls: ['./dot-form-dialog.component.scss']
 })
 export class DotFormDialogComponent implements OnInit, OnDestroy {
+    private dynamicDialog = inject(DynamicDialogRef);
+    private el = inject(ElementRef);
+
     destroy = new Subject();
     destroy$ = this.destroy.asObservable();
 
@@ -40,11 +43,6 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
 
     @Output()
     cancel: EventEmitter<MouseEvent> = new EventEmitter(null);
-
-    constructor(
-        private dynamicDialog: DynamicDialogRef,
-        private el: ElementRef
-    ) {}
 
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');

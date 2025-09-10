@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -35,13 +35,11 @@ enum ValidationError {
  */
 @Injectable()
 export class DotEditContentToolbarHtmlService {
-    isEnterpriseLicense: boolean;
+    private dotMessageService = inject(DotMessageService);
+    private dotDOMHtmlUtilService = inject(DotDOMHtmlUtilService);
+    private dotLicenseService = inject(DotLicenseService);
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
-        private dotLicenseService: DotLicenseService
-    ) {}
+    isEnterpriseLicense: boolean;
 
     /**
      * Add custom HTML buttons to the containers div

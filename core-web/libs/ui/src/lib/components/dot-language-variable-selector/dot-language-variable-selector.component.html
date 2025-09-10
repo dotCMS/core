@@ -1,0 +1,35 @@
+<div class="dot-language-variable-selector">
+    <p-autoComplete
+        #autoComplete
+        [appendTo]="'body'"
+        class="dot-language-variable-selector__autocomplete"
+        data-testid="language-variable-selector-input"
+        [placeholder]="'edit.content.wysiwyg-field.language-variable-placeholder' | dm"
+        [(ngModel)]="$selectedItem"
+        [ngModelOptions]="{ standalone: true }"
+        [suggestions]="$filteredSuggestions()"
+        [minLength]="1"
+        debounce="200"
+        (onHide)="onHideOverlay()"
+        tooltipEvent="focus"
+        (onSelect)="emitSelectLanguageVariable($event)"
+        (completeMethod)="loadSuggestions()"
+        [styleClass]="'dot-language-variable-selector__autocomplete--with-icon'">
+        <ng-template let-variable pTemplate="item">
+            <div
+                class="dot-language-variable-selector__item"
+                data-testid="language-variable-suggestion-item">
+                <div
+                    class="dot-language-variable-selector__item-value"
+                    data-testid="language-variable-suggestion-value">
+                    {{ variable.value }}
+                </div>
+                <div
+                    class="dot-language-variable-selector__item-key"
+                    data-testid="language-variable-suggestion-key"
+                    [innerHTML]="variable.key | dotHighlight: $selectedItem()"></div>
+            </div>
+        </ng-template>
+    </p-autoComplete>
+    <i class="dot-language-variable-selector__search-icon pi pi-search"></i>
+</div>

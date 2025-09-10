@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { MenuItem, SelectItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -109,6 +109,27 @@ export const SESSION_STORAGE_FAVORITES_KEY = 'FavoritesSearchTerms';
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
+    private dotCurrentUser = inject(DotCurrentUserService);
+    private dotRouterService = inject(DotRouterService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotESContentService = inject(DotESContentService);
+    private dotPageTypesService = inject(DotPageTypesService);
+    private dotMessageService = inject(DotMessageService);
+    private dialogService = inject(DialogService);
+    private dotLanguagesService = inject(DotLanguagesService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotPageWorkflowsActionsService = inject(DotPageWorkflowsActionsService);
+    private dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
+    private dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotEventsService = inject(DotEventsService);
+    private pushPublishService = inject(PushPublishService);
+    private siteService = inject(SiteService);
+    private dotFavoritePageService = inject(DotFavoritePageService);
+    private dotLocalstorageService = inject(DotLocalstorageService);
+    private dotPropertiesService = inject(DotPropertiesService);
+
     readonly getStatus$ = this.select((state) => state.pages.status);
 
     readonly getFilterParams$: Observable<DotSessionStorageFilter> = this.select((state) => {
@@ -440,28 +461,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         })
     );
 
-    constructor(
-        private dotCurrentUser: DotCurrentUserService,
-        private dotRouterService: DotRouterService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotESContentService: DotESContentService,
-        private dotPageTypesService: DotPageTypesService,
-        private dotMessageService: DotMessageService,
-        private dialogService: DialogService,
-        private dotLanguagesService: DotLanguagesService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotPageWorkflowsActionsService: DotPageWorkflowsActionsService,
-        private dotWorkflowsActionsService: DotWorkflowsActionsService,
-        private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotLicenseService: DotLicenseService,
-        private dotEventsService: DotEventsService,
-        private pushPublishService: PushPublishService,
-        private siteService: SiteService,
-        private dotFavoritePageService: DotFavoritePageService,
-        private dotLocalstorageService: DotLocalstorageService,
-        private dotPropertiesService: DotPropertiesService
-    ) {
+    constructor() {
         super(null);
     }
 

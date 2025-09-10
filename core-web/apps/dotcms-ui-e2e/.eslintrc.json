@@ -1,18 +1,22 @@
 {
-    "extends": ["plugin:cypress/recommended", "../../.eslintrc.base.json"],
+    "extends": ["plugin:playwright/recommended", "../../.eslintrc.base.json"],
     "ignorePatterns": ["!**/*"],
-    "rules": {},
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
             "rules": {}
         },
         {
-            "files": ["src/plugins/index.js"],
-            "rules": {
-                "@typescript-eslint/no-var-requires": "off",
-                "no-undef": "off"
-            }
+            "files": ["*.ts", "*.tsx"],
+            "rules": {}
+        },
+        {
+            "files": ["*.js", "*.jsx"],
+            "rules": {}
+        },
+        {
+            "files": ["src/**/*.{ts,js,tsx,jsx}"],
+            "rules": {}
         }
     ]
 }

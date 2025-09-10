@@ -33,7 +33,7 @@ RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat && \
 # ----------------------------------------------
 # Stage 2: Final stage for minimal runtime image
 # ----------------------------------------------
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 LABEL com.dotcms.contact="support@dotcms.com" \
       com.dotcms.vendor="dotCMS LLC" \
@@ -52,7 +52,7 @@ RUN apt update && \
         libtcnative-1 \
         tzdata \
         ca-certificates \
-        libjemalloc2 \
+        libmimalloc2.0 \
         openssl \
         libapr1 \
         libpq-dev && \
@@ -62,9 +62,10 @@ RUN apt update && \
 RUN apt update && \
     apt install -y --no-install-recommends postgresql-common && \
     /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+    apt update && \
     apt install -y --no-install-recommends postgresql-client-16 && \
-    apt purge -y postgresql-common gnupg && \
     /usr/bin/pg_dump --version || exit 1 && \
+    apt purge -y postgresql-common && \
     rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"
@@ -92,6 +93,10 @@ CMD ["dotcms"]
 EXPOSE 4000
 # Java Debugging - must be configured via CMS_JAVA_OPTS
 EXPOSE 8000
+# JMX Remote Monitoring - must be configured via CMS_JAVA_OPTS
+EXPOSE 9999
+# JMX RMI Port - must be configured via CMS_JAVA_OPTS  
+EXPOSE 9998
 # Direct connect
 EXPOSE 8080
 # Connect from proxy, HTTP/80, non-secure

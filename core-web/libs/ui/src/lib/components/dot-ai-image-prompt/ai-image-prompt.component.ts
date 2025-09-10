@@ -1,4 +1,3 @@
-import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
@@ -17,12 +16,10 @@ import { DotAiImagePromptStore } from './store/ai-image-prompt.store';
 
 @Component({
     selector: 'dot-ai-image-prompt',
-    standalone: true,
     templateUrl: './ai-image-prompt.component.html',
     styleUrls: ['./ai-image-prompt.component.scss'],
     imports: [
         DialogModule,
-        AsyncPipe,
         DotMessagePipe,
         ButtonModule,
         ConfirmDialogModule,

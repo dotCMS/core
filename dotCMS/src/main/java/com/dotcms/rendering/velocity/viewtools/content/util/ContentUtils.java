@@ -234,7 +234,7 @@ public class ContentUtils {
 				//need to send the query with the defaults --- 
 			    List<Contentlet> contentlets=null;
 			    if(tmDate!=null && query.contains("+live:true")) {
-			        // with timemachine on!
+			        // with time machine on!
                     final Date futureDate = new Date(Long.parseLong(tmDate));
                     query = query.replaceAll("\\+live\\:true", "")
                             .replaceAll("\\+working\\:true", "");
@@ -282,12 +282,11 @@ public class ContentUtils {
 	    	            });
 		            }
 		            
-		            // truncate to respect limit
-		            if(contentlets.size()>limit){
+		            // truncate to respect limit, remember 0 means no limit
+		            if(limit > 0 && contentlets.size() > limit){
 		                contentlets = contentlets.subList(0, limit);
 		            }
-			    }
-			    else {
+			    } else {
 			        // normal query
 			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, respectFrontendRoles);
 			        ret.setTotalResults(conts.getTotalResults());

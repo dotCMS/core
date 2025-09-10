@@ -9,7 +9,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-ema-form-selector',
-    standalone: true,
     imports: [CommonModule, TableModule, ButtonModule, DotMessagePipe],
     templateUrl: './ema-form-selector.component.html',
     styleUrls: ['./ema-form-selector.component.scss'],

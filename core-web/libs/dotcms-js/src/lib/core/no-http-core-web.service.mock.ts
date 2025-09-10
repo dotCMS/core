@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { delay } from 'rxjs/operators';
 
@@ -9,7 +9,7 @@ import { ResponseView } from './util/response-view';
 
 @Injectable()
 export class NoHttpCoreWebServiceMock {
-    constructor(private data: any) {}
+    private data = inject(any);
 
     public requestView(): Observable<ResponseView<any>> {
         return of(

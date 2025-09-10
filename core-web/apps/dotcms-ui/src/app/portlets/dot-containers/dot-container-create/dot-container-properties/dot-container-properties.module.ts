@@ -9,18 +9,20 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import {
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-create/dot-container-code/dot-container-code.module';
-import { DotContainerPropertiesComponent } from '@portlets/dot-containers/dot-container-create/dot-container-properties/dot-container-properties.component';
-import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-create/dot-loop-editor/dot-loop-editor.module';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+
+import { DotContainerPropertiesComponent } from './dot-container-properties.component';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { DotTextareaContentModule } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotPortletBaseModule } from '../../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotContentEditorModule } from '../dot-container-code/dot-container-code.module';
+import { DotLoopEditorModule } from '../dot-loop-editor/dot-loop-editor.module';
 
 @NgModule({
     declarations: [DotContainerPropertiesComponent],

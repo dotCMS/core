@@ -3,18 +3,19 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
+import { DotCMSBasicContentlet } from '@dotcms/types';
+
 import { FallbackComponent } from '../../components/FallbackComponent/FallbackComponent';
 import * as useIsDevModeHook from '../../hooks/useIsDevMode';
-import { DotCMSContentlet } from '../../types';
 
 jest.mock('../../hooks/useIsDevMode', () => ({
     useIsDevMode: jest.fn()
 }));
 
 const { useIsDevMode } = useIsDevModeHook as jest.Mocked<typeof useIsDevModeHook>;
-const MOCK_DUMMY_CONTENTLET = { contentType: 'test-type' } as unknown as DotCMSContentlet;
+const MOCK_DUMMY_CONTENTLET = { contentType: 'test-type' } as unknown as DotCMSBasicContentlet;
 
-const CustomNoComponent: React.FC<DotCMSContentlet> = ({ contentType }) => (
+const CustomNoComponent: React.FC<DotCMSBasicContentlet> = ({ contentType }) => (
     <div data-testid="custom-no-component">
         Custom Component for <strong>{contentType}</strong>.
     </div>
@@ -37,7 +38,9 @@ describe('FallbackComponent', () => {
         test('should render default NoComponent when is in development mode and no custom component is provided', () => {
             render(
                 <FallbackComponent
-                    UserNoComponent={undefined as unknown as React.ComponentType<DotCMSContentlet>}
+                    UserNoComponent={
+                        undefined as unknown as React.ComponentType<DotCMSBasicContentlet>
+                    }
                     contentlet={MOCK_DUMMY_CONTENTLET}
                 />
             );

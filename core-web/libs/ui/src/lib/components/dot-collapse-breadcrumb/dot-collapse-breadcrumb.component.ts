@@ -16,7 +16,6 @@ import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
  */
 @Component({
     imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterModule, BreadcrumbModule],
-    standalone: true,
     selector: 'dot-collapse-breadcrumb',
     templateUrl: './dot-collapse-breadcrumb.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -34,6 +33,12 @@ export class DotCollapseBreadcrumbComponent {
      * @memberof DotCollapseBreadcrumbComponent
      */
     $maxItems = input<number>(MAX_ITEMS, { alias: 'maxItems' });
+    /**
+     * Style class to apply to the component
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
+    $styleClass = input<string>('', { alias: 'styleClass' });
     /**
      * Items to show
      *

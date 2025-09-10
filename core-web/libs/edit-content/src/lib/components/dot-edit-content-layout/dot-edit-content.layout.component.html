@@ -1,31 +1,65 @@
 @if ($store.isLoaded() || $store.isSaving()) {
-    @let contentType = $store.contentType();
-    @let variable = contentType.variable;
     @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
+    @let lockWarningMessage = $store.lockWarningMessage();
+    @let showBetaMessage = $store.isBetaMessageVisible();
 
-    <div class="edit-content-layout__topBar" data-testId="edit-content-layout__topBar">
-        @if ($store.isEnabledNewContentEditor()) {
+    @let isEnabledNewContentEditor = $store.isEnabledNewContentEditor();
+
+    @let topBarHasMessages =
+        (isEnabledNewContentEditor && showBetaMessage) ||
+        lockWarningMessage ||
+        showSelectWorkflowWarning;
+    <div
+        class="edit-content-layout__topBar"
+        data-testId="edit-content-layout__topBar"
+        [class.edit-content-layout__topBar--beta-message-visible]="topBarHasMessages">
+        <!-- TODO: Improve this to use all the messages as a service -->
+        @if (isEnabledNewContentEditor && showBetaMessage) {
             <p-messages
                 styleClass="edit-content-layout__beta-message"
-                severity="success"
+                severity="info"
                 data-testId="edit-content-layout__beta-message">
                 <ng-template pTemplate>
-                    <i class="pi pi-info-circle"></i>
-                    <div>
-                        <span
-                            [innerHTML]="
-                                ('edit.content.layout.back.to.old.edit.content' | dm) + ' '
-                            "></span>
-                        <a
-                            [routerLink]="'/content-types-angular/edit/' + variable"
-                            data-testId="beta-message-content-type">
-                            {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
-                        </a>
-                        <span>
-                            {{ ' '
-                            }}{{ 'edit.content.layout.back.to.old.edit.content.subtitle' | dm }}
-                        </span>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-info-circle"></i>
+                        <div
+                            class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__beta-message-content">
+                            {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
+                            <a
+                                href="#"
+                                (click)="$event.preventDefault(); $store.disableNewContentEditor()"
+                                data-testId="edit-content-layout__beta-message-link">
+                                {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
+                            </a>
+                            {{ 'edit.content.layout.back.to.old.edit.content.subtitle' | dm }}
+                        </div>
+
+                        <button
+                            type="button"
+                            pButton
+                            icon="pi pi-times"
+                            rounded="true"
+                            data-testId="edit-content-layout__beta-message-close-button"
+                            (click)="closeMessage('betaMessage')"
+                            severity="info"
+                            text="true"
+                            size="small"></button>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
+
+        @if (lockWarningMessage) {
+            <p-messages severity="warning" data-testId="edit-content-layout__lock-warning">
+                <ng-template pTemplate>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-exclamation-triangle"></i>
+                        <div
+                            class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__lock-warning-content"
+                            [innerHTML]="lockWarningMessage"></div>
                     </div>
                 </ng-template>
             </p-messages>
@@ -34,25 +68,28 @@
         @if (showSelectWorkflowWarning) {
             <p-messages
                 styleClass="edit-content-layout__select-workflow-warning"
-                severity="warn"
+                severity="warning"
                 data-testId="edit-content-layout__select-workflow-warning">
                 <ng-template pTemplate>
-                    <i class="pi pi-info-circle"></i>
-                    <div>
-                        <span
-                            [innerHTML]="
-                                ('edit.content.layout.select.workflow.warning' | dm) + ' '
-                            "></span>
-                        <a
-                            href="#"
-                            data-testId="select-workflow-link"
-                            (click)="$event.preventDefault(); selectWorkflow()">
-                            {{ 'edit.content.layout.select.workflow.warning.switch' | dm }}
-                        </a>
-                        <span
-                            [innerHTML]="
-                                ('edit.content.layout.select.workflow.warning.subtitle' | dm) + ' '
-                            "></span>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-info-circle"></i>
+                        <div class="flex align-items-center mr-auto gap-1">
+                            <span
+                                [innerHTML]="
+                                    ('edit.content.layout.select.workflow.warning' | dm) + ' '
+                                "></span>
+                            <a
+                                href="#"
+                                data-testId="select-workflow-link"
+                                (click)="$event.preventDefault(); selectWorkflow()">
+                                {{ 'edit.content.layout.select.workflow.warning.switch' | dm }}
+                            </a>
+                            <span
+                                [innerHTML]="
+                                    ('edit.content.layout.select.workflow.warning.subtitle' | dm) +
+                                    ' '
+                                "></span>
+                        </div>
                     </div>
                 </ng-template>
             </p-messages>

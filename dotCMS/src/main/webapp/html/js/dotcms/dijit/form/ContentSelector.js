@@ -363,6 +363,7 @@ dojo.declare(
 
         // DOTCMS-3896
         _renderSearchField: function (field) {
+
             var fieldVelocityVarName = field['fieldVelocityVarName'];
             var fieldContentlet = field['fieldContentlet'];
             var value = '';
@@ -401,7 +402,6 @@ dojo.declare(
                             this.structureVelVar +
                             '.' +
                             fieldVelocityVarName +
-                            this.dialogCounter +
                             '"> ' +
                             actual_option[0] +
                             '<br>\n';
@@ -1040,7 +1040,7 @@ dojo.declare(
                             values = formField.value;
                             name = formField.name.substring(
                                 0,
-                                formField.name.length - 1
+                                formField.name.length
                             );
                             fieldsValues[fieldsValues.length] = name;
                             fieldsValues[fieldsValues.length] = values;
@@ -1174,6 +1174,16 @@ dojo.declare(
             //Filling Headers
             var row = table.insertRow(table.rows.length);
 
+            // Add checkbox/select column header FIRST
+            var cell = row.insertCell(row.cells.length);
+            cell.setAttribute('class', 'beta');
+            cell.setAttribute('className', 'beta');
+            if (this.multiple == 'true') {
+                cell.innerHTML = '<b>Select</b>';
+            } else {
+                cell.innerHTML = '<b></b>'; // Empty for single select
+            }
+
             var cell = row.insertCell(row.cells.length);
             cell.setAttribute('class', 'beta');
             cell.setAttribute('className', 'beta');
@@ -1194,11 +1204,6 @@ dojo.declare(
             cell.setAttribute('style', 'min-width:120px;');
             cell.innerHTML =
                 '<b>' + this.availableLanguages[0]['title'] + '</b>';
-
-            var cell = row.insertCell(row.cells.length);
-            cell.setAttribute('class', 'beta');
-            cell.setAttribute('className', 'beta');
-            cell.setAttribute('width', '5%');
 
             var style = document.createElement('style');
             style.type = 'text/css';
@@ -1232,7 +1237,7 @@ dojo.declare(
 
                 // Select button functionality
                 var selected = function (scope, content) {
-                    if (this.useRelateContentOnSelect) {
+                    if (scope.useRelateContentOnSelect) {
                         scope._doRelateContent(content);
                     } else {
                         scope._onContentSelected(content);
@@ -1249,6 +1254,15 @@ dojo.declare(
                             asset
                         );
                     }
+                }
+
+                // Add checkbox/select button cell FIRST
+                var cell = row.insertCell(row.cells.length);
+                cell.setAttribute('id', i);
+                if (this.multiple == 'true') {
+                    cell.innerHTML = this._checkButton(cellData);
+                } else {
+                    cell.innerHTML = this._selectButton(cellData);
                 }
 
                 var cell = row.insertCell(row.cells.length);
@@ -1302,14 +1316,6 @@ dojo.declare(
                             ')';
                     }
                 }
-
-                var cell = row.insertCell(row.cells.length);
-                cell.setAttribute('id', i);
-                if (this.multiple == 'true') {
-                    cell.innerHTML = this._checkButton(cellData);
-                } else {
-                    cell.innerHTML = this._selectButton(cellData);
-                }
             }
 
             //dojo.parser.parse("results_table_popup_menus");
@@ -1322,6 +1328,7 @@ dojo.declare(
                     );
                     if (selectButton.onclick == undefined) {
                         selectButton.onclick = dojo.hitch(this, function (event) {
+                            event.stopPropagation();
                             selected(this, asset);
                         });
                     }

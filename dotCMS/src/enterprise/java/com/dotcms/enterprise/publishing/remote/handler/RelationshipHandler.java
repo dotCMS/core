@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.wrapper.RelationshipWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
@@ -28,6 +29,7 @@ import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
+
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -48,7 +50,7 @@ import java.util.Collection;
  */
 public class RelationshipHandler implements IHandler {
 
-	private PublisherConfig config;
+	private final PublisherConfig config;
 
 	public RelationshipHandler(PublisherConfig config) {
 		this.config = config;
@@ -121,10 +123,10 @@ public class RelationshipHandler implements IHandler {
 				}
 			}
 		} catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when processing Relationship in '%s' with ID " +
-                    "'%s': %s", workingOn, (null == relationshipToPublish ? "(empty)" : relationshipToPublish
+            final String errorMsg = String.format("An error occurred when processing Relationship in '%s' with type value " +
+                    "'%s' [%s]: %s", workingOn, (null == relationshipToPublish ? "(empty)" : relationshipToPublish
                     .getRelationTypeValue()), (null == relationshipToPublish ? "(empty)" : relationshipToPublish
-                    .getInode()), e.getMessage());
+                    .getInode()), ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
 		}

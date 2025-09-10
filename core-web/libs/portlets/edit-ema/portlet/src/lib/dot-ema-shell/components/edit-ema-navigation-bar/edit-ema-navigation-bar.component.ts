@@ -1,19 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    inject
+} from '@angular/core';
 import { RouterModule } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { NavigationBarItem } from '../../../shared/models';
+import { UVEStore } from '../../../store/dot-uve.store';
 @Component({
     selector: 'dot-edit-ema-navigation-bar',
-    standalone: true,
     templateUrl: './edit-ema-navigation-bar.component.html',
     styleUrls: ['./edit-ema-navigation-bar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, RouterModule, DotMessagePipe, TooltipModule]
+    imports: [CommonModule, RouterModule, DotMessagePipe, TooltipModule, ButtonModule]
 })
 export class EditEmaNavigationBarComponent {
     /**
@@ -32,6 +40,12 @@ export class EditEmaNavigationBarComponent {
      */
     @Output() action: EventEmitter<string> = new EventEmitter();
 
+    uveStore = inject(UVEStore);
+
+    $editorProps = this.uveStore.$editorProps;
+
+    $params = this.uveStore.pageParams;
+
     /**
      * Handle the click event on the item
      *
@@ -40,5 +54,9 @@ export class EditEmaNavigationBarComponent {
      */
     itemAction(item: NavigationBarItem): void {
         this.action.emit(item.id);
+    }
+
+    togglePalette(): void {
+        this.uveStore.setPaletteOpen(!this.uveStore.paletteOpen());
     }
 }

@@ -1,26 +1,27 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
-import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotContentTypeService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotIframeService,
     DotLicenseService,
     DotPropertiesService,
     DotRouterService,
-    DotIframeService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotContentCompareEvent, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+
+import { DotCMSEditPageEvent } from '../../../view/components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
+import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotNavLogoService } from '../dot-nav-logo/dot-nav-logo.service';
+import { DotUiColorsService } from '../dot-ui-colors/dot-ui-colors.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 
@@ -32,25 +33,25 @@ export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
  */
 @Injectable()
 export class DotCustomEventHandlerService {
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dotRouterService = inject(DotRouterService);
+    private dotUiColorsService = inject(DotUiColorsService);
+    private dotNavLogoService = inject(DotNavLogoService);
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotIframeService = inject(DotIframeService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
+    private dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
+    private dotGenerateSecurePasswordService = inject(DotGenerateSecurePasswordService);
+    private dotEventsService = inject(DotEventsService);
+    private dotLicenseService = inject(DotLicenseService);
+    private router = inject(Router);
+    private dotPropertiesService = inject(DotPropertiesService);
+    private dotContentTypeService = inject(DotContentTypeService);
+
     private handlers: Record<string, ($event: CustomEvent) => void>;
 
-    constructor(
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotRouterService: DotRouterService,
-        private dotUiColorsService: DotUiColorsService,
-        private dotNavLogoService: DotNavLogoService,
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotIframeService: DotIframeService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotDownloadBundleDialogService: DotDownloadBundleDialogService,
-        private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
-        private dotGenerateSecurePasswordService: DotGenerateSecurePasswordService,
-        private dotEventsService: DotEventsService,
-        private dotLicenseService: DotLicenseService,
-        private router: Router,
-        private dotPropertiesService: DotPropertiesService,
-        private dotContentTypeService: DotContentTypeService
-    ) {
+    constructor() {
         this.dotPropertiesService
             .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
             .subscribe((response) => {

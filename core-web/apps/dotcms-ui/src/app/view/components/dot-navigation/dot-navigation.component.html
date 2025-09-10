@@ -1,5 +1,7 @@
 @let isCollapsed = $isCollapsed();
+
 <nav [class.collapsed]="isCollapsed" role="navigation">
+    <dot-nav-header [isCollapsed]="isCollapsed" (toggle)="handleCollapseButtonClick()" />
     <ul class="dot-nav">
         @for (item of $menu(); track item) {
             <li [class.dot-nav__list-item--active]="item.isOpen" class="dot-nav__list-item">

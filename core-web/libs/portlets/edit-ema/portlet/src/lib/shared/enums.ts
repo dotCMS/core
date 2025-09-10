@@ -48,3 +48,8 @@ export enum FormStatus {
     SAVED = 'SAVED',
     PRISTINE = 'PRISTINE'
 }
+
+export enum PALETTE_CLASSES {
+    OPEN = 'open',
+    CLOSED = 'closed'
+}

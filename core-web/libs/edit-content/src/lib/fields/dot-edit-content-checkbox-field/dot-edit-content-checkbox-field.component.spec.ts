@@ -105,4 +105,123 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             });
         });
     });
+
+    describe('test with value (string, pipe, comma, boolean, numeric)', () => {
+        let spectator: Spectator<DotEditContentCheckboxFieldComponent>;
+
+        const createComponent = createComponentFactory({
+            component: DotEditContentCheckboxFieldComponent,
+            componentViewProviders: [
+                {
+                    provide: ControlContainer,
+                    useValue: createFormGroupDirectiveMock(
+                        new FormGroup({ check: new FormControl('1,2') })
+                    )
+                }
+            ],
+            providers: [FormGroupDirective],
+            detectChanges: false
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+        });
+
+        it('should render checkboxes for pipe format', () => {
+            const field = {
+                ...CHECKBOX_FIELD_MOCK,
+                values: 'foo|1\r\nbar|2',
+                variable: 'check'
+            };
+            spectator.setInput('field', field);
+            spectator.detectComponentChanges();
+            const checkboxes = spectator.queryAll(Checkbox);
+            expect(checkboxes.length).toBe(2);
+            expect(checkboxes[0].label).toBe('foo');
+            expect(checkboxes[0].value).toBe('1');
+            expect(checkboxes[1].label).toBe('bar');
+            expect(checkboxes[1].value).toBe('2');
+        });
+
+        it('should render checkboxes for label-only format', () => {
+            const field = {
+                ...CHECKBOX_FIELD_MOCK,
+                values: 'label1\r\nlabel2',
+                variable: 'check'
+            };
+            spectator.setInput('field', field);
+            spectator.detectComponentChanges();
+            const checkboxes = spectator.queryAll(Checkbox);
+            expect(checkboxes.length).toBe(2);
+            expect(checkboxes[0].label).toBe('label1');
+            expect(checkboxes[0].value).toBe('label1');
+            expect(checkboxes[1].label).toBe('label2');
+            expect(checkboxes[1].value).toBe('label2');
+        });
+
+        it('should render checkboxes for comma format', () => {
+            const field = {
+                ...CHECKBOX_FIELD_MOCK,
+                values: '1,2,3',
+                variable: 'check'
+            };
+            spectator.setInput('field', field);
+            spectator.detectComponentChanges();
+            const checkboxes = spectator.queryAll(Checkbox);
+            expect(checkboxes.length).toBe(3);
+            expect(checkboxes[0].label).toBe('1');
+            expect(checkboxes[0].value).toBe('1');
+            expect(checkboxes[1].label).toBe('2');
+            expect(checkboxes[1].value).toBe('2');
+            expect(checkboxes[2].label).toBe('3');
+            expect(checkboxes[2].value).toBe('3');
+        });
+
+        it('should render checkboxes for boolean values', () => {
+            const field = {
+                ...CHECKBOX_FIELD_MOCK,
+                values: '|true\r\n|false',
+                dataType: 'BOOL',
+                variable: 'check'
+            };
+            spectator.setInput('field', field);
+            spectator.detectComponentChanges();
+            const checkboxes = spectator.queryAll(Checkbox);
+            expect(checkboxes.length).toBe(2);
+            expect(checkboxes[0].label).toBe(null);
+            expect(checkboxes[0].value).toBe(true);
+            expect(checkboxes[1].label).toBe(null);
+            expect(checkboxes[1].value).toBe(false);
+        });
+
+        it('should render checkboxes for numeric values', () => {
+            const field = {
+                ...CHECKBOX_FIELD_MOCK,
+                values: '1,2,3',
+                dataType: 'INTEGER',
+                variable: 'check'
+            };
+            spectator.setInput('field', field);
+            spectator.detectComponentChanges();
+            const checkboxes = spectator.queryAll(Checkbox);
+            expect(checkboxes.length).toBe(3);
+            expect(checkboxes[0].value).toBe(1);
+            expect(checkboxes[1].value).toBe(2);
+            expect(checkboxes[2].value).toBe(3);
+        });
+
+        it('should render no checkboxes for empty, null or whitespace values', () => {
+            const cases = ['', null, undefined, '   '];
+            for (const val of cases) {
+                const field = {
+                    ...CHECKBOX_FIELD_MOCK,
+                    values: val,
+                    variable: 'check'
+                };
+                spectator.setInput('field', field);
+                spectator.detectComponentChanges();
+                expect(spectator.queryAll(Checkbox).length).toBe(0);
+            }
+        });
+    });
 });

@@ -19,6 +19,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,6 +54,7 @@ import java.util.Set;
  @author jsanca
  */
 @Path("/environment")
+@Tag(name = "Environment")
 public class EnvironmentResource {
 
 	public static final String THE_USER_KEY = "The user: ";

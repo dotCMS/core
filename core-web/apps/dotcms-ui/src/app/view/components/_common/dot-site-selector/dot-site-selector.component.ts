@@ -4,6 +4,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    inject,
     Input,
     OnChanges,
     OnDestroy,
@@ -18,6 +19,8 @@ import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
+import { SiteEntity } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 
@@ -35,9 +38,15 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component';
     selector: 'dot-site-selector',
     styleUrls: ['./dot-site-selector.component.scss'],
     templateUrl: 'dot-site-selector.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
+    #globalStore = inject(GlobalStore);
+    private siteService = inject(SiteService);
+    paginationService = inject(PaginatorService);
+    private dotEventsService = inject(DotEventsService);
+
     @Input() archive: boolean;
     @Input() id: string;
     @Input() live: boolean;
@@ -59,12 +68,6 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private siteService: SiteService,
-        public paginationService: PaginatorService,
-        private dotEventsService: DotEventsService
-    ) {}
-
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
         this.paginationService.setExtraParams('archive', this.archive);
@@ -85,9 +88,9 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
                 });
         });
 
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe((site) => {
             setTimeout(() => {
-                this.updateCurrentSite(this.siteService.currentSite);
+                this.updateCurrentSite(site);
             }, 200);
         });
     }
@@ -170,6 +173,8 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
      * @memberof DotSiteSelectorComponent
      */
     siteChange(site: Site): void {
+        // Set the current site in the global store
+        this.#globalStore.setCurrentSite(site as unknown as SiteEntity);
         this.switch.emit(site);
     }
     /**

@@ -5,13 +5,15 @@ import { EMPTY, pipe } from 'rxjs';
 
 import { inject } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import { DotPageApiResponse, DotPageApiService } from '../../../../services/dot-page-api.service';
+import { DotCMSPageAsset } from '@dotcms/types';
+
+import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
-import { withClient } from '../../client/withClient';
+import { withLoad } from '../../load/withLoad';
 
 /**
  * Add methods to save the page
@@ -24,7 +26,7 @@ export function withSave() {
         {
             state: type<UVEState>()
         },
-        withClient(),
+        withLoad(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
 
@@ -44,30 +46,36 @@ export function withSave() {
                             };
 
                             return dotPageApiService.save(payload).pipe(
-                                switchMap(() =>
-                                    dotPageApiService
-                                        .getClientPage(
-                                            store.pageParams(),
-                                            store.clientRequestProps()
-                                        )
-                                        .pipe(
-                                            tapResponse(
-                                                (pageAPIResponse: DotPageApiResponse) => {
-                                                    patchState(store, {
-                                                        status: UVE_STATUS.LOADED,
-                                                        pageAPIResponse: pageAPIResponse
-                                                    });
-                                                },
-                                                (e) => {
-                                                    console.error(e);
+                                switchMap(() => {
+                                    const pageRequest = !store.graphql()
+                                        ? dotPageApiService.get(store.pageParams())
+                                        : dotPageApiService
+                                              .getGraphQLPage(store.$graphqlWithParams())
+                                              .pipe(
+                                                  tap((response) =>
+                                                      store.setGraphqlResponse(response)
+                                                  ),
+                                                  map((response) => response.pageAsset)
+                                              );
 
-                                                    patchState(store, {
-                                                        status: UVE_STATUS.ERROR
-                                                    });
-                                                }
-                                            )
+                                    return pageRequest.pipe(
+                                        tapResponse(
+                                            (pageAPIResponse: DotCMSPageAsset) => {
+                                                patchState(store, {
+                                                    status: UVE_STATUS.LOADED,
+                                                    pageAPIResponse: pageAPIResponse
+                                                });
+                                            },
+                                            (e) => {
+                                                console.error(e);
+
+                                                patchState(store, {
+                                                    status: UVE_STATUS.ERROR
+                                                });
+                                            }
                                         )
-                                ),
+                                    );
+                                }),
                                 catchError((e) => {
                                     console.error(e);
                                     patchState(store, {

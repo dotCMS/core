@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -44,16 +44,13 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
-    standalone: true,
     imports: [
         CommonModule,
         DotMessagePipe,
         DotIconModule,
-        DotExperimentsConfigurationVariantsAddComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
-
         //PrimeNg
         CardModule,
         InplaceModule,
@@ -69,6 +66,12 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
             tap(({ status }) => this.handleSidebar(status))
@@ -82,14 +85,6 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly DotExperimentStatusList = DotExperimentStatus;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
     protected readonly url = this.getUrl();
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute
-    ) {}
 
     /**
      * Edit the name of the selected variant
@@ -223,8 +218,11 @@ export class DotExperimentsConfigurationVariantsComponent {
             );
         } catch {
             // Fallback to relative URL using window.location.origin
+            const cleanProcessedUrl = processedUrl.startsWith('/')
+                ? processedUrl.substring(1)
+                : processedUrl;
             url = new URL(
-                `${window.location.origin}/${processedUrl}${
+                `${window.location.origin}/${cleanProcessedUrl}${
                     processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );

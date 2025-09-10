@@ -1,12 +1,10 @@
 package com.dotcms.ai.util;
 
 import com.dotmarketing.exception.DotRuntimeException;
-import com.liferay.util.StringPool;
+import com.dotmarketing.util.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Objects;
 
 /***
@@ -17,12 +15,10 @@ import java.util.Objects;
  */
 public class LineReadingOutputStream extends OutputStream {
 
-    private static final byte CR = '\r';
-    private static final byte LF = '\n';
-
     private final OutputStream consumer;
-    private final StringBuilder stringBuilder = new StringBuilder();
-    private boolean lastCR = false;
+    private final byte[] buffer = new byte[8192]; // 8KB buffer
+    private int bufferPos = 0;
+    private boolean lastWasCR = false;
 
     public LineReadingOutputStream(final OutputStream consumer) {
         this.consumer = Objects.requireNonNull(consumer);
@@ -30,7 +26,9 @@ public class LineReadingOutputStream extends OutputStream {
 
     @Override
     public void write(final int b) throws IOException {
-        write(new byte[]{(byte) b}, 0, 1);
+        // Handle single byte write
+        byte[] singleByte = {(byte) b};
+        write(singleByte, 0, 1);
     }
 
     @Override
@@ -46,61 +44,71 @@ public class LineReadingOutputStream extends OutputStream {
             throw new IndexOutOfBoundsException();
         }
 
-        if (this.lastCR && start < end && b[start] == LF) {
-            start++;
-            this.lastCR = false;
-        } else if (start < end) {
-            this.lastCR = b[end - 1] == CR;
-        }
+        try {
+            // Process each byte in the input
+            for (int i = start; i < end; i++) {
+                byte currentByte = b[i];
 
-        int base = start;
-        for (int i = start; i < end; i++) {
-            if (b[i] == LF || b[i] == CR) {
-                final String chunk = asString(b, base, i);
-                this.stringBuilder.append(chunk);
-                consume();
-            }
-            if (b[i] == LF) {
-                base = i + 1;
-            } else if (b[i] == CR) {
-                if (i < end - 1 && b[i + 1] == LF) {
-                    base = i + 2;
-                    i++;
+                // Check for line endings
+                if (currentByte == '\n' || (currentByte == '\r' && !lastWasCR)) {
+                    // We found a line ending, flush the buffer
+                    flushBuffer();
+                    // Write the newline character to ensure proper line breaks
+                    consumer.write('\n');
+                    consumer.flush();
+                    lastWasCR = (currentByte == '\r');
+                } else if (lastWasCR) {
+                    // Previous was CR but current is not LF, so CR was a line ending
+                    // Add the current byte to the buffer
+                    addToBuffer(currentByte);
+                    lastWasCR = false;
                 } else {
-                    base = i + 1;
+                    // Regular character, add to buffer
+                    addToBuffer(currentByte);
                 }
             }
+        } catch (IOException e) {
+            Logger.error(this, "Error writing to output stream", e);
+            throw new DotRuntimeException(e);
         }
-        final String chunk = asString(b, base, end);
-        this.stringBuilder.append(chunk);
+    }
+
+    private void addToBuffer(byte b) {
+        // Expand buffer if needed
+        if (bufferPos >= buffer.length) {
+            flushBuffer();
+        }
+        buffer[bufferPos++] = b;
+    }
+
+    private void flushBuffer() {
+        try {
+            if (bufferPos > 0) {
+                // Write the buffered content directly to the consumer
+                consumer.write(buffer, 0, bufferPos);
+                bufferPos = 0; // Reset buffer position
+            }
+        } catch (IOException e) {
+            Logger.error(this, "Error flushing buffer", e);
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    @Override
+    public void flush() throws IOException {
+        flushBuffer();
+        consumer.flush();
     }
 
     @Override
     public void close() {
-        if (this.stringBuilder.length() != 0) {
-            consume();
-        }
-    }
-
-    private static String asString(final byte[] b, final int start, final int end) {
-        if (start > end) {
-            throw new IllegalArgumentException();
-        }
-        if (start == end) {
-            return StringPool.BLANK;
-        }
-        final byte[] copy = Arrays.copyOfRange(b, start, end);
-        return new String(copy, StandardCharsets.UTF_8);
-    }
-
-    private void consume() {
         try {
-            this.consumer.write(this.stringBuilder.toString().getBytes());
-            this.consumer.write('\n');
-            this.consumer.flush();
-        } catch (Exception e) {
+            flushBuffer(); // Make sure any remaining content is written
+            consumer.flush();
+            consumer.close();
+        } catch (IOException e) {
+            Logger.error(this, "Error closing output stream", e);
             throw new DotRuntimeException(e);
         }
-        this.stringBuilder.delete(0, Integer.MAX_VALUE);
     }
 }

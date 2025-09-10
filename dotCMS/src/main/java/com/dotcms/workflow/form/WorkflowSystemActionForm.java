@@ -1,6 +1,6 @@
 package com.dotcms.workflow.form;
 
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.fasterxml.jackson.annotation.JsonProperty;

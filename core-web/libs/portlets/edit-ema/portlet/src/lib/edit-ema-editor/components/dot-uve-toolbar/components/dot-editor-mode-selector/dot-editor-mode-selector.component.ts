@@ -13,14 +13,13 @@ import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAnalyticsTrackerService } from '@dotcms/data-access';
+import { UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-editor-mode-selector',
-    standalone: true,
     imports: [TooltipModule, MenuModule, ButtonModule, DotMessagePipe, NgClass],
     templateUrl: './dot-editor-mode-selector.component.html',
     styleUrl: './dot-editor-mode-selector.component.scss',
@@ -62,20 +61,15 @@ export class DotEditorModeSelectorComponent {
         return this.$menuItems().find((item) => item.id === this.$currentMode())?.label;
     });
 
-    readonly $modeGuardEffect = effect(
-        () => {
-            const currentMode = untracked(() => this.$currentMode());
-            const canEditPage = this.#store.canEditPage();
+    readonly $modeGuardEffect = effect(() => {
+        const currentMode = untracked(() => this.$currentMode());
+        const canEditPage = this.#store.canEditPage();
 
-            // If the user is in edit mode and does not have edit permission, change to preview mode
-            if (currentMode === UVE_MODE.EDIT && !canEditPage) {
-                this.onModeChange(UVE_MODE.PREVIEW);
-            }
-        },
-        {
-            allowSignalWrites: true
+        // If the user is in edit mode and does not have edit permission, change to preview mode
+        if (currentMode === UVE_MODE.EDIT && !canEditPage) {
+            this.onModeChange(UVE_MODE.PREVIEW);
         }
-    );
+    });
 
     onModeChange(mode: UVE_MODE) {
         if (mode === this.$currentMode()) return;
@@ -89,9 +83,7 @@ export class DotEditorModeSelectorComponent {
             toMode: mode
         });
 
-        this.#store.loadPageAsset({
-            mode: mode,
-            publishDate: mode === UVE_MODE.LIVE ? new Date().toISOString() : undefined
-        });
+        /* More info here: https://github.com/dotCMS/core/issues/31719 */
+        this.#store.loadPageAsset({ mode: mode, publishDate: undefined });
     }
 }

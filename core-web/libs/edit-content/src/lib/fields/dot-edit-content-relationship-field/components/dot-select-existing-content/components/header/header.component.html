@@ -1,0 +1,32 @@
+<div class="flex items-center justify-center mb-2">
+    <span class="p-dialog-title">
+        {{ 'dot.file.relationship.dialog.search.title' | dm }}
+    </span>
+</div>
+<div class="flex justify-content-between align-items-center w-full mb-2">
+    <div class="flex align-items-center gap-2">
+        <div class="flex-none">
+            <dot-search (onSearch)="store.search($event)" [isLoading]="store.isLoading()" />
+        </div>
+
+        <div class="flex-grow-1">
+            <p class="text-primary-500">
+                {{
+                    'dot.file.relationship.dialog.per.page'
+                        | dm: [store.pagination().rowsPerPage.toString()]
+                }}
+            </p>
+        </div>
+    </div>
+    <div class="flex align-items-center gap-2">
+        <p-inputSwitch
+            [attr.aria-label]="'dot.file.relationship.dialog.show.selected.items' | dm"
+            inputId="show-selected-switch"
+            [ngModel]="store.isSelectedView()"
+            (onChange)="store.changeViewMode($event)"
+            data-testid="show-selected-switch" />
+        <label class="text-primary-500 cursor-pointer" for="show-selected-switch">
+            {{ 'dot.file.relationship.dialog.show.selected.items' | dm }}
+        </label>
+    </div>
+</div>

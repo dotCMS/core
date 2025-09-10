@@ -1,7 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
@@ -30,6 +30,10 @@ const initialState: ContentTypeState = {
 
 @Injectable()
 export class DotContentTypeStore extends ComponentStore<ContentTypeState> {
+    private readonly dotContentTypeService = inject(DotContentTypeService);
+    private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly router = inject(Router);
+
     readonly assetSelected$ = this.select(({ assetSelected }) => assetSelected);
     readonly isSaving$: Observable<boolean> = this.select(({ isSaving }) => isSaving);
 
@@ -71,11 +75,7 @@ export class DotContentTypeStore extends ComponentStore<ContentTypeState> {
         }
     );
 
-    constructor(
-        private readonly dotContentTypeService: DotContentTypeService,
-        private readonly httpErrorManagerService: DotHttpErrorManagerService,
-        private readonly router: Router
-    ) {
+    constructor() {
         super(initialState);
     }
 }

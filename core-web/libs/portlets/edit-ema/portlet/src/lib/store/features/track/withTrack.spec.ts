@@ -6,7 +6,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotAnalyticsTrackerService } from '@dotcms/data-access';
 import { EVENT_TYPES } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import { withTrack } from './withTrack';
 

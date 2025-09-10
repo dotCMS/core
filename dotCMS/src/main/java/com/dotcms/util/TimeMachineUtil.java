@@ -4,10 +4,12 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,16 +78,27 @@ public final class TimeMachineUtil {
      *         Returns an empty {@link Optional} if the date is invalid or does not meet the validation criteria.
      * @throws IllegalArgumentException If the date string cannot be parsed.
      */
-    public static Optional<Instant> parseTimeMachineDate(final String dateAsISO8601) {
+    public static Optional<Instant>  parseTimeMachineDate(final String dateAsISO8601) {
         if (Objects.isNull(dateAsISO8601)) {
             return Optional.empty();
         }
-        Instant instant = Try.of(() -> DateUtil.convertDate(dateAsISO8601))
-                .map(Date::toInstant)
-                .getOrElseThrow(e ->
-                        new IllegalArgumentException(
-                                String.format("Error Parsing date: %s", dateAsISO8601), e)
-                );
+
+        Instant instant = null;
+        try {
+            instant = Instant.parse(dateAsISO8601);
+        } catch (DateTimeParseException e) {
+            //Quietly ignore the exception and return an empty Optional
+            Logger.debug(TimeMachineUtil.class, "Failed to parse date: " + dateAsISO8601, e);
+        }
+
+        if (instant == null) {
+            instant = Try.of(() -> DateUtil.convertDate(dateAsISO8601))
+                    .map(Date::toInstant)
+                    .getOrElseThrow(e ->
+                            new IllegalArgumentException(
+                                    String.format("Error Parsing date: %s", dateAsISO8601), e)
+            );
+        }
         return isOlderThanGraceWindow(instant) ? Optional.of(instant) : Optional.empty();
     }
 

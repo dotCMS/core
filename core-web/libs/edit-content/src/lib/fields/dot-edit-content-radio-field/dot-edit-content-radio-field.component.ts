@@ -1,17 +1,18 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 
+/**
+ * Component to render a radio field.
+ */
 @Component({
     selector: 'dot-edit-content-radio-field',
-    standalone: true,
-    imports: [RadioButtonModule, ReactiveFormsModule, DotFieldRequiredDirective],
+    imports: [RadioButtonModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-radio-field.component.html',
     styleUrls: ['./dot-edit-content-radio-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,14 +23,16 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
         }
     ]
 })
-export class DotEditContentRadioFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
-    options = [];
+export class DotEditContentRadioFieldComponent {
+    /**
+     * The field to render.
+     */
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    ngOnInit() {
-        this.options = getSingleSelectableFieldOptions(
-            this.field.values || '',
-            this.field.dataType
-        );
-    }
+    /**
+     * Returns the options for the radio field.
+     */
+    $options = computed(() =>
+        getSingleSelectableFieldOptions(this.$field().values || '', this.$field().dataType)
+    );
 }

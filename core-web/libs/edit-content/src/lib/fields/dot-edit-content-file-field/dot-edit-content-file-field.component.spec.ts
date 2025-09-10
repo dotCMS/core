@@ -234,6 +234,150 @@ describe('DotEditContentFileFieldComponent', () => {
                 expect(spyHandleUploadFile).not.toHaveBeenCalled();
             });
         });
+
+        describe('Disabled State Management', () => {
+            it('should set disabled state correctly through setDisabledState method', () => {
+                spectator.detectChanges();
+
+                // Initially not disabled
+                expect(spectator.component.$disabled()).toBe(false);
+
+                // Set disabled
+                spectator.component.setDisabledState(true);
+                expect(spectator.component.$disabled()).toBe(true);
+
+                // Set enabled
+                spectator.component.setDisabledState(false);
+                expect(spectator.component.$disabled()).toBe(false);
+            });
+
+            it('should disable file input when field is disabled', () => {
+                spectator.detectChanges();
+
+                const fileInput = spectator.query(
+                    byTestId('file-field__file-input')
+                ) as HTMLInputElement;
+
+                // Initially not disabled
+                expect(fileInput.disabled).toBe(false);
+
+                // Set disabled
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+                expect(fileInput.disabled).toBe(true);
+            });
+
+            it('should disable action buttons when field is disabled', () => {
+                const dialogService = spectator.inject(DialogService);
+                const spyDialogOpen = jest.spyOn(dialogService, 'open');
+
+                spectator.detectChanges();
+
+                // Set disabled
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+
+                // Try to trigger the action methods
+                spectator.component.showImportUrlDialog();
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showFileEditorDialog();
+
+                // Verify that no dialogs are opened (dialog service not called)
+                expect(spyDialogOpen).not.toHaveBeenCalled();
+            });
+
+            it('should prevent file selection when disabled', () => {
+                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+
+                const mockFiles = {
+                    length: 1,
+                    0: new File(['test'], 'test.txt', { type: 'text/plain' })
+                } as unknown as FileList;
+
+                spectator.component.fileSelected(mockFiles);
+
+                expect(spyHandleUploadFile).not.toHaveBeenCalled();
+            });
+
+            it('should prevent file drop when disabled', () => {
+                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+
+                const mockEvent: DropZoneFileEvent = {
+                    file: new File(['test'], 'test.txt', { type: 'text/plain' }),
+                    validity: {
+                        fileTypeMismatch: false,
+                        maxFileSizeExceeded: false,
+                        multipleFilesDropped: false,
+                        errorsType: [],
+                        valid: true
+                    }
+                };
+
+                spectator.component.handleFileDrop(mockEvent);
+
+                expect(spyHandleUploadFile).not.toHaveBeenCalled();
+            });
+
+            it('should prevent opening dialogs when disabled', () => {
+                const dialogService = spectator.inject(DialogService);
+                const spyDialogOpen = jest.spyOn(dialogService, 'open');
+
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+
+                // Test each dialog method
+                spectator.component.showImportUrlDialog();
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showFileEditorDialog();
+                spectator.component.showAIImagePromptDialog();
+
+                expect(spyDialogOpen).not.toHaveBeenCalled();
+            });
+
+            it('should add disabled CSS class to container when disabled', () => {
+                spectator.detectChanges();
+
+                const container = spectator.query('.file-field__container');
+
+                // Initially not disabled
+                expect(container).not.toHaveClass('file-field__container--disabled');
+
+                // Set disabled
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+                expect(container).toHaveClass('file-field__container--disabled');
+            });
+
+            it('should pass disabled state to preview component when file is uploaded', () => {
+                const store = spectator.component.store;
+
+                // Use the existing NEW_FILE_MOCK with proper UploadedFile structure
+                const mockFile = { source: 'contentlet' as const, file: NEW_FILE_MOCK.entity };
+
+                // Mock the store signals to return the uploaded file and preview status
+                jest.spyOn(store, 'uploadedFile').mockReturnValue(mockFile);
+                jest.spyOn(store, 'fileStatus').mockReturnValue('preview');
+
+                spectator.detectChanges();
+
+                // Set disabled
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+
+                // Verify preview component exists - this confirms the template binding works
+                const previewComponent = spectator.query('dot-file-field-preview');
+                expect(previewComponent).toBeTruthy();
+
+                // Verify the component's disabled state is set correctly
+                expect(spectator.component.$disabled()).toBe(true);
+            });
+        });
     });
 
     describe('ImageField', () => {

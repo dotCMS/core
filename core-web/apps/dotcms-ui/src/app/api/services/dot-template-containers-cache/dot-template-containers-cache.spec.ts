@@ -14,7 +14,7 @@ describe('TemplateContainersCacheService', () => {
             imports: []
         });
 
-        service = TestBed.get(DotTemplateContainersCacheService);
+        service = TestBed.inject(DotTemplateContainersCacheService);
         containers = {
             '/containers/path': {
                 identifier: '1',

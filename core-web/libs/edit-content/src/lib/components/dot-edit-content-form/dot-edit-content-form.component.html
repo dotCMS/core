@@ -14,34 +14,27 @@
 @let isContentLocked = $store.isContentLocked();
 @let canLock = $store.canLock();
 @let lockSwitchLabel = $store.lockSwitchLabel();
-@let lockWarningMessage = $store.lockWarningMessage();
+@let tabs = $tabs();
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
-    <form [formGroup]="form" class="p-fluid dot-edit-content-form h-100">
+    <form
+        [formGroup]="form"
+        data-testId="edit-content-form"
+        class="p-fluid dot-edit-content-form h-100">
         <p-tabView
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
             [class.dot-edit-content-tabview--single-tab]="$hasSingleTab()"
             (onChange)="onActiveIndexChange($event)"
             [activeIndex]="activeIndex"
+            scrollable="false"
             class="dot-edit-content-tabview">
             <!-- Add prepend and append areas to the tabs -->
-            <ng-template
-                dotTabViewInsert
-                [dotTabViewPrepend]="prependContent"
-                [dotTabViewAppend]="appendContent"></ng-template>
+            <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
-            <!-- First tab is not lazy -->
-            @if ($firstTab()) {
-                <p-tabPanel [header]="$firstTab()!.title" [@fadeIn]>
-                    <ng-container
-                        *ngTemplateOutlet="tabPanelTemplate; context: { tab: $firstTab() }" />
-                </p-tabPanel>
-            }
-
-            <!-- Rest of the tabs are lazy -->
-            @for (tab of $restOfTabs(); track tab) {
+            <!-- Tabs are lazy -->
+            @for (tab of tabs; track tab) {
                 <p-tabPanel [header]="tab.title" [@fadeIn]>
                     <ng-template pTemplate="content">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
@@ -53,25 +46,16 @@
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">
             <div class="dot-edit-content-form__layout">
-                @if (lockWarningMessage) {
-                    <p-messages severity="info" styleClass="mb-3" [@fadeIn]>
-                        <ng-template pTemplate>
-                            <div class="flex gap-2 justify-content-start">
-                                <i class="pi pi-info-circle"></i>
-                                <span [innerHTML]="lockWarningMessage"></span>
-                            </div>
-                        </ng-template>
-                    </p-messages>
-                }
                 @for (row of tab.layout; track row) {
                     <div class="dot-edit-content-form__layout-row" data-testId="row">
                         @for (column of row.columns; track column) {
                             <div class="dot-edit-content-form__layout-column" data-testId="column">
                                 @for (field of column.fields; track field) {
                                     <dot-edit-content-field
-                                        [contentType]="contentType.variable"
+                                        [contentType]="contentType"
                                         [contentlet]="contentlet"
                                         [field]="field"
+                                        (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
                                         data-testId="field" />
                                 }
                             </div>
@@ -83,97 +67,90 @@
     </form>
 }
 
-<!-- Prepend template to add to the tabs-->
-<ng-template #prependContent>
-    <div class="back-button__wrapper h-100 flex">
-        <button
-            data-testId="back-button"
-            pButton
-            (click)="goBack()"
-            icon="pi pi-chevron-left"
-            class="p-button-tertiary p-button-rounded p-button-sm"></button>
-    </div>
-</ng-template>
-
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="dot-edit-content-actions"
+        class="dot-edit-content-actions flex align-items-center w-full"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
-        <!-- Add Content Lock Toggle here -->
-        <div
-            class="dot-edit-content-actions__lock flex align-items-center gap-2"
-            [class.locked]="isContentLocked">
+        <!-- Left group for lock controls -->
+        <div class="dot-edit-content-actions__left flex align-items-center">
             @if (canLock) {
-                <p-inputSwitch
-                    [ngModel]="isContentLocked"
-                    [disabled]="!canLock"
-                    (onChange)="onContentLockChange($event)"
-                    inputId="lockSwitch"
-                    data-testId="content-lock-switch"></p-inputSwitch>
-                <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
+                <div
+                    class="dot-edit-content-actions__lock flex align-items-center gap-2"
+                    [class.locked]="isContentLocked">
+                    <p-inputSwitch
+                        [ngModel]="isContentLocked"
+                        [disabled]="!canLock"
+                        (onChange)="onContentLockChange($event)"
+                        inputId="lockSwitch"
+                        data-testId="content-lock-switch"></p-inputSwitch>
+                    <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
+                </div>
             }
         </div>
 
-        @if ($showPreviewLink()) {
-            <button
-                pButton
-                icon="pi pi-external-link"
-                class="p-button-link p-button-md"
-                data-testId="preview-button"
-                (click)="showPreview()">
-                {{ 'edit.content.preview-link' | dm }}
-            </button>
-        }
+        <!-- Right group for all other actions -->
+        <div class="dot-edit-content-actions__right flex align-items-center">
+            @if ($showPreviewLink()) {
+                <button
+                    pButton
+                    class="p-button-link p-button-md"
+                    text="true"
+                    data-testId="preview-button"
+                    (click)="showPreview()">
+                    {{ 'edit.content.preview-link' | dm }}
+                </button>
+            }
 
-        @if (showWorkflowActions) {
-            <dot-workflow-actions
-                data-testId="workflow-actions"
-                (actionFired)="
-                    fireWorkflowAction({
-                        workflow: $event,
-                        inode: contentlet?.inode,
-                        contentType: contentType.variable,
-                        languageId: currentLocaleId,
-                        identifier: currentIdentifier
-                    })
-                "
-                [actions]="actions"
-                [groupActions]="true" />
-        }
+            @if (showWorkflowActions) {
+                <dot-workflow-actions
+                    data-testId="workflow-actions"
+                    (actionFired)="
+                        fireWorkflowAction({
+                            workflow: $event,
+                            inode: contentlet?.inode,
+                            contentType: contentType.variable,
+                            languageId: currentLocaleId,
+                            identifier: currentIdentifier
+                        })
+                    "
+                    [actions]="actions"
+                    [groupActions]="true" />
+            }
 
-        <div
-            class="dot-edit-content-actions__sidebar-toggle"
-            data-testId="sidebar-toggle"
-            [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
-            <button
-                class="dot-edit-content-actions__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
-                (click)="$store.toggleSidebar()"
-                data-testId="sidebar-toggle-button">
-                <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <rect
-                        x="2.70588"
-                        y="3.17659"
-                        width="14.5882"
-                        height="13.6471"
-                        rx="1.17647"
-                        stroke="#426BF0"
-                        stroke-width="1.41176" />
-                    <line
-                        x1="12.3528"
-                        y1="16.1223"
-                        x2="12.3528"
-                        y2="3.87797"
-                        stroke="#426BF0"
-                        stroke-width="1.88235" />
-                </svg>
-            </button>
+            <div
+                class="dot-edit-content-actions__sidebar-toggle flex align-items-center"
+                data-testId="sidebar-toggle"
+                [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
+                <button
+                    class="dot-edit-content-actions__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
+                    (click)="$store.toggleSidebar()"
+                    data-testId="sidebar-toggle-button">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect
+                            x="2.70588"
+                            y="3.17659"
+                            width="14.5882"
+                            height="13.6471"
+                            rx="1.17647"
+                            stroke="#426BF0"
+                            stroke-width="1.41176" />
+                        <line
+                            x1="12.3528"
+                            y1="16.1223"
+                            x2="12.3528"
+                            y2="3.87797"
+                            stroke="#426BF0"
+                            stroke-width="1.88235" />
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 </ng-template>

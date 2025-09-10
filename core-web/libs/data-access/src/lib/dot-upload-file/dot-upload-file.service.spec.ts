@@ -1,9 +1,9 @@
-import { createHttpFactory, SpectatorHttp, SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import { createHttpFactory, mockProvider, SpectatorHttp, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-
 import { DotUploadFileService } from './dot-upload-file.service';
+
+import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 
 describe('DotUploadFileService', () => {
     let spectator: SpectatorHttp<DotUploadFileService>;

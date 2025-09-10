@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { isInsideEditor } from '@dotcms/client';
+import { getUVEState } from '@dotcms/uve';
 
 import { DotExperiments } from '../dot-experiments';
 import { EXPERIMENT_DEFAULT_VARIANT_NAME, EXPERIMENT_QUERY_PARAM_KEY } from '../shared/constants';
@@ -28,7 +28,7 @@ export const useExperiments = (instance: DotExperiments | null): void => {
             return;
         }
 
-        const insideEditor = isInsideEditor();
+        const insideEditor = getUVEState()?.mode;
 
         if (!insideEditor) {
             const location = typeof window !== 'undefined' ? window.location : undefined;

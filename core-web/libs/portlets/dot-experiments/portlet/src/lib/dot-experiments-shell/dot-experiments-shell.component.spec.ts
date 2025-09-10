@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
 
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 import { DotExperimentsStore } from './store/dot-experiments.store';

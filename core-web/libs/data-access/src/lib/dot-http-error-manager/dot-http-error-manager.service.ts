@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
@@ -15,7 +15,6 @@ export interface DotHttpErrorHandled {
     redirected: boolean;
     status: HttpCode;
 }
-
 /**
  * Handle the UI for http errors messages
  *
@@ -24,16 +23,16 @@ export interface DotHttpErrorHandled {
  */
 @Injectable()
 export class DotHttpErrorManagerService {
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotMessageService = inject(DotMessageService);
+    private loginService = inject(LoginService);
+    private dotRouterService = inject(DotRouterService);
+
     private readonly errorHandlers?: Record<HttpCode, (response?: HttpErrorResponse) => boolean>;
     private _unobtrusive = false;
 
-    constructor(
-        private dotDialogService: DotAlertConfirmService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotMessageService: DotMessageService,
-        private loginService: LoginService,
-        private dotRouterService: DotRouterService
-    ) {
+    constructor() {
         if (!this.errorHandlers) {
             this.errorHandlers = {
                 [HttpCode.NOT_FOUND]: this.handleNotFound.bind(this),

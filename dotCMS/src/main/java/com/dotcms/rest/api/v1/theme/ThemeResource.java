@@ -19,6 +19,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,6 +39,7 @@ import java.util.Map;
  * Provides different methods to access information about Themes in dotCMS.
  */
 @Path("/v1/themes")
+@Tag(name = "Templates", description = "Template design and management")
 public class ThemeResource {
 
     private final PaginationUtil paginationUtil;

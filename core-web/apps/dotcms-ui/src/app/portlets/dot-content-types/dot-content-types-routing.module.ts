@@ -1,12 +1,11 @@
+/* eslint-disable @nx/enforce-module-boundaries */
+
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import {
-    DotContentTypesListingModule,
-    DotContentTypesPortletComponent
-} from '@portlets/shared/dot-content-types-listing';
-
 import { DotContentTypeEditResolver } from '../shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
+import { DotContentTypesListingModule } from '../shared/dot-content-types-listing/dot-content-types-listing.module';
+import { DotContentTypesPortletComponent } from '../shared/dot-content-types-listing/dot-content-types.component';
 
 const contentTypesRoutes: Routes = [
     {

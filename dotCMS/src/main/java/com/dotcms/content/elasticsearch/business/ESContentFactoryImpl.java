@@ -1,6 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
@@ -19,6 +21,7 @@ import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NMessage;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -40,6 +43,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -75,6 +79,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -124,6 +129,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
@@ -232,6 +240,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             "bool24", "bool25"};
 
     private static final int MAX_FIELDS_ALLOWED = 25;
+    private static final Lazy<Integer> OLD_CONTENT_BATCH_SIZE = Lazy.of(
+            () -> Config.getIntProperty("OLD_CONTENT_BATCH_SIZE", 100));
+    private static final Lazy<Long> OLD_CONTENT_JOB_PAUSE_MS = Lazy.of(
+            () -> Config.getLongProperty("OLD_CONTENT_JOB_PAUSE_MS", 200));
+    private static final Lazy<Integer> OLD_CONTENT_BATCHES_BEFORE_PAUSE = Lazy.of(
+            () -> Config.getIntProperty("OLD_CONTENT_BATCHES_BEFORE_PAUSE", 10));
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -710,20 +724,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
         final int before = Integer.parseInt(result.get(0).get("count"));
-        dc = new DotConnect();
-        final String query = new StringBuilder("SELECT DISTINCT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND ")
-                .append(" inode NOT IN (SELECT working_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode)")
-                .append(" AND ")
-                .append(" inode NOT IN (SELECT live_inode FROM contentlet_version_info WHERE live_inode = contentlet.inode)")
-                .toString();
-        dc.setSQL(query);
-        dc.addParam(date);
-        result = dc.loadResults();
-        int oldInodesCount = result.size();
-        if (oldInodesCount > 0) {
-            final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
-            deleteContentData(inodeList);
-        }
+
+        final int batchSize = OLD_CONTENT_BATCH_SIZE.get();
+        int batchExecutionCount = 0;
+        int oldInodesCount;
+        do {
+            oldInodesCount = deleteContentBatch(date, batchSize);
+            // Pause if needed to avoid overloading the system
+            if (oldInodesCount > 0) {
+                batchExecutionCount++;
+                pauseDeleteContentIfNeeded(batchExecutionCount);
+            }
+        } while (oldInodesCount == batchSize);
+
         dc = new DotConnect();
         dc.setSQL(countSQL);
         result = dc.loadResults();
@@ -733,6 +746,67 @@ public class ESContentFactoryImpl extends ContentletFactory {
             deleteOrphanedBinaryFiles();
         }
         return deleted;
+    }
+
+    /**
+     * Deletes a batch of Contentlets that are older than the specified date. The batch size is
+     * determined by the {@code batchSize} parameter.
+     * @param date The date as of which all contents older than that will be deleted.
+     * @param batchSize The number of Contentlets to delete in each batch.
+     * @return The number of Contentlets deleted by this operation.
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @ExternalTransaction
+    private int deleteContentBatch(final Date date, final int batchSize) throws DotDataException {
+        final String query = "SELECT c.inode FROM contentlet c"
+                + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date < ?"
+                + " AND NOT EXISTS (SELECT 1 FROM contentlet_version_info vi"
+                + " WHERE vi.working_inode = c.inode OR vi.live_inode = c.inode)"
+                + " LIMIT ?";
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(query);
+        dc.addParam(date);
+        dc.addParam(batchSize);
+        final List<Map<String, String>> results = dc.loadResults();
+        final int resultCount = results.size();
+        if (resultCount > 0) {
+            final List<String> inodeList = results.stream().map(
+                    row -> row.get("inode")).collect(Collectors.toList());
+            deleteContentData(inodeList);
+        }
+        return resultCount;
+    }
+
+    /**
+     * Pauses the deletion of old content if the number of batches executed so far is a multiple of
+     * {@code OLD_CONTENT_BATCHES_BEFORE_PAUSE} to avoid overloading the system.
+     *
+     * @param batchExecutionCount The number of batches executed so far.
+     */
+    private void pauseDeleteContentIfNeeded(final int batchExecutionCount) {
+        final int batchesBeforePause = OLD_CONTENT_BATCHES_BEFORE_PAUSE.get();
+        
+        // Skip the pause logic if batchesBeforePause is zero or negative
+        if (batchesBeforePause <= 0) {
+            return;
+        }
+        
+        if (batchExecutionCount % batchesBeforePause == 0) {
+            try {
+                // Schedule a no-op task to pause the deletion process
+                DotConcurrentFactory.getScheduledThreadPoolExecutor()
+                    .schedule(() -> {},
+                        OLD_CONTENT_JOB_PAUSE_MS.get(), TimeUnit.MILLISECONDS)
+                    .get(); // Wait for the pause to complete
+            } catch (RejectedExecutionException e) {
+                Logger.warn(this, "Delete content job pause task was rejected", e);
+            } catch (ExecutionException e) {
+                Logger.warn(this, "Error executing task to pause delete content job", e);
+            } catch (InterruptedException e) {
+                Logger.warn(this, "Thread interrupted in delete content job pause task", e);
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**
@@ -1032,18 +1106,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @Override
-    protected List<Contentlet> findAllVersions(final Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+    protected List<Contentlet> findAllVersions(final Identifier identifier) throws DotDataException {
         return findAllVersions(identifier, true);
     }
 
     @Override
-    protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
+    protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException {
         return findAllVersions(identifier, bringOldVersions, null);
     }
 
     @Override
     protected  List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
-            throws DotDataException, DotSecurityException{
+            throws DotDataException {
         DotPreconditions.notNull(identifier, () -> "Identifier cannot be null");
         DotPreconditions.notNull(variant, () -> "Variant cannot be null");
 
@@ -1068,35 +1142,56 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     public List<Contentlet> findAllVersions(final Identifier identifier,
-            final boolean bringOldVersions, final Integer maxResults)
-            throws DotDataException, DotStateException, DotSecurityException {
+            final boolean bringOldVersions, final Integer maxResults) throws DotDataException {
+        return findAllVersions(identifier, bringOldVersions, null != maxResults ? maxResults : 0, 0);
+	}
 
-	    if(!InodeUtils.isSet(identifier.getId())) {
-            return new ArrayList<>();
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit,
+                                            final int offset) throws DotDataException {
+        return findAllVersions(identifier, bringOldVersions, limit, offset, "mod_date", OrderDirection.DESC);
+    }
+
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit,
+                                            final int offset, final OrderDirection orderDirection) throws DotDataException {
+        return findAllVersions(identifier, bringOldVersions, limit, offset, "mod_date", orderDirection);
+    }
+
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit, final int offset, final String orderBy,
+                                            final OrderDirection orderDirection) throws DotDataException {
+	    if (!InodeUtils.isSet(identifier.getId())) {
+            return List.of();
         }
-
         final DotConnect dc = new DotConnect();
-        final StringBuffer query = new StringBuffer();
-
+        final StringBuilder query = new StringBuilder();
         if(bringOldVersions) {
-            query.append("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
-
+            query.append("SELECT inode FROM contentlet WHERE identifier = ? ORDER BY ")
+                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
+                    .append(SQLUtil.sanitizeCondition(orderDirection.name()));
         } else {
-            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi "
-                    + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) "
-                    + "WHERE c.identifier=? order by c.mod_date desc ");
+            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi ")
+                    .append("ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) ")
+                    .append("WHERE c.identifier = ? ORDER BY c.")
+                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
+                    .append(SQLUtil.sanitizeCondition(orderDirection.name()));
         }
-
         dc.setSQL(query.toString());
         dc.addObject(identifier.getId());
-
-        if (maxResults != null){
-            dc.setMaxRows(maxResults);
+        if (limit > 0) {
+            dc.setMaxRows(limit);
         }
-        List<Map<String,Object>> list=dc.loadObjectResults();
-        ArrayList<String> inodes=new ArrayList<>(list.size());
-        for(Map<String,Object> r : list)
-            inodes.add(r.get("inode").toString());
+        if (offset > 0) {
+            dc.setStartRow(offset);
+        }
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<String> inodes = results.stream().map(
+                        row -> row.get("inode").toString())
+                .collect(Collectors.toList());
         return findContentlets(inodes);
 	}
 
@@ -1241,13 +1336,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 + "INNER JOIN identifier i ON i.id = c.identifier\n"
                 + "INNER JOIN contentlet_version_info cvi ON cvi.identifier = c.identifier\n"
                 + "INNER JOIN inode ci ON ci.inode = c.inode\n"
-                + "WHERE ? >= i.syspublish_date \n"
-                + "   and (? <= i.sysexpire_date OR i.sysexpire_date IS NULL )\n"
-                + "   and cvi.working_inode = c.inode \n"
-                + "   and cvi.lang  = ?\n"
-                + "   and cvi.deleted = false\n"
-                + "   and c.identifier = ?\n"
-                + "   and cvi.variant_id = ?\n"
+                + " WHERE ((? AT TIME ZONE 'UTC') >= (i.syspublish_date AT TIME ZONE 'UTC') OR i.syspublish_date IS NULL)"
+                + " AND ((? AT TIME ZONE 'UTC') <= (i.sysexpire_date AT TIME ZONE 'UTC') OR i.sysexpire_date IS NULL)"
+                + "   AND cvi.working_inode = c.inode \n"
+                + "   AND cvi.lang  = ?\n"
+                + "   AND cvi.deleted = false\n"
+                + "   AND c.identifier = ?\n"
+                + "   AND cvi.variant_id = ?\n"
+                // at least one of the dates must be set
+                + "   AND (i.syspublish_date IS NOT NULL OR i.sysexpire_date IS NOT NULL)\n"
                 + ";";
 
         final DotConnect dotConnect = new DotConnect().setSQL(query)
@@ -1324,7 +1421,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
   @Override
-  protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
+  protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
 
     final HashMap<String, Contentlet> conMap = new HashMap<>();
     for (String i : inodes) {

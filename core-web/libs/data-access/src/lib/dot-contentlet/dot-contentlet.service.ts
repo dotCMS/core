@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -9,9 +9,9 @@ import { DotCMSContentlet, DotContentletCanLock, DotLanguage } from '@dotcms/dot
 
 @Injectable()
 export class DotContentletService {
-    private readonly CONTENTLET_API_URL = '/api/v1/content/';
+    private http = inject(HttpClient);
 
-    constructor(private http: HttpClient) {}
+    private readonly CONTENTLET_API_URL = '/api/v1/content/';
 
     /**
      * Get the Contentlet versions by language.

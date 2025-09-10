@@ -49,7 +49,7 @@
 }
 
 // Severity for basic button
-.p-button:enabled,
+.p-button:not(:disabled),
     // Used for file upload button
 .p-button.p-fileupload-choose {
     @extend #main-primary-severity;
@@ -70,10 +70,14 @@
         color: $color-palette-primary;
         @extend #main-tertiary-severity;
     }
+
+    &.p-button-success {
+        @extend #main-success-severity;
+    }
 }
 
 // Severity for outlined button
-.p-button.p-button-outlined:enabled,
+.p-button.p-button-outlined:not(:disabled),
 .p-button.p-button-outlined:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     @extend #outlined-primary-severity;
 
@@ -96,10 +100,18 @@
             @extend #outlined-tertiary-severity-sm;
         }
     }
+
+    &.p-button-success {
+        @extend #outlined-success-severity;
+
+        &.p-button-sm {
+            @extend #outlined-success-severity-sm;
+        }
+    }
 }
 
 // Severity for text button
-.p-button-text:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button-text:not(:disabled):not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
 a.p-button.p-button-text {
     @extend #text-primary-severity;
 
@@ -113,6 +125,14 @@ a.p-button.p-button-text {
 
     &.p-button-danger {
         @extend #text-danger-severity;
+    }
+
+    &.p-button-success {
+        @extend #text-success-severity;
+    }
+
+    &.p-button-warning {
+        @extend #text-warning-severity;
     }
 }
 
@@ -129,6 +149,17 @@ a.p-button.p-button-text {
 
     &.p-button-text {
         @extend #button-disabled-text;
+    }
+}
+
+// Disabled button child element styles
+.p-button:disabled.p-button-outlined:not(
+        .p-splitbutton-defaultbutton,
+        .p-splitbutton-menubutton
+    ).p-button-secondary {
+    .pi,
+    .p-button-label {
+        color: inherit;
     }
 }
 

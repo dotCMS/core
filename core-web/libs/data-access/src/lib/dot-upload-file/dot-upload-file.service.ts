@@ -5,8 +5,10 @@ import { inject, Injectable } from '@angular/core';
 
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 
-import { DotUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+
+import { DotUploadService } from '../dot-upload/dot-upload.service';
+import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',

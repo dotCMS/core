@@ -1,28 +1,52 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer utilities {
-  .line-clamp-1 {
+@plugin '@tailwindcss/typography';
+
+@theme {
+    --background-image-gradient-radial: radial-gradient(
+        var(--tw-gradient-stops)
+    );
+    --background-image-gradient-conic: conic-gradient(
+        from 180deg at 50% 50%,
+        var(--tw-gradient-stops)
+    );
+}
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentcolor);
+    }
+}
+
+@utility line-clamp-1 {
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
+}
 
-  .line-clamp-3 {
+@utility line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
 }
 
 /* Custom classes, example to BlockEditorRenderer */
-table, th, td {
-  border: 1px solid;
+table,
+th,
+td {
+    border: 1px solid;
 }
 
 .blog-styles {
-  @apply bg-gray-100;
+    @apply bg-gray-100;
+}
+
+.dot-row-container {
+    @apply mb-4;
 }

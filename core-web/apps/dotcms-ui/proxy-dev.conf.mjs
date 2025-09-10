@@ -17,7 +17,8 @@ export default [
             '/categoriesServlet',
             '/JSONTags',
             '/api/vtl',
-            '/tinymce'
+            '/tinymce',
+            '/ext'
         ],
         target: 'http://localhost:8080',
         secure: false,

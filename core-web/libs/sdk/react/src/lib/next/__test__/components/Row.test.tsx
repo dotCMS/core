@@ -1,8 +1,9 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
+import { DotPageAssetLayoutRow } from '@dotcms/types';
+
 import { Row } from '../../components/Row/Row';
-import { DotPageAssetLayoutRow } from '../../types';
 import { MOCK_COLUMN } from '../mock';
 
 const MOCK_ROW: DotPageAssetLayoutRow = {

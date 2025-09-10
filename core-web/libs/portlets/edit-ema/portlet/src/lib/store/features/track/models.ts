@@ -1,4 +1,4 @@
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 export interface AnalyticsUVEModeChange {
     toMode: UVE_MODE;

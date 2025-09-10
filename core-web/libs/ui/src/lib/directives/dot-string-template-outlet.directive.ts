@@ -6,7 +6,8 @@ import {
     SimpleChange,
     SimpleChanges,
     TemplateRef,
-    ViewContainerRef
+    ViewContainerRef,
+    inject
 } from '@angular/core';
 
 class DotStringTemplateOutletContext {
@@ -34,14 +35,12 @@ class DotStringTemplateOutletContext {
     selector: '[dotStringTemplateOutlet]'
 })
 export class DotStringTemplateOutletDirective implements OnChanges {
+    private templateRef = inject<TemplateRef<unknown>>(TemplateRef);
+    private viewContainer = inject(ViewContainerRef);
+
     @Input() dotStringTemplateOutlet: unknown | TemplateRef<unknown> = null;
     private embeddedViewRef: EmbeddedViewRef<unknown> | null = null;
     private context = new DotStringTemplateOutletContext();
-
-    constructor(
-        private templateRef: TemplateRef<unknown>,
-        private viewContainer: ViewContainerRef
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         const { dotStringTemplateOutlet } = changes;

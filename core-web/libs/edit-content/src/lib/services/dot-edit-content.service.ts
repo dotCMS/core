@@ -10,13 +10,21 @@ import {
     DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSContentlet,
+    DotCMSContentletVersion,
+    DotContentletDepth,
+    DotCMSResponse,
+    PaginationParams
+} from '@dotcms/dotcms-models';
 
 import {
     CustomTreeNode,
     DotFolder,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
+import { Activity } from '../models/dot-edit-content.model';
 import { createPaths } from '../utils/functions.util';
 
 @Injectable()
@@ -274,5 +282,69 @@ export class DotEditContentService {
         };
 
         return this.#siteService.getContentByFolder(params);
+    }
+
+    /**
+     * Get activities (comments) for a content
+     * @param identifier Content identifier
+     * @returns Observable of activities
+     */
+    getActivities(identifier: string): Observable<Activity[]> {
+        return this.#http
+            .get<{ entity: Activity[] }>(`/api/v1/workflow/tasks/history/comments/${identifier}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Create a new activity (comment) for a content
+     * @param identifier Content identifier
+     * @param comment Comment text
+     * @returns Observable of the created activity
+     */
+    createActivity(identifier: string, comment: string): Observable<Activity> {
+        return this.#http
+            .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Creates HTTP parameters for pagination requests.
+     * Handles the logic for setting offset and limit parameters with proper defaults.
+     *
+     * @private
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters
+     * @returns {HttpParams} Configured HTTP parameters
+     */
+    private buildPaginationParams(paginationParams?: PaginationParams): HttpParams {
+        let httpParams = new HttpParams();
+
+        if (paginationParams?.limit) {
+            const offset = paginationParams.offset || 1;
+            httpParams = httpParams
+                .set('offset', offset.toString())
+                .set('limit', paginationParams.limit.toString());
+        }
+
+        return httpParams;
+    }
+
+    /**
+     * Retrieves the version history for a content item by its identifier.
+     * Returns all versions of the content including live, working, and archived versions.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
+     * @returns {Observable<DotCMSResponse<DotCMSContentletVersion[]>>} Observable that emits DotCMS response with contentlet version history
+     */
+    getVersions(
+        identifier: string,
+        paginationParams?: PaginationParams
+    ): Observable<DotCMSResponse<DotCMSContentletVersion[]>> {
+        const httpParams = this.buildPaginationParams(paginationParams);
+
+        return this.#http.get<DotCMSResponse<DotCMSContentletVersion[]>>(
+            `/api/v1/content/versions/id/${identifier}/history`,
+            { params: httpParams }
+        );
     }
 }

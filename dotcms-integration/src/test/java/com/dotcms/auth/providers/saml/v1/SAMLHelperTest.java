@@ -3,6 +3,11 @@ package com.dotcms.auth.providers.saml.v1;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
@@ -36,6 +41,8 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Writer;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -191,8 +198,13 @@ public class SAMLHelperTest extends IntegrationTestBase {
         final User nativeUser = new UserDataGen().active(true).lastName(nativeLastName).firstName(nativeFirstName)
                 .emailAddress(nativeEmailAddress).nextPersisted();
 
+        final Map<String, Object> additionalAttributes = new HashMap<>();
+
+        additionalAttributes.put("prop-key1", "prop-value1");
+        additionalAttributes.put("prop-key2", "prop-value2");
+
         final Attributes nativeUserAttributes = new Attributes.Builder().firstName(nativeFirstName + "Updated")
-                .lastName(nativeLastName).nameID(nativeUser.getUserId()).email(nativeEmailAddress).build();
+                .lastName(nativeLastName).nameID(nativeUser.getUserId()).email(nativeEmailAddress).additionalAttributes(additionalAttributes).build();
 
         // recover with SAML the native user
         final User recoveredNativeUser = samlHelper.resolveUser(nativeUserAttributes, identityProviderConfiguration);
@@ -202,6 +214,9 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals (nativeUser.getEmailAddress(), recoveredNativeUser.getEmailAddress());
         Assert.assertNotEquals(nativeUser.getFirstName(),  recoveredNativeUser.getFirstName());
         Assert.assertEquals (nativeUser.getLastName(),     recoveredNativeUser.getLastName());
+        Assert.assertNotNull(recoveredNativeUser.getAdditionalInfo());
+        Assert.assertEquals ("The additional info prop1 is not right","prop-value1",     recoveredNativeUser.getAdditionalInfo().get("prop-key1"));
+        Assert.assertEquals ("The additional info prop1 is not right","prop-value2",     recoveredNativeUser.getAdditionalInfo().get("prop-key2"));
 
         // creates an user from saml
         final Attributes samlUserAttributes = new Attributes.Builder().firstName(samlFirstName)
@@ -472,5 +487,137 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals(nohashUuid, uuid);
     }
 
+    /**
+     * Method to test: testing the resolveUser of the {@link RoleGroupMappingStrategy#getRolesForGroup(String, IdentityProviderConfiguration)}
+     * Given Scenario: the test creates a content type with the default content type based on the default fields + creates a contentlet for the role group mapping
+     * ExpectedResult: Must return the 3 roles mapped
+     *
+     */
+    @Test()
+    public void test_ContentTypeRoleGroupMappingStrategyImpl() throws DotDataException, DotSecurityException, IOException {
 
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        // wants login by id
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+
+        final SamlConfigurationService samlConfigurationService  = mock(SamlConfigurationService.class);
+        SAMLHelper.setThirdPartySamlConfigurationService(samlConfigurationService);
+
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+
+        // Create role map contentlet
+        final ContentType contentType = new ContentTypeDataGen().baseContentType(BaseContentType.CONTENT).velocityVarName("RoleMap").nextPersisted();
+        new FieldDataGen().contentTypeId(contentType.id()).velocityVarName("fromRoleName").nextPersisted();
+        new FieldDataGen().contentTypeId(contentType.id()).velocityVarName("toRoleNames").nextPersisted();
+
+        new ContentletDataGen(contentType).setProperty("fromRoleName", "roleGroupKey").setProperty("toRoleNames", "role1,role2,role3").nextPersisted();
+        final RoleGroupMappingStrategy roleGroupMappingStrategy = new ContentTypeRoleGroupMappingStrategyImpl();
+        final Collection<String> roleMappedKeys = roleGroupMappingStrategy.getRolesForGroup("roleGroupKey", identityProviderConfiguration);
+
+        Assert.assertNotNull(roleMappedKeys);
+        Assert.assertEquals(3, roleMappedKeys.size());
+        Assert.assertTrue(roleMappedKeys.contains("role1"));
+        Assert.assertTrue(roleMappedKeys.contains("role2"));
+        Assert.assertTrue(roleMappedKeys.contains("role3"));
+    }
+
+    /**
+     * Method to test: testing the resolveUser of the {@link RoleGroupMappingStrategy#getRolesForGroup(String, IdentityProviderConfiguration)}
+     * Given Scenario: the test creates a content type with the NON default content type based on the default fields + creates a contentlet for the role group mapping
+     * ExpectedResult: Must return the 3 roles mapped
+     *
+     */
+    @Test()
+    public void test_ContentTypeRoleGroupMappingStrategyImpl_with_non_default_type_fields() throws DotDataException, DotSecurityException, IOException {
+
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        // wants login by id
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+
+        final SamlConfigurationService samlConfigurationService  = mock(SamlConfigurationService.class);
+        SAMLHelper.setThirdPartySamlConfigurationService(samlConfigurationService);
+
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+        when(samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_ROLES_GROUP_MAPPING_BY_CONTENT_TYPE)).thenReturn("MyRoleMap,myFromRoleName,myFoRoleNames");
+
+        // Create role map contentlet
+        final ContentType contentType = new ContentTypeDataGen().baseContentType(BaseContentType.CONTENT).velocityVarName("MyRoleMap").nextPersisted();
+        new FieldDataGen().contentTypeId(contentType.id()).velocityVarName("myFromRoleName").nextPersisted();
+        new FieldDataGen().contentTypeId(contentType.id()).velocityVarName("myFoRoleNames").nextPersisted();
+
+        new ContentletDataGen(contentType).setProperty("myFromRoleName", "roleGroupKey").setProperty("myFoRoleNames", "role1,role2,role3").nextPersisted();
+        final RoleGroupMappingStrategy roleGroupMappingStrategy = new ContentTypeRoleGroupMappingStrategyImpl();
+        final Collection<String> roleMappedKeys = roleGroupMappingStrategy.getRolesForGroup("roleGroupKey", identityProviderConfiguration);
+
+        Assert.assertNotNull(roleMappedKeys);
+        Assert.assertEquals(3, roleMappedKeys.size());
+        Assert.assertTrue(roleMappedKeys.contains("role1"));
+        Assert.assertTrue(roleMappedKeys.contains("role2"));
+        Assert.assertTrue(roleMappedKeys.contains("role3"));
+    }
+
+    /**
+     * Method to test: testing the resolveUser of the {@link RoleGroupMappingStrategy#getRolesForGroup(String, IdentityProviderConfiguration)}
+     * Given Scenario: test the default strategy which basically does nothing
+     * ExpectedResult: Must return the 1 roles mapped (which is identity itself)
+     *
+     */
+    @Test()
+    public void test_DEFAULT_ROLE_GROUP_MAPPING_STRATEGY() throws DotDataException, DotSecurityException, IOException {
+
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        // wants login by id
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+
+        final SamlConfigurationService samlConfigurationService  = mock(SamlConfigurationService.class);
+        SAMLHelper.setThirdPartySamlConfigurationService(samlConfigurationService);
+
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+
+        final RoleGroupMappingStrategy roleGroupMappingStrategy = SAMLHelper.DEFAULT_ROLE_GROUP_MAPPING_STRATEGY;
+        final Collection<String> roleMappedKeys = roleGroupMappingStrategy.getRolesForGroup("roleGroupKey", identityProviderConfiguration);
+
+        Assert.assertNotNull(roleMappedKeys);
+        Assert.assertEquals(1, roleMappedKeys.size());
+        Assert.assertTrue(roleMappedKeys.contains("roleGroupKey"));
+    }
 }

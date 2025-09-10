@@ -20,7 +20,7 @@ import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.quartz.job.ShutdownHookThread;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -141,14 +141,12 @@ public class InitServlet extends HttpServlet {
             throw new ServletException(e2.getMessage(), e2);
         }
 
-        //Adding the shutdown hook
-        Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
+        //Adding the shutdown hook - uses coordinated shutdown
+        // Register JVM shutdown hook that runs BEFORE Tomcat's shutdown sequence
+        // This ensures request draining happens before connectors are paused
+        registerEarlyShutdownHook();
+        Logger.info(InitServlet.class, "Startup completed - early shutdown hook registered");
 
-        /*
-         * Delete the files out of the temp dir (this gets huge)
-         */
-
-        deleteFiles(new File(SystemUtils.JAVA_IO_TMPDIR));
 
         // runs the InitThread
 
@@ -272,19 +270,124 @@ public class InitServlet extends HttpServlet {
 
     }
 
-    protected void deleteFiles(java.io.File directory) {
-        if (directory.isDirectory()) {
-            // get all files for this directory
-            java.io.File[] files = directory.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                // deletes all files on the directory
-                ((java.io.File) files[i]).delete();
-            }
-        }
-    }
 
     public static Date getStartupDate() {
         return startupDate;
+    }
+    
+    /**
+     * Registers a signal handler that responds to SIGTERM before any shutdown hooks run.
+     * This ensures request draining happens before protocol handlers are paused.
+     */
+    private void registerEarlyShutdownHook() {
+        try {
+            // Register SIGTERM handler that runs before JVM shutdown hooks
+            sun.misc.Signal.handle(new sun.misc.Signal("TERM"), signal -> {
+                try {
+                    Logger.info(InitServlet.class, "SIGTERM signal received - starting coordinated shutdown");
+                    
+                    // Start coordinated shutdown immediately on SIGTERM, before log4j shuts down
+                    ShutdownCoordinator coordinator = ShutdownCoordinator.getInstance();
+                    boolean success = coordinator.shutdown();
+                    
+                    if (success) {
+                        Logger.info(InitServlet.class, "Signal-triggered coordinated shutdown completed successfully");
+                    } else {
+                        Logger.warn(InitServlet.class, "Signal-triggered coordinated shutdown completed with warnings");
+                    }
+                    
+                    // After our coordinated shutdown, allow normal JVM shutdown to proceed
+                    // This will trigger Tomcat's shutdown sequence and other shutdown hooks
+                    Logger.info(InitServlet.class, "Coordinated shutdown complete, allowing JVM shutdown to proceed");
+                    
+                    // Force JVM exit after coordinated shutdown to prevent component reinitialization
+                    // This ensures the container actually stops instead of hanging
+                    try {
+                        Thread.sleep(1000); // Give log messages time to flush
+                        
+                        // Log active threads before exit for debugging
+                        logActiveThreads();
+                        
+                        Logger.info(InitServlet.class, "Exiting JVM to complete container shutdown");
+                        // Use halt() to prevent shutdown hooks from reinitializing components that were already shut down
+                        Runtime.getRuntime().halt(0);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        Runtime.getRuntime().halt(0);
+                    }
+                    
+                } catch (Exception e) {
+                    Logger.error(InitServlet.class, "Error in SIGTERM signal handler: " + e.getMessage(), e);
+                    // Use System.err as fallback since Logger may become unavailable
+                    System.err.println("Error in SIGTERM signal handler: " + e.getMessage());
+                    e.printStackTrace();
+                    // Force immediate halt on error (keep halt for error cases)
+                    Runtime.getRuntime().halt(1);
+                }
+            });
+            
+            // Also register SIGINT handler for graceful shutdown during development (Ctrl+C)
+            sun.misc.Signal.handle(new sun.misc.Signal("INT"), signal -> {
+                try {
+                    Logger.info(InitServlet.class, "SIGINT signal received - starting coordinated shutdown");
+                    
+                    ShutdownCoordinator coordinator = ShutdownCoordinator.getInstance();
+                    boolean success = coordinator.shutdown();
+                    
+                    if (success) {
+                        Logger.info(InitServlet.class, "SIGINT-triggered coordinated shutdown completed successfully");
+                    } else {
+                        Logger.warn(InitServlet.class, "SIGINT-triggered coordinated shutdown completed with warnings");
+                    }
+                    
+                    Logger.info(InitServlet.class, "Coordinated shutdown complete, allowing JVM shutdown to proceed");
+                    
+                    // Force JVM exit after coordinated shutdown to prevent component reinitialization
+                    try {
+                        Thread.sleep(1000); // Give log messages time to flush
+                        
+                        // Log active threads before exit for debugging
+                        logActiveThreads();
+                        
+                        Logger.info(InitServlet.class, "Exiting JVM to complete container shutdown");
+                        // Use halt() to prevent shutdown hooks from reinitializing components that were already shut down
+                        Runtime.getRuntime().halt(0);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        Runtime.getRuntime().halt(0);
+                    }
+                    
+                } catch (Exception e) {
+                    Logger.error(InitServlet.class, "Error in SIGINT signal handler: " + e.getMessage(), e);
+                    System.err.println("Error in SIGINT signal handler: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+            
+            Logger.info(InitServlet.class, "Signal handlers registered for SIGTERM and SIGINT");
+            
+        } catch (Exception e) {
+            Logger.warn(InitServlet.class, "Failed to register signal handlers, falling back to shutdown hook: " + e.getMessage());
+            
+            // Fallback to shutdown hook if signal handling fails
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    Logger.info(InitServlet.class, "Fallback shutdown hook triggered - starting coordinated shutdown");
+                    
+                    ShutdownCoordinator coordinator = ShutdownCoordinator.getInstance();
+                    boolean success = coordinator.shutdown();
+                    
+                    if (success) {
+                        Logger.info(InitServlet.class, "Fallback coordinated shutdown completed successfully");
+                    } else {
+                        Logger.warn(InitServlet.class, "Fallback coordinated shutdown completed with warnings");
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Error in fallback shutdown hook: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            }, "dotcms-fallback-shutdown-hook"));
+        }
     }
 
     /**
@@ -446,6 +549,39 @@ public class InitServlet extends HttpServlet {
             }
         }
 
+    }
+    
+    /**
+     * Logs information about active threads for debugging shutdown issues
+     */
+    private static void logActiveThreads() {
+        try {
+            ThreadGroup rootGroup = Thread.currentThread().getThreadGroup();
+            ThreadGroup parentGroup;
+            while ((parentGroup = rootGroup.getParent()) != null) {
+                rootGroup = parentGroup;
+            }
+            
+            Thread[] threads = new Thread[rootGroup.activeCount()];
+            int count = rootGroup.enumerate(threads);
+            
+            Logger.debug(InitServlet.class, "=== ACTIVE THREADS BEFORE JVM EXIT (" + count + " threads) ===");
+            
+            for (int i = 0; i < count; i++) {
+                Thread thread = threads[i];
+                if (thread != null) {
+                    Logger.debug(InitServlet.class, String.format("Thread: %s | State: %s | Daemon: %s | Alive: %s", 
+                        thread.getName(), 
+                        thread.getState(), 
+                        thread.isDaemon(), 
+                        thread.isAlive()));
+                }
+            }
+            
+            Logger.debug(InitServlet.class, "=== END ACTIVE THREADS ===");
+        } catch (Exception e) {
+            Logger.warn(InitServlet.class, "Failed to log active threads: " + e.getMessage());
+        }
     }
 
 }

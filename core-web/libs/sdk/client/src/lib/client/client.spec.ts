@@ -1,4 +1,6 @@
-import { createDotCMSClient, DotCMSClientConfig, RequestOptions } from './client';
+import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
+
+import { createDotCMSClient } from './client';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';
@@ -104,7 +106,7 @@ describe('DotCMSClient', () => {
             try {
                 createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
-            } catch (error) {
+            } catch {
                 // This is expected, verify the error
             }
 
@@ -122,7 +124,7 @@ describe('DotCMSClient', () => {
             try {
                 createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
-            } catch (error) {
+            } catch {
                 // This is expected, verify the error
             }
 

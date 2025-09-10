@@ -1,5 +1,6 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
+import tippy from 'tippy.js';
 
 import {
     ChangeDetectorRef,
@@ -25,15 +26,15 @@ import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-charact
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
-import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotPropertiesService, DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -49,27 +50,23 @@ import {
     AssetUploader,
     BubbleAssetFormExtension,
     BubbleFormExtension,
-    BubbleLinkFormExtension,
-    DEFAULT_LANG_ID,
-    DotBubbleMenuExtension,
     DotComands,
     DotConfigExtension,
+    DotTableCellContextMenu,
     DotFloatingButton,
-    DotTableCellExtension,
-    DotTableExtension,
-    DotTableHeaderExtension,
-    DragHandler,
+    DotCMSTableExtensions,
     FREEZE_SCROLL_KEY,
-    FreezeScroll
+    FreezeScroll,
+    IndentExtension
 } from '../../extensions';
-import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
     RestoreDefaultDOMAttrs,
-    SetDocAttrStep
+    SetDocAttrStep,
+    DEFAULT_LANG_ID
 } from '../../shared';
 
 @Component({
@@ -83,7 +80,8 @@ import {
             useExisting: forwardRef(() => DotBlockEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
@@ -102,6 +100,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     public customBlocks = '';
     public content: Content = '';
     public contentletIdentifier: string;
+    public disabled = false;
     editor: Editor;
     subject = new Subject();
     freezeScroll = true;
@@ -109,11 +108,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
-    private _customNodes: Map<string, AnyExtension> = new Map([
+    private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
-        ['table', DotTableExtension()],
         ['aiContent', AIContentNode],
         ['loader', LoaderNode]
     ]);
@@ -123,13 +121,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    constructor(
-        private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService,
-        private readonly dotAiService: DotAiService
-    ) {
-        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
-    }
+    readonly viewContainerRef = inject(ViewContainerRef);
+    readonly dotMarketingConfigService = inject(DotMarketingConfigService);
+    readonly dotAiService = inject(DotAiService);
+
+    readonly dotDragHandleOptions = {
+        duration: 250,
+        zIndex: 5,
+        placement: 'left'
+    };
 
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
@@ -138,7 +138,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     get showCharData() {
         try {
             return JSON.parse(this.displayCountBar as string);
-        } catch (e) {
+        } catch {
             return true;
         }
     }
@@ -162,11 +162,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.setEditorContent(content);
     }
 
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+        if (this.editor) {
+            this.editor.setEditable(!isDisabled);
+        }
+    }
+
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
     ngOnInit() {
+        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
+        tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),
@@ -181,7 +190,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
-                    ]
+                    ],
+                    editable: true
                 });
 
                 this.dotMarketingConfigService.setProperty(
@@ -194,11 +204,19 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnDestroy() {
+        if (this.editor) {
+            this.editor.destroy();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }
 
     onBlockEditorChange(value: JSONContent) {
+        if (this.disabled) {
+            return;
+        }
+
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();
@@ -433,7 +451,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                 contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
-            DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),
             Youtube.configure({
                 height: 300,
                 width: 400,
@@ -446,18 +463,47 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
-            DragHandler(this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
-            DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
-            DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
-            DotTableHeaderExtension(),
-            TableRow,
             FreezeScroll,
             CharacterCount,
-            AssetUploader(this.#injector, this.viewContainerRef)
+            AssetUploader(this.#injector, this.viewContainerRef),
+            IndentExtension,
+            Placeholder.configure({
+                emptyEditorClass: 'is-editor-empty',
+                emptyNodeClass: 'is-empty',
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
+                        return this.#dotMessageService.get('block-editor.placeholder.list');
+                    }
+
+                    if (node.type.name === 'heading') {
+                        const level = node.attrs['level'] ?? '';
+
+                        return this.#dotMessageService.get(
+                            'block-editor.placeholder.heading',
+                            level
+                        );
+                    }
+
+                    if (node.type.name === 'codeBlock') {
+                        return this.#dotMessageService.get('block-editor.placeholder.code');
+                    }
+
+                    if (node.type.name === 'blockquote') {
+                        return this.#dotMessageService.get('block-editor.placeholder.quote');
+                    }
+
+                    if (node.type.name === 'table') {
+                        return '';
+                    }
+
+                    return this.#dotMessageService.get('block-editor.placeholder.paragraph');
+                }
+            }),
+            ...DotCMSTableExtensions,
+            DotTableCellContextMenu(this.viewContainerRef)
         ];
 
         if (isAIPluginInstalled) {

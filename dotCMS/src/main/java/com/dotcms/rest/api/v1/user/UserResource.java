@@ -3,14 +3,17 @@ package com.dotcms.rest.api.v1.user;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.site.ResponseSiteVariablesEntityView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -49,23 +52,32 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
+import javax.ws.rs.Consumes;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -78,6 +90,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
@@ -91,6 +104,8 @@ import static com.dotmarketing.business.UserHelper.validateMaximumLength;
  *
  */
 @Path("/v1/users")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Users")
 public class UserResource implements Serializable {
 
 	public static final String USER_ID = "userID";
@@ -128,16 +143,28 @@ public class UserResource implements Serializable {
 		this.roleAPI = instanceProvider.getRoleAPI();
 	}
 
-	/**
-	 *
-	 * @param request
-	 * @return
-	 */
+	@Operation(
+		operationId = "getCurrentUser",
+		summary = "Get current user",
+		description = "Returns information about the currently authenticated user"
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Current user information retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = RestUser.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - could not provide current user",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@JSONP
 	@Path("/current")
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	public RestUser self(@Context final  HttpServletRequest request, final @Context HttpServletResponse response) {
 
 		final User user = new WebResource.InitBuilder(webResource)
@@ -208,12 +235,37 @@ public class UserResource implements Serializable {
 	 *                       <li>Generic error from server.</li>
 	 *                   </ul>
 	 */
+	@Operation(
+	    operationId = "updateCurrentUser",
+	    summary = "Update current user",
+	    description = "Updates information for the currently authenticated user. May require reauthentication if critical fields are changed."
+	)
+	@ApiResponses(value = {
+	    @ApiResponse(responseCode = "200",
+	                description = "User information updated successfully",
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityUserUpdateView.class))),
+	    @ApiResponse(responseCode = "400",
+	                description = "Bad request - invalid user data or password requirements",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "401",
+	                description = "Unauthorized - authentication required",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "500",
+	                description = "Internal server error",
+	                content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@JSONP
 	@Path("/current")
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response updateCurrent(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
+								 @io.swagger.v3.oas.annotations.parameters.RequestBody(
+								         description = "Current user update data including personal information and password changes",
+								         required = true,
+								         content = @Content(schema = @Schema(implementation = UpdateCurrentUserForm.class)))
 								 final UpdateCurrentUserForm updateUserForm) throws DotDataException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
@@ -248,7 +300,7 @@ public class UserResource implements Serializable {
 				userMap = userToUpdated.toMap();
 			}
 
-			response = Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+			response = Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(),
 					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
 		} catch (final UserFirstNameException e) {
 
@@ -331,21 +383,38 @@ public class UserResource implements Serializable {
 	 *
 	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
 	 */
+	@Operation(
+		operationId = "filterUsers",
+		summary = "Filter users",
+		description = "Returns a list of dotCMS users based on specified search criteria with pagination support"
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Users retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityListUserView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@JSONP
 	@Path("/filter")
 	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	@Produces({ MediaType.APPLICATION_JSON })
 	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-						   @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
-						   @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
-						   @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-						   @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
-						   @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-						   @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
-						   @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
-						   @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
-						   @QueryParam(UserPaginator.PERMISSION_PARAM) int permission) {
+						   @Parameter(description = "Filter users by full name or parts of it") @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
+						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
+						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+						   @Parameter(description = "Column name for sorting results") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
+						   @Parameter(description = "Sorting direction: ASC or DESC") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+						   @Parameter(description = "Include anonymous user in results") @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
+						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
+						   @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
+						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission) {
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
@@ -365,41 +434,41 @@ public class UserResource implements Serializable {
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
 	}
 
-	/**
-	 * Performs all the changes in the {@link HttpSession} that are required to
-	 * simulate another user's login via the 'Login As' feature in dotCMS.
-	 * <p>
-	 * The parameters for this REST call are the following:
-	 * <ul>
-	 * <li>{@code userid}</li>
-	 * <li>{@code pwd}</li>
-	 * </ul>
-	 * <p>
-	 * Example #1: Login as non-admin user.
-	 *
-	 * <pre>
-	 * http://localhost:8080/api/v1/users/loginas/userid/dotcms.org.2789
-	 * </pre>
-	 *
-	 * Example #2: Login as admin user.
-	 *
-	 * <pre>
-	 * http://localhost:8080/api/v1/users/loginas/userid/dotcms.org.2/pwd/admin
-	 * </pre>
-	 *
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 *            - The parameters that can be specified in the REST call.
-	 * @return A {@link Response} containing the status of the operation. This
-	 *         will probably require a page refresh.
-	 * @throws Exception An error occurred when authenticating the request.
-	 */
+	@Operation(
+	    operationId = "loginAsUser",
+	    summary = "Login as user",
+	    description = "Performs user impersonation via the 'Login As' feature, allowing administrators to simulate another user's session"
+	)
+	@ApiResponses(value = {
+	    @ApiResponse(responseCode = "200",
+	                description = "Login as operation successful",
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityLoginAsView.class))),
+	    @ApiResponse(responseCode = "400",
+	                description = "Bad request - invalid user credentials",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "401",
+	                description = "Unauthorized - authentication failed",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "403",
+	                description = "Forbidden - insufficient permissions or missing Login As role",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "500",
+	                description = "Internal server error",
+	                content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@Path("/loginas")
 	@JSONP
 	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAs(@Context final HttpServletRequest request, @Context final HttpServletResponse httpResponse, final LoginAsForm loginAsForm) throws Exception {
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Consumes(MediaType.APPLICATION_JSON)
+	public final Response loginAs(@Context final HttpServletRequest request, @Context final HttpServletResponse httpResponse,
+	        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+	            description = "Login as credentials",
+	            required = true,
+	            content = @Content(schema = @Schema(implementation = LoginAsForm.class))
+	        ) final LoginAsForm loginAsForm) throws Exception {
 		final String loginAsUserId = loginAsForm.getUserId();
 		final String loginAsUserPwd = loginAsForm.getPassword();
 
@@ -422,7 +491,7 @@ public class UserResource implements Serializable {
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
-			response = Response.ok(new ResponseEntityView(Map.of("loginAs", true))).build();
+			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
@@ -540,27 +609,31 @@ public class UserResource implements Serializable {
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
-	/**
-	 * Performs all the changes in the {@link HttpSession} that are required to
-	 * logout from the simulated user's login via the 'Login As' feature in
-	 * dotCMS.
-	 * <p>
-	 * Example:
-	 *
-	 * <pre>
-	 * http://localhost:8080/api/v1/users/logoutas
-	 * </pre>
-	 *
-	 * @param httpServletRequest
-	 *            - The {@link HttpServletRequest} object.
-	 * @return A {@link Response} containing the status of the operation. This
-	 *         will probably require a page refresh.
-	 */
+	@Operation(
+	    operationId = "logoutAsUser",
+	    summary = "Logout as user",
+	    description = "Ends user impersonation session and reverts back to the original administrator user"
+	)
+	@ApiResponses(value = {
+	    @ApiResponse(responseCode = "200",
+	                description = "Logout as operation successful",
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityLoginAsView.class))),
+	    @ApiResponse(responseCode = "400",
+	                description = "Bad request - invalid session state",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "401",
+	                description = "Unauthorized - authentication required",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "500",
+	                description = "Internal server error",
+	                content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@Path("/logoutas")
 	@JSONP
 	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	@Produces({ MediaType.APPLICATION_JSON })
 	public final Response logoutAs(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) {
 
 		new WebResource.InitBuilder(webResource)
@@ -582,7 +655,7 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
-			response = Response.ok(new ResponseEntityView(Map.of("logoutAs", true))).build();
+			response = Response.ok(new ResponseEntityView<>(Map.of("logoutAs", true))).build();
 		} catch (final DotSecurityException | DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
 							"out as user '%s' by UserID '%s' / Remote IP '%s': %s", currentLoginAsUser.getUserId(),
@@ -601,22 +674,36 @@ public class UserResource implements Serializable {
 		return response;
 	}
 
-	/**
-	 * Returns all the users (without the anonymous and default users) that can
-	 * be impersonated.
-	 *
-	 * @return The list of users that can be impersonated.
-	 */
+	@Operation(
+	    operationId = "getLoginAsData",
+	    summary = "Get login as data",
+	    description = "Returns a paginated list of users that can be impersonated (excludes anonymous and default users)"
+	)
+	@ApiResponses(value = {
+	    @ApiResponse(responseCode = "200",
+	                description = "User list retrieved successfully",
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityListUserView.class))),
+	    @ApiResponse(responseCode = "401",
+	                description = "Unauthorized - authentication required",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "403",
+	                description = "Forbidden - insufficient permissions",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "500",
+	                description = "Internal server error",
+	                content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/loginAsData")
 	@JSONP
 	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	@Produces({ MediaType.APPLICATION_JSON })
 	public final Response loginAsData(@Context final HttpServletRequest httpServletRequest,
 									  @Context final HttpServletResponse httpServletResponse,
-									  @QueryParam(PaginationUtil.FILTER)   final String filter,
-									  @QueryParam(PaginationUtil.PAGE) final int page,
-									  @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
+									  @Parameter(description = "Filter for user search") @QueryParam(PaginationUtil.FILTER)   final String filter,
+									  @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+									  @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -665,35 +752,44 @@ public class UserResource implements Serializable {
 		}
 	}
 
-	/**
-	 * Creates an user.
-	 * If userId is sent will be use, if not will be created "userId-" + UUIDUtil.uuid().
-	 * By default, users will be inactive unless the active = true is sent and user has permissions( is Admin or access
-	 * to Users and Roles portlets).
-	 * FirstName, LastName, Email and Password are required.
-	 *
-	 *
-	 * Scenarios:
-	 *  1. No Auth or User doing the request do not have access to Users and Roles Portlets
-	 *  	- Always will be inactive
-	 *  	- Only the	Role DOTCMS_FRONT_END_USER will be added
-	 *  2. Auth, User is Admin or have access to Users and Roles Portlets
-	 *  	- Can be active if JSON includes ("active": true)
-	 *  	- The list of RoleKey will be use to assign the roles, if the roleKey doesn't exist will be
-	 *  		created under the ROOT ROLE.
-	 *
-	 * @param httpServletRequest
-	 * @param createUserForm
-	 * @return User Created
-	 * @throws Exception
-	 */
+	@Operation(
+	    operationId = "createUser",
+	    summary = "Create user",
+	    description = "Creates a new user. Requires admin privileges or access to Users and Roles portlets. FirstName, LastName, Email and Password are required"
+	)
+	@ApiResponses(value = {
+	    @ApiResponse(responseCode = "200",
+	                description = "User created successfully",
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityUserUpdateView.class))),
+	    @ApiResponse(responseCode = "400",
+	                description = "Bad request - missing required fields or invalid data",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "401",
+	                description = "Unauthorized - authentication required",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "403",
+	                description = "Forbidden - insufficient permissions to create users",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "409",
+	                description = "Conflict - user already exists",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "500",
+	                description = "Internal server error",
+	                content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
 	public final Response create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
-								 final UserForm createUserForm) throws Exception {
+								 @io.swagger.v3.oas.annotations.parameters.RequestBody(
+								     description = "User creation data",
+								     required = true,
+								     content = @Content(schema = @Schema(implementation = UserForm.class))
+								 ) final UserForm createUserForm) throws Exception {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requestAndResponse(httpServletRequest, httpServletResponse)
@@ -707,10 +803,11 @@ public class UserResource implements Serializable {
 				);
 
 		if (isRoleAdministrator) {
+
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
-
-			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
@@ -797,13 +894,14 @@ public class UserResource implements Serializable {
 	 * @return User Updated
 	 * @throws Exception
 	 */
-	@Operation(summary = "Update an existing user.",
+	@Operation(operationId = "updateUser", summary = "Update an existing user.",
+			description = "Updates an existing user's information including personal details, roles, and account settings. Only admin users or users with appropriate portlet access can perform this operation.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
-											ResponseSiteVariablesEntityView.class)),
+											ResponseEntityUserUpdateView.class)),
 							description = "If success returns a map with the user + user id."),
 					@ApiResponse(
 							responseCode = "403",
@@ -827,9 +925,14 @@ public class UserResource implements Serializable {
 	@PUT
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response udpate(@Context final HttpServletRequest httpServletRequest,
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public final Response update(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
+								 @io.swagger.v3.oas.annotations.parameters.RequestBody(
+								         description = "User update data including personal information, roles, and account settings",
+								         required = true,
+								         content = @Content(schema = @Schema(implementation = UserForm.class)))
 								 final UserForm createUserForm) throws DotDataException, IncorrectPasswordException, SystemException, DotSecurityException, ParseException, PortalException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
@@ -856,6 +959,175 @@ public class UserResource implements Serializable {
 
 		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 	} // create.
+
+	/**
+     * Activate an existing user.
+     *
+     * Only Admin User or have access to Users and Roles Portlets can update an existing user
+     *
+     * @param httpServletRequest
+     * @return User Updated
+     * @throws Exception
+     */
+    @Operation(operationId = "activateUser", summary = "Active an existing user.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If success returns a map with the user + user id."),
+                    @ApiResponse(
+                            responseCode = "403",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+                    @ApiResponse(
+                            responseCode = "404",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user to update does not exist"),
+                    @ApiResponse(
+                            responseCode = "400",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user information is not valid"),
+            })
+    @PATCH
+    @Path("/activate/{userId}")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public final ResponseUserMapEntityView active(@Context final HttpServletRequest httpServletRequest,
+                                 @Context final HttpServletResponse httpServletResponse,
+                                 @PathParam("userId") @Parameter(
+                                         required = true,
+                                         description = "Identifier of an user.\n\n" +
+                                                 "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
+                                         schema = @Schema(type = "string"))
+                                 final String userId)
+            throws Exception {
+
+        final User modUser = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Activating user: " + modUser.getUserId());
+
+        final boolean isRoleAdministrator = modUser.isAdmin() ||
+                (
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+                );
+
+        if (isRoleAdministrator) {
+
+            final User userToUpdated = this.userAPI.loadUserById(userId);
+            if (Objects.isNull(userToUpdated)) {
+
+                throw new NoSuchUserException("User with id " + userId + " does not exist");
+            }
+
+            userToUpdated.setActive(true);
+            this.userAPI.save(userToUpdated, modUser, false);
+
+            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+                    "user", userToUpdated.toMap())); // 200
+        }
+
+        throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
+    } // active.
+
+    /**
+     * Deactivate an existing user.
+     *
+     * Only Admin User or have access to Users and Roles Portlets can update an existing user
+     *
+     * @param httpServletRequest
+     * @return User Updated
+     * @throws Exception
+     */
+    @Operation(operationId = "deactivateUser", summary = "Deactivate an existing user.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If success returns a map with the user + user id."),
+                    @ApiResponse(
+                            responseCode = "403",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+                    @ApiResponse(
+                            responseCode = "404",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user to update does not exist"),
+                    @ApiResponse(
+                            responseCode = "400",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user information is not valid"),
+            })
+    @PATCH
+    @Path("/deactivate/{userId}")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public final ResponseUserMapEntityView deactivate(@Context final HttpServletRequest httpServletRequest,
+                                                  @Context final HttpServletResponse httpServletResponse,
+                                                  @PathParam("userId") @Parameter(
+                                                          required = true,
+                                                          description = "Identifier of an user.\n\n" +
+                                                                  "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
+                                                          schema = @Schema(type = "string"))
+                                                  final String userId)
+            throws Exception {
+
+        final User modUser = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Deactivating user: " + modUser.getUserId());
+
+        final boolean isRoleAdministrator = modUser.isAdmin() ||
+                (
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+                );
+
+        if (isRoleAdministrator) {
+
+            final User userToUpdated = this.userAPI.loadUserById(userId);
+            if (Objects.isNull(userToUpdated)) {
+
+                throw new NoSuchUserException("User with id " + userId + " does not exist");
+            }
+
+            userToUpdated.setActive(false);
+            this.userAPI.save(userToUpdated, modUser, false);
+
+            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+                    "user", userToUpdated.toMap())); // 200
+        }
+
+        throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
+    } // deactivate.
+
 
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
@@ -944,4 +1216,122 @@ public class UserResource implements Serializable {
 
 		return userToSave;
 	}
+
+	/**
+	 * Deletes an existing user.
+	 *
+	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
+	 *
+	 * - Invalid or missing userToDelete → 400 Bad Request or 404 Not Found
+	 * - Invalid userToReplace → 400 Bad Request
+	 * - Unauthorized access → 403 Forbidden
+	 * - Internal failures during reassignment or deletion → 500 Internal Server Error
+	 *
+	 * @param httpServletRequest
+	 * @return User Deleted View
+	 * @throws Exception
+	 */
+	@Operation(operationId = "deleteUser", summary = "Deletes an existing user.",
+			description = "Deletes a user account and reassigns all associated content and permissions to a replacement user. Only admin users or users with appropriate portlet access can perform this operation.",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseUserDeletedEntityView.class)),
+							description = "If success returns a map with the user + user id."),
+					@ApiResponse(
+							responseCode = "403",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseUserDeletedEntityView.class)),
+							description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+					@ApiResponse(
+							responseCode = "404",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseUserDeletedEntityView.class)),
+							description = "If the user to update does not exist"),
+					@ApiResponse(
+							responseCode = "400",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseUserDeletedEntityView.class)),
+							description = "If the user information is not valid"),
+			})
+	@DELETE
+	@Path("/{userId}")
+	@JSONP
+	@NoCache
+	@Produces(MediaType.APPLICATION_JSON)
+	public final void delete(@Context final HttpServletRequest httpServletRequest,
+							 @Suspended final AsyncResponse asyncResponse,
+							 @PathParam("userId") @Parameter(
+									 required = true,
+									 description = "Identifier of an user.\n\n" +
+											 "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
+									 schema = @Schema(type = "string"))
+							 final String userIdToDelete,
+							 @QueryParam("replacementUserId") @Parameter(
+									 required = true,
+									 description = "Identifier of an user.\n\n" +
+											 "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
+									 schema = @Schema(type = "string"))
+							 final String replacementUserId)
+			throws Exception {
+
+		final User modUser = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(httpServletRequest, new EmptyHttpResponse())
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " by the user id " + modUser.getUserId()
+				+ " will the replacement: " + replacementUserId);
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				(
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+				);
+
+		if (isRoleAdministrator) {
+
+			final String finalReplacementUserId = Objects.nonNull(replacementUserId)?replacementUserId:modUser.getUserId();
+
+			Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " replacement the user id " + finalReplacementUserId);
+
+			if (modUser.getUserId().equals(userIdToDelete)) {
+
+				throw new IllegalAccessException(USER_MSG + modUser.getUserId() + " can not remove itself");
+			}
+
+			final User userToUpdated = Try.of(()->this.userAPI.loadUserById(userIdToDelete)).getOrNull();
+			if (Objects.isNull(userToUpdated)) {
+
+				throw new NoSuchUserException("User with id " + userIdToDelete + " does not exist");
+			}
+
+			final User replacementUser = Try.of(()->this.userAPI.loadUserById(finalReplacementUserId)).getOrNull();
+			if (Objects.isNull(replacementUser)) {
+
+				throw new BadRequestException("User replacement with id " + finalReplacementUserId + " does not exist");
+			}
+
+			ResponseUtil.handleAsyncResponse(() -> {
+				try {
+					this.userAPI.delete(userToUpdated, replacementUser, modUser, false);
+					return new ResponseUserDeletedEntityView(new UserDeletedView("success", userIdToDelete, finalReplacementUserId)); // 200
+				} catch (Exception e) {
+					asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+				}
+				return null;
+			}, asyncResponse);
+
+		} else {
+
+			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
+		}
+	} // delete.
 }

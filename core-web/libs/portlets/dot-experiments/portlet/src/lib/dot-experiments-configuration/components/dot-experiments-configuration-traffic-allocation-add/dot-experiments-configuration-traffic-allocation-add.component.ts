@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import {
     FormControl,
     FormGroup,
@@ -27,11 +27,9 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-traffic-allocation-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
-
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
@@ -47,16 +45,14 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficAllocationAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     form: FormGroup;
     trafficAllocation: string;
     stepStatus = ComponentStatus;
 
     vm$: Observable<ConfigurationTrafficStepViewModel> =
         this.dotExperimentsConfigurationStore.trafficStepVm$;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     ngOnInit(): void {
         this.initForm();

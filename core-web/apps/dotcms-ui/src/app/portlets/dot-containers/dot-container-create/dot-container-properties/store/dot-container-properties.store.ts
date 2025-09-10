@@ -2,7 +2,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
@@ -22,7 +22,8 @@ import {
     DotContainerStructure
 } from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+
+import { DotContainersService } from '../../../../../api/services/dot-containers/dot-containers.service';
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
@@ -38,15 +39,15 @@ export interface DotContainerPropertiesState {
 
 @Injectable()
 export class DotContainerPropertiesStore extends ComponentStore<DotContainerPropertiesState> {
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotContainersService: DotContainersService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private activatedRoute: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotContentTypeService: DotContentTypeService
-    ) {
+    private dotMessageService = inject(DotMessageService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotContainersService = inject(DotContainersService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private activatedRoute = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotContentTypeService = inject(DotContentTypeService);
+
+    constructor() {
         super({
             showPrePostLoopInput: false,
             isContentTypeVisible: false,

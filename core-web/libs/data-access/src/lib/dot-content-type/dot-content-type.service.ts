@@ -1,22 +1,21 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     StructureTypeView,
     ContentTypeView,
-    DotCopyContentTypeDialogFormFields
+    DotCopyContentTypeDialogFormFields,
+    DotPagination
 } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotContentTypeService {
-    private readonly coreWebService = inject(CoreWebService);
-    private readonly http = inject(HttpClient);
+    readonly #httpClient = inject(HttpClient);
 
     /**
      * Get a content type by id or variable name
@@ -24,10 +23,8 @@ export class DotContentTypeService {
      * @returns Content Type
      */
     getContentType(idOrVar: string): Observable<DotCMSContentType> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/contenttype/id/${idOrVar}`
-            })
+        return this.#httpClient
+            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${idOrVar}`)
             .pipe(take(1), pluck('entity'));
     }
 
@@ -39,14 +36,36 @@ export class DotContentTypeService {
      * @memberof DotContentTypeService
      */
     getContentTypes({ filter = '', page = 40, type = '' }): Observable<DotCMSContentType[]> {
-        return this.coreWebService
-            .requestView({
-                url: `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${
-                    type ? `&type=${type}` : ''
-                }`
-            })
+        return this.#httpClient
+            .get<{
+                entity: DotCMSContentType[];
+            }>(
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${type ? `&type=${type}` : ''}`
+            )
             .pipe(pluck('entity'));
     }
+
+    /**
+     *Get the content types from the endpoint
+     *
+     * @param {*} { filter = '', page = 40, type = '' }
+     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @memberof DotContentTypeService
+     */
+    getContentTypesWithPagination({ filter = '', page = 40, type = '' }): Observable<{
+        contentTypes: DotCMSContentType[];
+        pagination: DotPagination;
+    }> {
+        return this.#httpClient
+            .get<{
+                entity: DotCMSContentType[];
+                pagination: DotPagination;
+            }>(
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${type ? `&type=${type}` : ''}`
+            )
+            .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
+    }
+
     /**
      * Gets all content types excluding the RECENT ones
      *
@@ -70,9 +89,14 @@ export class DotContentTypeService {
      * @memberof DotContentTypeService
      */
     filterContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
-        return this.coreWebService
-            .requestView({
-                body: {
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+        });
+
+        return this.#httpClient
+            .post<{ entity: DotCMSContentType[] }>(
+                `/api/v1/contenttype/_filter`,
+                {
                     filter: {
                         types: allowedTypes,
                         query: filter
@@ -81,9 +105,8 @@ export class DotContentTypeService {
                     direction: 'ASC',
                     perPage: 40
                 },
-                method: 'POST',
-                url: `/api/v1/contenttype/_filter`
-            })
+                { headers }
+            )
             .pipe(pluck('entity'));
     }
 
@@ -132,14 +155,14 @@ export class DotContentTypeService {
         variable: string,
         copyFormFields: DotCopyContentTypeDialogFormFields
     ): Observable<DotCMSContentType> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    ...copyFormFields
-                },
-                method: 'POST',
-                url: `/api/v1/contenttype/${variable}/_copy`
-            })
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+        });
+
+        return this.#httpClient
+            .post<{
+                entity: DotCMSContentType;
+            }>(`/api/v1/contenttype/${variable}/_copy`, copyFormFields, { headers })
             .pipe(pluck('entity'));
     }
 
@@ -151,10 +174,27 @@ export class DotContentTypeService {
      * @memberof DotContentTypeService
      */
     getByTypes(type: string, per_page = 100): Observable<DotCMSContentType[]> {
-        return this.http
+        return this.#httpClient
             .get<{
                 entity: DotCMSContentType[];
             }>(`/api/v1/contenttype?type=${type}&per_page=${per_page}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Updates a content type by its ID with the provided payload.
+     *
+     * This method allows updating any property of a content type by sending a partial or full payload.
+     * The payload should match the expected structure for the content type update API.
+     *
+     * @param id The unique identifier of the content type to update.
+     * @param payload The data to update the content type with. This can be a partial or full content type object.
+     * @returns Observable<DotCMSContentType> The updated content type.
+     * @memberof DotContentTypeService
+     */
+    updateContentType(id: string, payload: unknown): Observable<DotCMSContentType> {
+        return this.#httpClient
+            .put<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${id}`, payload)
             .pipe(pluck('entity'));
     }
 
@@ -163,10 +203,8 @@ export class DotContentTypeService {
     }
 
     private getBaseTypes(): Observable<StructureTypeView[]> {
-        return this.coreWebService
-            .requestView({
-                url: 'v1/contenttype/basetypes'
-            })
+        return this.#httpClient
+            .get<{ entity: StructureTypeView[] }>('/api/v1/contenttype/basetypes')
             .pipe(pluck('entity'));
     }
 }

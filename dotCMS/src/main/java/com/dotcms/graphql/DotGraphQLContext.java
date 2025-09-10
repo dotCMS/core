@@ -137,6 +137,20 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
         return params.get(key);
     }
 
+    /**
+     * Marks this context as representing a vanity URL redirect.
+     */
+    public void markAsVanityRedirect() {
+        this.addParam("isVanityRedirect", true);
+    }
+
+    /**
+     * Returns whether the current request is handling a vanity URL redirect.
+     */
+    public boolean isVanityRedirect() {
+        return Boolean.TRUE.equals(this.getParam("isVanityRedirect"));
+    }
+
     public static class Builder {
         private HttpServletRequest httpServletRequest;
         private HttpServletResponse httpServletResponse;

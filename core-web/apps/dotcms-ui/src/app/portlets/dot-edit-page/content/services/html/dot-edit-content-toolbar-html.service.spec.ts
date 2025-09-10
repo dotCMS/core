@@ -138,7 +138,7 @@ describe('DotEditContentToolbarHtmlService', () => {
 
                 describe('without license', () => {
                     beforeEach(() => {
-                        const dotLicenseService = TestBed.get(DotLicenseService);
+                        const dotLicenseService = TestBed.inject(DotLicenseService);
                         spyOn(dotLicenseService, 'isEnterprise').and.returnValue(
                             observableOf(false)
                         );

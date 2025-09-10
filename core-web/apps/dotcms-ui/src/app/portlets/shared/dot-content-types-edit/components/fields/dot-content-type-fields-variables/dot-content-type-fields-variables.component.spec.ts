@@ -4,15 +4,14 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
+import { EMPTY_FIELD } from '@dotcms/utils';
 import {
     dotcmsContentTypeFieldBasicMock,
     DotFieldVariablesServiceMock,
-    EMPTY_FIELD,
     LoginServiceMock,
     mockFieldVariables
 } from '@dotcms/utils-testing';
@@ -20,11 +19,14 @@ import {
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
 
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+
 @Component({
     selector: 'dot-test-host-component',
     template: `
         <dot-content-type-fields-variables [field]="value"></dot-content-type-fields-variables>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     value: DotCMSContentTypeField = {
@@ -122,9 +124,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     describe('Block Editor Field', () => {
-        const BLOCK_EDITOR_FIELD = {
+        const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
             ...EMPTY_FIELD,
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+            clazz: DotCMSClazzes.BLOCK_EDITOR
         };
 
         beforeEach(() => {
@@ -136,10 +138,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 of(mockFieldVariables)
             );
             fixtureHost.detectChanges();
-
-            const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
             expect(comp.fieldVariables.length).toBe(mockFieldVariables.length);
-            expect(dotKeyValue.variables.length).toBe(mockFieldVariables.length);
         });
 
         it('should not set allowedBlocks variable', () => {
@@ -155,10 +154,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 ])
             );
             fixtureHost.detectChanges();
-
-            const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
             expect(comp.fieldVariables.length).toBe(0);
-            expect(dotKeyValue.variables.length).toBe(0);
         });
     });
 });

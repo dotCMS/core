@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -9,7 +9,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotPageTypesService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Returns Content Type data of type page and urlMap

@@ -5,6 +5,7 @@ import {
     Component,
     ElementRef,
     forwardRef,
+    inject,
     OnDestroy,
     OnInit,
     ViewChild
@@ -15,11 +16,12 @@ import { LazyLoadEvent } from 'primeng/api';
 
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
-import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
+
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',
@@ -31,11 +33,16 @@ import { DotTheme } from '@dotcms/dotcms-models';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotThemeSelectorDropdownComponent
     implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit
 {
+    readonly paginatorService = inject(PaginatorService);
+    private readonly siteService = inject(SiteService);
+    private readonly themesService = inject(DotThemesService);
+
     themes: DotTheme[] = [];
     value: DotTheme = null;
     totalRecords = 0;
@@ -68,18 +75,12 @@ export class DotThemeSelectorDropdownComponent
     private initialLoad = true;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        public readonly paginatorService: PaginatorService,
-        private readonly siteService: SiteService,
-        private readonly themesService: DotThemesService
-    ) {}
-
     ngOnInit(): void {
         const interval = setInterval(() => {
             try {
                 this.currentSiteIdentifier = this.siteService.currentSite.identifier;
                 clearInterval(interval);
-            } catch (e) {
+            } catch {
                 /* */
             }
         }, 0);

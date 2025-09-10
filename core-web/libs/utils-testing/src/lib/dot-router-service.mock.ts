@@ -67,6 +67,7 @@ export class MockDotRouterService {
     goToEditTemplate = jasmine.createSpy('goToEditTemplate');
     allowRouteDeactivation = jasmine.createSpy('allowRouteDeactivation');
     forbidRouteDeactivation = jasmine.createSpy('forbidRouteDeactivation');
+    goToEditContainer = jasmine.createSpy('goToEditContainer');
     isEditPage() {
         /* */
     }

@@ -1,8 +1,6 @@
-import { Params } from '@angular/router';
-
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotCMSPage, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -20,23 +18,21 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
-    getAllowedPageParams,
     getOrientation,
     getWrapperMeasures,
     normalizeQueryParams
 } from '.';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
-import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
 import { Orientation } from '../store/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
     page: {
         locked,
         lockedBy
-    } as DotPage,
+    } as DotCMSPage,
     currentUser: {
         userId
     } as CurrentUser
@@ -45,7 +41,7 @@ const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
 describe('utils functions', () => {
     describe('SDK Editor Script Source', () => {
         it('should return the correct script source', () => {
-            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/html/js/editor-js/sdk-editor.js');
+            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/ext/uve/dot-uve.js');
         });
     });
 
@@ -153,6 +149,51 @@ describe('utils functions', () => {
                 ],
                 contentletsId: ['test']
             });
+        });
+
+        it('should add container to pageContainers if it does not exist - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to delete the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['test'],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            // Contentlet to delete
+            const contentlet = {
+                identifier: 'test',
+                inode: 'test',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = deleteContentletFromContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'test',
+                language_id: 'test',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.pageContainers).toEqual([
+                {
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    variantId: '1',
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: [],
+                    personaTag: 'persona-tag'
+                }
+            ]);
+            expect(result.contentletsId).toEqual([]);
         });
     });
 
@@ -306,6 +347,103 @@ describe('utils functions', () => {
                 ]
             });
         });
+
+        it('should add container to pageContainers if it does not exist - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to insert the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: [],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            // Contentlet position mark
+            const contentlet = {
+                identifier: 'contentlet-id',
+                inode: 'contentlet-inode',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'page-id',
+                language_id: '1',
+                newContentletId: 'new-contentlet-id',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['new-contentlet-id'],
+                        personaTag: 'persona-tag',
+                        acceptTypes: 'test',
+                        maxContentlets: 1,
+                        variantId: '1'
+                    }
+                ]
+            });
+        });
+
+        it('should add container to pageContainers and insert in specific position - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to insert the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['test123'],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            // Contentlet to insert
+            const contentlet = {
+                identifier: 'test123',
+                inode: 'test',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'test',
+                language_id: 'test',
+                position: 'after',
+                newContentletId: '000',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test123', '000'],
+                        personaTag: 'persona-tag',
+                        acceptTypes: 'test',
+                        maxContentlets: 1,
+                        variantId: '1'
+                    }
+                ]
+            });
+        });
     });
 
     describe('url sanitize', () => {
@@ -341,13 +479,13 @@ describe('utils functions', () => {
             const personalization = getPersonalization({
                 contentType: 'persona',
                 keyTag: 'adminUser'
-            });
+            } as DotCMSViewAsPersona);
 
             expect(personalization).toBe('dot:persona:adminUser');
         });
 
         it('should return the correct personalization when persona does not exist', () => {
-            const personalization = getPersonalization({});
+            const personalization = getPersonalization({} as DotCMSViewAsPersona);
             expect(personalization).toBe('dot:default');
         });
     });
@@ -546,7 +684,7 @@ describe('utils functions', () => {
             const result = mapContainerStructureToDotContainerMap(dotPageContainerStructureMock);
 
             expect(result).toEqual({
-                '123': dotPageContainerStructureMock['123'].container
+                '123': dotPageContainerStructureMock['123'].container as unknown as DotContainer
             });
         });
     });
@@ -751,53 +889,6 @@ describe('utils functions', () => {
             expect(result).toEqual(
                 'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
-        });
-    });
-
-    describe('getAllowedPageParams', () => {
-        it('should filter and return only allowed page params', () => {
-            const expected = {
-                url: 'some-url',
-                mode: UVE_MODE.EDIT,
-                depth: '2',
-                clientHost: 'localhost',
-                variantName: 'variant',
-                language_id: '1',
-                experimentId: 'exp123',
-                [PERSONA_KEY]: 'persona123'
-            } as DotPageApiParams;
-
-            const params: Params = {
-                ...expected,
-                invalidParam: 'invalid'
-            };
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if no allowed params are present', () => {
-            const params: Params = {
-                invalidParam1: 'invalid1',
-                invalidParam2: 'invalid2'
-            };
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if params is empty', () => {
-            const params: Params = {};
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
         });
     });
 

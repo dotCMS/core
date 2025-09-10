@@ -14,10 +14,6 @@ import { CalendarModule } from 'primeng/calendar';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
-import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
-import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
@@ -46,6 +42,11 @@ import {
 
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 
+import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
+import { PushPublishServiceMock } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
+import { PushPublishEnvSelectorModule } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
+
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',
     'contenttypes.content.push_publish.action.remove': 'Remove',
@@ -58,7 +59,8 @@ const messageServiceMock = new MockDotMessageService({
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-push-publish-form *ngIf="data" (valid)="valid = $event" (value)="value = $event" [data]="data"></dot-push-publish-form>'
+        '@if (data) {<dot-push-publish-form (valid)="valid = $event" (value)="value = $event" [data]="data"></dot-push-publish-form>}',
+    standalone: false
 })
 class TestHostComponent {
     @Input() data: DotPushPublishDialogData;

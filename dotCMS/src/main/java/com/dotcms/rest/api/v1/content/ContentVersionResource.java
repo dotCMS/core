@@ -1,13 +1,17 @@
 package com.dotcms.rest.api.v1.content;
 
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
-
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.ContentHistoryPaginator;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Identifier;
@@ -23,10 +27,33 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,26 +63,23 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.JSONP;
 
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+
+/**
+ * This REST Endpoint allows you to retrieve information related to versions of Contentlets in
+ * dotCMS, as well as their History data.
+ *
+ * @author Fabrizzio Araya
+ * @since Dec 18th, 2018
+ */
 @Path("/v1/content/versions")
+@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
 public class ContentVersionResource {
 
     private static final String FIND_BY_ID_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-id";
     private static final String FIND_BY_INODE_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-inode";
-    private static final String DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
+    private static final String DATATYPE_MISMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
     private static final String BAD_REQUEST_ERROR_MESSAGE_KEY = "Bad-Request";
 
     private static final String VERSIONS = "versions";
@@ -161,6 +185,80 @@ public class ContentVersionResource {
             return ResponseUtil.mapExceptionResponse(ex);
         }
 
+    }
+
+    @Operation(
+            summary = "Contentlet History",
+            description = "Returns the history of a contentlet with the minimum expected information, " +
+                    "as seen in the History tab in the Content Edition page."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "History data retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+            @ApiResponse(responseCode = "400", description = "The identifier path parameter was not specified.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "The specified identifier does not match any contentlet.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "An internal dotCMS error has occurred.",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/id/{identifier}/history")
+    @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
+    @NoCache
+    public ResponseEntityPaginatedDataView history(@Context final HttpServletRequest request,
+                                                   @Context final HttpServletResponse response,
+                                                   @Parameter(description = "The Identifier of the Contentlet whose history will be retrieved", required = true)
+                                                        @PathParam("identifier") final String identifier,
+                                                   @Parameter(description = "Specified whether the history must be grouped by language or not")
+                                                        @QueryParam("groupByLang") @DefaultValue("false") final boolean groupByLanguage,
+                                                   @Parameter(description = "Specified whether the history must include old versions or not")
+                                                        @QueryParam("bringOldVersions") @DefaultValue("true") final boolean bringOldVersions,
+                                                   @Parameter(description = "Sort direction: Choose between ascending or descending.",
+                                                           schema = @Schema(
+                                                                   type = "string",
+                                                                   allowableValues = {"ASC", "DESC"},
+                                                                   defaultValue = "DESC"))
+                                                        @QueryParam(PaginationUtil.DIRECTION) @DefaultValue("DESC") final String direction,
+                                                   @Parameter(description = "Maximum number or results being returned, for pagination purposes.")
+                                                        @QueryParam("limit") final int limit,
+                                                   @Parameter(description = "Page number of the results being returned, for pagination purposes.")
+                                                        @QueryParam("offset") final int offset)
+            throws DotDataException, DotStateException, DotSecurityException {
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initDataObject.getUser();
+        if (null == identifier) {
+            throw new BadRequestException(getFormattedMessage(user.getLocale(),
+                    BAD_REQUEST_ERROR_MESSAGE_KEY));
+        }
+        final Identifier identifierObj = this.getIdentifier(identifier, user);
+        if (null == identifierObj) {
+            throw new NotFoundException(getFormattedMessage(user.getLocale(),
+                    BAD_REQUEST_ERROR_MESSAGE_KEY));
+        }
+        final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;
+        final PaginationUtil paginationUtil = new PaginationUtil(new ContentHistoryPaginator());
+        final Map<String, Object> extraParams = Map.of(
+                ContentHistoryPaginator.IDENTIFIER, identifierObj,
+                ContentHistoryPaginator.RESPECT_FRONTEND_ROLES, respectFrontendRoles,
+                ContentHistoryPaginator.GROUP_BY_LANG, groupByLanguage,
+                ContentHistoryPaginator.BRING_OLD_VERSIONS, bringOldVersions);
+        final PaginationUtilParams<Map<String, Object>, PaginatedArrayList<?>> params = new PaginationUtilParams.Builder<Map<String, Object>, PaginatedArrayList<?>>()
+                .withRequest(request)
+                .withResponse(response)
+                .withUser(user)
+                .withPage(offset)
+                .withPerPage(limit)
+                .withDirection(OrderDirection.valueOf(direction))
+                .withExtraParams(extraParams)
+                .build();
+        return paginationUtil.getPageView(params);
     }
 
     /**
@@ -289,7 +387,7 @@ public class ContentVersionResource {
 
             if (shorty.type != ShortType.INODE) {
                 throw new BadRequestException(
-                        getFormattedMessage(user.getLocale(), DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY));
+                        getFormattedMessage(user.getLocale(), DATATYPE_MISMATCH_ERROR_MESSAGE_KEY));
             }
 
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, respectFrontendRoles);

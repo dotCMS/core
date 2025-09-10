@@ -1,6 +1,6 @@
 import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
-import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
@@ -8,10 +8,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
@@ -53,6 +49,11 @@ import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 
+import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
 /**
@@ -66,9 +67,35 @@ export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
-    styleUrls: ['./dot-edit-content.component.scss']
+    styleUrls: ['./dot-edit-content.component.scss'],
+    standalone: false
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
+    private dialogService = inject(DialogService);
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPageStateService = inject(DotPageStateService);
+    private dotRouterService = inject(DotRouterService);
+    private dotUiColorsService = inject(DotUiColorsService);
+    private ngZone = inject(NgZone);
+    private route = inject(ActivatedRoute);
+    private router = inject(Router);
+    private siteService = inject(SiteService);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    dotEditContentHtmlService = inject(DotEditContentHtmlService);
+    dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    sanitizer = inject(DomSanitizer);
+    iframeOverlayService = inject(IframeOverlayService);
+    private dotConfigurationService = inject(DotPropertiesService);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotEventsService = inject(DotEventsService);
+    private dotESContentService = inject(DotESContentService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+    private dotCurrentUser = inject(DotCurrentUserService);
+    private dotFavoritePageService = inject(DotFavoritePageService);
+
     @ViewChild('iframe') iframe: ElementRef;
 
     contentletActionsUrl: SafeResourceUrl;
@@ -94,32 +121,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private pageStateInternal: DotPageRenderState;
     private pageSaved$: Subject<void> = new Subject<void>();
 
-    constructor(
-        private dialogService: DialogService,
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotDialogService: DotAlertConfirmService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotMessageService: DotMessageService,
-        private dotPageStateService: DotPageStateService,
-        private dotRouterService: DotRouterService,
-        private dotUiColorsService: DotUiColorsService,
-        private ngZone: NgZone,
-        private route: ActivatedRoute,
-        private router: Router,
-        private siteService: SiteService,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        public dotEditContentHtmlService: DotEditContentHtmlService,
-        public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        public sanitizer: DomSanitizer,
-        public iframeOverlayService: IframeOverlayService,
-        private dotConfigurationService: DotPropertiesService,
-        private dotLicenseService: DotLicenseService,
-        private dotEventsService: DotEventsService,
-        private dotESContentService: DotESContentService,
-        private dotSessionStorageService: DotSessionStorageService,
-        private dotCurrentUser: DotCurrentUserService,
-        private dotFavoritePageService: DotFavoritePageService
-    ) {
+    constructor() {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
                 'remote-render-edit': ({ pathname }) => {

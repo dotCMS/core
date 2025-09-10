@@ -2,16 +2,15 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/uve/types';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
+import { withSave } from './features/editor/save/withSave';
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
-import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
 import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
-import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
@@ -64,7 +63,8 @@ export const UVEStore = signalStore(
                 $shellProps: computed<ShellProps>(() => {
                     const response = pageAPIResponse();
 
-                    const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
+                    const url = sanitizeURL(response?.page.pageURI);
+                    const currentUrl = url.startsWith('/') ? url : '/' + url;
 
                     const requestHostName = getRequestHostName(pageParams());
 
@@ -77,6 +77,8 @@ export const UVEStore = signalStore(
                     const errorPayload = getErrorPayload(errorCode);
                     const isLoading = status() === UVE_STATUS.LOADING;
                     const isEnterpriseLicense = isEnterprise();
+
+                    const canSeeRulesExists = page && 'canSeeRules' in page;
 
                     return {
                         canRead: page?.canRead,
@@ -110,7 +112,10 @@ export const UVEStore = signalStore(
                                 id: 'rules',
                                 href: `rules/${page?.identifier}`,
                                 isDisabled:
-                                    !page?.canSeeRules || !page?.canEdit || !isEnterpriseLicense
+                                    // Check if the page has the canSeeRules property, GraphQL query does suppport this property
+                                    (canSeeRulesExists && !page.canSeeRules) ||
+                                    !page?.canEdit ||
+                                    !isEnterpriseLicense
                             },
                             {
                                 iconURL: 'experiments',
@@ -160,7 +165,7 @@ export const UVEStore = signalStore(
                     status
                 });
             },
-            updatePageResponse(pageAPIResponse: DotPageApiResponse) {
+            updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
                 patchState(store, {
                     status: UVE_STATUS.LOADED,
                     pageAPIResponse
@@ -176,7 +181,8 @@ export const UVEStore = signalStore(
             }
         };
     }),
-    withLoad(),
+    // withLoad(),
+    withSave(),
     withLayout(),
     withEditor(),
     withTrack(),

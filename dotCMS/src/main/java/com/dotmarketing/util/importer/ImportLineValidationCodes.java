@@ -7,6 +7,7 @@ package com.dotmarketing.util.importer;
  */
 public enum ImportLineValidationCodes {
 
+    UNKNOWN_ERROR,
     /**
      * Line does not contain all required columns
      */
@@ -30,12 +31,22 @@ public enum ImportLineValidationCodes {
     /**
      * Invalid site/folder reference
      */
-    INVALID_LOCATION,
+    INVALID_SITE_FOLDER_REF,
 
     /**
      * Invalid binary field URL
      */
     INVALID_BINARY_URL,
+
+    /**
+     * Invalid URL for file/image field in dotCMS
+     */
+    UNREACHABLE_URL_CONTENT,
+
+    /**
+     * Invalid file path for file/image field in dotCMS
+     */
+    INVALID_FILE_PATH,
 
     /**
      * Invalid image file type
@@ -78,6 +89,11 @@ public enum ImportLineValidationCodes {
     RELATIONSHIP_VALIDATION_ERROR,
 
     /**
+     * Relationship cardinality error
+     */
+    RELATIONSHIP_CARDINALITY_ERROR,
+
+    /**
      * User lacks required permissions
      */
     PERMISSION_ERROR,
@@ -85,6 +101,31 @@ public enum ImportLineValidationCodes {
     /**
      * The language does not exist
      */
-    LANGUAGE_NOT_FOUND
+    LANGUAGE_NOT_FOUND,
+
+    /**
+     * Regular non-key field is missing
+     */
+    REQUIRED_FIELD_MISSING,
+
+    /**
+     * Invalid field value
+     */
+    VALIDATION_FAILED_PATTERN,
+
+    /**
+     * Invalid numeric field value
+     */
+    INVALID_NUMBER_FORMAT,
+
+    /**
+     * Invalid field type
+     */
+    INVALID_FIELD_TYPE,
+
+    /**
+     * Invalid Json
+     */
+    INVALID_JSON
 
 }

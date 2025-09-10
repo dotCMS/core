@@ -131,8 +131,22 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
         }
     }
 
+    /**
+     * Determines the connection timeout set for executing a CubeJS query. After that, an error will
+     * be thrown. Keep in mind that a ClickHouse Database with thousands if not millions of records
+     * may take a long time to retrieve results.
+     * <p>
+     * It's also important to note that this timeout should match the value of the
+     * {@code continueWaitTimeout} configuration property in the {@code cube.js} file for
+     * ClickHouse, which has a maximum value of {@code 90} -- in seconds. For more information, you
+     * can refer to
+     * <a href="https://cube.dev/docs/reference/configuration/config#orchestrator_options">The
+     * official documentation</a>.</p>
+     *
+     * @return The connection timeout for executing queries, in milliseconds.
+     */
     private long resolveClientTimeout() {
-        return Config.getLongProperty(CUBEJS_CLIENT_TIMEOUT_KEY, 8000);
+        return Config.getLongProperty(CUBEJS_CLIENT_TIMEOUT_KEY, 30000);
     }
 
     private Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient,

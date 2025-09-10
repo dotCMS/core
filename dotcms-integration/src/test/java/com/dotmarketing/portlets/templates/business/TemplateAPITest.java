@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +65,6 @@ import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.quartz.JobExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -141,7 +141,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         final String templateBody = "  This is just test<br/>  \n" +
                 "  #parseContainer   (\"f4a02846-7ca4-4e08-bf07-a61366bbacbb\",\"1552493847863\")  \n" +
                 "  <p>This is just test</p>  \n" +
-                "  #parseContainer   (\"/application/containers/test1/\",'1552493847864\")  \n" +
+                "  #parseContainer   (\"/application/containers/test1/\",'1552493847864')  \n" +
                 "#parseContainer(\"/application/containers/test2/\",'1552493847868')\n" +
                 "#parseContainer('/application/containers/test3/'     ,'1552493847869'       )\n" +
                 "#parseContainer(    '/application/containers/test4/',    '1552493847870')\n";
@@ -179,7 +179,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         final String templateBody = "  This is just test<br/>  \n" +
                 "  #parseContainer   (\"f4a02846-7ca4-4e08-bf07-a61366bbacbb\")  \n" +
                 "  <p>This is just test</p>  \n" +
-                "  #parseContainer   (\"/application/containers/test1/\",'1552493847864\")  \n" +
+                "  #parseContainer   (\"/application/containers/test1/\",'1552493847864')  \n" +
                 "#parseContainer(\"/application/containers/test2/\",'1552493847868')\n" +
                 "#parseContainer('/application/containers/test3/'    )\n" +
                 "#parseContainer(    '/application/containers/test4/',    '1552493847870')\n";
@@ -211,6 +211,74 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals("1552493847870", containerUUID5.getUUID());
     }
 
+    /**
+     * Method to test: {@link TemplateAPIImpl#getContainersUUIDFromDrawTemplateBody}
+     * Given Scenario: Template body contains a #dotParse directive that includes a file with parseContainer directives
+     * ExpectedResult: The method should extract all container UUIDs from both the main template and the included file
+     */
+    @Test
+    public void getContainersUUIDFromDrawTemplateBodyWithDotParseTest() throws Exception {
+
+        Host site = null;
+        final String container1Identifier = "f4a02846-7ca4-4e08-bf07-a61366bbacbb";
+        final String container1UUID = "0987654321";
+        final String container2Identifier = "/application/containers/included-container-1";
+        final String container2UUID = "5678901234";
+        final String container3Identifier = "/application/containers/included-container-2";
+        final String container3UUID = "1234567890";
+
+        try {
+            // Create a host and a folder to hold the template includes
+            site = new SiteDataGen().nextPersisted();
+            final String includeFolderPath = "application/templates/includes";
+            final String includeTemplateFileName = "container_includes.vtl";
+            final Folder includeFolder = APILocator.getFolderAPI().createFolders(
+                    includeFolderPath, site, user, false);
+
+            // Create a template file that includes these containers
+            final String includedTemplateBody = String.format("#parseContainer('%s', '%s')\n" +
+                    "#parseContainer('%s', '%s')\n",
+                    container1Identifier, container1UUID, container2Identifier, container2UUID);
+            final File includedTemplateFile = FileUtil.createTemporaryFile(
+                    "includedTemplate", ".vtl", includedTemplateBody);
+            final Contentlet savedFile =  new FileAssetDataGen(includeFolder, includedTemplateFile)
+                    .setProperty("title", includeTemplateFileName)
+                    .setProperty("fileName", includeTemplateFileName)
+                    .nextPersisted();
+            APILocator.getContentletAPI().publish(savedFile, user, false);
+
+            // Setup a template body with a #dotParse directive
+            final String templateBody = String.format("#dotParse('//%s/%s/%s')\n" +
+                    "#parseContainer('%s', '%s')\n",
+                    site.getHostname(), includeFolderPath, includeTemplateFileName,
+                    container3Identifier, container3UUID);
+            final List<ContainerUUID> containerUUIDS = templateAPI.getContainersUUIDFromDrawTemplateBody(templateBody);
+
+            // Verify results
+            assertNotNull(containerUUIDS);
+            assertEquals(3, containerUUIDS.size());
+
+            final ContainerUUID containerUUID1 = containerUUIDS.get(0);
+            assertEquals(container1Identifier, containerUUID1.getIdentifier());
+            assertEquals(container1UUID, containerUUID1.getUUID());
+
+            final ContainerUUID containerUUID2 = containerUUIDS.get(1);
+            assertEquals(container2Identifier, containerUUID2.getIdentifier());
+            assertEquals(container2UUID, containerUUID2.getUUID());
+
+            final ContainerUUID containerUUID3 = containerUUIDS.get(2);
+            assertEquals(container3Identifier, containerUUID3.getIdentifier());
+            assertEquals(container3UUID, containerUUID3.getUUID());
+
+        } finally {
+            if (site != null) {
+                APILocator.getHostAPI().archive(site, user, false);
+                APILocator.getHostAPI().delete(site, user, false);
+            }
+        }
+
+
+    }
 
     @Test
     public void getContainersUUIDFromDrawTemplateBodyTestNullInput() throws Exception {
@@ -653,19 +721,29 @@ public class TemplateAPITest extends IntegrationTestBase {
      * ExpectedResult: list of templates that live under a host
      */
     @Test
-    public void testFindTemplatesAssignedTo() throws DotDataException {
-        final String title = "testTemplate_" + System.currentTimeMillis();
-        final Template template = new TemplateDataGen().title(title).nextPersisted();
+    public void testFindTemplatesAssignedTo() throws DotDataException, DotSecurityException {
+        Host site = null;
+        try {
+            site = new SiteDataGen().nextPersisted();
 
-        final List<Template> result = templateAPI.findTemplatesAssignedTo(host);
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
+            final String title = "testTemplate_" + System.currentTimeMillis();
+            final Template template = new TemplateDataGen().site(site).title(title).nextPersisted();
 
-        diagnoseResultWithRetry(title, template, result);
+            final List<Template> result = templateAPI.findTemplatesAssignedTo(site);
+            assertNotNull(result);
+            assertFalse(result.isEmpty());
 
-        assertTrue(result.contains(template));
-        assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
-        assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
+            diagnoseResultWithRetry(title, template, result);
+
+            assertTrue(result.contains(template));
+            assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
+            assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
+        } finally {
+            if (site != null) {
+                hostAPI.archive(site, user, false);
+                hostAPI.delete(site, user, false);
+            }
+        }
     }
 
     private static void diagnoseResultWithRetry(String title, Template template, List<Template> result) {

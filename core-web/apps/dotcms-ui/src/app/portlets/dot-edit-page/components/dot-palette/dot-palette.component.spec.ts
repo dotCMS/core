@@ -19,7 +19,8 @@ import { DotPaletteStore } from './store/dot-palette.store';
 
 @Component({
     selector: 'dot-palette-content-type',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotPaletteContentTypeMockComponent {
     @Input() items: any[];
@@ -35,7 +36,8 @@ export class DotPaletteContentTypeMockComponent {
 
 @Component({
     selector: 'dot-palette-contentlets',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotPaletteContentletsMockComponent {
     @Input() items: string;

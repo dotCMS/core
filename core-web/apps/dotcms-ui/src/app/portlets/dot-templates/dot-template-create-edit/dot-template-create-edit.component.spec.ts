@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BehaviorSubject, of, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -16,12 +16,14 @@ import {
     DotCrudService,
     DotEventsService,
     DotMessageService,
+    DotSystemConfigService,
     DotTempFileUploadService,
     DotThemesService,
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
 import { DotFormDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
@@ -41,7 +43,8 @@ import {
 
 @Component({
     selector: 'dot-api-link',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotApiLinkMockComponent {
     @Input() href;
@@ -49,7 +52,8 @@ export class DotApiLinkMockComponent {
 
 @Component({
     selector: 'dot-template-builder',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotTemplateBuilderMockComponent {
     @Input() item;
@@ -61,7 +65,8 @@ export class DotTemplateBuilderMockComponent {
 
 @Component({
     selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletBaseMockComponent {
     @Input() boxed;
@@ -70,7 +75,8 @@ export class DotPortletBaseMockComponent {
 @Component({
     selector: 'dot-portlet-toolbar',
     template:
-        '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>'
+        '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>',
+    standalone: false
 })
 export class DotPortletToolbarMockComponent {
     @Input() title;
@@ -84,6 +90,27 @@ const messageServiceMock = new MockDotMessageService({
 
 interface TemplateStoreValueType {
     [key: string]: jasmine.Spy;
+}
+
+const mockSystemConfig: DotSystemConfig = {
+    logos: { loginScreen: '', navBar: '' },
+    colors: { primary: '#54428e', secondary: '#3a3847', background: '#BB30E1' },
+    releaseInfo: { buildDate: 'June 24, 2019', version: '5.0.0' },
+    systemTimezone: { id: 'America/Costa_Rica', label: 'Costa Rica', offset: 360 },
+    languages: [],
+    license: {
+        level: 100,
+        displayServerId: '19fc0e44',
+        levelName: 'COMMUNITY EDITION',
+        isCommunity: true
+    },
+    cluster: { clusterId: 'test-cluster', companyKeyDigest: 'test-digest' }
+};
+
+class MockDotSystemConfigService {
+    getSystemConfig(): Observable<DotSystemConfig> {
+        return of(mockSystemConfig);
+    }
 }
 
 async function makeFormValid(fixture) {
@@ -126,7 +153,6 @@ describe('DotTemplateCreateEditComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotApiLinkMockComponent,
-
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotTemplateBuilderMockComponent,
@@ -211,7 +237,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         url: '',
                         paginationPerPage: '',
                         totalRecords: mockDotThemes.length,
-
+                        get: jasmine.createSpy().and.returnValue(of([...mockDotThemes])),
                         setExtraParams() {
                             //
                         },
@@ -244,7 +270,8 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: {
                         get: jasmine.createSpy().and.returnValue(of(mockDotThemes[1]))
                     }
-                }
+                },
+                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService }
             ]
         });
 
@@ -479,12 +506,10 @@ describe('DotTemplateCreateEditComponent', () => {
 
             it('should load edit mode', () => {
                 const portlet = de.query(By.css('dot-portlet-base')).componentInstance;
-                const toolbar = de.query(By.css('dot-portlet-toolbar')).componentInstance;
                 const builder = de.query(By.css('dot-template-builder')).componentInstance;
                 const apiLink = de.query(By.css('dot-api-link')).componentInstance;
 
                 expect(portlet.boxed).toBe(false);
-                expect(toolbar.title).toBe('Some template');
                 expect(builder.item).toEqual({
                     ...EMPTY_TEMPLATE_DESIGN,
                     identifier: '123',

@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
 import com.dotcms.util.SecurityUtils;
@@ -43,6 +44,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.tools.ant.filters.StringInputStream;
 import org.apache.tools.ant.util.ReaderInputStream;
 import org.jetbrains.annotations.NotNull;
@@ -159,8 +161,12 @@ public class MapToContentletPopulator  {
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
 
-                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : null);
+                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : contentlet.getVariantId());
+
+                //fill up disabledWYSIWYG
+                contentlet.setDisabledWysiwyg(map.get("disabledWYSIWYG") != null ? (List<String>) map.get("disabledWYSIWYG") : new ArrayList<>());
             }
+
 
             this.setIndexPolicy (contentlet, map);
         }
@@ -255,6 +261,7 @@ public class MapToContentletPopulator  {
                 }
             }
         }
+
     } // fillFields.
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,

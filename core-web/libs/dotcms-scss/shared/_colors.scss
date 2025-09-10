@@ -80,6 +80,10 @@ $color-palette-gray-700: var(--gray-700);
 $color-palette-gray-800: var(--gray-800);
 $color-palette-gray-900: var(--gray-900);
 
+// Surface
+$color-palette-surface-500: var(--surface-500);
+$color-palette-surface-900: var(--surface-900);
+
 $color-palette-gray-shade: $color-palette-gray-300;
 $color-palette-gray: $color-palette-gray-500;
 $color-palette-gray-tint: rgba($color-palette-gray, 0.1);
@@ -110,9 +114,10 @@ $color-palette-yellow-op-08: rgba($color-palette-yellow, 0.8);
 $color-palette-yellow-op-10: rgba($color-palette-yellow, 0.1);
 $color-palette-yellow-op-15: rgba($color-palette-yellow, 0.15);
 $color-palette-yellow-op-20: rgba($color-palette-yellow, 0.2);
+$color-palette-yellow-op-07: rgba($color-palette-yellow, 0.07);
 
 $color-accessible-text-yellow: $color-palette-yellow-shade;
-$color-accessible-text-yellow-bg: $color-palette-yellow-op-08;
+$color-accessible-text-yellow-bg: $color-palette-yellow-tint;
 $color-alert-yellow: $color-palette-yellow;
 $color-alert-yellow-light: $color-palette-yellow-tint;
 
@@ -125,7 +130,7 @@ $color-palette-red-op-08: rgba($color-palette-red, 0.8);
 $color-palette-red-op-10: rgba($color-palette-red, 0.1);
 $color-palette-red-op-15: rgba($color-palette-red, 0.15);
 $color-palette-red-op-20: rgba($color-palette-red, 0.2);
-
+$color-palette-red-op-07: rgba($color-palette-red, 0.07);
 $color-accessible-text-red: $color-palette-red-shade;
 $color-accessible-text-red-bg: $color-palette-red-op-08;
 $color-alert-red: $color-palette-red;
@@ -148,16 +153,18 @@ $color-alert-fuchsia-light: $color-palette-fuchsia-tint;
 
 // Green sass variables
 $color-palette-green-shade: #0b6948;
-$color-palette-green: #3ed97a;
+$color-palette-green: #1ea97c;
 $color-palette-green-tint: #f5fdf8;
 
-$color-palette-green-op-08: rgba($color-palette-green, 0.8);
+$color-palette-green-op-80: rgba($color-palette-green, 0.8);
+$color-palette-green-op-70: rgba($color-palette-green, 0.7);
 $color-palette-green-op-10: rgba($color-palette-green, 0.1);
 $color-palette-green-op-15: rgba($color-palette-green, 0.15);
 $color-palette-green-op-20: rgba($color-palette-green, 0.2);
+$color-palette-green-op-07: rgba($color-palette-green, 0.07);
 
 $color-accessible-text-green: $color-palette-green-shade;
-$color-accessible-text-green-bg: $color-palette-green-op-08;
+$color-accessible-text-green-bg: $color-palette-green-op-80;
 $color-alert-green: $color-palette-green;
 $color-alert-green-light: $color-palette-green-tint;
 
@@ -177,14 +184,15 @@ $color-alert-purple: $color-palette-purple;
 $color-alert-purple-light: $color-palette-purple-tint;
 
 // Blue sass variables
-$color-palette-blue-shade: $color-palette-primary-600;
-$color-palette-blue: $color-palette-primary-500;
-$color-palette-blue-tint: $color-palette-primary-200;
+$color-palette-blue-shade: #18186d;
+$color-palette-blue: #1243e3;
+$color-palette-blue-tint: #dbeafe;
 
 $color-palette-blue-op-08: rgba($color-palette-blue, 0.8);
 $color-palette-blue-op-10: rgba($color-palette-blue, 0.1);
 $color-palette-blue-op-15: rgba($color-palette-blue, 0.15);
 $color-palette-blue-op-20: rgba($color-palette-blue, 0.2);
+$color-palette-blue-op-70: rgba($color-palette-blue, 0.7);
 
 $color-accessible-text-blue: $color-palette-blue-shade;
 $color-accessible-text-blue-bg: $color-palette-blue-op-08;
@@ -440,6 +448,16 @@ $success: $color-accessible-text-green;
     --primary-800: var(--color-palette-primary-800);
     --primary-900: var(--color-palette-primary-900);
 
+    --red-100: var(--color-palette-red-100);
+    --red-200: var(--color-palette-red-200);
+    --red-300: var(--color-palette-red-300);
+    --red-400: var(--color-palette-red-400);
+    --red-500: var(--color-palette-red-500);
+    --red-600: var(--color-palette-red-600);
+    --red-700: var(--color-palette-red-700);
+    --red-800: var(--color-palette-red-800);
+    --red-900: var(--color-palette-red-900);
+
     --gray-100: #fafafb;
     --gray-200: #f3f3f4;
     --gray-300: #ebecef;
@@ -449,4 +467,7 @@ $success: $color-accessible-text-green;
     --gray-700: #6c7389;
     --gray-800: #515667;
     --gray-900: #3d404d;
+
+    --surface-500: #9e9e9e;
+    --surface-900: #212121;
 }

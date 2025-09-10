@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -9,10 +9,9 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 export interface DotVersionable {
     inode: string;
 }
-
 @Injectable()
 export class DotVersionableService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Bring back specific version of based on the inode.

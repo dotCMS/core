@@ -1,10 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { LoggerService } from './logger.service';
 import { UserModel } from './shared/user.model';
 
 @Injectable()
 export class ApiRoot {
+    private loggerService = inject(LoggerService);
+
     siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
     authUser: UserModel;
     hideFireOn = false;
@@ -27,10 +29,9 @@ export class ApiRoot {
         return result;
     }
 
-    constructor(
-        authUser: UserModel,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const authUser = inject(UserModel);
+
         this.authUser = authUser;
 
         try {

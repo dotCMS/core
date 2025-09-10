@@ -4,6 +4,7 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotPage,
     DotPageContainer,
@@ -80,7 +81,7 @@ describe('DotContainerContentletService', () => {
 
         const form: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
-            clazz: 'clazz',
+            clazz: DotCMSClazzes.TEXT,
             defaultType: true,
             fixed: true,
             folder: 'folder',

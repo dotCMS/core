@@ -17,14 +17,13 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "main": "libs/sdk/react/src/index.ts",
-                "additionalEntryPoints": ["libs/sdk/react/src/next.ts"],
                 "generateExportsField": true,
                 "outputPath": "dist/libs/sdk/react",
                 "tsConfig": "libs/sdk/react/tsconfig.lib.json",
                 "project": "libs/sdk/react/package.json",
                 "entryFile": "libs/sdk/react/src/index.ts",
                 "external": ["react/jsx-runtime"],
-                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "rollupConfig": "@nx/react/plugins/bundle-rollup",
                 "compiler": "babel",
                 "format": ["esm"],
                 "extractCss": false,
@@ -38,7 +37,7 @@
             }
         },
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/sdk/react/jest.config.ts",

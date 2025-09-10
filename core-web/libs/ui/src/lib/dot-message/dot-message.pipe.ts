@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { Pipe, PipeTransform, inject } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -8,7 +8,7 @@ import { DotMessageService } from '@dotcms/data-access';
     pure: true
 })
 export class DotMessagePipe implements PipeTransform {
-    constructor(private dotMessageService: DotMessageService) {}
+    private dotMessageService = inject(DotMessageService);
 
     transform(value: string, args: string[] = []): string {
         return value ? this.dotMessageService.get(value, ...args) : '';

@@ -2,28 +2,47 @@
     @for (item of items; track $index) {
         <ng-container
             [ngTemplateOutlet]="!item.href?.length ? button : anchor"
-            [ngTemplateOutletContext]="{ item: item }"></ng-container>
+            [ngTemplateOutletContext]="{ item: item, index: $index }"></ng-container>
     }
 </nav>
 
-<ng-template #anchor let-item="item">
-    <a
-        [routerLink]="item.isDisabled ? null : item.href"
-        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
-        [pTooltip]="item.tooltip | dm"
-        class="edit-ema-nav-bar__item"
-        data-testId="nav-bar-item"
-        routerLinkActive="edit-ema-nav-bar__item--active"
-        queryParamsHandling="merge"
-        tooltipPosition="left"
-        rel="noopener">
-        <ng-container
-            [ngTemplateOutlet]="item.icon ? icon : iconURL"
-            [ngTemplateOutletContext]="{ item: item }"></ng-container>
-        <span class="item__label" data-testId="nav-bar-item-label">
-            {{ item.label | dm }}
-        </span>
-    </a>
+<ng-template #anchor let-item="item" let-index="index">
+    <div class="edit-ema-nav-bar__item-container">
+        @if (index === 0 && $editorProps().palette) {
+            <button
+                pButton
+                data-testId="toggle-palette"
+                icon="pi pi-angle-right"
+                [ngClass]="$editorProps().palette.paletteClass"
+                class="p-button-outlined p-button-sm toggle-palette"
+                (click)="togglePalette()"></button>
+        }
+
+        <a
+            [routerLink]="item.isDisabled ? null : item.href"
+            [queryParams]="$params()"
+            [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+            [pTooltip]="item.tooltip | dm"
+            class="edit-ema-nav-bar__item"
+            data-testId="nav-bar-item"
+            routerLinkActive="edit-ema-nav-bar__item--active"
+            [routerLinkActiveOptions]="{
+                queryParams: 'ignored',
+                matrixParams: 'ignored',
+                paths: 'exact',
+                fragment: 'ignored'
+            }"
+            queryParamsHandling="merge"
+            tooltipPosition="left"
+            rel="noopener">
+            <ng-container
+                [ngTemplateOutlet]="item.icon ? icon : iconURL"
+                [ngTemplateOutletContext]="{ item: item }"></ng-container>
+            <span class="item__label" data-testId="nav-bar-item-label">
+                {{ item.label | dm }}
+            </span>
+        </a>
+    </div>
 </ng-template>
 
 <ng-template #button let-item="item">

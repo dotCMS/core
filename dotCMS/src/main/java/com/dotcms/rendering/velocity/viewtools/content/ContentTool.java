@@ -14,6 +14,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -61,6 +63,7 @@ public class ContentTool implements ViewTool {
 	private Host currentHost;
 	private PageMode mode;
 	private Language language;
+
 	public void init(Object initData) {
 		this.req = ((ViewContext) initData).getRequest();
 
@@ -102,18 +105,52 @@ public class ContentTool implements ViewTool {
 	 * Will pull a single piece of content for you based on the inode or identifier. It will always
 	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
 	 * identifier.  If it is an inode this is ignored.
+	 * In this case the object will be hydrated with all properties associated to the contentlet
+	 * Will return NULL if not found
+	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
+	 * @return NULL if not found
+	 */
+	public ContentMap findHydrated(String inodeOrIdentifier) {
+
+		return find(inodeOrIdentifier, true);
+	}
+
+	/**
+	 * Will pull a single piece of content for you based on the inode or identifier. It will always
+	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
+	 * identifier.  If it is an inode this is ignored.
 	 * Will return NULL if not found
 	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
 	 * @return NULL if not found
 	 */
 	public ContentMap find(String inodeOrIdentifier) {
+
+		return find(inodeOrIdentifier, false);
+	}
+
+	/**
+	 * Will pull a single piece of content for you based on the inode or identifier. It will always
+	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
+	 * identifier.  If it is an inode this is ignored.
+	 * Will return NULL if not found
+	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
+	 * @param hydrateRelated Should the content be hydrated with all properties associated to the contentlet
+	 * @return NULL if not found
+	 */
+	public ContentMap find(String inodeOrIdentifier, final boolean hydrateRelated) {
 		final long sessionLang = language.getId();
-		
 	    try {
     		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE, sessionLang);
     		if(c== null || !InodeUtils.isSet(c.getInode())){
     			return null;
     		}
+
+			if(hydrateRelated) {
+				final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+						.hydratedContentMapTransformer().content(c).build();
+				c = myTransformer.hydrate().get(0);
+			}
+
     		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
 	    }
 	    catch(Throwable ex) {

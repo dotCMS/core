@@ -36,7 +36,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             new AtomicBoolean(false);
 
     private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false));
+            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
     @Override
     public void addBefore(final String webInterceptorName, final WebInterceptor webInterceptor) {

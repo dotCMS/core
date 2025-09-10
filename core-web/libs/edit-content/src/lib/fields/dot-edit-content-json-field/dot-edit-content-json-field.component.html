@@ -1,3 +1,19 @@
-<ngx-monaco-editor
-    [formControlName]="contentTypeField().variable"
-    [options]="monacoEditorOptions()"></ngx-monaco-editor>
+<div
+    class="dot-json-field__container flex flex-column gap-2 h-full w-full"
+    data-testid="json-field-container">
+    <div
+        class="dot-json-field__controls flex justify-content-end"
+        data-testid="json-field-controls">
+        <dot-language-variable-selector
+            data-testid="json-field-language-selector"
+            (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+    </div>
+
+    <div class="dot-json-field__editor" data-testid="json-field-editor">
+        <dot-edit-content-monaco-editor-control
+            #monaco
+            data-testid="json-field-monaco-editor"
+            [field]="$field()"
+            [forceLanguage]="languages.Json" />
+    </div>
+</div>

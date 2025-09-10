@@ -1,3 +1,5 @@
+import { DotCMSGraphQLPageResponse } from '@dotcms/types';
+
 import { graphqlToPageEntity } from './transforms';
 
 const GRAPHQL_RESPONSE_MOCK = {
@@ -63,10 +65,18 @@ const GRAPHQL_RESPONSE_MOCK = {
             identifier: '31f4c794-c769-4929-9d5d-7c383408c65c'
         },
         urlContentMap: {
-            identifier: '31f4c794-c769-4929-9d5d-7c383408c74d'
+            _map: {
+                identifier: '31f4c794-c769-4929-9d5d-7c383408c74d'
+            }
         },
         viewAs: {
             mode: 'LIVE'
+        },
+        runningExperimentId: '123',
+        vanityUrl: {
+            action: 200,
+            uri: '/test2',
+            forwardTo: '/test2'
         }
     }
 };
@@ -123,9 +133,6 @@ const MOCK_PAGE_ENTITY = {
         title: 'default-template'
     },
     page: {
-        host: {
-            hostName: 'demo.dotcms.com'
-        },
         seodescription: null,
         title: 'test2',
         url: '/test2'
@@ -138,13 +145,131 @@ const MOCK_PAGE_ENTITY = {
     },
     viewAs: {
         mode: 'LIVE'
-    }
+    },
+    site: {
+        hostName: 'demo.dotcms.com'
+    },
+    vanityUrl: {
+        action: 200,
+        uri: '/test2',
+        forwardTo: '/test2'
+    },
+    runningExperimentId: '123'
 };
 
 describe('GraphQL Parser', () => {
     it('should return the correct page entity', () => {
-        const pageEntity = graphqlToPageEntity(GRAPHQL_RESPONSE_MOCK);
+        const pageEntity = graphqlToPageEntity(
+            GRAPHQL_RESPONSE_MOCK as unknown as DotCMSGraphQLPageResponse
+        );
 
         expect(pageEntity).toEqual(MOCK_PAGE_ENTITY);
+    });
+
+    it('should transform _map properties correctly', () => {
+        const graphqlResponse = {
+            page: {
+                title: 'map-test',
+                url: '/map-test',
+                _map: {
+                    customField: 'custom value'
+                },
+                urlContentMap: {
+                    _map: {
+                        mapField: 'map value',
+                        identifier: 'test-id',
+                        someNestedField: {
+                            nestedField: 'nested value'
+                        }
+                    }
+                },
+                containers: [
+                    {
+                        path: '//test/container/',
+                        identifier: 'test-container-id',
+                        containerContentlets: [
+                            {
+                                uuid: 'test-uuid',
+                                contentlets: [
+                                    {
+                                        _map: {
+                                            identifier: 'test-contentlet-id',
+                                            contentletField: 'contentlet value'
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        const expectedResult = {
+            page: {
+                title: 'map-test',
+                url: '/map-test',
+                customField: 'custom value'
+            },
+            urlContentMap: {
+                identifier: 'test-id',
+                mapField: 'map value',
+                someNestedField: {
+                    nestedField: 'nested value'
+                }
+            },
+            containers: {
+                '//test/container/': {
+                    container: {
+                        path: '//test/container/',
+                        identifier: 'test-container-id'
+                    },
+                    containerStructures: undefined,
+                    contentlets: {
+                        'test-uuid': [
+                            {
+                                identifier: 'test-contentlet-id',
+                                contentletField: 'contentlet value'
+                            }
+                        ]
+                    }
+                }
+            }
+        };
+
+        const pageEntity = graphqlToPageEntity(
+            graphqlResponse as unknown as DotCMSGraphQLPageResponse
+        );
+
+        expect(pageEntity?.page).toEqual(expectedResult.page);
+        expect(pageEntity?.urlContentMap).toEqual(expectedResult.urlContentMap);
+        expect(pageEntity?.containers['//test/container/'].contentlets['test-uuid'][0]).toEqual(
+            expectedResult.containers['//test/container/'].contentlets['test-uuid'][0]
+        );
+    });
+
+    it('should merge urlContentMap keys into _map', () => {
+        const graphqlResponse = {
+            ...GRAPHQL_RESPONSE_MOCK,
+            page: {
+                ...GRAPHQL_RESPONSE_MOCK.page,
+                urlContentMap: {
+                    _map: {
+                        customField: 'custom value',
+                        someOtherField: 'empty'
+                    },
+                    someOtherField: 'some other value by relationship'
+                }
+            }
+        };
+
+        const pageEntity = graphqlToPageEntity(
+            graphqlResponse as unknown as DotCMSGraphQLPageResponse
+        );
+
+        expect(pageEntity?.urlContentMap).toEqual({
+            customField: 'custom value',
+            someOtherField: 'some other value by relationship'
+        });
     });
 });

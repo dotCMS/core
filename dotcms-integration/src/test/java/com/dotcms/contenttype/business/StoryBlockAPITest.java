@@ -1,26 +1,50 @@
 
 package com.dotcms.contenttype.business;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
-import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -29,27 +53,23 @@ import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.enterprise.context.ApplicationScoped;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Test for {@link StoryBlockAPI}
@@ -435,7 +455,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         assertNotNull(contentletIdList);
         assertTrue(contentletIdList.isEmpty());
     }
-    
+
     @Test
     public void test_get_refreshStoryBlockValueReferences_with_bad_content_value()  {
     
@@ -466,6 +486,143 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1, "xxx");
         assertNotNull(result);
         assertFalse(result.isRefreshed());
+
+    }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshReferences(Contentlet)}
+     * Given Scenario: This will create 2 block contents, adds a rich content to each block content and retrieve the json.
+     * ExpectedResult: The new json will contain the rich text data map for each block content.
+     */
+    @Test
+    public void test_refresh_references_multiple_blocks()
+            throws DotDataException, DotSecurityException, JsonProcessingException, IOException {
+
+        ContentType storyBlockType = null;
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            // 1) get the default language
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+            // 2) create 2 rich text contentlets with some initial values
+            final ContentType contentTypeRichText = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+            final Contentlet richTextContentlet1 = new ContentletDataGen(contentTypeRichText)
+                    .languageId(defaultLanguage.getId())
+                    .setProperty("title","Title1")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .nextPersistedAndPublish();
+            final Contentlet richTextContentlet2 = new ContentletDataGen(contentTypeRichText)
+                    .languageId(defaultLanguage.getId())
+                    .setProperty("title","Title2")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .nextPersistedAndPublish();
+
+            // 3) create a StoryBlockField and a ContentType with it
+            final Field storyBlockField = new FieldDataGen()
+                    .type(StoryBlockField.class)
+                    .name("StoryBlockTestField")
+                    .velocityVarName("storyBlockTestField")
+                    .next();
+            storyBlockType = new ContentTypeDataGen().field(storyBlockField).nextPersisted();
+
+            // 4) create first block content with first rich content
+            final Contentlet firstBlockContentlet = new ContentletDataGen(storyBlockType)
+                    .languageId(defaultLanguage.getId())
+                    .nextPersisted();
+            final Contentlet firstBlockCheckout = ContentletDataGen.checkout(firstBlockContentlet);
+            setBlockEditorField(firstBlockCheckout, storyBlockField, richTextContentlet1);
+            final Contentlet firstBlockComplete = APILocator.getContentletAPI().checkin(
+                    firstBlockCheckout, APILocator.systemUser(), false);
+            ContentletDataGen.publish(firstBlockComplete);
+
+            // 5) create second block content with second rich content
+            final Contentlet secondBlockContentlet = new ContentletDataGen(storyBlockType)
+                    .languageId(defaultLanguage.getId())
+                    .nextPersisted();
+            final Contentlet secondBlockCheckout = ContentletDataGen.checkout(secondBlockContentlet);
+            setBlockEditorField(secondBlockCheckout, storyBlockField, richTextContentlet2);
+            final Contentlet secondBlockComplete = APILocator.getContentletAPI().checkin(
+                    secondBlockCheckout, APILocator.systemUser(), false);
+            ContentletDataGen.publish(secondBlockComplete);
+
+            // 6) now we have 2 block contents, each one with a rich content, we are going to refresh the references
+            final HttpServletRequest attrRequest = new MockAttributeRequest(mock(HttpServletRequest.class));
+            attrRequest.setAttribute("USER", APILocator.systemUser());
+            attrRequest.setAttribute(WebKeys.PAGE_MODE_PARAMETER, PageMode.LIVE);
+            attrRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+
+            final HttpServletRequest request = VelocityRequestWrapper.wrapVelocityRequest(attrRequest);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            // 7) verify first rich content
+            final Contentlet firstBlockPublished = APILocator.getContentletAPI().find(
+                    firstBlockComplete.getInode(), APILocator.systemUser(), false);
+            assertNotNull(firstBlockPublished);
+
+            final Map<?, ?> firstDataMap = getDataMap(firstBlockPublished, storyBlockField.variable());
+            assertNotNull(firstDataMap);
+
+            assertEquals(richTextContentlet1.getIdentifier(), firstDataMap.get("identifier"));
+            assertEquals(richTextContentlet1.getStringProperty("title"), firstDataMap.get("title"));
+
+            // 8) verify second rich content
+            final Contentlet secondBlockPublished = APILocator.getContentletAPI().find(
+                    secondBlockComplete.getInode(), APILocator.systemUser(), false);
+            assertNotNull(secondBlockPublished);
+
+            final Map<?, ?> secondDataMap = getDataMap(secondBlockPublished, storyBlockField.variable());
+            assertNotNull(secondDataMap);
+
+            assertEquals(richTextContentlet2.getIdentifier(), secondDataMap.get("identifier"));
+            assertEquals(richTextContentlet2.getStringProperty("title"), secondDataMap.get("title"));
+
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+            if (storyBlockType != null) {
+                ContentTypeDataGen.remove(storyBlockType);
+            }
+        }
+    }
+
+    /**
+     * Helper method to get the data map from the first Contentlet that is referenced in a StoryBlockField.
+     * @param storyBlockContentlet The Contentlet that contains the StoryBlockField.
+     * @param storyBlockField The StoryBlockField variable name.
+     * @return A map containing the data from the referenced Contentlet, or null if not found.
+     */
+    private Map<?, ?> getDataMap(final Contentlet storyBlockContentlet, final String storyBlockField)
+            throws JsonProcessingException {
+
+        if (storyBlockContentlet == null || storyBlockField == null) return null;
+
+        final Object storyBlockValue = storyBlockContentlet.getStringProperty(storyBlockField);
+        if (storyBlockValue == null) return null;
+
+        final Map<String, Object> blockEditorMap =
+                APILocator.getStoryBlockAPI().toMap(storyBlockValue);
+        if (blockEditorMap == null || blockEditorMap.isEmpty()) return null;
+
+        final List<?> contentsMap = (List<?>) blockEditorMap.get(StoryBlockAPI.CONTENT_KEY);
+        if (contentsMap == null || contentsMap.isEmpty()) return null;
+
+        final Optional<?> firstContentletMap = contentsMap.stream()
+                .filter(contentMap -> "dotContent".equals(
+                    ((Map<?,?>)contentMap).get("type")))
+                .findFirst();
+        if (firstContentletMap.isEmpty()) return null;
+
+        final Map<?, ?> contentletMap = (Map<?, ?>) firstContentletMap.get();
+        final Map<?, ?> attrsMap = (Map<?, ?>) contentletMap.get(StoryBlockAPI.ATTRS_KEY);
+        if (attrsMap == null) return null;
+
+        return (Map<?, ?>) attrsMap.get(StoryBlockAPI.DATA_KEY);
 
     }
 
@@ -827,4 +984,142 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         return contentletRelationships;
     }
 
+
+    /**
+     * Method to test: {@link StoryBlockAPI#addContentlet(Object, Contentlet)} in conjunction with {@link StoryBlockAPIImpl#toMap(Object)}
+     * Given Scenario: Test that when a contentlet with an image is added to a story block,
+     * the title image information is properly included in the data map
+     * ExpectedResult: The story block data should contain hasTitleImage=true and titleImage=field variable name
+     */
+    @Test
+    public void test_loadCommonContentletProps_with_title_image()
+            throws DotDataException, DotSecurityException, IOException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mock(HttpServletRequest.class));
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+        ContentType contentTypeWithImage = null;
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        long time = System.currentTimeMillis();
+        final String parentContentTypeName = "ParentImageTestContentType_" + time;
+        final String childContentTypeName = "TitleImageTestContentType_" + time;
+        final Host host = APILocator.systemHost();
+        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+        File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+        Assert.assertNotNull("Can't find the test image file",url);
+        File testImage = new File(url.getFile());
+        FileUtils.copyFile(testImage, tempFile);
+
+        try {
+            // 1) Create the content-type and the respective fields
+            final Contentlet imageFileAsset = new FileAssetDataGen(tempFile)
+                    .host(host)
+                    .languageId(1L)
+                    .folder(imageFolder).nextPersisted();
+
+            // Create the title field
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .required(true)
+                    .next();
+
+            // Create the Image field
+            com.dotcms.contenttype.model.field.Field imageField = new FieldDataGen()
+                    .name("image")
+                    .velocityVarName("image")
+                    .type(ImageField.class)
+                    .required(false)
+                    .next();
+
+            // Add a binary image
+            com.dotcms.contenttype.model.field.Field binaryField = new FieldDataGen()
+                    .name("fileAsset")
+                    .velocityVarName("fileAsset")
+                    .type(BinaryField.class)
+                    .next();
+
+            // Create a content type with both fields
+            ContentType childContentType = new ContentTypeDataGen()
+                    .name(childContentTypeName)
+                    .velocityVarName(childContentTypeName)
+                    .host(host)
+                    .fields(List.of(titleField, imageField, binaryField))
+                    .nextPersisted();
+
+            // 2) Create the contentlet with the image field
+            final Contentlet contentletWithImage = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .host(host)
+                    .setProperty("title", "Testing StoryBlock image property")
+                    .setProperty(imageField.variable(), imageFileAsset.getIdentifier())
+                    .setProperty("fileAsset",tempFile)
+                    .nextPersisted();
+
+            //  create the content that has the BlockEditor
+            com.dotcms.contenttype.model.field.Field blockEditoField = new FieldDataGen()
+                    .name("blockEditor")
+                    .velocityVarName("blockEditor")
+                    .type(StoryBlockField.class)
+                    .next();
+
+            ContentType parentContentType = new ContentTypeDataGen()
+                    .name(parentContentTypeName)
+                    .velocityVarName(parentContentTypeName)
+                    .host(host)
+                    .fields(List.of(blockEditoField))
+                    .nextPersisted();
+
+            // Create a contentlet with a blockEditor to hold contentlets
+            final Contentlet parentWithBlockEditor = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty("blockEditor", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .host(host)
+                    .nextPersisted();
+
+            //Modify the block editor adding the contentlet with the images
+            final Contentlet checkout = ContentletDataGen.checkout(parentWithBlockEditor);
+            final Object newStoryBlockJson = APILocator.getStoryBlockAPI().addContentlet(JSON, contentletWithImage);
+            //Set the blockEditor json to the parent
+            checkout.setProperty("blockEditor", newStoryBlockJson);
+            final Contentlet checkin = ContentletDataGen.checkin(checkout);
+            final Contentlet published = ContentletDataGen.publish(checkin);
+
+            //Call the apis
+            final StoryBlockReferenceResult storyBlockReferenceResult = storyBlockAPI
+                    .refreshReferences(published);
+
+            //Extract updated fields
+            Assert.assertTrue(storyBlockReferenceResult.isRefreshed());
+            final Contentlet parentContent = (Contentlet)storyBlockReferenceResult.getValue();
+            final Object blockEditor = parentContent.get("blockEditor");
+            final Map<String, Object> storyBlockMap = storyBlockAPI.toMap(blockEditor);
+            assertNotNull(storyBlockMap);
+
+            final List<Map<String, Object>> contentList = (List<Map<String, Object>>) storyBlockMap.get("content");
+            final Optional<Map<String, Object>> contentletMap = contentList.stream()
+                    .filter(content -> "dotContent".equals(content.get("type")))
+                    .findFirst();
+
+            assertTrue(contentletMap.isPresent());
+            final Map<String, Object> dataMap = (Map<String, Object>)
+                    ((Map<String, Object>) contentletMap.get().get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
+
+            // And Verify...
+            //Verify that we have a hasImageTitle and the imageTitle per se
+            assertEquals("Should have title image", true, dataMap.get(Contentlet.HAS_TITLE_IMAGE_KEY));
+            assertEquals("Title image field should match", "fileAsset", dataMap.get(Contentlet.TITLE_IMAGE_KEY));
+
+            // Verify the image field is set correctly
+            assertEquals("Image field should match", imageFileAsset.getIdentifier(), dataMap.get("image"));
+
+            // Verify the binary field is correctly set as an url
+            assertThat(dataMap.get("fileAsset").toString(), startsWith("http"));
+
+        } finally {
+            if (contentTypeWithImage != null) {
+                ContentTypeDataGen.remove(contentTypeWithImage);
+            }
+        }
+    }
 }

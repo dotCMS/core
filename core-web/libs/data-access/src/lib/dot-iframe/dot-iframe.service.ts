@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { filter } from 'rxjs/operators';
 
@@ -10,9 +10,9 @@ import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 export class DotIframeService {
-    private _actions: Subject<DotFunctionInfo> = new Subject();
+    private dotRouterService = inject(DotRouterService);
 
-    constructor(private dotRouterService: DotRouterService) {}
+    private _actions: Subject<DotFunctionInfo> = new Subject();
 
     /**
      * Trigger reload action

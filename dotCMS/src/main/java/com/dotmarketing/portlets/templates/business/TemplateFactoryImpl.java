@@ -2,11 +2,18 @@ package com.dotmarketing.portlets.templates.business;
 
 import static com.dotcms.util.FunctionUtils.ifOrElse;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.rendering.velocity.directive.DotCacheDirective;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -27,13 +34,16 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
-import com.google.common.io.LineReader;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.velocity.VelocityContext;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -425,52 +435,51 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	private static final String PARSE_CONTAINER_ID_PATTERN =
 			"#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)";
-	private static final String PARSE_CONTAINER_ID_UUDI_PATTERN =
-			"\\s*#parseContainer\\s*\\(\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*,\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*\\)\\s*";
 
 	@Override
 	public List<ContainerUUID> getContainerUUIDFromHTML(final String templateBody) {
 
-		final LineReader lineReader = new LineReader(new StringReader(templateBody));
-		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
-		String line  = null;
-
-		try {
-
-			line = lineReader.readLine();
-			final Pattern newContainerUUIDReferencesRegex =
-					Pattern.compile(PARSE_CONTAINER_ID_UUDI_PATTERN);
-			final Pattern newContainerReferencesRegex =
-					Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
-
-			while (null != line) {
-
-				Matcher matcher = newContainerUUIDReferencesRegex.matcher(line);
-
-				if (matcher.find() && matcher.groupCount() == 2) {
-
-					final String containerId = matcher.group(1).trim();
-					final String uuid        = matcher.group(2).trim();
-					containerUUIDS.add(new ContainerUUID(containerId, uuid));
-				} else {
-
-					matcher = newContainerReferencesRegex.matcher(line);
-					if (matcher.find() && matcher.groupCount() == 1) {
-
-						final String containerId = matcher.group(1).trim();
-						final String uuid        = ContainerUUID.UUID_LEGACY_VALUE;
-						containerUUIDS.add(new ContainerUUID(containerId, uuid));
-					}
-				}
-
-				line = lineReader.readLine();
-			}
-		} catch (IOException e) {
-
-			Logger.error(this, e.getMessage(), e);
+		if(!UtilMethods.isSet(templateBody)){
+			return Collections.emptyList();
 		}
 
+		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
+		try {
+			// Get the default host to use for parsing the template
+			final Host host = Try.of(()-> APILocator.getHostAPI().findDefaultHost(
+					APILocator.systemUser(), false)).getOrElse(APILocator.systemHost());
+			final String hostname = UtilMethods.isSet(host) ?
+					host.getHostname() : "dotcms.com"; // fake host
+
+			// Get the current request or create a fake request and response to parse the template
+			final HttpServletRequest requestProxy = HttpServletRequestThreadLocal.INSTANCE.getRequest() != null ?
+					HttpServletRequestThreadLocal.INSTANCE.getRequest() :
+					new FakeHttpRequest(hostname, StringPool.FORWARD_SLASH).request();
+			final HttpServletResponse responseProxy = HttpServletResponseThreadLocal.INSTANCE.getResponse() != null ?
+					HttpServletResponseThreadLocal.INSTANCE.getResponse() : new BaseResponse().response();
+
+			// Create a Velocity context with the fake request and response
+			// and parse the template body to extract container UUIDs
+			final VelocityContext context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
+			context.put(DotCacheDirective.DONT_USE_DIRECTIVE_CACHE, Boolean.TRUE); // Disable cache for this parsing
+			context.put(ParseContainer.DONT_LOAD_CONTAINERS, Boolean.TRUE); // Disable loading containers
+			VelocityUtil.eval(templateBody, context);
+
+			final Object containerIdsObj = context.get(ParseContainer.DOT_TEMPLATE_CONTAINER_IDS);
+			if (containerIdsObj instanceof Collection<?>) {
+				final Collection<?> containerIds = (Collection<?>) containerIdsObj;
+				for (final Object containerIdObj : containerIds) {
+					final Pair<?, ?> containerId = (Pair<?, ?>) containerIdObj;
+					containerUUIDS.add(new ContainerUUID(
+							(String) containerId.getLeft(),
+							(String) containerId.getRight()));
+				}
+			}
+		} catch (Exception e) {
+			Logger.error(this, "Error parsing template body to get container", e);
+		}
 		return containerUUIDS;
+
 	}
 
 

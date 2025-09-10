@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
@@ -16,8 +18,13 @@ const MINIMUM_CHARACTERS = 3;
 
 @Component({
     selector: 'dot-category-field-search',
-    standalone: true,
-    imports: [DotMessagePipe, InputTextModule, ReactiveFormsModule],
+    imports: [
+        DotMessagePipe,
+        InputTextModule,
+        ReactiveFormsModule,
+        InputGroupModule,
+        InputGroupAddonModule
+    ],
     templateUrl: './dot-category-field-search.component.html',
     styleUrl: './dot-category-field-search.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

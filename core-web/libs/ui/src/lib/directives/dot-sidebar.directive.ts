@@ -1,4 +1,4 @@
-import { Directive, Input, Optional, Self } from '@angular/core';
+import { Directive, Input, inject } from '@angular/core';
 
 import { Sidebar } from 'primeng/sidebar';
 
@@ -21,13 +21,15 @@ export enum SIDEBAR_SIZES {
     selector: '[dotSidebar]'
 })
 export class DotSidebarDirective {
-    constructor(@Optional() @Self() private readonly primeSidebar: Sidebar) {
-        if (primeSidebar) {
-            primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
-            primeSidebar.styleClass = SIDEBAR_SIZES.MD;
-            primeSidebar.showCloseIcon = false;
-            primeSidebar.dismissible = false;
-            primeSidebar.closeOnEscape = false;
+    private readonly primeSidebar = inject(Sidebar, { optional: true, self: true });
+
+    constructor() {
+        if (this.primeSidebar) {
+            this.primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
+            this.primeSidebar.styleClass = SIDEBAR_SIZES.MD;
+            this.primeSidebar.showCloseIcon = false;
+            this.primeSidebar.dismissible = false;
+            this.primeSidebar.closeOnEscape = false;
         } else {
             console.warn('DotSidebarDirective is for use with PrimeNg Sidebar');
         }

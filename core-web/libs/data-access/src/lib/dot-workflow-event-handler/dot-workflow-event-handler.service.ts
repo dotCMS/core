@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -52,20 +52,17 @@ export const WORKFLOW_STEP_MAP: { [key in DotWizardComponentEnum]: boolean } = {
     commentAndAssign: true,
     pushPublish: true
 };
-
 @Injectable()
 export class DotWorkflowEventHandlerService {
-    constructor(
-        private pushPublishService: PushPublishService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotMessageService: DotMessageService,
-        private dotWizardService: DotWizardService,
-        private dotIframeService: DotIframeService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotFormatDateService: DotFormatDateService
-    ) {}
+    private pushPublishService = inject(PushPublishService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotMessageService = inject(DotMessageService);
+    private dotWizardService = inject(DotWizardService);
+    private dotIframeService = inject(DotIframeService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotFormatDateService = inject(DotFormatDateService);
 
     /**
      * Fire the event to open the wizard to collect data

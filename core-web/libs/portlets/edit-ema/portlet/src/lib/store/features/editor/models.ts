@@ -3,18 +3,18 @@ import {
     DotDeviceListItem,
     DotExperiment,
     DotLanguage,
-    DotPageContainerStructure,
     DotPersona,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
+import { DotCMSPageAssetContainers, DotCMSViewAsPersona } from '@dotcms/types';
 
 import {
     Container,
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE } from '../../../shared/enums';
+import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
 import { Orientation } from '../../models';
 
 export interface EditorState {
@@ -23,6 +23,7 @@ export interface EditorState {
     contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
+    paletteOpen: boolean;
 }
 
 export interface EditorToolbarState {
@@ -50,7 +51,6 @@ export interface PageData {
 
 export interface ReloadEditorContent {
     isTraditionalPage: boolean;
-    isClientReady: boolean;
 }
 
 export interface EditorProps {
@@ -79,8 +79,9 @@ export interface EditorProps {
     };
     palette?: {
         languageId: number;
-        containers: DotPageContainerStructure;
+        containers: DotCMSPageAssetContainers;
         variantId: string;
+        paletteClass: PALETTE_CLASSES;
     };
     showDialogs: boolean;
     progressBar: boolean;
@@ -142,5 +143,5 @@ export interface UVEToolbarProps {
 
 export interface PersonaSelectorProps {
     pageId: string;
-    value: DotPersona;
+    value: DotCMSViewAsPersona;
 }

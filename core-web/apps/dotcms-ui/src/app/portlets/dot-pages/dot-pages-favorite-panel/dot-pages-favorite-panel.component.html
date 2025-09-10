@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-panel
         (onAfterToggle)="toggleFavoritePagesPanel($event)"
         [ngClass]="{
@@ -16,31 +16,29 @@
                 <span>{{ 'favoritePage.panel.header' | dm }}</span>
             </span>
         </ng-template>
-
-        <ng-template [ngIf]="vm.favoritePages?.items?.length !== 0" [ngIfElse]="emptyState">
-            <dot-pages-card
-                *ngFor="let item of vm.favoritePages.items; let i = index"
-                (edit)="editFavoritePage(item)"
-                (goTo)="goToUrl.emit(item.url)"
-                (showActionMenu)="
-                    showActionsMenu.emit({
-                        event: $event,
-                        actionMenuDomId: 'favoritePageActionButton-' + i,
-                        item
-                    })
-                "
-                [actionButtonId]="'favoritePageActionButton-' + i"
-                [imageUri]="
-                    item.screenshot
-                        ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
-                        : ''
-                "
-                [title]="item.title"
-                [url]="item.url"
-                [ownerPage]="item.owner === vm.loggedUser.id"></dot-pages-card>
-        </ng-template>
-
-        <ng-template #emptyState>
+        @if (vm.favoritePages?.items?.length !== 0) {
+            @for (item of vm.favoritePages.items; track $index) {
+                <dot-pages-card
+                    (edit)="editFavoritePage(item)"
+                    (goTo)="goToUrl.emit(item.url)"
+                    (showActionMenu)="
+                        showActionsMenu.emit({
+                            event: $event,
+                            actionMenuDomId: 'favoritePageActionButton-' + i,
+                            item
+                        })
+                    "
+                    [actionButtonId]="'favoritePageActionButton-' + i"
+                    [imageUri]="
+                        item.screenshot
+                            ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
+                            : ''
+                    "
+                    [title]="item.title"
+                    [url]="item.url"
+                    [ownerPage]="item.owner === vm.loggedUser.id"></dot-pages-card>
+            }
+        } @else {
             <div class="dot-pages-empty__container">
                 <i class="pi pi-star"></i>
                 <div class="dot-pages-empty__header">
@@ -51,6 +49,6 @@
                     data-testid="dot-pages-empty__content"
                     innerHTML="{{ 'favoritePage.listing.empty.content' | dm }}"></p>
             </div>
-        </ng-template>
+        }
     </p-panel>
-</ng-container>
+}

@@ -1,0 +1,30 @@
+@let field = $field();
+
+<div class="flex flex-column gap-2" data-testid="generated-string-field">
+    <div class="flex align-items-start gap-2 relative">
+        <input
+            type="text"
+            class="flex-1"
+            data-testid="generated-string-input"
+            [id]="field.name"
+            [(ngModel)]="$value"
+            [placeholder]="'apps.content-analytics.generated.string.placeholder' | dm"
+            pInputText />
+
+        <button
+            type="button"
+            data-testid="generate-button"
+            [disabled]="$isDisabled() || $isLoading()"
+            [loading]="$isLoading()"
+            (click)="generateString($event)"
+            pButton
+            [label]="field.buttonLabel"></button>
+    </div>
+
+    @if (field.hint) {
+        <span class="p-field-hint">
+            {{ field.hint }}
+        </span>
+    }
+</div>
+<p-confirmPopup />

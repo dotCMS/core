@@ -24,9 +24,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -70,41 +72,53 @@ public class DropOldContentVersionsJobTest {
             JobExecutionException {
         final int olderThan =
                 Config.getIntProperty(DropOldContentVersionsJob.OLDER_THAN_DAYS_PROP, 365);
-        final Date oneYearAgo = localDateToDate(olderThan);
-        final Date twoYearsAgo = localDateToDate(olderThan * 2);
+        final int defaultBatchSize = Config.getIntProperty("OLD_CONTENT_BATCH_SIZE", 8192);
+        Config.setProperty("OLD_CONTENT_BATCH_SIZE", 4);
+        try {
+            final Date oneYearAgo = localDateToDate(olderThan);
+            final Date twoYearsAgo = localDateToDate(olderThan * 2);
 
-        Contentlet veryOldContentlet = TestDataUtils.getGenericContentContent(false, 1);
-        // Create first version in English from two years ago
-        veryOldContentlet = createContentlet(veryOldContentlet, "VERY Old Contentlet", twoYearsAgo);
-        // Create three more versions
-        veryOldContentlet = createContentletVersions(veryOldContentlet, "VERY Old Contentlet", twoYearsAgo, 2, 4);
-        contentletAPI.unlock(veryOldContentlet, SYSTEM_USER, false);
-        ContentletDataGen.publish(veryOldContentlet);
+            final List<String> oldContentIds = new ArrayList<>();
+            for (int i = 0; i < 25; i++) {
+                final String contentTitle = "VERY Old Contentlet " + (i + 1);
+                Contentlet veryOldContentlet = TestDataUtils.getGenericContentContent(false, 1);
+                // Create first version in English from two years ago
+                veryOldContentlet = createContentlet(veryOldContentlet, contentTitle, twoYearsAgo);
+                // Create three more versions
+                veryOldContentlet = createContentletVersions(veryOldContentlet, contentTitle, twoYearsAgo, 2, 4);
+                contentletAPI.unlock(veryOldContentlet, SYSTEM_USER, false);
+                ContentletDataGen.publish(veryOldContentlet);
+                oldContentIds.add(veryOldContentlet.getIdentifier());
+            }
 
-        Contentlet contentWithManyVersions = TestDataUtils.getGenericContentContent(false, 1);
-        // Create first version in English form one year ago
-        contentWithManyVersions = createContentlet(contentWithManyVersions, "Old Contentlet Version", oneYearAgo);
-        // Create 100 more versions
-        contentWithManyVersions = createContentletVersions(contentWithManyVersions, "Old Contentlet Version", oneYearAgo, 2, 101);
-        // Create three more versions with the current date
-        contentWithManyVersions = createContentletVersions(contentWithManyVersions, "Old Contentlet Version", new Date(), 102, 105);
-        contentletAPI.unlock(contentWithManyVersions, SYSTEM_USER, false);
-        ContentletDataGen.publish(contentWithManyVersions);
+            Contentlet contentWithManyVersions = TestDataUtils.getGenericContentContent(false, 1);
+            // Create first version in English form one year ago
+            contentWithManyVersions = createContentlet(contentWithManyVersions, "Old Contentlet Version", oneYearAgo);
+            // Create 100 more versions
+            contentWithManyVersions = createContentletVersions(contentWithManyVersions, "Old Contentlet Version", oneYearAgo, 2, 101);
+            // Create three more versions with the current date
+            contentWithManyVersions = createContentletVersions(contentWithManyVersions, "Old Contentlet Version", new Date(), 102, 105);
+            contentletAPI.unlock(contentWithManyVersions, SYSTEM_USER, false);
+            ContentletDataGen.publish(contentWithManyVersions);
 
-        final DropOldContentVersionsJob oldContentVersionsJob = new DropOldContentVersionsJob();
-        oldContentVersionsJob.execute(null);
+            final DropOldContentVersionsJob oldContentVersionsJob = new DropOldContentVersionsJob();
+            oldContentVersionsJob.execute(null);
 
-        // The two-year-old Contentlet should have all of its versions removed, except for the
-        // published one
-        final List<Versionable> allVersions =
-                versionableAPI.findAllVersions(veryOldContentlet.getIdentifier());
-        // The one-year-old Contentlet should have 5 versions removed, so that only 100 are kept
-        final List<Versionable> contentletVersions =
-                versionableAPI.findAllVersions(contentWithManyVersions.getIdentifier());
+            // The two-year-old Contentlet should have all of its versions removed, except for the
+            // published one
+            for (final String oldContentId : oldContentIds) {
+                final List<Versionable> allVersions =
+                        versionableAPI.findAllVersions(oldContentId);
+                assertEquals("There should only be 1 version of the two-year-old Contentlet!" + allVersions.size(), 1, allVersions.size());
+            }
 
-        assertEquals("There should only be 1 version of the two-year-old Contentlet!" + allVersions.size(), 1, allVersions.size());
-        assertEquals("There must be only 100 versions of the one-year-old Contentlet!" + contentletVersions.size(), 100, contentletVersions.size());
-
+            // The one-year-old Contentlet should have 5 versions removed, so that only 100 are kept
+            final List<Versionable> contentletVersions =
+                    versionableAPI.findAllVersions(contentWithManyVersions.getIdentifier());
+            assertEquals("There must be only 100 versions of the one-year-old Contentlet!" + contentletVersions.size(), 100, contentletVersions.size());
+        } finally {
+            Config.setProperty("OLD_CONTENT_BATCH_SIZE", defaultBatchSize);
+        }
     }
 
     /**

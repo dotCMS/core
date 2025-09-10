@@ -10,7 +10,6 @@ import com.dotcms.telemetry.collectors.ai.TotalEmbeddingsIndexesMetricType;
 import com.dotcms.telemetry.collectors.ai.TotalSitesUsingDotaiMetricType;
 import com.dotcms.telemetry.collectors.ai.TotalSitesWithAutoIndexContentConfigMetricType;
 import com.dotcms.telemetry.collectors.api.ApiMetricAPI;
-import com.dotcms.telemetry.collectors.api.ApiMetricTypes;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInLivePageDatabaseMetricType;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInLiveTemplatesDatabaseMetricType;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInWorkingPageDatabaseMetricType;
@@ -93,6 +92,7 @@ import com.dotcms.telemetry.collectors.template.TotalTemplatesInWorkingPagesData
 import com.dotcms.telemetry.collectors.theme.TotalFilesInThemeMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalLiveContainerDatabaseMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalLiveFilesInThemeMetricType;
+import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalThemeMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalThemeUsedInLiveTemplatesMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalThemeUsedInWorkingTemplatesMetricType;
@@ -198,6 +198,7 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new TotalLiveFilesInThemeMetricType());
         metricStatsCollectors.add(new TotalFilesInThemeMetricType());
         metricStatsCollectors.add(new TotalThemeMetricType());
+        metricStatsCollectors.add(new TotalSizeOfFilesPerThemeMetricType());
 
         metricStatsCollectors.add(new TotalLiveContainerDatabaseMetricType());
         metricStatsCollectors.add(new TotalWorkingContainerDatabaseMetricType());
@@ -264,9 +265,6 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new CountExperimentsWithExitRateGoalMetricType());
         metricStatsCollectors.add(new CountExperimentsWithBounceRateGoalMetricType());
         metricStatsCollectors.add(new CountExperimentsEditedInThePast30DaysMetricType());
-
-        // api ones
-        metricStatsCollectors.addAll(ApiMetricTypes.INSTANCE.get());
     }
 
     public static MetricsSnapshot getStatsAndCleanUp() {

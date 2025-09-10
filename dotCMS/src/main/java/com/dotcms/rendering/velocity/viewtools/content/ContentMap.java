@@ -382,9 +382,9 @@ public class ContentMap implements Serializable {
 				}
 
 				for (String key : keyValueMap.keySet()) {
-					retMap.put(key.replaceAll("\\W", ""), keyValueMap.get(key));
+					retMap.put(key, keyValueMap.get(key));
 				}
-				retMap.put("keys", retMap.keySet());
+				retMap.put("keys", keyValueMap.keySet());
 				retMap.put("map", keyValueMap);
 				return retMap;
 			} else if(f != null && f.getFieldType().equals(FieldType.RELATIONSHIP.toString())){

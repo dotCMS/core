@@ -1,6 +1,8 @@
 <div class="dot-apps-configuration-detail__container">
     <div class="dot-apps-configuration-detail__header">
-        <dot-apps-configuration-header *ngIf="apps" [app]="apps"></dot-apps-configuration-header>
+        @if (apps) {
+            <dot-apps-configuration-header [app]="apps"></dot-apps-configuration-header>
+        }
         <div class="dot-apps-configuration-detail__host-name">
             <span>{{ apps.sites[0].name }}</span>
             <div class="dot-apps-configuration-detail-actions">
@@ -28,14 +30,16 @@
                 (valid)="formValid = $event"
                 [appConfigured]="apps.sites[0].configured"
                 [formFields]="formFields"></dot-apps-configuration-detail-form>
-            <div *ngIf="apps.allowExtraParams">
-                <h5>{{ 'apps.custom.properties' | dm }}</h5>
-                <dot-key-value-ng
-                    (updatedList)="updateVariables($event)"
-                    [autoFocus]="false"
-                    [showHiddenField]="true"
-                    [variables]="dynamicVariables" />
-            </div>
+            @if (apps.allowExtraParams) {
+                <div>
+                    <h5>{{ 'apps.custom.properties' | dm }}</h5>
+                    <dot-key-value-ng
+                        (updatedList)="updateVariables($event)"
+                        [autoFocus]="false"
+                        [showHiddenField]="true"
+                        [variables]="dynamicVariables" />
+                </div>
+            }
         </div>
     </div>
 </div>

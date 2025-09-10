@@ -15,9 +15,6 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
@@ -30,6 +27,11 @@ import {
     mockLoginFormResponse,
     mockUser
 } from '@dotcms/utils-testing';
+
+import { DotLoginComponent } from './dot-login.component';
+
+import { DotLoadingIndicatorModule } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 const mockLoginInfo = {
     ...mockLoginFormResponse,

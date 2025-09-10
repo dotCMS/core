@@ -51,7 +51,7 @@
                 data-testId="progress-bar"
                 mode="indeterminate" />
         }
-        @if ($editorProps().contentletTools; as contentletTools) {
+        @if ($editorProps()?.contentletTools; as contentletTools) {
             <dot-ema-contentlet-tools
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
@@ -75,7 +75,11 @@
 </div>
 
 @if ($editorProps().palette; as palette) {
+    <!-- This is to hold the place for the button that is on the nav bar -->
+    <div class="toggle-palette-placeholder" data-testId="toggle-palette-placeholder"></div>
+
     <dot-edit-ema-palette
+        [ngClass]="palette.paletteClass"
         [languageId]="palette.languageId"
         [containers]="palette.containers"
         [variantId]="palette.variantId"

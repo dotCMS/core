@@ -7,7 +7,8 @@ import { DotAppsSite } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-apps-configuration-list',
     templateUrl: './dot-apps-configuration-list.component.html',
-    styleUrls: ['./dot-apps-configuration-list.component.scss']
+    styleUrls: ['./dot-apps-configuration-list.component.scss'],
+    standalone: false
 })
 export class DotAppsConfigurationListComponent {
     @ViewChild('searchInput') searchInput: ElementRef;

@@ -20,13 +20,11 @@ import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models'
 import {
     DotEmptyContainerComponent,
     DotMessagePipe,
-    DotRelativeDatePipe,
     DotTimestampToDatePipe,
     PrincipalConfiguration
 } from '@dotcms/ui';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-list-table',
     imports: [
         NgIf,
@@ -35,7 +33,6 @@ import {
         NgForOf,
         // dotCMS
         DotMessagePipe,
-        DotRelativeDatePipe,
         // PrimeNG
         ConfirmPopupModule,
         TableModule,

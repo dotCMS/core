@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DbExporterUtil;
 import com.dotcms.util.SizeUtil;
 import com.dotmarketing.business.APILocator;
@@ -14,6 +15,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -25,6 +27,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,6 +51,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +64,7 @@ import java.util.concurrent.TimeUnit;
  * @since Oct 21st, 2020
  */
 @Path("/v1/maintenance")
+@Tag(name = "Maintenance", description = "System maintenance and administration operations")
 @SuppressWarnings("serial")
 public class MaintenanceResource implements Serializable {
 
@@ -240,10 +246,24 @@ public class MaintenanceResource implements Serializable {
         public void write(OutputStream output) throws IOException, WebApplicationException {
 
             synchronized (PGDumpStreamingOutput.class) {
+                final long startTime = System.currentTimeMillis();
+                long bytesWritten = 0;
+                
                 try (InputStream input = DbExporterUtil.exportSql()) {
-                    IOUtils.copy(input, output);
+                    Logger.info(this.getClass(), "Starting database dump stream to client...");
+                    bytesWritten = IOUtils.copyLarge(input, output);
+                    
+                    final long durationMs = System.currentTimeMillis() - startTime;
+                    final String sizeFormatted = ConversionUtils.toHumanReadableByteSize(bytesWritten);
+                    
+                    Logger.info(this.getClass(), "=== DATABASE DUMP STREAM COMPLETED ===");
+                    Logger.info(this.getClass(), "Bytes streamed: " + sizeFormatted + " (" + bytesWritten + " bytes)");
+                    Logger.info(this.getClass(), "Duration: " + DateUtil.humanReadableFormat(Duration.of(durationMs, ChronoUnit.MILLIS)));
+                    Logger.info(this.getClass(), "==========================================");
 
                 } catch (Exception e) {
+                    Logger.error(this.getClass(), "Database dump streaming failed after " + 
+                               (System.currentTimeMillis() - startTime) + "ms, " + bytesWritten + " bytes written", e);
                     throw new DotRuntimeException(e);
                 }
             }

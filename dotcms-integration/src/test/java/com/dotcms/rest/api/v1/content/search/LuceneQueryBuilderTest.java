@@ -99,6 +99,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
      * <ul>
      *     <li>Global Search. This is basically the top center Search field you can see in the
      *     {@code Search} portlet, and the field in the search dialog of the Relationships field.
+     *     It's worth noting the use of the {@code catchall} clause for this specific search case.
      *     </li>
      *     <li>Unpublished content.</li>
      *     <li>Locked content.</li>
@@ -116,43 +117,43 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                         "{\n" +
                                 "    " +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +working:true"),
 
                 new TestCase("Global Search",
                         "{\n" +
                         "    \"globalSearch\": \"dummy search\"\n" +
                         "}",
-                        "+systemType:false -contentType:forms -contentType:Host +catchall:dummy search* title:'dummy search'^15 title:dummy^5 title:search^5 title_dotraw:*dummy search*^5 title:dummy search* +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true"),
+                        "+catchall:dummy search* title:'dummy search'^15 title:dummy^5 title:search^5 title_dotraw:*dummy search*^5 title:dummy search* +systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +working:true"),
 
                 new TestCase("Published content",
                         "{\n" +
                                 "    \"unpublishedContent\": false\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +live:true +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +live:true +working:true"),
 
                 new TestCase("Unpublished content",
                         "{\n" +
                         "    \"unpublishedContent\": true\n" +
                         "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +live:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +live:false +working:true"),
 
                 new TestCase("Locked content",
                         "{\n" +
                                 "    \"lockedContent\": true\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +locked:true +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +locked:true +working:true"),
 
                 new TestCase("Unlocked content",
                         "{\n" +
                                 "    \"lockedContent\": false\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +locked:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +locked:false +working:true"),
 
                 new TestCase("Archived content",
                         "{\n" +
                                 "    \"archivedContent\": true\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:true +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:true +working:true"),
 
                 new TestCase("With all attributes present",
                         "{\n" +
@@ -163,7 +164,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "    \"page\": 0,\n" +
                                 "    \"perPage\": 40\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:true +locked:true +live:false +working:true")
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:true +locked:true +live:false +working:true")
         };
     }
 
@@ -197,12 +198,13 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
     }
 
     /**
-     * This DataProvider provides the test cases for the different system searchable fields. These
+     * This DataProvider provides the test cases for the different system-searchable fields. These
      * fields are NOT actual fields in a Contentlet per se, but rather fields that allow you to
      * filter contents in a way that provides additional value to users. For instance, you can
      * filter them based on:
      * <ul>
      *     <li>Site ID.</li>
+     *     <li>Folder ID.</li>
      *     <li>Language ID.</li>
      *     <li>Workflow Scheme ID.</li>
      *     <li>Workflow Step ID.</li>
@@ -229,7 +231,15 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        \"siteId\": \"\"\n" +
                                 "    }\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +working:true"),
+
+                new TestCase("With Folder ID",
+                        "{\n" +
+                                "    \"systemSearchableFields\": {\n" +
+                                "        \"folderId\": \"83bb5752-4264-43c4-84c8-28176603431a\"\n" +
+                                "    }\n" +
+                                "}",
+                        "+systemType:false -contentType:forms -contentType:Host +conFolder:83bb5752-4264-43c4-84c8-28176603431a* +variant:default +deleted:false +working:true"),
 
                 new TestCase("With Language ID",
                         "{\n" +
@@ -237,7 +247,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        \"languageId\": 1\n" +
                                 "    }\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +languageId:1 +variant:default +deleted:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +languageId:1 +variant:default +deleted:false +working:true"),
 
                 new TestCase("With Workflow Scheme ID",
                         "{\n" +
@@ -245,7 +255,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        \"workflowSchemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n" +
                                 "    }\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +(wfscheme:d61a59e1-a49c-46f2-a929-db2b4bfa88b2*) +variant:default +deleted:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +(wfscheme:d61a59e1-a49c-46f2-a929-db2b4bfa88b2*) +variant:default +deleted:false +working:true"),
 
                 new TestCase("With Workflow Step ID",
                         "{\n" +
@@ -253,7 +263,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        \"workflowStepId\": \"dc3c9cd0-8467-404b-bf95-cb7df3fbc293\"\n" +
                                 "    }\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +(wfstep:dc3c9cd0-8467-404b-bf95-cb7df3fbc293*) +variant:default +deleted:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +(wfstep:dc3c9cd0-8467-404b-bf95-cb7df3fbc293*) +variant:default +deleted:false +working:true"),
 
                 new TestCase("With Variant Name",
                         "{\n" +
@@ -261,9 +271,17 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        \"variantName\": \"test-variant-name\"\n" +
                                 "    }\n" +
                                 "}",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +(variant:test-variant-name OR variant:default) +deleted:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +(variant:test-variant-name OR variant:default) +deleted:false +working:true"),
 
                 new TestCase("With System Host Content",
+                        "{\n" +
+                                "    \"systemSearchableFields\": {\n" +
+                                "        \"systemHostContent\": true\n" +
+                                "    }\n" +
+                                "}",
+                        "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +working:true"),
+
+                new TestCase("Without System Host Content",
                         "{\n" +
                                 "    \"systemSearchableFields\": {\n" +
                                 "        \"systemHostContent\": false\n" +
@@ -327,7 +345,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
         final ContentType testContentType = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME);
         try {
             String jsonBody = "{ }";
-            String expectedQuery = "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true";
+            String expectedQuery = "+systemType:false -contentType:forms -contentType:Host +variant:default +deleted:false +working:true";
 
             ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
             LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
@@ -344,7 +362,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                     "        }\n" +
                     "    }\n" +
                     "}";
-            expectedQuery = "+contentType:(" + TEST_CONTENT_TYPE_NAME + ") +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true";
+            expectedQuery = "+contentType:(" + TEST_CONTENT_TYPE_NAME + ") +variant:default +deleted:false +working:true";
 
             contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
             luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
@@ -414,7 +432,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.binary:*value*"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +SSS.binary:*value*"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Checkbox Field",
@@ -426,7 +444,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.checkbox:*value1* SSS.checkbox_dotraw:*value1*) +(SSS.checkbox:*value2* SSS.checkbox_dotraw:*value2*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.checkbox:*value1* SSS.checkbox_dotraw:*value1*) +(SSS.checkbox:*value2* SSS.checkbox_dotraw:*value2*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Custom Field",
@@ -438,7 +456,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.custom:*value* SSS.custom_dotraw:*value*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.custom:*value* SSS.custom_dotraw:*value*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Date Field",
@@ -450,7 +468,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.date:[02/03/2025 TO 02/03/2025]"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +SSS.date:[02/03/2025 TO 02/03/2025]"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Date and Time Field",
@@ -462,7 +480,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.dateAndTime:[01/07/2025 13:50:00 TO 01/07/2025 13:50:00]"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +SSS.dateAndTime:[01/07/2025 13:50:00 TO 01/07/2025 13:50:00]"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With JSON Field",
@@ -474,7 +492,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.json:*value* SSS.json_dotraw:*value*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.json:*value* SSS.json_dotraw:*value*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Key/Value Field",
@@ -486,7 +504,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.keyValue.key_value:*value*"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +SSS.keyValue.key_value:*value*"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Multi-Select Field",
@@ -498,7 +516,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.multiSelect:*multi1* SSS.multiSelect_dotraw:*multi1*) +(SSS.multiSelect:*multi2* SSS.multiSelect_dotraw:*multi2*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.multiSelect:*multi1* SSS.multiSelect_dotraw:*multi1*) +(SSS.multiSelect:*multi2* SSS.multiSelect_dotraw:*multi2*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Radio Field",
@@ -510,7 +528,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.radio:*radio1* SSS.radio_dotraw:*radio1*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.radio:*radio1* SSS.radio_dotraw:*radio1*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Select Field",
@@ -522,7 +540,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.select:*select1* SSS.select_dotraw:*select1*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.select:*select1* SSS.select_dotraw:*select1*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Tag Field",
@@ -534,7 +552,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.tag:\"beach\" +SSS.tag:\"mountain\""
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +SSS.tag:\"beach\" +SSS.tag:\"mountain\""
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Text Field",
@@ -546,7 +564,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.text:*value* SSS.text_dotraw:*value*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.text:*value* SSS.text_dotraw:*value*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Text Area Field",
@@ -558,7 +576,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.textArea:*some* SSS.textArea_dotraw:*some*) +(SSS.textArea:*values* SSS.textArea_dotraw:*values*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.textArea:*some* SSS.textArea_dotraw:*some*) +(SSS.textArea:*values* SSS.textArea_dotraw:*values*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Time Field",
@@ -570,7 +588,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.time:[12:30PM TO 12:30PM]"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +SSS.time:[12:30PM TO 12:30PM]"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With WYSIWYG Field",
@@ -582,7 +600,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                                 "        }\n" +
                                 "    }\n" +
                                 "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.wysiwyg:*some* SSS.wysiwyg_dotraw:*some*) +(SSS.wysiwyg:*values* SSS.wysiwyg_dotraw:*values*)"
+                        "+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS.wysiwyg:*some* SSS.wysiwyg_dotraw:*some*) +(SSS.wysiwyg:*values* SSS.wysiwyg_dotraw:*values*)"
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
         };
     }
@@ -665,7 +683,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                     "        }\n" +
                     "    }\n" +
                     "}";
-            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS." + categoryFieldName + ":" + testCategoryOne.getKey() + " SSS." + categoryFieldName + ":" + testCategoryTwo.getKey() + ")")
+            String expectedQuery = ("+contentType:(SSS) +variant:default +deleted:false +working:true +(SSS." + categoryFieldName + ":" + testCategoryOne.getKey() + " SSS." + categoryFieldName + ":" + testCategoryTwo.getKey() + ")")
                     .replaceAll("SSS", TEST_CONTENT_TYPE_NAME);
 
             ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
@@ -767,7 +785,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                     "        }\n" +
                     "    }\n" +
                     "}";
-            final String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +identifier:(" + parentTestContent.getIdentifier() + ")")
+            final String expectedQuery = ("+contentType:(SSS) +variant:default +deleted:false +working:true +identifier:(" + parentTestContent.getIdentifier() + ")")
                     .replaceAll("SSS", parentCt.variable());
 
             final ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
@@ -855,7 +873,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                     "        }\n" +
                     "    }\n" +
                     "}";
-            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +my_test_ct." + relationshipsFieldName + ":" + childTestContent.getIdentifier())
+            String expectedQuery = ("+contentType:(SSS) +variant:default +deleted:false +working:true +my_test_ct." + relationshipsFieldName + ":" + childTestContent.getIdentifier())
                     .replaceAll("SSS", parentCt.variable());
 
             ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);

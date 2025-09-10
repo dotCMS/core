@@ -2,6 +2,8 @@ package com.dotmarketing.filters;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.config.DotServiceLocatorImpl.QuietServiceShutdownException;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -16,6 +18,7 @@ import com.dotmarketing.util.*;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
+import java.util.Set;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -58,6 +61,10 @@ public class CMSFilter implements Filter {
         try {
             doFilterInternal(req, res, chain);
         } catch (Exception e) {
+            if(ExceptionUtil.causedBy(e, ExceptionUtil.LOUD_MOUTH_EXCEPTIONS)){
+                Logger.warn(this.getClass(), e.getMessage());
+                return;
+            }
             if (e.getClass().getCanonicalName().contains("ClientAbortException")) {
                 Logger.info(this.getClass(), "ClientAbortException: " + ((HttpServletRequest) req).getRequestURI());
                 Logger.debug(this.getClass(), "ClientAbortException: " + e.getMessage());

@@ -1,7 +1,8 @@
 import { renderHook } from '@testing-library/react-hooks';
 import React from 'react';
 
-import * as dotcmsClient from '@dotcms/client';
+import { DotCMSPageAsset, UVE_MODE, UVEState } from '@dotcms/types';
+import * as uve from '@dotcms/uve';
 
 import { useExperimentVariant } from './useExperimentVariant';
 
@@ -39,9 +40,9 @@ describe('useExperimentVariant', () => {
             const mockData = {
                 runningExperimentId: '1',
                 viewAs: { variantId: '1' }
-            };
+            } as DotCMSPageAsset;
 
-            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
+            jest.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.EDIT } as UVEState);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -53,9 +54,9 @@ describe('useExperimentVariant', () => {
         it(' if `runningExperimentId` is undefined', () => {
             const mockData = {
                 viewAs: { variantId: EXPERIMENT_DEFAULT_VARIANT_NAME }
-            };
+            } as DotCMSPageAsset;
 
-            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -71,14 +72,14 @@ describe('useExperimentVariant', () => {
 
             locationSpy.mockReturnValue(locationMock);
 
-            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(
                 () =>
                     useExperimentVariant({
                         runningExperimentId: 'exp-id',
                         viewAs: { variantId: 'variant-1' }
-                    }),
+                    } as DotCMSPageAsset),
                 { wrapper }
             );
 
@@ -93,14 +94,14 @@ describe('useExperimentVariant', () => {
 
                 locationSpy.mockReturnValue(locationMock);
 
-                jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+                jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
                 const { result } = renderHook(
                     () =>
                         useExperimentVariant({
                             runningExperimentId: 'exp-id',
                             viewAs: { variantId: EXPERIMENT_DEFAULT_VARIANT_NAME }
-                        }),
+                        } as DotCMSPageAsset),
                     { wrapper }
                 );
 

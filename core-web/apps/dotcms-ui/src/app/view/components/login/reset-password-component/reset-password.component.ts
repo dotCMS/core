@@ -1,36 +1,36 @@
 import { Observable } from 'rxjs';
 
-import { AfterViewChecked, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { AfterViewChecked, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { take, tap } from 'rxjs/operators';
 
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
     providers: [],
     selector: 'dot-reset-password-component',
     styleUrls: ['./reset-password.component.scss'],
-    templateUrl: 'reset-password.component.html'
+    templateUrl: 'reset-password.component.html',
+    standalone: false
 })
 export class ResetPasswordComponent implements OnInit, AfterViewChecked {
+    private fb = inject(UntypedFormBuilder);
+    private loginService = inject(LoginService);
+    dotLoginPageStateService = inject(DotLoginPageStateService);
+    private dotRouterService = inject(DotRouterService);
+    private route = inject(ActivatedRoute);
+    private readonly cd = inject(ChangeDetectorRef);
+
     resetPasswordForm: UntypedFormGroup;
     loginInfo$: Observable<DotLoginInformation>;
     message = '';
     private passwordDontMatchMessage = '';
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        private loginService: LoginService,
-        public dotLoginPageStateService: DotLoginPageStateService,
-        private dotRouterService: DotRouterService,
-        private route: ActivatedRoute,
-        private readonly cd: ChangeDetectorRef
-    ) {}
 
     ngAfterViewChecked() {
         this.cd.detectChanges();

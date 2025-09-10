@@ -105,5 +105,15 @@ Feature: Setting up the Future Time Machine Test
     # Create new version of the content for the UrlMap Content Type with future publishDate
     * def newUrlMapContentPiceOneVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(urlMapContentTypeId)', identifier: '#(urlMapContentPieceOneId)', title: 'url-content-map-test-1-v2', publishDate: '#(formattedFutureDateTime)' }
 
+    # Create a separate piece of content for the UrlMap Content Type. Will use for testing 404 upon unpublishing
+    * def createUrlMapContentPieceTwoResult = callonce read('classpath:graphql/ftm/newContent.feature') { contentTypeId: '#(urlMapContentTypeId)', title: 'url-content-map-piece', urlTitle: 'url-content-map-piece-two' }
+    * def urlMapContentPieceTwo = createUrlMapContentPieceTwoResult.response.entity.results[0]
+    * def urlMapContentPieceTwoId = karate.keysOf(urlMapContentPieceTwo)[0]
+    # This piece is unpublished in the test and will be used to test the 404 error
+    * def urlUnpublishedContentMap = urlMapContentPieceTwo[urlMapContentPieceTwoId].urlMap
+
+    * def unpublishResult = callonce read('classpath:graphql/ftm/unpublish.feature') { contentlet_id: '#(urlMapContentPieceTwoId)', contentlet_inode: '#(urlMapContentPieceTwo.inode)' }
+    * karate.log('Unpublish Result ::', unpublishResult)
+
 
   Scenario:

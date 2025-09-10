@@ -1,38 +1,44 @@
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { createPipeFactory, mockProvider, SpectatorPipe, SpyObject } from '@ngneat/spectator/jest';
+
+import { DomSanitizer } from '@angular/platform-browser';
 
 import { SafeUrlPipe } from './safe-url.pipe';
 
 describe('SafeUrlPipe', () => {
-    let pipe: SafeUrlPipe;
-    let sanitizer: DomSanitizer;
+    let spectator: SpectatorPipe<SafeUrlPipe>;
+    let sanitizer: SpyObject<DomSanitizer>;
+    const safeUrl = 'safeUrl: http://example.com';
 
-    beforeEach(() => {
-        sanitizer = {
-            bypassSecurityTrustResourceUrl: jest.fn()
-        } as unknown as DomSanitizer;
-        pipe = new SafeUrlPipe(sanitizer);
+    const createPipe = createPipeFactory({
+        pipe: SafeUrlPipe,
+        providers: [
+            mockProvider(DomSanitizer, {
+                bypassSecurityTrustResourceUrl: jest.fn().mockReturnValue(safeUrl)
+            })
+        ]
     });
 
-    it('should transform URL to a safe resource URL', () => {
+    it('should transform URL to a safe resource URL (string)', () => {
         const url = 'http://example.com';
-        const safeUrl: SafeResourceUrl = 'safeUrl: http://example.com';
-
-        (sanitizer.bypassSecurityTrustResourceUrl as jest.Mock).mockReturnValue(safeUrl);
-
-        const transformedUrl = pipe.transform(url);
-
-        expect(transformedUrl).toBe(safeUrl);
+        const safeUrl = 'safeUrl: http://example.com';
+        spectator = createPipe(`{{ url | safeUrl }}`, {
+            hostProps: { url }
+        });
+        sanitizer = spectator.inject(DomSanitizer);
+        spectator.detectChanges();
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(url);
+        expect(spectator.element.textContent).toBe(safeUrl);
     });
-    it('should transform URL to a safe resource URL when the URL is an instance of String', () => {
+
+    it('should transform URL to a safe resource URL (String object)', () => {
         const url = new String('http://example.com');
-        const safeUrl: SafeResourceUrl = 'safeUrl: http://example.com';
-
-        (sanitizer.bypassSecurityTrustResourceUrl as jest.Mock).mockReturnValue(safeUrl);
-
-        const transformedUrl = pipe.transform(url);
-
-        expect(transformedUrl).toBe(safeUrl);
+        const safeUrl = 'safeUrl: http://example.com';
+        spectator = createPipe(`{{ url | safeUrl }}`, {
+            hostProps: { url }
+        });
+        sanitizer = spectator.inject(DomSanitizer);
+        spectator.detectChanges();
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(url.toString());
+        expect(spectator.element.textContent).toBe(safeUrl);
     });
 });

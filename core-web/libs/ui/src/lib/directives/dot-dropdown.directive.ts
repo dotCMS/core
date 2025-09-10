@@ -1,4 +1,4 @@
-import { Directive, Input, Optional, Self } from '@angular/core';
+import { Directive, Input, inject } from '@angular/core';
 
 import { Dropdown } from 'primeng/dropdown';
 import { MultiSelect } from 'primeng/multiselect';
@@ -23,13 +23,13 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
     providers: [DotMessagePipe]
 })
 export class DotDropdownDirective {
+    private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });
+    private readonly primeMultiSelect = inject(MultiSelect, { optional: true, self: true });
+    private readonly dotMessageService = inject(DotMessageService);
+
     control: Dropdown | MultiSelect;
 
-    constructor(
-        @Optional() @Self() private readonly primeDropdown: Dropdown,
-        @Optional() @Self() private readonly primeMultiSelect: MultiSelect,
-        private readonly dotMessageService: DotMessageService
-    ) {
+    constructor() {
         this.control = this.primeDropdown ? this.primeDropdown : this.primeMultiSelect;
 
         if (this.control) {

@@ -7,10 +7,11 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, untracked } from '@angular/core';
+import { computed, inject, untracked } from '@angular/core';
 
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
 
 import {
     EditorProps,
@@ -19,7 +20,6 @@ import {
     PageDataContainer,
     ReloadEditorContent
 } from './models';
-import { withSave } from './save/withSave';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
@@ -28,7 +28,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -45,18 +45,11 @@ import {
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
-import { withClient } from '../client/withClient';
 
-const buildIframeURL = ({ url, params, isTraditionalPage }) => {
-    if (isTraditionalPage) {
-        // Force iframe reload on every page load to avoid caching issues and window dirty state
-        // We need a new reference to avoid the iframe to be cached
-        // More reference: https://github.com/dotCMS/core/issues/30981
-        return new String('');
-    }
-
+const buildIframeURL = ({ url, params, dotCMSHost }) => {
+    const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
     const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
-    const iframeURL = new URL(pageURL, params.clientHost || window.location.origin); // Add Host to iframeURL
+    const iframeURL = new URL(`${host}/${pageURL}&dotCMSHost=${dotCMSHost}`);
 
     return iframeURL.toString();
 };
@@ -66,7 +59,8 @@ const initialState: EditorState = {
     state: EDITOR_STATE.IDLE,
     contentletArea: null,
     dragItem: null,
-    ogTags: null
+    ogTags: null,
+    paletteOpen: true
 };
 
 /**
@@ -82,9 +76,9 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
-        withSave(),
-        withClient(),
         withComputed((store) => {
+            const dotWindow = inject(WINDOW);
+
             return {
                 $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.pageAPIResponse();
@@ -104,8 +98,7 @@ export function withEditor() {
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.pageAPIResponse()?.page?.rendered,
-                        isClientReady: store.isClientReady(),
-                        isTraditionalPage: untracked(() => store.isTraditionalPage()),
+                        isTraditionalPage: store.isTraditionalPage(),
                         enableInlineEdit:
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
@@ -134,9 +127,11 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
+                    const paletteOpen = store.paletteOpen();
 
-                    const isPreview = params?.mode === UVE_MODE.PREVIEW;
-                    const isPageReady = isTraditionalPage || isClientReady || isPreview;
+                    const isEditMode = params?.mode === UVE_MODE.EDIT;
+
+                    const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
@@ -149,10 +144,10 @@ export function withEditor() {
                         canEditPage &&
                         isEditState &&
                         !isScrolling &&
-                        !isPreview;
+                        isEditMode;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-                    const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
+                    const showPalette = isEnterprise && canEditPage && isEditState && isEditMode;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
@@ -196,7 +191,10 @@ export function withEditor() {
                             ? {
                                   variantId: params?.variantName,
                                   containers: pageAPIResponse?.containers,
-                                  languageId: pageAPIResponse?.viewAs.language.id
+                                  languageId: pageAPIResponse?.viewAs.language.id,
+                                  paletteClass: paletteOpen
+                                      ? PALETTE_CLASSES.OPEN
+                                      : PALETTE_CLASSES.CLOSED
                               }
                             : null,
 
@@ -211,23 +209,29 @@ export function withEditor() {
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     /*
                         Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
-                        This should change in future UVE improvements. 
-                        The url should not depend on the PageAPI response since it does not change (In traditional).
-                        In the future we should have a function that updates the content, independent of the url.
-                        More info: https://github.com/dotCMS/core/issues/31475
+                        This should change in future UVE improvements.
+                        More info: https://github.com/dotCMS/core/issues/31475 and https://github.com/dotCMS/core/issues/32139
                      */
-                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
-                    const sanitizedURL = sanitizeURL(
-                        vanityURL ?? untracked(() => store.pageParams().url)
-                    );
+                    const pageAPIResponse = store.pageAPIResponse();
+                    const vanityURL = pageAPIResponse?.vanityUrl?.url;
+                    const isTraditionalPage = untracked(() => store.isTraditionalPage());
+                    const params = untracked(() => store.pageParams());
 
-                    const url = buildIframeURL({
-                        url: sanitizedURL,
-                        params: untracked(() => store.pageParams()),
-                        isTraditionalPage: untracked(() => store.isTraditionalPage())
+                    if (isTraditionalPage) {
+                        // Force iframe reload on every page load to avoid caching issues and window dirty state
+                        // We need a new reference to avoid the iframe to be cached
+                        // More reference: https://github.com/dotCMS/core/issues/30981
+                        return new String('');
+                    }
+
+                    const url = sanitizeURL(vanityURL ?? params.url);
+                    const dotCMSHost = dotWindow?.location?.origin;
+
+                    return buildIframeURL({
+                        url,
+                        params,
+                        dotCMSHost
                     });
-
-                    return url;
                 }),
                 $editorContentStyles: computed<Record<string, string>>(() => {
                     const socialMedia = store.socialMedia();
@@ -349,6 +353,9 @@ export function withEditor() {
                 },
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
+                },
+                setPaletteOpen(paletteOpen: boolean) {
+                    patchState(store, { paletteOpen });
                 }
             };
         })

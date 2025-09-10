@@ -1,4 +1,5 @@
 @use "variables" as *;
+@import "dotcms-theme/utils/theme-variables";
 
 :host {
     display: flex;
@@ -8,6 +9,11 @@
     gap: $spacing-3;
     height: 100%;
     padding: $spacing-3;
+
+    &.disabled {
+        opacity: 1; // Override the global disabled opacity
+        pointer-events: none;
+    }
 }
 
 .icon-container {
@@ -28,10 +34,23 @@
         color: $color-alert-yellow;
         background: $color-alert-yellow-light;
     }
+
+    &.disabled {
+        color: $field-disabled-color;
+        background: $field-disabled-bgcolor;
+
+        .icon {
+            color: $field-disabled-color;
+        }
+    }
 }
 
 .text {
     text-align: center;
     line-height: 140%;
     font-size: $font-size-default;
+
+    &.disabled {
+        color: $field-disabled-color;
+    }
 }

@@ -13,21 +13,22 @@ import {
     Output,
     Renderer2,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeLayoutRow,
     DotDialogActions
 } from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { FieldType } from '../models';
@@ -43,9 +44,19 @@ import { FieldPropertyService } from '../service/field-properties.service';
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     styleUrls: ['./content-type-fields-drop-zone.component.scss'],
-    templateUrl: './content-type-fields-drop-zone.component.html'
+    templateUrl: './content-type-fields-drop-zone.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
+    private dotMessageService = inject(DotMessageService);
+    private fieldDragDropService = inject(FieldDragDropService);
+    private fieldPropertyService = inject(FieldPropertyService);
+    private dotEventsService = inject(DotEventsService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dragulaService = inject(DragulaService);
+    private elRef = inject(ElementRef);
+    private rendered = inject(Renderer2);
+
     readonly OVERVIEW_TAB_INDEX = 0;
     readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
 
@@ -77,17 +88,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private fieldDragDropService: FieldDragDropService,
-        private fieldPropertyService: FieldPropertyService,
-        private dotEventsService: DotEventsService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dragulaService: DragulaService,
-        private elRef: ElementRef,
-        private rendered: Renderer2
-    ) {}
-
     private _loading: boolean;
 
     get loading(): boolean {
@@ -114,7 +114,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
-            return FieldUtil.isColumnBreak(item.clazz);
+            return item.clazz === DotCMSClazzes.COLUMN_BREAK;
         });
     }
 

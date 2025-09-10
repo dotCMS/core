@@ -31,7 +31,6 @@ interface WorkflowActionsGroup {
 
 @Component({
     selector: 'dot-workflow-actions',
-    standalone: true,
     imports: [CommonModule, ButtonModule, SplitButtonModule, DotMessagePipe],
     templateUrl: './dot-workflow-actions.component.html',
     styleUrl: './dot-workflow-actions.component.scss',

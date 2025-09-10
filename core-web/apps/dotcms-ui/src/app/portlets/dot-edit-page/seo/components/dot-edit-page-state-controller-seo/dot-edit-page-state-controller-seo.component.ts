@@ -1,6 +1,5 @@
 import { from, Observable, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -9,7 +8,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -22,7 +22,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { switchMap, take } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -40,9 +39,11 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
+
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 enum DotConfirmationType {
     LOCK,
@@ -54,13 +55,10 @@ enum DotConfirmationType {
     selector: 'dot-edit-page-state-controller-seo',
     templateUrl: './dot-edit-page-state-controller-seo.component.html',
     styleUrls: ['./dot-edit-page-state-controller-seo.component.scss'],
-    standalone: true,
     imports: [
-        CommonModule,
         FormsModule,
         InputSwitchModule,
         SelectButtonModule,
-        DotSafeHtmlPipe,
         DotMessagePipe,
         TooltipModule,
         ButtonModule,
@@ -71,6 +69,13 @@ enum DotConfirmationType {
     ]
 })
 export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPageStateService = inject(DotPageStateService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+    private dotContentletEditor = inject(DotContentletEditorService);
+    private dotPropertiesService = inject(DotPropertiesService);
+
     @ViewChild('pageLockInfo', { static: true })
     pageLockInfo: DotEditPageLockInfoSeoComponent;
     @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
@@ -106,15 +111,6 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     };
 
     private readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService,
-        private dotContentletEditor: DotContentletEditorService,
-        private dotPropertiesService: DotPropertiesService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges) {
         const pageState = changes.pageState?.currentValue;

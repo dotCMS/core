@@ -1,0 +1,57 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-columns: min-content 1fr min-content;
+
+    /* This is the height according to figma for the first row */
+    grid-template-rows: 4.375rem 1fr;
+    grid-template-areas:
+        "tree toolbar detail"
+        "tree list    detail";
+    height: 100%;
+}
+
+/* The styles below are just for the placeholders. */
+
+.center-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
+}
+
+dot-content-drive-toolbar {
+    grid-area: toolbar;
+}
+
+.tree-selector {
+    grid-area: tree;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    visibility: hidden;
+    width: 0;
+    border-right: 1px solid $color-palette-gray-300;
+
+    &.expanded {
+        /* This is the width according to figma */
+        width: 16.5rem;
+        visibility: visible;
+    }
+}
+
+dot-folder-list-view {
+    grid-area: list;
+}
+
+.detail-view {
+    background-color: lightcoral;
+    grid-area: detail;
+
+    /* This is the width according to figma */
+    // width: 21.875rem;
+    width: 0;
+}

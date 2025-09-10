@@ -9,10 +9,14 @@ import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.sun.mail.pop3.POP3SSLStore;
 import io.vavr.Tuple2;
+import org.apache.velocity.context.Context;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,6 +54,14 @@ import javax.mail.internet.MimeMultipart;
 public class EmailUtils {
    
 	@SuppressWarnings({ "unchecked"})
+
+	// Use a MailerWrapperFactory to create Mailer instances.
+	private static MailerWrapperFactory mailerFactory = new MailerWrapperFactoryImpl();
+
+	@VisibleForTesting
+	static void setMailerWrapperFactory(MailerWrapperFactory factory) {
+		mailerFactory = factory;
+	}
 
 	public static  void  SendContentSubmitEmail (Map <String, String> map, Structure structure,
 			List<String> emails) {
@@ -432,7 +444,7 @@ public class EmailUtils {
 
 		final ConfigurationHelper helper = ConfigurationHelper.INSTANCE;
 
-		final Mailer mailer = new Mailer();
+		final MailerWrapper mailer = mailerFactory.createMailer();
 		mailer.setToEmail(user.getEmailAddress());
 		mailer.setToName(user.getFullName());
 		mailer.setSubject(subject);
@@ -443,5 +455,47 @@ public class EmailUtils {
 		mailer.setFromName(  UtilMethods.isSet(mailAndSender._2) ? mailAndSender._2 : company.getName() );
 		mailer.sendMessage();
 
+	}
+
+	/**
+	 * Parses custom headers from a string and adds them to the provided mail object.
+	 * <p>
+	 * Each header should be on a new line in the format: {@code Header-Name: Header-Value}.
+	 * <p>
+	 * The method evaluates the provided string using Velocity, trims each line, and splits only on the first colon.
+	 * Empty or malformed lines (e.g., missing colon or empty name/value) are skipped with a warning.
+	 *
+	 * @param mail           The mail object to add headers to (must support {@code addHeader(String, String)})
+	 * @param ctx            The Velocity context used to evaluate dynamic content in headers
+	 * @param customHeaders  String containing headers in "Name: Value" format separated by newlines
+	 */
+	public static void processCustomHeaders(final Mailer mail, final Context ctx, final String customHeaders) {
+		if (!UtilMethods.isSet(customHeaders)) {
+			return;
+		}
+		try {
+			final String evaluatedCustomHeaders = VelocityUtil.eval(customHeaders, ctx);
+			String[] headerLines = evaluatedCustomHeaders.split("\\r?\\n|\\r");
+
+			for (String line : headerLines) {
+				line = line.trim();
+				if (line.contains(StringPool.COLON)) {
+					// Split only on the first colon
+					String[] parts = line.split(StringPool.COLON, 2);
+					String headerName = parts[0].trim();
+					String headerValue = parts[1].trim();
+
+					if (!headerName.isEmpty() && !headerValue.isEmpty()) {
+						mail.addHeader(headerName, headerValue);
+					} else {
+						Logger.warn(EmailUtils.class, "Skipping header with empty name or value: " + line);
+					}
+				} else {
+					Logger.warn(EmailUtils.class, "Skipping invalid header line (missing colon): " + line);
+				}
+			}
+		} catch (Exception e) {
+			Logger.error(EmailUtils.class, "Error processing custom headers: " + e.getMessage(), e);
+		}
 	}
 }

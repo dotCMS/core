@@ -1,4 +1,4 @@
-import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
+import { Injectable, Renderer2, RendererFactory2, inject } from '@angular/core';
 
 /**
  * Parse html and execute scripts
@@ -10,7 +10,9 @@ import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
 export class DotParseHtmlService {
     private renderer: Renderer2;
 
-    constructor(rendererFactory: RendererFactory2) {
+    constructor() {
+        const rendererFactory = inject(RendererFactory2);
+
         this.renderer = rendererFactory.createRenderer(null, null);
     }
 
