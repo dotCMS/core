@@ -7,12 +7,13 @@ import {
     input,
     output
 } from '@angular/core';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -77,6 +78,7 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 })
 export class DotEditContentFieldComponent {
     readonly #globalStore = inject(GlobalStore);
+    #parentForm = inject(ControlContainer, { skipSelf: true })?.control as FormGroup;
 
     @HostBinding('class') class = 'field';
 
@@ -127,4 +129,42 @@ export class DotEditContentFieldComponent {
 
         return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
     });
+
+    /**
+     * Event emitted when the binary field value is updated.
+     * @param event
+     */
+    onBinaryFieldValueUpdated(event: { value: string; fileName: string }) {
+        if (!this.shouldAutoFillFields(this.$contentType())) {
+            return;
+        }
+
+        const { fileName } = event;
+
+        const titleControl = this.#parentForm.get('title');
+        const fileNameControl = this.#parentForm.get('fileName');
+
+        // Auto-fill title if exists and is empty
+        if (titleControl && !titleControl.value) {
+            titleControl.setValue(fileName);
+            titleControl.markAsTouched();
+        }
+
+        // Auto-fill fileName if exists and is empty
+        if (fileNameControl && !fileNameControl.value) {
+            fileNameControl.setValue(fileName);
+            fileNameControl.markAsTouched();
+        }
+    }
+
+    /**
+     * Whether to auto-fill the fields.
+     * @param contentType
+     * @returns
+     */
+    private shouldAutoFillFields(contentType: DotCMSContentType | null): boolean {
+        if (!contentType) return false;
+
+        return contentType.baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+    }
 }

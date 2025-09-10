@@ -54,8 +54,3 @@ export enum DialogStatus {
     HIDE = 'HIDE',
     SHOW = 'SHOW'
 }
-export interface DotPagination {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
-}
