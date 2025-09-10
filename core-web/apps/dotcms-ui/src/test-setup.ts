@@ -24,6 +24,11 @@ if (!global.Date) {
     global.Date = Date;
 }
 
+// Add scrollIntoView polyfill for JSDOM
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = jest.fn();
+}
+
 // Add element.animate polyfill for Jest/JSDOM environment
 if (typeof Element !== 'undefined' && !Element.prototype.animate) {
     Element.prototype.animate = function () {
