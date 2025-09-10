@@ -55,6 +55,7 @@ export * from './lib/dot-page-mode.enum';
 export * from './lib/dot-page-render.model';
 export * from './lib/dot-page-tool.model';
 export * from './lib/dot-page.model';
+export * from './lib/dot-pagination.model';
 export * from './lib/dot-persona.model';
 export * from './lib/dot-personalize.model';
 export * from './lib/dot-push-publish-data.model';
