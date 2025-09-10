@@ -115,7 +115,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
     describe('ngOnInit', () => {
         it('should load announcements and set about links on init', () => {
             const loadSpy = jest.spyOn(store, 'load');
-            const getAboutLinksSpy = jest.jest
+            const getAboutLinksSpy = jest
                 .spyOn(spectator.component, 'getAboutLinks')
                 .mockReturnValue([]);
 
@@ -141,7 +141,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
     describe('Site Switching Subscription', () => {
         it('should reload announcements when site changes', () => {
             const loadSpy = jest.spyOn(spectator.component.announcementsStore, 'load');
-            const getAboutLinksSpy = jest.jest
+            const getAboutLinksSpy = jest
                 .spyOn(spectator.component, 'getAboutLinks')
                 .mockReturnValue([]);
 

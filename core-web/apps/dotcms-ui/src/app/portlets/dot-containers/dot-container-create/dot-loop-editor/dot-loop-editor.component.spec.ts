@@ -107,7 +107,7 @@ describe('DotLoopEditorComponent', () => {
 
     it('should show pre_loop', () => {
         const label = de.query(By.css('[data-testId="label"]')).nativeElement;
-        expect(label.innerText).toBe('Pre-loop');
+        expect(label.textContent).toBe('Pre-loop');
     });
 
     it('should show post_loop', () => {
@@ -115,7 +115,7 @@ describe('DotLoopEditorComponent', () => {
         fixture.detectChanges();
         de = fixture.debugElement.query(By.css('dot-loop-editor'));
         const label = de.query(By.css('[data-testId="label"]')).nativeElement;
-        expect(label.innerText).toBe('Post-loop');
+        expect(label.textContent).toBe('Post-loop');
     });
 
     it('should show pre post loop button when Editor is not visible', () => {

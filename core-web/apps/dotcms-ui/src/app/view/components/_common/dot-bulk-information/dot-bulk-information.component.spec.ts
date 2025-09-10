@@ -95,8 +95,8 @@ describe('DotBulkInformationComponent', () => {
         const success: HTMLElement = document.querySelector('[data-testId="successful"]');
         const fail: HTMLElement = document.querySelector('[data-testId="fails"]');
 
-        expect(success.innerText).toEqual('Template archived: 1');
-        expect(fail.innerText).toEqual('2 failed');
+        expect(success.textContent).toEqual('Template archived: 1');
+        expect(fail.textContent).toEqual('2 failed');
     });
 
     it('should list error messages', () => {
@@ -104,10 +104,10 @@ describe('DotBulkInformationComponent', () => {
             'bulk-information__fail-item'
         );
         expect(items.length).toEqual(2);
-        expect((items[0].firstChild as HTMLElement).innerText).toEqual('Template 1');
-        expect((items[0].lastChild as HTMLElement).innerText).toEqual('error 1');
-        expect((items[1].firstChild as HTMLElement).innerText).toEqual('Template 2');
-        expect((items[1].lastChild as HTMLElement).innerText).toEqual('error 2');
+        expect((items[0].firstChild as HTMLElement).textContent).toEqual('Template 1');
+        expect((items[0].lastChild as HTMLElement).textContent).toEqual('error 1');
+        expect((items[1].firstChild as HTMLElement).textContent).toEqual('Template 2');
+        expect((items[1].lastChild as HTMLElement).textContent).toEqual('error 2');
     });
 
     afterEach(() => {

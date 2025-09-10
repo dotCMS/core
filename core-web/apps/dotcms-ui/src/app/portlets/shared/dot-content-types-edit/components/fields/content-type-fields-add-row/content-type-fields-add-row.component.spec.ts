@@ -82,8 +82,8 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         fixture.detectChanges();
         const splitOptionsBtn = de.queryAll(By.css('p-splitbutton .p-menuitem-text'));
         expect(splitOptionsBtn.length).toBe(2);
-        expect(splitOptionsBtn[0].nativeElement.innerText).toBe('Add Row');
-        expect(splitOptionsBtn[1].nativeElement.innerText).toBe('Add Tab');
+        expect(splitOptionsBtn[0].nativeElement.textContent).toBe('Add Row');
+        expect(splitOptionsBtn[1].nativeElement.textContent).toBe('Add Tab');
     });
 
     it('should display row selection after click on Add Rows button and focus the first column selection', () => {

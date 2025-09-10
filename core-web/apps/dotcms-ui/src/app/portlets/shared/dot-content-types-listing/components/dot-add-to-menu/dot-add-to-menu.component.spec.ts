@@ -166,10 +166,12 @@ describe('DotAddToMenuComponent', () => {
             dotdialog.query(By.css('[data-testId="menuOption"]')).componentInstance.options.length
         ).toBe(2);
         expect(
-            dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement.innerText
+            dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement
+                .textContent
         ).toBe(messageServiceMock.get('Add'));
         expect(
-            dotdialog.query(By.css('[data-testId="dotDialogCancelAction"]')).nativeElement.innerText
+            dotdialog.query(By.css('[data-testId="dotDialogCancelAction"]')).nativeElement
+                .textContent
         ).toBe(messageServiceMock.get('Cancel'));
     });
 

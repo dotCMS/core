@@ -291,7 +291,7 @@ describe('DotMyAccountComponent', () => {
             const loginService = spectator.inject(LoginService);
 
             // Spy on updateUser and setAuth methods
-            const updateUserSpy = jest.jest
+            const updateUserSpy = jest
                 .spyOn(accountService, 'updateUser')
                 .mockReturnValue(of({ entity: { user: mockUser, reauthenticate: false } }));
             const setAuthSpy = jest.spyOn(loginService, 'setAuth');

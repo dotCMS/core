@@ -167,7 +167,7 @@ describe('DotPaletteContentTypeComponent', () => {
         fixtureHost.detectChanges();
         const content = fixtureHost.debugElement.query(By.css('[data-testId="paletteItem"]'));
         content.triggerEventHandler('dragstart', contentTypeDataMock[0]);
-        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledOnceWith(
+        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledWith(
             contentTypeDataMock[0] as DotCMSContentType
         );
     });
@@ -177,7 +177,7 @@ describe('DotPaletteContentTypeComponent', () => {
         jest.spyOn(comp.selected, 'emit');
         fixtureHost.detectChanges();
         const buttons = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
-        const label = buttons[0].nativeElement.querySelector('p').innerText.trim();
+        const label = buttons[0].nativeElement.querySelector('p').textContent.trim();
         buttons[0].nativeElement.click();
         expect(comp.items).toEqual(contentTypeDataMock as DotCMSContentType[]);
         expect(comp.selected.emit).toHaveBeenCalledWith(label);

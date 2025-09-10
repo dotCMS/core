@@ -353,7 +353,7 @@ describe('DotContentEditorComponent', () => {
                 expect(code.attributes.formControlName).toBe('code');
                 expect(code.attributes.language).toBe('html');
                 expect(code.attributes['ng-reflect-show']).toBe('code');
-                expect(selectedContentType.nativeElement.innerText.toLowerCase()).toBe(
+                expect(selectedContentType.nativeElement.textContent.toLowerCase()).toBe(
                     mockContentTypes[0].name.toLowerCase()
                 );
                 expect(hostComponent.form.valid).toEqual(true);

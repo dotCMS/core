@@ -579,7 +579,7 @@ describe('DotListingDataTableComponent', () => {
         tick(1);
         hostFixture.detectChanges();
         const emptyState = de.query(By.css('dot-empty-state'));
-        expect(emptyState.nativeElement.innerText).toBe('Im empty');
+        expect(emptyState.nativeElement.textContent).toBe('Im empty');
     }));
 
     it('should show no results message if filtered content is empty', fakeAsync(() => {
@@ -591,7 +591,7 @@ describe('DotListingDataTableComponent', () => {
         tick(de.componentInstance.filterDelay + 1);
         hostFixture.detectChanges();
         const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
-        expect(noResults.nativeElement.innerText).toEqual('No Results Found');
+        expect(noResults.nativeElement.textContent).toEqual('No Results Found');
     }));
 
     it('should hide entries for system content types', fakeAsync(() => {

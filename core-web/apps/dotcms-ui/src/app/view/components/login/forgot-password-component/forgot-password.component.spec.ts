@@ -134,7 +134,7 @@ describe('ForgotPasswordComponent', () => {
         requestPasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
         expect(errorMessage).toEqual('error message');
     });
 

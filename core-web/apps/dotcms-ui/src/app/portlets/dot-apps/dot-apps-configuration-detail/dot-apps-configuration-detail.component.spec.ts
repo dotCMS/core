@@ -207,11 +207,11 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should set labels and buttons with right values', () => {
             expect(
                 fixture.debugElement.query(By.css('[data-testid="cancelBtn"]')).nativeElement
-                    .innerText
+                    .textContent
             ).toContain(messageServiceMock.get('Cancel'));
             expect(
                 fixture.debugElement.query(By.css('[data-testid="saveBtn"]')).nativeElement
-                    .innerText
+                    .textContent
             ).toContain(messageServiceMock.get('Save'));
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))

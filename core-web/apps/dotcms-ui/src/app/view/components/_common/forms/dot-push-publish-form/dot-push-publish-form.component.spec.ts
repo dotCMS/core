@@ -374,9 +374,9 @@ xdescribe('DotPushPublishFormComponent', () => {
         fixture.detectChanges();
         const errorMessages = fixture.debugElement.queryAll(By.css('.p-invalid'));
 
-        expect(errorMessages[0].nativeElement.innerText).toEqual('Publish Date is required');
-        expect(errorMessages[1].nativeElement.innerText).toEqual('Expire Date is required');
-        expect(errorMessages[2].nativeElement.innerText).toContain(
+        expect(errorMessages[0].nativeElement.textContent).toEqual('Publish Date is required');
+        expect(errorMessages[1].nativeElement.textContent).toEqual('Expire Date is required');
+        expect(errorMessages[2].nativeElement.textContent).toContain(
             'Must add at least one Environment'
         );
     });

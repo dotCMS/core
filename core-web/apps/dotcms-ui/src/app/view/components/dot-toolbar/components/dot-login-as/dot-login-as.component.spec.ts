@@ -161,7 +161,7 @@ describe('DotLoginAsComponent', () => {
             spectator.detectChanges();
 
             // Verify that the form is valid before clicking
-            expect(component.form.valid).toBeTrue();
+            expect(component.form.valid).toBe(true);
 
             // Call the doLoginAs method directly instead of clicking the button
             component.doLoginAs();
@@ -184,7 +184,7 @@ describe('DotLoginAsComponent', () => {
             spectator.detectChanges();
 
             // Assert
-            expect(component.needPassword()).toBeTrue();
+            expect(component.needPassword()).toBe(true);
             expect(spectator.query(byTestId('dot-login-as-password-input'))).toBeTruthy();
         });
 

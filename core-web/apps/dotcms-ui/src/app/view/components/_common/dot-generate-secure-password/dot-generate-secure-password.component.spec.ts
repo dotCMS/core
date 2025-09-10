@@ -90,10 +90,10 @@ describe('DotGenerateSecurePasswordComponent', () => {
             copyButton.nativeElement.click();
             fixture.detectChanges();
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith(comp.value);
-            expect(copyButton.nativeElement.innerText).toBe('Copied');
+            expect(copyButton.nativeElement.textContent).toBe('Copied');
             tick(2000);
             fixture.detectChanges();
-            expect(copyButton.nativeElement.innerText).toBe('Copy');
+            expect(copyButton.nativeElement.textContent).toBe('Copy');
         }));
 
         it('should Reveal password', () => {

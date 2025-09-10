@@ -173,7 +173,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
         hostFixture.detectChanges();
         de = hostFixture.debugElement.query(By.css('p-table'));
         const emptyState = de.query(By.css('[data-testid="title"]'));
-        expect(emptyState.nativeElement.innerText).toBe('Your category list is empty');
+        expect(emptyState.nativeElement.textContent).toBe('Your category list is empty');
     }));
 
     function setRequestSpy(response: any): void {

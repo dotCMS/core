@@ -279,7 +279,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                     const errorElement = fixture.debugElement.query(
                         By.css('.download-bundle__error')
                     );
-                    expect(errorElement.nativeElement.innerText).toEqual('Error Building Bundle');
+                    expect(errorElement.nativeElement.textContent).toEqual('Error Building Bundle');
                 }));
             });
         });

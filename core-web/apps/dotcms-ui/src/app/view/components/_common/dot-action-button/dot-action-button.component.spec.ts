@@ -63,7 +63,7 @@ describe('ActionButtonComponent', () => {
         comp.label = 'Hello World';
         fixture.detectChanges();
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(label.nativeElement.innerText).toBe('Hello World');
+        expect(label.nativeElement.textContent).toBe('Hello World');
     });
 
     it('should have p-menu and pass the model to it', () => {
@@ -127,7 +127,7 @@ describe('ActionButtonComponent', () => {
         fixture.detectChanges();
         const button = fixture.debugElement.query(By.css('p-button'));
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(button.componentInstance.disabled).toBeTrue();
+        expect(button.componentInstance.disabled).toBe(true);
         expect(label.nativeElement.classList).toContain(
             'action-button__label--disabled',
             'Label disabled class'

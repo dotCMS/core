@@ -97,7 +97,7 @@ describe('ResetPasswordComponent', () => {
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testid="errorMessage"]'));
 
-        expect(errorMessage.nativeElement.innerText).toBe('password do not match');
+        expect(errorMessage.nativeElement.textContent).toBe('password do not match');
         expect(loginService.changePassword).not.toHaveBeenCalled();
     });
 
@@ -131,7 +131,7 @@ describe('ResetPasswordComponent', () => {
         changePasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
 
         expect(errorMessage).toEqual('error message');
     });
@@ -148,7 +148,7 @@ describe('ResetPasswordComponent', () => {
         fixture.detectChanges();
 
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
 
         expect(errorMessage).toEqual('password do not match');
     });

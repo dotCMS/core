@@ -254,7 +254,7 @@ describe('DotLoginComponent', () => {
                 By.css('[data-testId="message"]')
             ).nativeElement;
             expect(message).toHaveClass('p-invalid');
-            expect(message.innerText).toEqual('error message');
+            expect(message.textContent).toEqual('error message');
         });
     });
 
@@ -266,7 +266,7 @@ describe('DotLoginComponent', () => {
                 By.css('[data-testId="message"]')
             ).nativeElement;
             expect(message).toHaveClass('success');
-            expect(message.innerText).toEqual('Your password has been successfully changed');
+            expect(message.textContent).toEqual('Your password has been successfully changed');
         });
 
         it('should show email reset notification', () => {
@@ -276,7 +276,7 @@ describe('DotLoginComponent', () => {
                 By.css('[data-testId="message"]')
             ).nativeElement;
             expect(message).toHaveClass('success');
-            expect(message.innerText).toEqual(
+            expect(message.textContent).toEqual(
                 'An Email with instructions has been sent to test@email.com.'
             );
         });

@@ -154,7 +154,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 fixture.detectChanges();
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('Invalid image');
+                expect(error.nativeElement.textContent).toBe('Invalid image');
             });
 
             it('should set asset to null and propagate', () => {
@@ -214,7 +214,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 ).toHaveBeenCalledTimes(0);
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('Invalid url');
+                expect(error.nativeElement.textContent).toBe('Invalid url');
             });
 
             it('should show default error', () => {
@@ -254,12 +254,12 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     dotWorkflowActionsFireService.publishContentletAndWaitForIndex
                 ).toHaveBeenCalledWith('dotAsset', { asset: '123' });
 
-                expect(dotTempFileUploadService.upload).toHaveBeenCalledOnceWith(
+                expect(dotTempFileUploadService.upload).toHaveBeenCalledWith(
                     'path/to/filename.pdf'
                 );
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('Error');
+                expect(error.nativeElement.textContent).toBe('Error');
             });
 
             it('should show set asset and propagate', () => {
@@ -305,7 +305,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 expect(component.asset).toEqual(mock);
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('');
+                expect(error.nativeElement.textContent).toBe('');
             });
         });
     });

@@ -46,11 +46,11 @@ describe('DotConvertWysiwygToBlockComponent', () => {
         const iUnderstand = de.query(By.css('[data-testId="iUnderstand"]')).nativeElement;
         const buttonConvert = de.query(By.css('[data-testId="buttonConvert"]')).nativeElement;
 
-        expect(infoHeader.innerText).toBe('Info Header');
-        expect(infoContent.innerText).toBe('Info Content');
-        expect(header.innerText).toBe('Header');
-        expect(content.innerText).toBe('Content');
-        expect(iUnderstand.innerText.trim()).toBe('I understand');
-        expect(buttonConvert.innerText).toBe('Button');
+        expect(infoHeader.textContent).toBe('Info Header');
+        expect(infoContent.textContent).toBe('Info Content');
+        expect(header.textContent).toBe('Header');
+        expect(content.textContent).toBe('Content');
+        expect(iUnderstand.textContent.trim()).toBe('I understand');
+        expect(buttonConvert.textContent).toBe('Button');
     });
 });

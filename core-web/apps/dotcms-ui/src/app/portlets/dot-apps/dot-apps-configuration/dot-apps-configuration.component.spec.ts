@@ -203,13 +203,13 @@ describe('DotAppsConfigurationComponent', () => {
             expect(
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
-                )[0].nativeElement.innerText
+                )[0].nativeElement.textContent
             ).toContain(messageServiceMock.get('apps.confirmation.export.all.button'));
 
             expect(
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
-                )[1].nativeElement.innerText
+                )[1].nativeElement.textContent
             ).toContain(messageServiceMock.get('apps.confirmation.delete.all.button'));
         });
 

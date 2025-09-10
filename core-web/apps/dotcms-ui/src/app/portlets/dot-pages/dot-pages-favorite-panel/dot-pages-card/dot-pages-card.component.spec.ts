@@ -69,12 +69,12 @@ describe('DotPagesCardComponent', () => {
                 fixture.debugElement
                     .query(By.css('[data-testid="favoriteCardImageContainer"]'))
                     .nativeElement.style['background-image'].includes(component.imageUri)
-            ).toBeTrue();
+            ).toBe(true);
             expect(
                 fixture.debugElement
                     .query(By.css('.dot-pages-favorite-card-content__image img'))
                     .nativeElement.src.includes(component.imageUri)
-            ).toBeTrue();
+            ).toBe(true);
         });
 
         it('should set title and url as content', () => {

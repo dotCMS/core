@@ -202,8 +202,8 @@ describe('DotWizardComponent', () => {
         });
 
         it('should load buttons', () => {
-            expect(acceptButton.nativeElement.innerText).toEqual('Next');
-            expect(closeButton.nativeElement.innerText).toEqual('Previous');
+            expect(acceptButton.nativeElement.textContent).toEqual('Next');
+            expect(closeButton.nativeElement.textContent).toEqual('Previous');
             expect(closeButton.nativeElement.disabled).toEqual(true);
             expect(acceptButton.nativeElement.disabled).toEqual(true);
         });
@@ -245,7 +245,7 @@ describe('DotWizardComponent', () => {
             form2.valid.emit(true);
             acceptButton.triggerEventHandler('click', {});
             fixture.detectChanges();
-            expect(acceptButton.nativeElement.innerText).toEqual('Send');
+            expect(acceptButton.nativeElement.textContent).toEqual('Send');
             expect(acceptButton.nativeElement.disabled).toEqual(false);
         });
         it('should consolidate forms values and send them on send ', () => {

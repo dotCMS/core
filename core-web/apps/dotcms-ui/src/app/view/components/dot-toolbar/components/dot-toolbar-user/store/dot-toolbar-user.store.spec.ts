@@ -113,7 +113,7 @@ describe('DotToolbarUserStore', () => {
         it('should change its state value to true', () => {
             store.showLoginAs(true);
             store.state$.subscribe((state) => {
-                expect(state.showLoginAs).toBeTrue();
+                expect(state.showLoginAs).toBe(true);
             });
         });
 
@@ -129,7 +129,7 @@ describe('DotToolbarUserStore', () => {
         it('should change its state value to true', () => {
             store.showMyAccount(true);
             store.state$.subscribe((state) => {
-                expect(state.showMyAccount).toBeTrue();
+                expect(state.showMyAccount).toBe(true);
             });
         });
 

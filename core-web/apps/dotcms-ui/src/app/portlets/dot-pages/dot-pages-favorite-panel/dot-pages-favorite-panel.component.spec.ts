@@ -189,7 +189,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 de
                     .query(By.css('.dot-pages-empty__container i'))
                     .nativeElement.classList.contains('pi-star')
-            ).toBeTrue();
+            ).toBe(true);
 
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
@@ -383,7 +383,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                     }
                 });
 
-                expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
+                expect(component.goToUrl.emit).toHaveBeenCalledWith(
                     favoritePagesInitialTestData[0].url
                 );
             });

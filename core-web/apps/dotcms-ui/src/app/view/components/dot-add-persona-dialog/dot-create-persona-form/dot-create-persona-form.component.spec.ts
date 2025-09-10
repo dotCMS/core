@@ -142,10 +142,10 @@ describe('DotCreatePersonaFormComponent', () => {
             );
 
             const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-            expect(hostLabel.nativeElement.innerText).toEqual('Host');
-            expect(nameLabel.nativeElement.innerText).toEqual('Name');
-            expect(keyTagLabel.nativeElement.innerText).toEqual('Key Tag');
-            expect(imageLabel.nativeElement.innerText).toEqual('Upload File');
+            expect(hostLabel.nativeElement.textContent).toEqual('Host');
+            expect(nameLabel.nativeElement.textContent).toEqual('Name');
+            expect(keyTagLabel.nativeElement.textContent).toEqual('Key Tag');
+            expect(imageLabel.nativeElement.textContent).toEqual('Upload File');
             expect(validationMessage.componentInstance.defaultMessage).toEqual('Name is required');
             expect(fileUpload.componentInstance.chooseLabel).toEqual('Choose');
         });
@@ -218,7 +218,7 @@ describe('DotCreatePersonaFormComponent', () => {
 
             const removeButton: DebugElement = fixture.debugElement.query(By.css('button'));
             removeButton.triggerEventHandler('click', {});
-            expect(removeButton.nativeElement.innerText).toBe('Remove');
+            expect(removeButton.nativeElement.textContent).toBe('Remove');
             expect(component.form.get('photo').value).toEqual('');
             expect(component.tempUploadedFile).toEqual(null);
         });

@@ -146,7 +146,7 @@ describe('DotEditPageNavComponent', () => {
         it('should have correct item active', () => {
             fixture.detectChanges();
             const activeItem = fixture.debugElement.query(By.css('.edit-page-nav__item--active'));
-            expect(activeItem.nativeElement.innerText).toContain('CONTENT');
+            expect(activeItem.nativeElement.textContent).toContain('CONTENT');
         });
 
         it('should call the ContentletEditorService Edit when clicked on Properties button', () => {
@@ -362,7 +362,7 @@ describe('DotEditPageNavComponent', () => {
         it('should has Experiments nav item', () => {
             const MATERIAL_ICON_NAME = 'science';
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
+            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {
@@ -393,7 +393,7 @@ describe('DotEditPageNavComponent', () => {
     describe('experiments feature flag false', () => {
         it('should not has Experiments item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
+            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {
@@ -413,7 +413,7 @@ describe('DotEditPageNavComponent', () => {
     describe('Page tools feature flag', () => {
         it('Should has Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
+            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {
@@ -431,7 +431,7 @@ describe('DotEditPageNavComponent', () => {
 
         it('Should not have Page Tools item', () => {
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-            spyOnProperty<any>(route, 'snapshot', 'get').mockReturnValue({
+            jest.spyOn<any>(route, 'snapshot', 'get').mockReturnValue({
                 firstChild: {
                     url: [
                         {
