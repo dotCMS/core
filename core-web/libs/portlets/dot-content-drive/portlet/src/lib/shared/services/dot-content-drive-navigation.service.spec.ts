@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { Router } from '@angular/router';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotContentDriveNavigationService } from './dot-content-drive-navigation.service';
@@ -42,7 +42,7 @@ describe('DotContentDriveNavigationService', () => {
     describe('editContent', () => {
         it('should navigate to page editor when contentType is htmlpageasset', () => {
             const mockContentlet = createFakeContentlet({
-                contentType: 'htmlpageasset',
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
                 urlMap: '/test-page',
                 languageId: 1
             });
@@ -54,9 +54,9 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('should use url property when urlMap is not available for htmlpageasset', () => {
+        it('should use url property when urlMap is not available for Pages contentlet', () => {
             const mockContentlet = createFakeContentlet({
-                contentType: 'htmlpageasset',
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
                 url: '/test-page-url',
                 languageId: 2
             });

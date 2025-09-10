@@ -4,7 +4,11 @@ import { Router } from '@angular/router';
 import { take } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotContentDriveItem, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotContentDriveItem,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 
 @Injectable({
     providedIn: 'root'
@@ -18,7 +22,7 @@ export class DotContentDriveNavigationService {
      * @param contentlet The content item to edit
      */
     editContent(contentlet: DotContentDriveItem) {
-        if (contentlet.contentType === 'htmlpageasset') {
+        if (contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE) {
             this.#editPage(contentlet);
         } else {
             this.#editContentlet(contentlet);
