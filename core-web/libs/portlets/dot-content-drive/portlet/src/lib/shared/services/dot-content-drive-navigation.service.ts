@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotContentDriveItem,
@@ -16,6 +16,7 @@ import {
 export class DotContentDriveNavigationService {
     readonly #router = inject(Router);
     readonly #dotContentTypeService = inject(DotContentTypeService);
+    readonly #dotRouterService = inject(DotRouterService);
 
     /**
      * Navigates to the appropriate editor based on the content type
@@ -31,9 +32,8 @@ export class DotContentDriveNavigationService {
 
     #editPage(contentlet: DotContentDriveItem) {
         const url = contentlet.urlMap || contentlet.url;
-        this.#router.navigate(['/edit-page/content'], {
-            queryParams: { url, language_id: contentlet.languageId }
-        });
+
+        this.#dotRouterService.goToEditPage({ url, language_id: contentlet.languageId });
     }
 
     #editContentlet(contentlet: DotContentDriveItem) {

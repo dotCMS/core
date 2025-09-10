@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 
 import { Router } from '@angular/router';
 
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
@@ -15,6 +15,7 @@ describe('DotContentDriveNavigationService', () => {
     let service: DotContentDriveNavigationService;
     let router: jest.Mocked<Router>;
     let contentTypeService: jest.Mocked<DotContentTypeService>;
+    let dotRouterService: jest.Mocked<DotRouterService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
@@ -24,6 +25,9 @@ describe('DotContentDriveNavigationService', () => {
             }),
             mockProvider(DotContentTypeService, {
                 getContentType: jest.fn()
+            }),
+            mockProvider(DotRouterService, {
+                goToEditPage: jest.fn()
             })
         ]
     });
@@ -33,6 +37,7 @@ describe('DotContentDriveNavigationService', () => {
         service = spectator.service;
         router = spectator.inject(Router);
         contentTypeService = spectator.inject(DotContentTypeService);
+        dotRouterService = spectator.inject(DotRouterService);
     });
 
     afterEach(() => {
@@ -40,7 +45,7 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     describe('editContent', () => {
-        it('should navigate to page editor when contentType is htmlpageasset', () => {
+        it('should navigate to page editor when baseType is htmlpageasset', () => {
             const mockContentlet = createFakeContentlet({
                 baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
                 urlMap: '/test-page',
@@ -49,8 +54,9 @@ describe('DotContentDriveNavigationService', () => {
 
             service.editContent(mockContentlet);
 
-            expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-                queryParams: { url: '/test-page', language_id: 1 }
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/test-page',
+                language_id: 1
             });
         });
 
@@ -63,8 +69,9 @@ describe('DotContentDriveNavigationService', () => {
 
             service.editContent(mockContentlet);
 
-            expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-                queryParams: { url: '/test-page-url', language_id: 2 }
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/test-page-url',
+                language_id: 2
             });
         });
 

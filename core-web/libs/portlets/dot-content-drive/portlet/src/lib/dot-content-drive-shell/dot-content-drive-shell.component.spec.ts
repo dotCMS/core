@@ -17,7 +17,8 @@ import {
     DotSystemConfigService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -122,7 +123,8 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(MessageService, {
                     messageObserver: of({}),
                     clearObserver: of({})
-                })
+                }),
+                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
