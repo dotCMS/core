@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { pluck, skip, take, takeUntil } from 'rxjs/operators';
+import { pluck, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -73,7 +73,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             });
         this.setAddOptions();
 
-        this.dotSiteService.switchSite$.pipe(skip(1), takeUntil(this.destroy$)).subscribe(() => {
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.dotRouterService.gotoPortlet('templates');
         });
     }

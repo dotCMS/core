@@ -27,7 +27,7 @@ export class GoogleMapService {
         this.mapsApi$ = window['mapsApi$'];
         this.mapsApi$.subscribe();
 
-        this.siteService.switchSite$
+        this.siteService.currentSite$
             .pipe(
                 takeUntil(this.destroy$),
                 switchMap(({ identifier }) => this.loadApi(identifier))
