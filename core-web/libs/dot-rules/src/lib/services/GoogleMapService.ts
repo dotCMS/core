@@ -1,11 +1,9 @@
-// tslint:disable:typedef
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
+import { switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotSiteService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 
 window['mapsApi$'] = new BehaviorSubject({ ready: false });
@@ -18,8 +16,8 @@ window['mapsApiReady'] = () => {
 @Injectable()
 export class GoogleMapService {
     private siteService = inject(SiteService);
-    private dotSiteService = inject(DotSiteService);
 
+    // eslint-disable-next-line
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
     private destroy$ = new Subject<boolean>();
     constructor() {

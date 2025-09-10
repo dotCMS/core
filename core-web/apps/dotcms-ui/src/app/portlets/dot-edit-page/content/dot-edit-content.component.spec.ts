@@ -51,6 +51,7 @@ import {
     DotEventsSocketURL,
     LoggerService,
     LoginService,
+    mockSites,
     SiteService,
     StringUtils,
     UserModel
@@ -225,6 +226,7 @@ describe('DotEditContentComponent', () => {
     let dotLicenseService: DotLicenseService;
     let dotEventsService: DotEventsService;
     let dotSessionStorageService: DotSessionStorageService;
+    let siteService: SiteServiceMock;
     let router: Router;
 
     function detectChangesForIframeRender(fix) {
@@ -394,6 +396,7 @@ describe('DotEditContentComponent', () => {
         dotLicenseService = de.injector.get(DotLicenseService);
         dotEventsService = de.injector.get(DotEventsService);
         dotSessionStorageService = de.injector.get(DotSessionStorageService);
+        siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
         router = de.injector.get(Router);
         spyOn(dotPageStateService, 'reload');
 
@@ -1608,5 +1611,11 @@ describe('DotEditContentComponent', () => {
         spyOn(dotSessionStorageService, 'removeVariantId');
         component.ngOnDestroy();
         expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(0);
+    });
+
+    it("should set reload to null when site is changed and it's not the first time", () => {
+        fixture.detectChanges(); // Initialize component and set up subscriptions
+        siteService.setFakeCurrentSite(mockSites[1]); // Trigger site change after subscription is active
+        expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
     });
 });
