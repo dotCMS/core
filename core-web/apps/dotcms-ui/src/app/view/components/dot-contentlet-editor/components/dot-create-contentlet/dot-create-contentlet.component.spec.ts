@@ -114,7 +114,7 @@ describe('DotCreateContentletComponent', () => {
 
     it('should emit shutdown and redirect to Content page when coming from starter', () => {
         routerService.currentSavedURL = '/c/content/new/';
-        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
+        component.onClose({});
         expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.goToContent).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
@@ -122,7 +122,7 @@ describe('DotCreateContentletComponent', () => {
 
     it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {
         routerService.currentSavedURL = '/pages/new/';
-        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
+        component.onClose({});
         expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
@@ -146,7 +146,10 @@ describe('DotCreateContentletComponent', () => {
     });
 
     it('should set url from resolver', () => {
-        spyOnProperty<any>(routeService, 'data').mockReturnValue(of({ url: 'url.from.resolver' }));
+        Object.defineProperty(routeService, 'data', {
+            get: jest.fn().mockReturnValue(of({ url: 'url.from.resolver' })),
+            configurable: true
+        });
         fixture.detectChanges();
         expect(dotCreateContentletWrapperComponent.url).toEqual('url.from.resolver');
     });

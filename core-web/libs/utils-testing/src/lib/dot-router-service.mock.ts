@@ -1,4 +1,4 @@
-import { of, NEVER } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
@@ -59,6 +59,7 @@ export class MockDotRouterService {
     goToUpdateAppsConfiguration = jest.fn();
     goToSiteBrowser = jest.fn();
     isCurrentPortletCustom = jest.fn();
+    isCustomPortlet = jest.fn().mockReturnValue(false);
     isJSPPortlet = jest.fn();
     reloadCurrentPortlet = jest.fn();
     goToEditTemplate = jest.fn();

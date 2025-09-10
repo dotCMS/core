@@ -17,7 +17,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let service: DotWorkflowsActionsSelectorFieldService;
-    let spy: jasmine.Spy;
+    let spy: jest.SpyInstance;
     let result: SelectItemGroup[];
 
     beforeEach(() =>
@@ -57,7 +57,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
         service.load(mockWorkflows);
 
         expect(dotWorkflowsActionsService.getByWorkflows).toHaveBeenCalledWith(
-            jasmine.arrayContaining(mockWorkflows)
+            expect.arrayContaining(mockWorkflows)
         );
 
         expect(result).toEqual([

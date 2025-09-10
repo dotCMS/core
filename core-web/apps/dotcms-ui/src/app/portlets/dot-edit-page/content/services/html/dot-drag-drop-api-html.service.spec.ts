@@ -30,14 +30,14 @@ describe('DotDragDropAPIHtmlService', () => {
         service.initDragAndDropContext(iframe);
 
         expect(doc.head.appendChild).toHaveBeenCalledWith(
-            jasmine.objectContaining({
+            expect.objectContaining({
                 tagName: 'STYLE',
                 innerHTML: DRAGULA_CSS
             })
         );
 
         expect(doc.body.appendChild).toHaveBeenCalledWith(
-            jasmine.objectContaining({
+            expect.objectContaining({
                 tagName: 'SCRIPT',
                 innerHTML: EDIT_MODE_DRAG_DROP
             })
@@ -45,11 +45,11 @@ describe('DotDragDropAPIHtmlService', () => {
     });
 
     it('should include drag and drop css and js for DOJO', () => {
-        spyOn<any>(iframe.contentWindow, 'hasOwnProperty').mockReturnValue(true);
+        jest.spyOn<any>(iframe.contentWindow, 'hasOwnProperty').mockReturnValue(true);
         service.initDragAndDropContext(iframe);
 
         expect(doc.body.appendChild).toHaveBeenCalledWith(
-            jasmine.objectContaining({
+            expect.objectContaining({
                 tagName: 'SCRIPT',
                 innerHTML: EDIT_PAGE_JS_DOJO_REQUIRE
             })

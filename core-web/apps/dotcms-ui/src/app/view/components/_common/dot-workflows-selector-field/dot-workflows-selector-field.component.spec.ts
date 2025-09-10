@@ -110,41 +110,41 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
 
             it('should have options', () => {
                 expect(multiselect.options).toEqual(
-                    jasmine.objectContaining([
+                    expect.objectContaining([
                         {
                             id: '85c1515c-c4f3-463c-bac2-860b8fcacc34',
-                            creationDate: jasmine.any(Date),
+                            creationDate: expect.any(Date),
                             name: 'Default Scheme',
                             description:
                                 'This is the default workflow scheme that will be applied to all content',
                             archived: false,
                             mandatory: false,
                             defaultScheme: true,
-                            modDate: jasmine.any(Date),
+                            modDate: expect.any(Date),
                             entryActionId: null,
                             system: false
                         },
                         {
                             id: '77a9bf3f-a402-4c56-9b1f-1050b9d345dc',
-                            creationDate: jasmine.any(Date),
+                            creationDate: expect.any(Date),
                             name: 'Document Management',
                             description: 'Default workflow for documents',
                             archived: true,
                             mandatory: false,
                             defaultScheme: false,
-                            modDate: jasmine.any(Date),
+                            modDate: expect.any(Date),
                             entryActionId: null,
                             system: false
                         },
                         {
                             id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                            creationDate: jasmine.any(Date),
+                            creationDate: expect.any(Date),
                             name: 'System Workflow',
                             description: '',
                             archived: false,
                             mandatory: false,
                             defaultScheme: false,
-                            modDate: jasmine.any(Date),
+                            modDate: expect.any(Date),
                             entryActionId: null,
                             system: true
                         }

@@ -106,7 +106,7 @@ describe('DotEditPageStateControllerComponent', () => {
     let personalizeService: DotPersonalizeService;
     let propertiesService: DotPropertiesService;
     let editContentletService: DotContentletEditorService;
-    let featFlagMock: jasmine.Spy;
+    let featFlagMock: jest.SpyInstance;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -456,7 +456,7 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it('should update LOCK and MODE when confirmation dialog Canceled', () => {
-            spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
+            jest.spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.cancel();
             });
 

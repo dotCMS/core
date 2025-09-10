@@ -38,7 +38,7 @@ route.queryParams = {};
 
 describe('DotIframePorletLegacyResolver', () => {
     let dotPageStateService: DotPageStateService;
-    let dotPageStateServiceRequestPageSpy: jasmine.Spy;
+    let dotPageStateServiceRequestPageSpy: jest.SpyInstance;
     let resolver: DotIframePortletLegacyResolver;
     let dotLicenseService: DotLicenseService;
 

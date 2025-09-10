@@ -149,10 +149,10 @@ describe('DotTemplateAdvancedComponent', () => {
                     {
                         label: 'Save',
                         disabled: true,
-                        command: jasmine.any(Function)
+                        command: expect.any(Function)
                     }
                 ],
-                cancel: jasmine.any(Function)
+                cancel: expect.any(Function)
             });
         });
 

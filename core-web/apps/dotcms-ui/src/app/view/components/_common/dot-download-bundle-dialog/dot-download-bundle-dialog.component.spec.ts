@@ -219,7 +219,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                 let anchor: HTMLAnchorElement;
 
                 beforeEach(() => {
-                    spyOn<any>(window, 'fetch').mockReturnValue(Promise.resolve(mockResponse));
+                    jest.spyOn<any>(window, 'fetch').mockReturnValue(Promise.resolve(mockResponse));
                     anchor = document.createElement('a');
                     jest.spyOn(anchor, 'click');
                     jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
@@ -265,7 +265,7 @@ describe('DotDownloadBundleDialogComponent', () => {
 
             describe('on error', () => {
                 beforeEach(() => {
-                    spyOn<any>(window, 'fetch').mockReturnValue(
+                    jest.spyOn<any>(window, 'fetch').mockReturnValue(
                         Promise.resolve(throwError('error'))
                     );
                 });

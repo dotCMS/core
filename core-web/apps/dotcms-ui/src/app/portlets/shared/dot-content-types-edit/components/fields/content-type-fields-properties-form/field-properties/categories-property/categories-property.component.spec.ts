@@ -133,7 +133,7 @@ describe('CategoriesPropertyComponent', () => {
     });
 
     describe('Pagination events', () => {
-        let spyMethod: jasmine.Spy;
+        let spyMethod: jest.SpyInstance;
 
         beforeEach(() => {
             const divForm: DebugElement = de.query(By.css('div'));

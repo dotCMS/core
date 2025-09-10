@@ -214,7 +214,7 @@ describe('DotContentEditorComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
+            jest.spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: mockContentTypes
                 })
@@ -229,8 +229,8 @@ describe('DotContentEditorComponent', () => {
 
         it('should set labels', () => {
             const actions = [
-                { label: 'Activity', command: jasmine.any(Function) },
-                { label: 'Activity 2', command: jasmine.any(Function) }
+                { label: 'Activity', command: expect.any(Function) },
+                { label: 'Activity 2', command: expect.any(Function) }
             ];
 
             expect(menu.model).toEqual(actions);

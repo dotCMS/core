@@ -409,7 +409,7 @@ describe('DotTemplateListComponent', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
     let coreWebService: CoreWebService;
     let dotSiteBrowserService: DotSiteBrowserService;
-    let mockGoToFolder: jasmine.Spy;
+    let mockGoToFolder: jest.SpyInstance;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -498,7 +498,7 @@ describe('DotTemplateListComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<any>(coreWebService, 'requestView').mockReturnValue(
+            jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: templatesMock,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
@@ -512,7 +512,7 @@ describe('DotTemplateListComponent', () => {
             ).componentInstance;
             jest.spyOn(dotPushPublishDialogService, 'open');
 
-            spyOn<any>(dialogService, 'open').mockReturnValue({
+            jest.spyOn<any>(dialogService, 'open').mockReturnValue({
                 onClose: dialogRefClose
             });
 
@@ -635,10 +635,10 @@ describe('DotTemplateListComponent', () => {
                 ).componentInstance;
                 const actions = setBasicOptions();
                 actions.push({
-                    menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+                    menuItem: { label: 'Unpublish', command: expect.any(Function) }
                 });
                 actions.push({
-                    menuItem: { label: 'Copy', command: jasmine.any(Function) }
+                    menuItem: { label: 'Copy', command: expect.any(Function) }
                 });
 
                 expect(publishTemplate.actions).toEqual(actions);
@@ -650,10 +650,10 @@ describe('DotTemplateListComponent', () => {
                 ).componentInstance;
                 const actions = setBasicOptions();
                 actions.push({
-                    menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+                    menuItem: { label: 'Unpublish', command: expect.any(Function) }
                 });
                 actions.push({
-                    menuItem: { label: 'Copy', command: jasmine.any(Function) }
+                    menuItem: { label: 'Copy', command: expect.any(Function) }
                 });
 
                 expect(lockedTemplate.actions).toEqual(actions);
@@ -665,10 +665,10 @@ describe('DotTemplateListComponent', () => {
                 ).componentInstance;
                 const actions = setBasicOptions();
                 actions.push({
-                    menuItem: { label: 'Archive', command: jasmine.any(Function) }
+                    menuItem: { label: 'Archive', command: expect.any(Function) }
                 });
                 actions.push({
-                    menuItem: { label: 'Copy', command: jasmine.any(Function) }
+                    menuItem: { label: 'Copy', command: expect.any(Function) }
                 });
 
                 expect(unPublishTemplate.actions).toEqual(actions);
@@ -679,8 +679,8 @@ describe('DotTemplateListComponent', () => {
                     By.css('[data-testid="123Archived"]')
                 ).componentInstance;
                 const actions = [
-                    { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
-                    { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
+                    { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
+                    { menuItem: { label: 'Delete', command: expect.any(Function) } }
                 ];
                 expect(archivedTemplate.actions).toEqual(actions);
             });
@@ -698,10 +698,10 @@ describe('DotTemplateListComponent', () => {
                     By.css('[data-testid="123Published"]')
                 ).componentInstance;
                 const actions = [
-                    { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
-                    { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
-                    { menuItem: { label: 'Unpublish', command: jasmine.any(Function) } },
-                    { menuItem: { label: 'Copy', command: jasmine.any(Function) } }
+                    { menuItem: { label: 'Edit', command: expect.any(Function) } },
+                    { menuItem: { label: 'Publish', command: expect.any(Function) } },
+                    { menuItem: { label: 'Unpublish', command: expect.any(Function) } },
+                    { menuItem: { label: 'Copy', command: expect.any(Function) } }
                 ];
 
                 expect(publishTemplate.actions).toEqual(actions);
@@ -865,13 +865,13 @@ describe('DotTemplateListComponent', () => {
 
             it('should set labels', () => {
                 const actions = [
-                    { label: 'Publish', command: jasmine.any(Function) },
-                    { label: 'Push Publish', command: jasmine.any(Function) },
-                    { label: 'Add To Bundle', command: jasmine.any(Function) },
-                    { label: 'Unpublish', command: jasmine.any(Function) },
-                    { label: 'Archive', command: jasmine.any(Function) },
-                    { label: 'Unarchive', command: jasmine.any(Function) },
-                    { label: 'Delete', command: jasmine.any(Function) }
+                    { label: 'Publish', command: expect.any(Function) },
+                    { label: 'Push Publish', command: expect.any(Function) },
+                    { label: 'Add To Bundle', command: expect.any(Function) },
+                    { label: 'Unpublish', command: expect.any(Function) },
+                    { label: 'Archive', command: expect.any(Function) },
+                    { label: 'Unarchive', command: expect.any(Function) },
+                    { label: 'Delete', command: expect.any(Function) }
                 ];
 
                 expect(menu.model).toEqual(actions);
@@ -1005,7 +1005,7 @@ describe('DotTemplateListComponent', () => {
 
     describe('without data', () => {
         beforeEach(() => {
-            spyOn<any>(coreWebService, 'requestView').mockReturnValue(
+            jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: [],
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
@@ -1022,10 +1022,10 @@ describe('DotTemplateListComponent', () => {
 
     function setBasicOptions(): any {
         return [
-            { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Push Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Add To Bundle', command: jasmine.any(Function) } }
+            { menuItem: { label: 'Edit', command: expect.any(Function) } },
+            { menuItem: { label: 'Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Push Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Add To Bundle', command: expect.any(Function) } }
         ];
     }
 

@@ -277,7 +277,7 @@ describe('DotCustomEventHandlerService', () => {
     it('should set colors in the ui', () => {
         jest.spyOn(dotUiColorsService, 'setColors');
         const fakeHtmlEl = { hello: 'html' };
-        spyOn<any>(document, 'querySelector').mockReturnValue(fakeHtmlEl);
+        jest.spyOn<any>(document, 'querySelector').mockReturnValue(fakeHtmlEl);
 
         service.handle(
             new CustomEvent('ng-event', {

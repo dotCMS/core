@@ -217,17 +217,17 @@ describe('IframeComponent', () => {
 
             expect(
                 comp.iframeElement.nativeElement.contentWindow.removeEventListener
-            ).toHaveBeenCalledWith('keydown', jasmine.any(Function));
+            ).toHaveBeenCalledWith('keydown', expect.any(Function));
             expect(
                 comp.iframeElement.nativeElement.contentWindow.document.removeEventListener
-            ).toHaveBeenCalledWith('ng-event', jasmine.any(Function));
+            ).toHaveBeenCalledWith('ng-event', expect.any(Function));
 
             expect(
                 comp.iframeElement.nativeElement.contentWindow.addEventListener
-            ).toHaveBeenCalledWith('keydown', jasmine.any(Function));
+            ).toHaveBeenCalledWith('keydown', expect.any(Function));
             expect(
                 comp.iframeElement.nativeElement.contentWindow.document.addEventListener
-            ).toHaveBeenCalledWith('ng-event', jasmine.any(Function));
+            ).toHaveBeenCalledWith('ng-event', expect.any(Function));
         });
 
         it('should set the colors to the jsp on load', () => {

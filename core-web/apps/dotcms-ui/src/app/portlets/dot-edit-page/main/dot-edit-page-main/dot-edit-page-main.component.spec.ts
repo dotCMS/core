@@ -216,7 +216,7 @@ describe('DotEditPageMainComponent', () => {
         titleService = fixture.debugElement.injector.get(Title);
         fixture.detectChanges();
 
-        spyOn<any>(route, 'queryParams').mockReturnValue(of({}));
+        jest.spyOn<any>(route, 'queryParams').mockReturnValue(of({}));
     });
 
     it('should have router-outlet', () => {

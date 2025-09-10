@@ -163,7 +163,7 @@ describe('DotWizardComponent', () => {
 
     describe('multiple steps', () => {
         let formOneFirst: DebugElement;
-        let formOneFirstSPy: jasmine.Spy;
+        let formOneFirstSPy: jest.SpyInstance;
 
         beforeEach(fakeAsync(() => {
             fixture = TestBed.createComponent(DotWizardComponent);

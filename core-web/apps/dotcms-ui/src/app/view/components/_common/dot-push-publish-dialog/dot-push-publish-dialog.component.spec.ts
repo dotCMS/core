@@ -175,7 +175,7 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                spyOn<any>(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
+                jest.spyOn<any>(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
             });
 
             xit('should submit on accept and hide dialog', () => {
@@ -218,7 +218,7 @@ describe('DotPushPublishDialogComponent', () => {
         describe('on error pushPublishContent', () => {
             const errors = ['Error 1', 'Error 2'];
             beforeEach(() => {
-                spyOn<any>(pushPublishService, 'pushPublishContent').mockReturnValue(
+                jest.spyOn<any>(pushPublishService, 'pushPublishContent').mockReturnValue(
                     of({ errors: errors })
                 );
             });

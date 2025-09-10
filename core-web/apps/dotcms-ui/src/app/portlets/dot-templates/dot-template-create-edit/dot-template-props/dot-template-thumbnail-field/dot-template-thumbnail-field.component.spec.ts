@@ -105,7 +105,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             const field = de.query(By.css('dot-binary-file'));
 
             expect(field.attributes).toEqual(
-                jasmine.objectContaining({
+                expect.objectContaining({
                     accept: 'image/*',
                     style: 'height: 3.35rem;'
                 })
@@ -128,7 +128,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             const field = de.query(By.css('dot-binary-file'));
 
             expect(field.attributes).toEqual(
-                jasmine.objectContaining({
+                expect.objectContaining({
                     accept: 'image/*',
                     style: 'height: 7.14rem;'
                 })

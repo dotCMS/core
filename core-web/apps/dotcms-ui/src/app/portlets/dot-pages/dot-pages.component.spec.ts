@@ -14,13 +14,13 @@ import { of } from 'rxjs/internal/observable/of';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
     DotPageRenderService,
     DotRouterService,
-    DotSessionStorageService,
-    DotIframeService,
-    DotFormatDateService
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -305,9 +305,7 @@ describe('DotPagesComponent', () => {
 
     it('should throw error dialog when call GoTo and url does not match with existing page', () => {
         const error404 = mockResponseView(404);
-        dotPageRenderService.checkPermission = jasmine
-            .createSpy()
-            .mockReturnValue(throwError(error404));
+        dotPageRenderService.checkPermission = jest.fn().mockReturnValue(throwError(error404));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');

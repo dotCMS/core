@@ -87,7 +87,7 @@ describe('Guards', () => {
 
     describe('newEditContentForContentTypeGuard', () => {
         it('should return true when CONTENT_EDITOR2_ENABLED is false', (done) => {
-            const spyContentType = jest
+            const spyContentType = jest.jest
                 .spyOn(dotContentTypeService, 'getContentType')
                 .mockReturnValue(of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK));
 
@@ -101,7 +101,7 @@ describe('Guards', () => {
         });
 
         it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', (done) => {
-            const spyContentType = jest
+            const spyContentType = jest.jest
                 .spyOn(dotContentTypeService, 'getContentType')
                 .mockReturnValue(of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK));
 
@@ -120,10 +120,10 @@ describe('Guards', () => {
 
     describe('newEditContentForContentletGuard', () => {
         it('should return true when CONTENT_EDITOR2_ENABLED is false', (done) => {
-            const spyContentlet = jest
+            const spyContentlet = jest.jest
                 .spyOn(dotContentletService, 'getContentletByInode')
                 .mockReturnValue(of(CONTENTLET_MOCK));
-            const spyContentType = jest
+            const spyContentType = jest.jest
                 .spyOn(dotContentTypeService, 'getContentType')
                 .mockReturnValue(of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK));
 
@@ -138,10 +138,10 @@ describe('Guards', () => {
         });
 
         it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', (done) => {
-            const spyContentlet = jest
+            const spyContentlet = jest.jest
                 .spyOn(dotContentletService, 'getContentletByInode')
                 .mockReturnValue(of(CONTENTLET_MOCK));
-            const spyContentType = jest
+            const spyContentType = jest.jest
                 .spyOn(dotContentTypeService, 'getContentType')
                 .mockReturnValue(of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK));
 

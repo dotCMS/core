@@ -345,10 +345,10 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
             const actions = setBasicOptions();
             actions.push({
-                menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+                menuItem: { label: 'Unpublish', command: expect.any(Function) }
             });
             actions.push({
-                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+                menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
             expect(publishContainer.actions).toEqual(actions);
@@ -360,10 +360,10 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
             const actions = setBasicOptions();
             actions.push({
-                menuItem: { label: 'Archive', command: jasmine.any(Function) }
+                menuItem: { label: 'Archive', command: expect.any(Function) }
             });
             actions.push({
-                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+                menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
             expect(unPublishContainer.actions).toEqual(actions);
@@ -375,8 +375,8 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
 
             const actions = [
-                { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
-                { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
+                { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
+                { menuItem: { label: 'Delete', command: expect.any(Function) } }
             ];
             expect(archivedContainer.actions).toEqual(actions);
         });
@@ -522,10 +522,10 @@ describe('ContainerListComponent', () => {
 
     function setBasicOptions() {
         return [
-            { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Push Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Add To Bundle', command: jasmine.any(Function) } }
+            { menuItem: { label: 'Edit', command: expect.any(Function) } },
+            { menuItem: { label: 'Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Push Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Add To Bundle', command: expect.any(Function) } }
         ];
     }
 });

@@ -61,7 +61,7 @@ describe('DotAppsConfigurationListResolver', () => {
         };
 
         activatedRouteSnapshotMock.paramMap.get = () => '123';
-        spyOn<any>(dotAppsServices, 'getConfigurationList').mockReturnValue(of(response));
+        jest.jest.spyOn<any>(dotAppsServices, 'getConfigurationList').mockReturnValue(of(response));
 
         dotAppsConfigurationListResolver
             .resolve(activatedRouteSnapshotMock)

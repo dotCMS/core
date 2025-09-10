@@ -1034,7 +1034,7 @@ describe('Load fields and drag and drop', () => {
                 convertBox.triggerEventHandler('convert', {});
 
                 expect(comp.editField.emit).toHaveBeenCalledWith(
-                    jasmine.objectContaining({
+                    expect.objectContaining({
                         contentTypeId: '3b',
                         fieldType: 'Story-Block',
                         id: '3',

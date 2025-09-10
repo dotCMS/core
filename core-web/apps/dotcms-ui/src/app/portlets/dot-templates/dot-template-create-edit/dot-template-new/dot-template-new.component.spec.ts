@@ -46,7 +46,7 @@ describe('DotTemplateNewComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
 
         dialogService = TestBed.inject(DialogService);
-        spyOn<any>(dialogService, 'open').mockReturnValue({
+        jest.spyOn<any>(dialogService, 'open').mockReturnValue({
             onClose: dialogRefClose
         });
 
@@ -54,7 +54,7 @@ describe('DotTemplateNewComponent', () => {
     });
 
     it('should open template type selector', () => {
-        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+        expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
             header: 'Create a template',
             width: '37rem',
             contentStyle: { padding: '0px' },

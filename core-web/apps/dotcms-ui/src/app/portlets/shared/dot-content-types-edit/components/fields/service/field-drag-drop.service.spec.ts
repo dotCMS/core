@@ -222,7 +222,7 @@ describe('FieldDragDropService', () => {
 
                     expect(dotAlertConfirmService.alert).toHaveBeenCalledTimes(1);
                     expect(dotAlertConfirmService.alert).toHaveBeenCalledWith(
-                        jasmine.objectContaining({
+                        expect.objectContaining({
                             header: 'This row is full',
                             message: 'The maximum number of columns per row is limited to four.',
                             footerLabel: {

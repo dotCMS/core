@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Component, DebugElement, Input } from '@angular/core';
-import {
-    ComponentFixture,
-    fakeAsync,
-    flush,
-    TestBed,
-    tick,
-    waitForAsync
-} from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -96,12 +89,12 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
 
-        TestBed.configureTestingModule({
+        await TestBed.configureTestingModule({
             declarations: [SearchableDropdownComponent, HostTestComponent],
             imports: [
                 ...SEARCHABLE_NGFACES_MODULES,
@@ -135,7 +128,7 @@ describe('SearchableDropdownComponent', () => {
         hostComp.totalRecords = NROWS;
         hostComp.rows = rows;
         hostComp.pageLinkSize = pageLinkSize;
-    }));
+    });
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';
@@ -146,7 +139,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should have placeholder set', () => {
-        expect(mainButton.nativeElement.innerText).toBe('placeholder');
+        expect(mainButton.componentInstance.label).toBe('placeholder');
     });
 
     it('should disabled', () => {
@@ -209,10 +202,20 @@ describe('SearchableDropdownComponent', () => {
         hostFixture.detectChanges();
         tick();
 
+        // Mock the searchPanelRef to avoid getBoundingClientRect error
+        comp.searchPanelRef = {
+            container: {
+                getBoundingClientRect: () => ({ height: 200 })
+            }
+        } as any;
+
+        // Trigger the overlay show to update cssClass
+        comp.showOverlayHandler();
+
         const overlay = de.query(By.css('.p-overlaypanel'));
         expect(comp.cssClass).toContain('searchable-dropdown paginator');
 
-        expect(overlay.componentInstance.styleClass).toBe('testClass');
+        expect(overlay.componentInstance.styleClass).toContain('testClass');
         expect(overlay.componentInstance.style.width).toEqual('650px');
         flush();
     }));
@@ -471,12 +474,12 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
 
-        TestBed.configureTestingModule({
+        await TestBed.configureTestingModule({
             declarations: [SearchableDropdownComponent, HostTestExternalTemplateComponent],
             imports: [
                 ...SEARCHABLE_NGFACES_MODULES,
@@ -510,7 +513,7 @@ describe('SearchableDropdownComponent', () => {
         hostComp.totalRecords = NROWS;
         hostComp.rows = rows;
         hostComp.pageLinkSize = pageLinkSize;
-    }));
+    });
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';

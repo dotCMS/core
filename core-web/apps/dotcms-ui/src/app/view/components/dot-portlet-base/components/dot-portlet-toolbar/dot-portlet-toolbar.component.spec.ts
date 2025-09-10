@@ -208,11 +208,11 @@ describe('DotPortletToolbarComponent', () => {
                 expect(actionsMenu.componentInstance.model).toEqual([
                     {
                         label: 'Design',
-                        command: jasmine.any(Function)
+                        command: expect.any(Function)
                     },
                     {
                         label: 'Code',
-                        command: jasmine.any(Function)
+                        command: expect.any(Function)
                     }
                 ]);
             });

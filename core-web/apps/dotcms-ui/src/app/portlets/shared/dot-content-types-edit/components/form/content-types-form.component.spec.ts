@@ -516,8 +516,8 @@ describe('ContentTypesFormComponent', () => {
             workflows: [
                 {
                     ...mockWorkflows[2],
-                    creationDate: jasmine.any(Date),
-                    modDate: jasmine.any(Date)
+                    creationDate: expect.any(Date),
+                    modDate: expect.any(Date)
                 }
             ],
             newEditContent: false
@@ -767,13 +767,13 @@ describe('ContentTypesFormComponent', () => {
                 workflows: [
                     {
                         id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        creationDate: jasmine.any(Date),
+                        creationDate: expect.any(Date),
                         name: 'System Workflow',
                         description: '',
                         archived: false,
                         mandatory: false,
                         defaultScheme: false,
-                        modDate: jasmine.any(Date),
+                        modDate: expect.any(Date),
                         entryActionId: null,
                         system: true
                     }

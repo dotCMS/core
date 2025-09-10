@@ -161,7 +161,7 @@ describe('DotAppsConfigurationComponent', () => {
     describe('With integrations count', () => {
         beforeEach(() => {
             jest.spyOn(paginationService, 'setExtraParams');
-            spyOn<any>(paginationService, 'getWithOffset').mockReturnValue(of(appData));
+            jest.spyOn<any>(paginationService, 'getWithOffset').mockReturnValue(of(appData));
             jest.spyOn(component.searchInput.nativeElement, 'focus');
             fixture.detectChanges();
         });

@@ -243,7 +243,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                 componentHost.workfows = mock;
                 fixtureHost.detectChanges();
                 expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith(
-                    jasmine.arrayContaining(mock)
+                    expect.arrayContaining(mock)
                 );
             });
         });

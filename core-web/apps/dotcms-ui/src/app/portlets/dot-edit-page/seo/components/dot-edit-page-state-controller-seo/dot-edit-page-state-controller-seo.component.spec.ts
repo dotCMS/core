@@ -118,7 +118,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     let dotTabButtons: DotTabButtonsComponent;
     let deDotTabButtons: DebugElement;
 
-    let featFlagMock: jasmine.Spy;
+    let featFlagMock: jest.SpyInstance;
 
     let pointerEvent: PointerEvent;
 
@@ -463,7 +463,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should update LOCK and MODE when confirmation dialog Canceled', () => {
-            spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
+            jest.spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.cancel();
             });
 

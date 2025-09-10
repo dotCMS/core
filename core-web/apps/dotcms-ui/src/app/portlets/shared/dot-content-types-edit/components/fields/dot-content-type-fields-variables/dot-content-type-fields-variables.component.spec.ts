@@ -110,7 +110,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     it('should delete a variable from the server', () => {
         const variableToDelete = mockFieldVariables[0];
-        spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').mockReturnValue(of([]));
+        jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').mockReturnValue(
+            of([])
+        );
         const deletedCollection = mockFieldVariables.filter(
             (item: DotFieldVariable) => variableToDelete.key !== item.key
         );
@@ -134,7 +136,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should set variable correctly', () => {
-            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
+            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
                 of(mockFieldVariables)
             );
             fixtureHost.detectChanges();
@@ -142,7 +144,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should not set allowedBlocks variable', () => {
-            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
+            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',

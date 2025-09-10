@@ -45,8 +45,8 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotEditPageService,
                     useValue: {
-                        whatChange: jasmine
-                            .createSpy()
+                        whatChange: jest
+                            .fn()
                             .mockReturnValue(
                                 of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
                             )
@@ -55,8 +55,8 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotDOMHtmlUtilService,
                     useValue: {
-                        createStyleElement: jasmine
-                            .createSpy()
+                        createStyleElement: jest
+                            .fn()
                             .mockReturnValue(document.createElement('style'))
                     }
                 },

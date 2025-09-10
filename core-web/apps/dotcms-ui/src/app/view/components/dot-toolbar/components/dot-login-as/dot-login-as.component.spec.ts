@@ -92,9 +92,7 @@ describe('DotLoginAsComponent', () => {
             {
                 provide: PaginatorService,
                 useValue: {
-                    getWithOffset: jasmine
-                        .createSpy('getWithOffset')
-                        .mockReturnValue(observableOf([...users])),
+                    getWithOffset: jest.fn().mockReturnValue(observableOf([...users])),
                     filter: '',
                     url: ''
                 }

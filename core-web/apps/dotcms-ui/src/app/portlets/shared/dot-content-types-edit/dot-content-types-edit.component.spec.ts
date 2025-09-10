@@ -224,7 +224,7 @@ describe('DotContentTypesEditComponent', () => {
                 accept: {
                     disabled: true,
                     label: 'Create',
-                    action: jasmine.any(Function)
+                    action: expect.any(Function)
                 },
                 cancel: {
                     label: 'Cancel'
@@ -317,7 +317,9 @@ describe('DotContentTypesEditComponent', () => {
                 };
 
                 jest.spyOn(crudService, 'postData').mockReturnValue(of([responseContentType]));
-                spyOn<any>(location, 'replaceState').mockReturnValue(of([responseContentType]));
+                jest.spyOn<any>(location, 'replaceState').mockReturnValue(
+                    of([responseContentType])
+                );
 
                 contentTypeForm.triggerEventHandler('send', mockContentType);
 
@@ -629,7 +631,7 @@ describe('DotContentTypesEditComponent', () => {
             const fieldsReturnByServer: DotCMSContentTypeField[] =
                 newFieldsAdded.concat(currentFieldsInServer);
 
-            spyOn<any>(fieldService, 'saveFields').mockReturnValue(of(fieldsReturnByServer));
+            jest.spyOn<any>(fieldService, 'saveFields').mockReturnValue(of(fieldsReturnByServer));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -661,7 +663,7 @@ describe('DotContentTypesEditComponent', () => {
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
-            spyOn<any>(fieldService, 'saveFields').mockImplementation(() => {
+            jest.spyOn<any>(fieldService, 'saveFields').mockImplementation(() => {
                 fixture.detectChanges();
                 expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(true);
 
@@ -778,7 +780,7 @@ describe('DotContentTypesEditComponent', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             layout[0].columns[0].fields = layout[0].columns[0].fields.slice(-1);
 
-            spyOn<any>(fieldService, 'deleteFields').mockReturnValue(of({ fields: layout }));
+            jest.spyOn<any>(fieldService, 'deleteFields').mockReturnValue(of({ fields: layout }));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 

@@ -113,11 +113,11 @@ describe('DotAddPersonaDialogComponent', () => {
                 accept: {
                     label: 'Accept',
                     disabled: true,
-                    action: jasmine.any(Function)
+                    action: expect.any(Function)
                 },
                 cancel: {
                     label: 'Cancel',
-                    action: jasmine.any(Function)
+                    action: expect.any(Function)
                 }
             });
         });

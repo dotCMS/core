@@ -112,8 +112,8 @@ describe('DotToolbarUserComponent', () => {
         });
 
         const mockDate = new Date(1466424490000);
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
+        jest.useFakeTimers();
+        jest.setSystemTime(mockDate);
 
         fixture = TestBed.createComponent(DotToolbarUserComponent);
 
@@ -125,7 +125,7 @@ describe('DotToolbarUserComponent', () => {
     });
 
     afterEach(() => {
-        jasmine.clock().uninstall();
+        jest.useRealTimers();
     });
 
     it('should have correct href in logout link', () => {

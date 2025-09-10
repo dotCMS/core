@@ -462,7 +462,7 @@ xdescribe('DotEditContentHtmlService', () => {
 
         expect(insertAdjacentElement).toHaveBeenCalledWith(
             'afterbegin',
-            jasmine.objectContaining({
+            expect.objectContaining({
                 tagName: 'DIV',
                 className: 'loader__overlay'
             })
@@ -475,11 +475,11 @@ xdescribe('DotEditContentHtmlService', () => {
         );
 
         expect(replaceChild).toHaveBeenCalledWith(
-            jasmine.objectContaining({
+            expect.objectContaining({
                 tagName: 'H1',
                 innerHTML: 'new container'
             }),
-            jasmine.objectContaining({
+            expect.objectContaining({
                 tagName: 'DIV',
                 dataset: {
                     dotIdentifier: '888',
@@ -713,7 +713,7 @@ xdescribe('DotEditContentHtmlService', () => {
     it('should remove contentlet', () => {
         const remove = jest.fn();
 
-        spyOn<any>(fakeDocument, 'querySelectorAll').mockReturnValue([
+        jest.spyOn<any>(fakeDocument, 'querySelectorAll').mockReturnValue([
             {
                 remove: remove
             },

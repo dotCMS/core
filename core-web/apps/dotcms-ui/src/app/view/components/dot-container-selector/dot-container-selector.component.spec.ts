@@ -118,7 +118,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
         const searchable = de.query(By.css('[data-testId="searchableDropdown"]'));
         expect(searchable.attributes).toEqual(
-            jasmine.objectContaining({
+            expect.objectContaining({
                 'ng-reflect-label-property-name': 'name,parentPermissionable.host',
                 'ng-reflect-multiple': 'true',
                 'ng-reflect-page-link-size': '5',

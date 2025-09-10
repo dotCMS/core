@@ -178,7 +178,7 @@ describe('DotLoginComponent', () => {
             component.loginForm.setValue(credentials);
             jest.spyOn(dotFormatDateService, 'setLang');
             jest.spyOn(dotRouterService, 'goToMain');
-            spyOn<any>(loginService, 'loginUser').mockReturnValue(
+            jest.spyOn<any>(loginService, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -196,7 +196,7 @@ describe('DotLoginComponent', () => {
         it('should disable fields while waiting login response', async () => {
             component.loginForm.setValue(credentials);
             jest.spyOn(dotRouterService, 'goToMain');
-            spyOn<any>(loginService, 'loginUser').mockReturnValue(
+            jest.spyOn<any>(loginService, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'

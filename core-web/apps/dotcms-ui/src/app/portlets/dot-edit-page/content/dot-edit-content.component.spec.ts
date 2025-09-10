@@ -407,7 +407,7 @@ describe('DotEditContentComponent', () => {
 
     describe('elements', () => {
         beforeEach(() => {
-            spyOn<any>(dotEditPageService, 'save').mockReturnValue(of({}));
+            jest.spyOn<any>(dotEditPageService, 'save').mockReturnValue(of({}));
 
             jest.spyOn(dotConfigurationService, 'getKey').mockReturnValue(of('false'));
             jest.spyOn(dotConfigurationService, 'getKeyAsList').mockReturnValue(
@@ -754,7 +754,7 @@ describe('DotEditContentComponent', () => {
                     component.isEditMode = false;
                     expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
                         mockRenderedPageState,
-                        jasmine.any(ElementRef)
+                        expect.any(ElementRef)
                     );
                     fixture.detectChanges();
                     const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
@@ -791,7 +791,7 @@ describe('DotEditContentComponent', () => {
                     const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
                     expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(
                         state,
-                        jasmine.any(ElementRef)
+                        expect.any(ElementRef)
                     );
                     expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
                     expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(

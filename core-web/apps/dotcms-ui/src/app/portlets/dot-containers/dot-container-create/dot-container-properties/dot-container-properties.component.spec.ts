@@ -320,7 +320,7 @@ describe('DotContainerPropertiesComponent', () => {
 
     describe('with data', () => {
         beforeEach(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
+            jest.spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: mockContentTypes,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')

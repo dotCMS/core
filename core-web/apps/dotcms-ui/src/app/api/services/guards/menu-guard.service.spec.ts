@@ -117,7 +117,7 @@ describe('ValidMenuGuardService', () => {
         });
 
         it('should allow children access to Menu Portlets if JSPPortlet is in menu', (done) => {
-            const spy = jest
+            const spy = jest.jest
                 .spyOn(dotMenuService, 'isPortletInMenu')
                 .mockReturnValue(observableOf(true));
             menuGuardService
@@ -131,7 +131,7 @@ describe('ValidMenuGuardService', () => {
         });
 
         it('should prevent children access to Menu Portlets if JSPPortlet is in menu', (done) => {
-            const spy = jest
+            const spy = jest.jest
                 .spyOn(dotMenuService, 'isPortletInMenu')
                 .mockReturnValue(observableOf(false));
             menuGuardService

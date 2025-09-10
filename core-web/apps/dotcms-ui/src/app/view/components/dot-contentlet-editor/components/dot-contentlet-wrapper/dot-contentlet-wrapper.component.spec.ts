@@ -275,8 +275,8 @@ describe('DotContentletWrapperComponent', () => {
                     });
 
                     expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
-                        accept: jasmine.any(Function),
-                        reject: jasmine.any(Function),
+                        accept: expect.any(Function),
+                        reject: expect.any(Function),
                         header: 'Header',
                         message: 'Message',
                         footerLabel: {
@@ -307,8 +307,8 @@ describe('DotContentletWrapperComponent', () => {
                     });
 
                     expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
-                        accept: jasmine.any(Function),
-                        reject: jasmine.any(Function),
+                        accept: expect.any(Function),
+                        reject: expect.any(Function),
                         header: 'Header',
                         message: 'Message',
                         footerLabel: {

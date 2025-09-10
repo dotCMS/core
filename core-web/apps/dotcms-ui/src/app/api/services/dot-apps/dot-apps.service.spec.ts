@@ -9,15 +9,14 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
-    DotRouterService,
-    DotFormatDateService
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotApp, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -26,6 +25,8 @@ import {
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
+// eslint-disable-next-line import/order
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 import { DotAppsService } from './dot-apps.service';
 
@@ -195,7 +196,7 @@ describe('DotAppsService', () => {
             }
         };
         const anchor: HTMLAnchorElement = document.createElement('a');
-        spyOn<any>(window, 'fetch').mockReturnValue(Promise.resolve(mockResponse));
+        (window as any).fetch = jest.fn().mockReturnValue(Promise.resolve(mockResponse));
         jest.spyOn(anchor, 'click');
         jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
 
@@ -208,7 +209,7 @@ describe('DotAppsService', () => {
         dotAppsService.exportConfiguration(conf);
         tick(1);
 
-        expect(window.fetch).toHaveBeenCalledWith(`/api/v1/apps/export`, {
+        expect((window as any).fetch).toHaveBeenCalledWith(`/api/v1/apps/export`, {
             method: 'POST',
             cache: 'no-cache',
             headers: {
@@ -221,7 +222,7 @@ describe('DotAppsService', () => {
     }));
 
     it('should throw error when export apps configuration', fakeAsync(() => {
-        spyOn<any>(window, 'fetch').mockReturnValue(Promise.reject(new Error('error')));
+        (window as any).fetch = jest.fn().mockReturnValue(Promise.reject(new Error('error')));
 
         const conf = {
             appKeysBySite: {},

@@ -64,7 +64,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
             return param === 'appKey' ? queryParams.appKey : queryParams.id;
         };
 
-        spyOn<any>(dotAppsServices, 'getConfiguration').mockReturnValue(of(response));
+        jest.spyOn<any>(dotAppsServices, 'getConfiguration').mockReturnValue(of(response));
 
         dotAppsConfigurationDetailResolver
             .resolve(activatedRouteSnapshotMock)

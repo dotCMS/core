@@ -90,7 +90,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 interface TemplateStoreValueType {
-    [key: string]: jasmine.Spy;
+    [key: string]: jest.SpyInstance;
 }
 
 const mockSystemConfig: DotSystemConfig = {
@@ -317,7 +317,7 @@ describe('DotTemplateCreateEditComponent', () => {
             });
 
             it('should open create dialog', async () => {
-                expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
                     header: 'Create new template',
                     width: '40rem',
                     closable: false,
@@ -339,7 +339,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             theme: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function)
+                        onSave: expect.any(Function)
                     }
                 });
             });
@@ -405,7 +405,7 @@ describe('DotTemplateCreateEditComponent', () => {
             });
 
             it('should open create dialog', async () => {
-                expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
                     header: 'Create new template',
                     width: '40rem',
                     closable: false,
@@ -419,7 +419,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             friendlyName: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function)
+                        onSave: expect.any(Function)
                     }
                 });
             });
@@ -652,7 +652,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     const button = de.query(By.css('[data-testId="editTemplateButton"]'));
                     button.nativeElement.click();
 
-                    expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                    expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
                         header: 'Template Properties',
                         width: '30rem',
 
@@ -673,7 +673,7 @@ describe('DotTemplateCreateEditComponent', () => {
                                 theme: '',
                                 image: ''
                             },
-                            onSave: jasmine.any(Function)
+                            onSave: expect.any(Function)
                         }
                     });
                 });

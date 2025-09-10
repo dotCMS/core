@@ -157,11 +157,11 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     beforeEach(() => {
-        spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
+        jest.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
             resolvedOptions: () => ({ timeZone: localTZ })
         });
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
+        jest.useFakeTimers();
+        jest.setSystemTime(mockDate);
         fixture = TestBed.createComponent(TestHostComponent);
         dotPushPublishFiltersService = fixture.debugElement.injector.get(
             DotPushPublishFiltersService
@@ -177,7 +177,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     afterEach(() => {
-        jasmine.clock().uninstall();
+        jest.useRealTimers();
     });
 
     it('should load filters on load', () => {

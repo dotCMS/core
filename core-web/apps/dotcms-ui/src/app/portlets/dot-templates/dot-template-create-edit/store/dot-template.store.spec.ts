@@ -7,10 +7,10 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import {
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotRouterService,
-    DotGlobalMessageService
+    DotRouterService
 } from '@dotcms/data-access';
 import {
     MockDotMessageService,
@@ -144,7 +144,7 @@ describe('DotTemplateStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     afterEach(() => {
-        cacheSetSpy.calls.reset();
+        cacheSetSpy.mockClear();
     });
 
     describe('create', () => {

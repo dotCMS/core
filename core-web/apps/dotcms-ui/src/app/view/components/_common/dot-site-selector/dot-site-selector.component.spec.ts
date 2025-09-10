@@ -185,7 +185,7 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should call getSitesList', () => {
-        spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf(sites[0]));
+        jest.spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf(sites[0]));
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
 
         fixtureHost.detectChanges();
@@ -194,7 +194,7 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should call refresh if a event happen', () => {
-        spyOn<any>(siteService, 'refreshSites$').mockReturnValue(observableOf(sites[0]));
+        jest.spyOn<any>(siteService, 'refreshSites$').mockReturnValue(observableOf(sites[0]));
         jest.spyOn(comp, 'handleSitesRefresh');
 
         fixtureHost.detectChanges();
@@ -208,7 +208,7 @@ describe('SiteSelectorComponent', () => {
 
         paginatorService.totalRecords = 2;
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
-        spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf({}));
+        jest.spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf({}));
 
         fixtureHost.detectChanges();
 
@@ -232,7 +232,7 @@ describe('SiteSelectorComponent', () => {
         const filter = 'filter';
 
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
-        spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf({}));
+        jest.spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf({}));
 
         fixtureHost.detectChanges();
 
