@@ -1,13 +1,12 @@
 import { CommonModule, Location } from '@angular/common';
-import { Component, effect, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
-
-import { skip } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -87,7 +86,7 @@ export class DotEmaShellComponent implements OnInit {
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
     readonly uveStore = inject(UVEStore);
-
+    readonly destroyRef = inject(DestroyRef);
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #siteService = inject(SiteService);
@@ -118,12 +117,10 @@ export class DotEmaShellComponent implements OnInit {
         const viewParams = this.#getViewParams(params.mode);
 
         this.uveStore.patchViewParams(viewParams);
-
         this.uveStore.loadPageAsset(params);
 
-        // We need to skip one because it's the initial value
         this.#siteService.switchSite$
-            .pipe(skip(1))
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => this.#router.navigate(['/pages']));
     }
 
