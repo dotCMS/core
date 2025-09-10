@@ -85,6 +85,7 @@
                 [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 [field]="field"
+                (valueUpdated)="onBinaryFieldValueUpdated($event)"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
