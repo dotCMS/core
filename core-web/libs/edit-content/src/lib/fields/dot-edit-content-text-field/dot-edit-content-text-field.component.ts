@@ -26,8 +26,7 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotCardFieldComponent,
         DotCardFieldLabelComponent,
         DotCardFieldContentComponent,
-        DotCardFieldFooterComponent,
-        DotCardFieldComponent
+        DotCardFieldFooterComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

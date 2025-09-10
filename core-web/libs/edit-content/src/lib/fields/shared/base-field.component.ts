@@ -70,6 +70,7 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
     }
 
     get isDisabled(): boolean {
-        return this.$formControl().disabled;
+        const control = this.$formControl();
+        return control.disabled;
     }
 }

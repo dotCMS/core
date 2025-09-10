@@ -46,6 +46,7 @@
         @defer (on immediate) {
             <dot-edit-content-checkbox-field
                 [field]="field"
+                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
