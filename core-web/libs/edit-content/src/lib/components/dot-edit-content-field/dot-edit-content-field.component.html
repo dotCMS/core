@@ -54,6 +54,7 @@
         @defer (on immediate) {
             <dot-edit-content-multi-select-field
                 [field]="field"
+                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
