@@ -67,11 +67,6 @@ console.error = (...args: unknown[]) => {
         return;
     }
 
-    // Skip NG0303 errors for UI library components and missing Angular directives in tests
-    if (firstArg.includes('NG0303:')) {
-        return;
-    }
-
     originalConsoleError(...args);
 };
 
