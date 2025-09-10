@@ -1,11 +1,3 @@
-// Mock createFakeEvent function for Jest
-const createFakeEvent = (type: string) => ({
-    type,
-    preventDefault: jest.fn(),
-    stopPropagation: jest.fn(),
-    target: { value: '' },
-    currentTarget: { value: '' }
-});
 import { Observable, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -58,6 +50,7 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 import {
+    createFakeEvent,
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,

@@ -10,7 +10,7 @@ import {
     DynamicDialogRef
 } from 'primeng/dynamicdialog';
 
-import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotActionBulkResult } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -95,8 +95,8 @@ describe('DotBulkInformationComponent', () => {
         const success: HTMLElement = document.querySelector('[data-testId="successful"]');
         const fail: HTMLElement = document.querySelector('[data-testId="fails"]');
 
-        expect(success.textContent).toEqual('Template archived: 1');
-        expect(fail.textContent).toEqual('2 failed');
+        expect(success.textContent?.trim()).toEqual('Template archived: 1');
+        expect(fail.textContent?.trim()).toEqual('2 failed');
     });
 
     it('should list error messages', () => {

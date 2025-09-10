@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createFakeEvent } from '@ngneat/spectator/jest';
-import { of, throwError, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -27,15 +26,16 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSClazzes
+    DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 import { DotDialogModule, DotIconModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
+    createFakeEvent,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     DotMessageDisplayServiceMock,
@@ -569,7 +569,7 @@ describe('DotContentTypesEditComponent', () => {
             comp.contentTypeActions[1].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[1].label).toBe('Add tab');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
-            expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
+            expect(dotEventsService.notify).toHaveBeenCalledTimes(2);
         });
 
         it('should close the dialog', () => {

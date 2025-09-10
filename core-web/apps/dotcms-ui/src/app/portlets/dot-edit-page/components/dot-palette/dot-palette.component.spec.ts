@@ -94,38 +94,33 @@ class MockPaginatorService {
     }
 }
 
-const storeMock = jest.fn(
-    'DotPaletteStore',
-    [
-        'getContentletsData',
-        'getContenttypesData',
-        'setAllowedContent',
-        'setFilter',
-        'setLanguageId',
-        'setViewContentlet',
-        'setLoading',
-        'setLoaded',
-        'loadContentTypes',
-        'filterContentlets',
-        'filterContentTypes',
-        'loadContentlets',
-        'switchView',
-        'switchLanguage'
-    ],
-    {
-        vm$: of({
-            contentlets: [contentletProductDataMock],
-            contentTypes: [itemMock],
-            allowedContent: null,
-            filter: '',
-            languageId: '1',
-            loading: false,
-            totalRecords: 20,
-            viewContentlet: 'contentlet:out',
-            callState: ComponentStatus.LOADED
-        })
-    }
-);
+const storeMock = {
+    getContentletsData: jest.fn(),
+    getContenttypesData: jest.fn(),
+    setAllowedContent: jest.fn(),
+    setFilter: jest.fn(),
+    setLanguageId: jest.fn(),
+    setViewContentlet: jest.fn(),
+    setLoading: jest.fn(),
+    setLoaded: jest.fn(),
+    loadContentTypes: jest.fn(),
+    filterContentlets: jest.fn(),
+    filterContentTypes: jest.fn(),
+    loadContentlets: jest.fn(),
+    switchView: jest.fn(),
+    switchLanguage: jest.fn(),
+    vm$: of({
+        contentlets: [contentletProductDataMock],
+        contentTypes: [itemMock],
+        allowedContent: null,
+        filter: '',
+        languageId: '1',
+        loading: false,
+        totalRecords: 20,
+        viewContentlet: 'contentlet:out',
+        callState: ComponentStatus.LOADED
+    })
+};
 
 describe('DotPaletteComponent', () => {
     let comp: DotPaletteComponent;
@@ -152,28 +147,37 @@ describe('DotPaletteComponent', () => {
         fixture = TestBed.createComponent(DotPaletteComponent);
         comp = fixture.componentInstance;
         fixture.detectChanges();
+
+        // Clear all mocks before each test
+        jest.clearAllMocks();
     });
 
     it('should dot-palette-content-type have items assigned', async () => {
-        const contentTypeComp = fixture.debugElement.query(By.css('dot-palette-content-type'));
-
         fixture.detectChanges();
         await fixture.whenStable();
 
+        const contentTypeComp = fixture.debugElement.query(By.css('dot-palette-content-type'));
+        expect(contentTypeComp).toBeTruthy();
         expect(contentTypeComp.componentInstance.items).toEqual([itemMock]);
         expect(contentTypeComp.componentInstance.loading).toBeFalsy();
         expect(contentTypeComp.componentInstance.viewContentlet).toEqual('contentlet:out');
     });
 
     it('should change view to contentlets and set viewContentlet Variable on contentlets palette view', async () => {
-        const contentContentletsComp = fixture.debugElement.query(
-            By.css('dot-palette-contentlets')
-        );
+        fixture.detectChanges();
+        await fixture.whenStable();
+
         const contentTypeComp = fixture.debugElement.query(By.css('dot-palette-content-type'));
+        expect(contentTypeComp).toBeTruthy();
         contentTypeComp.triggerEventHandler('selected', 'Blog');
 
         fixture.detectChanges();
         await fixture.whenStable();
+
+        const contentContentletsComp = fixture.debugElement.query(
+            By.css('dot-palette-contentlets')
+        );
+        expect(contentContentletsComp).toBeTruthy();
 
         const wrapper = fixture.debugElement.query(By.css('[data-testid="wrapper"]'));
         expect(wrapper.nativeElement.style.transform).toEqual('translateX(0%)');
@@ -184,7 +188,11 @@ describe('DotPaletteComponent', () => {
     });
 
     it('should call filterContentTypes when content type compenent emits filter event', async () => {
+        fixture.detectChanges();
+        await fixture.whenStable();
+
         const contentTypeComp = fixture.debugElement.query(By.css('dot-palette-content-type'));
+        expect(contentTypeComp).toBeTruthy();
         contentTypeComp.triggerEventHandler('filter', 'Blog');
 
         fixture.detectChanges();
@@ -195,9 +203,13 @@ describe('DotPaletteComponent', () => {
     });
 
     it('should change view to content type and unset viewContentlet Variable on contentlets palette view', async () => {
+        fixture.detectChanges();
+        await fixture.whenStable();
+
         const contentContentletsComp = fixture.debugElement.query(
             By.css('dot-palette-contentlets')
         );
+        expect(contentContentletsComp).toBeTruthy();
         contentContentletsComp.triggerEventHandler('back', '');
 
         fixture.detectChanges();
@@ -208,9 +220,13 @@ describe('DotPaletteComponent', () => {
     });
 
     it('should set value on store on filtering event', async () => {
+        fixture.detectChanges();
+        await fixture.whenStable();
+
         const contentContentletsComp = fixture.debugElement.query(
             By.css('dot-palette-contentlets')
         );
+        expect(contentContentletsComp).toBeTruthy();
         contentContentletsComp.triggerEventHandler('filter', 'test');
 
         fixture.detectChanges();
@@ -221,9 +237,13 @@ describe('DotPaletteComponent', () => {
     });
 
     it('should set value on store on paginate event', async () => {
+        fixture.detectChanges();
+        await fixture.whenStable();
+
         const contentContentletsComp = fixture.debugElement.query(
             By.css('dot-palette-contentlets')
         );
+        expect(contentContentletsComp).toBeTruthy();
         contentContentletsComp.triggerEventHandler('paginate', { first: 20 });
 
         fixture.detectChanges();

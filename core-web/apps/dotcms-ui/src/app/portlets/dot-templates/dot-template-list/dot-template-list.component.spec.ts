@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -52,6 +51,7 @@ import {
 } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeEvent,
     DotFormatDateServiceMock,
     MockDotMessageService,
     mockSites,

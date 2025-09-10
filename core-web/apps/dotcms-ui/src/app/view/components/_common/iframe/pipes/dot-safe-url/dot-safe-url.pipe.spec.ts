@@ -41,6 +41,7 @@ describe('DotSafeUrlPipe', () => {
             hostProps: { value: 'test' }
         });
         sanitizer = spectator.inject(DomSanitizer);
+        sanitizer.bypassSecurityTrustResourceUrl.mockClear();
         const sanitizedUrl = 'sanitized-test-url';
         sanitizer.bypassSecurityTrustResourceUrl.mockReturnValue(sanitizedUrl);
         spectator.detectChanges();
@@ -55,6 +56,7 @@ describe('DotSafeUrlPipe', () => {
             hostProps: { value: '' }
         });
         sanitizer = spectator.inject(DomSanitizer);
+        sanitizer.bypassSecurityTrustResourceUrl.mockClear();
         sanitizer.bypassSecurityTrustResourceUrl.mockReturnValue(URL_EMPTY);
         spectator.detectChanges();
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(URL_EMPTY);

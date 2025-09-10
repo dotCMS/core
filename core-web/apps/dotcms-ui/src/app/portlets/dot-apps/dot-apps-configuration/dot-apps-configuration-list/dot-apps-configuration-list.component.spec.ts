@@ -72,8 +72,9 @@ describe('DotAppsConfigurationListComponent', () => {
                     .componentInstance.site
             ).toBe(component.siteConfigurations[0]);
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-list__show-more'))
-                    .nativeElement.outerText
+                fixture.debugElement
+                    .query(By.css('.dot-apps-configuration-list__show-more'))
+                    .nativeElement.textContent.trim()
             ).toBe(messageServiceMock.get('apps.configurations.show.more'));
         });
 

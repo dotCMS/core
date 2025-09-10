@@ -1,4 +1,3 @@
-import { createFakeEvent } from '@ngneat/spectator/jest';
 import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -18,7 +17,7 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotMessageService, createFakeEvent } from '@dotcms/utils-testing';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
 import { DotFolder, DotPageSelectorItem } from './models/dot-page-selector.models';

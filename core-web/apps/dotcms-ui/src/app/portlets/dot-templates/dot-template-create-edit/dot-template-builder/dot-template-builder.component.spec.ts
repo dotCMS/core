@@ -2,6 +2,7 @@ import {
     AfterContentInit,
     Component,
     ContentChild,
+    CUSTOM_ELEMENTS_SCHEMA,
     DebugElement,
     ElementRef,
     EventEmitter,
@@ -160,7 +161,8 @@ describe('DotTemplateBuilderComponent', () => {
                     provide: DotRouterService,
                     useValue: new MockDotRouterService()
                 }
-            ]
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
     });
 
@@ -235,7 +237,9 @@ describe('DotTemplateBuilderComponent', () => {
             fixture = TestBed.createComponent(DotTemplateBuilderComponent); // new fixture as async pipe was running before function was replaced
             fixture.componentInstance.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
             fixture.detectChanges();
-            const tabView = fixture.debugElement.query(By.css('p-tabView'));
+
+            const tabView = fixture.debugElement.query(By.css('p-tabview'));
+            expect(tabView).toBeTruthy();
             const tabViewComponent: TabViewMockComponent = tabView.componentInstance;
             expect(tabViewComponent.styleClass).toEqual(
                 'dot-template-builder__new-template-builder'

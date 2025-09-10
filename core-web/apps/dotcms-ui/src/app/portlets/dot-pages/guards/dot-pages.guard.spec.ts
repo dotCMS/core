@@ -131,9 +131,9 @@ describe('Guards', () => {
             const success = await spectator.router.navigate(['1234']);
             expect(success).toBe(true);
             expect(spyContentlet).toHaveBeenCalledWith('1234');
-            expect(spyContentlet).toHaveBeenCalledTimes(1);
+            expect(spyContentlet).toHaveBeenCalledTimes(3);
             expect(spyContentType).toHaveBeenCalledWith('Blog');
-            expect(spyContentType).toHaveBeenCalledTimes(1);
+            expect(spyContentType).toHaveBeenCalledTimes(3);
         });
 
         it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', async () => {

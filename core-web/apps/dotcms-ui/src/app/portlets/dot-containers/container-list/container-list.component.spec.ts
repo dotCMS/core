@@ -1,4 +1,3 @@
-import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -50,6 +49,7 @@ import {
     DotRelativeDatePipe
 } from '@dotcms/ui';
 import {
+    createFakeEvent,
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator/jest';
 import { Observable, of } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
@@ -15,7 +14,7 @@ import { ChipsModule } from 'primeng/chips';
 import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeEvent, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 
@@ -61,7 +60,7 @@ describe('DotAutocompleteTagsComponent', () => {
         de = fixture.debugElement;
         component = fixture.componentInstance;
         fixture.detectChanges();
-        autoComplete = de.query(By.css('p-autoComplete')).componentInstance as AutoComplete;
+        autoComplete = de.query(By.directive(AutoComplete)).componentInstance as AutoComplete;
     });
 
     it('should set options when load', () => {

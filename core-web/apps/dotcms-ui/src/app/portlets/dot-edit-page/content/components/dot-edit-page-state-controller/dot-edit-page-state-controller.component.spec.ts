@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -10,9 +9,9 @@ import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
-import { InputSwitchModule } from 'primeng/inputswitch';
+import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { MenuModule } from 'primeng/menu';
-import { SelectButtonModule } from 'primeng/selectbutton';
+import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -35,6 +34,7 @@ import {
 import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeEvent,
     dotcmsContentletMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
@@ -225,7 +225,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const lockerDe = de.query(By.css('p-inputSwitch'));
+                const lockerDe = de.query(By.directive(InputSwitch));
                 const locker = lockerDe.componentInstance;
 
                 await fixtureHost.whenRenderingDone();
@@ -408,7 +408,7 @@ describe('DotEditPageStateControllerComponent', () => {
         it('should without confirmation dialog emit modeChange and update pageState service', async () => {
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
@@ -440,7 +440,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
@@ -464,7 +464,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
@@ -504,7 +504,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
@@ -541,7 +541,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 conf.accept();
             });
             fixtureHost.detectChanges();
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });

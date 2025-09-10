@@ -82,8 +82,9 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-list__name'))
-                    .nativeElement.textContent
+                fixture.debugElement
+                    .query(By.css('.dot-apps-configuration-list__name'))
+                    .nativeElement.textContent.trim()
             ).toBe(sites[0].name);
 
             expect(

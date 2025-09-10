@@ -195,10 +195,10 @@ describe('DotPaletteStore', () => {
 
     // Effects
     it('should load contentTypes to store', (done) => {
-        jest.spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
+        jest.spyOn(dotContentTypeService, 'filterContentTypes').mockReturnValue(
             of(SORTED_CONTENT_TYPE_MOCK)
         );
-        jest.spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
+        jest.spyOn(dotContentTypeService, 'getContentTypes').mockReturnValue(of([]));
 
         dotPaletteStore.loadContentTypes(['blog', 'banner']);
         dotPaletteStore.vm$.subscribe((data) => {
@@ -208,10 +208,10 @@ describe('DotPaletteStore', () => {
     });
 
     it("should load contentTypes and remove the hidden is the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES is setted'", (done) => {
-        jest.spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
+        jest.spyOn(dotContentTypeService, 'filterContentTypes').mockReturnValue(
             of(SORTED_CONTENT_TYPE_MOCK)
         );
-        jest.spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
+        jest.spyOn(dotContentTypeService, 'getContentTypes').mockReturnValue(of([]));
         jest.spyOn(dotPropertiesService, 'getKeyAsList').mockReturnValue(of(['Form']));
 
         const expectedData = SORTED_CONTENT_TYPE_MOCK.filter((item) => item.variable !== 'Form');
@@ -224,8 +224,8 @@ describe('DotPaletteStore', () => {
     });
 
     it('should load only widgets to store if allowedContent is empty', (done) => {
-        jest.spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
-        jest.spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(
+        jest.spyOn(dotContentTypeService, 'filterContentTypes').mockReturnValue(of([]));
+        jest.spyOn(dotContentTypeService, 'getContentTypes').mockReturnValue(
             of(SORTED_CONTENT_TYPE_MOCK)
         );
         dotPaletteStore.loadContentTypes([]);

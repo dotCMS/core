@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -41,6 +40,7 @@ import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeEvent,
     dotcmsContentletMock,
     DotDevicesServiceMock,
     DotPageStateServiceMock,

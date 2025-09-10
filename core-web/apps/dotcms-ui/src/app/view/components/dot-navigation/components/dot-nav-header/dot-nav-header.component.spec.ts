@@ -149,7 +149,7 @@ describe('DotNavHeaderComponent', () => {
                 spectator.detectChanges();
 
                 const whitelabelLogo = spectator.query(byTestId('whitelabel-logo')) as HTMLElement;
-                expect(whitelabelLogo.style.backgroundImage).toBe(logoUrl);
+                expect(whitelabelLogo.style.backgroundImage).toBe('url(/dA/logo.png)');
             });
         });
 

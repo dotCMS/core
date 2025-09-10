@@ -76,7 +76,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
         it('should have personalized button with right properties', () => {
             const btnElement: DebugElement = de.query(By.css('button'));
-            expect(btnElement.nativeElement.textContent).toBe('Personalized');
+            expect(btnElement.nativeElement.textContent.trim()).toBe('Personalized');
             expect(btnElement.attributes.icon).toBe('pi pi-times');
             expect(btnElement.attributes.iconPos).toBe('right');
         });
@@ -85,7 +85,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
             const lblElement: DebugElement = de.query(
                 By.css('.dot-persona-selector-option__label')
             );
-            expect(lblElement.nativeElement.textContent).toBe(mockDotPersona.name);
+            expect(lblElement.nativeElement.textContent.trim()).toBe(mockDotPersona.name);
             expect(lblElement.nativeElement.classList).toContain(
                 'dot-persona-selector-option__personalized'
             );
@@ -104,7 +104,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
             const lblElement: DebugElement = de.query(
                 By.css('.dot-persona-selector-option__label')
             );
-            expect(lblElement.nativeElement.textContent).toBe(mockDotPersona.name);
+            expect(lblElement.nativeElement.textContent.trim()).toBe(mockDotPersona.name);
             expect(lblElement.nativeElement.classList).not.toContain(
                 'dot-persona-selector-option__personalized'
             );

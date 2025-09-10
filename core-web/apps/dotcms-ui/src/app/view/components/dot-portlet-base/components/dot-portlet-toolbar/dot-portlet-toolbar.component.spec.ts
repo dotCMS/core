@@ -150,7 +150,9 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should one button show and handle error', () => {
-                jest.spyOn(console, 'error');
+                const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                    //
+                });
 
                 component.actions = {
                     primary: [
@@ -172,7 +174,9 @@ describe('DotPortletToolbarComponent', () => {
                 );
 
                 actionsPrimaryButton.triggerEventHandler('click', {});
-                expect(console.error).toHaveBeenCalledTimes(1);
+                expect(consoleSpy).toHaveBeenCalledTimes(1);
+
+                consoleSpy.mockRestore();
             });
 
             it('should show dropdown menu', () => {
@@ -250,7 +254,9 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should show and handle error', () => {
-                jest.spyOn(console, 'error');
+                const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                    //
+                });
 
                 component.actions = {
                     primary: null,
@@ -263,7 +269,9 @@ describe('DotPortletToolbarComponent', () => {
                 const actionsCancelButton = de.query(By.css('[data-testId="actionsCancelButton"]'));
 
                 actionsCancelButton.triggerEventHandler('click', {});
-                expect(console.error).toHaveBeenCalledTimes(1);
+                expect(consoleSpy).toHaveBeenCalledTimes(1);
+
+                consoleSpy.mockRestore();
             });
         });
     });

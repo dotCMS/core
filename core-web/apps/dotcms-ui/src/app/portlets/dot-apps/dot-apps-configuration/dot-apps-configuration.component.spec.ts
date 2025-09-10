@@ -159,11 +159,23 @@ describe('DotAppsConfigurationComponent', () => {
     }));
 
     describe('With integrations count', () => {
+        let setExtraParamsSpy: jest.SpyInstance;
+        let getWithOffsetSpy: jest.SpyInstance;
+        let focusSpy: jest.SpyInstance;
+
         beforeEach(() => {
-            jest.spyOn(paginationService, 'setExtraParams');
-            jest.spyOn<any>(paginationService, 'getWithOffset').mockReturnValue(of(appData));
-            jest.spyOn(component.searchInput.nativeElement, 'focus');
+            setExtraParamsSpy = jest.spyOn(paginationService, 'setExtraParams');
+            getWithOffsetSpy = jest
+                .spyOn<any>(paginationService, 'getWithOffset')
+                .mockReturnValue(of(appData));
+            focusSpy = jest.spyOn(component.searchInput.nativeElement, 'focus');
             fixture.detectChanges();
+        });
+
+        afterEach(() => {
+            setExtraParamsSpy.mockClear();
+            getWithOffsetSpy.mockClear();
+            focusSpy.mockClear();
         });
 
         it('should set App from resolver', () => {
@@ -183,17 +195,17 @@ describe('DotAppsConfigurationComponent', () => {
             expect(paginationService.paginationPerPage).toBe(component.paginationPerPage);
             expect(paginationService.sortField).toBe('name');
             expect(paginationService.sortOrder).toBe(1);
-            expect(paginationService.setExtraParams).toHaveBeenCalledWith('filter', '');
-            expect(paginationService.setExtraParams).toHaveBeenCalledTimes(1);
+            expect(setExtraParamsSpy).toHaveBeenCalledWith('filter', '');
+            expect(setExtraParamsSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should call first pagination call onInit', () => {
-            expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
-            expect(paginationService.getWithOffset).toHaveBeenCalledTimes(1);
+            expect(getWithOffsetSpy).toHaveBeenCalledWith(0);
+            expect(getWithOffsetSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should input search be focused on init', () => {
-            expect(component.searchInput.nativeElement.focus).toHaveBeenCalledTimes(1);
+            expect(focusSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should set messages/values in DOM correctly', () => {
@@ -226,12 +238,15 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should dot-apps-configuration-list emit action to load more data', () => {
+            // Clear the spy to only count calls from this specific test
+            getWithOffsetSpy.mockClear();
+
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
             listComp.loadData.emit({ first: 10 });
-            expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
-            expect(paginationService.getWithOffset).toHaveBeenCalledTimes(1);
+            expect(getWithOffsetSpy).toHaveBeenCalledWith(10);
+            expect(getWithOffsetSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should redirect to goto configuration page action', () => {
@@ -294,12 +309,15 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should call App filter on search', fakeAsync(() => {
+            // Clear the spy to only count calls from this specific test
+            setExtraParamsSpy.mockClear();
+
             component.searchInput.nativeElement.value = 'test';
             component.searchInput.nativeElement.dispatchEvent(new Event('keyup'));
             tick(550);
-            expect(paginationService.setExtraParams).toHaveBeenCalledWith('filter', 'test');
-            expect(paginationService.setExtraParams).toHaveBeenCalledTimes(1);
-            expect(paginationService.getWithOffset).toHaveBeenCalled();
+            expect(setExtraParamsSpy).toHaveBeenCalledWith('filter', 'test');
+            expect(setExtraParamsSpy).toHaveBeenCalledTimes(1);
+            expect(getWithOffsetSpy).toHaveBeenCalled();
         }));
     });
 });

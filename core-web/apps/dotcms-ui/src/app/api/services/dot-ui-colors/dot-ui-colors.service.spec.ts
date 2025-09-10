@@ -21,6 +21,10 @@ describe('DotUiColorsService', () => {
         } as HTMLElement);
     });
 
+    beforeEach(() => {
+        setPropertySpy.mockClear();
+    });
+
     it('should set all colors', () => {
         service.setColors(document.querySelector('html'), {
             primary: '#78E4FF',
@@ -30,7 +34,7 @@ describe('DotUiColorsService', () => {
 
         const html = <HTMLElement>document.querySelector('');
 
-        [
+        const expectedCalls = [
             { key: '--color-primary-h', value: '192deg' },
             { key: '--color-primary-s', value: '100%' },
             { key: '--color-palette-primary-100', value: 'hsl(194deg, 100%, 97%)' },
@@ -126,10 +130,13 @@ describe('DotUiColorsService', () => {
                 value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.9)'
             },
             { key: '--color-background', value: '#CB8978' }
-        ].forEach(({ key, value }) => {
+        ];
+
+        expectedCalls.forEach(({ key, value }) => {
             expect(html.style.setProperty).toHaveBeenCalledWith(key, value);
-            expect(html.style.setProperty).toHaveBeenCalledTimes(1);
         });
+
+        expect(html.style.setProperty).toHaveBeenCalledTimes(expectedCalls.length);
     });
 
     it('should not set invalid colors', () => {
@@ -153,7 +160,7 @@ describe('DotUiColorsService', () => {
 
         const html = <HTMLElement>document.querySelector('');
 
-        [
+        const expectedCalls = [
             { key: '--color-primary-h', value: '226deg' },
             { key: '--color-primary-s', value: '85%' },
             {
@@ -229,10 +236,14 @@ describe('DotUiColorsService', () => {
             {
                 key: '--color-palette-secondary-900',
                 value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 22%)'
-            }
-        ].forEach(({ key, value }) => {
+            },
+            { key: '--color-background', value: '#CB8978' }
+        ];
+
+        expectedCalls.forEach(({ key, value }) => {
             expect(html.style.setProperty).toHaveBeenCalledWith(key, value);
-            expect(html.style.setProperty).toHaveBeenCalledTimes(1);
         });
+
+        expect(html.style.setProperty).toHaveBeenCalledTimes(expectedCalls.length);
     });
 });

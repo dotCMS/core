@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator/jest';
 import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -26,6 +25,7 @@ import {
 } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeEvent,
     dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';

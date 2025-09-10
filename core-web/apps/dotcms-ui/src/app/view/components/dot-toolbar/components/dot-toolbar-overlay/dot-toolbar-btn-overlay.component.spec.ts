@@ -1,6 +1,7 @@
-import { Spectator, createComponentFactory, byTestId } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { OverlayPanel } from 'primeng/overlaypanel';
+import { ButtonModule } from 'primeng/button';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotToolbarBtnOverlayComponent } from './dot-toolbar-btn-overlay.component';
 
@@ -10,6 +11,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotToolbarBtnOverlayComponent,
+        imports: [OverlayPanelModule, ButtonModule],
         detectChanges: false
     });
 
@@ -113,7 +115,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should render overlay panel with correct attributes', () => {
-            const overlayPanel = spectator.query('p-overlayPanel');
+            const overlayPanel = spectator.query('p-overlaypanel');
 
             expect(overlayPanel).toBeTruthy();
             expect(overlayPanel?.getAttribute('ng-reflect-append-to')).toBe('body');
@@ -121,10 +123,14 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
         it('should apply custom style class to overlay panel', () => {
             const customClass = 'my-custom-class';
-            spectator.setInput('overlayStyleClass', customClass);
-            spectator.detectChanges();
 
-            const overlayPanel = spectator.query('p-overlayPanel');
+            // Create a new spectator with the custom class input set before detection
+            const spectatorWithClass = createComponent();
+            spectatorWithClass.setInput('icon', 'pi pi-bell');
+            spectatorWithClass.setInput('overlayStyleClass', customClass);
+            spectatorWithClass.detectChanges();
+
+            const overlayPanel = spectatorWithClass.query('p-overlaypanel');
             expect(overlayPanel?.getAttribute('ng-reflect-style-class')).toBe(customClass);
         });
     });
