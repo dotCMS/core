@@ -49,6 +49,7 @@ import {
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
     DotCMSPage,
+    DotCMSURLContentMap,
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
@@ -102,7 +103,6 @@ import {
 
 @Component({
     selector: 'dot-edit-ema-editor',
-    standalone: true,
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1141,7 +1141,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {DotCMSContentlet} contentlet
      * @memberof EditEmaEditorComponent
      */
-    protected editContentMap(contentlet: DotCMSContentlet): void {
+    protected editContentMap(contentlet: DotCMSURLContentMap): void {
         this.dialog.editUrlContentMapContentlet(contentlet);
     }
 

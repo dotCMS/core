@@ -61,7 +61,7 @@
         </java.module.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
-        <tomcat.version>9.0.85</tomcat.version>
+        <tomcat.version>9.0.108</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>

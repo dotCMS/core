@@ -17,13 +17,15 @@ import { DotTemplateAdvancedComponent } from './dot-template-advanced.component'
 
 @Component({
     selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletBaseMockComponent {}
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletToolbarMockComponent {
     @Input() actions;
@@ -31,13 +33,15 @@ export class DotPortletToolbarMockComponent {
 
 @Component({
     selector: 'dot-global-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-container-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotContainerSelectorMockComponent {
     @Output() swap = new EventEmitter<any>();
@@ -52,7 +56,8 @@ export class DotContainerSelectorMockComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()

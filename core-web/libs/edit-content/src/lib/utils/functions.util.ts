@@ -13,6 +13,7 @@ import { UVE_MODE } from '@dotcms/types';
 import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
+    CALENDAR_FIELD_TYPES_WITH_TIME,
     DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
     TAB_FIELD_CLAZZ,
@@ -157,17 +158,19 @@ export const getSingleSelectableFieldOptions = (
         );
 };
 
-// This function is used to cast the value to a correct type for the Angular Form
+/**
+ * This function is used to cast the value to a correct type for the Angular Form
+ *
+ * @param value
+ * @param field
+ * @returns
+ */
 export const getFinalCastedValue = (
-    value: object | string | undefined,
+    value: object | string | number | undefined,
     field: DotCMSContentTypeField
 ) => {
-    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        const parseResult = new Date(value as string);
-
-        // When we create a field, we can set the default value to "now" so, it will cast to Invalid Date. But an undefined value can also be casted to Invalid Date.
-        // So if the getTime() method returns NaN that means the value is invalid and it's either undefined or "now". Otherwise just return the parsed date.
-        return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
+    if (CALENDAR_FIELD_TYPES_WITH_TIME.includes(field.fieldType as FIELD_TYPES)) {
+        return value;
     }
 
     if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
@@ -228,7 +231,7 @@ export const isValidJson = (value: string): boolean => {
         const json = JSON.parse(value);
 
         return json !== null && typeof json === 'object' && !Array.isArray(json);
-    } catch (e) {
+    } catch {
         console.warn(`${value} is not a valid JSON`);
 
         return false;
@@ -506,4 +509,129 @@ export const createCustomFieldConfig = (
     }
 
     return mergedConfig;
+};
+
+/**
+ * Checks if a field should be flattened (array values joined with commas).
+ * Used for multi-select fields that need to be converted to comma-separated strings.
+ *
+ * @param fieldValue - The field value to check
+ * @param field - The field configuration
+ * @returns True if the field should be flattened
+ */
+export const isFlattenedField = (
+    fieldValue: string | string[] | Date | number | null | undefined,
+    field: DotCMSContentTypeField
+): fieldValue is string[] => {
+    return (
+        Array.isArray(fieldValue) && FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
+    );
+};
+
+/**
+ * Checks if a field is a calendar field (date, datetime, time).
+ * Used to determine if special timestamp processing is needed.
+ *
+ * @param field - The field configuration
+ * @returns True if the field is a calendar field
+ */
+export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
+    return CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES);
+};
+
+/**
+ * Processes calendar field values to ensure they are always numeric timestamps.
+ * Handles conversion from Date objects, strings, and validates numeric values.
+ *
+ * @param fieldValue - The calendar field value (Date, number, string, or null/undefined)
+ * @param fieldName - The field name (for logging purposes)
+ * @returns Numeric timestamp or null/undefined
+ */
+export const processCalendarFieldValue = (
+    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldName: string
+): number | null | undefined => {
+    // Handle null/undefined values
+    if (fieldValue === null || fieldValue === undefined) {
+        return fieldValue as null | undefined;
+    }
+
+    // Handle empty strings
+    if (fieldValue === '') {
+        return null;
+    }
+
+    // Convert Date objects to timestamps (normal case from calendar component)
+    if (fieldValue instanceof Date) {
+        return fieldValue.getTime();
+    }
+
+    // Keep numeric values as-is (already correct timestamps)
+    if (typeof fieldValue === 'number') {
+        return fieldValue;
+    }
+
+    // Convert string timestamps to numbers (edge case - from form state)
+    if (typeof fieldValue === 'string') {
+        const trimmedValue = fieldValue.trim();
+
+        // Handle empty string after trim
+        if (trimmedValue === '') {
+            return null;
+        }
+
+        const numericValue = Number(trimmedValue);
+
+        if (isNaN(numericValue)) {
+            console.warn(`Calendar field ${fieldName} has invalid timestamp string:`, fieldValue);
+            return null;
+        }
+
+        console.warn(
+            `Calendar field ${fieldName} received string timestamp, converted to number:`,
+            {
+                original: fieldValue,
+                converted: numericValue
+            }
+        );
+
+        return numericValue;
+    }
+
+    // Handle unexpected cases (arrays, objects, etc.)
+    console.error(`Calendar field ${fieldName} received unexpected value:`, {
+        value: fieldValue,
+        type: typeof fieldValue
+    });
+
+    return null;
+};
+
+/**
+ * Processes a single field value based on its field type.
+ * Applies appropriate transformations for different field types:
+ * - Flattened fields: Joins arrays with commas
+ * - Calendar fields: Converts to numeric timestamps
+ * - Other fields: Returns as-is
+ *
+ * @param fieldValue - The raw field value
+ * @param field - The field configuration
+ * @returns The processed field value
+ */
+export const processFieldValue = (
+    fieldValue: string | string[] | Date | number | null | undefined,
+    field: DotCMSContentTypeField
+): string | number | null | undefined => {
+    // Handle flattened fields (multi-select, etc.)
+    if (isFlattenedField(fieldValue, field)) {
+        return (fieldValue as string[]).join(',');
+    }
+
+    // Handle calendar fields (date, datetime, time)
+    if (isCalendarField(field)) {
+        return processCalendarFieldValue(fieldValue, field.variable);
+    }
+
+    // For all other fields, return as-is
+    return fieldValue as string | number | null | undefined;
 };

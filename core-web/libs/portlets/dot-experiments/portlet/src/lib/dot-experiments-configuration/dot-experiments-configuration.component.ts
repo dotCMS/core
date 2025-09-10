@@ -34,7 +34,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
 @Component({
-    standalone: true,
     imports: [
         AsyncPipe,
         NgIf,

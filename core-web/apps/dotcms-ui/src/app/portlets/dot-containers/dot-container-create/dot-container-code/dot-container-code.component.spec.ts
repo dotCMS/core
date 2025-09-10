@@ -95,7 +95,8 @@ const mockContentTypes: DotCMSContentType[] = [
     selector: 'dot-host-component',
     template: `
         <dot-container-code [contentTypes]="contentTypes" [fg]="form"></dot-container-code>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     private fb = inject_1(FormBuilder);
@@ -119,7 +120,8 @@ class HostTestComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()

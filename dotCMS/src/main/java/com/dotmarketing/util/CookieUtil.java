@@ -130,8 +130,10 @@ public class CookieUtil {
             request.getCookies();
 
         if (null != cookies) {
-
             for (Cookie cookie : cookies) {
+                if(WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE.equalsIgnoreCase(cookie.getName())){
+                    continue;
+                }
                 cookie.setValue("");
                 cookie.setMaxAge(0);
                 cookie.setPath("/");

@@ -23,8 +23,6 @@ import {
     StepStatus
 } from '@dotcms/dotcms-models';
 import {
-    DotAutofocusDirective,
-    DotDropdownDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
     DotSidebarDirective,
@@ -42,7 +40,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 @Component({
     selector: 'dot-experiments-configuration-goal-select',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -50,8 +47,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotSidebarHeaderComponent,
         DotSidebarDirective,
         DotExperimentsOptionsModule,
-        DotDropdownDirective,
-        DotAutofocusDirective,
         SidebarModule,
         ButtonModule,
         SelectButtonModule,

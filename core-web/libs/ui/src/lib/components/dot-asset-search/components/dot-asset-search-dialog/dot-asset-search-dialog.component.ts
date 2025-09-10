@@ -3,11 +3,11 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
-import { DotAssetSearchComponent } from '@dotcms/ui';
+
+import { DotAssetSearchComponent } from '../../dot-asset-search.component';
 
 @Component({
     selector: 'dot-asset-search-dialog',
-    standalone: true,
     imports: [DotAssetSearchComponent],
     templateUrl: './dot-asset-search-dialog.component.html',
     styleUrl: './dot-asset-search-dialog.component.scss',

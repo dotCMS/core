@@ -6,7 +6,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -26,12 +25,15 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+
 export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
-    styleUrls: ['./dot-edit-layout.component.scss']
+    styleUrls: ['./dot-edit-layout.component.scss'],
+    standalone: false
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

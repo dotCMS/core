@@ -197,9 +197,24 @@ public class HostUtil {
 			final Optional<Host> siteOpt =
 					Try.of(() -> APILocator.getHostAPI().findByIdOrKey(siteIdOrKey, user,
 							respectFrontendRoles)).getOrElse(Optional.empty());
-			return siteOpt.map(Host::getIdentifier).orElse(siteIdOrKey);
+			
+			// SECURITY: Validate site ID format before returning unverified input
+			if (siteOpt.isPresent()) {
+				return siteOpt.get().getIdentifier();
+			} else {
+				// Only return the original input if it's a valid site identifier format
+				if (IdentifierValidator.isValid(siteIdOrKey, IdentifierValidator.SITE_PROFILE)) {
+					return siteIdOrKey;
+				} else {
+					// SECURITY: Do not log user input to prevent information disclosure
+					Logger.warn(HostUtil.class, "Invalid site identifier rejected");
+					return null; // Filter out invalid identifiers
+				}
+			}
 
 		}).filter(Objects::nonNull).collect(Collectors.toList());
 	}
+	
+
 
 }

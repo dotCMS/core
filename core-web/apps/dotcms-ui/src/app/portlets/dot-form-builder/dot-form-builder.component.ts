@@ -8,7 +8,8 @@ import { pluck } from 'rxjs/operators';
 @Component({
     selector: 'dot-form-builder',
     templateUrl: './dot-form-builder.component.html',
-    styleUrls: ['./dot-form-builder.component.scss']
+    styleUrls: ['./dot-form-builder.component.scss'],
+    standalone: false
 })
 export class DotFormBuilderComponent implements OnInit {
     private route = inject(ActivatedRoute);

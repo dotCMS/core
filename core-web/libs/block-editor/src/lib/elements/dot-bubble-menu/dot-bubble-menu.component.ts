@@ -78,7 +78,6 @@ const BUBBLE_MENU_VISIBLE_NODES = {
         OverlayPanelModule,
         DotMessagePipe
     ],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent implements OnInit {

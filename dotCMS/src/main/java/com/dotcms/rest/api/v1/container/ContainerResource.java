@@ -170,7 +170,6 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "getContainers",
@@ -255,7 +254,6 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req,
@@ -314,7 +312,6 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/content/{contentletId}")
     public final Response containerContentByQueryParam(@Context final HttpServletRequest req,
@@ -348,7 +345,6 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/form/{formId}")
     public final Response containerFormByQueryParam(@Context final HttpServletRequest req,
@@ -374,7 +370,6 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/form/{formId}")
     @Operation(
@@ -888,7 +883,6 @@ public class ContainerResource implements Serializable {
     @Path("/live")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "getLiveContainer",
@@ -946,7 +940,6 @@ public class ContainerResource implements Serializable {
     @Path("/working")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "getWorkingContainer",

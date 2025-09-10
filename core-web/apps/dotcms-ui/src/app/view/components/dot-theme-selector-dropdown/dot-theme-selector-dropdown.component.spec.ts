@@ -13,17 +13,18 @@ import {
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import {
-    PaginationEvent,
-    SearchableDropdownComponent
-} from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
+
+import {
+    PaginationEvent,
+    SearchableDropdownComponent
+} from '../_common/searchable-dropdown/component/searchable-dropdown.component';
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',
@@ -36,7 +37,8 @@ const messageServiceMock = new MockDotMessageService({
         <select>
             <option>Fake site selector</option>
         </select>
-    `
+    `,
+    standalone: false
 })
 class MockDotSiteSelectorComponent {
     @Input() system;
@@ -55,7 +57,8 @@ class MockDotSiteSelectorComponent {
         <form [formGroup]="form">
             <dot-theme-selector-dropdown formControlName="theme"></dot-theme-selector-dropdown>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostFilledComponent {
     private fb = inject_1(UntypedFormBuilder);
@@ -75,7 +78,8 @@ class TestHostFilledComponent {
         <form [formGroup]="form">
             <dot-theme-selector-dropdown formControlName="theme"></dot-theme-selector-dropdown>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostEmtpyComponent {
     private fb = inject_1(UntypedFormBuilder);

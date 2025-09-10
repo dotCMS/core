@@ -4,9 +4,10 @@ import { TestBed } from '@angular/core/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
-import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
 
 import { FieldService } from '.';
+
+import { FieldType } from '../../../components/fields';
 
 export const mockFieldType: FieldType = {
     clazz: 'TextField',

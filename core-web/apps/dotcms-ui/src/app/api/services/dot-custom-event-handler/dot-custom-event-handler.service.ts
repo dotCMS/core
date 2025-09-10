@@ -3,24 +3,25 @@ import { Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
-import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotContentTypeService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotIframeService,
     DotLicenseService,
     DotPropertiesService,
     DotRouterService,
-    DotIframeService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotContentCompareEvent, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+
+import { DotCMSEditPageEvent } from '../../../view/components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
+import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotNavLogoService } from '../dot-nav-logo/dot-nav-logo.service';
+import { DotUiColorsService } from '../dot-ui-colors/dot-ui-colors.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 

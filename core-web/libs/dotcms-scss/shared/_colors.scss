@@ -80,6 +80,10 @@ $color-palette-gray-700: var(--gray-700);
 $color-palette-gray-800: var(--gray-800);
 $color-palette-gray-900: var(--gray-900);
 
+// Surface
+$color-palette-surface-500: var(--surface-500);
+$color-palette-surface-900: var(--surface-900);
+
 $color-palette-gray-shade: $color-palette-gray-300;
 $color-palette-gray: $color-palette-gray-500;
 $color-palette-gray-tint: rgba($color-palette-gray, 0.1);
@@ -463,4 +467,7 @@ $success: $color-accessible-text-green;
     --gray-700: #6c7389;
     --gray-800: #515667;
     --gray-900: #3d404d;
+
+    --surface-500: #9e9e9e;
+    --surface-900: #212121;
 }

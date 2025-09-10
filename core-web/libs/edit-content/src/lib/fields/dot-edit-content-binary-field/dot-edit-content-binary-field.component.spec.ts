@@ -32,11 +32,11 @@ import {
     DotUploadService
 } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
+import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
@@ -769,6 +769,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
  * @class MockFormComponent
  */
 @Component({
+    standalone: false,
     selector: 'dot-custom-host',
     template: ''
 })

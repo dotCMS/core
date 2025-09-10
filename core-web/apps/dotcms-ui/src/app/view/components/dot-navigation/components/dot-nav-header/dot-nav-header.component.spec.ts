@@ -9,9 +9,9 @@ import { BehaviorSubject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
-
 import { DotNavHeaderComponent } from './dot-nav-header.component';
+
+import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
 
 describe('DotNavHeaderComponent', () => {
     let spectator: Spectator<DotNavHeaderComponent>;

@@ -2,6 +2,8 @@
 
 import { describe, expect, it, jest } from '@jest/globals';
 
+type SpyInstance = ReturnType<typeof jest.spyOn>;
+
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
@@ -25,7 +27,10 @@ import {
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
-import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
+import {
+    DotEditContentFieldSingleSelectableDataType,
+    FIELD_TYPES
+} from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 
 describe('Utils Functions', () => {
@@ -39,8 +44,15 @@ describe('Utils Functions', () => {
         console.warn = originalWarn;
     });
 
-    const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
-        functionsUtil;
+    const {
+        castSingleSelectableValue,
+        getSingleSelectableFieldOptions,
+        getFinalCastedValue,
+        isFlattenedField,
+        isCalendarField,
+        processCalendarFieldValue,
+        processFieldValue
+    } = functionsUtil;
 
     describe('castSingleSelectableValue', () => {
         describe('null/undefined/empty handling', () => {
@@ -494,32 +506,62 @@ describe('Utils Functions', () => {
     });
 
     describe('getFinalCastedValue', () => {
-        describe.each([...CALENDAR_FIELD_TYPES])('Calendar Fields', (fieldType) => {
-            describe(fieldType, () => {
-                it('should parse the date if the value is a valid date', () => {
+        describe('DATE_AND_TIME and TIME fields', () => {
+            it.each(['Date-and-Time', 'Time'])(
+                'should return the original value for %s field',
+                (fieldType) => {
                     const value = '2021-09-01T18:00:00.000Z';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date(value).toDateString()
-                    );
-                });
+                    // DATE_AND_TIME and TIME fields return the original value without conversion
+                    expect(getFinalCastedValue(value, field)).toEqual(value);
+                }
+            );
 
-                it("should return Date.now if the value is 'now'", () => {
+            it.each(['Date-and-Time', 'Time'])(
+                "should return 'now' string as-is for %s field",
+                (fieldType) => {
                     const value = 'now';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date().toDateString()
-                    );
-                });
+                    // DATE_AND_TIME and TIME fields return the original value
+                    expect(getFinalCastedValue(value, field)).toEqual(value);
+                }
+            );
 
-                it('should return undefined if the value is undefined', () => {
+            it.each(['Date-and-Time', 'Time'])(
+                'should return undefined for %s field when value is undefined',
+                (fieldType) => {
                     const value = undefined;
                     const field = { fieldType } as DotCMSContentTypeField;
 
                     expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                });
+                }
+            );
+        });
+
+        describe('DATE field', () => {
+            it('should convert value to string for DATE field', () => {
+                const value = '2021-09-01T18:00:00.000Z';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                // DATE field goes through castSingleSelectableValue which returns String(value)
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it("should convert 'now' to string for DATE field", () => {
+                const value = 'now';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                // DATE field goes through castSingleSelectableValue which returns String(value)
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it('should return undefined for DATE field when value is undefined', () => {
+                const value = undefined;
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(undefined);
             });
         });
 
@@ -1024,6 +1066,333 @@ describe('Utils Functions', () => {
                 ...contentlet,
                 locked: false,
                 lockedBy: undefined
+            });
+        });
+    });
+
+    describe('Form Field Processing Utilities', () => {
+        describe('isFlattenedField', () => {
+            it.each(FLATTENED_FIELD_TYPES)(
+                'should return true for flattened field type: %s',
+                (fieldType) => {
+                    const field = { fieldType } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['value1', 'value2', 'value3'];
+
+                    expect(isFlattenedField(arrayValue, field)).toBe(true);
+                }
+            );
+
+            it('should return false for non-array values even with flattened field types', () => {
+                const field = {
+                    fieldType: FIELD_TYPES.CHECKBOX
+                } as unknown as DotCMSContentTypeField;
+                const stringValue = 'not an array';
+
+                expect(isFlattenedField(stringValue, field)).toBe(false);
+            });
+
+            it('should return false for array values with non-flattened field types', () => {
+                const field = { fieldType: FIELD_TYPES.TEXT } as unknown as DotCMSContentTypeField;
+                const arrayValue = ['value1', 'value2'];
+
+                expect(isFlattenedField(arrayValue, field)).toBe(false);
+            });
+
+            it('should return false for null/undefined values', () => {
+                const field = {
+                    fieldType: FIELD_TYPES.CHECKBOX
+                } as unknown as DotCMSContentTypeField;
+
+                expect(isFlattenedField(null, field)).toBe(false);
+                expect(isFlattenedField(undefined, field)).toBe(false);
+            });
+        });
+
+        describe('isCalendarField', () => {
+            it.each(CALENDAR_FIELD_TYPES)(
+                'should return true for calendar field type: %s',
+                (fieldType) => {
+                    const field = { fieldType } as unknown as DotCMSContentTypeField;
+
+                    expect(isCalendarField(field)).toBe(true);
+                }
+            );
+
+            it('should return false for non-calendar field types', () => {
+                const nonCalendarTypes = [
+                    FIELD_TYPES.TEXT,
+                    FIELD_TYPES.TEXTAREA,
+                    FIELD_TYPES.CHECKBOX
+                ];
+
+                nonCalendarTypes.forEach((fieldType) => {
+                    const field = { fieldType } as unknown as DotCMSContentTypeField;
+                    expect(isCalendarField(field)).toBe(false);
+                });
+            });
+        });
+
+        describe('processCalendarFieldValue', () => {
+            const fieldName = 'testField';
+
+            describe('null/undefined handling', () => {
+                it('should return null for null value', () => {
+                    expect(processCalendarFieldValue(null, fieldName)).toBeNull();
+                });
+
+                it('should return undefined for undefined value', () => {
+                    expect(processCalendarFieldValue(undefined, fieldName)).toBeUndefined();
+                });
+
+                it('should return null for empty string', () => {
+                    expect(processCalendarFieldValue('', fieldName)).toBeNull();
+                });
+            });
+
+            describe('Date object handling', () => {
+                it('should convert Date objects to timestamps', () => {
+                    const date = new Date('2025-01-15T10:30:00Z');
+                    const expectedTimestamp = date.getTime();
+
+                    expect(processCalendarFieldValue(date, fieldName)).toBe(expectedTimestamp);
+                });
+
+                it('should handle current date', () => {
+                    const now = new Date();
+                    const expectedTimestamp = now.getTime();
+
+                    expect(processCalendarFieldValue(now, fieldName)).toBe(expectedTimestamp);
+                });
+            });
+
+            describe('number handling', () => {
+                it('should return numeric values as-is', () => {
+                    const timestamp = 1737021000000;
+
+                    expect(processCalendarFieldValue(timestamp, fieldName)).toBe(timestamp);
+                });
+
+                it('should handle zero timestamp', () => {
+                    expect(processCalendarFieldValue(0, fieldName)).toBe(0);
+                });
+
+                it('should handle negative timestamps', () => {
+                    const negativeTimestamp = -1737021000000;
+
+                    expect(processCalendarFieldValue(negativeTimestamp, fieldName)).toBe(
+                        negativeTimestamp
+                    );
+                });
+            });
+
+            describe('string handling', () => {
+                it('should convert valid numeric strings to numbers', () => {
+                    const stringTimestamp = '1737021000000';
+                    const expectedNumber = 1737021000000;
+
+                    expect(processCalendarFieldValue(stringTimestamp, fieldName)).toBe(
+                        expectedNumber
+                    );
+                });
+
+                it('should handle string with leading/trailing spaces', () => {
+                    const stringTimestamp = '  1737021000000  ';
+                    const expectedNumber = 1737021000000;
+
+                    expect(processCalendarFieldValue(stringTimestamp, fieldName)).toBe(
+                        expectedNumber
+                    );
+                });
+
+                it('should return null for invalid string timestamps', () => {
+                    const invalidString = 'not-a-number';
+
+                    expect(processCalendarFieldValue(invalidString, fieldName)).toBeNull();
+                });
+
+                it('should return null for empty string after trim', () => {
+                    const emptyString = '   ';
+
+                    expect(processCalendarFieldValue(emptyString, fieldName)).toBeNull();
+                });
+            });
+
+            describe('unexpected value handling', () => {
+                it('should return null for unexpected value types', () => {
+                    const objectValue = { timestamp: 1737021000000 };
+
+                    expect(processCalendarFieldValue(objectValue as any, fieldName)).toBeNull();
+                });
+
+                it('should return null for boolean values', () => {
+                    expect(processCalendarFieldValue(true as any, fieldName)).toBeNull();
+                    expect(processCalendarFieldValue(false as any, fieldName)).toBeNull();
+                });
+            });
+
+            describe('console logging', () => {
+                let consoleWarnSpy: SpyInstance;
+                let consoleErrorSpy: SpyInstance;
+
+                beforeEach(() => {
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+                });
+
+                afterEach(() => {
+                    consoleWarnSpy.mockRestore();
+                    consoleErrorSpy.mockRestore();
+                });
+
+                it('should log warning for string timestamp conversion', () => {
+                    processCalendarFieldValue('1737021000000', fieldName);
+
+                    expect(consoleWarnSpy).toHaveBeenCalledWith(
+                        `Calendar field ${fieldName} received string timestamp, converted to number:`,
+                        { original: '1737021000000', converted: 1737021000000 }
+                    );
+                });
+
+                it('should log warning for invalid string timestamps', () => {
+                    processCalendarFieldValue('invalid', fieldName);
+
+                    expect(consoleWarnSpy).toHaveBeenCalledWith(
+                        `Calendar field ${fieldName} has invalid timestamp string:`,
+                        'invalid'
+                    );
+                });
+
+                it('should log error for unexpected value types', () => {
+                    const unexpectedValue = { test: 'value' };
+                    processCalendarFieldValue(unexpectedValue as any, fieldName);
+
+                    expect(consoleErrorSpy).toHaveBeenCalledWith(
+                        `Calendar field ${fieldName} received unexpected value:`,
+                        { value: unexpectedValue, type: 'object' }
+                    );
+                });
+            });
+        });
+
+        describe('processFieldValue', () => {
+            describe('flattened fields', () => {
+                it('should join array values with commas for flattened fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CHECKBOX,
+                        variable: 'checkboxField'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['option1', 'option2', 'option3'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('option1,option2,option3');
+                });
+
+                it('should handle empty arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.MULTI_SELECT,
+                        variable: 'multiSelectField'
+                    } as unknown as DotCMSContentTypeField;
+                    const emptyArray: string[] = [];
+
+                    expect(processFieldValue(emptyArray, field)).toBe('');
+                });
+
+                it('should handle single-item arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TAG,
+                        variable: 'tagField'
+                    } as unknown as DotCMSContentTypeField;
+                    const singleItemArray = ['onlyOption'];
+
+                    expect(processFieldValue(singleItemArray, field)).toBe('onlyOption');
+                });
+            });
+
+            describe('calendar fields', () => {
+                it('should process Date objects to timestamps for calendar fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.DATE,
+                        variable: 'dateField'
+                    } as unknown as DotCMSContentTypeField;
+                    const date = new Date('2025-01-15T10:30:00Z');
+                    const expectedTimestamp = date.getTime();
+
+                    expect(processFieldValue(date, field)).toBe(expectedTimestamp);
+                });
+
+                it('should process string timestamps for calendar fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.DATE_AND_TIME,
+                        variable: 'datetimeField'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringTimestamp = '1737021000000';
+
+                    expect(processFieldValue(stringTimestamp, field)).toBe(1737021000000);
+                });
+
+                it('should handle null values for calendar fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TIME,
+                        variable: 'timeField'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                });
+            });
+
+            describe('other field types', () => {
+                it('should return string values as-is for text fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TEXT,
+                        variable: 'textField'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringValue = 'some text';
+
+                    expect(processFieldValue(stringValue, field)).toBe(stringValue);
+                });
+
+                it('should return number values as-is for numeric fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TEXT,
+                        variable: 'numericField'
+                    } as unknown as DotCMSContentTypeField;
+                    const numberValue = 42;
+
+                    expect(processFieldValue(numberValue, field)).toBe(numberValue);
+                });
+
+                it('should return null/undefined values as-is', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.TEXTAREA,
+                        variable: 'textareaField'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                    expect(processFieldValue(undefined, field)).toBeUndefined();
+                });
+            });
+
+            describe('edge cases', () => {
+                it('should handle fields without specific processing', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.WYSIWYG,
+                        variable: 'wysiwygField'
+                    } as unknown as DotCMSContentTypeField;
+                    const complexValue = { html: '<p>content</p>' };
+
+                    expect(processFieldValue(complexValue as any, field)).toBe(complexValue);
+                });
+
+                it('should handle unknown field types gracefully', () => {
+                    const field = {
+                        fieldType: 'UNKNOWN_TYPE' as any,
+                        variable: 'unknownField'
+                    } as unknown as DotCMSContentTypeField;
+                    const value = 'some value';
+
+                    expect(processFieldValue(value, field)).toBe(value);
+                });
             });
         });
     });

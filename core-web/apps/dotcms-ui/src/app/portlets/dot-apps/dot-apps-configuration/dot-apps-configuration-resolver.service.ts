@@ -5,8 +5,9 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotApp } from '@dotcms/dotcms-models';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 /**
  * Returns apps list from the system

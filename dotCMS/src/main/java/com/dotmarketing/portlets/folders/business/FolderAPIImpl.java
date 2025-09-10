@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.folders.business;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -36,7 +42,9 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -60,11 +68,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
-
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -79,12 +86,6 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
  *
@@ -102,6 +103,7 @@ public class FolderAPIImpl implements FolderAPI  {
 					new HashSet<>(CollectionsUtils
 							.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
 									new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html",
+											"System folder",
 											"portal",
 											"email_backups",
 											"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
@@ -594,12 +596,24 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 	}
 
+
 	@Override
 	@WrapInTransaction
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		final Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+
+		// if we ingest bad folder ids, we should fix them
+		if(!folder.getIdentifier().equalsIgnoreCase(folder.getInode()) && Config.getBooleanProperty("FIX_FOLDER_IDS_AUTOMATICALLY", false)) {
+			final String FIX_FOLDER_IDS_JOB= "FIX_FOLDER_IDS_JOB";
+			HibernateUtil.addCommitListener(FIX_FOLDER_IDS_JOB,()->{
+				if(folderIdsNeedFixing()){
+					fixFolderIds();
+				}
+			});
+		}
+
 		if(existingID ==null || !UtilMethods.isSet(existingID.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
 		}
@@ -653,15 +667,11 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	}
 
-	final Lazy<Folder> loadSystemFolder = Lazy.of(
-	                ()-> { return Try.of(()->folderFactory.findSystemFolder())
-	                                .getOrElseThrow(e->new DotRuntimeException(e));
-	                                                });
 	
 	
 	@CloseDBIfOpened
 	public Folder findSystemFolder()  {
-		return loadSystemFolder.get();
+		return Try.of(()->folderFactory.findSystemFolder()).getOrElseThrow(DotRuntimeException::new);
 	}
 
 
@@ -1294,5 +1304,106 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		return this.folderFactory.getContentTypeCount(folder.getPath(), folder.getHostId());
 	}
+
+
+	String BROKEN_FOLDERS_SHOULD_BE_EMPTY = "select * from folder where inode <> identifier limit 1";
+	String SYSTEM_FOLDER_SHOULD_NOT_BE_EMPTY =
+			"select * from folder where inode ='SYSTEM_FOLDER' and identifier='SYSTEM_FOLDER'";
+
+
+	@CloseDBIfOpened
+	@Override
+	public boolean folderIdsNeedFixing(){
+
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				DotConnect db = new DotConnect();
+				return !db.setSQL(BROKEN_FOLDERS_SHOULD_BE_EMPTY).loadObjectResults(conn).isEmpty() || db.setSQL(SYSTEM_FOLDER_SHOULD_NOT_BE_EMPTY)
+						.loadObjectResults(conn).isEmpty();
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
+
+
+	}
+	String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
+	String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
+	String DEFER_CONSTRAINT_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
+	String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder' or id='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
+	String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
+	String UPDATE_FOLDER_IDENTIFIERS="update identifier "
+			+ "set id =subquery.inode "
+			+ "from (select inode, identifier from folder where identifier <> inode) as subquery "
+			+ "where  "
+			+ "subquery.identifier =identifier.id;";
+
+	String UPDATE_ALL_FOLDERS = "update folder set identifier = inode where identifier <> inode;";
+	
+	// Template theme fix queries
+	String FIX_TEMPLATE_THEMES_QUERY = 
+		"UPDATE template SET theme = f.inode " +
+		"FROM folder f " +
+		"WHERE template.theme = f.identifier " +
+		"AND template.theme NOT IN (SELECT identifier FROM folder WHERE identifier = inode) " +
+		"AND template.theme != 'SYSTEM_THEME';";
+
+
+	@CloseDBIfOpened
+	@Override
+	public void fixFolderIds() {
+		Logger.info(this,
+				"Found non-matching folder inodes/identifiers, Fixing folder IDs task.");
+
+		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			// allow deferred constraints
+			conn.createStatement().execute(ALLOW_DEFER_CONSTRAINT_SQL);
+
+			conn.setAutoCommit(false);
+
+			// defer folder/identifier constraint
+			conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
+
+			// Fix template themes before updating folder IDs to prevent broken references
+			Logger.info(this, "Fixing template themes that reference folder identifiers");
+			conn.createStatement().execute(FIX_TEMPLATE_THEMES_QUERY);
+
+			// update system folder identifier
+			conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_IDENTIFIER);
+
+			// update system folder folder
+			conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_FOLDER);
+
+			// update folder ids with the inodes
+			conn.createStatement().execute(UPDATE_FOLDER_IDENTIFIERS);
+
+			// set all folder inodes=identifer
+			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+
+			conn.commit();
+
+			conn.setAutoCommit(true);
+
+			// just in case
+			CacheLocator.getFolderCache().clearCache();
+			CacheLocator.getPermissionCache().clearCache();
+			CacheLocator.getTemplateCache().clearCache();
+			CacheLocator.getVeloctyResourceCache().clearCache();
+
+		} catch (Exception e) {
+			Logger.error(this, e);
+			throw new DotRuntimeException(e);
+		} finally {
+
+			// reset the constraint to not deferred
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
+		}
+
+	}
+
 
 }

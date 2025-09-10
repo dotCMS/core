@@ -18,7 +18,6 @@ import { DotPageToolsSeoState, DotPageToolsSeoStore } from './store/dot-page-too
     imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule, NgIf],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPageToolsSeoComponent {

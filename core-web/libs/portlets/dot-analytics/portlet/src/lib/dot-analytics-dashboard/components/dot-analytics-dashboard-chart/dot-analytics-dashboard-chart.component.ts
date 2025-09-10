@@ -1,22 +1,14 @@
 import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
-import { Subscription } from 'rxjs';
 
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    inject,
-    input,
-    OnDestroy,
-    OnInit,
-    signal
-} from '@angular/core';
+import { Breakpoints, BreakpointObserver } from '@angular/cdk/layout';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
+
+import { map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -53,25 +45,21 @@ type ChartRawData =
  */
 @Component({
     selector: 'dot-analytics-dashboard-chart',
-    standalone: true,
-    imports: [
-        CommonModule,
-        CardModule,
-        ChartModule,
-        SkeletonModule,
-        DotAnalyticsStateMessageComponent
-    ],
+    imports: [CardModule, ChartModule, SkeletonModule, DotAnalyticsStateMessageComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-chart.component.html',
     styleUrl: './dot-analytics-dashboard-chart.component.scss'
 })
-export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
+export class DotAnalyticsDashboardChartComponent {
     private readonly messageService = inject(DotMessageService);
     private readonly breakpointObserver = inject(BreakpointObserver);
-    private breakpointSubscription?: Subscription;
+
+    private readonly isMobile$ = this.breakpointObserver
+        .observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Tablet])
+        .pipe(map((result) => result.matches));
 
     /** Signal to track if we're on mobile/small screen */
-    protected readonly $isMobile = signal<boolean>(false);
+    protected readonly $isMobile = toSignal(this.isMobile$, { initialValue: false });
 
     // Required inputs
     /** Chart type (line, pie, doughnut, bar, etc.) */
@@ -113,7 +101,7 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
 
     // Computed properties
     /** Complete chart configuration merging defaults with custom options */
-    protected readonly $chartOptions = computed((): ChartOptions => {
+    protected readonly $chartOptions = computed<ChartOptions>(() => {
         const chartType = this.$type();
         const customOptions = this.$options();
         const isMobile = this.$isMobile();
@@ -125,6 +113,11 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index' as const,
+                intersect: false,
+                axis: 'x' as const
+            },
             plugins: {
                 legend: {
                     display: chartType !== 'line', // Hide legend for line charts
@@ -134,14 +127,16 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
                         pointStyle: 'circle',
                         boxWidth: 10,
                         boxHeight: 10,
-                        padding: shouldUseSideLegend ? 15 : 20, // Slightly less padding for side legend
+                        padding: shouldUseSideLegend ? 15 : 20,
                         font: {
-                            size: shouldUseSideLegend ? 11 : 12 // Slightly smaller font for mobile
+                            size: shouldUseSideLegend ? 11 : 12
                         },
                         ...this.getChartTypeSpecificLegendOptions(chartType)
                     }
                 },
                 tooltip: {
+                    mode: 'index' as const,
+                    intersect: false,
                     callbacks: {
                         label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
                             this.getTooltipLabel(context),
@@ -149,7 +144,23 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
                             this.getTooltipTitle(context)
                     }
                 }
-            }
+            },
+            scales:
+                chartType === 'line'
+                    ? {
+                          x: {
+                              ticks: {
+                                  maxTicksLimit: isMobile ? 6 : 10,
+                                  autoSkip: true,
+                                  maxRotation: 45,
+                                  minRotation: 0
+                              }
+                          },
+                          y: {
+                              beginAtZero: true
+                          }
+                      }
+                    : undefined
         };
 
         // Merge with custom options
@@ -290,18 +301,5 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
         const datasetLabel = dataset.label ? this.messageService.get(dataset.label) : '';
 
         return `${datasetLabel}: ${value}`;
-    }
-
-    ngOnInit(): void {
-        // Watch for mobile breakpoint changes (991px and below to match SCSS)
-        this.breakpointSubscription = this.breakpointObserver
-            .observe('(max-width: 991px)')
-            .subscribe((result) => {
-                this.$isMobile.set(result.matches);
-            });
-    }
-
-    ngOnDestroy(): void {
-        this.breakpointSubscription?.unsubscribe();
     }
 }

@@ -1487,9 +1487,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					comment}, false);
 
 			if ( processor.getContextMap().containsKey("type") && WorkflowHistoryType.APPROVAL == processor.getContextMap().get("type")) {
-				description = "{\"description\":'"+ description +
-						"', \"type\":'" + WorkflowHistoryType.APPROVAL.name() +
-						"', \"state\":'"+  WorkflowHistoryState.NONE.name() +"\" }";
+				description = "{\"description\":\""+ description +
+						"\", \"type\":\"" + WorkflowHistoryType.APPROVAL.name() +
+						"\", \"state\":\""+  WorkflowHistoryState.NONE.name() +"\" }";
 			}
 
 			history.setChangeDescription(description);

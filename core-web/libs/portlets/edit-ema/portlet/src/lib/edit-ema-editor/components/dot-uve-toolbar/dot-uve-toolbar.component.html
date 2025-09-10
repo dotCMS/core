@@ -5,10 +5,44 @@
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
+        <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
+        <p-button
+            [pTooltip]="'editpage.header.copy' | dm"
+            tooltipPosition="bottom"
+            icon="pi pi-copy"
+            styleClass="p-button-text p-button-sm p-button-rounded"
+            (cdkCopyToClipboardCopied)="triggerCopyToast()"
+            [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
+            data-testId="uve-toolbar-copy-url" />
+
+        <a
+            title="Page API URL"
+            [pTooltip]="'uve.toolbar.page.api.url' | dm"
+            tooltipPosition="bottom"
+            pButton
+            label="API"
+            class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
+            target="_blank"
+            data-testId="uve-toolbar-api-link"
+            [href]="$apiURL()"></a>
         @if (preview || live) {
-            <ng-container [ngTemplateOutlet]="previewLeftOptionsTemplate"></ng-container>
+            @if ($devices()?.length) {
+                <dot-uve-device-selector
+                    [devices]="$devices()"
+                    data-testId="uve-toolbar-device-selector" />
+            }
         } @else {
-            <ng-container [ngTemplateOutlet]="editLeftOptionsTemplate"></ng-container>
+            @if ($urlContentMap(); as urlContentMap) {
+                <p-button
+                    (click)="editUrlContentMap.emit(urlContentMap)"
+                    [pTooltip]="
+                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                    "
+                    tooltipPosition="bottom"
+                    icon="pi pi-pencil"
+                    styleClass="p-button-text p-button-sm p-button-rounded"
+                    data-testId="edit-url-content-map" />
+            }
         }
     </div>
 
@@ -71,46 +105,6 @@
         }
     </div>
 </p-toolbar>
-
-<ng-template #editLeftOptionsTemplate>
-    @if ($urlContentMap(); as urlContentMap) {
-        <p-button
-            (click)="editUrlContentMap.emit(urlContentMap)"
-            [pTooltip]="'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]"
-            tooltipPosition="bottom"
-            icon="pi pi-pencil"
-            styleClass="p-button-text p-button-sm p-button-rounded"
-            data-testId="edit-url-content-map" />
-    }
-    <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
-
-    <p-button
-        [pTooltip]="'editpage.header.copy' | dm"
-        tooltipPosition="bottom"
-        icon="pi pi-copy"
-        styleClass="p-button-text p-button-sm p-button-rounded"
-        (cdkCopyToClipboardCopied)="triggerCopyToast()"
-        [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
-        data-testId="uve-toolbar-copy-url" />
-
-    <a
-        title="Page API URL"
-        [pTooltip]="'uve.toolbar.page.api.url' | dm"
-        tooltipPosition="bottom"
-        pButton
-        label="API"
-        class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
-        target="_blank"
-        data-testId="uve-toolbar-api-link"
-        [href]="$apiURL()"></a>
-</ng-template>
-
-<ng-template #previewLeftOptionsTemplate>
-    <!-- We want to be sure we have devices -->
-    @if ($devices()?.length) {
-        <dot-uve-device-selector [devices]="$devices()" data-testId="uve-toolbar-device-selector" />
-    }
-</ng-template>
 
 @if ($infoDisplayProps(); as options) {
     <dot-ema-info-display data-testId="info-display" [options]="options" />

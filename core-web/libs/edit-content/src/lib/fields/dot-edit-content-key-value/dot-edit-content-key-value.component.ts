@@ -5,7 +5,6 @@ import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-content-key-value',
-    standalone: true,
     imports: [DotKeyValueComponent],
     templateUrl: './dot-edit-content-key-value.component.html',
     styleUrl: './dot-edit-content-key-value.component.css',

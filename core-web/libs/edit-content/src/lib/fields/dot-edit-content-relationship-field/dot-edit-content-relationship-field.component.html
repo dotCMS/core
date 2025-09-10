@@ -1,13 +1,13 @@
 @let pagination = store.pagination();
-@let attributes = $attributes();
 @let showPagination = store.totalPages() > 1;
 @let data = store.data();
-@let hitText = attributes.hitText;
+@let hitText = $field()?.hint || null;
 @let isDisabled = $isDisabled();
 @let isEmpty = data.length === 0;
 
 <p-table
     [value]="data"
+    [columns]="store.columns()"
     data-testid="relationship-field-table"
     styleClass="dotTable p-datatable-relationship"
     [paginator]="data.length > pagination.rowsPerPage"
@@ -16,21 +16,50 @@
     [scrollable]="true"
     [reorderableColumns]="false"
     (onRowReorder)="onRowReorder($event)">
-    <ng-template pTemplate="header" styleClass="relative">
+    <ng-template pTemplate="header" styleClass="relative" let-columns>
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
         <tr class="relationship-field__table_header">
-            <th scope="col" class="min-w-3rem"></th>
-            <th scope="col" [class.min-w-12rem]="!isEmpty">
-                {{ 'dot.file.relationship.field.table.title' | dm }}
-            </th>
-            <th scope="col" [class.min-w-8rem]="!isEmpty">
-                {{ 'dot.file.relationship.field.table.language' | dm }}
-            </th>
-            <th scope="col" [class.min-w-8rem]="!isEmpty">
-                {{ 'dot.file.relationship.field.table.status' | dm }}
-            </th>
-            <th scope="col" class="w-1rem" alignFrozen="right" pFrozenColumn [frozen]="true">
+            <!-- Drag handle column - fixed width -->
+            <th scope="col" class="drag-handle-column"></th>
+
+            @for (column of columns; track $index) {
+                @switch (column.type) {
+                    @case ('title') {
+                        <th scope="col" [class.title-column]="!isEmpty">
+                            {{ 'dot.file.relationship.field.table.title' | dm }}
+                        </th>
+                    }
+                    @case ('language') {
+                        <th scope="col" [class.dynamic-column]="!isEmpty">
+                            {{ 'dot.file.relationship.field.table.language' | dm }}
+                        </th>
+                    }
+                    @case ('status') {
+                        <th scope="col" [class.dynamic-column]="!isEmpty">
+                            {{ 'dot.file.relationship.field.table.status' | dm }}
+                        </th>
+                    }
+                    @case ('image') {
+                        <th scope="col" [class.image-column]="!isEmpty">
+                            <p class="truncate-text capitalize">{{ column.header }}</p>
+                        </th>
+                    }
+                    @default {
+                        <th scope="col" [class.dynamic-column]="!isEmpty">
+                            <span class="capitalize">{{ column.header }}</span>
+                        </th>
+                    }
+                }
+            }
+
+            <!-- Add button column - fixed width -->
+            <th
+                scope="col"
+                class="actions-column"
+                alignFrozen="right"
+                pFrozenColumn
+                [frozen]="true">
                 <p-button
                     (onClick)="menu.toggle($event)"
                     size="small"
@@ -40,9 +69,10 @@
             </th>
         </tr>
     </ng-template>
+
     <ng-template pTemplate="emptymessage">
         <tr>
-            <td colspan="5">
+            <td [colSpan]="$totalColumns()">
                 <div class="flex p-2 gap-2 justify-content-center">
                     <i class="pi pi-folder-open"></i>
                     <p class="text-500">{{ 'dot.file.relationship.field.empty.message' | dm }}</p>
@@ -50,29 +80,64 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-item let-index="rowIndex">
+
+    <ng-template pTemplate="body" let-item let-index="rowIndex" let-columns="columns">
         <tr
             [pReorderableRow]="index"
             [class.opacity-50]="isDisabled"
             [class.cursor-not-allowed]="isDisabled">
-            <td>
+            <!-- Drag handle column - fixed width -->
+
+            <td class="drag-handle-column">
                 @if (!isDisabled) {
                     <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
                 } @else {
                     <span class="pi pi-bars text-gray-500 cursor-not-allowed"></span>
                 }
             </td>
-            <td class="min-w-12rem" [class.cursor-not-allowed]="isDisabled">
-                <p class="truncate-text">{{ item.title }}</p>
-            </td>
-            <td class="min-w-8rem" [class.cursor-not-allowed]="isDisabled">
-                {{ item.language | language }}
-            </td>
-            <td class="min-w-8rem" [class.cursor-not-allowed]="isDisabled">
-                @let status = item | contentletStatus;
-                <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
-            </td>
+
+            @for (column of columns; track $index) {
+                @switch (column.type) {
+                    @case ('title') {
+                        <td class="title-column" [class.cursor-not-allowed]="isDisabled">
+                            <p class="truncate-text">{{ item.title }}</p>
+                        </td>
+                    }
+                    @case ('language') {
+                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
+                            {{ item.language | language }}
+                        </td>
+                    }
+                    @case ('status') {
+                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
+                            @let status = item | contentletStatus;
+                            <p-chip
+                                [styleClass]="'p-chip-sm ' + status.classes"
+                                [label]="status.label" />
+                        </td>
+                    }
+                    @case ('image') {
+                        <td class="image-column" [class.cursor-not-allowed]="isDisabled">
+                            <div class="container-thumbnail">
+                                <dot-contentlet-thumbnail
+                                    [iconSize]="'30px'"
+                                    [contentlet]="item"
+                                    [playableVideo]="false"
+                                    data-testId="contentlet-thumbnail" />
+                            </div>
+                        </td>
+                    }
+                    @default {
+                        <td class="dynamic-column">
+                            <p class="truncate-text">{{ item[column.nameField] }}</p>
+                        </td>
+                    }
+                }
+            }
+
+            <!-- Delete button column - fixed width -->
             <td
+                class="actions-column"
                 pFrozenColumn
                 alignFrozen="right"
                 [frozen]="true"
@@ -95,7 +160,7 @@
                 [class.justify-content-between]="hitText"
                 [class.justify-content-center]="!hitText">
                 @if (hitText) {
-                    <small>{{ hitText }}</small>
+                    <small class="text-gray-700">{{ hitText }}</small>
                 }
                 @if (showPagination) {
                     <dot-pagination

@@ -1,6 +1,7 @@
 package com.dotcms.shutdown;
 
 import com.dotcms.cdi.CDIUtils;
+import com.dotcms.metrics.RequestTracker;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -48,7 +49,6 @@ public class ShutdownCoordinator {
     private static final int DEFAULT_JMX_BUSY_THREADS_TIMEOUT_SECONDS = 1;
 
     private static volatile ShutdownCoordinator instance;
-    private static final AtomicInteger activeRequestCount = new AtomicInteger(0);
     private final AtomicBoolean shutdownInProgress = new AtomicBoolean(false);
     private final AtomicBoolean shutdownCompleted = new AtomicBoolean(false);
     private final AtomicBoolean requestDrainingInProgress = new AtomicBoolean(false);
@@ -245,7 +245,7 @@ public class ShutdownCoordinator {
             long drainTimeoutMs = drainTimeout * 1000L;
             
             // Initial check
-            int initialActiveRequests = activeRequestCount.get();
+            long initialActiveRequests = RequestTracker.getInstance().getActiveRequests();
             Logger.info(this, String.format("Initial active request count: %d", initialActiveRequests));
             
             // If no active requests from the start, skip the draining loop
@@ -265,7 +265,7 @@ public class ShutdownCoordinator {
             }
         
         while (System.currentTimeMillis() - drainStartTime < drainTimeoutMs) {
-            int activeRequests = activeRequestCount.get();
+            long activeRequests = RequestTracker.getInstance().getActiveRequests();
             int busyThreads = 0;
             
             // Try to get busy threads, but don't let JMX issues block shutdown
@@ -301,7 +301,7 @@ public class ShutdownCoordinator {
         }
         
         // Timeout reached
-        int finalActiveRequests = activeRequestCount.get();
+        long finalActiveRequests = RequestTracker.getInstance().getActiveRequests();
         int finalBusyThreads = 0;
         try {
             finalBusyThreads = getBusyConnectorThreads();
@@ -570,24 +570,28 @@ public class ShutdownCoordinator {
 
     
     /**
-     * Increments the active request count (called by request filter on request start)
+     * @deprecated Active request counting is now handled by RequestTracker.
+     * This method is maintained for backwards compatibility but does nothing.
      */
+    @Deprecated
     public static void incrementActiveRequests() {
-        activeRequestCount.incrementAndGet();
+        // No-op: RequestTracker handles this now
     }
     
     /**
-     * Decrements the active request count (called by request filter on request end)
+     * @deprecated Active request counting is now handled by RequestTracker.
+     * This method is maintained for backwards compatibility but does nothing.
      */
+    @Deprecated
     public static void decrementActiveRequests() {
-        activeRequestCount.decrementAndGet();
+        // No-op: RequestTracker handles this now
     }
     
     /**
-     * Gets the current active request count for monitoring
+     * Gets the current active request count from RequestTracker for monitoring
      */
-    public static int getCurrentActiveRequestCount() {
-        return activeRequestCount.get();
+    public static long getCurrentActiveRequestCount() {
+        return RequestTracker.getInstance().getActiveRequests();
     }
     
     /**
@@ -599,14 +603,14 @@ public class ShutdownCoordinator {
     public static ShutdownStatus getShutdownStatus() {
         ShutdownCoordinator instance = ShutdownCoordinator.instance;
         if (instance == null) {
-            return new ShutdownStatus(false, false, false, activeRequestCount.get());
+            return new ShutdownStatus(false, false, false, RequestTracker.getInstance().getActiveRequests());
         }
         
         return new ShutdownStatus(
             instance.isShutdownInProgress(),
             instance.isRequestDrainingInProgress(), 
             instance.isShutdownCompleted(),
-            activeRequestCount.get()
+            RequestTracker.getInstance().getActiveRequests()
         );
     }
     
@@ -617,10 +621,10 @@ public class ShutdownCoordinator {
         private final boolean shutdownInProgress;
         private final boolean requestDrainingInProgress;
         private final boolean shutdownCompleted;
-        private final int activeRequestCount;
+        private final long activeRequestCount;
         
         public ShutdownStatus(boolean shutdownInProgress, boolean requestDrainingInProgress, 
-                            boolean shutdownCompleted, int activeRequestCount) {
+                            boolean shutdownCompleted, long activeRequestCount) {
             this.shutdownInProgress = shutdownInProgress;
             this.requestDrainingInProgress = requestDrainingInProgress;
             this.shutdownCompleted = shutdownCompleted;
@@ -630,7 +634,7 @@ public class ShutdownCoordinator {
         public boolean isShutdownInProgress() { return shutdownInProgress; }
         public boolean isRequestDrainingInProgress() { return requestDrainingInProgress; }
         public boolean isShutdownCompleted() { return shutdownCompleted; }
-        public int getActiveRequestCount() { return activeRequestCount; }
+        public long getActiveRequestCount() { return activeRequestCount; }
         
         @Override
         public String toString() {

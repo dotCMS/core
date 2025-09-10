@@ -178,11 +178,12 @@ $select-border-size: 2px;
     border-radius: $border-radius-sm;
     color: $color-palette-primary;
     font-size: $font-size-sm;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: $spacing-0;
     flex-direction: row-reverse;
+    margin-right: $spacing-0;
 }
 
 #field-chip-token {

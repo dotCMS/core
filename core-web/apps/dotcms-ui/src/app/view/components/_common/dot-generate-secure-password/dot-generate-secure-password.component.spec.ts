@@ -21,7 +21,8 @@ import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-passwo
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-generate-secure-password></dot-generate-secure-password>'
+    template: '<dot-generate-secure-password></dot-generate-secure-password>',
+    standalone: false
 })
 class TestHostComponent {}
 

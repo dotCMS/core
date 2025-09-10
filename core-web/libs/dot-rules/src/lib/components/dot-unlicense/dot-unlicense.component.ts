@@ -5,7 +5,8 @@ import { I18nService } from '../../services/system/locale/I18n';
 @Component({
     selector: 'dot-unlicense',
     templateUrl: './dot-unlicense.component.html',
-    styleUrls: ['./dot-unlicense.component.scss']
+    styleUrls: ['./dot-unlicense.component.scss'],
+    standalone: false
 })
 export class DotUnlicenseComponent implements OnInit {
     private resources = inject(I18nService);

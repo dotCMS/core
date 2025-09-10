@@ -40,7 +40,7 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
     format = 'text',
     contentlet,
     fieldName
-}: Readonly<DotCMSEditableTextProps<T>>): JSX.Element {
+}: Readonly<DotCMSEditableTextProps<T>>) {
     const editorRef = useRef<Editor['editor'] | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
     const [initEditor, setInitEditor] = useState(false);

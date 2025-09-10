@@ -9,7 +9,7 @@ export class CwFilter {
                 xform = true;
             } else if (fieldValue === 'false') {
                 xform = false;
-            } else if (fieldValue.match(numberRegex)) {
+            } else if (typeof fieldValue === 'string' && fieldValue.match(numberRegex)) {
                 xform = Number.parseFloat(fieldValue);
             }
         }

@@ -5,17 +5,18 @@
             class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
             <dot-analytics-dashboard-filters
                 class="analytics-dashboard__filters"
+                [timeRange]="store.timeRange()"
+                (changeFilters)="refreshQueryParams($event)"
                 data-testid="analytics-filters" />
 
             <p-button
                 class="analytics-dashboard__refresh-button"
                 [label]="'analytics.dashboard.refresh.button' | dm"
-                icon="pi pi-refresh"
                 [rounded]="false"
                 severity="primary"
                 size="small"
                 (onClick)="onRefresh()"
-                data-testid="refresh-button"></p-button>
+                data-testid="refresh-button" />
         </div>
     </div>
 

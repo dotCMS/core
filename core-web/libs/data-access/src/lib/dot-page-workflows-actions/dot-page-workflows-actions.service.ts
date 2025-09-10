@@ -5,14 +5,14 @@ import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { DotRenderMode } from '@dotcms/data-access';
 import { DotCMSWorkflowAction, DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { DotRenderMode } from '../dot-workflows-actions/dot-workflows-actions.service';
 
 export interface DotCMSPageWorkflowState {
     actions: DotCMSWorkflowAction[];
     page: DotCMSContentlet;
 }
-
 @Injectable()
 export class DotPageWorkflowsActionsService {
     private http = inject(HttpClient);

@@ -9,7 +9,8 @@ import { delay, filter, takeUntil, tap } from 'rxjs/operators';
  * If not maxLength is specified the default is 255.
  */
 @Directive({
-    selector: '[dotMaxlength]'
+    selector: '[dotMaxlength]',
+    standalone: false
 })
 export class DotMaxlengthDirective implements OnInit, OnDestroy {
     private el = inject(ElementRef);

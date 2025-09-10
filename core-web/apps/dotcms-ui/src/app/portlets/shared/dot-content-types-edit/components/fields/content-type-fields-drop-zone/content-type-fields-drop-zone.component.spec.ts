@@ -25,7 +25,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import {
     DotEventsService,
     DotFormatDateService,
@@ -35,6 +34,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
@@ -48,7 +48,7 @@ import {
     DotIconModule,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -56,13 +56,13 @@ import {
     dotcmsContentTypeFieldBasicMock,
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn,
-    FieldUtil,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
 import { ContentTypeFieldsAddRowModule } from '..';
+import { DotActionButtonModule } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.module';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
@@ -82,7 +82,8 @@ const fakeContentType: DotCMSContentType = {
 
 @Component({
     selector: 'dot-content-type-fields-row',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsRowComponent {
     @Input()
@@ -95,7 +96,8 @@ class TestContentTypeFieldsRowComponent {
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsPropertiesFormComponent {
     @Output()
@@ -114,7 +116,8 @@ class TestContentTypeFieldsPropertiesFormComponent {
 
 @Component({
     selector: 'dot-content-type-fields-tab',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotContentTypeFieldsTabComponent {
     @Input()
@@ -128,7 +131,8 @@ class TestDotContentTypeFieldsTabComponent {
 
 @Component({
     selector: 'dot-loading-indicator ',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotLoadingIndicatorComponent {
     @Input()
@@ -314,7 +318,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
 
@@ -330,7 +334,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
         fieldRow.columns[0].fields = [field];
@@ -364,7 +368,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow1: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
         fieldRow1.columns[0].fields = [field];
@@ -408,7 +412,8 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>'
+        '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>',
+    standalone: false
 })
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
@@ -423,7 +428,7 @@ class TestHostComponent {
 // Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
 // https://github.com/dotCMS/core-web/pull/1085
 
-const BLOCK_EDITOR_FIELD = {
+const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     id: '12',
@@ -434,7 +439,8 @@ const BLOCK_EDITOR_FIELD = {
 
 @Component({
     selector: 'dot-block-editor-settings',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotBlockEditorSettingsComponent {
     @Output() changeControls = new EventEmitter<DotDialogActions>();
@@ -611,7 +617,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                                clazz: DotCMSClazzes.TEXT,
                                 id: '5',
                                 name: 'field 5',
                                 sortOrder: 4,
@@ -653,7 +659,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                                clazz: DotCMSClazzes.TEXT,
                                 id: '9',
                                 name: 'field 9',
                                 sortOrder: 8,

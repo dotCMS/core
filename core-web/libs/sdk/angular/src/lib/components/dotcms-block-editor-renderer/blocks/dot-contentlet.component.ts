@@ -47,7 +47,6 @@ export class NoComponentProvided {
  */
 @Component({
     selector: 'dotcms-block-editor-renderer-contentlet',
-    standalone: true,
     imports: [NgComponentOutlet, AsyncPipe, NoComponentProvided],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `

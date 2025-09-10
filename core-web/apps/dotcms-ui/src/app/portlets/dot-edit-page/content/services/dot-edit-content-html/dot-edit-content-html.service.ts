@@ -6,7 +6,6 @@ import { ElementRef, Injectable, NgZone, inject } from '@angular/core';
 
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
     DotCopyContentService,
@@ -52,6 +51,7 @@ import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
+import { INLINE_TINYMCE_SCRIPTS } from '../html/libraries/inline-edit-mode.js';
 
 export enum DotContentletAction {
     EDIT,

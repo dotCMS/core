@@ -4,14 +4,15 @@ import { Component, Input } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-
 import { DotLegacyTemplateAdditionalActionsComponent } from './dot-legacy-template-additional-actions-iframe.component';
+
+import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIframeComponent {
     @Input()

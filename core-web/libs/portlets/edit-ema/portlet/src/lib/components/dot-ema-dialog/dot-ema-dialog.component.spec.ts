@@ -26,9 +26,9 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
 import {
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
@@ -413,7 +413,9 @@ describe('DotEmaDialogComponent', () => {
         it('should trigger editContentlet in the store for url Map', () => {
             const editContentletSpy = jest.spyOn(storeSpy, 'editUrlContentMapContentlet');
 
-            component.editUrlContentMapContentlet(PAYLOAD_MOCK.contentlet as DotCMSContentlet);
+            component.editUrlContentMapContentlet(
+                PAYLOAD_MOCK.contentlet as unknown as DotCMSURLContentMap
+            );
 
             expect(editContentletSpy).toHaveBeenCalledWith({
                 inode: PAYLOAD_MOCK.contentlet.inode,

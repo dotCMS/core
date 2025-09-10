@@ -50,9 +50,26 @@
 }
 
 .p-contextmenu .p-menuitem-link:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
+    background: $bg-highlight;
+    outline: 2px solid $color-palette-primary;
+    outline-offset: -2px;
+}
+
+/* PrimeNG keyboard navigation focus styles */
+.p-contextmenu .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus > .p-menuitem-content {
+    background: $bg-highlight;
+}
+
+.p-contextmenu
+    .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+    > .p-menuitem-content
+    .p-menuitem-link {
+    background: $bg-highlight;
+    color: $text-color-hover;
+}
+
+.p-contextmenu .p-menuitem.p-focus > .p-menuitem-content .p-menuitem-text {
+    color: $text-color-hover;
 }
 
 .p-contextmenu .p-submenu-list {

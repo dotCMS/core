@@ -12,7 +12,7 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
@@ -21,7 +21,7 @@ import {
 
 import { DotBlockEditorSidebarComponent } from './dot-block-editor-sidebar.component';
 
-const BLOCK_EDITOR_FIELD = {
+const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
     dataType: 'LONG_TEXT',

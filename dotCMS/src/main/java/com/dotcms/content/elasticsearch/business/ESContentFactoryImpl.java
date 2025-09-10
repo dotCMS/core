@@ -21,6 +21,7 @@ import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NMessage;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -42,6 +43,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -1104,18 +1106,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @Override
-    protected List<Contentlet> findAllVersions(final Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+    protected List<Contentlet> findAllVersions(final Identifier identifier) throws DotDataException {
         return findAllVersions(identifier, true);
     }
 
     @Override
-    protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
+    protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException {
         return findAllVersions(identifier, bringOldVersions, null);
     }
 
     @Override
     protected  List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
-            throws DotDataException, DotSecurityException{
+            throws DotDataException {
         DotPreconditions.notNull(identifier, () -> "Identifier cannot be null");
         DotPreconditions.notNull(variant, () -> "Variant cannot be null");
 
@@ -1140,35 +1142,56 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     public List<Contentlet> findAllVersions(final Identifier identifier,
-            final boolean bringOldVersions, final Integer maxResults)
-            throws DotDataException, DotStateException, DotSecurityException {
+            final boolean bringOldVersions, final Integer maxResults) throws DotDataException {
+        return findAllVersions(identifier, bringOldVersions, null != maxResults ? maxResults : 0, 0);
+	}
 
-	    if(!InodeUtils.isSet(identifier.getId())) {
-            return new ArrayList<>();
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit,
+                                            final int offset) throws DotDataException {
+        return findAllVersions(identifier, bringOldVersions, limit, offset, "mod_date", OrderDirection.DESC);
+    }
+
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit,
+                                            final int offset, final OrderDirection orderDirection) throws DotDataException {
+        return findAllVersions(identifier, bringOldVersions, limit, offset, "mod_date", orderDirection);
+    }
+
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+                                            final boolean bringOldVersions, final int limit, final int offset, final String orderBy,
+                                            final OrderDirection orderDirection) throws DotDataException {
+	    if (!InodeUtils.isSet(identifier.getId())) {
+            return List.of();
         }
-
         final DotConnect dc = new DotConnect();
-        final StringBuffer query = new StringBuffer();
-
+        final StringBuilder query = new StringBuilder();
         if(bringOldVersions) {
-            query.append("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
-
+            query.append("SELECT inode FROM contentlet WHERE identifier = ? ORDER BY ")
+                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
+                    .append(SQLUtil.sanitizeCondition(orderDirection.name()));
         } else {
-            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi "
-                    + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) "
-                    + "WHERE c.identifier=? order by c.mod_date desc ");
+            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi ")
+                    .append("ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) ")
+                    .append("WHERE c.identifier = ? ORDER BY c.")
+                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
+                    .append(SQLUtil.sanitizeCondition(orderDirection.name()));
         }
-
         dc.setSQL(query.toString());
         dc.addObject(identifier.getId());
-
-        if (maxResults != null){
-            dc.setMaxRows(maxResults);
+        if (limit > 0) {
+            dc.setMaxRows(limit);
         }
-        List<Map<String,Object>> list=dc.loadObjectResults();
-        ArrayList<String> inodes=new ArrayList<>(list.size());
-        for(Map<String,Object> r : list)
-            inodes.add(r.get("inode").toString());
+        if (offset > 0) {
+            dc.setStartRow(offset);
+        }
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<String> inodes = results.stream().map(
+                        row -> row.get("inode").toString())
+                .collect(Collectors.toList());
         return findContentlets(inodes);
 	}
 
@@ -1398,7 +1421,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
   @Override
-  protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
+  protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
 
     final HashMap<String, Contentlet> conMap = new HashMap<>();
     for (String i : inodes) {

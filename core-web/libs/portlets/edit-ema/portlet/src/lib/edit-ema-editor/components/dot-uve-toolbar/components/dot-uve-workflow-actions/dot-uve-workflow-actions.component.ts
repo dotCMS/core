@@ -20,7 +20,6 @@ import { getPageURI, compareUrlPaths } from '../../../../../utils';
 
 @Component({
     selector: 'dot-uve-workflow-actions',
-    standalone: true,
     imports: [DotWorkflowActionsComponent, ButtonModule],
     providers: [
         DotWorkflowActionsFireService,

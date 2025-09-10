@@ -7,17 +7,18 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { TreeSelectModule } from 'primeng/treeselect';
 
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
-import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SiteFieldComponent } from './site-field.component';
 import { SiteFieldStore } from './site-field.store';
+
+import {
+    TreeNodeItem,
+    TreeNodeSelectItem
+} from '../../../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pipe';
+import { DotEditContentService } from '../../../../../../../../services/dot-edit-content.service';
 
 describe('SiteFieldComponent', () => {
     let spectator: Spectator<SiteFieldComponent>;

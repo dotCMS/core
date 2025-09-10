@@ -13,8 +13,9 @@
         optionLabel="label"
         optionValue="value"
         [placeholder]="timePeriodPlaceholder"
-        [style]="{ minWidth: '150px' }"
-        data-testid="period-dropdown"></p-dropdown>
+        [style]="{ minWidth: '250px' }"
+        (onChange)="onChangeTimeRange($event)"
+        data-testid="period-dropdown" />
 
     <!-- Custom Date Range Calendar -->
     @if (showCustomDatePicker) {
@@ -22,11 +23,12 @@
             [(ngModel)]="$customDateRange"
             selectionMode="range"
             [readonlyInput]="false"
-            [showIcon]="true"
+            [showIcon]="false"
             [placeholder]="customDatePlaceholder"
             dateFormat="mm/dd/yy"
             [showButtonBar]="true"
             [style]="{ minWidth: '250px' }"
-            data-testid="custom-date-range-calendar"></p-calendar>
+            (onSelect)="onChangeCustomDateRange()"
+            data-testid="custom-date-range-calendar" />
     }
 </div>

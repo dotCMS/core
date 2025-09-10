@@ -9,7 +9,6 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 export interface DotVersionable {
     inode: string;
 }
-
 @Injectable()
 export class DotVersionableService {
     private coreWebService = inject(CoreWebService);

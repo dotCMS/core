@@ -24,7 +24,8 @@ import { DotMenuItem } from '../suggestions/suggestions.component';
 @Component({
     selector: 'dot-suggestion-list',
     templateUrl: './suggestion-list.component.html',
-    styleUrls: ['./suggestion-list.component.scss']
+    styleUrls: ['./suggestion-list.component.scss'],
+    standalone: false
 })
 export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     @ContentChildren(SuggestionsListItemComponent) items: QueryList<SuggestionsListItemComponent>;

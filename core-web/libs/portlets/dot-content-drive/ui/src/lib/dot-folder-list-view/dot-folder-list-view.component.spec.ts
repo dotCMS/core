@@ -130,6 +130,55 @@ describe('DotFolderListViewComponent', () => {
         });
     });
 
+    describe('Styles and Pagination', () => {
+        it('should have empty-table class when items list is empty', () => {
+            spectator.setInput('items', []);
+            spectator.setInput('totalItems', 0);
+            spectator.detectChanges();
+
+            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
+            expect(tableDebugEl.attributes['ng-reflect-style-class']).toContain('empty-table');
+        });
+
+        it('should not show pagination when there are 20 or fewer total items', () => {
+            spectator.setInput('totalItems', 20);
+            spectator.detectChanges();
+
+            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
+            expect(tableDebugEl.attributes['ng-reflect-paginator']).toBe('false');
+        });
+
+        it('should set first value when calling onPage', () => {
+            spectator.setInput('totalItems', 50); // Enable pagination
+            spectator.detectChanges();
+
+            const mockEvent = { first: 20, rows: 20 };
+            spectator.component.onPage(mockEvent);
+            spectator.detectChanges();
+
+            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
+            expect(tableDebugEl.attributes['ng-reflect-first']).toBe('20');
+        });
+
+        it('should reset first to 0 when showPagination becomes true', () => {
+            // Start with no pagination (totalItems <= MIN_ROWS_PER_PAGE)
+            spectator.setInput('totalItems', 15);
+            spectator.detectChanges();
+
+            // Set first to some value
+            const mockEvent = { first: 20, rows: 20 };
+            spectator.component.onPage(mockEvent);
+            spectator.detectChanges();
+
+            // Now enable pagination by setting totalItems > MIN_ROWS_PER_PAGE
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            const tableDebugEl = spectator.debugElement.query(By.css('[data-testId="table"]'));
+            expect(tableDebugEl.attributes['ng-reflect-first']).toBe('0');
+        });
+    });
+
     describe('Loading', () => {
         it('should show the loading row', () => {
             spectator.setInput('items', mockItems);
@@ -212,6 +261,20 @@ describe('DotFolderListViewComponent', () => {
             const contentletTitle = spectator.query(byTestId('item-title'));
 
             expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
+        });
+
+        it('should have item title text with truncate-text class', () => {
+            const itemTitleText = spectator.query(byTestId('item-title-text'));
+
+            expect(itemTitleText).toBeTruthy();
+            expect(itemTitleText).toHaveClass('truncate-text');
+        });
+
+        it('should not have max-width: 100% style on item-title td', () => {
+            const itemTitleTd = spectator.query(byTestId('item-title'));
+            const computedStyle = window.getComputedStyle(itemTitleTd);
+
+            expect(computedStyle.maxWidth).not.toBe('100%');
         });
 
         describe('Status', () => {

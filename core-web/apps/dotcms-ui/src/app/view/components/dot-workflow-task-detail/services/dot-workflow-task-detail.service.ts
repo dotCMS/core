@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotMenuService } from '../../../../api/services/dot-menu.service';
 
 export interface DotTaskAction {
     header?: string;

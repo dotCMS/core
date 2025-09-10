@@ -12,7 +12,6 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
  */
 @Component({
     selector: 'dot-edit-content-radio-field',
-    standalone: true,
     imports: [RadioButtonModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-radio-field.component.html',
     styleUrls: ['./dot-edit-content-radio-field.component.scss'],

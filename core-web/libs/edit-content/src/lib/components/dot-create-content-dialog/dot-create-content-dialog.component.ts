@@ -42,7 +42,6 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
  */
 @Component({
     selector: 'dot-edit-content-dialog',
-    standalone: true,
     imports: [DotEditContentLayoutComponent, DotMessagePipe],
     templateUrl: './dot-edit-content-dialog.component.html',
     styleUrls: ['./dot-edit-content-dialog.component.scss'],

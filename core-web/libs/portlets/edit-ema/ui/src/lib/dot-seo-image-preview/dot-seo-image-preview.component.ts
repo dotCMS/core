@@ -8,7 +8,6 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-seo-image-preview.component.html',
     styleUrls: ['./dot-seo-image-preview.component.scss'],
     imports: [DotMessagePipe, CommonModule],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSeoImagePreviewComponent {

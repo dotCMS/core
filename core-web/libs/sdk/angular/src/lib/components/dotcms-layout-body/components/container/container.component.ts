@@ -33,7 +33,6 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
  */
 @Component({
     selector: 'dotcms-container',
-    standalone: true,
     imports: [ContainerNotFoundComponent, EmptyContainerComponent, ContentletComponent],
     template: `
         @if (!$containerData()) {

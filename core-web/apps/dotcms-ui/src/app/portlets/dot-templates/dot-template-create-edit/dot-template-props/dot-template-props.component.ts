@@ -10,7 +10,8 @@ import { map, startWith } from 'rxjs/operators';
 @Component({
     selector: 'dot-template-props',
     templateUrl: './dot-template-props.component.html',
-    styleUrls: ['./dot-template-props.component.scss']
+    styleUrls: ['./dot-template-props.component.scss'],
+    standalone: false
 })
 export class DotTemplatePropsComponent implements OnInit {
     private ref = inject(DynamicDialogRef);

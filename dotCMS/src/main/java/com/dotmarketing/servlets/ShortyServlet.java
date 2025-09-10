@@ -268,6 +268,24 @@ public class ShortyServlet extends HttpServlet {
   private void serve(final HttpServletRequest request,
                      final HttpServletResponse response) throws Exception {
 
+    // Check for dotsass=true query parameter to enable SASS compilation
+    final String dotsassParam = request.getParameter("dotsass");
+    final boolean isDotsassParam = dotsassParam != null && dotsassParam.equalsIgnoreCase("true");
+    
+    if (isDotsassParam) {
+        // Forward to CSSPreProcessServlet for SASS compilation
+        Logger.debug(this, "ShortyServlet forwarding request with dotsass=true parameter to CSSPreProcessServlet: " + request.getRequestURI());
+        
+        // Create a new request attribute to pass the original URI to the CSSPreProcessServlet
+        request.setAttribute("originalShortyURI", request.getRequestURI());
+        
+        // Forward to the CSSPreProcessServlet using the /DOTSASS path
+        // We're just using /DOTSASS as a mapping to reach the servlet, not as a real file path
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/DOTSASS");
+        dispatcher.forward(request, response);
+        return;
+    }
+    
     try {
         final User user = ServletUtils.getUserAndAuthenticateIfRequired(
                 this.webResource, request, response);

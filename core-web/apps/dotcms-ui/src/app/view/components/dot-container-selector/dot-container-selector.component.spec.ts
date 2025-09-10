@@ -10,11 +10,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import {
-    PaginationEvent,
-    SearchableDropdownComponent
-} from '@components/_common/searchable-dropdown/component';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -30,7 +25,12 @@ import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 
+import { DotTemplateContainersCacheService } from '../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import {
+    PaginationEvent,
+    SearchableDropdownComponent
+} from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 describe('ContainerSelectorComponent', () => {

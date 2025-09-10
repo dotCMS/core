@@ -100,6 +100,7 @@ export interface ChartDataset {
     borderWidth?: number;
     fill?: boolean;
     tension?: number;
+    cubicInterpolationMode?: 'default' | 'monotone';
 }
 
 /**

@@ -1,11 +1,16 @@
 import { expect, describe } from '@jest/globals';
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
-import { of, throwError } from 'rxjs';
+import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
-import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotFieldService,
+    DotHttpErrorManagerService
+} from '@dotcms/data-access';
 import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
-import { createFakeContentlet } from '@dotcms/utils-testing';
+import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
+import { RelationshipFieldService } from './relationship-field.service';
 import { RelationshipFieldStore } from './relationship-field.store';
 
 describe('RelationshipFieldStore', () => {
@@ -47,28 +52,20 @@ describe('RelationshipFieldStore', () => {
     const createStoreService = createServiceFactory({
         service: RelationshipFieldStore,
         providers: [
-            {
-                provide: DotContentTypeService,
-                useValue: {
-                    getContentType: jest.fn()
-                }
-            },
-            {
-                provide: DotHttpErrorManagerService,
-                useValue: {
-                    handle: jest.fn()
-                }
-            }
+            RelationshipFieldService,
+            mockProvider(DotContentTypeService, {
+                getContentType: jest.fn().mockReturnValue(of(mockContentType))
+            }),
+            mockProvider(DotFieldService),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn()
+            })
         ]
     });
 
     beforeEach(() => {
         spectator = createStoreService();
         store = spectator.inject(RelationshipFieldStore);
-
-        // Set up default mock behavior
-        const dotContentTypeService = spectator.inject(DotContentTypeService);
-        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(of(mockContentType));
     });
 
     it('should be created', () => {
@@ -91,33 +88,39 @@ describe('RelationshipFieldStore', () => {
     describe('State Management', () => {
         describe('initialize', () => {
             it('should set single selection mode for ONE_TO_ONE relationship', () => {
-                store.initialize({
-                    cardinality: 2,
-                    contentlet: mockContentlet,
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 2, isParentField: true, velocityVar: 'AllTypes' }
+                });
+                store.initialize({
+                    field: mockField,
+                    contentlet: mockContentlet
                 });
 
                 expect(store.selectionMode()).toBe('single');
             });
 
             it('should set multiple selection mode for other relationship types', () => {
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 0, isParentField: true, velocityVar: 'AllTypes' }
+                });
+                store.initialize({
+                    field: mockField,
+                    contentlet: mockContentlet
                 });
 
                 expect(store.selectionMode()).toBe('multiple');
             });
 
             it('should initialize data from contentlet', () => {
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: { cardinality: 0, isParentField: true, velocityVar: 'AllTypes' }
+                });
+                store.initialize({
+                    field: mockField,
+                    contentlet: mockContentlet
                 });
 
                 expect(store.data()).toBeDefined();
@@ -125,16 +128,24 @@ describe('RelationshipFieldStore', () => {
 
             it('should load content type when initialized', () => {
                 const dotContentTypeService = spectator.inject(DotContentTypeService);
-                const getContentTypeSpy = jest.spyOn(dotContentTypeService, 'getContentType');
 
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: {
+                        cardinality: 0,
+                        isParentField: true,
+                        velocityVar: 'test-content-type'
+                    }
                 });
 
-                expect(getContentTypeSpy).toHaveBeenCalledWith('test-content-type');
+                store.initialize({
+                    field: mockField,
+                    contentlet: mockContentlet
+                });
+
+                expect(dotContentTypeService.getContentType).toHaveBeenCalledWith(
+                    'test-content-type'
+                );
                 expect(store.status()).toBe(ComponentStatus.LOADED);
                 expect(store.contentType()).toEqual(mockContentType);
                 expect(store.isNewEditorEnabled()).toBe(true);
@@ -198,11 +209,17 @@ describe('RelationshipFieldStore', () => {
 
         describe('isDisabledCreateNewContent', () => {
             beforeEach(() => {
-                store.initialize({
-                    cardinality: 2,
-                    contentlet: mockContentlet,
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: {
+                        cardinality: 2,
+                        isParentField: true,
+                        velocityVar: 'test-content-type'
+                    }
+                });
+                store.initialize({
+                    field: mockField,
+                    contentlet: mockContentlet
                 });
             });
 
@@ -219,11 +236,17 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should not disable for multiple mode regardless of items', () => {
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: {
+                        cardinality: 0,
+                        isParentField: true,
+                        velocityVar: 'test-content-type'
+                    }
+                });
+                store.initialize({
+                    field: mockField,
+                    contentlet: mockContentlet
                 });
                 store.setData(mockData);
 
@@ -322,59 +345,37 @@ describe('RelationshipFieldStore', () => {
                     inode: 'empty',
                     variable: 'relationship_field'
                 });
-
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: emptyContentlet,
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: {
+                        cardinality: 0,
+                        isParentField: true,
+                        velocityVar: 'test-content-type'
+                    }
+                });
+                store.initialize({
+                    field: mockField,
+                    contentlet: emptyContentlet
                 });
 
                 expect(store.data()).toBeDefined();
                 expect(store.data().length).toBe(0);
             });
 
-            it('should handle extreme cardinality values', async () => {
-                const dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
-                const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
-
-                store.initialize({
-                    cardinality: 999,
-                    contentlet: mockContentlet,
+            it('should handle extreme cardinality values', () => {
+                const mockField = createFakeRelationshipField({
                     variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
+                    relationships: {
+                        cardinality: 9999,
+                        isParentField: true,
+                        velocityVar: 'test-content-type'
+                    }
+                });
+                store.initialize({
+                    field: mockField,
+                    contentlet: mockContentlet
                 });
 
-                // Wait for async operation to complete
-                await new Promise((resolve) => setTimeout(resolve, 10));
-
-                expect(handleErrorSpy).toHaveBeenCalled();
-                expect(store.status()).toBe(ComponentStatus.ERROR);
-            });
-        });
-
-        describe('content type loading', () => {
-            it('should handle content type loading error', async () => {
-                const dotContentTypeService = spectator.inject(DotContentTypeService);
-                const dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
-
-                jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                    throwError(() => new Error('Content type not found'))
-                );
-
-                const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
-
-                store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field',
-                    contentTypeId: 'test-content-type'
-                });
-
-                // Wait for async operation to complete
-                await new Promise((resolve) => setTimeout(resolve, 10));
-
-                expect(handleErrorSpy).toHaveBeenCalled();
                 expect(store.status()).toBe(ComponentStatus.ERROR);
             });
         });

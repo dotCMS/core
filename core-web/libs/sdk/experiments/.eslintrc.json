@@ -5,7 +5,7 @@
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
             "rules": {
-                "padding-line-between-statements": [
+                "@stylistic/padding-line-between-statements": [
                     "error",
                     { "blankLine": "always", "prev": "const", "next": "*" },
                     { "blankLine": "always", "prev": "*", "next": "if" },

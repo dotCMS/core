@@ -14,12 +14,13 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
-import { createFormGroupDirectiveMock } from '@dotcms/edit-content/utils/mocks';
+import { DotCMSClazzes, DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
+
+import { createFormGroupDirectiveMock } from '../../utils/mocks';
 
 const mockField = createFakeRelationshipField({
     relationships: {
@@ -52,7 +53,7 @@ const mockContentType: DotCMSContentType = {
     name: 'Test Content Type',
     variable: 'testContentType',
     baseType: 'CONTENT',
-    clazz: '',
+    clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
     defaultType: false,
     fields: [],
     fixed: false,
@@ -263,11 +264,17 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         beforeEach(() => {
             spectator.detectChanges();
             // Initialize store with many-to-many cardinality (1) to allow multiple items
+            const fieldWithCardinality = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 1, // MANY_TO_MANY
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'test'
+            });
             store.initialize({
-                cardinality: 1, // MANY_TO_MANY
-                contentlet: createFakeContentlet({}),
-                variable: 'test',
-                contentTypeId: 'test-content-type-id'
+                field: fieldWithCardinality,
+                contentlet: createFakeContentlet({})
             });
             store.setData([]);
         });
@@ -327,11 +334,19 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         beforeEach(async () => {
             spectator.detectChanges();
             // Initialize store with many-to-many cardinality (1) to allow multiple items
+
+            const mockField = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 1, // MANY_TO_MANY
+                    isParentField: true,
+                    velocityVar: 'test-content-type'
+                },
+                variable: 'test'
+            });
+
             store.initialize({
-                cardinality: 1, // MANY_TO_MANY
-                contentlet: createFakeContentlet({}),
-                variable: 'test',
-                contentTypeId: 'test-content-type'
+                field: mockField,
+                contentlet: createFakeContentlet({})
             });
             store.setData([]);
             // Flush effects to ensure async operations complete
@@ -471,13 +486,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             expect(menuItems[0].disabled).toBe(true);
             expect(menuItems[1].disabled).toBe(true);
-        });
-
-        it('should compute attributes correctly', () => {
-            const attributes = spectator.component.$attributes();
-
-            expect(attributes).toHaveProperty('contentTypeId');
-            expect(attributes).toHaveProperty('hitText');
         });
     });
 });

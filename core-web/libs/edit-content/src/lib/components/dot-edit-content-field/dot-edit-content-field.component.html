@@ -2,6 +2,7 @@
 @let contentlet = $contentlet();
 @let contentType = $contentType();
 @let showLabel = $showLabel();
+@let contentTypeVariable = contentType?.variable;
 
 <ng-template #labelTemplate>
     @if (showLabel) {
@@ -49,6 +50,8 @@
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-text-area
                 [field]="field"
+                [contentlet]="contentlet"
+                (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
@@ -72,6 +75,9 @@
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-calendar-field
+                [formControlName]="field.variable"
+                [contentType]="contentType"
+                [utcTimezone]="$systemTimezone()"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
         }
@@ -100,6 +106,7 @@
                 [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 [field]="field"
+                (valueUpdated)="onBinaryFieldValueUpdated($event)"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
@@ -109,7 +116,7 @@
             <dot-edit-content-custom-field
                 [field]="field"
                 [inode]="contentlet?.inode"
-                [contentType]="contentType"
+                [contentType]="contentTypeVariable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
@@ -137,6 +144,7 @@
             <dot-edit-content-wysiwyg-field
                 [field]="field"
                 [contentlet]="contentlet"
+                (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
@@ -145,6 +153,7 @@
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-host-folder-field
                 [field]="field"
+                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
@@ -187,6 +196,12 @@
         }
     }
 }
-@if (field.hint && field.fieldType !== fieldTypes.RELATIONSHIP) {
-    <small [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
+@if (
+    field.hint &&
+    field.fieldType !== fieldTypes.RELATIONSHIP &&
+    !calendarTypes.includes(field.fieldType)
+) {
+    <small class="text-gray-700" [attr.data-testId]="'hint-' + field.variable">
+        {{ field.hint }}
+    </small>
 }

@@ -13,7 +13,8 @@ import java.net.URL;
 import java.util.Map;
 
 /**
- * Util class to handle JSON
+ * This utility class exposes different methods that allow you to transform JSON Strings into Java
+ * Objects and vice versa, as well as methods to validate JSON.
  *
  * @author Freddy Rodriguez
  * @since Jun 8th, 2022
@@ -22,10 +23,12 @@ public class JsonUtil {
 
     public final static ObjectMapper JSON_MAPPER = new ObjectMapper();
 
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> getJsonFileContent(final String path) throws IOException {
         return JSON_MAPPER.readValue(getJsonFileContentAsString(path), Map.class);
     }
 
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> getJsonFromString(final String json) throws IOException {
         return JSON_MAPPER.readValue(json, Map.class);
     }
@@ -78,6 +81,19 @@ public class JsonUtil {
                 () -> JSON_MAPPER.writeValueAsString(object)).getOrElse(StringPool.BLANK);
 
         return json;
+    }
+
+    /**
+     * Transforms the specified object into a prettified JSON String.
+     *
+     * @param object The object to be transformed.
+     *
+     * @return The prettified JSON String.
+     */
+    public static String getPrettyJsonStringFromObject(final Object object) {
+        return Try.of(() ->
+                JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(object))
+                .getOrElse(StringPool.BLANK);
     }
 
     /**
@@ -136,10 +152,18 @@ public class JsonUtil {
      * @return
      */
     public static JSONValidationResult validateJSON(final String fieldValue) {
+        if (fieldValue == null || fieldValue.isEmpty()) {
+            return new JSONValidationResult("Json is empty", -1, -1);
+        }
         try {
             JsonNode node = JSON_MAPPER.readTree(fieldValue);
             if (node != null && !node.isMissingNode()) {
-                return new JSONValidationResult(node);
+                // Only accept objects {} or arrays []
+                if (node.isObject() || node.isArray()) {
+                    return new JSONValidationResult(node);
+                } else {
+                    return new JSONValidationResult("JSON must be an object or array, not a primitive value", -1, -1);
+                }
             } else {
                 return new JSONValidationResult("Json Node is null or missing", -1, -1);
             }
@@ -152,4 +176,5 @@ public class JsonUtil {
             );
         }
     }
+
 }

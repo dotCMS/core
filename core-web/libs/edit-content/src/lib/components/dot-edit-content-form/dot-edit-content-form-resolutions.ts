@@ -1,7 +1,7 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { getRelationshipFromContentlet } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
  * A function that provides a default resolution value for a contentlet field.
@@ -85,6 +85,73 @@ const categoryResolutionFn: FnResolutionValue<string[] | string> = (contentlet, 
 };
 
 /**
+ * Resolution function for date/time fields
+ * Backend always returns numeric timestamps when value exists, or the field is not included
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object
+ * @param {DotCMSContentTypeField} field - The field object
+ * @returns {number | null} Numeric timestamp or null if no value
+ */
+const dateResolutionFn: FnResolutionValue<number | null> = (contentlet, field) => {
+    if (!contentlet) {
+        // For new content, let the calendar component handle defaultValue processing
+        // The calendar component has proper logic for "now" and fixed dates with server timezone
+        return null;
+    }
+
+    const value = contentlet[field.variable];
+
+    // If field doesn't exist in contentlet or is explicitly null/undefined/empty
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    // Backend should always return number timestamps
+    if (typeof value === 'number') {
+        // Validate it's a reasonable timestamp (not NaN or invalid)
+        return isNaN(value) || !isFinite(value) ? null : value;
+    }
+
+    // Handle edge cases where backend might return string timestamps
+    if (typeof value === 'string') {
+        const numericValue = Number(value);
+        if (!isNaN(numericValue) && isFinite(numericValue)) {
+            return numericValue;
+        }
+
+        console.warn(`Calendar field received unexpected string value from backend:`, {
+            fieldVariable: field.variable,
+            value: value,
+            type: typeof value
+        });
+        return null;
+    }
+
+    // Handle unexpected Date objects (shouldn't happen from backend)
+    if (value instanceof Date) {
+        const timestamp = value.getTime();
+        if (!isNaN(timestamp)) {
+            console.warn(`Calendar field received Date object instead of timestamp from backend:`, {
+                fieldVariable: field.variable,
+                value: value,
+                convertedTimestamp: timestamp
+            });
+            return timestamp;
+        }
+        return null;
+    }
+
+    // Log unexpected value types
+    console.error(`Calendar field received unexpected value type from backend:`, {
+        fieldVariable: field.variable,
+        value: value,
+        type: typeof value
+    });
+
+    return null;
+};
+
+/**
  * A function that provides a default resolution value for a contentlet field.
  *
  * @param {Object} contentlet - The contentlet object.
@@ -106,7 +173,10 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
  * This enables each field type to properly process its own data.
  *
  */
-export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue<string | string[] | Date>> = {
+export const resolutionValue: Record<
+    FIELD_TYPES,
+    FnResolutionValue<string | string[] | Date | number | null>
+> = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
@@ -114,9 +184,9 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue<string | str
     [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
-    [FIELD_TYPES.DATE]: defaultResolutionFn,
-    [FIELD_TYPES.DATE_AND_TIME]: defaultResolutionFn,
-    [FIELD_TYPES.TIME]: defaultResolutionFn,
+    [FIELD_TYPES.DATE]: dateResolutionFn,
+    [FIELD_TYPES.DATE_AND_TIME]: dateResolutionFn,
+    [FIELD_TYPES.TIME]: dateResolutionFn,
     [FIELD_TYPES.HIDDEN]: defaultResolutionFn,
     [FIELD_TYPES.HOST_FOLDER]: hostFolderResolutionFn,
     [FIELD_TYPES.JSON]: defaultResolutionFn,

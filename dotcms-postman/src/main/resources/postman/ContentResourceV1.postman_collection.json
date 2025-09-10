@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "c5851ae0-0b9c-4927-8fe9-44ea23ffeba6",
+		"_postman_id": "83dfa8cd-0714-4d23-8037-82a3e563015d",
 		"name": "ContentResourceV1",
 		"description": "This folder contains a comprehensive set of API requests related to the `ContentResourceV1` API endpoints. These requests cover various operations such as creating, retrieving and updating content. The folder is organized to help developers and testers efficiently validate and interact with the content resource endpoints in the system.\n\n#### Objectives:\n\n1. **Create Content**:\n    \n    - Test the creation of new content items with valid and invalid data.\n        \n    - Ensure that the response includes all necessary details for the created content.\n        \n2. **Retrieve Content**:\n    \n    - Validate the retrieval of content items by ID.\n        \n    - Ensure the response contains accurate and complete content details.\n        \n3. **Update Content**:\n    \n    - Test updating existing content items with valid and invalid data.\n        \n    - Verify that the response reflects the updated content accurately.\n        \n    - Ensure that only authorized users can update content.\n        \n4. **Error Handling**:\n    \n    - Verify that the API returns appropriate error messages for invalid requests.\n        \n    - Ensure the correct HTTP status codes are used for different error scenarios.\n        \n5. **Security**:\n    \n    - Validate that only authorized users can perform operations on the content.\n        \n    - Ensure that all security protocols are enforced during API interactions.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "6484944"
 	},
 	"item": [
 		{
@@ -27,6 +27,13 @@
 											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
 											"});",
 											"",
+											"pm.test(\"Test Check disabledWYSIWYG is exposed\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    var contentId = Object.keys(jsonData.entity.results[0]);",
+											"    pm.expect(jsonData.entity.results[0][contentId].disabledWYSIWYG).to.length(1);",
+											"});",
+											"",
 											"",
 											""
 										],
@@ -40,7 +47,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\",\n            \"body\": \"This is my Test Generic Content\"\n        }\n    ]\n}",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\",\n            \"body\": \"This is my Test Generic Content\",\n            \"disabledWYSIWYG\": [\"body\"]\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3176,6 +3183,12 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testContentId",
+			"value": ""
 		}
 	]
 }

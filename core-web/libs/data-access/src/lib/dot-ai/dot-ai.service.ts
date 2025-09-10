@@ -17,9 +17,7 @@ import {
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
 };
-
 export const API_ENDPOINT = '/api/v1/ai';
-
 export const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
 
 const headers = new HttpHeaders({

@@ -1,11 +1,12 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
+import { DotLanguage } from '@dotcms/dotcms-models';
+
 import {
     DotLanguagesService,
     LANGUAGE_API_URL,
     LANGUAGE_API_URL_WITH_VARS
-} from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+} from './dot-languages.service';
 
 describe('DotLanguagesService', () => {
     let spectator: SpectatorHttp<DotLanguagesService>;

@@ -11,7 +11,6 @@ export interface DotContentletLockResponse {
     inode: string;
     message: string;
 }
-
 @Injectable()
 export class DotContentletLockerService {
     private coreWebService = inject(CoreWebService);

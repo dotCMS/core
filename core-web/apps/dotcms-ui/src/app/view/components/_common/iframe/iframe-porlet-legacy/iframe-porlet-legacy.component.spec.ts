@@ -11,12 +11,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -57,6 +51,12 @@ import {
 
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotDownloadBundleDialogModule } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { IFrameModule } from '../index';
 
 const routeDatamock = {

@@ -10,7 +10,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -107,8 +106,6 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	abstract void updateMovedFolderAssets(Folder folder) throws DotDataException, DotStateException, DotSecurityException;
-
 	protected List<Folder> getFoldersByParent(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException{
 		return null;
 	}
@@ -135,9 +132,6 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond, String orderby) throws DotStateException,DotDataException{
-		return null;
-	}
 
 	protected List<Treeable> getChildrenClass(Folder parent, Class clazz, ChildrenCondition cond) throws DotStateException,DotDataException{
 		return null;

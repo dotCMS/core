@@ -6,16 +6,18 @@ import { ActivatedRoute } from '@angular/router';
 
 import { take, tap } from 'rxjs/operators';
 
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+
+import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
     providers: [],
     selector: 'dot-reset-password-component',
     styleUrls: ['./reset-password.component.scss'],
-    templateUrl: 'reset-password.component.html'
+    templateUrl: 'reset-password.component.html',
+    standalone: false
 })
 export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     private fb = inject(UntypedFormBuilder);

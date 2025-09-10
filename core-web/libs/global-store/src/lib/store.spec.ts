@@ -1,11 +1,11 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotSiteService } from '@dotcms/data-access';
+import { DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
 
 import { GlobalStore } from './store';
-import { mockSiteEntity, mockUserData, mockUserDataAlt } from './store.mock';
+import { mockSiteEntity } from './store.mock';
 
 describe('GlobalStore', () => {
     let spectator: SpectatorService<InstanceType<typeof GlobalStore>>;
@@ -13,7 +13,7 @@ describe('GlobalStore', () => {
 
     const createService = createServiceFactory({
         service: GlobalStore,
-        providers: [mockProvider(DotSiteService)]
+        providers: [mockProvider(DotSiteService), mockProvider(DotSystemConfigService)]
     });
 
     beforeEach(() => {
@@ -23,9 +23,7 @@ describe('GlobalStore', () => {
 
     describe('Initial State', () => {
         it('should initialize with expected default values', () => {
-            expect(store.user()).toBeNull();
             expect(store.siteDetails()).toBeNull();
-            expect(store.isLoggedIn()).toBe(false);
             expect(store.currentSiteId()).toBeNull();
         });
     });
@@ -49,30 +47,6 @@ describe('GlobalStore', () => {
 
             expect(store.siteDetails()).toEqual(mockSiteEntity);
             expect(store.currentSiteId()).toBe(mockSiteEntity.identifier);
-        });
-    });
-
-    // TODO: Implement user management tests when user functionality is fully implemented
-    describe('User Management', () => {
-        describe('login method', () => {
-            it('should update user state when login is called', () => {
-                store.login(mockUserData);
-
-                expect(store.user()).toEqual(mockUserData);
-                expect(store.isLoggedIn()).toBe(true);
-            });
-        });
-
-        describe('isLoggedIn computed', () => {
-            it('should return false when user is null', () => {
-                expect(store.isLoggedIn()).toBe(false);
-            });
-
-            it('should return true when user is set', () => {
-                store.login(mockUserDataAlt);
-
-                expect(store.isLoggedIn()).toBe(true);
-            });
         });
     });
 });

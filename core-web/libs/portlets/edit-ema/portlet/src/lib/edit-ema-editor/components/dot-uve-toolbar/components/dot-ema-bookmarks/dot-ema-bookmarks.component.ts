@@ -24,7 +24,6 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-ema-bookmarks',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe, TooltipModule],
     templateUrl: './dot-ema-bookmarks.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

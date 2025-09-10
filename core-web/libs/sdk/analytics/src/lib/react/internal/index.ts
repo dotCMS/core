@@ -1,0 +1,1 @@
+export { initializeAnalytics } from './utils';

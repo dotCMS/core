@@ -5,9 +5,10 @@ import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/r
 
 import { map, mergeMap, take } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotLicenseService } from '@dotcms/data-access';
 import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 /**
  * Returns apps list from the system

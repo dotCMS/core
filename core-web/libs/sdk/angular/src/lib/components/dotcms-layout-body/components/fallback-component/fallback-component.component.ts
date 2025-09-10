@@ -13,7 +13,6 @@ import { DynamicComponentEntity } from '../../../../models';
  */
 @Component({
     selector: 'dotcms-fallback-component',
-    standalone: true,
     imports: [AsyncPipe, NgComponentOutlet],
     template: `
         @if (UserNoComponent) {

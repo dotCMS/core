@@ -30,13 +30,7 @@ tags:
   name: Announcements
 - description: Third-party application integration and configuration
   name: Apps
-- description: Endpoints that handle operations related to API tokens
-  externalDocs:
-    description: Additional API token information
-    url: https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken
-  name: API Token
-- description: Endpoints that perform operations related to user authentication
-  externalDocs:
+- externalDocs:
     description: Additional Authentication API information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication
   name: Authentication
@@ -48,6 +42,9 @@ tags:
   name: Containers
 - description: Endpoints for managing content and contentlets
   name: Content
+- description: Returns the content types valid for a page based on the container/types
+    on the layout
+  name: getPagesContentTypes
 - description: Endpoints for managing folder structure and organization
   name: Folders
 - description: Form management and processing
@@ -77,15 +74,8 @@ tags:
   name: System Logging
 - description: System monitoring and health checks
   name: System Monitoring
-- description: Permission management and access control
-  name: Permissions
-- description: User role and permission management
-  name: Roles
 - description: Endpoints for managing page templates and layouts
   name: Templates
-- description: "Endpoints for managing user accounts, authentication, and user-related\
-    \ operations"
-  name: Users
 - description: Endpoints for managing content variants
   name: Variants
 - description: Endpoints that perform operations related to workflows.
@@ -95,6 +85,11 @@ tags:
   name: Workflow
 - description: System administration and management tools
   name: Administration
+- description: API token management and authentication
+  externalDocs:
+    description: Additional API token information
+    url: https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken
+  name: API Token
 - description: Cluster nodes and distributed system management
   name: Cluster Management
 - description: Content delivery and rendering
@@ -117,6 +112,8 @@ tags:
   name: Notifications
 - description: OSGi plugin management and dynamic deployment
   name: OSGi Plugins
+- description: Permission management and access control
+  name: Permissions
 - description: Content persona management and targeting
   name: Personas
 - description: Content personalization and persona management
@@ -127,6 +124,8 @@ tags:
   name: Publishing
 - description: Remote content publishing and synchronization
   name: Push Publishing
+- description: User role and permission management
+  name: Roles
 - description: Business rules and conditional logic management
   name: Rules Engine
 - description: SAML SSO authentication and integration
@@ -147,6 +146,8 @@ tags:
   name: Themes
 - description: Administrative tool group management
   name: Tool Groups
+- description: User account management and administration
+  name: Users
 - description: Version control and content archiving
   name: Versionables
 - description: Velocity Template Language execution and rendering
@@ -2006,53 +2007,111 @@ paths:
       - Administration
   /role/loadbyid/{params}:
     get:
-      operationId: loadById
+      deprecated: true
+      description: Returns detailed role information including all role properties.
+        Used for loading complete role details in admin UI. This endpoint is deprecated.
+      operationId: loadRoleByIdLegacy
       parameters:
-      - in: path
+      - description: URL parameters including role ID (id=roleId)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Role details including DBFQN, FQN, description, permissions,\
+                  \ id, name, and other role properties"
+          description: Role loaded successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Load role by ID (deprecated)
       tags:
       - Roles
   /role/loadbyname/{params}:
     get:
-      operationId: loadByName
+      deprecated: true
+      description: Returns a filtered role tree structure where leaf nodes contain
+        the specified name. Used for role filtering in admin UI. This endpoint is
+        deprecated.
+      operationId: loadRolesByNameLegacy
       parameters:
-      - in: path
+      - description: URL parameters including name filter (name=filterText)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Filtered role tree structure with identifier, label,\
+                  \ and items containing matching roles"
+          description: Filtered roles loaded successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Load roles by name filter (deprecated)
       tags:
       - Roles
   /role/loadchildren/{params}:
     get:
-      operationId: loadChildren
+      deprecated: true
+      description: "Returns role hierarchy with first-level children for lazy-loading\
+        \ role tree in admin UI. If no ID provided, returns root roles. This endpoint\
+        \ is deprecated."
+      operationId: loadRoleChildrenLegacy
       parameters:
-      - in: path
+      - description: URL parameters including role ID (id=roleId or empty for root
+          roles)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Role hierarchy tree with child roles containing id,\
+                  \ name, locked, and children properties"
+          description: Role children loaded successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Load role children (deprecated)
       tags:
       - Roles
   /rulesengine/layout/{params}:
@@ -2147,24 +2206,41 @@ paths:
   /user/getloggedinuser/{params}:
     get:
       deprecated: true
-      operationId: getLoggedInUser
+      description: "Returns a JSON representation of the currently logged in user\
+        \ including userId, emailAddress, firstName, lastName, and roleId. This endpoint\
+        \ is deprecated - use v1 UserResource instead."
+      operationId: getLoggedInUserLegacy
       parameters:
-      - in: path
+      - description: URL parameters for the request
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "User information containing userId, emailAddress, firstName,\
+                  \ lastName, and roleId"
+          description: User information retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get logged in user (deprecated)
       tags:
       - Users
   /util/encodeQueryParamValue/{params}:
     get:
-      operationId: getLoggedInUser_1
+      operationId: getLoggedInUser
       parameters:
       - in: path
         name: params
@@ -2926,7 +3002,7 @@ paths:
         Issues an API token to an authorized user account.
 
         Returns an object representing the issued token.
-      operationId: postIssueApiToken
+      operationId: postIssueApiTokenV1
       requestBody:
         content:
           application/json:
@@ -2982,6 +3058,8 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityApiTokenWithJwtView"
           description: Token successfully issued to user
         "400":
           description: Bad request
@@ -3005,7 +3083,7 @@ paths:
         For limited users, returns only their own expiring tokens.
 
         The number of days to look ahead can be configured via the EXPIRING_TOKEN_LOOKAHEAD_DAYS property (default: 7).
-      operationId: getExpiringApiTokens
+      operationId: getExpiringApiTokensV1
       responses:
         "200":
           content:
@@ -3044,7 +3122,7 @@ paths:
         This is used, for example, in configuring a [push publishing](https://www.dotcms.com/docs/latest/push-publishing) endpoint.
 
         Usable only by administrators.
-      operationId: putGetRemoteToken
+      operationId: putGetRemoteTokenV1
       requestBody:
         content:
           application/json:
@@ -3112,6 +3190,8 @@ paths:
                 i18nMessagesMap: {}
                 messages: []
                 permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityApiTokenWithJwtView"
           description: Remote token generated successfully
         "400":
           description: Bad request
@@ -3132,7 +3212,7 @@ paths:
         Deletes an API token by identifier. May be performed on either active, expired, or revoked.
 
         Returned entity contains the property `deleted`, the value of which is the deleted token object.
-      operationId: deleteApiTokenById
+      operationId: deleteApiTokenByIdV1
       parameters:
       - description: Identifier of API token to be deleted.
         in: path
@@ -3170,6 +3250,8 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: Token successfully deleted
         "400":
           description: Bad request
@@ -3186,7 +3268,7 @@ paths:
     get:
       description: Returns a JSON web token. This overwrites the JWT value associated
         with the specified token object.
-      operationId: getGetJwtFromApiToken
+      operationId: getJwtFromApiTokenV1
       parameters:
       - description: Identifier of API token to receive a new JWT.
         in: path
@@ -3206,6 +3288,8 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJwtView"
           description: JSON web token successfully created
         "400":
           description: Bad request
@@ -3226,7 +3310,7 @@ paths:
         Revokes a token by its identifier.
 
          Returned entity contains the property `revoked`, whose value is an object representing the revoked token.
-      operationId: putRevokeTokenById
+      operationId: putRevokeTokenByIdV1
       parameters:
       - description: Identifier of API token to be revoked
         in: path
@@ -3264,6 +3348,8 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: Token revoked successfully
         "400":
           description: Bad request
@@ -3285,7 +3371,7 @@ paths:
 
         The returned list may optionally include or exclude tokens that have been revoked.
 
-      operationId: getApiTokensByUserId
+      operationId: getApiTokensByUserIdV1
       parameters:
       - description: Identifier of user to check for tokens.
         in: path
@@ -3329,6 +3415,8 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: User's API tokens successfully retrieved
         "400":
           description: Bad request
@@ -3674,7 +3762,7 @@ paths:
 
         Otherwise the system will return an 'authentication failed' message.
 
-      operationId: postAuthentication
+      operationId: postAuthenticationV1
       requestBody:
         content:
           application/json:
@@ -3697,7 +3785,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityUserMapView"
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: User authentication successful
         "401":
           description: User not authenticated
@@ -3717,16 +3805,13 @@ paths:
 
         This retrieved data will be formatted into a JSON response body.
 
-      operationId: getLogInUser
+      operationId: getLogInUserV1
       responses:
         "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityUserView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityUserView"
+                $ref: "#/components/schemas/ResponseEntityMapMapView"
           description: User data successfully collected
         "400":
           description: Bad request
@@ -4263,18 +4348,36 @@ paths:
       - Categories
   /v1/changePassword:
     post:
+      description: Resets a user's password using a valid token received via email
+        or other secure channel
       operationId: resetPassword
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ResetPasswordForm"
+        description: Reset password form containing token and new password
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPasswordResetView"
+          description: Password reset successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Bad request - invalid login, token, or password"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - token expired or invalid
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Reset user password
       tags:
       - Authentication
   /v1/configuration:
@@ -5777,6 +5880,78 @@ paths:
           description: default response
       tags:
       - Content
+  /v1/content/versions/id/{identifier}/history:
+    get:
+      description: "Returns the history of a contentlet with the minimum expected\
+        \ information, as seen in the History tab in the Content Edition page."
+      operationId: history
+      parameters:
+      - description: The Identifier of the Contentlet whose history will be retrieved
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: Specified whether the history must be grouped by language or
+          not
+        in: query
+        name: groupByLang
+        schema:
+          type: boolean
+          default: false
+      - description: Specified whether the history must include old versions or not
+        in: query
+        name: bringOldVersions
+        schema:
+          type: boolean
+          default: true
+      - description: "Sort direction: Choose between ascending or descending."
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: DESC
+          enum:
+          - ASC
+          - DESC
+      - description: "Maximum number or results being returned, for pagination purposes."
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - description: "Page number of the results being returned, for pagination purposes."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: History data retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: The identifier path parameter was not specified.
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required.
+        "404":
+          content:
+            application/json: {}
+          description: The specified identifier does not match any contentlet.
+        "500":
+          content:
+            application/json: {}
+          description: An internal dotCMS error has occurred.
+      summary: Contentlet History
+      tags:
+      - Content
   /v1/content/versions/{inode}:
     get:
       operationId: findByInode
@@ -6067,7 +6242,7 @@ paths:
         in: query
         name: type
         schema:
-          type: string
+          type: array
           enum:
           - ANY
           - CONTENT
@@ -6079,6 +6254,20 @@ paths:
           - VANITY_URL
           - KEY_VALUE
           - DOTASSET
+          items:
+            type: string
+            enum:
+            - ANY
+            - CONTENT
+            - WIDGET
+            - FORM
+            - FILEASSET
+            - HTMLPAGE
+            - PERSONA
+            - VANITY_URL
+            - KEY_VALUE
+            - DOTASSET
+        style: form
       - description: Filter by site identifier.
         in: query
         name: host
@@ -6246,6 +6435,7 @@ paths:
               filter:
                 query: ""
                 types: "Blog,Activity"
+                sites: "demo.dotcms.com,SYSTEM_HOST"
               page: 1
               perPage: 10
               orderBy: name
@@ -6257,7 +6447,7 @@ paths:
 
           | Property |  Type  | Description |
           |----------|--------|-------------|
-          | `filter`   | JSON Object | Contains two properties: <table><tr><td>`query`</td><td>A simple query returning full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list of specific content type variables.</td></tr></table> |
+          | `filter`   | JSON Object | Contains three properties: <table><tr><td>`query`</td><td>A simple query returning full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list of specific content type variables.</td></tr><tr><td>`sites`</td><td>A comma-separated list of site identifiers or keys.</td></tr></table> |
           | `page` | Integer | Which page of results to show. Defaults to `1`. |
           | `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |
           | `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |
@@ -6539,6 +6729,122 @@ paths:
           description: Internal Server Error
       summary: Updates a content type
       tags:
+      - Content Type
+  /v1/contenttype/page:
+    get:
+      description: Returns a list of content type objects based on the filtering criteria.
+      operationId: getPagesContentTypes
+      parameters:
+      - description: The URL or Identifier of the page to filter content types for
+          the palette
+        in: query
+        name: pagePathOrId
+        schema:
+          type: string
+      - description: Optional Language id
+        in: query
+        name: language
+        schema:
+          type: string
+          default: "-1"
+      - description: String to filter/search for specific content types; leave blank
+          to return all.
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: |-
+          Page number in response pagination.
+
+          Default: `1`
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - description: |-
+          Number of results per page for pagination.
+
+          Default: `10`
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int64
+          default: 10
+      - description: |-
+          Column(s) to sort the results. Multiple columns can be combined in a comma-separated list. Column names can also be set within a SQL string function, such as `upper()`.
+
+          Some possible values:
+
+          `name`, `velocity_var_name`, `mod_date`, `sort_order`
+
+          `description`, `structuretype`, `category`, `inode`
+        in: query
+        name: orderby
+        schema:
+          type: string
+          default: usage
+      - description: "Sort direction: choose between ascending or descending."
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+          enum:
+          - ASC
+          - DESC
+      - description: Filter by site identifier.
+        in: query
+        name: host
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                - baseType: string
+                  clazz: string
+                  defaultType: true
+                  description: string
+                  fixed: true
+                  folder: string
+                  folderPath: string
+                  host: string
+                  iDate: 0
+                  icon: string
+                  id: string
+                  layout: []
+                  metadata: {}
+                  modDate: 0
+                  multilingualable: true
+                  nEntries: 0
+                  name: string
+                  siteName: string
+                  sortOrder: 0
+                  system: true
+                  variable: string
+                  versionable: true
+                  workflows: []
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination:
+                  currentPage: 0
+                  perPage: 0
+                  totalEntries: 0
+                permissions: []
+          description: Content types retrieved successfully
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a list of content types for a page
+      tags:
+      - getPagesContentTypes
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
     post:
@@ -8157,18 +8463,33 @@ paths:
       - Folders
   /v1/forgotpassword:
     post:
+      description: Sends a password reset email to the specified user. Returns the
+        email address where the reset link was sent.
       operationId: forgotPassword
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ForgotPasswordForm"
+        description: Forgot password form containing user ID or email address
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityForgotPasswordView"
+          description: Password reset email sent successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid email address or user not found (if configured
+            to show)
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Send password reset email
       tags:
       - Authentication
   /v1/form/{idOrVar}/successCallback:
@@ -8785,29 +9106,55 @@ paths:
       - System Logging
   /v1/loginform:
     post:
+      description: "Retrieves login form configuration including company details,\
+        \ available languages, and localized messages"
       operationId: loginForm
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/I18NForm"
+        description: Internationalization form containing language and country preferences
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLoginFormView"
+          description: Login form configuration retrieved successfully
+        "403":
+          content:
             application/json: {}
-          description: default response
+          description: Forbidden - security exception
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get login form configuration
       tags:
       - Authentication
   /v1/logout:
     get:
-      operationId: logout
+      description: "Logs out the current user, invalidating their session and optionally\
+        \ providing a redirect URL"
+      operationId: logoutUser
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: User logged out successfully
+        "403":
+          content:
             application/json: {}
-          description: default response
+          description: Forbidden - security exception during logout
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Logout user
       tags:
       - Authentication
   /v1/logs/{fileName}/_tail:
@@ -9728,13 +10075,19 @@ paths:
       - Page
   /v1/permissions/_bycontent:
     get:
+      description: "Retrieves permissions for a specific contentlet by its identifier.\
+        \ Only admin users can access this endpoint. Optionally filter by permission\
+        \ type (READ, WRITE, PUBLISH)."
       operationId: getByContentlet
       parameters:
-      - in: query
+      - description: Contentlet identifier
+        in: query
         name: contentletId
+        required: true
         schema:
           type: string
-      - in: query
+      - description: "Permission type (READ, WRITE, PUBLISH)"
+        in: query
         name: type
         schema:
           type: string
@@ -9752,10 +10105,15 @@ paths:
       - Permissions
   /v1/permissions/_bycontent/_groupbytype:
     get:
+      description: "Retrieves permissions for a specific contentlet grouped by permission\
+        \ type (READ, WRITE, PUBLISH). Only admin users or content owners can access\
+        \ this endpoint."
       operationId: getByContentletGroupByType
       parameters:
-      - in: query
+      - description: Contentlet identifier
+        in: query
         name: contentletId
+        required: true
         schema:
           type: string
       responses:
@@ -9771,111 +10129,218 @@ paths:
       - Permissions
   /v1/permissions/_bypermissiontype:
     get:
+      description: Load a map of permission type indexed by permissionable types and
+        permissions
       operationId: getPermissionsByPermissionType
       parameters:
-      - in: query
+      - description: User ID
+        in: query
         name: userid
         schema:
           type: string
-      - in: query
+      - description: "Permission type (READ, WRITE)"
+        in: query
         name: permission
         schema:
           type: string
-      - in: query
+      - description: Permissionable types
+        in: query
         name: permissiontype
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPermissionsByTypeView"
+          description: Permissions retrieved successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Get permissions by permission type
       tags:
       - Permissions
   /v1/personalization/pagepersonas:
     post:
+      description: Copies the current content associated to page containers with default
+        personalization and creates a new set with the specified persona personalization.
+        Requires edit permission on the page.
       operationId: personalizePageContainers
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/PersonalizationPersonaPageForm"
+        description: Personalization form data with page ID and persona tag
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPersonalizationView"
+          description: Page containers personalized successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Bad request - invalid page ID, persona tag, or missing parameters"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient edit permissions on page
+        "404":
+          content:
+            application/json: {}
+          description: Page or persona not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Personalize page containers
       tags:
       - Personalization
   /v1/personalization/pagepersonas/page/{pageId}/personalization/{personalization}:
     delete:
+      description: Deletes a personalization persona for a page. Can remove any persona
+        personalization for page containers except the default personalization. Requires
+        edit permission on the page.
       operationId: personalizePageContainers_1
       parameters:
-      - in: path
+      - description: Page identifier
+        in: path
         name: pageId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Personalization/persona tag to delete
+        in: path
         name: personalization
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Page personalization deleted successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Bad request - invalid parameters, trying to delete default\
+            \ personalization, or persona doesn't exist"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient edit permissions on page
+        "404":
+          content:
+            application/json: {}
+          description: Page not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete page personalization
       tags:
       - Personalization
   /v1/personas:
     get:
+      description: Returns all personas for the current site. Site can be determined
+        from session or header.
       operationId: list_3
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/RestPersona"
             application/json:
               schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/RestPersona"
-          description: default response
+                $ref: "#/components/schemas/MapStringRestPersonaView"
+          description: Personas retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - site ID required or invalid
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List personas
       tags:
-      - Personalization
+      - Personas
   /v1/personas/{id}:
     get:
+      description: Returns a specific persona by its identifier
       operationId: self
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Persona identifier
+        in: path
         name: id
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/RestPersona"
             application/json:
               schema:
                 $ref: "#/components/schemas/RestPersona"
-          description: default response
+          description: Persona retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - persona ID or site ID required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Persona not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get persona by ID
       tags:
-      - Personalization
+      - Personas
   /v1/portlet/_actionurl/{contentTypeVariable}:
     get:
       operationId: getCreateContentURL
@@ -10328,36 +10793,69 @@ paths:
       - Relationships
   /v1/roles:
     get:
+      description: Loads the root roles with optional children roles
       operationId: loadRootRoles
       parameters:
-      - in: query
+      - description: Load children roles
+        in: query
         name: loadChildrenRoles
         schema:
           type: boolean
           default: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleViewListView"
+          description: Root roles retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user required
+      summary: Load root roles
       tags:
       - Roles
     post:
-      operationId: addNewRole
+      description: Creates a new role in the system. Only admins can add roles.
+      operationId: createRole
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/RoleForm"
+        description: Role information
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleResponseEntityView"
+          description: Role created successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid role data or role name failed
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+      summary: Create new role
       tags:
       - Roles
   /v1/roles/_search:
     get:
+      description: "Search and filter roles by name, key, or ID with pagination support.\
+        \ Includes options to filter by workflow roles."
       operationId: searchRoles
       parameters:
       - description: Value to filter by role name
@@ -10415,123 +10913,282 @@ paths:
       - Roles
   /v1/roles/checkuserroles/userid/{userId}/roleids/{roleIds}:
     get:
-      operationId: checkRoles
+      description: Verifies that a user is assigned to one of the specified role IDs
+      operationId: checkUserRoles
       parameters:
-      - in: path
+      - description: User ID to check
+        in: path
         name: userId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Comma-separated list of role IDs
+        in: path
         name: roleIds
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleOperationView"
+          description: Role check completed successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Check user roles
       tags:
       - Roles
   /v1/roles/layouts:
     delete:
+      description: Deletes a set of layouts from a role
       operationId: deleteRoleLayouts
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/RoleLayoutForm"
+        description: Role and layout information
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleOperationView"
+          description: Layouts deleted successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid role or layout data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+      summary: Delete role layouts
       tags:
       - Roles
     get:
+      description: Get all layouts in the system
       operationId: getAllLayouts
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LayoutMapResponseEntityView"
+          description: Layouts retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get all layouts
       tags:
       - Roles
     post:
+      description: Saves a set of layouts to a role
       operationId: saveRoleLayouts
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/RoleLayoutForm"
+        description: Role and layout information
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleOperationView"
+          description: Layouts saved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid role or layout data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+      summary: Save role layouts
+      tags:
+      - Roles
+  /v1/roles/users/{userIdOrEmail}:
+    get:
+      description: Loads the user roles
+      operationId: loadUserRoles
+      parameters:
+      - description: User id or email
+        in: path
+        name: userIdOrEmail
+        required: true
+        schema:
+          type: string
+          default: "true"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleViewListView"
+          description: User roles retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user required
+      summary: Load user roles
       tags:
       - Roles
   /v1/roles/{roleId}/layouts:
     get:
+      description: Returns a collection of layouts associated to a role
       operationId: findRoleLayouts
       parameters:
-      - in: path
+      - description: Role ID
+        in: path
         name: roleId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLayoutList"
+          description: Role layouts retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid role ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - roles portlet access required
+      summary: Find role layouts
       tags:
       - Roles
   /v1/roles/{roleid}:
     get:
+      description: Load role based on the role id with optional children roles
       operationId: loadRoleByRoleId
       parameters:
-      - in: path
+      - description: Role ID
+        in: path
         name: roleid
         required: true
         schema:
           type: string
-      - in: query
+      - description: Load children roles
+        in: query
         name: loadChildrenRoles
         schema:
           type: boolean
           default: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid role ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Load role by role ID
       tags:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
+      description: Load the user and roles by role id with optional hierarchy and
+        filtering
       operationId: loadUsersAndRolesByRoleId
       parameters:
-      - in: path
+      - description: Role ID
+        in: path
         name: roleid
         required: true
         schema:
           type: string
-      - in: query
+      - description: Include role hierarchy
+        in: query
         name: roleHierarchyForAssign
         schema:
           type: boolean
           default: false
-      - in: query
+      - description: Role name filter prefix
+        in: query
         name: name
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleListView"
+          description: Users and roles retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid role ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Load users and roles by role ID
       tags:
       - Roles
   /v1/site:
@@ -12327,33 +12984,65 @@ paths:
       - Maintenance
   /v1/users:
     post:
-      operationId: create_3
+      description: "Creates a new user. Requires admin privileges or access to Users\
+        \ and Roles portlets. FirstName, LastName, Email and Password are required"
+      operationId: createUser
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/UserForm"
-      responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
-      tags:
-      - Users
-    put:
-      operationId: udpate
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: "#/components/schemas/UserForm"
+        description: User creation data
+        required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
+                $ref: "#/components/schemas/ResponseEntityUserUpdateView"
+          description: User created successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing required fields or invalid data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to create users
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - user already exists
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create user
+      tags:
+      - Users
+    put:
+      description: "Updates an existing user's information including personal details,\
+        \ roles, and account settings. Only admin users or users with appropriate\
+        \ portlet access can perform this operation."
+      operationId: updateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserForm"
+        description: "User update data including personal information, roles, and\
+          \ account settings"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUserUpdateView"
           description: If success returns a map with the user + user id.
         "400":
           content:
@@ -12379,7 +13068,7 @@ paths:
       - Users
   /v1/users/activate/{userId}:
     patch:
-      operationId: active
+      operationId: activateUser
       parameters:
       - description: "Identifier of an user.\n\nExample value: `b9d89c80-3d88-4311-8365-187323c96436` "
         in: path
@@ -12418,37 +13107,63 @@ paths:
       - Users
   /v1/users/current:
     get:
-      operationId: self_6
+      description: Returns information about the currently authenticated user
+      operationId: getCurrentUser
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/RestUser"
             application/json:
               schema:
                 $ref: "#/components/schemas/RestUser"
-          description: default response
+          description: Current user information retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - could not provide current user
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+      summary: Get current user
       tags:
       - Users
     put:
-      operationId: updateCurrent
+      description: Updates information for the currently authenticated user. May require
+        reauthentication if critical fields are changed.
+      operationId: updateCurrentUser
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/UpdateCurrentUserForm"
+        description: Current user update data including personal information and password
+          changes
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUserUpdateView"
+          description: User information updated successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid user data or password requirements
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Update current user
       tags:
       - Users
   /v1/users/deactivate/{userId}:
     patch:
-      operationId: deactivate
+      operationId: deactivateUser
       parameters:
       - description: "Identifier of an user.\n\nExample value: `b9d89c80-3d88-4311-8365-187323c96436` "
         in: path
@@ -12487,114 +13202,195 @@ paths:
       - Users
   /v1/users/filter:
     get:
-      operationId: filter
+      description: Returns a list of dotCMS users based on specified search criteria
+        with pagination support
+      operationId: filterUsers
       parameters:
-      - in: query
+      - description: Filter users by full name or parts of it
+        in: query
         name: query
         schema:
           type: string
-      - in: query
+      - description: Page number for pagination
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 0
-      - in: query
+      - description: Number of items per page
+        in: query
         name: per_page
         schema:
           type: integer
           format: int32
           default: 40
-      - in: query
+      - description: Column name for sorting results
+        in: query
         name: orderby
         schema:
           type: string
-      - in: query
+      - description: "Sorting direction: ASC or DESC"
+        in: query
         name: direction
         schema:
           type: string
           default: ASC
-      - in: query
+      - description: Include anonymous user in results
+        in: query
         name: includeanonymous
         schema:
           type: boolean
-      - in: query
+      - description: Include default user in results
+        in: query
         name: includedefault
         schema:
           type: boolean
-      - in: query
+      - description: Asset inode for permission-based filtering
+        in: query
         name: assetinode
         schema:
           type: string
-      - in: query
+      - description: Permission type for asset-based filtering
+        in: query
         name: permission
         schema:
           type: integer
           format: int32
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListUserView"
+          description: Users retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Filter users
       tags:
       - Users
   /v1/users/loginAsData:
     get:
-      operationId: loginAsData
+      description: Returns a paginated list of users that can be impersonated (excludes
+        anonymous and default users)
+      operationId: getLoginAsData
       parameters:
-      - in: query
+      - description: Filter for user search
+        in: query
         name: filter
         schema:
           type: string
-      - in: query
+      - description: Page number for pagination
+        in: query
         name: page
         schema:
           type: integer
           format: int32
-      - in: query
+      - description: Number of items per page
+        in: query
         name: per_page
         schema:
           type: integer
           format: int32
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListUserView"
+          description: User list retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get login as data
       tags:
       - Users
   /v1/users/loginas:
     post:
-      operationId: loginAs
+      description: "Performs user impersonation via the 'Login As' feature, allowing\
+        \ administrators to simulate another user's session"
+      operationId: loginAsUser
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/LoginAsForm"
+        description: Login as credentials
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLoginAsView"
+          description: Login as operation successful
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid user credentials
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication failed
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or missing Login As role
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Login as user
       tags:
       - Users
   /v1/users/logoutas:
     put:
-      operationId: logoutAs
+      description: Ends user impersonation session and reverts back to the original
+        administrator user
+      operationId: logoutAsUser
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLoginAsView"
+          description: Logout as operation successful
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid session state
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Logout as user
       tags:
       - Users
   /v1/users/{userId}:
     delete:
-      operationId: delete_15
+      description: Deletes a user account and reassigns all associated content and
+        permissions to a replacement user. Only admin users or users with appropriate
+        portlet access can perform this operation.
+      operationId: deleteUser
       parameters:
       - description: "Identifier of an user.\n\nExample value: `b9d89c80-3d88-4311-8365-187323c96436` "
         in: path
@@ -16167,81 +16963,163 @@ paths:
       - Internationalization
   /v2/tags:
     get:
+      description: "Searches and lists tags with filtering, pagination, and sorting.\
+        \ The filter parameter performs a case-insensitive search with wildcards on\
+        \ both sides (e.g., \"market\" matches \"Marketing\", \"marketplace\", \"\
+        supermarket\"). When using the filter, results are ordered by match length\
+        \ (shortest first) to prioritize exact matches. The site parameter accepts\
+        \ either a site ID or site name for filtering by specific sites."
       operationId: list_14
       parameters:
-      - in: query
-        name: name
+      - description: Tag name filter (LIKE search)
+        example: market
+        in: query
+        name: filter
         schema:
           type: string
-      - in: query
-        name: siteId
+      - description: Include system/global tags
+        example: true
+        in: query
+        name: global
+        schema:
+          type: boolean
+          default: false
+      - description: "Filter by site (ID, name, or SYSTEM_HOST)"
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: query
+        name: site
         schema:
           type: string
+      - description: Page number
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Items per page
+        example: 25
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+      - description: Sort field
+        example: tagname
+        in: query
+        name: orderBy
+        schema:
+          type: string
+          default: tagname
+      - description: Sort direction
+        example: ASC
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Tags retrieved successfully with pagination metadata
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - Insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error
+      summary: List/Search Tags
       tags:
       - Tags
     post:
-      operationId: addTag_1
+      description: "Creates one or more tags. Single tag = list with one element,\
+        \ multiple tags = list with multiple elements. This operation is idempotent\
+        \ - existing tags are returned without error."
+      operationId: createTags
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/TagForm"
+        description: "List of tag data to create. Single tag = list with one element,\
+          \ multiple tags = list with multiple elements."
+        required: true
       responses:
-        default:
+        "201":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
-      tags:
-      - Tags
-    put:
-      operationId: updateTag_1
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: "#/components/schemas/UpdateTagForm"
-      responses:
-        default:
+                $ref: "#/components/schemas/ResponseEntityRestTagListView"
+          description: Tags created successfully
+        "400":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
+            application/json: {}
+          description: Bad Request - Invalid tag data with field-level error details
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Create tags
       tags:
       - Tags
   /v2/tags/import:
     post:
+      description: Imports tags from a CSV file with row-level error reporting. Returns
+        detailed statistics and error information for each failed row.
       operationId: importTags_1
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: "CSV file with tag data in format: tag_name,host_id"
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityTagOperationView"
+          description: Import completed with detailed results
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid file format or content
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Import tags from CSV file
       tags:
       - Tags
   /v2/tags/inode/{inode}:
@@ -16332,30 +17210,113 @@ paths:
           description: default response
       tags:
       - Tags
+  /v2/tags/{idOrName}:
+    put:
+      description: "Updates a tag's name and site assignment. You can identify the\
+        \ tag by its UUID or by its name. When using a tag name, you must specify\
+        \ which site's tag you want to update via the siteId query parameter."
+      operationId: updateTag_1
+      parameters:
+      - description: Tag UUID or tag name
+        in: path
+        name: idOrName
+        required: true
+        schema:
+          type: string
+      - description: Site ID for name-based lookups. Required when idOrName is a tag
+          name
+        in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTagForm"
+        description: Updated tag data
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRestTagView"
+          description: Tag updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid input data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: Tag not found
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - Tag name already exists on target site
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Update tag
+      tags:
+      - Tags
   /v2/tags/{nameOrId}:
     get:
+      description: "Retrieves a single tag by its name or UUID. For name-based searches,\
+        \ uses site context for disambiguation."
       operationId: getTagsByNameOrId_1
       parameters:
-      - in: path
+      - description: Tag name or UUID
+        in: path
         name: nameOrId
         required: true
         schema:
           type: string
+      - description: "Site ID for name-based searches. If not provided, uses current\
+          \ site context with SYSTEM_HOST fallback"
+        in: query
+        name: siteId
+        schema:
+          type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityRestTagView"
+          description: Tag found successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: Tag not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error
+      summary: Get tag by name or ID
       tags:
       - Tags
   /v2/tags/{tagId}:
     delete:
-      operationId: delete_18
+      operationId: delete_17
       parameters:
       - in: path
         name: tagId
@@ -16731,7 +17692,7 @@ paths:
       - Templates
   /vtl/{folder}:
     delete:
-      operationId: delete_16
+      operationId: delete_15
       parameters:
       - in: path
         name: folder
@@ -16846,7 +17807,7 @@ paths:
       - Templates
   /vtl/{folder}/{pathParam}:
     delete:
-      operationId: delete_17
+      operationId: delete_16
       parameters:
       - in: path
         name: folder
@@ -20579,6 +21540,58 @@ components:
           type: string
         languageCode:
           type: string
+    LanguageView:
+      type: object
+      properties:
+        country:
+          type: string
+        displayName:
+          type: string
+        language:
+          type: string
+    Layout:
+      type: object
+      properties:
+        description:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        portletIds:
+          type: array
+          items:
+            type: string
+        tabOrder:
+          type: integer
+          format: int32
+    LayoutMapResponseEntityView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     LineDividerField:
       type: object
       allOf:
@@ -20653,6 +21666,33 @@ components:
       required:
       - password
       - userId
+    LoginFormResultView:
+      type: object
+      properties:
+        authorizationType:
+          type: string
+        backgroundColor:
+          type: string
+        backgroundPicture:
+          type: string
+        buildDateString:
+          type: string
+        companyEmail:
+          type: string
+        currentLanguage:
+          $ref: "#/components/schemas/LanguageView"
+        languages:
+          type: array
+          items:
+            $ref: "#/components/schemas/LanguageView"
+        levelName:
+          type: string
+        logo:
+          type: string
+        serverId:
+          type: string
+        version:
+          type: string
     LookBackWindow:
       type: object
       properties:
@@ -20665,6 +21705,13 @@ components:
       type: object
       properties:
         fireTransferAssetsJob:
+          type: boolean
+    MapStringRestPersonaView:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/RestPersona"
+      properties:
+        empty:
           type: boolean
     MessageBodyWorkers:
       type: object
@@ -21625,6 +22672,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityApiTokenWithJwtView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityBooleanView:
       type: object
       properties:
@@ -21984,6 +23056,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityForgotPasswordView:
+      type: object
+      properties:
+        entity:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityJobPaginatedResultView:
       type: object
       properties:
@@ -22053,6 +23148,81 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityJwtView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityLayoutList:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/Layout"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityListUserView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityListView:
       type: object
       properties:
@@ -22085,6 +23255,81 @@ components:
           type: array
           items:
             type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityLoginAsView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityLoginFormView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/LoginFormResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityMapMapView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
         errors:
           type: array
           items:
@@ -22151,6 +23396,52 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityPaginatedDataView:
+      type: object
+      properties:
+        entity:
+          type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPasswordResetView:
+      type: object
+      properties:
+        entity:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityPermissionView:
       type: object
       properties:
@@ -22158,6 +23449,204 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PermissionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPermissionsByTypeView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPersonalizationView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRestTagListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRestTagView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRoleDetailView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RoleView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRoleListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRoleOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRoleViewListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleView"
         errors:
           type: array
           items:
@@ -22345,11 +23834,13 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityUserMapView:
+    ResponseEntityTagOperationView:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/AuthenticationForm"
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -22368,11 +23859,13 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityUserView:
+    ResponseEntityUserUpdateView:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/AuthenticationForm"
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -23312,6 +24805,58 @@ components:
           uniqueItems: true
         roleId:
           type: string
+    RoleResponseEntityView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    RoleView:
+      type: object
+      properties:
+        dbfqn:
+          type: string
+        description:
+          type: string
+        editLayouts:
+          type: boolean
+        editPermissions:
+          type: boolean
+        editUsers:
+          type: boolean
+        fqn:
+          type: string
+        id:
+          type: string
+        locked:
+          type: boolean
+        name:
+          type: string
+        parent:
+          type: string
+        roleKey:
+          type: string
+        system:
+          type: boolean
     RowField:
       type: object
       allOf:
@@ -24024,14 +25569,16 @@ components:
     TagForm:
       type: object
       properties:
+        name:
+          type: string
         ownerId:
           type: string
-        tags:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/RestTag"
+        persona:
+          type: boolean
+        siteId:
+          type: string
       required:
-      - tags
+      - name
     TagInode:
       type: object
       properties:
@@ -24480,6 +26027,8 @@ components:
     UpdateTagForm:
       type: object
       properties:
+        name:
+          type: string
         siteId:
           type: string
         tagId:
@@ -24488,7 +26037,6 @@ components:
           type: string
       required:
       - siteId
-      - tagId
       - tagName
     UpgradeTaskForm:
       type: object
@@ -25535,6 +27083,10 @@ components:
     WorkflowTimelineItemView:
       type: object
       properties:
+        action:
+          type: object
+          additionalProperties:
+            type: string
         commentDescription:
           type: string
         createdDate:
@@ -25544,6 +27096,10 @@ components:
           type: string
         roleId:
           type: string
+        step:
+          type: object
+          additionalProperties:
+            type: string
         taskId:
           type: string
         type:

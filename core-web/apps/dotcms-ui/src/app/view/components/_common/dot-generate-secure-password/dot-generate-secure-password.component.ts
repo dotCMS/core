@@ -11,7 +11,8 @@ import { DotClipboardUtil } from '@dotcms/ui';
 @Component({
     selector: 'dot-generate-secure-password',
     templateUrl: './dot-generate-secure-password.component.html',
-    styleUrls: ['./dot-generate-secure-password.component.scss']
+    styleUrls: ['./dot-generate-secure-password.component.scss'],
+    standalone: false
 })
 export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     private dotClipboardUtil = inject(DotClipboardUtil);

@@ -122,7 +122,7 @@ export const isDataCreateValid = (): boolean => {
         const now = Date.now();
 
         return timeValidUntil > now;
-    } catch (error) {
+    } catch {
         return false;
     }
 };

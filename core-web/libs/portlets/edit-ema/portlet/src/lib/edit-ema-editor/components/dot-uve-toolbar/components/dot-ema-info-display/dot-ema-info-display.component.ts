@@ -10,7 +10,6 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-ema-info-display',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-ema-info-display.component.html',
     styleUrls: ['./dot-ema-info-display.component.scss'],

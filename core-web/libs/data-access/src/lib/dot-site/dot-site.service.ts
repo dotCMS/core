@@ -13,7 +13,6 @@ export interface SiteParams {
     live: boolean;
     system: boolean;
 }
-
 export interface ContentByFolderParams {
     hostFolderId: string;
     showLinks?: boolean;
@@ -27,13 +26,9 @@ export interface ContentByFolderParams {
     extensions?: string[];
     mimeTypes?: string[];
 }
-
 export const BASE_SITE_URL = '/api/v1/site';
-
 export const DEFAULT_PER_PAGE = 10;
-
 export const DEFAULT_PAGE = 1;
-
 @Injectable({
     providedIn: 'root'
 })

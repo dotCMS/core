@@ -11,7 +11,8 @@ import { DotAutofocusDirective } from './dot-autofocus.directive';
         } @else {
             <input type="text" dotAutofocus />
         }
-    `
+    `,
+    imports: [DotAutofocusDirective]
 })
 class TestHostComponent {
     disabled = false;
@@ -28,7 +29,7 @@ describe('Directive: DotAutofocus', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotAutofocusDirective]
+            imports: [TestHostComponent]
         });
         fixture = TestBed.createComponent(TestHostComponent);
         component = fixture.componentInstance;

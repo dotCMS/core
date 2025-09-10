@@ -1,8 +1,11 @@
-<!-- Just placeholders for now. -->
+<dot-content-drive-toolbar data-testid="toolbar" />
 
-<div class="toolbar center-content">Toolbar works</div>
-
-<div class="tree-selector center-content">Tree selector works</div>
+<div
+    class="tree-selector center-content"
+    [class.expanded]="$treeExpanded()"
+    data-testid="tree-selector">
+    <dot-content-drive-sidebar data-testid="sidebar" />
+</div>
 <dot-folder-list-view
     [items]="$items()"
     [totalItems]="$totalItems()"
@@ -10,4 +13,5 @@
     (paginate)="onPaginate($event)"
     (sort)="onSort($event)" />
 
-<div class="detail-view center-content">Detail view works</div>
+<!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
+<div class="detail-view center-content"></div>

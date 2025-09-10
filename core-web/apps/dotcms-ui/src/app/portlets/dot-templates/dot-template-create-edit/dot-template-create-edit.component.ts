@@ -19,7 +19,8 @@ import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.stor
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
     styleUrls: ['./dot-template-create-edit.component.scss'],
-    providers: [DotTemplateStore]
+    providers: [DotTemplateStore],
+    standalone: false
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

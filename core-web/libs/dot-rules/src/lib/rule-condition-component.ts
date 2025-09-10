@@ -62,7 +62,8 @@ import { I18nService } from './services/system/locale/I18n';
                     aria-label="Delete Condition"></button>
             </div>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class ConditionComponent implements OnInit {
     private _resources = inject(I18nService);

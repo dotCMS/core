@@ -2,10 +2,11 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/
 
 import { DotAnalyticsService } from './dot-analytics.service';
 
-import { DEFAULT_TIME_RANGE, type TimeRange } from '../../index';
+import { TIME_RANGE_OPTIONS } from '../constants';
 
 const ANALYTICS_API_ENDPOINT = '/api/v1/analytics/content/_query/cube';
 const TEST_SITE_ID = 'test-site-123';
+const DEFAULT_TIME_RANGE = TIME_RANGE_OPTIONS.last7days;
 
 describe('DotAnalyticsService', () => {
     let spectator: SpectatorHttp<DotAnalyticsService>;
@@ -44,13 +45,16 @@ describe('DotAnalyticsService', () => {
             });
 
             it('should make POST request with custom timeRange', () => {
-                const timeRange: TimeRange = 'from 30 days ago to now';
-                spectator.service.totalPageViews(timeRange, TEST_SITE_ID).subscribe();
+                spectator.service
+                    .totalPageViews(TIME_RANGE_OPTIONS.last30days, TEST_SITE_ID)
+                    .subscribe();
 
                 const req = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
                 expect(req.request.url).toBe(ANALYTICS_API_ENDPOINT);
                 expect(req.request.body).toBeDefined();
-                expect(req.request.body.timeDimensions[0].dateRange).toBe(timeRange);
+                expect(req.request.body.timeDimensions[0].dateRange).toBe(
+                    'from 30 days ago to now'
+                );
             });
         });
 

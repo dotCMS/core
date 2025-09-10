@@ -23,7 +23,8 @@ const regexYoutube = /(youtube\.com\/watch\?v=.*)|(youtu\.be\/.*)/;
     selector: 'dot-external-asset',
     templateUrl: './dot-external-asset.component.html',
     styleUrls: ['./dot-external-asset.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotExternalAssetComponent {
     @ViewChild('input') input!: ElementRef;

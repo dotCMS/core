@@ -42,6 +42,7 @@ export interface DotCMSContentlet {
     contentTypeIcon?: string;
     variant?: string;
     __icon__?: string;
+    disabledWYSIWYG?: string[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
@@ -95,4 +96,26 @@ export interface DotContentletCanLock {
     inode: string;
     locked: boolean;
     lockedBy: string;
+}
+
+/**
+ * Represents a contentlet version history item from the history endpoint.
+ * This interface is specifically for the /api/v1/content/versions/id/<identifier>/history endpoint.
+ */
+export interface DotCMSContentletVersion {
+    archived: boolean;
+    country: string;
+    countryCode: string;
+    experimentVariant: boolean;
+    inode: string;
+    isoCode: string;
+    language: string;
+    languageCode: string;
+    languageFlag: string;
+    languageId: number;
+    live: boolean;
+    modDate: number;
+    modUser: string;
+    title: string;
+    working: boolean;
 }

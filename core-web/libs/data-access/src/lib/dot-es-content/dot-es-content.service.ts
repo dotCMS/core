@@ -11,7 +11,6 @@ export enum ESOrderDirection {
     ASC = 'ASC',
     DESC = 'DESC'
 }
-
 export interface queryEsParams {
     itemsPerPage?: number;
     filter?: string;
@@ -21,7 +20,6 @@ export interface queryEsParams {
     sortField?: string;
     sortOrder?: ESOrderDirection | string;
 }
-
 /**
  * Provides util listing methods to get contentlets data from Elastic Search endpoint
  * @export

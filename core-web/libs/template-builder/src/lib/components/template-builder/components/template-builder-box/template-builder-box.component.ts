@@ -31,7 +31,6 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     templateUrl: './template-builder-box.component.html',
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         NgClass,
         ButtonModule,

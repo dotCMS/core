@@ -104,7 +104,13 @@ public enum TransformOptions {
      * I hate to introduce this but seems like the safest way to avoid breaking backward compatibility
      * This options controls the Strategy that gets fired by the Widget Content Type which by default will render the widget code
      */
-    SKIP_WIDGET_CODE_RENDERING;
+    SKIP_WIDGET_CODE_RENDERING,
+    /** Instructs the Strategy to include specific properties that are displayed in the History
+     * tab of the Content Editor page. */
+    HISTORY_VIEW,
+    /** Instructs the Strategy to clear all existing data in the Contentlet Map before applying a
+     * specific Strategy. */
+    CLEAR_EXISTING_DATA;
 
     // -----------------------------------------------------------------------------------------
     // Plug additional Transform Options to manipulate the outcome as a particular type of view

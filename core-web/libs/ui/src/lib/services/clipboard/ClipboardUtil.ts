@@ -20,7 +20,7 @@ export class DotClipboardUtil {
             await navigator.clipboard.writeText(text);
 
             return true;
-        } catch (err) {
+        } catch {
             return this.fallbackCopyToClipboard(text);
         }
     }
@@ -44,7 +44,7 @@ export class DotClipboardUtil {
                 const result = document.execCommand('copy');
                 document.body.removeChild(txtArea);
                 resolve(result);
-            } catch (err) {
+            } catch {
                 resolve(false);
             }
         });
