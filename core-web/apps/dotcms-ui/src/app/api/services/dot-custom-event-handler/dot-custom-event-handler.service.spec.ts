@@ -14,17 +14,17 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotPropertiesService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotIframeService,
-    DotGlobalMessageService,
-    DotFormatDateService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     PushPublishService
 } from '@dotcms/data-access';
@@ -358,15 +358,24 @@ describe('DotCustomEventHandlerService', () => {
 
     it('should notify to open download bundle dialog', () => {
         jest.spyOn(dotWorkflowEventHandlerService, 'open');
+        const mockWorkflowEvent = {
+            workflow: {
+                actionInputs: []
+            },
+            inode: 'testInode',
+            contentType: 'testContentType',
+            languageId: 1,
+            identifier: 'testIdentifier'
+        };
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
                     name: 'workflow-wizard',
-                    data: 'testData'
+                    data: mockWorkflowEvent
                 }
             })
         );
-        expect<any>(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith('testData');
+        expect<any>(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith(mockWorkflowEvent);
     });
 
     it('should notify to open contnt compare dialog', () => {

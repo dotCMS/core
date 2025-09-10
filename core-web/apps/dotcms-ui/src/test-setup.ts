@@ -19,6 +19,11 @@ if (!global.structuredClone) {
     };
 }
 
+// Add Date polyfill for Jest environment
+if (!global.Date) {
+    global.Date = Date;
+}
+
 // Add element.animate polyfill for Jest/JSDOM environment
 if (typeof Element !== 'undefined' && !Element.prototype.animate) {
     Element.prototype.animate = function () {

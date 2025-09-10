@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -111,10 +112,6 @@ describe('DotToolbarUserComponent', () => {
             ]
         });
 
-        const mockDate = new Date(1466424490000);
-        jest.useFakeTimers();
-        jest.setSystemTime(mockDate);
-
         fixture = TestBed.createComponent(DotToolbarUserComponent);
 
         de = fixture.debugElement;
@@ -124,11 +121,22 @@ describe('DotToolbarUserComponent', () => {
         dotNavigationService = de.injector.get(DotNavigationService);
     });
 
-    afterEach(() => {
-        jest.useRealTimers();
-    });
-
     it('should have correct href in logout link', () => {
+        // Mock Date constructor to return a specific timestamp
+        const mockDate = {
+            getTime: () => 1466424490000
+        };
+        const originalDate = global.Date;
+        global.Date = jest.fn(() => mockDate) as any;
+        global.Date.now = jest.fn(() => 1466424490000);
+
+        // Recreate the component with the mocked Date
+        fixture = TestBed.createComponent(DotToolbarUserComponent);
+        de = fixture.debugElement;
+        loginService = de.injector.get(LoginService);
+        locationService = de.injector.get(LOCATION_TOKEN);
+        dotNavigationService = de.injector.get(DotNavigationService);
+
         fixture.detectChanges();
 
         const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
@@ -140,6 +148,9 @@ describe('DotToolbarUserComponent', () => {
 
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
         expect(logoutItem.classes['toolbar-user__logout']).toBe(true);
+
+        // Restore original Date
+        global.Date = originalDate;
     });
     it('should have correct target in logout link', () => {
         fixture.detectChanges();
@@ -152,7 +163,7 @@ describe('DotToolbarUserComponent', () => {
         expect(logoutLink.attributes.target).toBe('_self');
     });
 
-    it('should call "logoutAs" in "LoginService" on logout click', () => {
+    it('should call "logoutAs" in "LoginService" on logout click', fakeAsync(() => {
         // Mock the watchUser method to simulate "login as" mode
         const mockAuth = {
             user: {
@@ -185,8 +196,11 @@ describe('DotToolbarUserComponent', () => {
 
         expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
+
+        // Wait for async operations to complete
+        tick();
         expect(locationService.reload).toHaveBeenCalledTimes(1);
-    });
+    }));
 
     it('should hide login as link', () => {
         jest.spyOn(loginService, 'getCurrentUser').mockReturnValue(

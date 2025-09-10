@@ -420,6 +420,10 @@ describe('ContentTypesLayoutComponent', () => {
                     addRow.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
+
+                    // Clear the mock before the second call
+                    dotEventsService.notify.mockClear();
+
                     addTabDivider.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);

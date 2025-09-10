@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -132,10 +133,38 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should call setColumnSelect when "add-row" event received', fakeAsync(() => {
+        // Set up the component to show the select state so ViewChild is available
+        comp.rowState = 'select';
         fixture.detectChanges();
+
         jest.spyOn(comp, 'setColumnSelect');
         dotEventsService.notify('add-row');
-        tick();
+        tick(201); // Wait for the setTimeout in setColumnSelect
+
         expect(comp.setColumnSelect).toHaveBeenCalled();
+    }));
+
+    it('should handle ViewChild properly when in select state', fakeAsync(() => {
+        // Mock HTMLElement methods to avoid DOM issues in tests
+        const mockFocus = jest.fn();
+        const mockElement = {
+            focus: mockFocus,
+            blur: jest.fn()
+        };
+
+        comp.rowState = 'select';
+        fixture.detectChanges();
+
+        // Mock the ViewChild element
+        comp.colContainerElem = {
+            nativeElement: {
+                children: [mockElement, mockElement, mockElement, mockElement]
+            }
+        } as any;
+
+        comp.setColumnSelect();
+        tick(201);
+
+        expect(mockFocus).toHaveBeenCalledWith({ preventScroll: true });
     }));
 });

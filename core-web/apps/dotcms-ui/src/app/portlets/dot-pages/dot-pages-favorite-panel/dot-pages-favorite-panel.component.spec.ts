@@ -191,11 +191,13 @@ describe('DotPagesFavoritePanelComponent', () => {
                     .nativeElement.classList.contains('pi-star')
             ).toBe(true);
 
-            expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
-                'favoritePage.listing.empty.header'
-            );
             expect(
-                de.query(By.css('[data-testId="dot-pages-empty__content"')).nativeElement.outerText
+                de.query(By.css('.dot-pages-empty__header')).nativeElement.textContent.trim()
+            ).toBe('favoritePage.listing.empty.header');
+            expect(
+                de
+                    .query(By.css('[data-testId="dot-pages-empty__content"'))
+                    .nativeElement.textContent.trim()
             ).toBe('favoritePage.listing.empty.content');
         });
     });
@@ -230,6 +232,10 @@ describe('DotPagesFavoritePanelComponent', () => {
             }
 
             setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
+                /* */
+            }
+
+            setFavoritePages() {
                 /* */
             }
         }
@@ -277,7 +283,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         it('should set panel inputs and attributes', () => {
             const elem = de.query(By.css('p-panel'));
-            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeFalse();
+            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBe(false);
             expect(elem.componentInstance['iconPos']).toBe('end');
             expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
             expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');

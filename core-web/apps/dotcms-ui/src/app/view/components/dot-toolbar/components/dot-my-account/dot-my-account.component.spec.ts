@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
@@ -40,9 +41,9 @@ describe('DotMyAccountComponent', () => {
         component: DotMyAccountComponent,
         providers: [
             mockProvider(DotAccountService, {
-                updateUser: () => of({ entity: { user: mockUser, reauthenticate: false } }),
-                addStarterPage: () => of({}),
-                removeStarterPage: () => of({})
+                updateUser: () => of({ entity: { user: mockUser, reauthenticate: false } }) as any,
+                addStarterPage: () => of('') as any,
+                removeStarterPage: () => of('') as any
             }),
             mockProvider(DotMessageService, {
                 get: (key) => key
@@ -86,8 +87,8 @@ describe('DotMyAccountComponent', () => {
         });
 
         it('should show dialog when visible is set to true', () => {
-            // Use setVisible method to update the signal
-            component.setVisible(true);
+            // Use visible signal directly to update the state
+            component.visible.set(true);
             spectator.detectChanges();
 
             expect(component.visible()).toBe(true);
@@ -97,7 +98,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should emit shutdown when dialog is closed', () => {
             jest.spyOn(component.shutdown, 'emit');
-            component.setVisible(true);
+            component.visible.set(true);
             spectator.detectChanges();
 
             component.handleClose();
@@ -107,7 +108,7 @@ describe('DotMyAccountComponent', () => {
 
     describe('Form Fields', () => {
         beforeEach(() => {
-            component.setVisible(true);
+            component.visible.set(true);
             spectator.detectChanges();
         });
 
@@ -120,8 +121,12 @@ describe('DotMyAccountComponent', () => {
             ];
 
             requiredFields.forEach((fieldId) => {
-                const field = spectator.query(byTestId(fieldId)) as HTMLInputElement;
+                // Use document.querySelector since PrimeNG dialog appends to body
+                const field = document.querySelector(
+                    `[data-testid="${fieldId}"]`
+                ) as HTMLInputElement;
                 expect(field).toBeTruthy();
+                expect(field.tagName.toLowerCase()).toBe('input');
             });
         });
 
@@ -150,31 +155,41 @@ describe('DotMyAccountComponent', () => {
             // Get the email control
             const emailControl = component.form.get('email');
 
-            // Set invalid email
+            // Set invalid email and trigger validation
             emailControl?.setValue('invalid-email');
             emailControl?.markAsDirty();
             emailControl?.markAsTouched();
             emailControl?.updateValueAndValidity();
             spectator.detectChanges();
 
-            // Verify error message is shown
+            // Verify control is invalid
             expect(emailControl?.valid).toBeFalsy();
-            const errorMessage = spectator.query(byTestId('dot-my-account-email-error'));
+            expect(emailControl?.errors?.['pattern']).toBeTruthy();
+
+            // Verify error message is shown (only when field is invalid and touched)
+            const errorMessage = document.querySelector(
+                '[data-testid="dot-my-account-email-error"]'
+            );
             expect(errorMessage).toBeTruthy();
+            expect(errorMessage?.textContent?.trim()).toContain('errors.email');
 
             // Set valid email
             emailControl?.setValue('valid@email.com');
             emailControl?.updateValueAndValidity();
             spectator.detectChanges();
 
-            // Verify error message is hidden
+            // Verify control is now valid and error message is hidden
             expect(emailControl?.valid).toBeTruthy();
+            const hiddenErrorMessage = document.querySelector(
+                '[data-testid="dot-my-account-email-error"]'
+            );
+            expect(hiddenErrorMessage).toBeFalsy();
         });
     });
 
     describe('Password Change', () => {
         beforeEach(() => {
-            component.setVisible(true);
+            component.visible.set(true);
             spectator.detectChanges();
         });
 
@@ -209,32 +224,40 @@ describe('DotMyAccountComponent', () => {
             expect(component.form.get('newPassword')?.disabled).toBe(false);
             expect(component.form.get('confirmPassword')?.disabled).toBe(false);
 
-            // Set different passwords
-            component.form.get('newPassword')?.setValue('password1');
-            component.form.get('confirmPassword')?.setValue('password2');
-            component.form.get('confirmPassword')?.markAsTouched();
-            component.form.get('confirmPassword')?.updateValueAndValidity();
+            // Set different passwords and mark as touched to trigger validation
+            const newPasswordControl = component.form.get('newPassword');
+            const confirmPasswordControl = component.form.get('confirmPassword');
+
+            newPasswordControl?.setValue('password1');
+            confirmPasswordControl?.setValue('password2');
+            confirmPasswordControl?.markAsDirty();
+            confirmPasswordControl?.markAsTouched();
+            confirmPasswordControl?.updateValueAndValidity();
             spectator.detectChanges();
 
             // Verify that there is a validation error
-            const confirmPasswordControl = component.form.get('confirmPassword');
             expect(confirmPasswordControl?.hasError('passwordMismatch')).toBe(true);
 
             // Verify that error message is displayed
-            const errorMessage = spectator.query(byTestId('dot-my-account-confirm-password-error'));
+            const errorMessage = document.querySelector(
+                '[data-testid="dot-my-account-confirm-password-error"]'
+            );
             expect(errorMessage).toBeTruthy();
+            expect(errorMessage?.textContent?.trim()).toContain(
+                'error.forgot.password.passwords.dont.match'
+            );
 
             // Set matching passwords
-            component.form.get('confirmPassword')?.setValue('password1');
-            component.form.get('confirmPassword')?.updateValueAndValidity();
+            confirmPasswordControl?.setValue('password1');
+            confirmPasswordControl?.updateValueAndValidity();
             spectator.detectChanges();
 
             // Verify that there is no validation error
             expect(confirmPasswordControl?.hasError('passwordMismatch')).toBe(false);
 
             // Verify that error message is not displayed
-            const errorMessageAfterFix = spectator.query(
-                byTestId('dot-my-account-confirm-password-error')
+            const errorMessageAfterFix = document.querySelector(
+                '[data-testid="dot-my-account-confirm-password-error"]'
             );
             expect(errorMessageAfterFix).toBeFalsy();
         });
@@ -242,13 +265,13 @@ describe('DotMyAccountComponent', () => {
 
     describe('Starter Checkbox', () => {
         beforeEach(() => {
-            component.setVisible(true);
+            component.visible.set(true);
             spectator.detectChanges();
         });
 
         it('should call addStarterPage when checkbox is checked', () => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'addStarterPage').mockReturnValue(of({}));
+            jest.spyOn(accountService, 'addStarterPage').mockReturnValue(of('') as any);
 
             // First set showStarter to false
             component.showStarter.set(false);
@@ -264,7 +287,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should call removeStarterPage when checkbox is unchecked', () => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'removeStarterPage').mockReturnValue(of({}));
+            jest.spyOn(accountService, 'removeStarterPage').mockReturnValue(of('') as any);
 
             // First set showStarter to true
             component.showStarter.set(true);
@@ -281,7 +304,7 @@ describe('DotMyAccountComponent', () => {
 
     describe('Form Submission', () => {
         beforeEach(() => {
-            component.setVisible(true);
+            component.visible.set(true);
             spectator.detectChanges();
         });
 
@@ -293,7 +316,7 @@ describe('DotMyAccountComponent', () => {
             // Spy on updateUser and setAuth methods
             const updateUserSpy = jest
                 .spyOn(accountService, 'updateUser')
-                .mockReturnValue(of({ entity: { user: mockUser, reauthenticate: false } }));
+                .mockReturnValue(of({ entity: { user: mockUser, reauthenticate: false } }) as any);
             const setAuthSpy = jest.spyOn(loginService, 'setAuth');
 
             // Fill form with valid data
@@ -386,8 +409,15 @@ describe('DotMyAccountComponent', () => {
             tick();
             spectator.detectChanges();
 
+            // Verify the error message signal is set
             expect(component.confirmPasswordFailedMsg()).toBe('Invalid current password');
-            expect(spectator.query(byTestId('dot-my-account-current-password-error'))).toBeTruthy();
+
+            // Verify the error message element is displayed
+            const errorElement = document.querySelector(
+                '[data-testid="dot-my-account-current-password-error"]'
+            );
+            expect(errorElement).toBeTruthy();
+            expect(errorElement?.textContent?.trim()).toBe('Invalid current password');
         }));
 
         it('should handle new password error', fakeAsync(() => {
@@ -439,9 +469,15 @@ describe('DotMyAccountComponent', () => {
             tick();
             spectator.detectChanges();
 
-            // Check that the error message is displayed
+            // Verify the error message signal is set
             expect(component.newPasswordFailedMsg()).toBe('Invalid new password');
-            expect(spectator.query(byTestId('dot-my-account-new-password-error'))).toBeTruthy();
+
+            // Verify the error message element is displayed
+            const errorElement = document.querySelector(
+                '[data-testid="dot-my-account-new-password-error"]'
+            );
+            expect(errorElement).toBeTruthy();
+            expect(errorElement?.textContent?.trim()).toBe('Invalid new password');
         }));
 
         it('should handle generic error', fakeAsync(() => {
@@ -460,7 +496,9 @@ describe('DotMyAccountComponent', () => {
                     }
                 })
             );
-            jest.spyOn(errorService, 'handle').mockReturnValue(of({}));
+            jest.spyOn(errorService, 'handle').mockReturnValue(
+                of({ redirected: false, status: 500 }) as any
+            );
 
             // Fill form with valid data
             component.form.patchValue({

@@ -377,7 +377,7 @@ describe('DotListingDataTableComponent', () => {
                             comp.columns[cellIndex].format === 'date'
                                 ? new Date(
                                       item[comp.columns[cellIndex].fieldName]
-                                  ).toLocaleDateString('US-en', {
+                                  ).toLocaleDateString('en-US', {
                                       month: '2-digit',
                                       day: '2-digit',
                                       year: 'numeric'
@@ -517,8 +517,8 @@ describe('DotListingDataTableComponent', () => {
         tick(1);
         hostFixture.detectChanges();
         const firstRow: DebugElement = de.queryAll(By.css('tr'))[1];
-        firstRow.triggerEventHandler('click', null);
-        firstRow.triggerEventHandler('keyup.enter', null);
+        firstRow.triggerEventHandler('click', { target: firstRow.nativeElement });
+        firstRow.triggerEventHandler('keyup.enter', { target: firstRow.nativeElement });
 
         expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
     }));
@@ -534,8 +534,8 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
 
         const systemFile: DebugElement = de.query(By.css('tr[data-testRowId="SYSTEM_TEMPLATE"]'));
-        systemFile.triggerEventHandler('click', null);
-        systemFile.triggerEventHandler('keyup.enter', null);
+        systemFile.triggerEventHandler('click', { target: systemFile.nativeElement });
+        systemFile.triggerEventHandler('keyup.enter', { target: systemFile.nativeElement });
 
         expect(comp.rowWasClicked.emit).not.toHaveBeenCalled();
     }));
@@ -605,11 +605,11 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     function setRequestSpy(response: any): void {
-        jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(
             of({
                 entity: response,
-                header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-            })
+                header: (type: any) => (type === 'Link' ? 'test;test=test' : '10')
+            }) as any
         );
     }
 });

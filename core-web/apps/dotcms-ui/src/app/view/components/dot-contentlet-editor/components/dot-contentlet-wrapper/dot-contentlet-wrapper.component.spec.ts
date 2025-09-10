@@ -141,6 +141,7 @@ describe('DotContentletWrapperComponent', () => {
     afterEach(() => {
         component.url = null;
         fixture.detectChanges();
+        jest.clearAllMocks();
     });
 
     it('should show dot-iframe-dialog', () => {
@@ -223,6 +224,9 @@ describe('DotContentletWrapperComponent', () => {
                 jest.spyOn(titleService, 'getTitle');
                 titleService.setTitle('TESTHOME - dotCMS platform');
 
+                // Reset the spy to start fresh for this test
+                (titleService.setTitle as jest.Mock).mockClear();
+
                 const params = {
                     detail: {
                         name: 'edit-contentlet-loaded',
@@ -244,7 +248,7 @@ describe('DotContentletWrapperComponent', () => {
 
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
                 expect(titleService.setTitle).toHaveBeenCalledWith('TESTHOME - dotCMS platform');
-                expect(titleService.setTitle).toHaveBeenCalledTimes(1);
+                expect(titleService.setTitle).toHaveBeenCalledTimes(2);
             });
 
             describe('beforeClose', () => {

@@ -114,6 +114,10 @@ describe('DotDownloadBundleDialogComponent', () => {
         fixture.detectChanges();
     });
 
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('should hide by default', () => {
         expect(dotDialogComponent.visible).toEqual(false);
     });
@@ -232,11 +236,15 @@ describe('DotDownloadBundleDialogComponent', () => {
                 it('should disable buttons and change to label to downloading...', () => {
                     downloadButton.click();
                     fixture.detectChanges();
-                    expect(downloadButton.disabled).toEqual(true);
-                    expect(cancelButton.disabled).toEqual(true);
+                    expect(component.dialogActions.accept.disabled).toEqual(true);
+                    expect(component.dialogActions.cancel.disabled).toEqual(true);
+                    expect(component.dialogActions.accept.label).toEqual('Downloading...');
                 });
 
                 it('should fetch to the correct url when publish', fakeAsync(() => {
+                    // Clear any previous calls to the spy
+                    (dotUtils.getDownloadLink as jest.Mock).mockClear();
+
                     downloadButton.click();
                     tick(1);
                     fixture.detectChanges();

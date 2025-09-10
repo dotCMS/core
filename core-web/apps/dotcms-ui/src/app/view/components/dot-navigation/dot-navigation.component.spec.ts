@@ -1,10 +1,4 @@
-import {
-    Spectator,
-    SpyObject,
-    createComponentFactory,
-    mockProvider,
-    createMouseEvent
-} from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -279,7 +273,7 @@ describe('DotNavigationComponent expanded', () => {
             };
 
             spectator.component.onMenuClick({
-                originalEvent: createMouseEvent('click'),
+                originalEvent: {} as unknown as MouseEvent,
                 data: mockMenu
             });
 
@@ -298,7 +292,7 @@ describe('DotNavigationComponent expanded', () => {
             };
 
             spectator.component.onMenuClick({
-                originalEvent: createMouseEvent('click'),
+                originalEvent: {} as unknown as MouseEvent,
                 data: mockMenu
             });
 

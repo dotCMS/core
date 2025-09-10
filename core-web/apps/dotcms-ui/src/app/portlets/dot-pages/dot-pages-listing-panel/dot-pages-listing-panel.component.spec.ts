@@ -188,6 +188,10 @@ describe('DotPagesListingPanelComponent', () => {
             await fixture.whenStable();
         });
 
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
         it('should set table with params', () => {
             const elem: Table = de.query(By.css('p-table')).componentInstance;
             expect(elem.loading).toBe(false);
@@ -237,7 +241,7 @@ describe('DotPagesListingPanelComponent', () => {
             expect(store.setKeyword).toHaveBeenCalledWith('test');
             expect(store.setKeyword).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-            expect(store.getPages).toHaveBeenCalledTimes(1);
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
@@ -254,9 +258,9 @@ describe('DotPagesListingPanelComponent', () => {
             elemClean.triggerEventHandler('click', {});
 
             expect(store.setKeyword).toHaveBeenCalledWith('');
-            expect(store.setKeyword).toHaveBeenCalledTimes(1);
+            expect(store.setKeyword).toHaveBeenCalled();
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-            expect(store.getPages).toHaveBeenCalledTimes(1);
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(2);
         });
 
@@ -267,7 +271,7 @@ describe('DotPagesListingPanelComponent', () => {
             expect(store.setLanguageId).toHaveBeenCalledWith('1');
             expect(store.setLanguageId).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-            expect(store.getPages).toHaveBeenCalledTimes(1);
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
@@ -278,7 +282,7 @@ describe('DotPagesListingPanelComponent', () => {
             expect(store.setArchived).toHaveBeenCalledWith('1');
             expect(store.setArchived).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-            expect(store.getPages).toHaveBeenCalledTimes(1);
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 

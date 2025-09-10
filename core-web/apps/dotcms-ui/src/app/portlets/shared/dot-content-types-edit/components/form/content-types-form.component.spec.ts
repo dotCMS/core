@@ -36,10 +36,10 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
-    FeaturedFlags,
-    DotCMSClazzes
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
@@ -516,8 +516,8 @@ describe('ContentTypesFormComponent', () => {
             workflows: [
                 {
                     ...mockWorkflows[2],
-                    creationDate: expect.any(Date),
-                    modDate: expect.any(Date)
+                    creationDate: '2018-04-05T14:21:33.321Z',
+                    modDate: '2018-04-03T22:35:58.958Z'
                 }
             ],
             newEditContent: false
@@ -767,13 +767,13 @@ describe('ContentTypesFormComponent', () => {
                 workflows: [
                     {
                         id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        creationDate: expect.any(Date),
+                        creationDate: '2018-04-05T14:21:33.321Z',
                         name: 'System Workflow',
                         description: '',
                         archived: false,
                         mandatory: false,
                         defaultScheme: false,
-                        modDate: expect.any(Date),
+                        modDate: '2018-04-03T22:35:58.958Z',
                         entryActionId: null,
                         system: true
                     }

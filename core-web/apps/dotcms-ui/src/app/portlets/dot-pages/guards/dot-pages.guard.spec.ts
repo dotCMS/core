@@ -83,6 +83,9 @@ describe('Guards', () => {
         dotRouterService = spectator.inject(DotRouterService);
         dotContentTypeService = spectator.inject(DotContentTypeService);
         dotContentletService = spectator.inject(DotContentletService);
+
+        // Clear all spies before each test
+        jest.clearAllMocks();
     });
 
     describe('newEditContentForContentTypeGuard', () => {
@@ -111,7 +114,7 @@ describe('Guards', () => {
             const success = await spectator.router.navigate(['new', 'Blog']);
             expect(success).toBe(false);
             expect(spyContentType).toHaveBeenCalledWith('Blog');
-            expect(spyContentType).toHaveBeenCalledTimes(2);
+            expect(spyContentType).toHaveBeenCalledTimes(1);
             expect(spyRouter).toHaveBeenCalledWith('content/new/Blog');
             expect(spyRouter).toHaveBeenCalledTimes(1);
         });
@@ -131,9 +134,9 @@ describe('Guards', () => {
             const success = await spectator.router.navigate(['1234']);
             expect(success).toBe(true);
             expect(spyContentlet).toHaveBeenCalledWith('1234');
-            expect(spyContentlet).toHaveBeenCalledTimes(3);
+            expect(spyContentlet).toHaveBeenCalledTimes(1);
             expect(spyContentType).toHaveBeenCalledWith('Blog');
-            expect(spyContentType).toHaveBeenCalledTimes(3);
+            expect(spyContentType).toHaveBeenCalledTimes(1);
         });
 
         it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', async () => {
@@ -151,9 +154,9 @@ describe('Guards', () => {
             const success = await spectator.router.navigate(['1234']);
             expect(success).toBe(false);
             expect(spyContentlet).toHaveBeenCalledWith('1234');
-            expect(spyContentlet).toHaveBeenCalledTimes(4);
+            expect(spyContentlet).toHaveBeenCalledTimes(1);
             expect(spyContentType).toHaveBeenCalledWith('Blog');
-            expect(spyContentType).toHaveBeenCalledTimes(4);
+            expect(spyContentType).toHaveBeenCalledTimes(1);
             expect(spyRouter).toHaveBeenCalledWith('content/1234');
             expect(spyRouter).toHaveBeenCalledTimes(1);
         });
