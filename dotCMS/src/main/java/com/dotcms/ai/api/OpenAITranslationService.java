@@ -14,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -39,19 +40,33 @@ public class OpenAITranslationService extends AbstractTranslationService {
     static final String AI_TRANSLATION_TEMPERATURE ="AI_TRANSLATION_TEMPERATURE";
     static final String AI_TRANSLATION_RESPONSE_FORMAT ="AI_TRANSLATION_RESPONSE_FORMAT";
 
-    static int MAX_LANGUAGE_VARIABLE_CONTEXT = 1000;
 
 
     public static final Lazy<TranslationService> INSTANCE = Lazy.of(()-> new OpenAITranslationService());
 
 
-
+   /**
+    * Translate a string from one language to another.
+    * @param toTranslate
+    * @param from
+    * @param to
+    * @return
+    * @throws TranslationException
+    */
 
     @Override
     public String translateString(String toTranslate, Language from, Language to) throws TranslationException {
         throw new DotRuntimeException("Not implemented");
     }
-
+   /**
+    *
+    * Translate a list of strings from one language to another.
+    * @param toTranslate
+    * @param from
+    * @param to
+    * @return
+    * @throws TranslationException
+    */
     @Override
     public List<String> translateStrings(List<String> toTranslate, Language from, Language to)
             throws TranslationException {
@@ -68,6 +83,15 @@ public class OpenAITranslationService extends AbstractTranslationService {
         throw new DotRuntimeException("Not implemented");
     }
 
+   /**
+    * Translate a contentlet to a list of languages.
+    * @param contentlet               content to translate
+    * @param langs             list of language to translate the content to
+    * @param oldFields list of fields to translate
+    * @param user
+    * @return
+    * @throws TranslationException
+    */
     @Override
     public List<Contentlet> translateContent(Contentlet contentlet, List<Language> langs,
             List<com.dotmarketing.portlets.structure.model.Field> oldFields,
@@ -87,6 +111,16 @@ public class OpenAITranslationService extends AbstractTranslationService {
 
     }
 
+
+   /**
+    * Translate a contentlet's fields to a language.
+    * @param contentlet               content to translate
+    * @param targetLanguage       language to translate te content to
+    * @param oldFields list of fields to translate
+    * @param user
+    * @return
+    * @throws TranslationException
+    */
     @Override
     public Contentlet translateContent(Contentlet contentlet, Language targetLanguage, List<com.dotmarketing.portlets.structure.model.Field> oldFields, User user)
             throws TranslationException {
@@ -249,7 +283,8 @@ public class OpenAITranslationService extends AbstractTranslationService {
         Map<String, String> context = new HashMap<>();
         int limit = 1000;
         int page = 0;
-        while (context.size() < MAX_LANGUAGE_VARIABLE_CONTEXT) {
+        int maxContextSize = Config.getIntProperty("MAX_LANGUAGE_VARIABLE_CONTEXT", 1000);
+        while (context.size() < maxContextSize) {
             int myPage = page;
             List<Contentlet> contentResults = Try.of(() -> APILocator.getContentletAPI()
                     .search(queryStr, limit, myPage * limit, "identifier,languageid", APILocator.systemUser(),
