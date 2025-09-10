@@ -197,6 +197,7 @@ describe('DotPersonaSelectorComponent', () => {
         jest.spyOn(component.selected, 'emit');
         dropdown.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should call filter change with keyword', () => {
@@ -212,6 +213,7 @@ describe('DotPersonaSelectorComponent', () => {
             rows: 10
         });
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     });
 
     it('should set dot-searchable-dropdown with right attributes', () => {
@@ -264,6 +266,7 @@ describe('DotPersonaSelectorComponent', () => {
         const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
         personaOption.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     xit('should execute "delete" event from dot-persona-selector-option', async () => {
@@ -310,8 +313,10 @@ describe('DotPersonaSelectorComponent', () => {
             personaDialog.createdPersona.emit(defaultPersona);
 
             expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+            expect(component.selected.emit).toHaveBeenCalledTimes(1);
             expect(paginatorService.filter).toEqual('');
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
             expect(dropdown.componentInstance.resetPanelMinHeight).toHaveBeenCalled();
         });
     });

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 // This file is required by jest and is used for setup for each test file.
+import '@testing-library/jest-dom';
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';

@@ -232,6 +232,7 @@ describe('DotPortletToolbarComponent', () => {
 
                 expect(actionsCancelButton.nativeElement.textContent).toBe('Cancel');
                 expect(spy).toHaveBeenCalledWith({});
+                expect(spy).toHaveBeenCalledTimes(1);
             });
 
             it('should bind input cancelButtonLabel', () => {

@@ -185,6 +185,7 @@ describe('DotEditRelationshipsComponent', () => {
         fixture.detectChanges();
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
         expect(dotSearchableDropdown.componentInstance.data).toEqual([
             {
@@ -220,6 +221,7 @@ describe('DotEditRelationshipsComponent', () => {
         fixture.detectChanges();
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
         expect(dotSearchableDropdown.componentInstance.data).toEqual([
             {
                 label: 'a.One to one',

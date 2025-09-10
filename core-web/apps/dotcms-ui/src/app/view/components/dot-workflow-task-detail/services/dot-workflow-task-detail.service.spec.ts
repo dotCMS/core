@@ -51,6 +51,7 @@ describe('DotWorkflowTaskDetailService', () => {
             );
 
             expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('workflow');
+            expect(dotMenuService.getDotMenuId).toHaveBeenCalledTimes(1);
             done();
         });
 

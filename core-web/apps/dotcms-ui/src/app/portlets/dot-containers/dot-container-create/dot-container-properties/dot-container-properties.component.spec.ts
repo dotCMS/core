@@ -466,6 +466,7 @@ describe('DotContainerPropertiesComponent', () => {
             saveBtn.triggerEventHandler('click');
             fixture.detectChanges();
             expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
+            expect(dotRouterService.goToURL).toHaveBeenCalledTimes(1);
         });
     });
 });

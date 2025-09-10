@@ -58,6 +58,7 @@ describe('DotSafeUrlPipe', () => {
         sanitizer.bypassSecurityTrustResourceUrl.mockReturnValue(URL_EMPTY);
         spectator.detectChanges();
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(URL_EMPTY);
+        expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledTimes(1);
         expect(spectator.element.textContent).toBe(URL_EMPTY);
     });
 });

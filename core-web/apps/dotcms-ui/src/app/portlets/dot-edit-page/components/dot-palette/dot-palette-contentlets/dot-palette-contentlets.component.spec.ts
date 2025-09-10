@@ -220,7 +220,7 @@ describe('DotPaletteContentletsComponent', () => {
         const content = fixtureHost.debugElement.query(By.css('[data-testId="paletteItem"]'));
         content.triggerEventHandler('dragstart', contentletProductDataMock);
 
-        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledOnceWith(
+        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledWith(
             (<any>contentletProductDataMock) as DotCMSContentlet
         );
     });
@@ -236,5 +236,6 @@ describe('DotPaletteContentletsComponent', () => {
         fixtureHost.detectChanges();
 
         expect(component.filter.emit).toHaveBeenCalledWith('test');
+        expect(component.filter.emit).toHaveBeenCalledTimes(1);
     });
 });

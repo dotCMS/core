@@ -224,6 +224,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 jest.spyOn(paginationService, 'getWithOffset');
                 component.searchableDropdown.pageChange.emit({ first: 10 } as PaginationEvent);
                 expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
+                expect(paginationService.getWithOffset).toHaveBeenCalledTimes(1);
             });
 
             it('should set the right attributes', () => {
@@ -250,6 +251,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 searchable.triggerEventHandler('switch', { ...value });
                 expect(component.value).toEqual(value);
                 expect(component.propagateChange).toHaveBeenCalledWith(value.identifier);
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
                 expect(searchable.componentInstance.toggleOverlayPanel).toHaveBeenCalledTimes(1);
             });
         });
@@ -278,6 +280,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 });
                 tick();
                 expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123');
+                expect(paginationService.setExtraParams).toHaveBeenCalledTimes(1);
                 expect(component.themes).toEqual(mockDotThemes);
                 expect(component.totalRecords).toBe(3);
             }));
@@ -326,6 +329,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 input.dispatchEvent(event);
                 await fixture.whenStable();
                 expect(component.onChange).toHaveBeenCalledWith(mockDotThemes[0]);
+                expect(component.onChange).toHaveBeenCalledTimes(1);
             });
         });
     });
@@ -344,8 +348,10 @@ describe('DotThemeSelectorDropdownComponent', () => {
             jest.spyOn(siteService, 'getSiteById');
             fixture.detectChanges();
 
-            expect(dotThemesService.get).toHaveBeenCalledOnceWith('123');
+            expect(dotThemesService.get).toHaveBeenCalledWith('123');
+            expect(dotThemesService.get).toHaveBeenCalledTimes(1);
             expect(siteService.getSiteById).toHaveBeenCalledWith('test');
+            expect(siteService.getSiteById).toHaveBeenCalledTimes(1);
             const selector = de.query(By.css('dot-theme-selector-dropdown')).componentInstance;
             expect(selector.value).toEqual(mockDotThemes[1]);
         });

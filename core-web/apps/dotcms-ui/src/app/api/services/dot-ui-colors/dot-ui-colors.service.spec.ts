@@ -128,6 +128,7 @@ describe('DotUiColorsService', () => {
             { key: '--color-background', value: '#CB8978' }
         ].forEach(({ key, value }) => {
             expect(html.style.setProperty).toHaveBeenCalledWith(key, value);
+            expect(html.style.setProperty).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -231,6 +232,7 @@ describe('DotUiColorsService', () => {
             }
         ].forEach(({ key, value }) => {
             expect(html.style.setProperty).toHaveBeenCalledWith(key, value);
+            expect(html.style.setProperty).toHaveBeenCalledTimes(1);
         });
     });
 });

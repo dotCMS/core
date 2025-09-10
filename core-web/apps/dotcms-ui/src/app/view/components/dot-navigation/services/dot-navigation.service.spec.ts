@@ -237,6 +237,7 @@ describe('DotNavigationService', () => {
         it('should go to first portlet: ', () => {
             service.goToFirstPortlet();
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -244,6 +245,7 @@ describe('DotNavigationService', () => {
         it('should reload current portlet', () => {
             service.reloadCurrentPortlet('123-567');
             expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledWith('123-567');
+            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
         });
 
         it('should NOT reload current portlet', () => {
@@ -342,6 +344,7 @@ describe('DotNavigationService', () => {
         it('should go to url', () => {
             service.goTo('hello/world');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('hello/world');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -365,6 +368,7 @@ describe('DotNavigationService', () => {
         );
 
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
     it('should expand and set active menu option by url when is not collapsed', () => {
@@ -388,10 +392,12 @@ describe('DotNavigationService', () => {
     it('should set Page title based on url', () => {
         router.triggerNavigationEnd('url/link1');
         expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
+        expect(titleService.setTitle).toHaveBeenCalledTimes(1);
     });
 
     // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.
     xit('should subscribe to UPDATE_PORTLET_LAYOUTS websocket event', () => {
         expect(dotcmsEventsService.subscribeTo).toHaveBeenCalledWith('UPDATE_PORTLET_LAYOUTS');
+        expect(dotcmsEventsService.subscribeTo).toHaveBeenCalledTimes(1);
     });
 });

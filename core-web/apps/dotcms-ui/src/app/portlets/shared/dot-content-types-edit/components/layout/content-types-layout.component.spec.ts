@@ -411,6 +411,7 @@ describe('ContentTypesLayoutComponent', () => {
                     const button = splitButton.query(By.css('button'));
                     button.nativeElement.click();
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
+                    expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
                 });
 
                 it('should set actions correctly', () => {
@@ -418,8 +419,10 @@ describe('ContentTypesLayoutComponent', () => {
                     const addTabDivider: MenuItem = splitButton.componentInstance.model[1];
                     addRow.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
+                    expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
                     addTabDivider.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
+                    expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
                 });
             });
         });

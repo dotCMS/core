@@ -72,6 +72,7 @@ describe('ValidMenuGuardService', () => {
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
         expect(result).toBe(true);
     });
 
@@ -83,6 +84,7 @@ describe('ValidMenuGuardService', () => {
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
     });
@@ -95,6 +97,7 @@ describe('ValidMenuGuardService', () => {
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
         expect(result).toBe(true);
     });
 
@@ -106,6 +109,7 @@ describe('ValidMenuGuardService', () => {
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
+        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
     });
@@ -127,6 +131,7 @@ describe('ValidMenuGuardService', () => {
                     done();
                 });
             expect(spy).toHaveBeenCalledWith('test', true);
+            expect(spy).toHaveBeenCalledTimes(1);
             expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
         });
 
@@ -141,6 +146,7 @@ describe('ValidMenuGuardService', () => {
                     done();
                 });
             expect(spy).toHaveBeenCalledWith('test', true);
+            expect(spy).toHaveBeenCalledTimes(1);
             expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         });
     });

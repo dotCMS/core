@@ -258,6 +258,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const cancelBtn = fixture.debugElement.query(By.css('[data-testid="cancelBtn"]'));
             cancelBtn.triggerEventHandler('click', {});
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps.key);
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
         });
 
         it('should have dot-copy-link with appKey value', () => {

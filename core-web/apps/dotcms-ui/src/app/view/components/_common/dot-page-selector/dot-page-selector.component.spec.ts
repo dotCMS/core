@@ -202,6 +202,7 @@ describe('DotPageSelectorComponent', () => {
             jest.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', searchPageObj);
             expect(dotPageSelectorService.getPages).toHaveBeenCalledWith(searchPageObj.query);
+            expect(dotPageSelectorService.getPages).toHaveBeenCalledTimes(1);
         });
 
         it('should not search for pages if has less than 2 characters', () => {
@@ -214,12 +215,14 @@ describe('DotPageSelectorComponent', () => {
             jest.spyOn(dotPageSelectorService, 'getSites');
             autocomplete.triggerEventHandler('completeMethod', searchHostObj);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('');
+            expect(dotPageSelectorService.getSites).toHaveBeenCalledTimes(1);
         });
 
         it('should allow white spaces in host', () => {
             jest.spyOn(dotPageSelectorService, 'getSites');
             autocomplete.triggerEventHandler('completeMethod', whiteSpaceHosts);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('new site');
+            expect(dotPageSelectorService.getSites).toHaveBeenCalledTimes(1);
         });
 
         it('should search for pages when the host is complete', () => {
@@ -227,13 +230,16 @@ describe('DotPageSelectorComponent', () => {
             jest.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', completeHostSearch);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('demo', true);
+            expect(dotPageSelectorService.getSites).toHaveBeenCalledTimes(1);
             expect(dotPageSelectorService.getPages).toHaveBeenCalledWith('//demo/');
+            expect(dotPageSelectorService.getPages).toHaveBeenCalledTimes(1);
         });
 
         it('should remove special characters when searching for pages', () => {
             jest.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', specialSearchObj);
             expect(dotPageSelectorService.getPages).toHaveBeenCalledWith('demo');
+            expect(dotPageSelectorService.getPages).toHaveBeenCalledTimes(1);
         });
 
         it('should display error when no results in pages', () => {
@@ -348,6 +354,7 @@ describe('DotPageSelectorComponent', () => {
             });
             autocomplete.triggerEventHandler('onClear', {});
             expect(component.propagateChange).toHaveBeenCalledWith(null);
+            expect(component.propagateChange).toHaveBeenCalledTimes(1);
         });
 
         it('should emit selected folder and propagate changes', () => {

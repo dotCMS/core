@@ -146,6 +146,7 @@ describe('DotContentletsComponent', () => {
         };
         await fixture.whenStable();
         expect(dotContentletEditorService.edit).toHaveBeenCalledWith(params);
+        expect(dotContentletEditorService.edit).toHaveBeenCalledTimes(1);
     });
 
     it('should go current portlet and reload data when modal closed', () => {
@@ -155,6 +156,7 @@ describe('DotContentletsComponent', () => {
             queryParamsHandling: 'preserve'
         });
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should call dotCustomEventHandlerService on customEvent', () => {

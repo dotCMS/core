@@ -122,6 +122,7 @@ describe('DotLoginAsComponent', () => {
         spectator.detectChanges();
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
         expect(paginatorService.url).toEqual('v1/users/loginAsData');
         expect(paginatorService.filter).toEqual('');
         expect(component.userCurrentPage()).toEqual(users);
@@ -138,6 +139,7 @@ describe('DotLoginAsComponent', () => {
 
             // Assert
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
             expect(paginatorService.filter).toEqual('new filter');
         });
     });

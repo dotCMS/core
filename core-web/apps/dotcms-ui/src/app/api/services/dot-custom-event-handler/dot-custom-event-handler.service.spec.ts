@@ -244,6 +244,7 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
+        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledTimes(1);
     });
 
     it('should edit a host', () => {
@@ -258,6 +259,7 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
+        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledTimes(1);
     });
 
     it('should edit a a workflow task', () => {
@@ -272,6 +274,7 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+        expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
     });
 
     it('should set colors in the ui', () => {
@@ -350,6 +353,7 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect(dotDownloadBundleDialogService.open).toHaveBeenCalledWith('testID');
+        expect(dotDownloadBundleDialogService.open).toHaveBeenCalledTimes(1);
     });
 
     it('should notify to open download bundle dialog', () => {
@@ -416,6 +420,7 @@ describe('DotCustomEventHandlerService', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a a workflow task', () => {
@@ -432,6 +437,7 @@ describe('DotCustomEventHandlerService', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a contentlet', () => {
@@ -447,6 +453,7 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -475,6 +482,7 @@ describe('DotCustomEventHandlerService', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a a workflow task', () => {
@@ -494,6 +502,7 @@ describe('DotCustomEventHandlerService', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a contentlet', () => {
@@ -512,6 +521,7 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
         it('should not create a contentlet', () => {

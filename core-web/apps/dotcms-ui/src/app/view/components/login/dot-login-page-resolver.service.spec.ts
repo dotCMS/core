@@ -45,5 +45,6 @@ describe('DotLoginPageResolver', () => {
     it('should set the dotLoginPageStateService with the correct values ', () => {
         dotLoginPageResolver.resolve();
         expect(dotLoginPageStateService.set).toHaveBeenCalledWith('');
+        expect(dotLoginPageStateService.set).toHaveBeenCalledTimes(1);
     });
 });

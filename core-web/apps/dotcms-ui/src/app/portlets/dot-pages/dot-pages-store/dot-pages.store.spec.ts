@@ -215,6 +215,7 @@ describe('DotPageStore', () => {
 
         dotPageStore.setInitialStateData(5);
         expect(sessionStorage.getItem).toHaveBeenCalledWith(SESSION_STORAGE_FAVORITES_KEY);
+        expect(sessionStorage.getItem).toHaveBeenCalledTimes(1);
 
         dotPageStore.state$.subscribe((data) => {
             expect(data.environments).toEqual(false);
@@ -533,6 +534,7 @@ describe('DotPageStore', () => {
         });
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error500, true);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
     });
 
     it('should remove page archived from pages collection and add undefined at the bottom', fakeAsync(() => {
@@ -813,6 +815,7 @@ describe('DotPageStore', () => {
             );
             publishAction.command({ originalEvent: createFakeEvent('click') });
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             done();
         });
     });

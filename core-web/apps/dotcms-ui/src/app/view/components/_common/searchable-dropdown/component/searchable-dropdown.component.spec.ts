@@ -313,6 +313,7 @@ describe('SearchableDropdownComponent', () => {
         it('should change the value', () => {
             items[0].triggerEventHandler('click', null);
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit the same value twice when multiple equal true', () => {
@@ -322,6 +323,7 @@ describe('SearchableDropdownComponent', () => {
             items[0].triggerEventHandler('click', null);
 
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
             expect(comp.switch.emit).toHaveBeenCalledTimes(2);
         });
 
@@ -330,6 +332,7 @@ describe('SearchableDropdownComponent', () => {
             items[0].triggerEventHandler('click', null);
 
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
             expect(comp.switch.emit).toHaveBeenCalledTimes(1);
         });
     });
@@ -562,6 +565,7 @@ describe('SearchableDropdownComponent', () => {
         searchInput.nativeElement.dispatchEvent(keyboardEvent);
 
         expect(comp.handleClick).toHaveBeenCalledWith(data[3]);
+        expect(comp.handleClick).toHaveBeenCalledTimes(1);
     });
 
     it('should render external listItem template', () => {

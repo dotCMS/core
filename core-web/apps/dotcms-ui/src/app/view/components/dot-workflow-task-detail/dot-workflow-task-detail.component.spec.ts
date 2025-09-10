@@ -109,6 +109,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
                 dotIframeDialog.triggerEventHandler('custom', customEvent);
                 expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
+                expect(component.custom.emit).toHaveBeenCalledTimes(1);
             });
         });
     });

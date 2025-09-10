@@ -160,6 +160,7 @@ describe('DotPaletteContentTypeComponent', () => {
         fixtureHost.detectChanges();
 
         expect(comp.filter.emit).toHaveBeenCalledWith('test');
+        expect(comp.filter.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should set Dragged ContentType on dragStart', () => {
@@ -181,5 +182,6 @@ describe('DotPaletteContentTypeComponent', () => {
         buttons[0].nativeElement.click();
         expect(comp.items).toEqual(contentTypeDataMock as DotCMSContentType[]);
         expect(comp.selected.emit).toHaveBeenCalledWith(label);
+        expect(comp.selected.emit).toHaveBeenCalledTimes(1);
     });
 });

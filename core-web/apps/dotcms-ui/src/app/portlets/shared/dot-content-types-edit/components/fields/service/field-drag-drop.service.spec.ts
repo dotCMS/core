@@ -92,6 +92,7 @@ describe('FieldDragDropService', () => {
             fieldDragDropService.setFieldBagOptions();
 
             expect(findSpy).toHaveBeenCalledWith('fields-bag');
+            expect(findSpy).toHaveBeenCalledTimes(1);
             expect(dragulaService.name).toBe('fields-bag');
         });
 
@@ -242,6 +243,7 @@ describe('FieldDragDropService', () => {
             fieldDragDropService.setFieldRowBagOptions();
 
             expect(findSpy).toHaveBeenCalledWith('fields-row-bag');
+            expect(findSpy).toHaveBeenCalledTimes(1);
             expect('fields-row-bag').toBe(dragulaService.name);
         });
 

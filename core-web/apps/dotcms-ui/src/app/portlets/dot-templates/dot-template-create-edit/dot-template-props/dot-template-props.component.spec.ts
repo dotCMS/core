@@ -282,13 +282,15 @@ describe('DotTemplatePropsComponent', () => {
             dialog.triggerEventHandler('save', {});
 
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
-            expect(dialogRef.close).toHaveBeenCalledOnceWith(false);
+            expect(dialogRef.close).toHaveBeenCalledWith(false);
+            expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });
 
         it('should call cancel from config', () => {
             const dialog = de.query(By.css('[data-testId="dialogForm"]'));
             dialog.triggerEventHandler('cancel', {});
-            expect(dialogRef.close).toHaveBeenCalledOnceWith(true);
+            expect(dialogRef.close).toHaveBeenCalledWith(true);
+            expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -80,6 +80,7 @@ describe('DotContentTypeEditResolver', () => {
                 });
             });
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
+        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
     });
 
     it("should redirect to content-types if content type it's not found", () => {
@@ -105,6 +106,7 @@ describe('DotContentTypeEditResolver', () => {
         dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
 
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
+        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', {
             replaceUrl: true
         });
@@ -132,6 +134,7 @@ describe('DotContentTypeEditResolver', () => {
 
         dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
+        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', {
             replaceUrl: true
         });

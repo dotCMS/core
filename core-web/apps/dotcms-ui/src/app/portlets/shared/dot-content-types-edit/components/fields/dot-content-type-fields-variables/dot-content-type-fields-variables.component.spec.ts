@@ -104,6 +104,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, variable);
+        expect(dotFieldVariableService.save).toHaveBeenCalledTimes(1);
 
         expect(comp.fieldVariables[0]).toEqual(variable);
     });
@@ -122,6 +123,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         dotKeyValue.triggerEventHandler('delete', variableToDelete);
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
+        expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
         expect(comp.fieldVariables).toEqual(deletedCollection);
     });
 

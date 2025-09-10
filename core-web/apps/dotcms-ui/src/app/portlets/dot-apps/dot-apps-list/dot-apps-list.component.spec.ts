@@ -227,6 +227,7 @@ describe('DotAppsListComponent', () => {
             )[0].componentInstance;
             card.actionFired.emit(component.apps[0].key);
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps[0].key);
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
         });
     });
 

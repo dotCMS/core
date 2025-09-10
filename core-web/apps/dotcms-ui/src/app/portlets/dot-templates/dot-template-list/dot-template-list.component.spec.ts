@@ -524,6 +524,7 @@ describe('DotTemplateListComponent', () => {
             siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
         it('should set attributes of dotListingDataTable', () => {
@@ -602,6 +603,7 @@ describe('DotTemplateListComponent', () => {
 
             dotListingDataTable.actionHeaderOptions.primary.command();
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
         it('should pass data to the status elements', () => {
@@ -773,6 +775,7 @@ describe('DotTemplateListComponent', () => {
                 unPublishTemplate.actions[4].menuItem.command();
 
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith(['123Unpublish']);
+                expect(dotTemplatesService.archive).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Template archived');
             });
             it('should call unArchive api, send notification and reload current page', () => {
@@ -782,6 +785,7 @@ describe('DotTemplateListComponent', () => {
                 archivedTemplate.actions[0].menuItem.command();
 
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledWith(['123Archived']);
+                expect(dotTemplatesService.unArchive).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Template unarchived');
             });
             it('should call publish api, send notification and reload current page', () => {
@@ -791,6 +795,7 @@ describe('DotTemplateListComponent', () => {
                 unPublishTemplate.actions[1].menuItem.command();
 
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith(['123Unpublish']);
+                expect(dotTemplatesService.publish).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Templates published');
             });
             it('should call unpublish api, send notification and reload current page', () => {
@@ -800,6 +805,7 @@ describe('DotTemplateListComponent', () => {
                 publishTemplate.actions[4].menuItem.command();
 
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledWith(['123Published']);
+                expect(dotTemplatesService.unPublish).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Template unpublished');
             });
             it('should call copy api, send notification and reload current page', () => {
@@ -807,6 +813,7 @@ describe('DotTemplateListComponent', () => {
                 publishTemplate.actions[5].menuItem.command();
 
                 expect(dotTemplatesService.copy).toHaveBeenCalledWith('123Published');
+                expect(dotTemplatesService.copy).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Template copied');
             });
             it('should call delete api, send notification and reload current page', () => {
@@ -818,6 +825,7 @@ describe('DotTemplateListComponent', () => {
                 });
                 archivedTemplate.actions[1].menuItem.command();
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith(['123Archived']);
+                expect(dotTemplatesService.delete).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Template deleted');
             });
 

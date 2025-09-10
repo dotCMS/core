@@ -125,9 +125,11 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         const avatar = de.query(By.css('p-avatar'));
         avatar.triggerEventHandler('click', { key: appData.key });
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.app.key);
+        expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
         const title = de.query(By.css('.dot-apps-configuration__service-name'));
         title.triggerEventHandler('click', { key: appData.key });
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.app.key);
+        expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
     });
 
     it('should show right message and no "Show More" link when no configurations and description short', async () => {

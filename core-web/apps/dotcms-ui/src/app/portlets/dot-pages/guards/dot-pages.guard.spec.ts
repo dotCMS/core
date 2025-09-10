@@ -95,6 +95,7 @@ describe('Guards', () => {
 
             spectator.router.navigate(['new', 'Blog']).then((success) => {
                 expect(spyContentType).toHaveBeenCalledWith('Blog');
+                expect(spyContentType).toHaveBeenCalledTimes(1);
                 expect(success).toBe(true);
                 done();
             });
@@ -112,7 +113,9 @@ describe('Guards', () => {
             spectator.router.navigate(['new', 'Blog']).then((success) => {
                 expect(success).toBe(false);
                 expect(spyContentType).toHaveBeenCalledWith('Blog');
+                expect(spyContentType).toHaveBeenCalledTimes(1);
                 expect(spyRouter).toHaveBeenCalledWith('content/new/Blog');
+                expect(spyRouter).toHaveBeenCalledTimes(1);
                 done();
             });
         });
@@ -132,7 +135,9 @@ describe('Guards', () => {
             spectator.router.navigate(['1234']).then((success) => {
                 expect(success).toBe(true);
                 expect(spyContentlet).toHaveBeenCalledWith('1234');
+                expect(spyContentlet).toHaveBeenCalledTimes(1);
                 expect(spyContentType).toHaveBeenCalledWith('Blog');
+                expect(spyContentType).toHaveBeenCalledTimes(1);
                 done();
             });
         });
@@ -152,8 +157,11 @@ describe('Guards', () => {
             spectator.router.navigate(['1234']).then((success) => {
                 expect(success).toBe(false);
                 expect(spyContentlet).toHaveBeenCalledWith('1234');
+                expect(spyContentlet).toHaveBeenCalledTimes(1);
                 expect(spyContentType).toHaveBeenCalledWith('Blog');
+                expect(spyContentType).toHaveBeenCalledTimes(1);
                 expect(spyRouter).toHaveBeenCalledWith('content/1234');
+                expect(spyRouter).toHaveBeenCalledTimes(1);
                 done();
             });
         });

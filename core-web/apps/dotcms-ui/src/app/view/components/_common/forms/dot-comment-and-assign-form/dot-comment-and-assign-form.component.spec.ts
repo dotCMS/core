@@ -112,7 +112,9 @@ describe('DotAssigneeFormComponent', () => {
             formComponent.form.setValue(mockFormValue);
 
             expect(formComponent.valid.emit).toHaveBeenCalledWith(true);
+            expect(formComponent.valid.emit).toHaveBeenCalledTimes(1);
             expect(formComponent.value.emit).toHaveBeenCalledWith(mockFormValue);
+            expect(formComponent.value.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

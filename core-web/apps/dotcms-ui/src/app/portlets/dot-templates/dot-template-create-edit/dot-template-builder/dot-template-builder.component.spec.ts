@@ -228,6 +228,7 @@ describe('DotTemplateBuilderComponent', () => {
 
             templateBuilder.triggerEventHandler('templateChange', template);
             expect(component.onTemplateItemChange).toHaveBeenCalledWith(template);
+            expect(component.onTemplateItemChange).toHaveBeenCalledTimes(1);
         });
 
         it('should add style classes if new template builder feature flag is on', () => {
@@ -269,7 +270,9 @@ describe('DotTemplateBuilderComponent', () => {
             builder.triggerEventHandler('cancel', {});
 
             expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_ADVANCED);
+            expect(component.save.emit).toHaveBeenCalledTimes(1);
             expect(component.updateTemplate.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_ADVANCED);
+            expect(component.updateTemplate.emit).toHaveBeenCalledTimes(1);
             expect(component.cancel.emit).toHaveBeenCalledTimes(1);
         });
     });
@@ -318,6 +321,7 @@ describe('DotTemplateBuilderComponent', () => {
                 });
                 permissions.custom.emit(customEvent);
                 expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
+                expect(component.custom.emit).toHaveBeenCalledTimes(1);
             });
         });
     });

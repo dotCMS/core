@@ -106,6 +106,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         de.queryAll(By.css('p-splitbutton .p-menuitem-link'))[1].nativeElement.click();
         fixture.detectChanges();
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
+        expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
     });
 
     it('should select columns number after click on li', () => {

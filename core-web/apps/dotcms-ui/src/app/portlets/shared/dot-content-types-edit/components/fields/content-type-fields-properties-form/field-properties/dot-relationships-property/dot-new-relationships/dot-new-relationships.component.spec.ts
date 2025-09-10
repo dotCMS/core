@@ -231,6 +231,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             expect(paginatorService.filter).toBe(newFilter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 
@@ -250,6 +251,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             expect(paginatorService.filter).toBe(event.filter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 

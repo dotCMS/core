@@ -84,6 +84,7 @@ describe('DotAppsConfigurationListComponent', () => {
 
             siteItem.edit.emit(sites[0]);
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit action for export --> Site Item', () => {
@@ -93,6 +94,7 @@ describe('DotAppsConfigurationListComponent', () => {
 
             siteItem.export.emit(sites[0]);
             expect(component.export.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.export.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit action for delete --> Site Item', () => {
@@ -102,6 +104,7 @@ describe('DotAppsConfigurationListComponent', () => {
 
             siteItem.delete.emit(sites[0]);
             expect(component.delete.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.delete.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should Load More button be enabled', () => {

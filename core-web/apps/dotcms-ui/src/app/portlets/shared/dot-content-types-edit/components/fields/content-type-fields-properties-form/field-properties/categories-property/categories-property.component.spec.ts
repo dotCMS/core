@@ -149,6 +149,7 @@ describe('CategoriesPropertyComponent', () => {
 
             expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(2);
+            expect(spyMethod).toHaveBeenCalledTimes(1);
         });
 
         it('should filter', () => {
@@ -156,6 +157,7 @@ describe('CategoriesPropertyComponent', () => {
 
             expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(0);
+            expect(spyMethod).toHaveBeenCalledTimes(1);
         });
 
         it('should valuePropertyName be undefined', () => {

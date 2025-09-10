@@ -190,6 +190,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         ).componentInstance;
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
+        expect(dotContentTypeService.getContentType).toHaveBeenCalledTimes(1);
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toEqual(clickEvent.dataset.language);
         expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.blockEditorContent));

@@ -109,6 +109,7 @@ describe('DotNavigationComponent collapsed', () => {
 
             expect(stopPropSpy).toHaveBeenCalled();
             expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
+            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
 
@@ -141,6 +142,7 @@ describe('DotNavigationComponent collapsed', () => {
             });
 
             expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
+            expect(navigationService.goTo).toHaveBeenCalledTimes(1);
         });
 
         it('should not have scroll', () => {
@@ -238,6 +240,7 @@ describe('DotNavigationComponent expanded', () => {
 
             expect(stopPropSpy).toHaveBeenCalled();
             expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
+            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
 
@@ -281,7 +284,9 @@ describe('DotNavigationComponent expanded', () => {
             });
 
             expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
+            expect(navigationService.goTo).toHaveBeenCalledTimes(1);
             expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+            expect(navigationService.setOpen).toHaveBeenCalledTimes(1);
         });
 
         it('should only set open when menu is already open', () => {
@@ -299,6 +304,7 @@ describe('DotNavigationComponent expanded', () => {
 
             expect(navigationService.goTo).not.toHaveBeenCalled();
             expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+            expect(navigationService.setOpen).toHaveBeenCalledTimes(1);
         });
     });
 

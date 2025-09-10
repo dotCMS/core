@@ -118,6 +118,7 @@ describe('DotCreateContentletComponent', () => {
         expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.goToContent).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {
@@ -126,6 +127,7 @@ describe('DotCreateContentletComponent', () => {
         expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should emit custom', () => {

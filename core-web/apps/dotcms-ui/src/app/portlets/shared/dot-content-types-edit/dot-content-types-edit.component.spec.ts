@@ -241,6 +241,7 @@ describe('DotContentTypesEditComponent', () => {
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
             expect(comp.show).toBe(false);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(`/${portlet}`);
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
         it('should NOT have dot-content-type-layout', () => {
@@ -563,10 +564,12 @@ describe('DotContentTypesEditComponent', () => {
             comp.contentTypeActions[0].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[0].label).toBe('Add rows');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
+            expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
             comp.contentTypeActions[1].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[1].label).toBe('Add tab');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
+            expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
         });
 
         it('should close the dialog', () => {
@@ -608,6 +611,7 @@ describe('DotContentTypesEditComponent', () => {
             contentTypeFieldsDropZone.triggerEventHandler('editField', fieldToUpdate);
 
             expect(fieldService.updateField).toHaveBeenCalledWith('1234567890', fieldToUpdate);
+            expect(fieldService.updateField).toHaveBeenCalledTimes(1);
 
             expect(comp.layout).toEqual(layout);
         });

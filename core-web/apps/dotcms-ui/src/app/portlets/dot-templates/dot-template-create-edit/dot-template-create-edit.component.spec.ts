@@ -578,6 +578,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     };
 
                     expect(store.updateWorkingTemplate).toHaveBeenCalledWith(template);
+                    expect(store.updateWorkingTemplate).toHaveBeenCalledTimes(1);
                 });
 
                 it('should saveAndPublishTemplate', () => {
@@ -630,6 +631,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     });
 
                     expect(store.goToEditTemplate).toHaveBeenCalledWith('1', '2');
+                    expect(store.goToEditTemplate).toHaveBeenCalledTimes(1);
                 });
 
                 it('should go to listing if page site changes', () => {

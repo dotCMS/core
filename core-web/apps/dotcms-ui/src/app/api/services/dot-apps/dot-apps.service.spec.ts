@@ -218,6 +218,7 @@ describe('DotAppsService', () => {
             body: JSON.stringify(conf)
         });
         expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
+        expect(dotUtils.getDownloadLink).toHaveBeenCalledTimes(1);
         expect(anchor.click).toHaveBeenCalledTimes(1);
     }));
 

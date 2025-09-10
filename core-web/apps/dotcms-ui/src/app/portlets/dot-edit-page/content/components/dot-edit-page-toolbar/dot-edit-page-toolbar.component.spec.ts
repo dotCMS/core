@@ -465,12 +465,14 @@ describe('DotEditPageToolbarComponent', () => {
             whatsChangedElem.triggerEventHandler('onChange', { checked: true });
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(true);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
         });
 
         it("should emit what's change in false", () => {
             whatsChangedElem.triggerEventHandler('onChange', { checked: false });
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
         });
 
         describe('whats change on state change', () => {
@@ -481,6 +483,7 @@ describe('DotEditPageToolbarComponent', () => {
                 dotEditPageState.triggerEventHandler('modeChange', DotPageMode.EDIT);
 
                 expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             });
 
             it('should not emit when showWhatsChanged is false', () => {

@@ -147,6 +147,7 @@ describe('DotAutocompleteTagsComponent', () => {
                     autoComplete.onKeyUp.emit(newEnterEvent);
 
                     expect(component.checkForTag).toHaveBeenCalledWith(newEnterEvent);
+                    expect(component.checkForTag).toHaveBeenCalledTimes(1);
                     expect(component.value[0].label).toEqual('newTag');
                     // expect(newEnterEvent.currentTarget.value).toBeNull();
                     expect(component.propagateChange).toHaveBeenCalledWith(
@@ -199,6 +200,7 @@ describe('DotAutocompleteTagsComponent', () => {
 
                 expect(component.addItem).toHaveBeenCalledTimes(1);
                 expect(component.propagateChange).toHaveBeenCalledWith('Dotcms,enterEvent');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
             });
 
             it('should call removeItem on onUnselect event and ', () => {
@@ -207,6 +209,7 @@ describe('DotAutocompleteTagsComponent', () => {
 
                 expect(component.removeItem).toHaveBeenCalledTimes(1);
                 expect(component.propagateChange).toHaveBeenCalledWith('enterEvent,Dotcms');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
             });
         });
     });

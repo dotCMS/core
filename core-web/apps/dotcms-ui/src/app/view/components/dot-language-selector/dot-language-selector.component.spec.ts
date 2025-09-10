@@ -47,6 +47,7 @@ describe('DotLanguageSelectorComponent', () => {
         spectator.setInput('value', DOT_LANG);
         spectator.detectComponentChanges();
         expect(dotLanguagesService.getLanguagesUsedPage).toHaveBeenCalledWith(PAGE_ID);
+        expect(dotLanguagesService.getLanguagesUsedPage).toHaveBeenCalledTimes(1);
         expect(spectator.component.languagesList().length).toBe(mockLanguageArray.length);
 
         const pDropdown: Dropdown = spectator.query(Dropdown);

@@ -324,6 +324,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 }
 
                 expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith(urlParams);
+                expect(dotPageRenderService.checkPermission).toHaveBeenCalledTimes(1);
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
             });
 

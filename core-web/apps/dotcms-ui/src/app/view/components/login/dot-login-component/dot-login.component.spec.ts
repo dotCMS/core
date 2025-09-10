@@ -154,7 +154,9 @@ describe('DotLoginComponent', () => {
             pDropDown.triggerEventHandler('onChange', { value: 'es_ES' });
 
             expect(dotMessageService.init).toHaveBeenCalledWith({ language: 'es_ES' });
+            expect(dotMessageService.init).toHaveBeenCalledTimes(1);
             expect(loginPageStateService.update).toHaveBeenCalledWith('es_ES');
+            expect(loginPageStateService.update).toHaveBeenCalledTimes(1);
         });
 
         it('should have a link to forgot password', () => {
@@ -189,8 +191,11 @@ describe('DotLoginComponent', () => {
             expect(signInButton.nativeElement.disabled).toBeFalsy();
             signInButton.triggerEventHandler('click', {});
             expect(loginService.loginUser).toHaveBeenCalledWith(credentials);
+            expect(loginService.loginUser).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
+            expect(dotRouterService.goToMain).toHaveBeenCalledTimes(1);
             expect(dotFormatDateService.setLang).toHaveBeenCalledWith('en_US');
+            expect(dotFormatDateService.setLang).toHaveBeenCalledTimes(1);
         });
 
         it('should disable fields while waiting login response', async () => {

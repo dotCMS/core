@@ -177,6 +177,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 fixture.detectChanges();
                 expect(component.asset).toBeNull();
                 expect(component.propagateChange).toHaveBeenCalledWith('');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
             });
 
             it('should show error for invalid image url', () => {
@@ -302,6 +303,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 fixture.detectChanges();
 
                 expect(component.propagateChange).toHaveBeenCalledWith('456');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
                 expect(component.asset).toEqual(mock);
 
                 const error = de.query(By.css('[data-testId="error"]'));

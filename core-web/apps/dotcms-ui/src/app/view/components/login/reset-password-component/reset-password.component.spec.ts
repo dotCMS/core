@@ -111,6 +111,7 @@ describe('ResetPasswordComponent', () => {
         });
         changePasswordButton.triggerEventHandler('click', {});
         expect(loginService.changePassword).toHaveBeenCalledWith('test', 'test@test.com');
+        expect(loginService.changePassword).toHaveBeenCalledTimes(1);
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
             queryParams: {
                 changedPassword: true

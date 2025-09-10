@@ -79,11 +79,13 @@ describe('DotTemplateNewComponent', () => {
 
     it('should go to create design template', () => {
         dialogRefClose.next('design');
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledOnceWith('/templates/new/design');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new/design');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
     it('should go to listing if close the dialog', () => {
         dialogRefClose.next(undefined);
-        expect(dotRouterService.goToURL).toHaveBeenCalledOnceWith('/templates');
+        expect(dotRouterService.goToURL).toHaveBeenCalledWith('/templates');
+        expect(dotRouterService.goToURL).toHaveBeenCalledTimes(1);
     });
 });

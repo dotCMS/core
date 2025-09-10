@@ -415,6 +415,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
                 { mode: DotPageMode.EDIT },
                 true
@@ -447,6 +448,7 @@ describe('DotEditPageStateControllerComponent', () => {
             await fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).not.toHaveBeenCalled();
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -470,6 +472,7 @@ describe('DotEditPageStateControllerComponent', () => {
             fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(component.lock).toBe(true);
             expect(component.mode).toBe(DotPageMode.PREVIEW);
@@ -508,6 +511,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).toHaveBeenCalledWith(
                 mockDotRenderedPage().page.identifier,
@@ -543,6 +547,7 @@ describe('DotEditPageStateControllerComponent', () => {
             });
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
 
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -586,6 +591,7 @@ describe('DotEditPageStateControllerComponent', () => {
             });
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
@@ -609,6 +615,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             component.menu.onHide.emit();
             expect(resetMock).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(resetMock).toHaveBeenCalledTimes(1);
         });
 
         it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {

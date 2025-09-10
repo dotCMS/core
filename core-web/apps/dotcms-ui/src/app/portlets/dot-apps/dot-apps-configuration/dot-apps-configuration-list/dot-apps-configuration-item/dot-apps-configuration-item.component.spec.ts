@@ -124,6 +124,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             });
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.export.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.export.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit delete action', () => {
@@ -143,6 +144,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.delete.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.delete.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit edit action with a site', () => {
@@ -157,6 +159,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             });
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit edit action when host component clicked', () => {
@@ -167,6 +170,7 @@ describe('DotAppsConfigurationItemComponent', () => {
                 }
             });
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should not emit edit action when host label clicked', () => {
@@ -203,6 +207,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             });
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.edit.emit).toHaveBeenCalledWith(sites[1]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

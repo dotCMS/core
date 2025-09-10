@@ -201,6 +201,7 @@ describe('DotCreatePersonaFormComponent', () => {
             fileUpload.triggerEventHandler('onBeforeUpload', {});
             fixture.detectChanges();
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
+            expect(component.isValid.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should set the photo id and tempUploadedFile after image upload', () => {
@@ -233,12 +234,14 @@ describe('DotCreatePersonaFormComponent', () => {
                 tags: 'test'
             });
             expect(component.isValid.emit).toHaveBeenCalledWith(true);
+            expect(component.isValid.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit if form is invalid after changes', () => {
             jest.spyOn(component.isValid, 'emit');
             component.form.get('photo').setValue('test');
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
+            expect(component.isValid.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should reset from to initial value and clear tempUploadedFile', () => {

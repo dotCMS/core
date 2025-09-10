@@ -134,5 +134,6 @@ describe('ContentTypeFieldsTabComponent', () => {
         const deleteButton = de.query(By.css('p-button')).nativeElement;
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);
+        expect(comp.removeTab.emit).toHaveBeenCalledTimes(1);
     });
 });

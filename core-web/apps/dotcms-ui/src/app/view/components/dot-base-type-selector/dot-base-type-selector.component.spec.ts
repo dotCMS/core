@@ -62,7 +62,9 @@ describe('DotBaseTypeSelectorComponent', () => {
         pDropDown.triggerEventHandler('onChange', allContentTypesItem);
 
         expect(component.change).toHaveBeenCalledWith(allContentTypesItem);
+        expect(component.change).toHaveBeenCalledTimes(1);
         expect(component.selected.emit).toHaveBeenCalledWith(allContentTypesItem.value);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should add All Content Types option as first position', () => {

@@ -97,6 +97,7 @@ describe('DotPagesCardComponent', () => {
             });
 
             expect(component.goTo.emit).toHaveBeenCalledWith(true);
+            expect(component.goTo.emit).toHaveBeenCalledTimes(1);
             expect(component.edit.emit).not.toHaveBeenCalledWith(true);
         });
     });

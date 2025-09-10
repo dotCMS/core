@@ -512,11 +512,12 @@ describe('DotEditContentComponent', () => {
                     } as DotCMSContentlet;
 
                     toolbarElement.triggerEventHandler('actionFired', contentlet);
-                    expect(dotRouterService.goToEditPage).toHaveBeenCalledOnceWith({
+                    expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                         url: contentlet.url,
                         host_id: contentlet.host,
                         language_id: contentlet.languageId
                     });
+                    expect(dotRouterService.goToEditPage).toHaveBeenCalledTimes(1);
                 });
 
                 it('whatschange > should show dot-whats-changed', () => {
@@ -579,6 +580,7 @@ describe('DotEditContentComponent', () => {
                 dotContentletEditorService.close$.next(true);
 
                 expect(component.reload).toHaveBeenCalledWith(null);
+                expect(component.reload).toHaveBeenCalledTimes(1);
             });
         });
 
@@ -609,6 +611,7 @@ describe('DotEditContentComponent', () => {
                 dotContentletEditorService.close$.next(true);
 
                 expect(component.reload).toHaveBeenCalledWith(null);
+                expect(component.reload).toHaveBeenCalledTimes(1);
             });
 
             it('should remove Contentlet Placeholder on close', () => {
@@ -1326,9 +1329,10 @@ describe('DotEditContentComponent', () => {
                             data: data
                         });
 
-                        expect(dotContentletEditorService.getActionUrl).toHaveBeenCalledOnceWith(
+                        expect(dotContentletEditorService.getActionUrl).toHaveBeenCalledWith(
                             'blog'
                         );
+                        expect(dotContentletEditorService.getActionUrl).toHaveBeenCalledTimes(1);
 
                         const container: DotPageContainer = {
                             identifier: 'identifier',

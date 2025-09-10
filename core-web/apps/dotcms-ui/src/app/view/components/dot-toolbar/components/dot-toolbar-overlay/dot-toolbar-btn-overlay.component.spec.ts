@@ -227,6 +227,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
                 component.show(mockEvent);
 
                 expect(overlayPanel.show).toHaveBeenCalledWith(mockEvent);
+                expect(overlayPanel.show).toHaveBeenCalledTimes(1);
             });
 
             it('should handle show method without errors', () => {

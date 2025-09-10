@@ -217,6 +217,7 @@ describe('DotTemplateStore', () => {
 
         it('should call set in DotTemplateContainersCacheService', () => {
             expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({});
+            expect(dotTemplateContainersCacheService.set).toHaveBeenCalledTimes(1);
         });
 
         describe('effects', () => {
@@ -315,6 +316,7 @@ describe('DotTemplateStore', () => {
         it('should redirect to edit template', () => {
             service.goToEditTemplate('1', '2');
             expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith('1', '2');
+            expect(dotRouterService.goToEditTemplate).toHaveBeenCalledTimes(1);
         });
         describe('selectors', () => {
             it('should update the didTemplateChanged$', () => {
@@ -475,7 +477,9 @@ describe('DotTemplateStore', () => {
                 });
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('saving');
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledTimes(1);
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('saved');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
                 expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith(
                     '222-3000-333---30303-394'
                 );
@@ -526,7 +530,9 @@ describe('DotTemplateStore', () => {
                 });
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('saving');
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledTimes(1);
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('saved');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
                 expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith(
                     '222-3000-333---30303-394'
                 );
@@ -572,7 +578,9 @@ describe('DotTemplateStore', () => {
                 });
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('publishing');
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledTimes(1);
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('published');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
                 expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith(
                     '222-3000-333---30303-394'
                 );
@@ -649,6 +657,7 @@ describe('DotTemplateStore', () => {
                     title: 'string'
                 });
                 expect(dotGlobalMessageService.error).toHaveBeenCalledWith('Unknown Error');
+                expect(dotGlobalMessageService.error).toHaveBeenCalledTimes(1);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
                 dotRouterService.canDeactivateRoute$.subscribe((resp) => {
                     expect(resp).toBeTruthy();
@@ -724,6 +733,7 @@ describe('DotTemplateStore', () => {
 
         it('Should redirect to templates listing when trying to edit a SYSTEM_TEMPALTE', () => {
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
     });
 });

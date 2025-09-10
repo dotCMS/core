@@ -181,6 +181,7 @@ describe('DotAddToMenuComponent', () => {
         expect(component.form.get('title').value).toEqual(contentTypeVar.name);
         expect(component.form.valid).toEqual(true);
         expect(dotMenuService.loadMenu).toHaveBeenCalledWith(true);
+        expect(dotMenuService.loadMenu).toHaveBeenCalledTimes(1);
     });
 
     it('should invalidate form and set Add button disabled, when name empty', () => {

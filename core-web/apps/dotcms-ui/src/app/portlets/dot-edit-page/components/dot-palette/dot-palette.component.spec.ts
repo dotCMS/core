@@ -178,6 +178,7 @@ describe('DotPaletteComponent', () => {
         const wrapper = fixture.debugElement.query(By.css('[data-testid="wrapper"]'));
         expect(wrapper.nativeElement.style.transform).toEqual('translateX(0%)');
         expect(store.switchView).toHaveBeenCalledWith('Blog');
+        expect(store.switchView).toHaveBeenCalledTimes(1);
         expect(contentContentletsComp.componentInstance.totalRecords).toBe(20);
         expect(contentContentletsComp.componentInstance.items).toEqual([contentletProductDataMock]);
     });
@@ -190,6 +191,7 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.filterContentTypes).toHaveBeenCalledWith('Blog');
+        expect(store.filterContentTypes).toHaveBeenCalledTimes(1);
     });
 
     it('should change view to content type and unset viewContentlet Variable on contentlets palette view', async () => {
@@ -202,6 +204,7 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.switchView).toHaveBeenCalledWith(undefined);
+        expect(store.switchView).toHaveBeenCalledTimes(1);
     });
 
     it('should set value on store on filtering event', async () => {
@@ -214,6 +217,7 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.filterContentlets).toHaveBeenCalledWith('test');
+        expect(store.filterContentlets).toHaveBeenCalledTimes(1);
     });
 
     it('should set value on store on paginate event', async () => {
@@ -226,6 +230,7 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.getContentletsData).toHaveBeenCalledWith({ first: 20 });
+        expect(store.getContentletsData).toHaveBeenCalledTimes(1);
     });
 
     it('should set allowedContent', async () => {
@@ -236,6 +241,7 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.setAllowedContent).toHaveBeenCalledWith(allowedContent);
+        expect(store.setAllowedContent).toHaveBeenCalledTimes(1);
     });
 
     it('should switch language', async () => {
@@ -245,5 +251,6 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.switchLanguage).toHaveBeenCalledWith('2');
+        expect(store.switchLanguage).toHaveBeenCalledTimes(1);
     });
 });

@@ -235,7 +235,9 @@ describe('DotPagesListingPanelComponent', () => {
             elem.triggerEventHandler('input');
 
             expect(store.setKeyword).toHaveBeenCalledWith('test');
+            expect(store.setKeyword).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalledTimes(1);
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
@@ -252,7 +254,9 @@ describe('DotPagesListingPanelComponent', () => {
             elemClean.triggerEventHandler('click', {});
 
             expect(store.setKeyword).toHaveBeenCalledWith('');
+            expect(store.setKeyword).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalledTimes(1);
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(2);
         });
 
@@ -261,7 +265,9 @@ describe('DotPagesListingPanelComponent', () => {
             elem.triggerEventHandler('onChange', { value: '1' });
 
             expect(store.setLanguageId).toHaveBeenCalledWith('1');
+            expect(store.setLanguageId).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalledTimes(1);
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
@@ -270,7 +276,9 @@ describe('DotPagesListingPanelComponent', () => {
             elem.triggerEventHandler('onChange', { checked: '1' });
 
             expect(store.setArchived).toHaveBeenCalledWith('1');
+            expect(store.setArchived).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalledTimes(1);
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
@@ -278,7 +286,7 @@ describe('DotPagesListingPanelComponent', () => {
             const elem = de.query(By.css('p-table'));
             elem.triggerEventHandler('onRowSelect', { data: { url: 'abc123', languageId: '1' } });
 
-            expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
+            expect(component.goToUrl.emit).toHaveBeenCalledWith(
                 'abc123?language_id=1&device_inode='
             );
         });

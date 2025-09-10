@@ -62,5 +62,6 @@ describe('DotAppsListResolver', () => {
                 });
             });
         expect(dotLicenseServices.canAccessEnterprisePortlet).toHaveBeenCalledWith('/apps');
+        expect(dotLicenseServices.canAccessEnterprisePortlet).toHaveBeenCalledTimes(1);
     });
 });

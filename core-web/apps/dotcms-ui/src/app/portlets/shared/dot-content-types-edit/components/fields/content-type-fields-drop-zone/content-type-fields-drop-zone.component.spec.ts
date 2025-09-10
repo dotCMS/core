@@ -311,6 +311,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.currentField).toBe(null);
         expect(comp.activeTab).toBe(0);
         expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
+        expect(comp.setDialogOkButtonState).toHaveBeenCalledTimes(1);
     });
 
     it('should emit removeFields event', () => {

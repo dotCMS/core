@@ -82,6 +82,7 @@ describe('AppComponent', () => {
     it('should init message service', () => {
         fixture.detectChanges();
         expect(dotMessageService.init).toHaveBeenCalledWith({ buildDate: 'Jan 1, 2022' });
+        expect(dotMessageService.init).toHaveBeenCalledTimes(1);
     });
 
     it('should have router-outlet', () => {
@@ -106,5 +107,6 @@ describe('AppComponent', () => {
     it('should set logo', () => {
         fixture.detectChanges();
         expect(dotNavLogoService.setLogo).toHaveBeenCalledWith(undefined);
+        expect(dotNavLogoService.setLogo).toHaveBeenCalledTimes(1);
     });
 });

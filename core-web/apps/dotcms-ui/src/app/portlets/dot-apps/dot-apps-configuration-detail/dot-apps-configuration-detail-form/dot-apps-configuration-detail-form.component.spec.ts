@@ -300,6 +300,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             buttonElement.click();
             expect(openMock).toHaveBeenCalledWith(field.value, '_blank');
+            expect(openMock).toHaveBeenCalledTimes(1);
         });
 
         it('should emit form state when loaded', async () => {
@@ -332,6 +333,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             spectator.component.myFormGroup.get('name').setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);
+            expect(spyValidOutput).toHaveBeenCalledTimes(1);
         });
     });
 

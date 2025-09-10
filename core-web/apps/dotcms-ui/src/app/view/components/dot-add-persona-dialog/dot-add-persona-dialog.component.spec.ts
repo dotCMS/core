@@ -191,6 +191,7 @@ describe('DotAddPersonaDialogComponent', () => {
                     tags: null
                 });
                 expect(component.createdPersona.emit).toHaveBeenCalledWith(mockDotPersona);
+                expect(component.createdPersona.emit).toHaveBeenCalledTimes(1);
                 expect(component.closeDialog).toHaveBeenCalled();
                 expect(component.dialogActions.accept.disabled).toEqual(true);
             });
@@ -209,6 +210,7 @@ describe('DotAddPersonaDialogComponent', () => {
                 expect(component.createdPersona.emit).not.toHaveBeenCalled();
                 expect(component.dialogActions.accept.disabled).toEqual(false);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
         });
     });

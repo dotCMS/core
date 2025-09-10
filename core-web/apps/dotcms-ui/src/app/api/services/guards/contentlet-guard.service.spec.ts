@@ -61,6 +61,7 @@ describe('ValidContentletGuardService', () => {
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledWith('banner');
+        expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledTimes(1);
         expect(result).toBe(true);
     });
 
@@ -72,6 +73,7 @@ describe('ValidContentletGuardService', () => {
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
         expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledWith('banner');
+        expect(dotContentletService.isContentTypeInMenu).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
     });

@@ -191,6 +191,7 @@ describe('SiteSelectorComponent', () => {
         fixtureHost.detectChanges();
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     });
 
     it('should call refresh if a event happen', () => {
@@ -225,7 +226,9 @@ describe('SiteSelectorComponent', () => {
         });
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     });
 
     it('should paginate when the filter change', () => {
@@ -244,6 +247,7 @@ describe('SiteSelectorComponent', () => {
         comp.handleFilterChange(filter);
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
         expect(paginatorService.filter).toEqual(`*${filter}`);
     });
 

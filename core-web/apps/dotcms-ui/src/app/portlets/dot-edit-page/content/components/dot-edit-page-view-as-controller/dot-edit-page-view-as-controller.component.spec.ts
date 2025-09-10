@@ -235,6 +235,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             personaSelector.selected.emit(mockDotPersona);
 
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.changePersonaHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should have Device selector with tooltip', () => {
@@ -250,6 +251,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             deviceSelector.selected.emit(mockDotDevices[0]);
 
             expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevices[0]);
+            expect(component.changeDeviceHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should have Language selector', () => {
@@ -271,6 +273,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
+            expect(component.changeLanguageHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should propagate the values to the selector components on init', () => {

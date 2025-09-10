@@ -173,6 +173,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
         it('should init form', () => {
             expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith(DotCMSClazzes.TEXT);
+            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledTimes(1);
             expect(comp.form.get('clazz').value).toBe(DotCMSClazzes.TEXT);
 
             expect(comp.form.get('id').value).toBe('123');
@@ -191,6 +192,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             comp.saveFieldProperties();
 
             expect(comp.valid.next).toHaveBeenCalledWith(false);
+            expect(comp.valid.next).toHaveBeenCalledTimes(1);
         });
     });
 

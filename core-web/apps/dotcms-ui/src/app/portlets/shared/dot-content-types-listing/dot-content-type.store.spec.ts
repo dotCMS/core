@@ -118,6 +118,7 @@ describe('DotContentTypeComponentStore', () => {
             });
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
 
             store.isSaving$.subscribe((resp) => {
                 expect(resp).toBe(false);

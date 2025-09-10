@@ -50,6 +50,7 @@ describe('DotLegacyAdditionalActionsComponent', () => {
 
         component.url.subscribe((url) => (urlResult = url));
         expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('templates');
+        expect(dotMenuService.getDotMenuId).toHaveBeenCalledTimes(1);
         expect(urlResult).toEqual(
             // tslint:disable-next-line:max-line-length
             `c/portal/layout?p_l_id=2&p_p_id=templates&p_p_action=1&p_p_state=maximized&p_p_mode=view&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&inode=1&drawed=false&selectedTab=properties`

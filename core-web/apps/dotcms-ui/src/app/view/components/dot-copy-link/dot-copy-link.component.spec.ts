@@ -83,6 +83,7 @@ describe('DotCopyLinkComponent', () => {
             });
 
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith('Text to copy');
+            expect(dotClipboardUtil.copy).toHaveBeenCalledTimes(1);
             expect(stopPropagation).toHaveBeenCalledTimes(1);
         });
     });

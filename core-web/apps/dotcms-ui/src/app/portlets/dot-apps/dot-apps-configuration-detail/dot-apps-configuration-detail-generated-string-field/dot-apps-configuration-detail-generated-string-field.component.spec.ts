@@ -367,6 +367,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             // Assert - Loading state should be reset after error
             expect(spectator.component.$isLoading()).toBe(false);
             expect(console.error).toHaveBeenCalledWith('Error generating string:', mockError);
+            expect(console.error).toHaveBeenCalledTimes(1);
         });
     });
 });

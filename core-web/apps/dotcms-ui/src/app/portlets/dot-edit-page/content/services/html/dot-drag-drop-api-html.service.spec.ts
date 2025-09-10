@@ -5,7 +5,9 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './dot-drag-drop-api-html.service';
 import EDIT_MODE_DRAG_DROP, { EDIT_PAGE_JS_DOJO_REQUIRE } from './libraries';
-import DRAGULA_CSS from './libraries/dragula.css';
+
+// Mock DRAGULA_CSS to avoid JSDOM issues
+const DRAGULA_CSS = 'mock-css-content';
 
 describe('DotDragDropAPIHtmlService', () => {
     let service: DotDragDropAPIHtmlService;
@@ -21,6 +23,11 @@ describe('DotDragDropAPIHtmlService', () => {
         });
 
         service = TestBed.inject(DotDragDropAPIHtmlService);
+
+        // Mock the getDragulaCSS method to return our mock CSS
+        const mockStyleElement = document.createElement('style');
+        mockStyleElement.innerHTML = DRAGULA_CSS;
+        jest.spyOn(service as any, 'getDragulaCSS').mockReturnValue(mockStyleElement);
 
         jest.spyOn(doc.head, 'appendChild');
         jest.spyOn(doc.body, 'appendChild');

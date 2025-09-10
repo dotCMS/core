@@ -141,6 +141,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         acceptButton.nativeElement.click();
 
         expect(component.validFormFields.emit).toHaveBeenCalledWith(formValues);
+        expect(component.validFormFields.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should call cancelBtn() on cancel button click', () => {

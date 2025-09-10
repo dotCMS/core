@@ -131,6 +131,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
         it('should load actions', () => {
             expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
             expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith([]);
+            expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
         });
 
         it('should subscribe to actions', () => {

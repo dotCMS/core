@@ -90,6 +90,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
             copyButton.nativeElement.click();
             fixture.detectChanges();
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith(comp.value);
+            expect(dotClipboardUtil.copy).toHaveBeenCalledTimes(1);
             expect(copyButton.nativeElement.textContent).toBe('Copied');
             tick(2000);
             fixture.detectChanges();

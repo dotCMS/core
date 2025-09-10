@@ -155,6 +155,7 @@ describe('ContainerSelectorComponent', () => {
 
         tick();
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     }));
 
     it('should paginate when the filter change', fakeAsync(() => {
@@ -171,6 +172,7 @@ describe('ContainerSelectorComponent', () => {
 
         tick();
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
         expect(paginatorService.filter).toEqual(filter);
     }));
 

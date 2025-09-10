@@ -378,6 +378,7 @@ xdescribe('DotEditContentHtmlService', () => {
         });
 
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
     });
 
     it('should render relocated contentlet', () => {
@@ -1015,7 +1016,8 @@ xdescribe('DotEditContentHtmlService', () => {
                 inode: '999'
             });
 
-            expect(dotGlobalMessageService.success).toHaveBeenCalledOnceWith('All changes Saved');
+            expect(dotGlobalMessageService.success).toHaveBeenCalledWith('All changes Saved');
+            expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
         });
 
         it('should not call saveContentlet if isNotDirty is true', () => {
@@ -1073,6 +1075,7 @@ xdescribe('DotEditContentHtmlService', () => {
             });
 
             expect(dotGlobalMessageService.error).toHaveBeenCalledWith('An error ocurred');
+            expect(dotGlobalMessageService.error).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -1308,7 +1311,8 @@ xdescribe('DotEditContentHtmlService', () => {
 
                 service.renderAddedContentlet({ identifier: '123', inode: '' });
 
-                expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
+                expect(httpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
+                expect(httpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
         });
     });

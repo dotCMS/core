@@ -178,6 +178,7 @@ xdescribe('IframePortletLegacyComponent', () => {
         fixture.detectChanges();
 
         expect(dotMenuService.getUrlById).toHaveBeenCalledWith('portlet-id');
+        expect(dotMenuService.getUrlById).toHaveBeenCalledTimes(1);
         expect(src).toEqual('fake-url');
     });
 

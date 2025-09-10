@@ -234,6 +234,7 @@ describe('DotContentletWrapperComponent', () => {
 
                 dotIframeDialog.triggerEventHandler('custom', params);
                 expect(titleService.setTitle).toHaveBeenCalledWith('test - dotCMS platform');
+                expect(titleService.setTitle).toHaveBeenCalledTimes(1);
 
                 dotIframeDialog.triggerEventHandler('custom', {
                     detail: {
@@ -243,6 +244,7 @@ describe('DotContentletWrapperComponent', () => {
 
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
                 expect(titleService.setTitle).toHaveBeenCalledWith('TESTHOME - dotCMS platform');
+                expect(titleService.setTitle).toHaveBeenCalledTimes(1);
             });
 
             describe('beforeClose', () => {
@@ -330,6 +332,7 @@ describe('DotContentletWrapperComponent', () => {
                     };
                     dotIframeDialog.triggerEventHandler('custom', params);
                     expect(component.custom.emit).toHaveBeenCalledWith(params);
+                    expect(component.custom.emit).toHaveBeenCalledTimes(1);
                     expect(dotEventsService.notify).toHaveBeenCalledWith('save-page', {
                         payload: {
                             hello: 'world'
@@ -374,6 +377,7 @@ describe('DotContentletWrapperComponent', () => {
 
                     expect(component.header).toBe('Blog');
                     expect(titleService.setTitle).toHaveBeenCalledWith('test - dotCMS platform');
+                    expect(titleService.setTitle).toHaveBeenCalledTimes(1);
                 });
 
                 it('should set Page title when a new contentlet will be created', () => {

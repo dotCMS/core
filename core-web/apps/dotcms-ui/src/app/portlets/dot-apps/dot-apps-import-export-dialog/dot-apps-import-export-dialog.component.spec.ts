@@ -164,6 +164,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.importConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.importConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
             expect(comp.resolved.emit).toHaveBeenCalledTimes(1);
         });
@@ -237,6 +238,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.exportConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.exportConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
         });
 
@@ -299,6 +301,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.exportConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.exportConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
         });
 
@@ -346,6 +349,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.exportConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.exportConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
         });
     });

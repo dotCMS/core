@@ -145,6 +145,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
                 }
             });
             expect(component.switch.emit).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.switch.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit persona when delete clicked', () => {
@@ -155,6 +156,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
                 }
             });
             expect(component.delete.emit).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.delete.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

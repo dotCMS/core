@@ -69,5 +69,6 @@ describe('DotAppsConfigurationListResolver', () => {
                 expect(fakeContentType).toEqual(response);
             });
         expect(dotAppsServices.getConfigurationList).toHaveBeenCalledWith('123');
+        expect(dotAppsServices.getConfigurationList).toHaveBeenCalledTimes(1);
     });
 });

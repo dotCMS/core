@@ -39,5 +39,6 @@ describe('DotTemplateGuard', () => {
         const segment = new UrlSegment('xxxx', null);
         expect(guard.canLoad(null, [segment])).toBe(false);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 });

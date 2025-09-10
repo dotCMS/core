@@ -164,12 +164,15 @@ describe('DotWorkflowTaskComponent', () => {
         };
 
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
+        expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
     });
 
     it('should redirect to /workflow and refresh data when modal closed', () => {
         taskDetail.triggerEventHandler('shutdown', {});
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should redirect to /workflow when edit-task-executed-workflow event is triggered', () => {
@@ -189,7 +192,9 @@ describe('DotWorkflowTaskComponent', () => {
             }
         });
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should call to dotCustomEventHandlerService with the correct callbaack', () => {

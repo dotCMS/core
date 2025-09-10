@@ -79,6 +79,7 @@ describe('DotTemplateDesignerService', () => {
             )
             .subscribe((res) => {
                 expect(templateService.getById).toHaveBeenCalledWith('ID');
+                expect(templateService.getById).toHaveBeenCalledTimes(1);
                 expect<any>(res).toEqual({ this: { is: 'a page' } });
                 done();
             });
@@ -99,6 +100,7 @@ describe('DotTemplateDesignerService', () => {
             )
             .subscribe((res) => {
                 expect(templateService.getFiltered).toHaveBeenCalledWith('inode123');
+                expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
                 expect<any>(res).toEqual(templateMock);
                 done();
             });
@@ -119,7 +121,9 @@ describe('DotTemplateDesignerService', () => {
             )
             .subscribe(() => {
                 expect(templateService.getFiltered).toHaveBeenCalledWith('inode123');
+                expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
                 expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
                 done();
             });
     });

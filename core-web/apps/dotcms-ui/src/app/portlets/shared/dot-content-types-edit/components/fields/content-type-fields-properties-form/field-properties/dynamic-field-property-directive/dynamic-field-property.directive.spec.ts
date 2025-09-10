@@ -89,6 +89,7 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
     it('Should set component properties', () => {
         hostSpectator.detectChanges();
         expect(fieldPropertyService.getComponent).toHaveBeenCalledWith('name');
+        expect(fieldPropertyService.getComponent).toHaveBeenCalledTimes(1);
 
         expect(hostSpectator.query('dot-test')).toContainText('Dynamic Component');
 

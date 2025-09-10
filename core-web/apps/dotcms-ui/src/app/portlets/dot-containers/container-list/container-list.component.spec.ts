@@ -427,6 +427,7 @@ describe('ContainerListComponent', () => {
             fixture.detectChanges();
             const path = new URL(`http:${containersMock[4].path}`).pathname;
             expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(path);
+            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
 
@@ -441,6 +442,7 @@ describe('ContainerListComponent', () => {
             contentTypesSelector.selected.emit('test');
 
             expect(store.getContainersByContentType).toHaveBeenCalledWith('test');
+            expect(store.getContainersByContentType).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when archive state change', () => {
@@ -453,6 +455,7 @@ describe('ContainerListComponent', () => {
             headerCheckbox.onChange.emit({ checked: true });
 
             expect(store.getContainersByArchiveState).toHaveBeenCalledWith(true);
+            expect(store.getContainersByArchiveState).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when query change', () => {
@@ -468,6 +471,7 @@ describe('ContainerListComponent', () => {
             fixture.detectChanges();
 
             expect(store.getContainersByQuery).toHaveBeenCalledWith('test');
+            expect(store.getContainersByQuery).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers with offset when table emits onPage', () => {
@@ -476,6 +480,7 @@ describe('ContainerListComponent', () => {
             table.onPage.emit({ first: 10, rows: 10 });
 
             expect(store.getContainersWithOffset).toHaveBeenCalledWith(10);
+            expect(store.getContainersWithOffset).toHaveBeenCalledTimes(1);
         });
 
         it('should update selectedContainers in store when actions button is clicked', () => {
@@ -490,6 +495,7 @@ describe('ContainerListComponent', () => {
             bulkButton.click();
 
             expect(store.updateSelectedContainers).toHaveBeenCalledWith([containersMock[0]]);
+            expect(store.updateSelectedContainers).toHaveBeenCalledTimes(1);
         });
 
         it('should focus first row when you press arrow down in query input', () => {

@@ -264,6 +264,7 @@ describe('DotContentTypesPortletComponent', () => {
         fixture.detectChanges();
 
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
+        expect(crudService.delete).toHaveBeenCalledTimes(1);
     });
 
     it('should have remove, push publish, Copy and Add to bundle actions to the list item', () => {
@@ -404,6 +405,7 @@ describe('DotContentTypesPortletComponent', () => {
         baseTypesSelector.selected.emit('test');
 
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
+        expect(comp.changeBaseTypeSelector).toHaveBeenCalledTimes(1);
     });
 
     it('should handle error if is not possible delete the content type', () => {

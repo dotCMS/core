@@ -422,6 +422,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             expect(dotTabButtons).toBeTruthy();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
                 { mode: DotPageMode.EDIT },
                 true
@@ -454,6 +455,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             await fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).not.toHaveBeenCalled();
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -477,6 +479,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(component.lock).toBe(true);
             expect(component.mode).toBe(DotPageMode.PREVIEW);
@@ -515,6 +518,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).toHaveBeenCalledWith(
                 mockDotRenderedPage().page.identifier,
@@ -552,6 +556,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
 
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -570,6 +575,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             dotSelector.triggerEventHandler('changeSeoMedia', 'Google');
 
             expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledTimes(1);
         });
 
         it('should call selected event', async () => {
@@ -587,7 +593,9 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             dotSelector.triggerEventHandler('selected', event);
 
             expect(dotPageStateService.setDevice).toHaveBeenCalledWith(event);
+            expect(dotPageStateService.setDevice).toHaveBeenCalledTimes(1);
             expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith(null);
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledTimes(1);
         });
     });
     describe('page does not have URLContentMap and feature flag is on', () => {
@@ -643,6 +651,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             });
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
@@ -663,6 +672,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             component.menu.onHide.emit();
 
             expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledTimes(1);
         });
 
         it('should trigger resetDropdownById when device selector hides', () => {
@@ -671,6 +681,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             component.deviceSelector.hideOverlayPanel.emit();
 
             expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.PREVIEW);
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledTimes(1);
         });
 
         it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {

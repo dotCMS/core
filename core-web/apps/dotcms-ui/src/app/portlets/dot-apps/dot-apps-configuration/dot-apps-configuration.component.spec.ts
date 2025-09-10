@@ -184,10 +184,12 @@ describe('DotAppsConfigurationComponent', () => {
             expect(paginationService.sortField).toBe('name');
             expect(paginationService.sortOrder).toBe(1);
             expect(paginationService.setExtraParams).toHaveBeenCalledWith('filter', '');
+            expect(paginationService.setExtraParams).toHaveBeenCalledTimes(1);
         });
 
         it('should call first pagination call onInit', () => {
             expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginationService.getWithOffset).toHaveBeenCalledTimes(1);
         });
 
         it('should input search be focused on init', () => {
@@ -229,6 +231,7 @@ describe('DotAppsConfigurationComponent', () => {
             ).componentInstance;
             listComp.loadData.emit({ first: 10 });
             expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
+            expect(paginationService.getWithOffset).toHaveBeenCalledTimes(1);
         });
 
         it('should redirect to goto configuration page action', () => {
@@ -265,6 +268,7 @@ describe('DotAppsConfigurationComponent', () => {
             deleteAllBtn.triggerEventHandler('click', null);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(appsServices.deleteAllConfigurations).toHaveBeenCalledWith(component.apps.key);
+            expect(appsServices.deleteAllConfigurations).toHaveBeenCalledTimes(1);
         });
 
         it('should export a specific configuration', () => {
@@ -294,6 +298,7 @@ describe('DotAppsConfigurationComponent', () => {
             component.searchInput.nativeElement.dispatchEvent(new Event('keyup'));
             tick(550);
             expect(paginationService.setExtraParams).toHaveBeenCalledWith('filter', 'test');
+            expect(paginationService.setExtraParams).toHaveBeenCalledTimes(1);
             expect(paginationService.getWithOffset).toHaveBeenCalled();
         }));
     });

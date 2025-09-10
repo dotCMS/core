@@ -98,6 +98,7 @@ describe('ForgotPasswordComponent', () => {
         requestPasswordButton.triggerEventHandler('click', {});
 
         expect(loginService.recoverPassword).toHaveBeenCalledWith('test');
+        expect(loginService.recoverPassword).toHaveBeenCalledTimes(1);
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
             queryParams: {
                 resetEmailSent: true,
@@ -160,5 +161,6 @@ describe('ForgotPasswordComponent', () => {
         cancelButton.triggerEventHandler('click', {});
 
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith(undefined);
+        expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
     });
 });

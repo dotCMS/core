@@ -246,6 +246,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                     });
 
                     expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
+                    expect(dotUtils.getDownloadLink).toHaveBeenCalledTimes(1);
                     expect(anchor.click).toHaveBeenCalledTimes(1);
                     expect(dotDialogComponent.visible).toEqual(false);
                 }));

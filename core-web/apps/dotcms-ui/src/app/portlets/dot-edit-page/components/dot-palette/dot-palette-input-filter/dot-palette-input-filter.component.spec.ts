@@ -51,5 +51,6 @@ describe('DotPaletteInputFilterComponent', () => {
         input.dispatchEvent(event);
         await fixture.whenStable();
         expect(comp.filter.emit).toHaveBeenCalledWith('hello');
+        expect(comp.filter.emit).toHaveBeenCalledTimes(1);
     });
 });
