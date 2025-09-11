@@ -78,7 +78,7 @@ import {
     providers: [DotTemplateBuilderStore],
     standalone: false
 })
-export class TemplateBuilderComponent implements OnInit, OnDestroy, OnChanges {
+export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     private store = inject(DotTemplateBuilderStore);
     private dialogService = inject(DialogService);
     private dotMessage = inject(DotMessageService);
@@ -224,20 +224,22 @@ export class TemplateBuilderComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     ngOnInit(): void {
-        this.dotContainersService.defaultContainer$.subscribe((defaultContainer) => {
-            this.store.setState({
-                rows: parseFromDotObjectToGridStack(this.layout.body, defaultContainer),
-                layoutProperties: this.layoutProperties,
-                resizingRowID: '',
-                containerMap: this.getContainerMap(defaultContainer),
-                themeId: this.template.themeId,
-                templateIdentifier: this.template.identifier,
-                shouldEmit: true,
-                defaultContainer
-            });
+        this.dotContainersService.defaultContainer$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((defaultContainer) => {
+                this.store.setState({
+                    rows: parseFromDotObjectToGridStack(this.layout.body, defaultContainer),
+                    layoutProperties: this.layoutProperties,
+                    resizingRowID: '',
+                    containerMap: this.getContainerMap(defaultContainer),
+                    themeId: this.template.themeId,
+                    templateIdentifier: this.template.identifier,
+                    shouldEmit: true,
+                    defaultContainer
+                });
 
-            requestAnimationFrame(() => this.setUpGridStack());
-        });
+                requestAnimationFrame(() => this.setUpGridStack());
+            });
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -252,6 +254,11 @@ export class TemplateBuilderComponent implements OnInit, OnDestroy, OnChanges {
         }
     }
 
+    /**
+     * @description This method sets up the gridstack
+     *
+     * @memberof TemplateBuilderComponent
+     */
     setUpGridStack() {
         setTimeout(() => {
             this.customStyles = {

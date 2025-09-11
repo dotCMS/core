@@ -1,9 +1,9 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable, of, BehaviorSubject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, switchMap } from 'rxjs/operators';
+import { map, pluck, switchMap, filter } from 'rxjs/operators';
 
 import { DotConfigurationVariables, DotContainer } from '@dotcms/dotcms-models';
 
@@ -15,18 +15,27 @@ export const CONTAINER_API_URL = '/api/v1/containers/';
  * @export
  * @class DotContainersService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Injectable()
 export class DotContainersService {
     private readonly http = inject(HttpClient);
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
     private readonly DOT_DEFAULT_CONTAINER = DotConfigurationVariables.DOT_DEFAULT_CONTAINER;
-    private readonly _defaultContainer$ = new Subject<DotContainer | null>();
+
+    // Candidate for a value in the global store
+    private readonly _defaultContainer$ = new BehaviorSubject<{
+        container: DotContainer | null;
+        isInitial: boolean;
+    }>({
+        container: null,
+        isInitial: true
+    });
 
     get defaultContainer$() {
-        return this._defaultContainer$.asObservable();
+        return this._defaultContainer$.asObservable().pipe(
+            filter(({ isInitial }) => !isInitial), // Skip only the initial value
+            map(({ container }) => container) // Extract just the container
+        );
     }
 
     constructor() {
@@ -34,11 +43,15 @@ export class DotContainersService {
             .getKey(this.DOT_DEFAULT_CONTAINER)
             .pipe(
                 switchMap((containerTitle) => {
+                    if (!containerTitle) {
+                        return of(null);
+                    }
+
                     return this.getContainerByTitle(containerTitle);
                 })
             )
             .subscribe((container) => {
-                this._defaultContainer$.next(container);
+                this._defaultContainer$.next({ container, isInitial: false });
             });
     }
 
