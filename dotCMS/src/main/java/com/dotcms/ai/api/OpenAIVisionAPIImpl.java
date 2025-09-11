@@ -57,6 +57,13 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     );
 
 
+   /**
+    * Checks if the contentlet should be processed by the AI
+    *
+    * @param contentlet
+    * @param binaryField
+    * @return
+    */
     boolean shouldProcessTags(Contentlet contentlet, Field binaryField) {
 
         Optional<Field> tagFieldOpt = contentlet.getContentType().fields(TagField.class).stream().findFirst();
@@ -85,6 +92,13 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
         return !AIUtil.getSecrets(contentlet).isEmpty();
     }
 
+   /**
+    * Checks if the contentlet should be processed by the AI
+    * @param contentlet
+    * @param binaryField
+    * @param altTextField
+    * @return
+    */
     boolean shouldProcessAltText(Contentlet contentlet, Field binaryField, Field altTextField) {
 
         if (UtilMethods.isSet(contentlet.getStringProperty(altTextField.variable()))) {
@@ -101,7 +115,11 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
         return !AIUtil.getSecrets(contentlet).isEmpty();
     }
 
-
+   /**
+    * Checks if the contentlet should be processed by the AI, if so to tag it
+    * @param contentlet
+    * @return
+    */
     @Override
     public boolean tagImageIfNeeded(Contentlet contentlet) {
 
@@ -121,6 +139,12 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
         return binaryField.filter(field -> tagImageIfNeeded(contentlet, binaryField.get())).isPresent();
     }
 
+   /**
+    * Checks if the contentlet should be processed by the AI, if so to tag it
+    * @param contentlet
+    * @param  binaryField
+    * @return
+    */
     public boolean tagImageIfNeeded(Contentlet contentlet, Field binaryField) {
         if (!shouldProcessTags(contentlet, binaryField)) {
             return false;
@@ -137,6 +161,11 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
 
     }
 
+   /**
+    * Checks if the contentlet should be processed by the AI, if so to add the alt tags to it
+    * @param contentlet
+    * @return
+    */
     @Override
     public boolean addAltTextIfNeeded(Contentlet contentlet) {
 
@@ -159,9 +188,18 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
         return valToReturn;
     }
 
-
+   /**
+    * Checks if the contentlet should be processed by the AI, if so to add the alt tags to it
+    * @param contentlet
+    * @param binaryField
+    * @param altTextField
+    * @return
+    */
     public boolean addAltTextIfNeeded(Contentlet contentlet, Field binaryField, Field altTextField) {
 
+       if (!shouldProcessAltText(contentlet, binaryField, altTextField)) {
+          return false;
+       }
         Optional<Tuple2<String, List<String>>> altAndTags = readImageTagsAndDescription(contentlet, binaryField);
 
         if (altAndTags.isEmpty()) {
@@ -186,6 +224,12 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
         }
     }
 
+   /**
+    * This method takes a file and returns a Tuple2 with the first element being the alt
+    * description and the second element being the list of tags
+    * @param imageFile
+    * @return
+    */
     @Override
     public Optional<Tuple2<String, List<String>>> readImageTagsAndDescription(File imageFile) {
 
@@ -204,6 +248,12 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     }
 
 
+   /**
+    * This method takes a prompt and returns a Tuple2 with the first element being the alt
+    * description and the second element being the list of tags
+    * @param parsedPrompt
+    * @return
+    */
     private Optional<Tuple2<String, List<String>>> readImageTagsAndDescription(String parsedPrompt) {
 
         String promptHash = Try.of(
@@ -239,6 +289,13 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
 
     }
 
+   /**
+    * This method takes a contentlet and a binary field and returns a Tuple2 with the first element being the alt description
+    * and the second element being the list of tags
+    * @param contentlet
+    * @param imageOrBinaryField
+    * @return
+    */
     @Override
     public Optional<Tuple2<String, List<String>>> readImageTagsAndDescription(Contentlet contentlet,
             Field imageOrBinaryField) {
@@ -267,6 +324,14 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     }
 
 
+   /**
+    * Retrieves a file to process based on the provided contentlet and field.
+    * The method attempts to resolve the file using binary or asset field information.
+    *
+    * @param contentlet the content object from which the file is to be retrieved
+    * @param field the field that specifies the binary or asset data to process
+    * @return an {@link Optional} containing the resolved file, or an empty {@link Optional} if no file could be determined
+    */
     Optional<File> getFileToProcess(Contentlet contentlet, Field field) {
 
         return Try.of(() ->{
@@ -294,6 +359,14 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     }
 
 
+   /**
+    * Parses the AI response JSON object to extract and convert the AI-generated content
+    * into a new JSON object representing the processed data.
+    *
+    * @param response the JSON object containing the AI response, which is expected
+    *                 to include a "choices" field with nested "message" and "content" data
+    * @return a JSON object created from the extracted and processed content of the AI response
+    */
     JSONObject parseAIResponse(JSONObject response) {
 
         String aiJson = response.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
@@ -335,6 +408,11 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
         return "gpt-4o";
     }
 
+   /**
+    * Retrieves the AI vision max tokens for the given host ID. If a max tokens value is configured for the specified host,
+    * @param hostId
+    * @return
+    */
     String getAiVisionMaxTokens(String hostId) {
         if (UtilMethods.isSet(() -> AIUtil.getSecrets(hostId).get(AI_VISION_MAX_TOKENS).getString())) {
             return AIUtil.getSecrets(hostId).get(AI_VISION_MAX_TOKENS).getString();
@@ -342,6 +420,11 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
         return "500";
     }
 
+   /**
+    * Retrieves the AI vision prompt for the given host ID. If a prompt is configured for the specified host,
+    * it is returned; otherwise, a default prompt is loaded from a JSON file in the classpath.
+    *
+    * @param hostId the identifier of the host for which the AI vision*/
     String getAiVisionPrompt(String hostId) {
         if (UtilMethods.isSet(() -> AIUtil.getSecrets(hostId).get(AI_VISION_PROMPT).getString())) {
             return AIUtil.getSecrets(hostId).get(AI_VISION_PROMPT).getString();
@@ -357,42 +440,51 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     }
 
 
+   /**
+    * Saves the tags to the contentlet
+    *
+    * @param contentlet
+    * @param tags
+    */
+   private void saveTags(Contentlet contentlet, List<String> tags) {
+      Optional<Field> tagFieldOpt = contentlet.getContentType().fields(TagField.class).stream().findFirst();
+      if (tagFieldOpt.isEmpty()) {
+         return;
+      }
+      Try.run(() -> APILocator.getTagAPI()
+              .addContentletTagInode(TAGGED_BY_DOTAI, contentlet.getInode(), contentlet.getHost(),
+                      tagFieldOpt.get().variable())).getOrElseThrow(
+              DotRuntimeException::new);
+
+      for (final String tag : tags) {
+         Try.run(() -> APILocator.getTagAPI().addContentletTagInode(tag, contentlet.getInode(), contentlet.getHost(),
+                 tagFieldOpt.get().variable())).getOrElseThrow(
+                 DotRuntimeException::new);
+      }
+   }
+
+   /**
+    * Sets the alt text to the contentlet
+    *
+    * @param contentlet
+    * @param altTextField
+    * @param altText
+    * @return
+    */
+   private Optional<Contentlet> setAltText(Contentlet contentlet, Field altTextField, String altText) {
+      if (UtilMethods.isEmpty(altText)) {
+         return Optional.empty();
+      }
+
+      if (UtilMethods.isSet(() -> contentlet.getStringProperty(altTextField.variable()))) {
+         return Optional.empty();
+      }
+
+      contentlet.setStringProperty(altTextField.variable(), altText);
+      return Optional.of(contentlet);
 
 
-
-
-
-    private void saveTags(Contentlet contentlet, List<String> tags) {
-        Optional<Field> tagFieldOpt = contentlet.getContentType().fields(TagField.class).stream().findFirst();
-        if (tagFieldOpt.isEmpty()) {
-            return;
-        }
-        Try.run(() -> APILocator.getTagAPI()
-                .addContentletTagInode(TAGGED_BY_DOTAI, contentlet.getInode(), contentlet.getHost(),
-                        tagFieldOpt.get().variable())).getOrElseThrow(
-                DotRuntimeException::new);
-
-        for (final String tag : tags) {
-            Try.run(() -> APILocator.getTagAPI().addContentletTagInode(tag, contentlet.getInode(), contentlet.getHost(),
-                    tagFieldOpt.get().variable())).getOrElseThrow(
-                    DotRuntimeException::new);
-        }
-    }
-
-    private Optional<Contentlet> setAltText(Contentlet contentlet, Field altTextField, String altText) {
-        if (UtilMethods.isEmpty(altText)) {
-            return Optional.empty();
-        }
-
-        if (UtilMethods.isSet(() -> contentlet.getStringProperty(altTextField.variable()))) {
-            return Optional.empty();
-        }
-
-        contentlet.setStringProperty(altTextField.variable(), altText);
-        return Optional.of(contentlet);
-
-
-    }
+   }
 
 
 }
