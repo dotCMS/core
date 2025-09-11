@@ -2365,14 +2365,44 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test.skip(\"HTTP Status code must be 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"There must be no generated errors\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    let errors = jsonData.errors.length;",
-							"    pm.expect(errors).to.be.eq(0);",
+							"pm.test(\"Response has correct structure with entity and errors\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('entity');",
+							"    pm.expect(jsonData).to.have.property('errors');",
+							"    pm.expect(jsonData.errors).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Import statistics are correct\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const stats = jsonData.entity;",
+							"    ",
+							"    // Verify statistics structure",
+							"    pm.expect(stats).to.have.property('totalRows');",
+							"    pm.expect(stats).to.have.property('successCount');",
+							"    pm.expect(stats).to.have.property('failureCount');",
+							"    pm.expect(stats).to.have.property('success');",
+							"    ",
+							"    // CSV has 4 lines: 1 header + 3 data rows",
+							"    pm.expect(stats.totalRows).to.equal(4);",
+							"    pm.expect(stats.successCount).to.equal(3);",
+							"    pm.expect(stats.failureCount).to.equal(0);",
+							"    pm.expect(stats.success).to.be.true;",
+							"});",
+							"",
+							"pm.test(\"No errors reported for valid CSV\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+							"});",
+							"",
+							"// Store tag names for cleanup or verification",
+							"pm.test(\"Store imported tag names for verification\", function () {",
+							"    pm.collectionVariables.set(\"importedTag1\", \"Sample Tag\");",
+							"    pm.collectionVariables.set(\"importedTag2\", \"Another Tag\");",
+							"    pm.collectionVariables.set(\"importedTag3\", \"Global Tag\");",
 							"});",
 							""
 						],
@@ -2444,6 +2474,163 @@
 					]
 				},
 				"description": "This tests the file import. "
+			},
+			"response": []
+		},
+		{
+			"name": "Import Tags from CSV with Errors",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Create CSV content with invalid data",
+							"const csvContent = `Tag Name,Host ID",
+							"Valid Tag 1,SYSTEM_HOST",
+							"Tag,With,Comma,SYSTEM_HOST",
+							",48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"${\"a\".repeat(256)},SYSTEM_HOST",
+							"Valid Tag 2,48190c8c-42c4-46af-8d1a-0cd5db894797`;",
+							"",
+							"// Store CSV content for use in request body",
+							"pm.collectionVariables.set(\"errorCsvContent\", csvContent);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has correct structure with entity and errors\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('entity');",
+							"    pm.expect(jsonData).to.have.property('errors');",
+							"    pm.expect(jsonData.errors).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Import statistics show partial success\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const stats = jsonData.entity;",
+							"    ",
+							"    // Verify statistics structure",
+							"    pm.expect(stats).to.have.property('totalRows');",
+							"    pm.expect(stats).to.have.property('successCount');",
+							"    pm.expect(stats).to.have.property('failureCount');",
+							"    pm.expect(stats).to.have.property('success');",
+							"    ",
+							"    // CSV has 6 total rows including header: 2 valid, 3 invalid",
+							"    pm.expect(stats.totalRows).to.equal(6);",
+							"    pm.expect(stats.successCount).to.equal(2);",
+							"    pm.expect(stats.failureCount).to.equal(3);",
+							"    pm.expect(stats.success).to.be.false; // false when there are errors",
+							"});",
+							"",
+							"pm.test(\"Errors contain detailed information for each failed row\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const errors = jsonData.errors;",
+							"    ",
+							"    pm.expect(errors).to.have.lengthOf(3);",
+							"    ",
+							"    // Check that errors have proper structure",
+							"    errors.forEach(error => {",
+							"        pm.expect(error).to.have.property('errorCode');",
+							"        pm.expect(error).to.have.property('message');",
+							"        pm.expect(error).to.have.property('fieldName');",
+							"        // Field name should contain line number reference",
+							"        pm.expect(error.fieldName).to.match(/line_\\d+/);",
+							"    });",
+							"    ",
+							"    // Verify specific error types",
+							"    const errorCodes = errors.map(e => e.errorCode);",
+							"    const errorMessages = errors.map(e => e.message);",
+							"    ",
+							"    // Should have format errors for lines with extra commas (treated as invalid CSV format)",
+							"    const formatErrors = errors.filter(e => ",
+							"        e.errorCode === 'tag.import.format.invalid' || ",
+							"        e.message.includes('Invalid CSV format'));",
+							"    pm.expect(formatErrors.length).to.be.at.least(2);",
+							"    ",
+							"    // Should have validation error for tag name length",
+							"    const validationError = errors.find(e => ",
+							"        e.errorCode === 'tag.validation.error' || ",
+							"        e.message.includes('between 1 and 255 characters'));",
+							"    pm.expect(validationError).to.not.be.undefined;",
+							"    ",
+							"    // Verify line numbers are correct (header is line 1)",
+							"    const lineNumbers = errors.map(e => parseInt(e.fieldName.replace('line_', '')));",
+							"    pm.expect(lineNumbers).to.include.members([3, 4, 5]);",
+							"});",
+							"",
+							"pm.test(\"Verify successful tags were still created\", function () {",
+							"    // Tags \"Valid Tag 1\" and \"Valid Tag 2\" should have been created",
+							"    pm.sendRequest({",
+							"        url: pm.variables.get(\"serverURL\") + \"/api/v2/tags?name=Valid%20Tag\",",
+							"        method: 'GET',",
+							"        header: { 'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin') }",
+							"    }, function (err, res) {",
+							"        if (!err) {",
+							"            pm.expect(res.code).to.equal(200);",
+							"            const jsonData = res.json();",
+							"            const tags = Object.keys(jsonData.entity);",
+							"            // Should find the valid tags that were imported",
+							"            const validTags = tags.filter(t => t.startsWith('Valid Tag'));",
+							"            pm.expect(validTags.length).to.be.at.least(1);",
+							"        }",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/csv_with_errors.csv",
+							"description": "CSV file with mix of valid and invalid tags"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags/import",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags",
+						"import"
+					]
+				},
+				"description": "Tests import with a CSV containing both valid and invalid tag entries to verify error handling and partial success"
 			},
 			"response": []
 		},

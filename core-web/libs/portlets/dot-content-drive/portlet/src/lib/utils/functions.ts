@@ -1,3 +1,7 @@
+import { SiteEntity } from '@dotcms/dotcms-models';
+import { QueryBuilder } from '@dotcms/query-builder';
+
+import { BASE_QUERY, SYSTEM_HOST } from '../shared/constants';
 import {
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
@@ -138,4 +142,82 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
             return acc;
         }, [])
         .join(';');
+}
+
+/**
+ * Builds a search query for content drive based on the provided parameters.
+ *
+ * @example
+ *
+ * ```typescript
+ * buildContentDriveQuery({
+ *   path: '/some/path',
+ *   currentSite: { identifier: 'site123' },
+ *   filters: { contentType: 'Blog', title: 'test' }
+ * })
+ * // Output: A built query string for content search
+ * ```
+ *
+ * @export
+ * @param {Object} params - The query parameters
+ * @param {string} [params.path] - The path to filter by
+ * @param {SiteEntity} params.currentSite - The current site
+ * @param {DotContentDriveFilters} [params.filters] - The filters to apply
+ * @return {string} The built query string
+ */
+export function buildContentDriveQuery({
+    path,
+    currentSite,
+    filters = {}
+}: {
+    path?: string;
+    currentSite: SiteEntity;
+    filters?: DotContentDriveFilters;
+}): string {
+    const query = new QueryBuilder();
+    const baseQuery = query.raw(BASE_QUERY);
+    let modifiedQuery = baseQuery;
+
+    const filtersEntries = Object.entries(filters);
+
+    // Add path filter if provided
+    if (path) {
+        modifiedQuery = modifiedQuery.field('parentPath').equals(path);
+    }
+
+    // Add site and working/variant filters
+    modifiedQuery = modifiedQuery.raw(
+        `+(conhost:${currentSite?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+    );
+
+    // Apply custom filters
+    filtersEntries
+        .filter(([_key, value]) => value !== undefined)
+        .forEach(([key, value]) => {
+            // Handle multiselectors
+            if (Array.isArray(value)) {
+                const orChain = value.join(' OR ');
+                const orQuery = value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
+                modifiedQuery = modifiedQuery.raw(orQuery);
+                return;
+            }
+
+            // Handle raw search for title
+            if (key === 'title') {
+                modifiedQuery = modifiedQuery.raw(
+                    `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
+                );
+                value
+                    .split(' ')
+                    .filter((word) => word.trim().length > 0)
+                    .forEach((word) => {
+                        modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
+                    });
+                return;
+            }
+
+            modifiedQuery = modifiedQuery.field(key).equals(value);
+        });
+
+    return modifiedQuery.build();
 }
