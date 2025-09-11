@@ -48,7 +48,7 @@ public class DotEmbeddingsActionlet extends WorkFlowActionlet {
 
     @Override
     public String getName() {
-        return "AI Embeddings";
+        return "AI - Embed Content";
     }
 
     @Override
