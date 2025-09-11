@@ -11,7 +11,7 @@
     }
     <dot-card-field-content>
         <p-dropdown
-            [formControl]="$formControl()"
+            [formControl]="formControl"
             [name]="field.variable"
             [options]="$options()"
             [class.ng-invalid]="hasError"

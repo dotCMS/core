@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { ControlValueAccessor, FormControl, NgControl, Validators } from '@angular/forms';
+import { NgControl, ControlValueAccessor, FormControl, Validators } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -11,7 +11,6 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
  */
 export abstract class BaseFieldComponent implements ControlValueAccessor {
     ngControl = inject(NgControl, { self: true, optional: true });
-    $formControl = computed(() => this.ngControl?.control as FormControl);
 
     $showLabel = computed(() => {
         const field = this.$field();
@@ -31,8 +30,12 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
      */
     abstract $field: () => DotCMSContentTypeField;
 
-    protected onChange: ((value: unknown) => void) | null = null;
-    protected onTouched: (() => void) | null = null;
+    protected onChange: (value: unknown) => void = () => {
+        /* no-op */
+    };
+    protected onTouched: () => void = () => {
+        /* no-op */
+    };
 
     /**
      * Registers a callback function that is called when the control's value changes in the UI.
@@ -57,20 +60,25 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
     abstract writeValue(value: unknown): void;
 
     get hasError(): boolean {
-        const control = this.$formControl();
+        const control = this.formControl;
         return !!(control.invalid && control.touched);
     }
 
     get isRequired(): boolean {
-        const control = this.$formControl();
-        if (control.hasValidator(Validators.required)) {
-            return true;
-        }
-        return false;
+        const control = this.formControl;
+        return control.hasValidator(Validators.required);
     }
 
     get isDisabled(): boolean {
-        const control = this.$formControl();
+        const control = this.formControl;
         return control.disabled;
+    }
+
+    get fieldVariable() {
+        return this.$field().variable;
+    }
+
+    get formControl(): FormControl {
+        return this.ngControl.control as FormControl;
     }
 }

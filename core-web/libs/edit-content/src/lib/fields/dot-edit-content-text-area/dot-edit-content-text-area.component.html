@@ -30,7 +30,7 @@
                     <textarea
                         #textarea
                         [id]="field.variable"
-                        [formControl]="$formControl()"
+                        [formControl]="formControl"
                         [class.ng-invalid]="hasError"
                         [class.ng-dirty]="hasError"
                         [attr.data-testId]="field.variable"
@@ -41,7 +41,7 @@
                         pInputTextarea></textarea>
                 } @else {
                     <dot-edit-content-monaco-editor-control
-                        [formControl]="$formControl()"
+                        [formControl]="formControl"
                         #monaco
                         [field]="field" />
                 }

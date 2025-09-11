@@ -14,7 +14,7 @@
         <input
             [id]="field.variable"
             [name]="field.variable"
-            [formControl]="$formControl()"
+            [formControl]="formControl"
             [class.ng-invalid]="hasError"
             [class.ng-dirty]="hasError"
             [attr.data-testId]="field.variable"

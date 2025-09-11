@@ -71,11 +71,7 @@ import {
     ]
 })
 export class DotEditContentTextAreaComponent extends BaseFieldComponent {
-    /**
-     * Control container for the form
-     */
-    private readonly controlContainer = inject(ControlContainer);
-
+    protected readonly controlContainer = inject(ControlContainer);
     /**
      * Reference to the textarea element
      */
@@ -197,7 +193,7 @@ export class DotEditContentTextAreaComponent extends BaseFieldComponent {
         textarea: HTMLTextAreaElement,
         languageVariable: string
     ): void {
-        const control = this.$formControl();
+        const control = this.formControl;
 
         if (!control) {
             return;

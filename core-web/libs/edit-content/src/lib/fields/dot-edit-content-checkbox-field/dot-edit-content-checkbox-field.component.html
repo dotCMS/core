@@ -17,7 +17,7 @@
                     [class.ng-invalid]="hasError"
                     [class.ng-dirty]="hasError"
                     [name]="field.variable"
-                    [formControl]="$formControl()"
+                    [formControl]="formControl"
                     [value]="option.value"
                     [label]="option.label || null"
                     [inputId]="field.variable + '-' + option.value"
