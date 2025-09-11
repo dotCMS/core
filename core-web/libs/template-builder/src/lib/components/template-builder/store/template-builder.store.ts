@@ -154,7 +154,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly addColumn = this.updater((state, column: DotGridStackNode) => {
         const { rows } = state;
-        const newColumn = createDotGridStackWidgetFromNode(column);
+        const newColumn = createDotGridStackWidgetFromNode(column, state.defaultContainer);
 
         return {
             ...state,
@@ -232,7 +232,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly updateColumnGridStackData = this.updater(
         (state, affectedColumns: DotGridStackNode[]) => {
             const { rows } = state;
-            affectedColumns = createDotGridStackWidgets(affectedColumns);
+            affectedColumns = createDotGridStackWidgets(affectedColumns, state.defaultContainer);
 
             return {
                 ...state,

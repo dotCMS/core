@@ -85,8 +85,11 @@ export function getIndexRowInItems(items: DotGridStackWidget[], rowID: string): 
  * @param {DotGridStackNode[]} columns
  * @return {*}  {DotGridStackWidget[]}
  */
-export function createDotGridStackWidgets(columns: DotGridStackNode[]): DotGridStackWidget[] {
-    return columns.map((node) => createDotGridStackWidgetFromNode(node));
+export function createDotGridStackWidgets(
+    columns: DotGridStackNode[],
+    defaultContainer?: DotContainer
+): DotGridStackWidget[] {
+    return columns.map((node) => createDotGridStackWidgetFromNode(node, defaultContainer));
 }
 
 /**
@@ -96,7 +99,10 @@ export function createDotGridStackWidgets(columns: DotGridStackNode[]): DotGridS
  * @param {DotGridStackNode} node
  * @return {*}  {DotGridStackWidget}
  */
-export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGridStackWidget {
+export function createDotGridStackWidgetFromNode(
+    node: DotGridStackNode,
+    defaultContainer?: DotContainer
+): DotGridStackWidget {
     return {
         x: node.x,
         id: node.id || uuid(),
@@ -105,7 +111,7 @@ export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGri
         styleClass: node.styleClass,
         containers: node.containers ?? [
             {
-                identifier: SYSTEM_CONTAINER_IDENTIFIER
+                identifier: defaultContainer?.identifier || SYSTEM_CONTAINER_IDENTIFIER
             }
         ],
         y: node.y

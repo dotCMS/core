@@ -224,9 +224,9 @@ export class TemplateBuilderComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     ngOnInit(): void {
-        this.dotContainersService.getContainerByTitle('Default').subscribe((defaultContainer) => {
+        this.dotContainersService.defaultContainer$.subscribe((defaultContainer) => {
             this.store.setState({
-                rows: parseFromDotObjectToGridStack(this.layout.body),
+                rows: parseFromDotObjectToGridStack(this.layout.body, defaultContainer),
                 layoutProperties: this.layoutProperties,
                 resizingRowID: '',
                 containerMap: this.getContainerMap(defaultContainer),
