@@ -359,28 +359,23 @@ describe('DotFavoritePageComponent', () => {
 
         describe('Store state changes', () => {
             it('should call close ref event when closeDialog event is executed from store', () => {
-                Object.defineProperty(store, 'closeDialog$', {
-                    value: of(true),
-                    writable: true
-                });
+                jest.spyOn(store, 'closeDialog$', 'get').mockReturnValue(of(true));
                 fixture.detectChanges();
                 expect(dialogRef.close).toHaveBeenCalledWith(true);
             });
 
             it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
-                Object.defineProperty(store, 'actionState$', {
-                    value: of(DotFavoritePageActionState.SAVED),
-                    writable: true
-                });
+                jest.spyOn(store, 'actionState$', 'get').mockReturnValue(
+                    of(DotFavoritePageActionState.SAVED)
+                );
                 fixture.detectChanges();
                 expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
             });
 
             it('should call onDelete ref event when actionState event is executed from store with Deleted value', () => {
-                Object.defineProperty(store, 'actionState$', {
-                    value: of(DotFavoritePageActionState.DELETED),
-                    writable: true
-                });
+                jest.spyOn(store, 'actionState$', 'get').mockReturnValue(
+                    of(DotFavoritePageActionState.DELETED)
+                );
                 fixture.detectChanges();
                 expect(dialogConfig.data.onDelete).toHaveBeenCalledTimes(1);
             });

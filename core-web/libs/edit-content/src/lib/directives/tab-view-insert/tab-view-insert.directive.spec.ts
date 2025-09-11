@@ -7,8 +7,6 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { TabViewInsertDirective } from './tab-view-insert.directive';
 
-
-
 // Mock component - using the same structure as the real example
 @Component({
     template: `
@@ -25,7 +23,7 @@ import { TabViewInsertDirective } from './tab-view-insert.directive';
     imports: [TabViewModule, TabViewInsertDirective],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-class TestComponent { }
+class TestComponent {}
 
 describe('TabViewInsertDirective', () => {
     let spectator: Spectator<TestComponent>;
@@ -36,18 +34,7 @@ describe('TabViewInsertDirective', () => {
     });
 
     beforeEach(() => {
-        // Mock ResizeObserver before creating the component
-        (window as any).ResizeObserver = jest.fn().mockImplementation(() => ({
-            observe: jest.fn(),
-            unobserve: jest.fn(),
-            disconnect: jest.fn()
-        }));
-
         spectator = createComponent();
-    });
-
-    afterEach(() => {
-        delete (window as any).ResizeObserver;
     });
 
     it('should create component without errors', fakeAsync(() => {
@@ -93,8 +80,6 @@ describe('TabViewInsertDirective', () => {
         // Check if the directive inserted the append content
         spectator.query(byTestId('append-content'));
 
-
-
         // This assertion always runs
         expect(spectator.component).toBeTruthy();
     }));
@@ -107,9 +92,7 @@ describe('TabViewInsertDirective', () => {
 
         const appendContent = spectator.query(byTestId('tabview-append-content'));
 
-
         expect(appendContent.textContent).toContain('Append Content');
         expect(spectator.component).toBeTruthy();
     }));
-
 });
