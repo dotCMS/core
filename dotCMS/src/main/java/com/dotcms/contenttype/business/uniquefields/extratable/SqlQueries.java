@@ -152,13 +152,22 @@ public final class SqlQueries {
             "WHERE unique_key_val = ?";
 
     /**
-     * Updates the unique value of the conflicting entries in the {@code unique_fields} table. That
-     * is, entries that belong to separate Contentlets that have the exact same unique value. The
-     * solution is to set a prefix to it, and re-generate the hash.
+     * Updates the unique value of a single conflicting entry in the {@code unique_fields} table.
+     * Conflicting entries may fall into one of the following categories:
+     * <ul>
+     *     <li>They belong to separate Contentlets; i.e. different Contentlet Identifiers, that have
+     *     the exact same unique value.</li>
+     *     <li>The same Contentlet. However, one entry belongs to the Live version, and the other
+     *     one belongs to the Working version.</li>
+     * </ul>
+     * The solution is to add some additional characters to the unique value, and re-generate the
+     * hash for the database record so it's now unique. In the end, this query is meant to <b>fix
+     * one duplicate entry at a time</b>, so it's very important that it matches only one record.
      */
     public static final String FIX_DUPLICATE_ENTRY = "UPDATE unique_fields " +
             "SET unique_key_val = encode(sha256(convert_to(?::text, 'UTF8')), 'hex'), " +
             "supporting_values = ? " +
-            "WHERE unique_key_val = ? AND supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb ";
+            "WHERE unique_key_val = ? AND supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
+            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ?";
 
 }

@@ -58,6 +58,7 @@ import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFiel
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LIVE_ATTR;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.liferay.util.StringPool.BLANK;
 
@@ -305,14 +306,16 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Set the supporting_value->live attribute to true to any register with the same Content's id, variant and language
+     * Sets the {@code supporting_value->live} attribute to {@code true} to any record with the same
+     * Contentlet id, variant and language.
      *
-     * @param contentlet
-     * @param liveValue
-     * @throws DotDataException
+     * @param contentlet The {@link Contentlet} whose attributes will be updated.
+     * @param liveValue  The new value of the {@code live} attribute.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
-    public void setLive(Contentlet contentlet, final boolean liveValue) throws DotDataException {
+    public void setLive(final Contentlet contentlet, final boolean liveValue) throws DotDataException {
 
          new DotConnect().setSQL(SET_LIVE_BY_CONTENTLET)
                  .addParam(String.valueOf(liveValue))
@@ -324,14 +327,15 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Remove any register with supporting_value->live set to true and the same Content's id, variant and language
+     * Removes any record with {@code supporting_value->live} set to {@code true} and the same
+     * Contentlet's id, variant and language.
      *
-     * @param contentlet
+     * @param contentlet The {@link Contentlet} whose record will be removed.
      *
-     * @throws DotDataException
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
-    public void removeLive(Contentlet contentlet) throws DotDataException {
+    public void removeLive(final Contentlet contentlet) throws DotDataException {
 
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_CONTENTLET)
                 .addParam("\"" + contentlet.getIdentifier() + "\"")
@@ -499,10 +503,15 @@ public class UniqueFieldDataBaseUtil {
      */
     @WrapInTransaction
     public void addPrimaryKeyConstraintsBack() throws DotDataException {
-        String sqlQuery = "ALTER TABLE unique_fields ALTER COLUMN unique_key_val SET NOT NULL";
-        new DotConnect().setSQL(sqlQuery).loadObjectResults();
-        sqlQuery = "ALTER TABLE unique_fields ADD PRIMARY KEY (unique_key_val)";
-        new DotConnect().setSQL(sqlQuery).loadObjectResults();
+        try {
+            String sqlQuery = "ALTER TABLE unique_fields ALTER COLUMN unique_key_val SET NOT NULL";
+            new DotConnect().setSQL(sqlQuery).loadObjectResults();
+            sqlQuery = "ALTER TABLE unique_fields ADD PRIMARY KEY (unique_key_val)";
+            new DotConnect().setSQL(sqlQuery).loadObjectResults();
+        } catch (final DotDataException e) {
+            Logger.error(this, "Failed to bring primary key constraints back. There may be an unhandled unique value scenario");
+            throw e;
+        }
     }
 
     /**
@@ -635,29 +644,34 @@ public class UniqueFieldDataBaseUtil {
      * For a given hash -- a.k.a. unique key value -- takes the list of unique field criteria of the
      * conflicting entries in the {@code unique_fields} table and updates the corresponding unique
      * value. This way, a new hash will be generated, and it won't collide with the original one.
-     * <p>There are specific properties that are used to make up the unique field criteria. For more
-     * details, you can refer to: {@link UniqueFieldCriteria#criteria()} .</p>
+     * <p>There are specific properties that are used to make up the unique field criteria. For
+     * more details, you can refer to: {@link UniqueFieldCriteria#criteria()} .</p>
      *
      * @param uniqueKeyVal   The hash value that is present in the table more than once.
      * @param valuesToUpdate The list of unique field criteria of the conflicting entries.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @WrapInTransaction
-    private void updateUniqueValues(final String uniqueKeyVal, final List<String> valuesToUpdate) {
+    private void updateUniqueValues(final String uniqueKeyVal, final List<String> valuesToUpdate) throws DotDataException {
         valuesToUpdate.forEach(supportingValues -> {
 
             try {
                 final Map<String, Object> supportingValuesAsMap = JsonUtil.getJsonFromString(supportingValues);
-                Logger.info(this, String.format("Fixing conflict for Content IDs '%s' with unique value '%s'",
+                Logger.info(this, String.format("Fixing conflict for Content IDs '%s' with duplicate unique value '%s'",
                         supportingValuesAsMap.get(CONTENTLET_IDS_ATTR), supportingValuesAsMap.get(FIELD_VALUE_ATTR)));
                 final String updatedFieldValue =
-                        this.generateUniqueName(supportingValuesAsMap.getOrDefault("fieldValue", BLANK).toString());
-                supportingValuesAsMap.put("fieldValue", updatedFieldValue);
+                        this.generateUniqueName(supportingValuesAsMap.getOrDefault(FIELD_VALUE_ATTR, BLANK).toString());
+                final boolean isLive = Try.of(() -> Boolean.parseBoolean(supportingValuesAsMap.get(LIVE_ATTR).toString()))
+                        .getOrNull();
+                supportingValuesAsMap.put(FIELD_VALUE_ATTR, updatedFieldValue);
                 final String updatedCriteria = UniqueFieldCriteria.criteria(supportingValuesAsMap);
                 final DotConnect dotConnect = new DotConnect().setSQL(FIX_DUPLICATE_ENTRY)
                         .addParam(updatedCriteria)
                         .addJSONParam(supportingValuesAsMap)
                         .addParam(uniqueKeyVal)
-                        .addJSONParam(supportingValuesAsMap.get(CONTENTLET_IDS_ATTR));
+                        .addJSONParam(supportingValuesAsMap.get(CONTENTLET_IDS_ATTR))
+                        .addParam(isLive);
                 dotConnect.loadObjectResults();
             } catch (final IOException e) {
                 final String errorMsg = String.format("Failed to transform support values [ %s ] into JSON Map for key " +

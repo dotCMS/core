@@ -23,6 +23,7 @@ export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
+export * from './lib/components/dot-sidebar-accordion';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
 export * from './lib/components/dot-temp-file-thumbnail/dot-temp-file-thumbnail.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
