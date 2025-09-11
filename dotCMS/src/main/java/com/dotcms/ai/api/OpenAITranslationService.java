@@ -1,6 +1,5 @@
 package com.dotcms.ai.api;
 
-
 import com.dotcms.ai.util.AIUtil;
 import com.dotcms.ai.workflow.OpenAITranslationActionlet;
 import com.dotcms.contenttype.model.field.Field;
@@ -40,34 +39,32 @@ public class OpenAITranslationService extends AbstractTranslationService {
     static final String AI_TRANSLATION_TEMPERATURE ="AI_TRANSLATION_TEMPERATURE";
     static final String AI_TRANSLATION_RESPONSE_FORMAT ="AI_TRANSLATION_RESPONSE_FORMAT";
 
-
-
     public static final Lazy<TranslationService> INSTANCE = Lazy.of(()-> new OpenAITranslationService());
-
 
    /**
     * Translate a string from one language to another.
+    *
     * @param toTranslate
     * @param from
     * @param to
     * @return
     * @throws TranslationException
     */
-
     @Override
     public String translateString(String toTranslate, Language from, Language to) throws TranslationException {
         throw new DotRuntimeException("Not implemented");
     }
+
    /**
-    *
     * Translate a list of strings from one language to another.
+    *
     * @param toTranslate
     * @param from
     * @param to
     * @return
     * @throws TranslationException
     */
-    @Override
+   @Override
     public List<String> translateStrings(List<String> toTranslate, Language from, Language to)
             throws TranslationException {
         throw new DotRuntimeException("Not implemented");
@@ -85,14 +82,15 @@ public class OpenAITranslationService extends AbstractTranslationService {
 
    /**
     * Translate a contentlet to a list of languages.
-    * @param contentlet               content to translate
-    * @param langs             list of language to translate the content to
-    * @param oldFields list of fields to translate
+    *
+    * @param contentlet content to translate
+    * @param langs      list of language to translate the content to
+    * @param oldFields  list of fields to translate
     * @param user
     * @return
     * @throws TranslationException
     */
-    @Override
+   @Override
     public List<Contentlet> translateContent(Contentlet contentlet, List<Language> langs,
             List<com.dotmarketing.portlets.structure.model.Field> oldFields,
             User user) throws TranslationException {
@@ -107,67 +105,118 @@ public class OpenAITranslationService extends AbstractTranslationService {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
-
     }
 
-
-   /**
-    * Translate a contentlet's fields to a language.
-    * @param contentlet               content to translate
-    * @param targetLanguage       language to translate te content to
-    * @param oldFields list of fields to translate
-    * @param user
-    * @return
-    * @throws TranslationException
-    */
+    /**
+     * Translate a contentlet's fields to a language.
+     * @param contentlet               content to translate
+     * @param targetLanguage       language to translate te content to
+     * @param oldFields list of fields to translate
+     * @param user
+     * @return
+     * @throws TranslationException
+     */
     @Override
     public Contentlet translateContent(Contentlet contentlet, Language targetLanguage, List<com.dotmarketing.portlets.structure.model.Field> oldFields, User user)
             throws TranslationException {
         Language sourceLang = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
         List<Field> fields = new LegacyFieldTransformer(oldFields).asList();
-        JSONObject sourceJson = new JSONObject();
+
+        // Build source JSON from contentlet fields
+       JSONObject sourceJson = buildSourceJson(contentlet, fields);
+
+       // Setup translation context
+       TranslationContext context = setupTranslationContext(contentlet, sourceLang, targetLanguage);
+
+       // Prepare prompts
+       PromptData promptData = preparePrompts(contentlet, sourceJson, context);
+
+       // Create AI request
+       JSONObject promptJson = buildAIRequest(contentlet, promptData);
+
+       // Execute AI call and process response
+       JSONObject aiResponse = executeTranslation(promptJson);
+
+       if (aiResponse.isEmpty()) {
+          return null;
+       }
+
+       // Create translated contentlet
+       return createTranslatedContentlet(contentlet, targetLanguage, fields, aiResponse, user);
+    }
+
+   /**
+    * Builds the source JSON object from contentlet fields.
+    */
+   private JSONObject buildSourceJson(Contentlet contentlet, List<Field> fields) {
+      JSONObject sourceJson = new JSONObject();
         fields.forEach(f -> {
-
-
             String value = contentlet.getStringProperty(f.variable());
             if (UtilMethods.isSet(value)) {
-                if(StringUtils.isJson(value)){
-                    sourceJson.put(f.variable(), new JSONObject(value));
-                }else{
-                    sourceJson.put(f.variable(), value);
+                if (StringUtils.isJson(value)) {
+                   sourceJson.put(f.variable(), new JSONObject(value));
+                } else {
+                   sourceJson.put(f.variable(), value);
                 }
-
             }
         });
+        return sourceJson;
+   }
 
-        Optional<String> translationKeyPrefix = Optional.ofNullable((String) contentlet.getMap().get(
+   /**
+    * Sets up the translation context including translation keys and language information.
+    */
+   private TranslationContext setupTranslationContext(Contentlet contentlet, Language sourceLang,
+           Language targetLanguage) {
+      Optional<String> translationKeyPrefix = Optional.ofNullable((String) contentlet.getMap().get(
                 OpenAITranslationActionlet.TRANSLATION_KEY_PREFIX));
 
-        JSONObject translationKeysJSON = new JSONObject(getTranslationKeys(translationKeyPrefix, contentlet.getLanguageId(), targetLanguage.getId()));
+        JSONObject translationKeysJSON = new JSONObject(getTranslationKeys(translationKeyPrefix,
+                contentlet.getLanguageId(), targetLanguage.getId()));
 
-        String systemPromptTemplate = getAISystemTranslationPrompt(contentlet.getHost());
+      return new TranslationContext(sourceLang, targetLanguage, translationKeysJSON);
+   }
+
+   /**
+    * Prepares system and user prompts for the AI translation request.
+    */
+   private PromptData preparePrompts(Contentlet contentlet, JSONObject sourceJson, TranslationContext context) {
+      String systemPromptTemplate = getAISystemTranslationPrompt(contentlet.getHost());
         String userPromptTemplate = getAIUserTranslationPrompt(contentlet.getHost());
 
-        Context systemContext = VelocityUtil.getBasicContext();
-        systemContext.put("sourceLanguage", sourceLang.getLanguage() + "(" + sourceLang.getCountry() + ")");
-        systemContext.put("targetLanguage", targetLanguage.getLanguage() + "(" + targetLanguage.getCountry() + ")");
+        // Build system prompt
+      Context systemContext = VelocityUtil.getBasicContext();
+        systemContext.put("sourceLanguage",
+                context.getSourceLanguage().getLanguage() + "(" + context.getSourceLanguage().getCountry() + ")");
+      systemContext.put("targetLanguage",
+              context.getTargetLanguage().getLanguage() + "(" + context.getTargetLanguage().getCountry() + ")");
 
-        if (!translationKeysJSON.isEmpty()) {
-            systemContext.put("translationKeys", translationKeysJSON.toString());
-        }
-        String systemPrompt = Try.of(() -> VelocityUtil.eval(systemPromptTemplate, systemContext))
+      if (!context.getTranslationKeysJSON().isEmpty()) {
+         systemContext.put("translationKeys", context.getTranslationKeysJSON().toString());
+      }
+
+      String systemPrompt = Try.of(() -> VelocityUtil.eval(systemPromptTemplate, systemContext))
                 .getOrElseThrow(DotRuntimeException::new);
 
-        Context userContext = VelocityUtil.getBasicContext();
+        // Build user prompt
+      Context userContext = VelocityUtil.getBasicContext();
         userContext.put("sourceJson", sourceJson.toString());
-        userContext.put("sourceLanguage", sourceLang.getLanguage() + "(" + sourceLang.getCountry() + ")");
-        userContext.put("targetLanguage", targetLanguage.getLanguage() + "(" + targetLanguage.getCountry() + ")");
+        userContext.put("sourceLanguage",
+                context.getSourceLanguage().getLanguage() + "(" + context.getSourceLanguage().getCountry() + ")");
+      userContext.put("targetLanguage",
+              context.getTargetLanguage().getLanguage() + "(" + context.getTargetLanguage().getCountry() + ")");
 
-        String userPrompt = Try.of(() -> VelocityUtil.eval(userPromptTemplate, userContext))
+      String userPrompt = Try.of(() -> VelocityUtil.eval(userPromptTemplate, userContext))
                 .getOrElseThrow(DotRuntimeException::new);
 
-        int maxTokens = getMaxTokens(contentlet.getHost());
+        return new PromptData(systemPrompt, userPrompt);
+   }
+
+   /**
+    * Builds the AI request JSON payload.
+    */
+   private JSONObject buildAIRequest(Contentlet contentlet, PromptData promptData) {
+      int maxTokens = getMaxTokens(contentlet.getHost());
         String model = getTranslationModel(contentlet.getHost());
 
         JSONObject promptJson = new JSONObject();
@@ -181,25 +230,38 @@ public class OpenAITranslationService extends AbstractTranslationService {
         if (maxTokens > 0) {
             promptJson.put("max_tokens", maxTokens);
         }
-        promptJson.put("messages", List.of(Map.of("role", "system", "content", systemPrompt),
-                Map.of("role", "user", "content", userPrompt)));
 
-        Logger.info(this.getClass(),"promptJson: " + promptJson.toString(2) + "\n\n");
+        promptJson.put("messages", List.of(
+                Map.of("role", "system", "content", promptData.getSystemPrompt()),
+                Map.of("role", "user", "content", promptData.getUserPrompt())
+        ));
 
-        final JSONObject openAIResponse = APILocator.getDotAIAPI()
+      return promptJson;
+   }
+
+   /**
+    * Executes the translation request to the AI API.
+    */
+   private JSONObject executeTranslation(JSONObject promptJson) {
+      Logger.info(this.getClass(), "promptJson: " + promptJson.toString(2) + "\n\n");
+
+      final JSONObject openAIResponse = APILocator.getDotAIAPI()
                 .getCompletionsAPI()
                 .raw(promptJson, APILocator.systemUser().getUserId());
 
-        Logger.info(this.getClass(),"openAIResponse: " + openAIResponse.toString(2) + "\n\n");
+        Logger.info(this.getClass(), "openAIResponse: " + openAIResponse.toString(2) + "\n\n");
 
-        JSONObject aiResponse = parseAIResponse(openAIResponse);
+      return parseAIResponse(openAIResponse);
+   }
 
-        if(aiResponse.isEmpty()){
-            return null;
-        }
+   /**
+    * Creates the translated contentlet from the AI response.
+    */
+   private Contentlet createTranslatedContentlet(Contentlet contentlet, Language targetLanguage,
+           List<Field> fields, JSONObject aiResponse, User user) {
 
-        Contentlet translated = Try.of(()->APILocator.getContentletAPI()
-                .checkout(contentlet.getInode(), user, false)).getOrElseThrow(DotRuntimeException::new);
+      Contentlet translated = Try.of(() -> APILocator.getContentletAPI()
+              .checkout(contentlet.getInode(), user, false)).getOrElseThrow(DotRuntimeException::new);
 
         translated.setLanguageId(targetLanguage.getId());
 
@@ -207,58 +269,101 @@ public class OpenAITranslationService extends AbstractTranslationService {
 
         for (Field field : fields) {
             String value = aiResponse.optString(field.variable());
-            if(UtilMethods.isSet(value)){
-                translated.setStringProperty(field.variable(),value.replaceAll("<\\\\/", "</"));
-                hasChanges = true;
+            if (UtilMethods.isSet(value)) {
+               translated.setStringProperty(field.variable(), value.replaceAll("<\\\\/", "</"));
+               hasChanges = true;
             }
         }
-
 
         return hasChanges ? translated : null;
-
-
-
     }
 
+    /**
+     * Inner class to hold translation context data.
+     */
+    private static class TranslationContext {
 
+       private final Language sourceLanguage;
+       private final Language targetLanguage;
+       private final JSONObject translationKeysJSON;
 
+       public TranslationContext(Language sourceLanguage, Language targetLanguage, JSONObject translationKeysJSON) {
+          this.sourceLanguage = sourceLanguage;
+          this.targetLanguage = targetLanguage;
+          this.translationKeysJSON = translationKeysJSON;
+       }
 
-    JSONObject parseAIResponse(JSONObject response) {
-        try {
-            String aiJson = response
-                    .getJSONArray("choices")
-                    .getJSONObject(0)
-                    .getJSONObject("message")
-                    .getString("content");
+       public Language getSourceLanguage() {
+          return sourceLanguage;
+       }
 
-            aiJson = aiJson.trim();
+       public Language getTargetLanguage() {
+          return targetLanguage;
+       }
 
-            // gets at the first json object
-            while (!aiJson.startsWith("{")) {
-                aiJson = aiJson.substring(1);
-            }
-            while (!aiJson.endsWith("}")) {
-                aiJson = aiJson.substring(0, aiJson.length() - 1);
-            }
-
-            return new JSONObject(aiJson);
-        }catch(Exception e){
-            // Handle JSON parsing errors
-            Logger.error(this.getClass(),"Error parsing AI response: " + e.getMessage(),e);
-            return new JSONObject(); // Return an empty JSONObject or handle the error as needed
-        }
-
+       public JSONObject getTranslationKeysJSON() {
+          return translationKeysJSON;
+       }
     }
 
+   /**
+    * Inner class to hold prompt data.
+    */
+   private static class PromptData {
 
+      private final String systemPrompt;
+      private final String userPrompt;
 
-    Map<String, String> getTranslationKeys(Optional<String> prefixIn, long originalLang, long langToTranslate) {
+      public PromptData(String systemPrompt, String userPrompt) {
+         this.systemPrompt = systemPrompt;
+         this.userPrompt = userPrompt;
+      }
 
-        if(prefixIn.isEmpty() || UtilMethods.isEmpty(prefixIn.get())){
-            return Map.of();
-        }
+      public String getSystemPrompt() {
+         return systemPrompt;
+      }
 
+      public String getUserPrompt() {
+         return userPrompt;
+      }
+   }
 
+   JSONObject parseAIResponse(JSONObject response) {
+      try {
+         String aiJson = response
+                 .getJSONArray("choices")
+                 .getJSONObject(0)
+                 .getJSONObject("message")
+                 .getString("content");
+
+         if (aiJson == null) {
+            return new JSONObject();
+         }
+         aiJson = aiJson.trim();
+         if (UtilMethods.isEmpty(aiJson)) {
+            return new JSONObject();
+         }
+         // gets at the first json object
+         while (!aiJson.startsWith("{")) {
+            aiJson = aiJson.substring(1);
+         }
+         while (!aiJson.endsWith("}")) {
+            aiJson = aiJson.substring(0, aiJson.length() - 1);
+         }
+
+         return new JSONObject(aiJson);
+      } catch (Exception e) {
+         // Handle JSON parsing errors
+         Logger.error(this.getClass(), "Error parsing AI response: " + e.getMessage(), e);
+         return new JSONObject(); // Return an empty JSONObject or handle the error as needed
+      }
+   }
+
+   Map<String, String> getTranslationKeys(Optional<String> prefixIn, long originalLang, long langToTranslate) {
+
+      if (prefixIn.isEmpty() || UtilMethods.isEmpty(prefixIn.get())) {
+         return Map.of();
+      }
 
         if (originalLang == langToTranslate) {
             throw new DotRuntimeException("Cannot translate contentlet to the same language: " + langToTranslate);
@@ -334,8 +439,6 @@ public class OpenAITranslationService extends AbstractTranslationService {
 
         return Try.of(() -> Integer.parseInt(AIUtil.getSecrets(hostId).get(AI_TRANSLATIONS_MAX_TOKENS).getString()))
                 .getOrElse(0);
-
-
     }
 
     String getTranslationModel(String hostId) {
