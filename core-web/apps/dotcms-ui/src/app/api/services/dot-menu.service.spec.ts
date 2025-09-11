@@ -1,4 +1,4 @@
-import { HttpMethod, SpectatorHttp, createHttpFactory } from '@ngneat/spectator';
+import { HttpMethod, SpectatorHttp, createHttpFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotMenu } from '@dotcms/dotcms-models';
@@ -103,7 +103,7 @@ describe('DotMenuService', () => {
 
     describe('getUrlById', () => {
         it('should get URL of JSP menu item', (done) => {
-            spyOn(spectator.service, 'loadMenu').and.returnValue(of(MENU_MOCK));
+            jest.spyOn(spectator.service, 'loadMenu').mockReturnValue(of(MENU_MOCK));
 
             spectator.service.getUrlById(ACTIVITY_JSP_ITEM_MOCK.id).subscribe((url) => {
                 expect(url).toEqual(ACTIVITY_JSP_ITEM_MOCK.url);
@@ -112,7 +112,7 @@ describe('DotMenuService', () => {
         });
 
         it('should not return anything if the menu item is an Angular URL', (done) => {
-            spyOn(spectator.service, 'loadMenu').and.returnValue(of(MENU_MOCK));
+            jest.spyOn(spectator.service, 'loadMenu').mockReturnValue(of(MENU_MOCK));
 
             spectator.service.getUrlById(STATER_ANGULAR_ITEM_MOCK.id).subscribe((url) => {
                 expect(url).toBe('');
@@ -123,7 +123,7 @@ describe('DotMenuService', () => {
 
     describe('isPortletInMenu', () => {
         it('should return true if the menu item is in the menu', (done) => {
-            spyOn(spectator.service, 'loadMenu').and.returnValue(of(MENU_MOCK));
+            jest.spyOn(spectator.service, 'loadMenu').mockReturnValue(of(MENU_MOCK));
 
             spectator.service.isPortletInMenu(ACTIVITY_JSP_ITEM_MOCK.id).subscribe((isInMenu) => {
                 expect(isInMenu).toBe(true);
@@ -132,7 +132,7 @@ describe('DotMenuService', () => {
         });
 
         it('should return false if the menu item is not in the menu', (done) => {
-            spyOn(spectator.service, 'loadMenu').and.returnValue(of(MENU_MOCK));
+            jest.spyOn(spectator.service, 'loadMenu').mockReturnValue(of(MENU_MOCK));
 
             spectator.service.isPortletInMenu(ACTIVITY_JSP_ITEM_MOCK.id).subscribe((isInMenu) => {
                 expect(isInMenu).toBe(true);
@@ -142,7 +142,7 @@ describe('DotMenuService', () => {
 
         describe('JSPPortlet', () => {
             it('should return true if the menu item is in the menu and is a JSP Portlet', (done) => {
-                spyOn(spectator.service, 'loadMenu').and.returnValue(of(MENU_MOCK));
+                jest.spyOn(spectator.service, 'loadMenu').mockReturnValue(of(MENU_MOCK));
 
                 spectator.service
                     .isPortletInMenu(ACTIVITY_JSP_ITEM_MOCK.id, true)
@@ -153,7 +153,7 @@ describe('DotMenuService', () => {
             });
 
             it('should return false if the menu item is not in the menu and is a JSP Portlet', (done) => {
-                spyOn(spectator.service, 'loadMenu').and.returnValue(of(MENU_MOCK));
+                jest.spyOn(spectator.service, 'loadMenu').mockReturnValue(of(MENU_MOCK));
 
                 spectator.service
                     .isPortletInMenu(STATER_ANGULAR_ITEM_MOCK.id, true)
@@ -182,7 +182,7 @@ describe('DotMenuService', () => {
 
     describe('getDotMenuId', () => {
         it('should return the id of the menu', (done) => {
-            spyOn(spectator.service, 'loadMenu').and.returnValue(of(MENU_MOCK));
+            jest.spyOn(spectator.service, 'loadMenu').mockReturnValue(of(MENU_MOCK));
 
             spectator.service.getDotMenuId(ACTIVITY_JSP_ITEM_MOCK.id).subscribe((id) => {
                 expect(id).toBe(ACTIVITY_MENU_ID);

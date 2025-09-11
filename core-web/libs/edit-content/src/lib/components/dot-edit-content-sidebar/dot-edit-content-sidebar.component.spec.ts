@@ -40,7 +40,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
-import { CONTENT_TYPE_MOCK, MockResizeObserver } from '../../utils/mocks';
+import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
@@ -96,7 +96,6 @@ describe('DotEditContentSidebarComponent', () => {
     });
 
     beforeEach(() => {
-        window.ResizeObserver = MockResizeObserver;
         spectator = createComponent({ detectChanges: false });
 
         store = spectator.inject(DotEditContentStore, true);

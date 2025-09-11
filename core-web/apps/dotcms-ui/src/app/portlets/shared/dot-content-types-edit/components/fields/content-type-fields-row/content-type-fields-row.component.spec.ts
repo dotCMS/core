@@ -169,7 +169,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
                 hostComp.setData(mock);
                 hostFixture.detectChanges();
-                spyOn(dotDialogService, 'confirm');
+                jest.spyOn(dotDialogService, 'confirm');
             });
 
             it('should show 1 remove button', () => {

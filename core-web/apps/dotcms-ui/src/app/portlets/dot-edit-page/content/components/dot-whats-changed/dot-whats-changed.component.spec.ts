@@ -45,9 +45,9 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotEditPageService,
                     useValue: {
-                        whatChange: jasmine
-                            .createSpy()
-                            .and.returnValue(
+                        whatChange: jest
+                            .fn()
+                            .mockReturnValue(
                                 of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
                             )
                     }
@@ -55,15 +55,15 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotDOMHtmlUtilService,
                     useValue: {
-                        createStyleElement: jasmine
-                            .createSpy()
-                            .and.returnValue(document.createElement('style'))
+                        createStyleElement: jest
+                            .fn()
+                            .mockReturnValue(document.createElement('style'))
                     }
                 },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy()
+                        handle: jest.fn()
                     }
                 }
             ],
@@ -84,8 +84,11 @@ describe('DotWhatsChangedComponent', () => {
     });
 
     it('should load content based on the pageId and URL', () => {
-        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledOnceWith(SHOW_DIFF_STYLES);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledWith(SHOW_DIFF_STYLES);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledTimes(1);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledTimes(1);
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '1');
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(1);
         expect(dotIframe.iframeElement.nativeElement.contentDocument.body.innerHTML).toContain(
             'ABC<ins class="diffins">&nbsp;DEF</ins>'
         );
@@ -96,6 +99,8 @@ describe('DotWhatsChangedComponent', () => {
         fixture.detectChanges();
 
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '2');
+        // The service is called twice: once in ngOnInit and once when languageId changes
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(2);
     });
 
     it('should load content when pageId is change', () => {
@@ -103,5 +108,7 @@ describe('DotWhatsChangedComponent', () => {
         fixture.detectChanges();
 
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('abc-123', '1');
+        // The service is called twice: once in ngOnInit and once when pageId changes
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(2);
     });
 });
