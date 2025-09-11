@@ -16,10 +16,20 @@ import java.util.Properties;
 
 public class AIUtil {
 
+   /**
+     * Returns the secrets for the given host.
+     * @param contentlet The contentlet to get the secrets for.
+     * @return A map of secrets.
+     */
     public static Map<String, Secret> getSecrets(Contentlet contentlet) {
         return getSecrets(contentlet.getHost());
     }
 
+    /**
+     * Returns the secrets for the given host.
+     * @param hostId The host identifier to get the secrets for.
+     * @return A map of secrets.
+     */
     public static Map<String, Secret> getSecrets(String hostId) {
         Host host = Try.of(() -> APILocator.getHostAPI().find(hostId, APILocator.systemUser(), true)).getOrNull();
         if (UtilMethods.isEmpty(() -> host.getIdentifier())) {
