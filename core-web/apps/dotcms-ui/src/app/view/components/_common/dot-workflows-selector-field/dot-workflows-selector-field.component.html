@@ -1,7 +1,7 @@
 <p-multiSelect
     (onChange)="handleChange($event.value)"
     [(ngModel)]="value"
-    [defaultLabel]="'dot.common.select.workflows' | dm"
+    [placeholder]="'dot.common.select.workflows' | dm"
     [disabled]="disabled"
     [maxSelectedLabels]="3"
     [options]="options$ | async"
