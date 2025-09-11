@@ -20,7 +20,9 @@ public class ModelProviderFactory {
     private final Map<String, ModelProvider> providers = new ConcurrentHashMap<>();
 
     public ModelProviderFactory() {
-        this(List.of(new OpenAiModelProvider(), new AnthropicModelProvider()));
+        this(List.of(new OpenAiModelProvider(), // Open AI LLM and Streaming
+                new OpenAiModelProvider(Model.OPEN_AI_GPT_40.getProviderName()), // Open AI Embbeding model
+                new AnthropicModelProvider()));
     }
 
     public ModelProviderFactory(final List<ModelProvider> providerList) {

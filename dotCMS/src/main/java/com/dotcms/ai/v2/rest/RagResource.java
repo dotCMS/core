@@ -5,10 +5,13 @@ import com.dotcms.ai.v2.api.embeddings.RagIngestAPI;
 import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievalQuery;
 import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievedChunk;
 import com.dotcms.ai.v2.api.embeddings.retrieval.Retriever;
+import com.dotcms.ai.v2.api.provider.Model;
+import com.dotcms.ai.v2.api.provider.ModelProviderFactory;
 import com.dotcms.ai.v2.api.provider.config.ModelConfig;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.inject.Inject;
@@ -35,10 +38,13 @@ import java.util.stream.Collectors;
 public class RagResource {
 
     private final RagIngestAPI ragIngestAPI;
+    private final ModelProviderFactory modelProviderFactory;
 
     @Inject
-    public RagResource(final RagIngestAPI ragIngestAPI) {
+    public RagResource(final RagIngestAPI ragIngestAPI,
+                       final ModelProviderFactory modelProviderFactory) {
         this.ragIngestAPI = ragIngestAPI;
+        this.modelProviderFactory = modelProviderFactory;
     }
 
 
@@ -58,11 +64,14 @@ public class RagResource {
                 50  : Math.max(1, request.getPageSize().get());
         final int batchSize = request.getBatchSize() == null && request.getBatchSize().isPresent()?
                 128 : Math.max(1, request.getBatchSize().get());
-        final ModelConfig modelConfig = null; // todo: get here the configuration model
+        // todo: this should reach into a configuration and retrieve the one, by now we are using the open ai
+        // eventually if do not send any provider key we can try onnix, but it is ok to hardcode by now
+        final ModelConfig modelConfig = Model.OPEN_AI_TEXT_EMBEDDING_3_SMALL.toConfig(Config.getStringProperty("OPEN_AI_API_KEY"));
 
-        DotConcurrentFactory.getInstance().getSubmitter() // todo: see if want a special one
+        DotConcurrentFactory.getInstance().getSubmitter() // todo: see if want a special one submitter
             .submit(() -> {
             try {
+                // todo: later we should create an observer/listener to stream the progress, but it is ok by now
                 final int chunks = ragIngestAPI.indexContentType(
                         ContentTypeRagIndexRequest.builder()
                                 .withHost(request.getHost().orElse(Host.SYSTEM_HOST))

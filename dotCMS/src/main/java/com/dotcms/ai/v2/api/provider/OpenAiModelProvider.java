@@ -13,9 +13,19 @@ import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_4_O_MINI;
 import static dev.langchain4j.model.openai.OpenAiEmbeddingModelName.TEXT_EMBEDDING_3_SMALL;
 
 public class OpenAiModelProvider implements  ModelProvider {
+
+    private final String name;
+
+    public OpenAiModelProvider() {
+        this(Model.OPEN_AI_GPT_40.getProviderName());
+    }
+    public OpenAiModelProvider(String name) {
+        this.name = name;
+    }
+
     @Override
     public String name() {
-        return Model.OPEN_AI_GPT_40.getProviderName();
+        return this.name;
     }
 
     @Override
@@ -34,6 +44,7 @@ public class OpenAiModelProvider implements  ModelProvider {
         return OpenAiStreamingChatModel.builder()
                 .apiKey(config.get(ModelConfig.API_KEY))
                 .modelName(config.getOrDefault(ModelConfig.MODEL, Model.OPEN_AI_GPT_40.getModel()))
+                .baseUrl(config.getOrDefault(ModelConfig.API_URL, Model.OPEN_AI_GPT_40.getApiUrl()))
                 .build();
     }
 

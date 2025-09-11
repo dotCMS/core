@@ -1,8 +1,12 @@
 package com.dotcms.ai.v2.rest;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.util.Objects;
 import java.util.Optional;
 
+@JsonDeserialize(builder = IndexContentTypeRequest.Builder.class)
 public final class IndexContentTypeRequest {
 
     private final String host;
@@ -83,10 +87,15 @@ public final class IndexContentTypeRequest {
 
     // Builder Class
     public static final class Builder {
+        @JsonProperty()
         private String host;
+        @JsonProperty(required = true)
         private String contentType;
+        @JsonProperty()
         private Long languageId;
+        @JsonProperty()
         private Integer pageSize;
+        @JsonProperty()
         private Integer batchSize;
 
         private Builder() {}
