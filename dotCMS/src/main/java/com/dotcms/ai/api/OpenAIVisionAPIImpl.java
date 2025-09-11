@@ -25,6 +25,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -216,9 +217,10 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
             var md = MessageDigest.getInstance("SHA-256");
             try (var in = new DigestInputStream(Files.newInputStream(imageFile.toPath()), md)) {
                 while (in.read() != -1) {
+
                 }
             }
-            return Optional.of(new String(md.digest()));
+            return Optional.of(new String(md.digest(), StandardCharsets.UTF_8));
         } catch (Exception e) {
             return Optional.empty();
         }
@@ -257,7 +259,10 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     private Optional<Tuple2<String, List<String>>> readImageTagsAndDescription(String parsedPrompt) {
 
         String promptHash = Try.of(
-                () -> MessageDigest.getInstance("SHA-256").digest(parsedPrompt.getBytes()).toString()).getOrNull();
+                () ->
+
+                        MessageDigest.getInstance("SHA-256").digest(parsedPrompt.getBytes()).toString()
+        ).getOrNull();
         if (UtilMethods.isEmpty(promptHash) || UtilMethods.isEmpty(parsedPrompt)) {
             return Optional.empty();
         }
