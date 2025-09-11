@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -25,10 +26,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,19 +210,6 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     }
 
 
-    private Optional<String> getSha256(File imageFile) {
-        try {
-            var md = MessageDigest.getInstance("SHA-256");
-            try (var in = new DigestInputStream(Files.newInputStream(imageFile.toPath()), md)) {
-                while (in.read() != -1) {
-
-                }
-            }
-            return Optional.of(new String(md.digest(), StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
 
    /**
     * This method takes a file and returns a Tuple2 with the first element being the alt
@@ -258,11 +243,7 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     */
     private Optional<Tuple2<String, List<String>>> readImageTagsAndDescription(String parsedPrompt) {
 
-        String promptHash = Try.of(
-                () ->
-
-                        MessageDigest.getInstance("SHA-256").digest(parsedPrompt.getBytes()).toString()
-        ).getOrNull();
+       String promptHash = StringUtils.hashText(parsedPrompt);
         if (UtilMethods.isEmpty(promptHash) || UtilMethods.isEmpty(parsedPrompt)) {
             return Optional.empty();
         }
