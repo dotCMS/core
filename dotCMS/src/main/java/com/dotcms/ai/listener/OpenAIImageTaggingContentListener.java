@@ -23,9 +23,14 @@ import java.util.Optional;
 
 public class OpenAIImageTaggingContentListener implements ContentletListener<Contentlet> {
 
-    AIVisionAPI aiVisionAPI = AIVisionAPI.instance.get();
+   AIVisionAPI aiVisionAPI = APILocator.getAiVisionAPI();
 
-
+   /**
+    * Checks if the contentlet should be tagged automatically.
+    *
+    * @param contentlet
+    * @return
+    */
     boolean shouldAutoTag(Contentlet contentlet) {
         Host host = Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), true)).getOrNull();
         if (UtilMethods.isEmpty(() -> host.getIdentifier())) {
@@ -60,7 +65,11 @@ public class OpenAIImageTaggingContentListener implements ContentletListener<Con
         return this.getClass().getCanonicalName();
     }
 
-
+   /**
+    * Handles the event triggered when a Contentlet is published effectively or un-published.
+    *
+    * @param contentletPublishEvent The event containing details about the contentlet's publish or un-publish operation.
+    */
     @Subscriber
     public void onPublish(final ContentletPublishEvent<Contentlet> contentletPublishEvent) {
 
@@ -91,9 +100,12 @@ public class OpenAIImageTaggingContentListener implements ContentletListener<Con
     }
 
 
-
-
-
+   /**
+    * Saves the contentlet to the database.
+    * @param contentlet
+    * @param user
+    * @return
+    */
     private Contentlet saveContentlet(Contentlet contentlet, User user) {
 
         try {

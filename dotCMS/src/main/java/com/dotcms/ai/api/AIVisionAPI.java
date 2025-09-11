@@ -2,7 +2,6 @@ package com.dotcms.ai.api;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.util.List;
@@ -24,7 +23,6 @@ public interface AIVisionAPI {
 
    static final String AI_VISITON_TAG_AND_ALT_PROMPT_TEMPLATE = "AI_VISITON_TAG_AND_ALT_PROMPT_TEMPLATE";
 
-   static final Lazy<AIVisionAPI> instance = Lazy.of(com.dotcms.ai.api.OpenAIVisionAPIImpl::new);
 
 
    /**

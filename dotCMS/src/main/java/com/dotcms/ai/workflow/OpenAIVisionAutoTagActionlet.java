@@ -16,10 +16,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * OpenAIVisionAutoTagActionlet is a workflow actionlet that will attempt to Auto-tag and add alt tag descriptions to
+ * your images based on field variables.
+ */
 public class OpenAIVisionAutoTagActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;
-    AIVisionAPI aiVisionAPI = AIVisionAPI.instance.get();
+
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
@@ -33,7 +37,12 @@ public class OpenAIVisionAutoTagActionlet extends WorkFlowActionlet {
 
     @Override
     public String getHowTo() {
-        return "This will attempt to Auto-tag and add alt tag descriptions to your images based on field variables.  You will need to make sure this runs before the save/publish Content actionlet.";
+       return "This will attempt to Auto-tag and add alt tag descriptions to your images. "
+               + "It looks for 2 field variables `dotAITagSrc` and `dotAIDescriptionSrc` "
+               + "which are added to the fields you want to autotag/auto-description.  "
+               + "The field value is the field variable for the `image/asset` to use as "
+               + "the source of the tags/descriptions.  You will need to make sure this "
+               + "runs before the save/publish Content actionlet.";
     }
 
 
@@ -41,13 +50,11 @@ public class OpenAIVisionAutoTagActionlet extends WorkFlowActionlet {
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params)
             throws WorkflowActionFailureException {
 
-
         Optional<Field> altField = processor.getContentlet().getContentType().fields().stream().filter(f -> f.fieldVariablesMap().containsKey(AIVisionAPI.AI_VISION_ALT_FIELD_VAR)).findFirst();
         Optional<Field> tagField = processor.getContentlet().getContentType().fields().stream().filter(f -> f.fieldVariablesMap().containsKey(AIVisionAPI.AI_VISION_TAG_FIELD_VAR)).findFirst();
         if(altField.isEmpty() && tagField.isEmpty()){
             return;
         }
-
 
         String myType = processor.getContentlet().getContentType().variable().toLowerCase();
 
@@ -59,11 +66,11 @@ public class OpenAIVisionAutoTagActionlet extends WorkFlowActionlet {
                                 .findFirst())
                 .getOrElse(Optional.empty());
 
-        if (clazz.isPresent() ) {
-            aiVisionAPI.tagImageIfNeeded(processor.getContentlet());
-            aiVisionAPI.addAltTextIfNeeded(processor.getContentlet());
+       if (clazz.isPresent()) {
+          APILocator.getAiVisionAPI().tagImageIfNeeded(processor.getContentlet());
+          APILocator.getAiVisionAPI().addAltTextIfNeeded(processor.getContentlet());
 
-        }
+       }
 
 
     }
