@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -29,7 +29,8 @@ import {
     CoreWebServiceMock,
     MockDotMessageService,
     mockDotThemes,
-    mockSites
+    mockSites,
+    SiteServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
@@ -147,7 +148,7 @@ describe('DotTemplateCreateEditComponent', () => {
     let dialogService: DialogService;
     let store: DotTemplateStore;
     let templateStoreValue: TemplateStoreValueType;
-    const switchSiteSubject = new Subject();
+    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -248,22 +249,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 },
                 {
                     provide: SiteService,
-                    useValue: {
-                        refreshSites$: of({}),
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        },
-                        getSiteById() {
-                            return of({
-                                identifier: '123'
-                            });
-                        },
-                        getCurrentSite() {
-                            return of({
-                                identifier: '123'
-                            });
-                        }
-                    }
+                    useValue: siteServiceMock
                 },
                 {
                     provide: DotThemesService,
@@ -647,8 +633,8 @@ describe('DotTemplateCreateEditComponent', () => {
                 });
 
                 it('should go to listing if page site changes', () => {
-                    switchSiteSubject.next(mockSites[0]); // setting the site
-                    switchSiteSubject.next(mockSites[1]); // switching the site
+                    fixture.detectChanges(); // Initialize component and subscriptions
+                    siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
                     expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
                 });
             });

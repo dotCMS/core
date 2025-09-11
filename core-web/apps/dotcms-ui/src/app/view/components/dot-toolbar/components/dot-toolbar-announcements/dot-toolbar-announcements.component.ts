@@ -49,9 +49,8 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
      * Sets up site switching subscription to reload announcements when site changes.
      */
     constructor() {
-        this.siteService.switchSite$.pipe(takeUntilDestroyed()).subscribe(() => {
-            this.announcementsStore.load();
-            this.$aboutLinks.set(this.getAboutLinks());
+        this.siteService.currentSite$.pipe(takeUntilDestroyed()).subscribe(() => {
+            this.setAnnouncementsStore();
         });
     }
 
@@ -100,6 +99,14 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
      */
     markAnnouncementsAsRead(): void {
         this.announcementsStore.markAnnouncementsAsRead();
+    }
+
+    /**
+     * Sets the announcements store.
+     */
+    private setAnnouncementsStore(): void {
+        this.announcementsStore.load();
+        this.$aboutLinks.set(this.getAboutLinks());
     }
 
     /**
