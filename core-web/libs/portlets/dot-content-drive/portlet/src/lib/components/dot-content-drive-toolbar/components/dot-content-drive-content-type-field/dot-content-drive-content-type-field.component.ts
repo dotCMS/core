@@ -67,20 +67,24 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
 
     // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
     // This prevents the effect from being triggered when the base types are the same or filters changes
-    private readonly $mappedBaseTypes = computed<string[]>(
-        () => this.#store.filters().baseType?.map((item) => MAP_NUMBERS_TO_BASE_TYPES[item]) ?? [],
+    private readonly $mappedBaseTypes = computed<string>(
+        () => {
+            const baseTypesString =
+                this.#store
+                    .filters()
+                    .baseType?.map((item) => MAP_NUMBERS_TO_BASE_TYPES[item])
+                    .join(',') ?? '';
+
+            return baseTypesString.length > 0 ? baseTypesString : undefined;
+        },
         {
             // This will trigger the effect if the base types are different
-            equal: (a, b) => a?.length === b?.length && a?.every((item) => b.includes(item))
+            equal: (a, b) => a?.length === b?.length && a === b
         }
     );
 
-    private get mappedBaseTypesString() {
-        return this.$mappedBaseTypes().join(',');
-    }
-
     readonly getContentTypesEffect = effect(() => {
-        const type = this.mappedBaseTypesString;
+        const type = this.$mappedBaseTypes();
 
         const filter = this.$state.filter();
 
@@ -200,7 +204,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      */
     private loadInitialContentTypes() {
         this.#contentTypesService
-            .getContentTypesWithPagination({ filter: '', type: this.mappedBaseTypesString })
+            .getContentTypesWithPagination({ filter: '', type: this.$mappedBaseTypes() })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
                 catchError(() =>

@@ -192,10 +192,14 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
             }>(
-                `/api/v1/contenttype?${type
-                    .split(',')
-                    .map((item) => `type=${item}&`)
-                    .join('')}per_page=${per_page}`
+                `/api/v1/contenttype?${
+                    type.length > 0
+                        ? type
+                              .split(',')
+                              .map((item) => `type=${item}&`)
+                              .join('')
+                        : '?'
+                }per_page=${per_page}`
             )
             .pipe(pluck('entity'));
     }

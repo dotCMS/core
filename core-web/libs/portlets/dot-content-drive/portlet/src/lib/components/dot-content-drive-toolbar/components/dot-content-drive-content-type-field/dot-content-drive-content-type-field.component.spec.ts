@@ -189,6 +189,10 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     });
 
     describe('API Integration & Content Type Loading', () => {
+        afterAll(() => {
+            mockStore.filters.mockReturnValue({ baseType: undefined });
+        });
+
         it('should call initial content types API with pagination on component initialization', () => {
             spectator.detectChanges();
 
@@ -198,7 +202,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(mockContentTypeService.getContentTypes).not.toHaveBeenCalled();
         });
 
-        it.skip('should handle base type filters (currently disabled feature)', () => {
+        it('should handle base type filters', () => {
             // Tests current implementation where baseType is explicitly undefined
             mockStore.filters.mockReturnValue({ baseType: ['1', '2'] });
 
@@ -207,7 +211,8 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
             // Due to TODO in component, type parameter is always undefined
             expect(mockContentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
-                filter: ''
+                filter: '',
+                type: 'CONTENT,WIDGET'
             });
         });
     });
@@ -215,13 +220,12 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
     describe('Content Type Filtering & Search', () => {
         beforeEach(() => {
             // Skip initial effect call because of skip(1) in filter subscription
+            mockStore.filters.mockReturnValue({ baseType: undefined });
             spectator.detectChanges();
+            jest.clearAllMocks();
         });
 
         it('should call API with current filter when filter changes', () => {
-            spectator.detectChanges();
-            jest.clearAllMocks();
-
             triggerMultiSelectOnFilter('blog');
             spectator.detectChanges();
             jest.advanceTimersByTime(500);
@@ -233,9 +237,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         });
 
         it('should trigger API request when filter signal changes', () => {
-            spectator.detectChanges();
-            jest.clearAllMocks();
-
             triggerMultiSelectOnFilter('updated-filter');
             spectator.detectChanges();
 
@@ -248,9 +249,6 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
         });
 
         it('should debounce rapid filter changes and cancel previous requests', () => {
-            spectator.detectChanges();
-            jest.clearAllMocks();
-
             // Simulate rapid typing scenario
             triggerMultiSelectOnFilter('first');
             spectator.detectChanges();
