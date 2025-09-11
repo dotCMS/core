@@ -13,6 +13,15 @@ import {
     DotPagination
 } from '@dotcms/dotcms-models';
 
+const generateContentTypeFilter = (type: string) => {
+    return type.length > 0
+        ? type
+              .split(',')
+              .map((item) => `&type=${item}`)
+              .join('')
+        : '';
+};
+
 @Injectable()
 export class DotContentTypeService {
     readonly #httpClient = inject(HttpClient);
@@ -40,14 +49,9 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
             }>(
-                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${generateContentTypeFilter(
                     type
-                        ? `${type
-                              .split(',')
-                              .map((item) => `&type=${item}`)
-                              .join('')}`
-                        : ''
-                }`
+                )}`
             )
             .pipe(pluck('entity'));
     }
@@ -68,14 +72,9 @@ export class DotContentTypeService {
                 entity: DotCMSContentType[];
                 pagination: DotPagination;
             }>(
-                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${
-                    type.length > 0
-                        ? type
-                              .split(',')
-                              .map((item) => `&type=${item}`)
-                              .join('')
-                        : ''
-                }`
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${generateContentTypeFilter(
+                    type
+                )}`
             )
             .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
     }
@@ -191,16 +190,7 @@ export class DotContentTypeService {
         return this.#httpClient
             .get<{
                 entity: DotCMSContentType[];
-            }>(
-                `/api/v1/contenttype?${
-                    type.length > 0
-                        ? type
-                              .split(',')
-                              .map((item) => `type=${item}&`)
-                              .join('')
-                        : '?'
-                }per_page=${per_page}`
-            )
+            }>(`/api/v1/contenttype?per_page=${per_page}${generateContentTypeFilter(type)}`)
             .pipe(pluck('entity'));
     }
 
