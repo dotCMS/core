@@ -20,7 +20,7 @@ export class DotContainersService {
     private readonly http = inject(HttpClient);
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
-    private readonly DOT_DEFAULT_CONTAINER = DotConfigurationVariables.DOT_DEFAULT_CONTAINER;
+    private readonly DEFAULT_CONTAINER = DotConfigurationVariables.DEFAULT_CONTAINER;
 
     // Candidate for a value in the global store
     private readonly _defaultContainer$ = new BehaviorSubject<{
@@ -40,7 +40,7 @@ export class DotContainersService {
 
     constructor() {
         this.dotConfigurationService
-            .getKey(this.DOT_DEFAULT_CONTAINER)
+            .getKey(this.DEFAULT_CONTAINER)
             .pipe(
                 switchMap((containerTitle) => {
                     if (!containerTitle) {
