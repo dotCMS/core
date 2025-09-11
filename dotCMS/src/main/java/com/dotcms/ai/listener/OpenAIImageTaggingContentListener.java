@@ -20,7 +20,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-
+/**
+ * Listener implementation to handle image tagging and alternative text generation
+ * during content publishing and unpublishing events. This listener utilizes the OpenAI
+ * Vision API to automatically tag images or add alternative text to content when applicable.
+ */
 public class OpenAIImageTaggingContentListener implements ContentletListener<Contentlet> {
 
    AIVisionAPI aiVisionAPI = APILocator.getAiVisionAPI();
