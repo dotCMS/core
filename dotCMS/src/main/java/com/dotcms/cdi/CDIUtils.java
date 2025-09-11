@@ -1,18 +1,18 @@
 package com.dotcms.cdi;
 
 import com.dotmarketing.util.Logger;
+import org.jboss.weld.bean.builtin.BeanManagerProxy;
+import org.jboss.weld.bootstrap.api.ServiceRegistry;
+import org.jboss.weld.literal.NamedLiteral;
+import org.jboss.weld.manager.BeanManagerImpl;
+import org.jboss.weld.resources.ClassTransformer;
+
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-import org.jboss.weld.bean.builtin.BeanManagerProxy;
-import org.jboss.weld.bootstrap.api.ServiceRegistry;
-import org.jboss.weld.manager.BeanManagerImpl;
-import org.jboss.weld.resources.ClassTransformer;
-import org.jboss.weld.resources.ReflectionCache;
-import org.jboss.weld.resources.SharedObjectCache;
 
 /**
  * Utility class to get beans from CDI container
@@ -51,6 +51,22 @@ public class CDIUtils {
     public static <T> T getBeanThrows(Class<T> clazz) {
         try {
             return CDI.current().select(clazz).get();
+        } catch (Exception e) {
+            String errorMessage = String.format("Unable to find bean of class [%s]: %s", clazz, e.getMessage());
+            Logger.error(CDIUtils.class, errorMessage);
+            throw new IllegalStateException(errorMessage, e);
+        }
+    }
+
+    /**
+     * Get a bean from CDI container but throw an exception if the bean is not found
+     * @param clazz the class of the bean
+     * @return the bean
+     * @param <T> the type of the bean
+     */
+    public static <T> T getBeanThrows(final Class<T> clazz, final String name) {
+        try {
+            return CDI.current().select(clazz, new NamedLiteral(name)).get();
         } catch (Exception e) {
             String errorMessage = String.format("Unable to find bean of class [%s]: %s", clazz, e.getMessage());
             Logger.error(CDIUtils.class, errorMessage);
