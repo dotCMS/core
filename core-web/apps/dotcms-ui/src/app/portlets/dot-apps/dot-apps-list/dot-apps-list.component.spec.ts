@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -115,6 +115,7 @@ describe('DotAppsListComponent', () => {
                 MockDotIconComponent
             ],
             imports: [ButtonModule, DotMessagePipe],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -142,9 +143,12 @@ describe('DotAppsListComponent', () => {
 
     describe('With access to portlet', () => {
         beforeEach(() => {
-            spyOnProperty(route, 'data').and.returnValue(
-                of({ dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true } })
-            );
+            Object.defineProperty(route, 'data', {
+                value: of({
+                    dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true }
+                }),
+                writable: true
+            });
             fixture.detectChanges();
         });
 
@@ -205,7 +209,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should reload apps data when resolve action from Import/Export dialog', () => {
-            spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+            jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
             const importExportDialog = fixture.debugElement.query(
                 By.css('dot-apps-import-export-dialog')
             );
@@ -227,6 +231,7 @@ describe('DotAppsListComponent', () => {
             )[0].componentInstance;
             card.actionFired.emit(component.apps[0].key);
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps[0].key);
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
         });
     });
 

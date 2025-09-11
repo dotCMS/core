@@ -4,7 +4,7 @@ import {
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -105,7 +105,7 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should emit changeControls when isVisible input is true', () => {
-            spyOn(component.changeControls, 'emit');
+            jest.spyOn(component.changeControls, 'emit');
 
             spectator.setInput('isVisible', true);
 
@@ -113,7 +113,7 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should emit valid output on form change', () => {
-            spyOn(component.valid, 'emit');
+            jest.spyOn(component.valid, 'emit');
 
             const acceptInput = spectator.query(byTestId('setting-accept'));
             spectator.typeInElement('text/*', acceptInput);
@@ -122,9 +122,9 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should handler error if save properties failed', () => {
-            spyOn(dotFieldVariableService, 'save').and.returnValue(throwError({}));
-            spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
-            spyOn(component.save, 'emit');
+            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError({}));
+            jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+            jest.spyOn(component.save, 'emit');
 
             component.saveSettings();
 
@@ -192,8 +192,8 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should not call save or delete when is empty and not previous variable exist', () => {
-            spyOn(dotFieldVariableService, 'delete').and.returnValue(of([]));
-            spyOn(dotFieldVariableService, 'save').and.returnValue(of([]));
+            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of([]));
+            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of([]));
 
             spectator.detectChanges();
 

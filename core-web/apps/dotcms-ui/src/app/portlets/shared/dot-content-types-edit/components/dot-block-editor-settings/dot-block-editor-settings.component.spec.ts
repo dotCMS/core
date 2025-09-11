@@ -74,7 +74,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     }));
 
     it('should not setup form values', () => {
-        spyOn(dotFieldVariableService, 'load').and.returnValue(of([]));
+        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
         fixture.detectChanges();
         expect(component.form.get('allowedBlocks').value).toBe(null);
     });
@@ -82,14 +82,14 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     it('should setup from value', () => {
         const value = ['orderList', 'unorderList', 'table'];
         fixture.detectChanges();
-        const selector = de.query(By.css('p-multiSelect'));
+        const selector = de.query(By.css('p-multiselect'));
         expect(component.form.get('allowedBlocks').value).toEqual(value);
         expect(selector).toBeTruthy();
     });
 
     it('should emit changeControls when isVisible input is true', () => {
         fixture.detectChanges();
-        spyOn(component.changeControls, 'emit');
+        jest.spyOn(component.changeControls, 'emit');
         component.ngOnChanges({
             isVisible: new SimpleChange(false, true, false)
         });
@@ -98,15 +98,15 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should emit valid output on form change', () => {
-        spyOn(component.valid, 'emit');
+        jest.spyOn(component.valid, 'emit');
         fixture.detectChanges();
         component.form.get('allowedBlocks').setValue(['codeblock']);
         expect(component.valid.emit).toHaveBeenCalled();
     });
 
     it('should save properties on saveSettings', () => {
-        spyOn(dotFieldVariableService, 'save').and.returnValue(of(mockFieldVariables[0]));
-        spyOn(component.save, 'emit');
+        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of(mockFieldVariables[0]));
+        jest.spyOn(component.save, 'emit');
         fixture.detectChanges();
         component.saveSettings();
         expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
@@ -115,8 +115,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should delete properties on saveSettings when is empty', () => {
-        spyOn(dotFieldVariableService, 'delete').and.returnValue(of(mockFieldVariables[0]));
-        spyOn(component.save, 'emit');
+        jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of(mockFieldVariables[0]));
+        jest.spyOn(component.save, 'emit');
         fixture.detectChanges();
         component.form.get('allowedBlocks').setValue([]);
         component.saveSettings();
@@ -126,9 +126,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should not call save or delete when is empty and not previus vairable exist', () => {
-        spyOn(dotFieldVariableService, 'load').and.returnValue(of([]));
-        spyOn(dotFieldVariableService, 'delete');
-        spyOn(dotFieldVariableService, 'save');
+        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
+        jest.spyOn(dotFieldVariableService, 'delete');
+        jest.spyOn(dotFieldVariableService, 'save');
         fixture.detectChanges();
         component.form.get('allowedBlocks').setValue([]);
         component.saveSettings();
@@ -137,9 +137,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should handler error if save proprties faild', () => {
-        spyOn(dotFieldVariableService, 'save').and.returnValue(throwError({}));
-        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
-        spyOn(component.save, 'emit');
+        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError({}));
+        jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+        jest.spyOn(component.save, 'emit');
         fixture.detectChanges();
         component.saveSettings();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
@@ -151,7 +151,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         beforeEach(() => {
             fixture.detectChanges();
-            multiselect = de.query(By.css('p-multiSelect')).componentInstance;
+            multiselect = de.query(By.css('p-multiselect')).componentInstance;
         });
 
         it('should have append to bobdy', () => {

@@ -1,4 +1,4 @@
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
@@ -113,14 +113,17 @@ describe('DotPortletDetailComponent', () => {
 
     it('should not have dot-workflow-task', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: ''
+        Object.defineProperty(router, 'parent', {
+            value: {
+                parent: {
+                    snapshot: {
+                        params: {
+                            id: ''
+                        }
                     }
                 }
-            }
+            },
+            writable: true
         });
 
         fixture.detectChanges();
@@ -130,14 +133,17 @@ describe('DotPortletDetailComponent', () => {
 
     it('should have dot-workflow-task', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: 'workflow'
+        Object.defineProperty(router, 'parent', {
+            value: {
+                parent: {
+                    snapshot: {
+                        params: {
+                            id: 'workflow'
+                        }
                     }
                 }
-            }
+            },
+            writable: true
         });
 
         fixture.detectChanges();
@@ -147,14 +153,17 @@ describe('DotPortletDetailComponent', () => {
 
     it('should have dot-contentlets', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: 'content'
+        Object.defineProperty(router, 'parent', {
+            value: {
+                parent: {
+                    snapshot: {
+                        params: {
+                            id: 'content'
+                        }
                     }
                 }
-            }
+            },
+            writable: true
         });
 
         fixture.detectChanges();
