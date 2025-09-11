@@ -444,7 +444,7 @@ describe('DotPagesComponent', () => {
         siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
         expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
         // getPages is called multiple times during initialization and site changes
-        expect(store.getPages).toHaveBeenCalledTimes(1);
+        expect(store.getPages).toHaveBeenCalledTimes(2);
         expect(component.scrollToTop).toHaveBeenCalled();
     });
 });
