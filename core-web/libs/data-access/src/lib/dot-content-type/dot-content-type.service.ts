@@ -194,8 +194,8 @@ export class DotContentTypeService {
             }>(
                 `/api/v1/contenttype?${type
                     .split(',')
-                    .map((item) => `type=${item}`)
-                    .join('')}&per_page=${per_page}`
+                    .map((item) => `type=${item}&`)
+                    .join('')}per_page=${per_page}`
             )
             .pipe(pluck('entity'));
     }
