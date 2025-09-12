@@ -831,4 +831,121 @@ public class TagResource {
     );
     }
 
+    /**
+     * Exports tags to CSV or JSON format.
+     * Supports the same filtering as the list endpoint.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param format   The export format (csv or json).
+     * @param global   Include global/system tags.
+     * @param siteId   Filter by specific host/site.
+     * @param filter   Tag name filter (LIKE search).
+     *
+     * @throws DotDataException     An error occurred when retrieving Tag data.
+     * @throws DotSecurityException The specified user does not have the required permissions.
+     */
+    @Operation(
+        summary = "Export tags",
+        description = "Export tags to CSV or JSON format. Supports the same filtering as list/search endpoint with configurable export format."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+            description = "File download initiated with appropriate content type",
+            content = {
+                @Content(mediaType = "text/csv"),
+                @Content(mediaType = "application/json")
+            }),
+        @ApiResponse(responseCode = "400",
+            description = "Invalid parameters",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+            description = "Unauthorized - Authentication required",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+            description = "Forbidden - Insufficient permissions",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+            description = "Internal server error",
+            content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/export")
+    @NoCache
+    @Produces({"text/csv", "application/json"})
+    public Response exportTags(
+        @Context final HttpServletRequest request,
+        @Context final HttpServletResponse response,
+        @Parameter(description = "Export format", example = "csv",
+                   schema = @Schema(allowableValues = {"csv", "json"}))
+        @QueryParam("format") @DefaultValue("csv") final String format,
+        @Parameter(description = "Include global tags", example = "false")
+        @QueryParam("global") @DefaultValue("false") final Boolean global,
+        @Parameter(description = "Filter by specific host/site", example = "48190c8c-42c4-46af-8d1a-0cd5db894797")
+        @QueryParam("siteId") final String siteId,
+        @Parameter(description = "Tag name filter (LIKE search)", example = "market")
+        @QueryParam("filter") final String filter
+    ) throws DotDataException, DotSecurityException {
+        
+        // Initialize and validate
+        final InitDataObject initData = getInitDataObject(request, response);
+        final User user = initData.getUser();
+        
+        // Validate format parameter
+        if (!"csv".equalsIgnoreCase(format) && !"json".equalsIgnoreCase(format)) {
+            throw new BadRequestException("Export format must be either 'csv' or 'json'");
+        }
+        
+        Logger.debug(this, () -> String.format(
+            "User '%s' exporting tags with format=%s, filter=%s, siteId=%s, global=%s",
+            user.getUserId(), format, filter, siteId, global));
+        
+        // Delegate to helper with all parameters
+        return helper.exportTags(request, response, format, global, siteId, filter, user);
+    }
+
+    /**
+     * Downloads a CSV template file for tag imports.
+     * No parameters required.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     */
+    @Operation(
+        summary = "Download tag import template",
+        description = "Download a CSV template file with headers and example data for tag imports. No parameters required."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+            description = "CSV template file download",
+            content = @Content(mediaType = "text/csv")),
+        @ApiResponse(responseCode = "401",
+            description = "Unauthorized - Authentication required",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+            description = "Forbidden - Insufficient permissions",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+            description = "Template generation error",
+            content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/export/template")
+    @NoCache
+    @Produces("text/csv")
+    public Response downloadTemplate(
+        @Context final HttpServletRequest request,
+        @Context final HttpServletResponse response
+    ) {
+        
+        // Ensure authenticated
+        final InitDataObject initData = getInitDataObject(request, response);
+        final User user = initData.getUser();
+        
+        Logger.debug(this, () -> String.format(
+            "User '%s' downloading tag import template", user.getUserId()));
+        
+        return helper.downloadImportTemplate(response);
+    }
+
 }
