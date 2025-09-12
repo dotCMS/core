@@ -28,7 +28,7 @@ import { EditContentState } from '../../edit-content.store';
 /**
  * Default number of items per page for versions pagination. Need 40 so scroll works correctly in large viewports.
  */
-const DEFAULT_VERSIONS_PER_PAGE = 40;
+export const DEFAULT_VERSIONS_PER_PAGE = 40;
 
 /**
  * Feature store for managing content versions state

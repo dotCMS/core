@@ -21,7 +21,7 @@ import {
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
 
-import { withHistory } from './history.feature';
+import { withHistory, DEFAULT_VERSIONS_PER_PAGE } from './history.feature';
 
 import {
     DotHistoryTimelineItemAction,
@@ -62,7 +62,7 @@ const mockVersionsResponse: DotCMSResponse<DotCMSContentletVersion[]> = {
     entity: [mockContentletVersion, mockContentletVersion2],
     pagination: {
         currentPage: 1,
-        perPage: 20,
+        perPage: DEFAULT_VERSIONS_PER_PAGE,
         totalEntries: 2
     } as DotPagination,
     errors: [],
@@ -81,7 +81,7 @@ const mockVersionsResponsePage2: DotCMSResponse<DotCMSContentletVersion[]> = {
     ],
     pagination: {
         currentPage: 2,
-        perPage: 20,
+        perPage: DEFAULT_VERSIONS_PER_PAGE,
         totalEntries: 3
     } as DotPagination,
     errors: [],
@@ -204,7 +204,7 @@ describe('HistoryFeature', () => {
 
             expect(dotEditContentService.getVersions).toHaveBeenCalledWith('test-identifier', {
                 offset: 1,
-                limit: 20
+                limit: DEFAULT_VERSIONS_PER_PAGE
             });
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
             expect(store.versionsPagination()).toEqual(mockVersionsResponse.pagination);
@@ -329,7 +329,7 @@ describe('HistoryFeature', () => {
             });
             expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
                 mockContentlet.identifier,
-                { offset: 1, limit: 20 }
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE }
             );
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
         }));
@@ -391,30 +391,24 @@ describe('HistoryFeature', () => {
         });
 
         it('should handle PREVIEW action', () => {
-            const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-            store.handleHistoryAction(mockAction(DotHistoryTimelineItemActionType.PREVIEW));
-
-            expect(consoleSpy).toHaveBeenCalledWith('Preview version:', mockContentletVersion);
-            consoleSpy.mockRestore();
+            // Currently a no-op with TODO comment
+            expect(() => {
+                store.handleHistoryAction(mockAction(DotHistoryTimelineItemActionType.PREVIEW));
+            }).not.toThrow();
         });
 
         it('should handle RESTORE action', () => {
-            const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-            store.handleHistoryAction(mockAction(DotHistoryTimelineItemActionType.RESTORE));
-
-            expect(consoleSpy).toHaveBeenCalledWith('Restore version:', mockContentletVersion);
-            consoleSpy.mockRestore();
+            // Currently a no-op with TODO comment
+            expect(() => {
+                store.handleHistoryAction(mockAction(DotHistoryTimelineItemActionType.RESTORE));
+            }).not.toThrow();
         });
 
         it('should handle COMPARE action', () => {
-            const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-            store.handleHistoryAction(mockAction(DotHistoryTimelineItemActionType.COMPARE));
-
-            expect(consoleSpy).toHaveBeenCalledWith('Compare version:', mockContentletVersion);
-            consoleSpy.mockRestore();
+            // Currently a no-op with TODO comment
+            expect(() => {
+                store.handleHistoryAction(mockAction(DotHistoryTimelineItemActionType.COMPARE));
+            }).not.toThrow();
         });
 
         it('should handle DELETE action with confirmation dialog', () => {
@@ -513,7 +507,11 @@ describe('HistoryFeature', () => {
         it('should handle empty versions response', fakeAsync(() => {
             const emptyResponse: DotCMSResponse<DotCMSContentletVersion[]> = {
                 entity: [],
-                pagination: { currentPage: 1, perPage: 20, totalEntries: 0 } as DotPagination,
+                pagination: {
+                    currentPage: 1,
+                    perPage: DEFAULT_VERSIONS_PER_PAGE,
+                    totalEntries: 0
+                } as DotPagination,
                 errors: [],
                 i18nMessagesMap: {},
                 messages: [],
