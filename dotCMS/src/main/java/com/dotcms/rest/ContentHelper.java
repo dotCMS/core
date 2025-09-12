@@ -56,6 +56,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -718,7 +719,19 @@ public class ContentHelper {
         final JSONArray jsonArray = new JSONArray();
 
         for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live)) {
+
+
+            Object originalValue = relatedContent.get(field.name());
+
             relatedContent.setProperty(field.name(), null);
+
+            if (relatedContent.getContentType() != null &&
+                relatedContent.getContentType().fields().stream().anyMatch(f ->
+                Objects.equals(f.variable(), field.variable()) && !f.type().equals(RelationshipField.class))) {
+                
+                relatedContent.setProperty(field.name(), originalValue);
+            }
+
 
             switch (depth) {
                 //returns a list of identifiers
