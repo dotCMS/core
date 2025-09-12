@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, signal, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
@@ -30,7 +37,8 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
     styleUrl: './dot-folder-list-context-menu.component.scss',
-    imports: [CommonModule, ContextMenuModule]
+    imports: [CommonModule, ContextMenuModule],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFolderListViewContextMenuComponent {
     contextMenu = viewChild<ContextMenu>('contextMenu');
