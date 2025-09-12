@@ -13,11 +13,4 @@ export default {
     },
     moduleFileExtensions: ['ts', 'js', 'html'],
     coverageDirectory: '../../target/core-web-reports/',
-    coverageReporters: [['lcovonly', { file: 'TEST-dotcms.lcov' }]],
-    reporters: [
-        [
-            'jest-junit',
-            { outputDirectory: 'target/core-web-reports', outputName: 'TEST-dotcms.xml' }
-        ]
-    ]
 };

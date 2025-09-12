@@ -4,10 +4,6 @@ export default {
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
-    coverageReporters: [['lcovonly', { file: 'TEST-dotcdn.lcov' }]],
-    reporters: [
-        'default',
-        ['github-actions', { silent: false }],
         [
             'jest-junit',
             {
