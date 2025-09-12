@@ -1,35 +1,34 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } from '@angular/core';
-import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 @Component({
     selector: 'dot-edit-content-select-field',
-    imports: [DropdownModule, ReactiveFormsModule],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
+    imports: [
+        DropdownModule,
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldLabelComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
     ],
-    template: `
-        <p-dropdown
-            [formControlName]="$field().variable"
-            [options]="$options()"
-            [attr.aria-labelledby]="'field-' + $field().variable"
-            optionLabel="label"
-            optionValue="value" />
-    `
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './dot-edit-content-select-field.component.html'
 })
-export class DotEditContentSelectFieldComponent implements OnInit {
+export class DotEditContentSelectFieldComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-    private readonly controlContainer = inject(ControlContainer);
 
     $options = computed(() => {
         const field = this.$field();
@@ -37,23 +36,7 @@ export class DotEditContentSelectFieldComponent implements OnInit {
         return getSingleSelectableFieldOptions(field?.values || '', field.dataType);
     });
 
-    ngOnInit() {
-        const options = this.$options();
-
-        if (this.formControl.value === null && options.length > 0) {
-            this.formControl.setValue(options[0]?.value);
-        }
-    }
-
-    /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
-     */
-    get formControl() {
-        const field = this.$field();
-
-        return this.controlContainer.control.get(
-            field.variable
-        ) as AbstractControl<DotEditContentFieldSingleSelectableDataTypes>;
+    writeValue(_: unknown): void {
+        // noop
     }
 }

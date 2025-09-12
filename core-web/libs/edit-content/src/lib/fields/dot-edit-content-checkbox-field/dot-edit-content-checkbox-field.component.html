@@ -1,21 +1,27 @@
-@let options = $options();
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <dot-card-field-label [for]="field.variable" [isRequired]="isRequired" [for]="field.variable">
-        {{ field.name }}
-    </dot-card-field-label>
+    @if (showLabel) {
+        <dot-card-field-label
+            [for]="field.variable"
+            [isRequired]="isRequired"
+            [for]="field.variable">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <div class="flex flex-column gap-2">
-            @for (option of options; track $index) {
-                <p-radioButton
-                    [inputId]="field.variable + '_' + option.value"
-                    [name]="field.variable"
+            @for (option of $options(); track $index) {
+                <p-checkbox
                     [class.ng-invalid]="hasError"
                     [class.ng-dirty]="hasError"
+                    [name]="field.variable"
+                    [formControl]="formControl"
                     [value]="option.value"
-                    [label]="option.label"
-                    [formControl]="formControl" />
+                    [label]="option.label || null"
+                    [inputId]="field.variable + '-' + option.value"
+                    data-testid="checkbox-option" />
             }
         </div>
     </dot-card-field-content>
@@ -27,7 +33,6 @@
                 }
             </div>
         }
-
         @if (!hasError && field.hint) {
             <div class="hint-message">
                 <small [attr.data-testId]="'hint-' + field.variable">

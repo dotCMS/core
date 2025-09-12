@@ -1,34 +1,40 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 @Component({
     selector: 'dot-edit-content-multi-select-field',
-    imports: [MultiSelectModule, ReactiveFormsModule],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
+    imports: [
+        MultiSelectModule,
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldLabelComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
     ],
-    template: `
-        <p-multiSelect
-            [options]="$options()"
-            [formControlName]="$field().variable"
-            optionLabel="label"
-            optionValue="value" />
-    `
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './dot-edit-content-multi-select-field.component.html'
 })
-export class DotEditContentMultiSelectFieldComponent {
+export class DotEditContentMultiSelectFieldComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     $options = computed(() => {
         const field = this.$field();
 
         return getSingleSelectableFieldOptions(field.values || '', field.dataType);
     });
+
+    writeValue(_: unknown): void {
+        // noop
+    }
 }
