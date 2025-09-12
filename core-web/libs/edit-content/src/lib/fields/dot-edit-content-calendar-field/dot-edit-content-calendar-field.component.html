@@ -7,8 +7,6 @@
 
 @let showTimezoneInfo = $showTimezoneInfo();
 
-<input type="hidden" [formControl]="formControl" />
-
 <dot-card-field [hasError]="hasError">
     <dot-card-field-label [for]="field.variable" [isRequired]="isRequired" [for]="field.variable">
         {{ field.name }}

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { CalendarModule } from 'primeng/calendar';
@@ -64,7 +64,7 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     styleUrls: ['./dot-edit-content-calendar-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentCalendarFieldComponent extends BaseFieldComponent {
+export class DotEditContentCalendarFieldComponent extends BaseFieldComponent implements OnInit {
     /**
      * The field configuration (required).
      * Determines the type of calendar field (date, time, datetime).
@@ -88,6 +88,9 @@ export class DotEditContentCalendarFieldComponent extends BaseFieldComponent {
     // Store last value to reprocess when timezone becomes available
     private lastUtcValue: number | null = null;
 
+    /**
+     * The internal form control for the calendar field.
+     */
     internalFormControl = new FormControl<Date | null>(null);
 
     constructor() {
@@ -106,6 +109,12 @@ export class DotEditContentCalendarFieldComponent extends BaseFieldComponent {
                 );
                 this.internalFormControl.setValue(displayValue);
             }
+        });
+    }
+
+    ngOnInit() {
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
         });
     }
 

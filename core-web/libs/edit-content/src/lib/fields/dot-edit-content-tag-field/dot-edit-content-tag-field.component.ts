@@ -3,29 +3,29 @@ import { BehaviorSubject, EMPTY } from 'rxjs';
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
-    forwardRef,
     inject,
     input,
     model,
     signal,
-    viewChild
+    viewChild,
+    OnInit
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-    ControlValueAccessor,
-    FormsModule,
-    NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
 import { catchError, skip, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 export const AUTO_COMPLETE_MIN_LENGTH = 2;
 
@@ -40,20 +40,21 @@ export const AUTO_COMPLETE_UNIQUE = true;
  */
 @Component({
     selector: 'dot-edit-content-tag-field',
-    imports: [AutoCompleteModule, FormsModule, ReactiveFormsModule],
+    imports: [
+        AutoCompleteModule,
+        FormsModule,
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldLabelComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-edit-content-tag-field.component.html',
     styleUrl: './dot-edit-content-tag-field.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentTagFieldComponent),
-            multi: true
-        }
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentTagFieldComponent implements ControlValueAccessor {
-    #destroyRef = inject(DestroyRef);
+export class DotEditContentTagFieldComponent extends BaseFieldComponent implements OnInit {
     #editContentService = inject(DotEditContentService);
 
     protected readonly AUTO_COMPLETE_MIN_LENGTH = AUTO_COMPLETE_MIN_LENGTH;
@@ -92,16 +93,15 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
      */
     #searchTerms$ = new BehaviorSubject<string>('');
 
-    // ControlValueAccessor callbacks
-    private onChange: (value: string) => void = () => {
-        // Callback will be set by registerOnChange
-    };
-    private onTouched: () => void = () => {
-        // Callback will be set by registerOnTouched
-    };
-
     constructor() {
+        super();
         this.setupSearchListener();
+    }
+
+    ngOnInit() {
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
+        });
     }
 
     /**
@@ -112,7 +112,7 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
             .pipe(
                 skip(1),
                 switchMap((term) => this.searchTags(term)),
-                takeUntilDestroyed(this.#destroyRef)
+                takeUntilDestroyed(this.destroyRef)
             )
             .subscribe({
                 next: (tags) => this.$suggestions.set(tags),
@@ -217,20 +217,6 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
         }
 
         this.$values.set(tagsArray);
-    }
-
-    /**
-     * Registers the callback for when the control's value changes
-     */
-    registerOnChange(fn: (value: string) => void): void {
-        this.onChange = fn;
-    }
-
-    /**
-     * Registers the callback for when the control is touched
-     */
-    registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
     }
 
     /**

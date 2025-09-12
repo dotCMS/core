@@ -1,5 +1,14 @@
-import { computed, inject } from '@angular/core';
-import { NgControl, ControlValueAccessor, FormControl, Validators } from '@angular/forms';
+import { ChangeDetectorRef, computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    NgControl,
+    ControlValueAccessor,
+    FormControl,
+    Validators,
+    TouchedChangeEvent
+} from '@angular/forms';
+
+import { filter } from 'rxjs/operators';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -10,7 +19,9 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
  * Note: Child components must define the $field input property.
  */
 export abstract class BaseFieldComponent implements ControlValueAccessor {
-    ngControl = inject(NgControl, { self: true, optional: true });
+    protected ngControl = inject(NgControl, { self: true, optional: true });
+    protected changeDetectorRef = inject(ChangeDetectorRef);
+    protected destroyRef = inject(DestroyRef);
 
     $showLabel = computed(() => {
         const field = this.$field();
@@ -24,6 +35,7 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
             this.ngControl.valueAccessor = this;
         }
     }
+
     /**
      * Abstract property that child components must implement
      * This should be the $field input property
@@ -80,5 +92,12 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
 
     get formControl(): FormControl {
         return this.ngControl.control as FormControl;
+    }
+
+    get statusChanges$() {
+        return this.formControl.events.pipe(
+            takeUntilDestroyed(this.destroyRef),
+            filter((event) => event instanceof TouchedChangeEvent)
+        );
     }
 }

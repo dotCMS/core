@@ -2,6 +2,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     computed,
     DestroyRef,
@@ -174,6 +175,8 @@ export class DotEditContentFormComponent implements OnInit {
      */
     $tabs = this.$store.tabs;
 
+    changeDetectorRef = inject(ChangeDetectorRef);
+
     /**
      * The system timezone.
      */
@@ -264,6 +267,7 @@ export class DotEditContentFormComponent implements OnInit {
     }: DotWorkflowActionParams): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
+            this.changeDetectorRef.detectChanges();
             requestAnimationFrame(() => {
                 this.scrollToFirstError();
             });
