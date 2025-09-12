@@ -26,9 +26,9 @@ import { DotEditContentService } from '../../../services/dot-edit-content.servic
 import { EditContentState } from '../../edit-content.store';
 
 /**
- * Default number of items per page for versions pagination
+ * Default number of items per page for versions pagination. Need 40 so scroll works correctly in large viewports.
  */
-const DEFAULT_VERSIONS_PER_PAGE = 20;
+const DEFAULT_VERSIONS_PER_PAGE = 40;
 
 /**
  * Feature store for managing content versions state
