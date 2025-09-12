@@ -16,13 +16,11 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -273,29 +271,6 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
        return isDeleted();
 	}
-
-
-	/**
-	 * Returns the live.
-	 * @return boolean
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
-	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
-	    return APILocator.getVersionableAPI().isLive(this);
-	}
-
-	/**
-	 * Returns the locked.
-	 * @return boolean
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
-	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-       return APILocator.getVersionableAPI().isLocked(this);
-   }
 
 	public String getType(){
 		return "file_asset";

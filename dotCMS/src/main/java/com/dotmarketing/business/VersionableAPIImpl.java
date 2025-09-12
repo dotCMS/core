@@ -1,23 +1,14 @@
 
 package com.dotmarketing.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.concurrent.Debouncer;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -27,22 +18,15 @@ import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-
 import io.vavr.control.Try;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import org.apache.commons.beanutils.BeanUtils;
 
 public class VersionableAPIImpl implements VersionableAPI {
@@ -323,8 +307,6 @@ public class VersionableAPIImpl implements VersionableAPI {
                     contentlet.getVariantId());
         }
 
-        if(info.isEmpty())
-            throw new DotStateException("No version info. Call setWorking first "+identifier.getId());
         return info;
     }
 
@@ -344,7 +326,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             final Contentlet contentlet = (Contentlet)versionable;
             final Optional<ContentletVersionInfo> info = getContentletVersionInfo(identifier, contentlet);
 
-            return info.get().isLocked();
+          return info.isPresent() && info.get().isLocked();
         } else {
             final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
             if(!UtilMethods.isSet(info.getIdentifier()))
