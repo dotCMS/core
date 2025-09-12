@@ -349,6 +349,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws Exception if an error occurs during portlet registration
      */
     protected Collection<Portlet> registerPortlets(BundleContext context, String[] xmls) throws Exception {
+
         for (String xml : xmls) {
             try (InputStream input = new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xml)).getBytes(StandardCharsets.UTF_8))) {
                 portlets.putAll(PortletManagerUtil.addPortlets(new InputStream[]{input}));
@@ -561,10 +562,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void registerActionlet (final BundleContext context, final WorkFlowActionlet actionlet) {
 
+       forceWorkflowServiceLoading(context);
         //Getting the service to register our Actionlet
         final ServiceReference<?> serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
         if (serviceRefSelected == null) {
-            return;
+
+            throw new DotRuntimeException("Unable to get WorkflowAPIOsgiService service reference");
         }
 
         OSGIUtil.getInstance().setWorkflowOsgiService((WorkflowAPIOsgiService) context.getService(serviceRefSelected));
@@ -579,7 +582,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * Register a Rules Engine RuleActionlet service
      */
     protected void registerRuleActionlet(BundleContext context, RuleActionlet<?> actionlet) {
-
+         forceRuleConditionletServiceLoading(context);
         //Getting the service to register our Actionlet
         ServiceReference<?> serviceRefSelected = context.getServiceReference(RuleActionletOSGIService.class.getName());
         if(serviceRefSelected == null) {
@@ -600,7 +603,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param conditionlet
      */
     protected void registerRuleConditionlet ( BundleContext context, Conditionlet<?> conditionlet) {
-
+       forceRuleConditionletServiceLoading(context);
         //Getting the service to register our Conditionlet
         ServiceReference<?> serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
         if ( serviceRefSelected == null ) {
@@ -697,6 +700,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void registerCacheProvider ( BundleContext context, String cacheRegion, Class<CacheProvider> provider ) throws Exception {
 
+       forceCacheProviderServiceLoading(context);
         //Getting the service to register our Cache provider implementation
         ServiceReference<?> serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
         if ( serviceRefSelected == null ) {
@@ -717,7 +721,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param info
      */
     protected void registerViewToolService ( BundleContext context, ToolInfo info ) {
-
+         forceToolBoxLoading(context);
         //Getting the service to register our ViewTool
         ServiceReference<?> serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
         if ( serviceRefSelected == null ) {
