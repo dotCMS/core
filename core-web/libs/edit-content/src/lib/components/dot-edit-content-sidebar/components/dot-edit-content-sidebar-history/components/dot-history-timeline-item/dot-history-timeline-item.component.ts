@@ -103,7 +103,7 @@ export class DotHistoryTimelineItemComponent {
         const item = this.$item();
         const isCurrentItem = this.$isCurrentItem();
 
-        const allActions = [
+        return [
             // { // TODO: enable them as is implemented.
             //     label: labels.preview,
             //     disabled: true,
@@ -141,20 +141,6 @@ export class DotHistoryTimelineItemComponent {
                     })
             }
         ];
-
-        return allActions;
-    });
-
-    /**
-     * Computed signal that determines the display text for the time section
-     * Shows "Current" for the current item, relative date for others
-     */
-    readonly $timeDisplayText = computed(() => {
-        const isCurrentItem = this.$isCurrentItem();
-
-        return isCurrentItem
-            ? this.dotMessageService.get('edit.content.sidebar.history.menu.current')
-            : null; // null means use the pipe in template
     });
 
     /**
