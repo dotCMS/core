@@ -4,10 +4,10 @@
     "required": true,
 
     "allowed_attributes": {
-      "site_key": {
+      "site_auth": {
         "type": "string",
         "required": true,
-        "custom-validator": "SiteKeyValidator"
+        "custom-validator": "SiteAuthValidator"
       },
       "session_id": {
         "type": "string",

@@ -32,7 +32,7 @@ describe('initializeContentAnalytics', () => {
     const mockConfig: DotCMSAnalyticsConfig = {
         debug: false,
         server: 'https://test.com',
-        siteKey: 'test-site-key',
+        siteAuth: 'test-site-key',
         autoPageView: false
     };
 
@@ -98,15 +98,15 @@ describe('initializeContentAnalytics', () => {
         expect(mockAddEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function));
     });
 
-    it('should return null when siteKey is missing', () => {
+    it('should return null when siteAuth is missing', () => {
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        const configWithoutSiteKey = { ...mockConfig, siteKey: '' };
+        const configWithoutSiteKey = { ...mockConfig, siteAuth: '' };
 
         const analytics = initializeContentAnalytics(configWithoutSiteKey);
 
         expect(analytics).toBeNull();
         expect(consoleSpy).toHaveBeenCalledWith(
-            'DotContentAnalytics: Missing "siteKey" in configuration'
+            'DotContentAnalytics: Missing "siteAuth" in configuration'
         );
 
         consoleSpy.mockRestore();

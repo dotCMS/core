@@ -194,7 +194,7 @@ export const getAnalyticsContext = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
     }
 
     return {
-        site_key: config.siteKey,
+        site_auth: config.siteAuth,
         session_id: sessionId,
         user_id: userId
     };
@@ -226,7 +226,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
             server: script.getAttribute('data-analytics-server') || window.location.origin,
             debug: script.getAttribute('data-analytics-debug') === 'true',
             autoPageView: script.getAttribute('data-analytics-auto-page-view') === 'true',
-            siteKey: script.getAttribute('data-analytics-auth') || ''
+            siteAuth: script.getAttribute('data-analytics-auth') || ''
         };
     }
 
@@ -235,7 +235,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
         server: window.location.origin,
         debug: false,
         autoPageView: false,
-        siteKey: ''
+        siteAuth: ''
     };
 };
 

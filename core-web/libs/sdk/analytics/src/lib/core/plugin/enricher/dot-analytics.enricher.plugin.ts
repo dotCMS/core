@@ -5,7 +5,7 @@ import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-conte
 /**
  * Plugin that enriches the analytics payload data based on the event type.
  * Uses Analytics.js lifecycle events to inject context before processing.
- * The identity plugin runs FIRST to inject context: { session_id, site_key, user_id }
+ * The identity plugin runs FIRST to inject context: { session_id, site_auth, user_id }
  * This enricher plugin runs SECOND to add page/device/utm data.
  *
  * OPTIMIZED: Uses existing payload.properties data to avoid duplication

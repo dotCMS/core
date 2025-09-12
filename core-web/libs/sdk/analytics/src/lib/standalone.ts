@@ -14,11 +14,11 @@ declare global {
     const config = getAnalyticsConfig();
 
     // Check if critical attribute is missing (server is auto-detected)
-    if (!config.siteKey) {
-        // Don't initialize if siteKey is missing
+    if (!config.siteAuth) {
+        // Don't initialize if siteAuth is missing
         // eslint-disable-next-line no-console
         console.warn(
-            'DotAnalytics: Cannot initialize without required configuration: missing data-site-key'
+            'DotAnalytics: Cannot initialize without required configuration: missing data-analytics-auth'
         );
         window[ANALYTICS_WINDOWS_KEY] = null;
         return;

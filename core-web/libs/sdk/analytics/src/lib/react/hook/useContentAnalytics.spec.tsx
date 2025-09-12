@@ -25,7 +25,7 @@ const mockPageView = jest.fn();
 
 const mockConfig = {
     server: 'https://example.com',
-    siteKey: 'test-site-key',
+    siteAuth: 'test-site-key',
     debug: false
 };
 

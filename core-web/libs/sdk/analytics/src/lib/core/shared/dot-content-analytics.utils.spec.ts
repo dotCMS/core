@@ -60,7 +60,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -74,7 +74,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: true,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -88,7 +88,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: true,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -104,7 +104,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: true,
                 autoPageView: true,
-                siteKey: 'custom-site-key'
+                siteAuth: 'custom-site-key'
             });
         });
 
@@ -124,7 +124,7 @@ describe('Analytics Utils', () => {
                 server: window.location.origin,
                 debug: false,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
 
@@ -138,7 +138,7 @@ describe('Analytics Utils', () => {
                 server: window.location.origin,
                 debug: false,
                 autoPageView: false,
-                siteKey: ''
+                siteAuth: ''
             });
         });
 
@@ -159,7 +159,7 @@ describe('Analytics Utils', () => {
                 server: window.location.origin,
                 debug: false,
                 autoPageView: false,
-                siteKey: ''
+                siteAuth: ''
             });
         });
 
@@ -174,7 +174,7 @@ describe('Analytics Utils', () => {
                 server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: false,
-                siteKey: 'test-key'
+                siteAuth: 'test-key'
             });
         });
     });
@@ -703,12 +703,12 @@ describe('Analytics Utils', () => {
             };
             mockSessionStorage.getItem.mockReturnValue(JSON.stringify(sessionData));
 
-            const config = { siteKey: 'test-site', debug: false } as any;
+            const config = { siteAuth: 'test-site', debug: false } as any;
 
             const result = getAnalyticsContext(config);
 
             expect(result).toEqual({
-                site_key: 'test-site',
+                site_auth: 'test-site',
                 session_id: 'session_67890',
                 user_id: 'user_12345'
             });
