@@ -275,7 +275,7 @@ describe('DotContentletService', () => {
                 done();
             });
 
-        const req = httpMock.expectOne('/api/v1/contenttype?type=contentType&per_page=200');
+        const req = httpMock.expectOne('/api/v1/contenttype?per_page=200&type=contentType');
         expect(req.request.method).toBe('GET');
 
         req.flush({ entity: [contenttypeA, contentTypeB] });
@@ -307,7 +307,7 @@ describe('DotContentletService', () => {
             });
 
         const req = httpMock.expectOne(
-            '/api/v1/contenttype?type=contentType&type=contentTypeB&per_page=200'
+            '/api/v1/contenttype?per_page=200&type=contentType&type=contentTypeB'
         );
         expect(req.request.method).toBe('GET');
 
