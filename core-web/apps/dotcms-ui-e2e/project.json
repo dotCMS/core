@@ -14,7 +14,27 @@
             "configurations": {
                 "ci": {
                     "headed": false,
-                    "ui": false
+                    "ui": false,
+                    "env": {
+                        "CURRENT_ENV": "ci",
+                        "HEADLESS": "true"
+                    }
+                },
+                "dev": {
+                    "headed": false,
+                    "ui": false,
+                    "env": {
+                        "CURRENT_ENV": "dev",
+                        "HEADLESS": "false"
+                    }
+                },
+                "local": {
+                    "headed": false,
+                    "ui": false,
+                    "env": {
+                        "CURRENT_ENV": "local",
+                        "HEADLESS": "false"
+                    }
                 },
                 "headless": {
                     "headed": false
@@ -27,6 +47,30 @@
         "lint": {
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
+        },
+        "e2e:ci": {
+            "executor": "@nx/playwright:playwright",
+            "options": {
+                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
+                "headed": false,
+                "ui": false
+            }
+        },
+        "e2e:dev": {
+            "executor": "@nx/playwright:playwright",
+            "options": {
+                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
+                "headed": false,
+                "ui": false
+            }
+        },
+        "e2e:dev:headless": {
+            "executor": "@nx/playwright:playwright",
+            "options": {
+                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
+                "headed": false,
+                "ui": false
+            }
         }
     }
 }
