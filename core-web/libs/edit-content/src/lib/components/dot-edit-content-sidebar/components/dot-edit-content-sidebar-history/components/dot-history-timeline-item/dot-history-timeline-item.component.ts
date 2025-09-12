@@ -133,7 +133,7 @@ export class DotHistoryTimelineItemComponent {
             // },
             {
                 label: labels.delete,
-                visible: !isCurrentItem, // Hide the delete button for the current version
+                disabled: isCurrentItem, // disable the delete button for the current version
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,

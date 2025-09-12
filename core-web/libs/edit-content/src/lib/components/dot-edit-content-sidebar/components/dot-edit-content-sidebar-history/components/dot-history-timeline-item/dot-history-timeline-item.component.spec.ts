@@ -156,7 +156,7 @@ describe('DotHistoryTimelineItemComponent', () => {
         it('should hide delete action for current item', () => {
             // Default itemIndex is 0 (current item)
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems[0].visible).toBe(false); // Delete should be hidden for current item
+            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for current item
         });
 
         it('should show delete action for non-current items', () => {
@@ -165,7 +165,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.detectChanges(); // Trigger change detection
 
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems[0].visible).toBe(true); // Delete should be visible for non-current items
+            expect(menuItems[0].disabled).toBe(false); // Delete should be enabled for non-current items
         });
     });
 
@@ -193,7 +193,7 @@ describe('DotHistoryTimelineItemComponent', () => {
 
             expect(menuItems).toHaveLength(1);
             expect(menuItems[0].label).toBe('Delete');
-            expect(menuItems[0].visible).toBe(false); // Current item should hide delete
+            expect(menuItems[0].disabled).toBe(true); // Current item should have delete disabled
         });
 
         it('should compute menu items with correct actions for non-current item', () => {
@@ -205,7 +205,7 @@ describe('DotHistoryTimelineItemComponent', () => {
 
             expect(menuItems).toHaveLength(1);
             expect(menuItems[0].label).toBe('Delete');
-            expect(menuItems[0].visible).toBe(true); // Non-current item should show delete
+            expect(menuItems[0].disabled).toBe(false); // Non-current item should have delete enabled
         });
 
         it('should determine if item is current based on itemIndex', () => {
