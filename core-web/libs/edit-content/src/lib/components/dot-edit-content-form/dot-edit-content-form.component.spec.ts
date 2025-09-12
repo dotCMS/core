@@ -58,7 +58,6 @@ import {
     MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
 import { generatePreviewUrl } from '../../utils/functions.util';
-import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
@@ -147,8 +146,6 @@ describe('DotFormComponent', () => {
     });
 
     beforeEach(() => {
-        window.ResizeObserver = MockResizeObserver;
-
         spectator = createComponent({ detectChanges: false });
         component = spectator.component;
         store = spectator.inject(DotEditContentStore);

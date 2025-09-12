@@ -44,8 +44,8 @@ describe('DotConvertToBlockInfoComponent', () => {
         const infoContent = de.query(By.css('[data-testId="infoContent"]')).nativeElement;
         const learnMore = de.query(By.css('[data-testId="learnMore"]')).nativeElement;
 
-        expect(infoContent.innerText).toBe('Info Content');
-        expect(learnMore.innerText).toBe('Learn More');
+        expect(infoContent.textContent?.trim()).toBe('Info Content');
+        expect(learnMore.textContent?.trim()).toBe('Learn More');
     });
     it('should render info and info button', () => {
         component.currentField = {
@@ -57,7 +57,7 @@ describe('DotConvertToBlockInfoComponent', () => {
         const infoContent = de.query(By.css('[data-testId="infoContent"]')).nativeElement;
         const button = de.query(By.css('[data-testId="button"]')).nativeElement;
 
-        expect(infoContent.innerText).toBe('Info Content');
-        expect(button.innerText).toBe('Info Button');
+        expect(infoContent.textContent?.trim()).toBe('Info Content');
+        expect(button.textContent?.trim()).toBe('Info Button');
     });
 });

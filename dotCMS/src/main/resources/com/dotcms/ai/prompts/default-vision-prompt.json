@@ -1,0 +1,21 @@
+{
+"model": "${visionModel}",
+ "messages": [
+   {
+     "role": "user",
+     "content": [
+       {
+         "type": "text",
+         "text": "Generate appropriate alt text and keywords that describe this image.  Return your response as a valid json object with the properties `altText` and `tags` where `tags` is an array of the keywords"
+       },
+       {
+         "type": "image_url",
+         "image_url": {
+           "url": "data:image/webp;base64,${base64Image}"
+         }
+       }
+     ]
+   }
+ ],
+ "max_tokens": ${maxTokens}
+}

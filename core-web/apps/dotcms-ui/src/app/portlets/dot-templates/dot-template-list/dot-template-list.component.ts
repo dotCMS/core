@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, pluck, take, takeUntil } from 'rxjs/operators';
+import { pluck, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -15,7 +15,7 @@ import {
     DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
     DotActionMenuItem,
@@ -73,32 +73,9 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             });
         this.setAddOptions();
 
-        /**
-         * When the portlet reload (from the browser reload button), the site service emits
-         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
-         * an unwanted reload.
-         *
-         * This extra work in the filter is to prevent that extra reload.
-         *
-         */
-        let currentHost = this.dotSiteService.currentSite?.hostname || null;
-
-        this.dotSiteService.switchSite$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((site: Site) => {
-                    if (currentHost === null) {
-                        currentHost = site?.hostname;
-
-                        return false;
-                    }
-
-                    return true;
-                })
-            )
-            .subscribe(() => {
-                this.dotRouterService.gotoPortlet('templates');
-            });
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.dotRouterService.gotoPortlet('templates');
+        });
     }
 
     ngOnDestroy(): void {

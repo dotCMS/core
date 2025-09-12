@@ -3,7 +3,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
 
-import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
+import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
 
 import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
@@ -47,7 +47,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
          *  skip first - to avoid subscription when page loads due login user subscription:
          *  https://github.com/dotCMS/core-web/blob/main/projects/dotcms-js/src/lib/core/site.service.ts#L58
          */
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             if (this.url.getValue() !== '') {
                 this.reloadIframePortlet();
             }

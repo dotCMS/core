@@ -86,8 +86,8 @@ xdescribe('ActionHeaderComponent', () => {
     });
 
     it('should trigger the methods in the action buttons', () => {
-        const primarySpy = jasmine.createSpy('spy');
-        const secondarySpy = jasmine.createSpy('spy2');
+        const primarySpy = jest.fn();
+        const secondarySpy = jest.fn();
         const options = {
             secondary: [
                 {

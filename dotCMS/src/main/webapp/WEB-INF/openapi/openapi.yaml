@@ -6242,7 +6242,7 @@ paths:
         in: query
         name: type
         schema:
-          type: string
+          type: array
           enum:
           - ANY
           - CONTENT
@@ -6254,6 +6254,20 @@ paths:
           - VANITY_URL
           - KEY_VALUE
           - DOTASSET
+          items:
+            type: string
+            enum:
+            - ANY
+            - CONTENT
+            - WIDGET
+            - FORM
+            - FILEASSET
+            - HTMLPAGE
+            - PERSONA
+            - VANITY_URL
+            - KEY_VALUE
+            - DOTASSET
+        style: form
       - description: Filter by site identifier.
         in: query
         name: host
@@ -16949,26 +16963,86 @@ paths:
       - Internationalization
   /v2/tags:
     get:
+      description: "Searches and lists tags with filtering, pagination, and sorting.\
+        \ The filter parameter performs a case-insensitive search with wildcards on\
+        \ both sides (e.g., \"market\" matches \"Marketing\", \"marketplace\", \"\
+        supermarket\"). When using the filter, results are ordered by match length\
+        \ (shortest first) to prioritize exact matches. The site parameter accepts\
+        \ either a site ID or site name for filtering by specific sites."
       operationId: list_14
       parameters:
-      - in: query
-        name: name
+      - description: Tag name filter (LIKE search)
+        example: market
+        in: query
+        name: filter
         schema:
           type: string
-      - in: query
-        name: siteId
+      - description: Include system/global tags
+        example: true
+        in: query
+        name: global
+        schema:
+          type: boolean
+          default: false
+      - description: "Filter by site (ID, name, or SYSTEM_HOST)"
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: query
+        name: site
         schema:
           type: string
+      - description: Page number
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Items per page
+        example: 25
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+      - description: Sort field
+        example: tagname
+        in: query
+        name: orderBy
+        schema:
+          type: string
+          default: tagname
+      - description: Sort direction
+        example: ASC
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Tags retrieved successfully with pagination metadata
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - Insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error
+      summary: List/Search Tags
       tags:
       - Tags
     post:
@@ -17012,19 +17086,40 @@ paths:
       - Tags
   /v2/tags/import:
     post:
+      description: Imports tags from a CSV file with row-level error reporting. Returns
+        detailed statistics and error information for each failed row.
       operationId: importTags_1
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: "CSV file with tag data in format: tag_name,host_id"
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityTagOperationView"
+          description: Import completed with detailed results
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid file format or content
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Import tags from CSV file
       tags:
       - Tags
   /v2/tags/inode/{inode}:
@@ -23721,6 +23816,31 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityTagOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:

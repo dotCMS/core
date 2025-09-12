@@ -2,7 +2,7 @@ import { Observable, Subject, merge, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, pluck, skip, startWith, switchMap, take, tap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -26,7 +26,7 @@ export class SiteService {
     private loggerService = inject(LoggerService);
 
     private selectedSite: Site;
-    private urls: any;
+    private urls: { currentSiteUrl: string; sitesUrl: string; switchSiteUrl: string };
     private events: string[] = [
         'SAVE_SITE',
         'PUBLISH_SITE',
@@ -35,7 +35,8 @@ export class SiteService {
         'UPDATE_SITE',
         'ARCHIVE_SITE'
     ];
-    private _switchSite$: Subject<Site> = new Subject<Site>();
+
+    private _currentSite$: Subject<Site> = new Subject<Site>();
     private _refreshSites$: Subject<Site> = new Subject<Site>();
 
     constructor() {
@@ -103,12 +104,34 @@ export class SiteService {
     }
 
     /**
-     * Observable tigger when the current site is changed
+     * Returns an Observable that immediately emits the current selected site upon subscription,
+     * then emits whenever the site changes.
+     *
+     * This Observable will always emit at least one value (the current site) as soon as you subscribe,
+     * making it ideal for components that need the current site data immediately.
+     *
+     * @readonly
+     * @memberof SiteService
+     */
+    get currentSite$(): Observable<Site> {
+        return this._currentSite$.asObservable().pipe(startWith(this.selectedSite));
+    }
+
+    /**
+     * Returns an Observable that only emits when the site selector changes after you're already subscribed.
+     *
+     * This Observable will NOT emit the current site immediately upon subscription. It will only emit
+     * when a site switch occurs after the subscription is active. The first emission from the internal
+     * subject is skipped, so you only get notifications of actual site changes.
+     *
+     * Use this when you want to react to site changes but don't need the current site value immediately.
+     * If you need the current site right away, use `currentSite$` instead.
+     *
      * @readonly
      * @memberof SiteService
      */
     get switchSite$(): Observable<Site> {
-        return this._switchSite$.asObservable();
+        return this.currentSite$.pipe(skip(1));
     }
 
     /**
@@ -203,7 +226,7 @@ export class SiteService {
     getCurrentSite(): Observable<Site> {
         return merge(
             this.selectedSite ? of(this.selectedSite) : this.requestCurrentSite(),
-            this.switchSite$
+            this.switchSite$.pipe(filter((site) => !!site))
         );
     }
 
@@ -217,12 +240,15 @@ export class SiteService {
 
     private setCurrentSite(site: Site): void {
         this.selectedSite = site;
-        this._switchSite$.next({ ...site });
+        this._currentSite$.next({ ...site });
     }
 
     private loadCurrentSite(): void {
         this.getCurrentSite()
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                filter((site) => !!site)
+            )
             .subscribe((currentSite: Site) => {
                 this.setCurrentSite(currentSite);
             });

@@ -14,7 +14,7 @@
 
     ::ng-deep {
         .tabview-append-content {
-            min-height: 52px;
+            min-height: 50px;
             border-left: 1px solid $color-palette-black-op-10;
             display: flex;
             align-items: center;
@@ -33,8 +33,13 @@
 
         .p-tabview-nav-content .p-tabview-nav {
             border: none;
-            min-height: 52px;
+            min-height: 50px;
+            max-height: 52px;
             min-width: auto;
+        }
+
+        .p-tabview-nav-content .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+            border-top: 2px solid transparent;
         }
 
         .p-tabview-nav-content {

@@ -189,7 +189,7 @@ describe('DotNewRelationshipsComponent', () => {
         comp = de.componentInstance;
 
         paginatorService = de.injector.get(PaginatorService);
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([contentTypeMock]));
     }));
 
     describe('Content Types', () => {
@@ -231,6 +231,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             expect(paginatorService.filter).toBe(newFilter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 
@@ -250,6 +251,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             expect(paginatorService.filter).toBe(event.filter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 
@@ -288,7 +290,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             it('should load content type, and emit change event with the right variableValue', (done) => {
                 const contentTypeService = de.injector.get(DotContentTypeService);
-                spyOn(contentTypeService, 'getContentType').and.callThrough();
+                jest.spyOn(contentTypeService, 'getContentType');
 
                 fixtureHostComponent.detectChanges();
 
