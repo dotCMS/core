@@ -44,9 +44,11 @@ public enum PortletID {
     WEB_EVENT_REGISTRATIONS,
     WEB_FORMS,
     WORKFLOW, 
-    WORKFLOW_SCHEMES;
+    WORKFLOW_SCHEMES,
+    LOCALES,
+    ANALYTICS_DASHBOARD;
 
-    private String url;
+    private final String url;
 
     private PortletID(){
         url = this.name().toLowerCase().replace("_", "-");
@@ -60,4 +62,5 @@ public enum PortletID {
     public String toString() {
         return url;
     }
+
 }
