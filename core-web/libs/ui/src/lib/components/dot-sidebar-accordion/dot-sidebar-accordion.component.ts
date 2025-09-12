@@ -67,8 +67,7 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
                     height: '0',
                     opacity: '0',
                     visibility: 'hidden',
-                    transform: 'translate3d(0, -4px, 0)', // GPU acceleration
-                    willChange: 'height, opacity, transform'
+                    transform: 'translate3d(0, -4px, 0)' // GPU acceleration
                 })
             ),
             state(
@@ -77,8 +76,7 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
                     height: '*',
                     opacity: '1',
                     visibility: 'visible',
-                    transform: 'translate3d(0, 0, 0)', // GPU acceleration
-                    willChange: 'auto'
+                    transform: 'translate3d(0, 0, 0)' // GPU acceleration
                 })
             ),
             // Optimized transitions with different timing for smooth feel

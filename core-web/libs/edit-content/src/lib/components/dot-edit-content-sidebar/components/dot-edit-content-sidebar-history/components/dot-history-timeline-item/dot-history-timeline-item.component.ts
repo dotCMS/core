@@ -15,6 +15,7 @@ import { ChipModule } from 'primeng/chip';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
 import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
@@ -48,20 +49,33 @@ import {
         DotMessagePipe,
         DotRelativeDatePipe
     ],
-    providers: [DatePipe, DotMessagePipe],
+    providers: [DatePipe],
     templateUrl: './dot-history-timeline-item.component.html',
     styleUrls: ['./dot-history-timeline-item.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotHistoryTimelineItemComponent {
     private readonly datePipe = inject(DatePipe);
-    private readonly dotMessagePipe = inject(DotMessagePipe);
+    private readonly dotMessageService = inject(DotMessageService);
 
     /**
      * The version item to display
      * @readonly
      */
     $item = input.required<DotCMSContentletVersion>({ alias: 'item' });
+
+    /**
+     * The index of this item in the timeline (0-based)
+     * Used to determine which actions are available
+     * @readonly
+     */
+    $itemIndex = input<number>(0, { alias: 'itemIndex' });
+
+    /**
+     * Computed signal that determines if this is the current (most recent) item
+     * Based on itemIndex being 0 (first item in the timeline)
+     */
+    readonly $isCurrentItem = computed(() => this.$itemIndex() === 0);
 
     /**
      * Event emitted when an action is triggered on the timeline item
@@ -73,19 +87,21 @@ export class DotHistoryTimelineItemComponent {
      * Contains static translations for menu labels
      */
     private readonly $labels = signal({
-        preview: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.preview'),
-        restore: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.restore'),
-        compare: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.compare'),
-        delete: this.dotMessagePipe.transform('edit.content.sidebar.history.menu.delete')
+        preview: this.dotMessageService.get('edit.content.sidebar.history.menu.preview'),
+        restore: this.dotMessageService.get('edit.content.sidebar.history.menu.restore'),
+        compare: this.dotMessageService.get('edit.content.sidebar.history.menu.compare'),
+        delete: this.dotMessageService.get('edit.content.sidebar.history.menu.delete')
     });
 
     /**
      * Computed signal that generates menu items for version actions
      * Uses reactive approach with computed signal for better performance
+     * Filters actions based on item position and business rules
      */
     readonly $menuItems = computed(() => {
         const labels = this.$labels();
         const item = this.$item();
+        const isCurrentItem = this.$isCurrentItem();
 
         return [
             // { // TODO: enable them as is implemented.
@@ -99,7 +115,7 @@ export class DotHistoryTimelineItemComponent {
             // },
             // {
             //     label: labels.restore,
-            //     disabled: true,
+            //     visible: !isCurrentItem, // Hide restore for the current version
             //     command: () =>
             //         this.actionTriggered.emit({
             //             type: DotHistoryTimelineItemActionType.RESTORE,
@@ -117,7 +133,7 @@ export class DotHistoryTimelineItemComponent {
             // },
             {
                 label: labels.delete,
-                disabled: true,
+                disabled: isCurrentItem, // disable the delete button for the current version
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,
