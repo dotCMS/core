@@ -196,7 +196,7 @@ describe('DotContentTypesPortletComponent', () => {
             DotPushPublishDialogService
         );
 
-        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
+        jest.spyOn(dotContentletService, 'getAllContentTypes').mockReturnValue(
             of([
                 { name: 'CONTENT', label: 'Content', types: [] },
                 { name: 'WIDGET', label: 'Widget', types: [] },
@@ -254,16 +254,17 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        spyOn(crudService, 'delete').and.returnValue(of(mockContentType));
+        jest.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
 
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
+        expect(crudService.delete).toHaveBeenCalledTimes(1);
     });
 
     it('should have remove, push publish, Copy and Add to bundle actions to the list item', () => {
@@ -279,7 +280,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
         fixture.detectChanges();
         expect(
@@ -298,7 +299,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
-        spyOn(pushPublishService, 'getEnvironments').and.returnValue(of([]));
+        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         fixture.detectChanges();
 
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
@@ -311,7 +312,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should open push publish dialog', () => {
         fixture.detectChanges();
-        spyOn(dotPushPublishDialogService, 'open').and.callThrough();
+        jest.spyOn(dotPushPublishDialogService, 'open');
         const mockContentType: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -400,10 +401,11 @@ describe('DotContentTypesPortletComponent', () => {
     it('should emit changes in base types selector', () => {
         fixture.detectChanges();
         baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
-        spyOn(comp, 'changeBaseTypeSelector');
+        jest.spyOn(comp, 'changeBaseTypeSelector');
         baseTypesSelector.selected.emit('test');
 
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
+        expect(comp.changeBaseTypeSelector).toHaveBeenCalledTimes(1);
     });
 
     it('should handle error if is not possible delete the content type', () => {
@@ -433,12 +435,12 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(crudService, 'delete').and.returnValue(observableThrowError(forbiddenError));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();

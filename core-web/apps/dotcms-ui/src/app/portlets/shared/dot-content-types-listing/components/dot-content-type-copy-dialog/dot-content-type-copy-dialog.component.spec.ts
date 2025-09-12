@@ -136,11 +136,12 @@ describe('DotContentTypeCloneDialogComponent', () => {
         fixture.detectChanges();
 
         expect(component.form.valid).toEqual(true);
-        spyOn(component.validFormFields, 'emit');
+        jest.spyOn(component.validFormFields, 'emit');
 
         acceptButton.nativeElement.click();
 
         expect(component.validFormFields.emit).toHaveBeenCalledWith(formValues);
+        expect(component.validFormFields.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should call cancelBtn() on cancel button click', () => {
@@ -149,7 +150,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         );
 
         expect(cancelButton).toBeDefined();
-        spyOn(component, 'closeDialog');
+        jest.spyOn(component, 'closeDialog');
         cancelButton.nativeElement.click();
 
         expect(component.closeDialog).toHaveBeenCalledTimes(1);
@@ -168,7 +169,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         fixture.detectChanges();
 
         expect(component.form.valid).toEqual(true);
-        spyOn(component, 'submitForm');
+        jest.spyOn(component, 'submitForm');
 
         acceptButton.nativeElement.click();
 
@@ -182,7 +183,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         expect(copyButton).toBeDefined();
 
         expect(component.form.valid).toEqual(false);
-        spyOn(component, 'submitForm');
+        jest.spyOn(component, 'submitForm');
 
         fixture.detectChanges();
         copyButton.nativeElement.click();

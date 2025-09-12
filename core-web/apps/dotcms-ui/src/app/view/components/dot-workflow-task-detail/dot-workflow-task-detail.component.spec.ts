@@ -70,10 +70,10 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 id: '123'
             });
 
-            spyOn(component, 'onClose').and.callThrough();
-            spyOn(dotWorkflowTaskDetailService, 'clear');
-            spyOn(component.shutdown, 'emit');
-            spyOn(component.custom, 'emit');
+            jest.spyOn(component, 'onClose');
+            jest.spyOn(dotWorkflowTaskDetailService, 'clear');
+            jest.spyOn(component.shutdown, 'emit');
+            jest.spyOn(component.custom, 'emit');
             fixture.detectChanges();
         });
 
@@ -109,6 +109,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
                 dotIframeDialog.triggerEventHandler('custom', customEvent);
                 expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
+                expect(component.custom.emit).toHaveBeenCalledTimes(1);
             });
         });
     });

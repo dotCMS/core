@@ -27,7 +27,11 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
+import {
+    DEBOUNCE_TIME,
+    MAP_NUMBERS_TO_BASE_TYPES,
+    PANEL_SCROLL_HEIGHT
+} from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
@@ -60,8 +64,28 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     });
 
     readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
+
+    // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
+    // This prevents the effect from being triggered when the base types are the same or filters changes
+    private readonly $mappedBaseTypes = computed<string>(
+        () => {
+            const baseTypesString =
+                this.#store
+                    .filters()
+                    .baseType?.map((item) => MAP_NUMBERS_TO_BASE_TYPES[item])
+                    .join(',') ?? '';
+
+            return baseTypesString.length > 0 ? baseTypesString : undefined;
+        },
+        {
+            // This will trigger the effect if the base types are different
+            equal: (a, b) => a?.length === b?.length && a === b
+        }
+    );
+
     readonly getContentTypesEffect = effect(() => {
-        const type = undefined;
+        const type = this.$mappedBaseTypes();
+
         const filter = this.$state.filter();
 
         // Push the request parameters to the debounced stream
@@ -180,7 +204,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
      */
     private loadInitialContentTypes() {
         this.#contentTypesService
-            .getContentTypesWithPagination({ filter: '' })
+            .getContentTypesWithPagination({ filter: '', type: this.$mappedBaseTypes() })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
                 catchError(() =>
@@ -234,9 +258,9 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 tap(() => this.updateState({ loading: true })),
                 debounceTime(DEBOUNCE_TIME),
                 takeUntilDestroyed(this.#destroyRef),
-                switchMap(({ filter }) =>
+                switchMap(({ filter, type }) =>
                     this.#contentTypesService
-                        .getContentTypes({ filter })
+                        .getContentTypes({ filter, type })
                         .pipe(catchError(() => of([])))
                 )
             )

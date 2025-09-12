@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator';
+import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { Observable, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';

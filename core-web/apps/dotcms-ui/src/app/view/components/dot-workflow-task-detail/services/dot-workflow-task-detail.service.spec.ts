@@ -27,7 +27,7 @@ describe('DotWorkflowTaskDetailService', () => {
 
         service = injector.get(DotWorkflowTaskDetailService);
         dotMenuService = injector.get(DotMenuService);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('456'));
+        jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
     });
 
     it('should set data to view', (done) => {
@@ -51,6 +51,7 @@ describe('DotWorkflowTaskDetailService', () => {
             );
 
             expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('workflow');
+            expect(dotMenuService.getDotMenuId).toHaveBeenCalledTimes(1);
             done();
         });
 
