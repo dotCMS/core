@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -13,6 +13,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -52,7 +53,9 @@ describe('DotEditContentStore', () => {
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
             mockProvider(DotCurrentUserService),
-            mockProvider(DialogService)
+            mockProvider(DialogService),
+            mockProvider(DotVersionableService),
+            mockProvider(ConfirmationService)
         ]
     });
 

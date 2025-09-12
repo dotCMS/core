@@ -26,6 +26,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotSystemConfigService,
+    DotVersionableService,
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
@@ -91,6 +92,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotWorkflowEventHandlerService),
             mockProvider(DotWizardService),
             mockProvider(DotMessageService),
+            mockProvider(DotVersionableService),
             {
                 provide: ActivatedRoute,
                 useValue: {

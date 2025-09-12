@@ -1,7 +1,6 @@
 import { createComponentFactory, Spectator, mockProvider, byTestId } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
-import { Pipe, PipeTransform } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -17,14 +16,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotHistoryTimelineItemComponent } from './dot-history-timeline-item.component';
 
 import { DotHistoryTimelineItemActionType } from '../../../../../../models/dot-edit-content.model';
-
-// Mock pipe for DotRelativeDatePipe
-@Pipe({ name: 'dotRelativeDate' })
-class MockDotRelativeDatePipe implements PipeTransform {
-    transform(_value: unknown): string {
-        return '1 day ago';
-    }
-}
 
 describe('DotHistoryTimelineItemComponent', () => {
     let spectator: Spectator<DotHistoryTimelineItemComponent>;
@@ -56,8 +47,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             MenuModule,
             TooltipModule,
             DotGravatarDirective,
-            DotMessagePipe,
-            MockDotRelativeDatePipe
+            DotMessagePipe
         ],
         providers: [
             DatePipe,
@@ -70,6 +60,7 @@ describe('DotHistoryTimelineItemComponent', () => {
                     'edit.content.sidebar.history.menu.restore': 'Restore',
                     'edit.content.sidebar.history.menu.compare': 'Compare',
                     'edit.content.sidebar.history.menu.delete': 'Delete',
+                    'edit.content.sidebar.history.menu.current': 'Current',
                     'edit.content.sidebar.history.published': 'Published',
                     'edit.content.sidebar.history.draft': 'Draft'
                 })
@@ -143,6 +134,39 @@ describe('DotHistoryTimelineItemComponent', () => {
         it('should hide variant chip when experimentVariant is false', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
+
+        it('should show "Current" text for current item (itemIndex = 0)', () => {
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).toBe('Current');
+        });
+
+        it('should show relative date for non-current items', () => {
+            // Set itemIndex to 1 to make it non-current
+            spectator.setInput('itemIndex', 1);
+            spectator.detectChanges(); // Trigger change detection
+
+            // Verify that $isCurrentItem() is working correctly
+            expect(spectator.component.$isCurrentItem()).toBe(false);
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+
+            expect(timeDisplay.textContent?.trim()).not.toBe('Current');
+        });
+
+        it('should hide delete action for current item', () => {
+            // Default itemIndex is 0 (current item)
+            const menuItems = spectator.component.$menuItems();
+            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for current item
+        });
+
+        it('should show delete action for non-current items', () => {
+            // Set itemIndex to 1 to make it non-current
+            spectator.setInput('itemIndex', 1);
+            spectator.detectChanges(); // Trigger change detection
+
+            const menuItems = spectator.component.$menuItems();
+            expect(menuItems[0].disabled).toBe(false); // Delete should be enabled for non-current items
+        });
     });
 
     describe('Computed Signals', () => {
@@ -163,21 +187,48 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.component.$timelineMarkerClass()).toBe('');
         });
 
-        it('should compute menu items with correct actions', () => {
+        it('should compute menu items with correct actions for current item', () => {
+            // Default itemIndex is 0 (current item)
             const menuItems = spectator.component.$menuItems();
 
             expect(menuItems).toHaveLength(1);
-            expect(menuItems.every((item) => item.disabled)).toBe(true);
             expect(menuItems[0].label).toBe('Delete');
+            expect(menuItems[0].disabled).toBe(true); // Current item should have delete disabled
+        });
+
+        it('should compute menu items with correct actions for non-current item', () => {
+            // Set itemIndex to 1 to make it non-current
+            spectator.setInput('itemIndex', 1);
+            spectator.detectChanges(); // Trigger change detection
+
+            const menuItems = spectator.component.$menuItems();
+
+            expect(menuItems).toHaveLength(1);
+            expect(menuItems[0].label).toBe('Delete');
+            expect(menuItems[0].disabled).toBe(false); // Non-current item should have delete enabled
+        });
+
+        it('should determine if item is current based on itemIndex', () => {
+            // Default itemIndex is 0, so should be current
+            expect(spectator.component.$isCurrentItem()).toBe(true);
+
+            // Set itemIndex to 1, should not be current
+            spectator.setInput('itemIndex', 1);
+            spectator.detectChanges(); // Trigger change detection
+            expect(spectator.component.$isCurrentItem()).toBe(false);
         });
     });
 
     describe('Event Emission', () => {
         it('should emit actionTriggered when menu actions are triggered', () => {
+            // Set itemIndex to 1 to make it non-current (so delete action is visible)
+            spectator.setInput('itemIndex', 1);
+            spectator.detectChanges(); // Trigger change detection
+
             const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
             const menuItems = spectator.component.$menuItems();
 
-            // Test delete action (only available action)
+            // Test delete action (only available action for non-current items)
             menuItems[0].command();
             expect(actionSpy).toHaveBeenCalledWith({
                 type: DotHistoryTimelineItemActionType.DELETE,
