@@ -41,6 +41,7 @@
                             <ng-template pTemplate="item" let-item let-index="index">
                                 <dot-history-timeline-item
                                     [item]="item"
+                                    [itemIndex]="getRealIndex(item)"
                                     (actionTriggered)="
                                         onTimelineItemAction($event)
                                     "></dot-history-timeline-item>
