@@ -4,14 +4,23 @@ import { Component, effect, inject, signal, viewChild } from '@angular/core';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
+import { take } from 'rxjs/operators';
+
 import {
     DotMessageService,
     DotRenderMode,
+    DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSWorkflowAction,
+    DotProcessedWorkflowPayload,
+    DotWorkflowPayload
+} from '@dotcms/dotcms-models';
 
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
@@ -20,6 +29,7 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 @Component({
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
+    styleUrl: './dot-folder-list-context-menu.component.scss',
     imports: [CommonModule, ContextMenuModule]
 })
 export class DotFolderListViewContextMenuComponent {
@@ -32,6 +42,7 @@ export class DotFolderListViewContextMenuComponent {
     #store = inject(DotContentDriveStore);
     #navigationService = inject(DotContentDriveNavigationService);
     #messageService = inject(MessageService);
+    #dotWizardService = inject(DotWizardService);
 
     /** The menu items for the context menu. */
     $items = signal<MenuItem[]>([]);
@@ -116,23 +127,7 @@ export class DotFolderListViewContextMenuComponent {
         workflowActions.map((action) => {
             const menuItem = {
                 label: `${this.#dotMessageService.get(action.name)}`,
-                command: () => {
-                    if (!(action.actionInputs?.length > 0)) {
-                        this.#store.setStatus(DotContentDriveStatus.LOADING);
-                        this.#fireWorkflowAction(contentlet.inode, action.id);
-
-                        return;
-                    }
-
-                    const wfActionEvent: DotCMSWorkflowActionEvent = {
-                        workflow: action,
-                        callback: 'ngWorkflowEventCallback',
-                        inode: contentlet.inode,
-                        selectedInodes: null
-                    };
-
-                    this.#dotWorkflowEventHandlerService.open(wfActionEvent);
-                }
+                command: () => this.#executeWorkflowActions(action, contentlet)
             };
 
             actionsMenu.push(menuItem);
@@ -153,25 +148,74 @@ export class DotFolderListViewContextMenuComponent {
         this.contextMenu()?.show(triggeredEvent);
     }
 
-    #fireWorkflowAction(contentletInode: string, actionId: string) {
-        this.#workflowActionsFireService.fireTo({ actionId, inode: contentletInode }).subscribe(
-            () => {
-                this.#store.reloadContentDrive();
+    #executeWorkflowActions(workflowAction: DotCMSWorkflowAction, contentlet: DotCMSContentlet) {
+        if (workflowAction.actionInputs?.length > 0) {
+            this.#openWizard(workflowAction, contentlet);
+        } else {
+            this.#fireWorkflowAction({
+                contentletInode: contentlet.inode,
+                actionId: workflowAction.id
+            });
+        }
+    }
 
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('content-drive.toast.workflow-executed'),
-                    life: 2000
+    #openWizard(workflowAction: DotCMSWorkflowAction, contentlet: DotCMSContentlet) {
+        this.#dotWizardService
+            .open<DotWorkflowPayload>(
+                this.#dotWorkflowEventHandlerService.setWizardInput(
+                    workflowAction,
+                    this.#dotMessageService.get('Workflow-Action')
+                )
+            )
+            .pipe(take(1))
+            .subscribe((data: DotWorkflowPayload) => {
+                const payload = this.#dotWorkflowEventHandlerService.processWorkflowPayload(
+                    data,
+                    workflowAction.actionInputs
+                );
+
+                this.#store.setStatus(DotContentDriveStatus.LOADING);
+                this.#fireWorkflowAction({
+                    contentletInode: contentlet.inode,
+                    actionId: workflowAction.id,
+                    payload
                 });
-            },
-            (error) => {
-                this.#messageService.add({
-                    severity: 'error',
-                    summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
-                    life: 2000
-                });
-                console.error('Error firing workflow action', error);
-            }
-        );
+            });
+    }
+
+    #fireWorkflowAction({
+        contentletInode,
+        actionId,
+        payload
+    }: {
+        contentletInode: string;
+        actionId: string;
+        payload?: DotProcessedWorkflowPayload;
+    }) {
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
+        this.#workflowActionsFireService
+            .fireTo({ actionId, inode: contentletInode, data: payload })
+            .subscribe(
+                () => {
+                    this.#store.reloadContentDrive();
+
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.toast.workflow-executed'
+                        ),
+                        life: 2000
+                    });
+                },
+                (error) => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
+                        life: 2000
+                    });
+                    this.#store.setStatus(DotContentDriveStatus.LOADED);
+                    console.error('Error firing workflow action', error);
+                }
+            );
     }
 }
