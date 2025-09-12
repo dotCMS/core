@@ -5,10 +5,6 @@ export default {
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
     coverageDirectory: '../../../../../target/core-web-reports/',
-    coverageReporters: [['lcovonly', { file: 'TEST-data-access-experiment.lcov' }]],
-    reporters: [
-        'default',
-        ['github-actions', { silent: false }],
         [
             'jest-junit',
             {
