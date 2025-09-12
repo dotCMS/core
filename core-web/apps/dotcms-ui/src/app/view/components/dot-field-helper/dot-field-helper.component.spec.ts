@@ -46,7 +46,7 @@ describe('DotFieldHelperComponent', () => {
     });
 
     it('should have correct attributes on Overlay Panel', () => {
-        const overlayPanel: OverlayPanel = de.query(By.css('p-overlayPanel')).componentInstance;
+        const overlayPanel: OverlayPanel = de.query(By.directive(OverlayPanel)).componentInstance;
 
         expect(overlayPanel.style).toEqual({ width: '350px' });
         expect(overlayPanel.appendTo).toEqual('body');

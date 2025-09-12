@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -41,6 +40,7 @@ import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeEvent,
     dotcmsContentletMock,
     DotDevicesServiceMock,
     DotPageStateServiceMock,
@@ -118,7 +118,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     let dotTabButtons: DotTabButtonsComponent;
     let deDotTabButtons: DebugElement;
 
-    let featFlagMock: jasmine.Spy;
+    let featFlagMock: jest.SpyInstance;
 
     let pointerEvent: PointerEvent;
 
@@ -188,10 +188,10 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         propertiesService = de.injector.get(DotPropertiesService);
         editContentletService = de.injector.get(DotContentletEditorService);
 
-        spyOn(component.modeChange, 'emit');
-        spyOn(dotPageStateService, 'setLock');
-        spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        featFlagMock = spyOn(propertiesService, 'getFeatureFlag').and.returnValue(of(false));
+        jest.spyOn(component.modeChange, 'emit');
+        jest.spyOn(dotPageStateService, 'setLock');
+        jest.spyOn(personalizeService, 'personalized').mockReturnValue(of(null));
+        featFlagMock = jest.spyOn(propertiesService, 'getFeatureFlag').mockReturnValue(of(false));
 
         deDotTabButtons = de.query(By.css('[data-testId="dot-tabs-buttons"]'));
         dotTabButtons = deDotTabButtons.componentInstance;
@@ -234,7 +234,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const lockerDe = de.query(By.css('p-inputSwitch'));
+                const lockerDe = de.query(By.css('p-inputswitch'));
                 const lockerContainerDe = de.query(By.css('[data-testId="lock-container"]'));
                 const locker = lockerDe.componentInstance;
 
@@ -422,6 +422,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             expect(dotTabButtons).toBeTruthy();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
                 { mode: DotPageMode.EDIT },
                 true
@@ -440,7 +441,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
@@ -454,6 +455,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             await fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).not.toHaveBeenCalled();
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -463,7 +465,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should update LOCK and MODE when confirmation dialog Canceled', () => {
-            spyOn<any>(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.cancel();
             });
 
@@ -477,6 +479,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(component.lock).toBe(true);
             expect(component.mode).toBe(DotPageMode.PREVIEW);
@@ -502,7 +505,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             );
 
             fixtureHost.componentInstance.pageState = pageRenderStateMocked;
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
@@ -515,6 +518,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).toHaveBeenCalledWith(
                 mockDotRenderedPage().page.identifier,
@@ -540,7 +544,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
             fixtureHost.detectChanges();
@@ -552,6 +556,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
 
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -564,17 +569,18 @@ describe('DotEditPageStateControllerSeoComponent', () => {
     describe('Dot Device Selector events', () => {
         it('should call  changeSeoMedia event', async () => {
             fixtureHost.detectChanges();
-            spyOn(dotPageStateService, 'setSeoMedia');
+            jest.spyOn(dotPageStateService, 'setSeoMedia');
             const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
 
             dotSelector.triggerEventHandler('changeSeoMedia', 'Google');
 
             expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith('Google');
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledTimes(1);
         });
 
         it('should call selected event', async () => {
-            spyOn(dotPageStateService, 'setDevice');
-            spyOn(dotPageStateService, 'setSeoMedia');
+            jest.spyOn(dotPageStateService, 'setDevice');
+            jest.spyOn(dotPageStateService, 'setSeoMedia');
             const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
             const event = {
                 identifier: 'string',
@@ -587,12 +593,14 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             dotSelector.triggerEventHandler('selected', event);
 
             expect(dotPageStateService.setDevice).toHaveBeenCalledWith(event);
+            expect(dotPageStateService.setDevice).toHaveBeenCalledTimes(1);
             expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith(null);
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledTimes(1);
         });
     });
     describe('page does not have URLContentMap and feature flag is on', () => {
         beforeEach(() => {
-            featFlagMock.and.returnValue(of(true));
+            featFlagMock.mockReturnValue(of(true));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '486' },
@@ -610,7 +618,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            featFlagMock.and.returnValue(of('true'));
+            featFlagMock.mockReturnValue(of('true'));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '457' },
@@ -643,10 +651,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             });
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
-            spyOn(editContentletService, 'edit');
+            jest.spyOn(editContentletService, 'edit');
             component.menuItems[1].command({
                 originalEvent: createFakeEvent('click')
             });
@@ -658,19 +667,21 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should trigger resetDropdownById when menu hides', () => {
-            spyOn(dotTabButtons, 'resetDropdownById');
+            jest.spyOn(dotTabButtons, 'resetDropdownById');
 
             component.menu.onHide.emit();
 
             expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledTimes(1);
         });
 
         it('should trigger resetDropdownById when device selector hides', () => {
-            spyOn(dotTabButtons, 'resetDropdownById');
+            jest.spyOn(dotTabButtons, 'resetDropdownById');
 
             component.deviceSelector.hideOverlayPanel.emit();
 
             expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.PREVIEW);
+            expect(dotTabButtons.resetDropdownById).toHaveBeenCalledTimes(1);
         });
 
         it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {

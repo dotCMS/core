@@ -133,12 +133,12 @@ describe('CategoriesPropertyComponent', () => {
     });
 
     describe('Pagination events', () => {
-        let spyMethod: jasmine.Spy;
+        let spyMethod: jest.SpyInstance;
 
         beforeEach(() => {
             const divForm: DebugElement = de.query(By.css('div'));
             searchableDropdown = divForm.query(By.css('dot-searchable-dropdown'));
-            spyMethod = spyOn(paginatorService, 'getWithOffset').and.returnValue(of([]));
+            spyMethod = jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([]));
         });
 
         it('should change Page', () => {
@@ -149,6 +149,7 @@ describe('CategoriesPropertyComponent', () => {
 
             expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(2);
+            expect(spyMethod).toHaveBeenCalledTimes(1);
         });
 
         it('should filter', () => {
@@ -156,6 +157,7 @@ describe('CategoriesPropertyComponent', () => {
 
             expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(0);
+            expect(spyMethod).toHaveBeenCalledTimes(1);
         });
 
         it('should valuePropertyName be undefined', () => {

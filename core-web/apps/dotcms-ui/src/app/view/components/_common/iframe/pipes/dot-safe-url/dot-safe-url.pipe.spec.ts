@@ -1,4 +1,4 @@
-import { createPipeFactory, mockProvider, SpectatorPipe, SpyObject } from '@ngneat/spectator';
+import { createPipeFactory, mockProvider, SpectatorPipe, SpyObject } from '@ngneat/spectator/jest';
 
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -28,7 +28,7 @@ describe('DotSafeUrlPipe', () => {
         pipe: DotSafeUrlPipe,
         providers: [
             mockProvider(DomSanitizer, {
-                bypassSecurityTrustResourceUrl: jasmine.createSpy('bypassSecurityTrustResourceUrl')
+                bypassSecurityTrustResourceUrl: jest.fn()
             }),
             { provide: DotRouterService, useClass: MockDotRouterService },
             { provide: ActivatedRoute, useValue: fakeActivatedRoute }
@@ -41,8 +41,9 @@ describe('DotSafeUrlPipe', () => {
             hostProps: { value: 'test' }
         });
         sanitizer = spectator.inject(DomSanitizer);
+        sanitizer.bypassSecurityTrustResourceUrl.mockClear();
         const sanitizedUrl = 'sanitized-test-url';
-        sanitizer.bypassSecurityTrustResourceUrl.and.returnValue(sanitizedUrl);
+        sanitizer.bypassSecurityTrustResourceUrl.mockReturnValue(sanitizedUrl);
         spectator.detectChanges();
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(
             `test${URL_WITH_PARAMS}`
@@ -55,9 +56,11 @@ describe('DotSafeUrlPipe', () => {
             hostProps: { value: '' }
         });
         sanitizer = spectator.inject(DomSanitizer);
-        sanitizer.bypassSecurityTrustResourceUrl.and.returnValue(URL_EMPTY);
+        sanitizer.bypassSecurityTrustResourceUrl.mockClear();
+        sanitizer.bypassSecurityTrustResourceUrl.mockReturnValue(URL_EMPTY);
         spectator.detectChanges();
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(URL_EMPTY);
+        expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledTimes(1);
         expect(spectator.element.textContent).toBe(URL_EMPTY);
     });
 });
