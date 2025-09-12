@@ -92,6 +92,7 @@ describe('ContainerHistoryComponent', () => {
             historyIframe.custom.emit(customEvent);
 
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith('456');
+            expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
         });
     });
 });

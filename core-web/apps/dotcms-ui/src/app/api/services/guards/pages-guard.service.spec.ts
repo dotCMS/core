@@ -27,7 +27,7 @@ describe('PagesGuardService', () => {
 
     it('should allow access to Pages Portlets', () => {
         let result: boolean;
-        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
+        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(true));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
@@ -37,7 +37,7 @@ describe('PagesGuardService', () => {
 
     it('should deny access to Pages Portlets', () => {
         let result: boolean;
-        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
+        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE

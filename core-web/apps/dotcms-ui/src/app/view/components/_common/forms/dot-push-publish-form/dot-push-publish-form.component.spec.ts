@@ -157,27 +157,27 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     beforeEach(() => {
-        spyOn<any>(Intl, 'DateTimeFormat').and.returnValue({
+        jest.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
             resolvedOptions: () => ({ timeZone: localTZ })
         });
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
+        jest.useFakeTimers();
+        jest.setSystemTime(mockDate);
         fixture = TestBed.createComponent(TestHostComponent);
         dotPushPublishFiltersService = fixture.debugElement.injector.get(
             DotPushPublishFiltersService
         );
         hostComponent = fixture.componentInstance;
-        spyOn(dotPushPublishFiltersService, 'get').and.returnValue(of(mockFilters));
+        jest.spyOn(dotPushPublishFiltersService, 'get').mockReturnValue(of(mockFilters));
         hostComponent.data = mockPublishFormData;
         fixture.detectChanges();
         pushPublishForm = fixture.debugElement.query(
             By.css('dot-push-publish-form')
         ).componentInstance;
-        pushActionsSelect = fixture.debugElement.query(By.css('p-selectButton')).componentInstance;
+        pushActionsSelect = fixture.debugElement.query(By.css('p-selectbutton')).componentInstance;
     });
 
     afterEach(() => {
-        jasmine.clock().uninstall();
+        jest.useRealTimers();
     });
 
     it('should load filters on load', () => {
@@ -270,7 +270,7 @@ xdescribe('DotPushPublishFormComponent', () => {
 
     describe('Push Action scenarios', () => {
         beforeEach(() => {
-            selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
+            selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         });
 
         it('should disable publish date on select remove', () => {
@@ -327,7 +327,7 @@ xdescribe('DotPushPublishFormComponent', () => {
 
     it('should load custom code', () => {
         const dotParseHtmlService = fixture.debugElement.injector.get(DotParseHtmlService);
-        spyOn(dotParseHtmlService, 'parse').and.callThrough();
+        jest.spyOn(dotParseHtmlService, 'parse');
         const mockCustomCode: DotPushPublishDialogData = {
             customCode: '<h1>Code</h1>',
             ...mockPublishFormData
@@ -357,7 +357,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     it('should show error messages', () => {
-        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
+        selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         selectActionButtons[2].triggerEventHandler('click', {});
         pushPublishForm.form.get('environment').setValue(null);
         pushPublishForm.form.get('environment').markAsDirty();
@@ -374,9 +374,9 @@ xdescribe('DotPushPublishFormComponent', () => {
         fixture.detectChanges();
         const errorMessages = fixture.debugElement.queryAll(By.css('.p-invalid'));
 
-        expect(errorMessages[0].nativeElement.innerText).toEqual('Publish Date is required');
-        expect(errorMessages[1].nativeElement.innerText).toEqual('Expire Date is required');
-        expect(errorMessages[2].nativeElement.innerText).toContain(
+        expect(errorMessages[0].nativeElement.textContent).toEqual('Publish Date is required');
+        expect(errorMessages[1].nativeElement.textContent).toEqual('Expire Date is required');
+        expect(errorMessages[2].nativeElement.textContent).toContain(
             'Must add at least one Environment'
         );
     });

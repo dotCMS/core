@@ -33,7 +33,7 @@ describe('DotContentTypeComponentStore', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn().mockReturnValue(of({}))
                     }
                 }
             ]
@@ -62,7 +62,7 @@ describe('DotContentTypeComponentStore', () => {
 
     describe('effects', () => {
         it('should save Content Type Copy values', () => {
-            spyOn(dotContentTypeService, 'saveCopyContentType').and.returnValue(
+            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
                 of({
                     ...dotcmsContentTypeBasicMock,
                     id: '1234567890',
@@ -72,7 +72,7 @@ describe('DotContentTypeComponentStore', () => {
                 })
             );
 
-            spyOn(router, 'navigate');
+            jest.spyOn(router, 'navigate');
 
             store.setAssetSelected('content-type-id');
 
@@ -105,7 +105,9 @@ describe('DotContentTypeComponentStore', () => {
 
         it('should handler error on update template', (done) => {
             const error = new HttpErrorResponse(mockResponseView(400));
-            spyOn(dotContentTypeService, 'saveCopyContentType').and.returnValue(throwError(error));
+            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
+                throwError(error)
+            );
 
             store.saveCopyDialog({
                 name: 'new-name',
@@ -116,6 +118,7 @@ describe('DotContentTypeComponentStore', () => {
             });
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
 
             store.isSaving$.subscribe((resp) => {
                 expect(resp).toBe(false);

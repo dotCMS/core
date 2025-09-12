@@ -27,7 +27,7 @@ public class OpenAIGenerateImageActionlet extends WorkFlowActionlet {
 
     @Override
     public String getName() {
-        return "AI Generate Image";
+        return "AI - Generate Image";
     }
 
     @Override

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -26,6 +25,7 @@ import {
 } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeEvent,
     dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
@@ -171,13 +171,13 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should have a tab-view', () => {
-        const pTabView = de.query(By.css('p-tabView'));
+        const pTabView = de.query(By.css('p-tabview'));
 
         expect(pTabView).not.toBeNull();
     });
 
     it('should have just one tab', () => {
-        const pTabPanels = fixture.debugElement.queryAll(By.css('p-tabPanel'));
+        const pTabPanels = fixture.debugElement.queryAll(By.css('p-tabpanel'));
         expect(pTabPanels.length).toBe(1);
     });
 
@@ -190,7 +190,7 @@ describe('ContentTypesLayoutComponent', () => {
         const fieldDragDropService: FieldDragDropService =
             fixture.debugElement.injector.get(FieldDragDropService);
         fixture.componentInstance.contentType = fakeContentType;
-        spyOn(fieldDragDropService, 'setBagOptions');
+        jest.spyOn(fieldDragDropService, 'setBagOptions');
         fixture.detectChanges();
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
@@ -266,8 +266,8 @@ describe('ContentTypesLayoutComponent', () => {
                 By.css('.main-toolbar-left header dot-inline-edit')
             ).componentInstance;
 
-            spyOn(de.componentInstance.changeContentTypeName, 'emit');
-            spyOn(dotInlineEditComp, 'hideContent');
+            jest.spyOn(de.componentInstance.changeContentTypeName, 'emit');
+            jest.spyOn(dotInlineEditComp, 'hideContent');
 
             expect(de.query(By.css('.main-toolbar-left header p-inplace input'))).toBeDefined();
             de.query(By.css('.main-toolbar-left header p-inplace input')).nativeElement.value =
@@ -275,7 +275,7 @@ describe('ContentTypesLayoutComponent', () => {
             de.query(By.css('.main-toolbar-left header p-inplace input')).triggerEventHandler(
                 'keyup',
                 {
-                    stopPropagation: jasmine.createSpy('stopPropagation'),
+                    stopPropagation: jest.fn(),
                     key: 'Enter'
                 }
             );
@@ -316,7 +316,7 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should have open Add to Menu Dialog and close', () => {
-            spyOn(de.componentInstance, 'addContentInMenu').and.callThrough();
+            jest.spyOn(de.componentInstance, 'addContentInMenu');
             fixture.debugElement.query(By.css('#add-to-menu-button')).triggerEventHandler('click');
             fixture.detectChanges();
             expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
@@ -339,7 +339,7 @@ describe('ContentTypesLayoutComponent', () => {
         beforeEach(() => {
             fixture.componentInstance.contentType = fakeContentType;
             dotCurrentUserService = fixture.debugElement.injector.get(DotCurrentUserService);
-            spyOn(dotCurrentUserService, 'hasAccessToPortlet').and.returnValue(of(true));
+            jest.spyOn(dotCurrentUserService, 'hasAccessToPortlet').mockReturnValue(of(true));
 
             fixture.detectChanges();
         });
@@ -393,10 +393,10 @@ describe('ContentTypesLayoutComponent', () => {
 
                 beforeEach(() => {
                     splitButton = pTabPanel.query(
-                        By.css('.content-type__fields-sidebar p-splitButton')
+                        By.css('.content-type__fields-sidebar p-splitbutton')
                     );
                     dotEventsService = fixture.debugElement.injector.get(DotEventsService);
-                    spyOn(dotEventsService, 'notify');
+                    jest.spyOn(dotEventsService, 'notify');
                 });
 
                 it('should have the correct label', () => {
@@ -411,6 +411,7 @@ describe('ContentTypesLayoutComponent', () => {
                     const button = splitButton.query(By.css('button'));
                     button.nativeElement.click();
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
+                    expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
                 });
 
                 it('should set actions correctly', () => {
@@ -418,8 +419,14 @@ describe('ContentTypesLayoutComponent', () => {
                     const addTabDivider: MenuItem = splitButton.componentInstance.model[1];
                     addRow.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
+                    expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
+
+                    // Clear the mock before the second call
+                    dotEventsService.notify.mockClear();
+
                     addTabDivider.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
+                    expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
                 });
             });
         });

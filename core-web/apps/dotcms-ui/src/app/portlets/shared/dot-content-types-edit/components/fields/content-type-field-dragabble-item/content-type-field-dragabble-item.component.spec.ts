@@ -126,7 +126,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             )
         ).nativeElement.textContent;
 
-        expect(attrs.every((attr) => attrsString.includes(attr))).toBeTrue();
+        expect(attrs.every((attr) => attrsString.includes(attr))).toBe(true);
     });
 
     it('should has a drag button', () => {

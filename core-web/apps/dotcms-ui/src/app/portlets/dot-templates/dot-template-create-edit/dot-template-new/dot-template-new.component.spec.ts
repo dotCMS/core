@@ -26,8 +26,8 @@ describe('DotTemplateNewComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToURL: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToURL: jest.fn()
                     }
                 },
                 {
@@ -46,7 +46,7 @@ describe('DotTemplateNewComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
 
         dialogService = TestBed.inject(DialogService);
-        spyOn<any>(dialogService, 'open').and.returnValue({
+        jest.spyOn<any>(dialogService, 'open').mockReturnValue({
             onClose: dialogRefClose
         });
 
@@ -54,7 +54,7 @@ describe('DotTemplateNewComponent', () => {
     });
 
     it('should open template type selector', () => {
-        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+        expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
             header: 'Create a template',
             width: '37rem',
             contentStyle: { padding: '0px' },
@@ -79,11 +79,13 @@ describe('DotTemplateNewComponent', () => {
 
     it('should go to create design template', () => {
         dialogRefClose.next('design');
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledOnceWith('/templates/new/design');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new/design');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
     it('should go to listing if close the dialog', () => {
         dialogRefClose.next(undefined);
-        expect(dotRouterService.goToURL).toHaveBeenCalledOnceWith('/templates');
+        expect(dotRouterService.goToURL).toHaveBeenCalledWith('/templates');
+        expect(dotRouterService.goToURL).toHaveBeenCalledTimes(1);
     });
 });
