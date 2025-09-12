@@ -11,5 +11,5 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class DotCardFieldLabelComponent {
     $for = input<string>(null, { alias: 'for' });
-    $isRequired = input.required<boolean>({ alias: 'isRequired' });
+    $isRequired = input<boolean>(false, { alias: 'isRequired' });
 }

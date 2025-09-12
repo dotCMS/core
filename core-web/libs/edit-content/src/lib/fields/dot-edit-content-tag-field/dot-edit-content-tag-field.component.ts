@@ -23,7 +23,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
-import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseFieldComponent } from '../shared/base-field.component';
 
@@ -45,7 +44,6 @@ export const AUTO_COMPLETE_UNIQUE = true;
         FormsModule,
         ReactiveFormsModule,
         DotCardFieldComponent,
-        DotCardFieldLabelComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
         DotMessagePipe

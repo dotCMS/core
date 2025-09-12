@@ -25,7 +25,10 @@ import { WINDOW } from '@dotcms/utils';
 import { CustomFieldConfig } from '../../models/dot-edit-content-custom-field.interface';
 import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { createCustomFieldConfig } from '../../utils/functions.util';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 /**
  * This component is used to render a custom field in the DotCMS content editor.
@@ -39,7 +42,9 @@ import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
         ButtonModule,
         InputTextModule,
         DialogModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent
     ],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
@@ -50,17 +55,11 @@ import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
             useValue: window
         }
     ],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
     host: {
         '[class.no-label]': '!$showLabel()'
     }
 })
-export class DotEditContentCustomFieldComponent implements OnDestroy {
+export class DotEditContentCustomFieldComponent extends BaseFieldComponent implements OnDestroy {
     /**
      * The field to render.
      */
@@ -124,16 +123,6 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
     });
 
     /**
-     * Whether to show the label.
-     */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
-    });
-
-    /**
      * The title for the iframe.
      */
     $iframeTitle = computed(() => {
@@ -146,7 +135,8 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
      * The minimum height for the container based on whether the label is shown or not.
      */
     $minContainerHeight = computed(() => {
-        return this.$showLabel() ? '40px' : '17px';
+        // return this.$showLabel() ? '40px' : '17px';
+        return '40px';
     });
 
     /**
@@ -358,5 +348,9 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         if (this.#formBridge) {
             this.#formBridge.destroy();
         }
+    }
+
+    writeValue(_: unknown): void {
+        // noop
     }
 }

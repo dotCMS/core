@@ -28,7 +28,6 @@ import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
-import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseFieldComponent } from '../shared/base-field.component';
 import {
@@ -57,7 +56,6 @@ import {
         FormsModule,
         DotEditContentMonacoEditorControlComponent,
         DotCardFieldComponent,
-        DotCardFieldLabelComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
         DotMessagePipe

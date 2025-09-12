@@ -1,16 +1,8 @@
 @let field = $field();
 @let variable = field.variable;
-@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    @if (showLabel) {
-        <dot-card-field-label
-            [attr.data-testId]="'label-' + field.variable"
-            [isRequired]="isRequired"
-            [for]="field.variable">
-            {{ field.name }}
-        </dot-card-field-label>
-    }
+    <ng-content />
     <dot-card-field-content>
         <p-autoComplete
             #autocomplete

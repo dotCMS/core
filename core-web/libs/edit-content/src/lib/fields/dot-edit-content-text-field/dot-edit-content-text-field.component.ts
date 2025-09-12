@@ -10,7 +10,6 @@ import { INPUT_TEXT_OPTIONS } from './utils';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
-import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseFieldComponent } from '../shared/base-field.component';
 
@@ -24,7 +23,6 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         InputTextModule,
         DotMessagePipe,
         DotCardFieldComponent,
-        DotCardFieldLabelComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent
     ],
@@ -37,10 +35,6 @@ export class DotEditContentTextFieldComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     readonly inputTextOptions = INPUT_TEXT_OPTIONS;
-
-    constructor() {
-        super();
-    }
 
     writeValue(_: unknown): void {
         // Do nothing

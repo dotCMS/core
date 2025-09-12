@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, computed, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     NgControl,
@@ -9,8 +9,6 @@ import {
 } from '@angular/forms';
 
 import { filter } from 'rxjs/operators';
-
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 /**
  * Base class for all field components that provides common functionality
@@ -23,24 +21,11 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
     protected changeDetectorRef = inject(ChangeDetectorRef);
     protected destroyRef = inject(DestroyRef);
 
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
-    });
-
     constructor() {
         if (this.ngControl !== null) {
             this.ngControl.valueAccessor = this;
         }
     }
-
-    /**
-     * Abstract property that child components must implement
-     * This should be the $field input property
-     */
-    abstract $field: () => DotCMSContentTypeField;
 
     protected onChange: (value: unknown) => void = () => {
         /* no-op */
@@ -82,12 +67,7 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
     }
 
     get isDisabled(): boolean {
-        const control = this.formControl;
-        return control.disabled;
-    }
-
-    get fieldVariable() {
-        return this.$field().variable;
+        return this.formControl.disabled;
     }
 
     get formControl(): FormControl {

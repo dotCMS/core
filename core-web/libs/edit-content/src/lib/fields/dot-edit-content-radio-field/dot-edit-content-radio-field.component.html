@@ -2,9 +2,7 @@
 @let field = $field();
 
 <dot-card-field [hasError]="hasError">
-    <dot-card-field-label [for]="field.variable" [isRequired]="isRequired" [for]="field.variable">
-        {{ field.name }}
-    </dot-card-field-label>
+    <ng-content />
     <dot-card-field-content>
         <div class="flex flex-column gap-2">
             @for (option of options; track $index) {

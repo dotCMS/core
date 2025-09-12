@@ -1,6 +1,7 @@
 @let field = $field();
 @let contentlet = $contentlet();
 @let contentType = $contentType();
+@let showLabel = $showLabel();
 @let contentTypeVariable = contentType?.variable;
 
 @switch (field.fieldType) {
@@ -13,7 +14,15 @@
             <dot-edit-content-select-field
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-select-field>
         }
     }
     @case (fieldTypes.RADIO) {
@@ -21,7 +30,15 @@
             <dot-edit-content-radio-field
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-radio-field>
         }
     }
     @case (fieldTypes.TEXT) {
@@ -29,7 +46,15 @@
             <dot-edit-content-text-field
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-text-field>
         }
     }
     @case (fieldTypes.TEXTAREA) {
@@ -39,7 +64,15 @@
                 [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-text-area>
         }
     }
     @case (fieldTypes.CHECKBOX) {
@@ -47,7 +80,15 @@
             <dot-edit-content-checkbox-field
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-checkbox-field>
         }
     }
     @case (fieldTypes.MULTI_SELECT) {
@@ -55,7 +96,15 @@
             <dot-edit-content-multi-select-field
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-multi-select-field>
         }
     }
     @case (calendarTypes.includes(field.fieldType) ? field.fieldType : '') {
@@ -65,7 +114,15 @@
                 [contentType]="contentType"
                 [utcTimezone]="$systemTimezone()"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-calendar-field>
         }
     }
     @case (fieldTypes.TAG) {
@@ -73,7 +130,15 @@
             <dot-edit-content-tag-field
                 [formControlName]="field.variable"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-tag-field>
         }
     }
     @case (fieldTypes.JSON) {
@@ -81,7 +146,15 @@
             <dot-edit-content-json-field
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-json-field>
         }
     }
     @case (fieldTypes.BINARY) {
@@ -116,7 +189,15 @@
         @defer (on immediate) {
             <dot-edit-content-key-value
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable" />
+                [attr.data-testId]="'field-' + field.variable">
+                @if (showLabel) {
+                    <dot-card-field-label
+                        [attr.data-testId]="'label-' + field.variable"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </dot-card-field-label>
+                }
+            </dot-edit-content-key-value>
         }
     }
     @case (fieldTypes.WYSIWYG) {

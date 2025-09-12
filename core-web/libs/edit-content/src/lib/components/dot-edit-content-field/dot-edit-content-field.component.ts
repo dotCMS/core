@@ -21,6 +21,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
+import { DotCardFieldLabelComponent } from '../../fields/dot-card-field/components/dot-card-field-label.component';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -73,7 +74,8 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentFileFieldComponent,
         DotEditContentRelationshipFieldComponent,
-        DividerModule
+        DividerModule,
+        DotCardFieldLabelComponent
     ]
 })
 export class DotEditContentFieldComponent {
