@@ -868,15 +868,18 @@ public class BundleResource {
         public void run() {
             bundleFile = APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
             
+            // Send notification that bundle is being downloaded
             final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
-
-            final String message = "Bundle <strong>" + bundle.getName() + "</strong> can be downloaded here: <a href='/api/bundle/_download/" + bundle.getId() + "'>download</a>";
-
-            final SystemMessage systemMessage = systemMessageBuilder.setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
-                            .setSeverity(MessageSeverity.SUCCESS).setLife(1000*60*12).create();
+            final String message = "Bundle <strong>" + bundle.getName() + "</strong> is being auto-downloaded in the background.";
+            final SystemMessage systemMessage = systemMessageBuilder.setMessage(message)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setSeverity(MessageSeverity.SUCCESS)
+                    .setLife(1000*10) // 10 seconds
+                    .create();
 
             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
 
+            // Auto-download the bundle file
             final Response response = Response.ok(bundleFile, MediaType.APPLICATION_OCTET_STREAM).build();
 
             this.asyncResponse.resume(response);

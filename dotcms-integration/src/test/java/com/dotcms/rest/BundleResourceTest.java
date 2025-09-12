@@ -194,6 +194,118 @@ public class BundleResourceTest {
     }
 
     /**
+     * Method to Test: {@link BundleResource#generateBundle(HttpServletRequest, HttpServletResponse, AsyncResponse, GenerateBundleForm)}
+     * When: Create a bundle and generate the tar.gz file of the given bundle.
+     * Should: Generate the bundle without sending popup message, only auto-download should occur.
+     * This test verifies the fix for issue #31817 where popup messages were causing confusion and errors.
+     */
+    @Test
+    public void test_generateBundle_noPopupMessage() throws DotDataException, InterruptedException {
+        //Create new bundle
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+
+        //Create a Filter since it's needed to generate the bundle
+        createFilter();
+
+        //Create GenerateBundleForm
+        final GenerateBundleForm bundleForm = new GenerateBundleForm.Builder().bundleId(bundleId).build();
+
+        // Track system events before bundle generation
+        final long beforeTime = System.currentTimeMillis();
+
+        //Call generate endpoint
+        final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+            final Response generateBundleResponse = (Response)arg;
+            assertEquals(Status.OK.getStatusCode(), generateBundleResponse.getStatus());
+            return true;
+        }, arg -> {
+            fail("Error generating bundle");
+            return true;
+        });
+
+        bundleResource.generateBundle(getHttpRequest(),response,asyncResponse,bundleForm);
+        
+        // Wait a bit for async processing to complete
+        Thread.sleep(5000);
+
+        // Verify no system message was sent about download link
+        // The fix should prevent any system messages containing download links
+        final boolean foundDownloadMessage = SystemEventsFactory.getInstance().getSystemEventsAPI()
+                .getEventsSince(beforeTime).stream()
+                .anyMatch(systemEvent -> {
+                    final String eventData = systemEvent.getPayload().getData().toString();
+                    return eventData.contains("can be downloaded here") || 
+                           eventData.contains("/api/bundle/_download/");
+                });
+
+        assertFalse("No system message with download link should be sent", foundDownloadMessage);
+        
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#generateBundle(HttpServletRequest, HttpServletResponse, AsyncResponse, GenerateBundleForm)}
+     * When: Create a bundle and generate the tar.gz file of the given bundle.
+     * Should: Generate the bundle and provide auto-download without popup messages.
+     * This test verifies the enhanced user experience where users get clear feedback about download completion.
+     */
+    @Test
+    public void test_generateBundle_autoDownloadWithoutPopup() throws DotDataException, InterruptedException {
+        //Create new bundle
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+
+        //Create a Filter since it's needed to generate the bundle
+        createFilter();
+
+        //Create GenerateBundleForm
+        final GenerateBundleForm bundleForm = new GenerateBundleForm.Builder().bundleId(bundleId).build();
+
+        // Track system events before bundle generation
+        final long beforeTime = System.currentTimeMillis();
+
+        //Call generate endpoint
+        final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+            final Response generateBundleResponse = (Response)arg;
+            assertEquals(Status.OK.getStatusCode(), generateBundleResponse.getStatus());
+            
+            // Verify the response contains the bundle file for auto-download
+            assertNotNull("Response should contain bundle file for auto-download", generateBundleResponse.getEntity());
+            return true;
+        }, arg -> {
+            fail("Error generating bundle");
+            return true;
+        });
+
+        bundleResource.generateBundle(getHttpRequest(),response,asyncResponse,bundleForm);
+        
+        // Wait for async processing to complete
+        Thread.sleep(5000);
+
+        // Verify download notification is sent after bundle generation (not before)
+        final boolean foundDownloadMessage = SystemEventsFactory.getInstance().getSystemEventsAPI()
+                .getEventsSince(beforeTime).stream()
+                .anyMatch(systemEvent -> {
+                    final String eventData = systemEvent.getPayload().getData().toString();
+                    return eventData.contains("is being auto-downloaded in the background");
+                });
+
+        assertTrue("Download notification should be sent after bundle is generated", foundDownloadMessage);
+        
+        // Verify no early download link popup is sent
+        final boolean foundEarlyPopupMessage = SystemEventsFactory.getInstance().getSystemEventsAPI()
+                .getEventsSince(beforeTime).stream()
+                .anyMatch(systemEvent -> {
+                    final String eventData = systemEvent.getPayload().getData().toString();
+                    return eventData.contains("can be downloaded here") || 
+                           eventData.contains("/api/bundle/_download/");
+                });
+
+        assertFalse("No early popup message with download link should be sent", foundEarlyPopupMessage);
+        
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+    }
+
+    /**
      * Method to Test: {@link BundleResource#downloadBundle(HttpServletRequest, HttpServletResponse, String)}
      * When: Create a bundle and try to download it, but since the tar.gz has not been generated should fail.
      * Should: return 404 since the file has not been generated
