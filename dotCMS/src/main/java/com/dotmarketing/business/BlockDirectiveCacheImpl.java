@@ -14,12 +14,11 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
     private final DotCacheAdministrator cache;
 
     private final String group = "BlockDirectiveCache";
-    private final String secondaryGroup = "BlockDirectiveHTMLPageCache";
+
 
     // regions name for the cache
     private final String[] groupNames = {
-            group,
-            secondaryGroup};
+            group};
 
     public BlockDirectiveCacheImpl() {
         this(CacheLocator.getCacheAdministrator(), (LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level));
@@ -35,7 +34,6 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
     public void clearCache() {
         // clear the cache
         cache.flushGroup(group);
-        cache.flushGroup(secondaryGroup);
     }
 
     @Override
