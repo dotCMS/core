@@ -119,7 +119,7 @@ public class Log4jUtil {
         LoggerContext context = (LoggerContext) LogManager.getContext();
 
         //Shutting down log4j in order to avoid memory leaks
-        shutdown(context);
+        shutdown(context, true);
     }
 
     /**
@@ -133,11 +133,25 @@ public class Log4jUtil {
      * @param context the LoggerContext to shutdown
      */
     public static void shutdown(LoggerContext context) {
+        shutdown(context, false);
+    }
+
+    /**
+     * Normally there is no need to do this manually.
+     * Each LoggerContext registers a shutdown hook that takes care of releasing resources when the JVM exits (unless system property log4j.shutdownHookEnabled is set to false).
+     * Web applications should include the log4j-web module in their classpath which disables the shutdown
+     * hook but instead cleans up log4j resources when the web application is stopped.
+     * If the ContextSelector in use is BasicAsyncLoggerContextSelector, we skip the shutdown
+     * to avoid shutting down the global async context while still in use, unless force is set to true.
+     * @param context the LoggerContext to shutdown
+     * @param force if true, forces Configurator.shutdown even with BasicAsyncLoggerContextSelector
+     */
+    public static void shutdown(LoggerContext context, boolean force) {
         // Get the current ContextSelector and check if it's BasicAsyncLoggerContextSelector
         ContextSelector currentContextSelector = contextSelector.get();
         
-        // Skip Configurator.shutdown if using BasicAsyncLoggerContextSelector to avoid issues
-        if (!(currentContextSelector instanceof BasicAsyncLoggerContextSelector)) {
+        // Skip Configurator.shutdown if using BasicAsyncLoggerContextSelector to avoid issues, unless forced
+        if (force || !(currentContextSelector instanceof BasicAsyncLoggerContextSelector)) {
             //Shutting down log4j in order to avoid memory leaks
             Configurator.shutdown(context);
         }
