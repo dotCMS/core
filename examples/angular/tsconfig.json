@@ -22,13 +22,7 @@
     "lib": [
       "ES2022",
       "dom"
-    ],
-    "paths": {
-      "@dotcms/angular": ["../../core-web/dist/libs/sdk/angular"],
-      "@dotcms/client": ["../../core-web/dist/libs/sdk/client"],
-      "@dotcms/types": ["../../core-web/dist/libs/sdk/types"],
-      "@dotcms/uve": ["../../core-web/dist/libs/sdk/uve"],
-      }
+    ]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
