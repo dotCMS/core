@@ -22,32 +22,6 @@ import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
 import { buildExtraQuery } from '../../shared/queries';
 import { ExtraContent, Blog } from '../../shared/contentlet.model';
-<<<<<<< HEAD
-import { PageState } from '../../shared/models';
-import { DotCMSClient } from '@dotcms/angular';
-import { HttpClient } from '@angular/common/http';
-
-// Function to debounce calls
-function debounce<T extends (...args: any[]) => void>(
-    func: T,
-    wait: number
-): (...args: Parameters<T>) => void {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-
-    return function (...args: Parameters<T>): void {
-        const later = () => {
-            timeout = null;
-            func(...args);
-        };
-
-        if (timeout !== null) {
-            clearTimeout(timeout);
-        }
-        timeout = setTimeout(later, wait);
-    };
-}
-=======
->>>>>>> main
 
 type DotCMSPage = {
   pageAsset: DotCMSPageAsset;

@@ -10,20 +10,6 @@ import { RouterLink } from '@angular/router';
 import { Product } from '../../shared/contentlet.model';
 
 @Component({
-<<<<<<< HEAD
-    selector: 'app-product',
-    imports: [RouterLink, NgOptimizedImage],
-    template: ` <div class="overflow-hidden bg-white rounded shadow-lg my-2">
-        <div class="p-4">
-            @if (contentlet().image.versionPath; as imageVersionPath) {
-            <img
-                class="w-full"
-                [ngSrc]="imageVersionPath"
-                width="100"
-                height="100"
-                alt="Product Image" />
-            }
-=======
   selector: 'app-product',
   imports: [RouterLink, NgOptimizedImage],
   template: ` <div class="overflow-hidden bg-white rounded shadow-lg my-2">
@@ -46,7 +32,6 @@ import { Product } from '../../shared/contentlet.model';
       } @else {
         <div class="text-3xl font-bold">
           {{ contentlet()['retailPrice'] ? $retailPrice() : $salePrice() }}
->>>>>>> main
         </div>
       }
       <a
