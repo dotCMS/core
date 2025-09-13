@@ -129,6 +129,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
     }));
   }
 
+
   /**
    * Set the error state
    * @param error
@@ -137,7 +138,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
     this.#context.update((state) => ({
       ...state,
       error: error,
-      status: 'error',
+      status: 'error'
     }));
   }
 }

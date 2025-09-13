@@ -1,5 +1,11 @@
 import { consola } from 'consola';
 
+import {
+    DotHttpClient,
+    DotCMSGraphQLError,
+    DotGraphQLApiResponse,
+    DotHttpError
+} from '@dotcms/types';
 import { ErrorMessages } from '../models';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
@@ -235,10 +241,14 @@ export function buildQuery(queryData: Record<string, string>): string {
  * @param {string[]} keys - Array of keys to extract from the response data
  * @returns {Record<string, string>} New object containing only the specified keys
  */
-export function mapResponseData(
-    responseData: Record<string, string>,
+export function mapContentResponse(
+    responseData: Record<string, unknown> | undefined,
     keys: string[]
-): Record<string, string> {
+): Record<string, unknown> | undefined {
+    if (!responseData) {
+        return undefined;
+    }
+
     return keys.reduce(
         (accumulator, key) => {
             if (responseData[key] !== undefined) {
@@ -247,7 +257,7 @@ export function mapResponseData(
 
             return accumulator;
         },
-        {} as Record<string, string>
+        {} as Record<string, unknown>
     );
 }
 
@@ -257,28 +267,31 @@ export function mapResponseData(
  * @param {Object} options - Options for the fetch request
  * @param {string} options.body - GraphQL query string
  * @param {Record<string, string>} options.headers - HTTP headers for the request
- * @returns {Promise<any>} Parsed JSON response from the GraphQL API
- * @throws {Error} If the HTTP response is not successful
+ * @param {DotHttpClient} options.httpClient - HTTP client for making requests
+ * @returns {Promise<DotGraphQLApiResponse>} Parsed JSON response from the GraphQL API
+ * @throws {Error} If the HTTP response is not successful or GraphQL errors are present
  */
 export async function fetchGraphQL({
     baseURL,
     body,
-    headers
+    headers,
+    httpClient
 }: {
     baseURL: string;
     body: string;
-    headers: Record<string, string>;
-}) {
+    headers?: HeadersInit;
+    httpClient: DotHttpClient;
+}): Promise<DotGraphQLApiResponse> {
     const url = new URL(baseURL);
     url.pathname = '/api/v1/graphql';
 
-    const response = await fetch(url.toString(), {
+    const response = await httpClient.request<DotGraphQLApiResponse>(url.toString(), {
         method: 'POST',
         body,
         headers
-    });
+    } as RequestInit);
 
-    if (!response.ok) {
+    if (response instanceof DotHttpError) {
         const error = {
             status: response.status,
             message: ErrorMessages[response.status] || response.statusText
@@ -287,5 +300,35 @@ export async function fetchGraphQL({
         throw error;
     }
 
-    return await response.json();
+    return response;
 }
+
+// export async function fetchGraphQL({
+//     baseURL,
+//     body,
+//     headers
+// }: {
+//     baseURL: string;
+//     body: string;
+//     headers: Record<string, string>;
+// }) {
+//     const url = new URL(baseURL);
+//     url.pathname = '/api/v1/graphql';
+
+//     const response = await fetch(url.toString(), {
+//         method: 'POST',
+//         body,
+//         headers
+//     });
+
+//     if (!response.ok) {
+//         const error = {
+//             status: response.status,
+//             message: ErrorMessages[response.status] || response.statusText
+//         };
+
+//         throw error;
+//     }
+
+//     return await response.json();
+// }
