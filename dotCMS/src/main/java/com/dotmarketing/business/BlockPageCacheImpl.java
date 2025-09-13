@@ -90,10 +90,10 @@ public class BlockPageCacheImpl extends BlockPageCache {
 
         // Look up the cached versions of the page based on inode and moddate
         Object cachedValue = this.cache.getNoThrow(cacheKey, PRIMARY_GROUP);
-        if(cachedValue instanceof String){
+        if(cachedValue !=null &&cachedValue instanceof String){
             return (String) cachedValue;
         }
-        if (cachedValue instanceof CacheValue) {
+        if (cachedValue !=null && cachedValue instanceof CacheValue) {
             return (String) ((CacheValue) cachedValue).value;
         }
 
