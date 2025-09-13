@@ -3,7 +3,7 @@ package com.dotmarketing.business;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.elasticsearch.common.recycler.Recycler.C;
+
 
 public class BlockDirectiveCacheObject implements Serializable {
 
