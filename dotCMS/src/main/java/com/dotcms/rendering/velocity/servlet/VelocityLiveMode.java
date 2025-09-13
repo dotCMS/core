@@ -29,6 +29,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import org.apache.velocity.context.Context;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
@@ -134,13 +135,13 @@ public class VelocityLiveMode extends VelocityModeHandler {
                         .remove(new VelocityResourceKey((HTMLPageAsset) htmlPage, PageMode.LIVE,
                                 htmlPage.getLanguageId()));
             }
-
+            int statusCode = response.getStatus();
             // Begin page caching
             String userId = (user != null) ? user.getUserId() : APILocator.getUserAPI().getAnonymousUser().getUserId();
             String language = String.valueOf(langId);
             String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
             String vanityUrl =  request.getAttribute(VANITY_URL_OBJECT)!=null ? ((CachedVanityUrl)request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId : "";
-            String queryString = request.getQueryString();
+            String queryString = PageCacheParameters.filterQueryString(request.getQueryString());
             String persona = null;
             Optional<Visitor> v = visitorAPI.getVisitor(request, false);
             if (v.isPresent() && v.get().getPersona() != null) {
@@ -148,24 +149,24 @@ public class VelocityLiveMode extends VelocityModeHandler {
             }
             final String originalUrl = (String)  request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) ;
             
-            
+            Date modDate = htmlPage.getModDate()!=null ? htmlPage.getModDate() : new Date(0);
             
             final Context context = VelocityUtil.getInstance().getContext(request, response);
 
             final PageCacheParameters cacheParameters =
-                    new PageCacheParameters(userId,
-                                    language,
-                                    urlMap,
-                                    queryString,
-                                    persona,
-                                    originalUrl,
-                                    htmlPage.getInode(),
-                                    String.valueOf(htmlPage.getModDate()),
-                                    vanityUrl,
-                                    WebAPILocator.getVariantWebAPI().currentVariantId()
+                    new PageCacheParameters("user:" + userId,
+                                    "lang:" + language,
+                                    "urlmap:" + urlMap,
+                                    "query:" + queryString,
+                                    "persona:" + persona,
+                                    "pageInode:" + htmlPage.getInode(),
+                                    "modDate:" + modDate.getTime(),
+                                    "vanity:" + vanityUrl,
+                                    "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
                                     );
             
             final boolean shouldCache = VelocityUtil.shouldPageCache(request, htmlPage);
+
             if(response.getHeader("Cache-Control")==null) {
                 // set cache control headers based on page cache
                 final String cacheControl = htmlPage.getCacheTTL() >= 0 ? "max-age=" +  htmlPage.getCacheTTL() : "no-cache";

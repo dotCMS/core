@@ -1,20 +1,14 @@
 package com.dotmarketing.business;
 
-import java.io.Serializable;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
+import com.dotcms.cache.CacheValue;
 import com.dotcms.concurrent.Debouncer;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
- * Provides the caching implementation for HTML pages. This approach uses a main
- * key to retrieve a cached page, and a subkey to retrieve the different
- * versions of it. With this structure, during the removal of a page, all the 
- * different versions of it will also be deleted easily. So, basically:
+ * Provides the caching implementation for HTML pages. This approach uses a main key to retrieve a cached page, and a
+ * subkey to retrieve the different versions of it. With this structure, during the removal of a page, all the different
+ * versions of it will also be deleted easily. So, basically:
  * <ul>
  * 	<li>
  * 		The main key is composed of:
@@ -33,7 +27,7 @@ import com.dotmarketing.util.Logger;
  * 		</ul>
  *  </li>
  * </ul>
- * 
+ *
  * @author Jose Castro
  * @version 1.0
  * @since 10-17-2014
@@ -41,92 +35,78 @@ import com.dotmarketing.util.Logger;
  */
 public class BlockPageCacheImpl extends BlockPageCache {
 
-	private boolean canCache = false;
-	private DotCacheAdministrator cache = null;
-	private static String primaryCacheGroup = "BlockDirectiveHTMLPageCache";
 
-	/**
-	 * Default constructor. Initializes the internal caching structures.
-	 */
-	public BlockPageCacheImpl() {
-		this.cache = CacheLocator.getCacheAdministrator();
-		this.canCache = LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level;
-	}
+    private static final String PRIMARY_GROUP = "BlockDirectiveHTMLPageCache";
 
-	@Override
-	public String getPrimaryGroup() {
-		return primaryCacheGroup;
-	}
+    private DotCacheAdministrator cache = null;
 
-	@Override
-	public String[] getGroups() {
-	    return new String[]{ primaryCacheGroup };
+    /**
+     * Default constructor. Initializes the internal caching structures.
+     */
+    public BlockPageCacheImpl() {
+        this.cache = CacheLocator.getCacheAdministrator();
 
-	}
+    }
 
-	@Override
-	public void clearCache() {
-		cache.flushGroup(primaryCacheGroup);
-	}
-
-	Debouncer debounceAdd = new Debouncer();
-	
-	
     @Override
-    public void add(IHTMLPage page, final String pageContent, PageCacheParameters pageChacheParams) {
-        if (!canCache || page == null || pageChacheParams == null ) {
+    public String getPrimaryGroup() {
+        return PRIMARY_GROUP;
+    }
+
+    @Override
+    public String[] getGroups() {
+        return new String[]{PRIMARY_GROUP};
+
+    }
+
+    @Override
+    public void clearCache() {
+        cache.flushGroup(PRIMARY_GROUP);
+    }
+
+    @Override
+    public void add(IHTMLPage page, final String pageContent, PageCacheParameters pageCacheParams) {
+        if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null) {
             return;
         }
-        
-        final String key = pageChacheParams.getKey();
-        Map<String,Serializable> cacheMap = Map.of(BlockDirectiveCache.PAGE_CONTENT_KEY, pageContent);
-        final BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(cacheMap, (int) page.getCacheTTL());
+
+        final String cacheKey = pageCacheParams.getKey();
+
+        long ttl = page.getCacheTTL()>0 ? page.getCacheTTL() * 1000 : Long.MAX_VALUE;
+        CacheValue cacheValue = new CacheValue(pageContent, ttl);
+
+        this.cache.put(cacheKey, cacheValue, PRIMARY_GROUP);
+
+    }
 
 
-        debounceAdd.debounce(key, () -> 
+    @Override
+    public String get(final IHTMLPage page, final PageCacheParameters pageCacheParams) {
 
-            this.cache.put(key, cto, primaryCacheGroup)
+        if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null) {
+            return null;
+        }
 
+        final String cacheKey = pageCacheParams.getKey();
 
-        , 1, TimeUnit.SECONDS);
+        // Look up the cached versions of the page based on inode and moddate
+        Object cachedValue = this.cache.getNoThrow(cacheKey, PRIMARY_GROUP);
+        if(cachedValue instanceof String){
+            return (String) cachedValue;
+        }
+        if (cachedValue instanceof CacheValue) {
+            return (String) ((CacheValue) cachedValue).value;
+        }
 
+        return null;
 
     }
 
     @Override
-    public String get(final IHTMLPage page, final PageCacheParameters pageChacheParams) {
-        if (!canCache || page == null || pageChacheParams == null ) {
-            return null;
-        }
+    public void remove(IHTMLPage page) {
 
-        final String key = pageChacheParams.getKey();
+        // not implemented
 
-        // Lookup the cached versions of the page based on inode and moddate
-
-        BlockDirectiveCacheObject bdco = (BlockDirectiveCacheObject) this.cache.getNoThrow(key, primaryCacheGroup);
-        if (bdco == null) {
-            return null;
-        }
-        
-        // if we are not expired, return
-        if (bdco.getCreated() + ((int) page.getCacheTTL() * 1000) > System.currentTimeMillis()) {
-            return (String) bdco.getMap().getOrDefault(BlockDirectiveCache.PAGE_CONTENT_KEY,"");
-        }
-
-        remove(page);
-        return null;
     }
-
-	@Override
-	public void remove(IHTMLPage page) {
-		try {
-			StringBuilder key = new StringBuilder();
-			key.append(page.getInode());
-			key.append("_" + page.getModDate().getTime());
-			this.cache.remove(key.toString(), primaryCacheGroup);
-		} catch (Exception e) {
-			Logger.debug(this, "Cache not able to be removed", e);
-		}
-	}
 
 }
