@@ -55,7 +55,6 @@ export class DotContentDriveSidebarComponent {
         const fullPath = untracked(() => `${currentSite.hostname}${URLForlderPath}`);
 
         this.getFolderHierarchyByPath(fullPath).subscribe((folders) => {
-            debugger;
             const { rootNodes, selectedNode } = buildTreeFolderNodes(
                 folders,
                 URLForlderPath || '/'

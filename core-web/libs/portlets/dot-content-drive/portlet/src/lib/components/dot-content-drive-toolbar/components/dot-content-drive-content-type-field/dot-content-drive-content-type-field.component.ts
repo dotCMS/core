@@ -8,7 +8,6 @@ import {
     inject,
     DestroyRef,
     OnInit,
-    signal,
     computed,
     linkedSignal
 } from '@angular/core';
