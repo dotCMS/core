@@ -36,6 +36,7 @@
         "e2e:dev": "CURRENT_ENV=dev HEADLESS=false nx e2e:dev dotcms-ui-e2e",
         "e2e:dev:headless": "CURRENT_ENV=dev HEADLESS=true nx e2e:dev dotcms-ui-e2e",
         "e2e:ui": "nx e2e dotcms-ui-e2e --ui",
+        "e2e:codegen": "npx playwright codegen http://localhost:8080/dotAdmin/#/",
         "format": "nx format:write",
         "format:write": "nx format:write",
         "format:check": "nx format:check",
@@ -44,10 +45,7 @@
         "test:dotcms-ui": "nx run dotcms-ui:test",
         "test:dotcms": "nx affected -t test --exclude='tag:skip:test'",
         "lint:dotcms": "nx run-many -t lint --exclude='tag:skip:lint' --fix",
-        "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test",
-        "update": "nx migrate latest",
-        "workspace-generator": "nx workspace-generator",
-        "help": "nx help"
+        "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test"
     },
     "private": false,
     "dependencies": {

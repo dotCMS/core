@@ -15,10 +15,10 @@ export class LoginPage {
         // Navigate to login page first
         await this.navigateToLogin();
 
-        // Use data-testid selectors (more stable than id selectors)
+        // Use data-testid selectors matching the codegen flow
         await this.page.getByTestId('userNameInput').click();
         await this.page.getByTestId('userNameInput').fill(username);
-        await this.page.getByTestId('userNameInput').press('Tab');
+        await this.page.getByTestId('password').click();
         await this.page.getByTestId('password').fill(password);
         await this.page.getByTestId('submitButton').click();
     }
@@ -27,6 +27,7 @@ export class LoginPage {
      * Navigate to login page based on environment
      */
     async navigateToLogin() {
+
         const loginUrl = '/dotAdmin/#/public/login';
 
         await this.page.goto(loginUrl);
@@ -57,10 +58,17 @@ export class LoginPage {
      * Verify login page structure and elements
      */
     async verifyLoginPageStructure(): Promise<{ inputs: number; buttons: number; hasPasswordField: boolean }> {
-        const inputs = await this.page.locator('input').count();
-        const buttons = await this.page.locator('button').count();
-        const bodyHTML = await this.page.locator('body').innerHTML();
-        const hasPasswordField = bodyHTML.includes('password');
+        // Count actual login form elements using real data-testid values
+        const usernameField = await this.page.getByTestId('userNameInput').count();
+        const passwordField = await this.page.getByTestId('password').count();
+        const inputs = usernameField + passwordField;
+
+        // Count buttons using real data-testid values
+        const submitButton = await this.page.getByTestId('submitButton').count();
+        const cancelButton = await this.page.getByTestId('cancelButton').count();
+        const buttons = submitButton + cancelButton;
+
+        const hasPasswordField = passwordField > 0;
 
         return {
             inputs,
