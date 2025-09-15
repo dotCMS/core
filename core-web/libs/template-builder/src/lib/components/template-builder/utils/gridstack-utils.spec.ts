@@ -67,7 +67,7 @@ describe('parseFromDotObjectToGridStack', () => {
             y: 0,
             x: 0,
             styleClass: [],
-            containers: []
+            containers: [{ identifier: 'SYSTEM_CONTAINER' }]
         });
         expect(result[0].subGridOpts?.children[0].id).toBeDefined();
     });
@@ -92,7 +92,7 @@ describe('parseFromDotObjectToGridStack', () => {
             y: 0,
             x: 0,
             styleClass: [],
-            containers: []
+            containers: [{ identifier: 'SYSTEM_CONTAINER' }]
         });
         expect(result[0].subGridOpts?.children[0].id).toBeDefined();
     });
