@@ -1,3 +1,9 @@
+<div class="tree-header">
+    <dot-content-drive-tree-toggler data-testid="tree-toggler" />
+    <h3>
+        {{ $currentSite()?.hostname }}
+    </h3>
+</div>
 <dot-tree-folder
     [folders]="$folders()"
     [loading]="$loading()"

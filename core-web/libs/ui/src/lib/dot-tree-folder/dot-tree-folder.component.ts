@@ -76,4 +76,9 @@ export class DotTreeFolderComponent {
      * @type {TreeNodeCollapseEvent}
      */
     onNodeCollapse = output<TreeNodeCollapseEvent>();
+
+
+    show() {
+        console.log(this.$selectedNode());
+    }
 }

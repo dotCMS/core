@@ -9,7 +9,8 @@ import {
     DestroyRef,
     OnInit,
     signal,
-    computed
+    computed,
+    linkedSignal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -59,7 +60,21 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         contentTypes: []
     });
 
-    readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
+    readonly $selectedContentTypes = linkedSignal<DotCMSContentType[]>(() => {
+        const contentTypesParam = this.#store.getFilterValue('contentType') as string[];
+
+        if (!contentTypesParam) {
+            return [];
+        }
+
+        const contentType = this.$state.contentTypes();
+
+        // Get contentTypes using the contentTypesParam
+        const contentTypes = contentType.filter((item) => contentTypesParam.includes(item.variable));
+        
+        return contentTypes ?? [];
+
+    });
     readonly getContentTypesEffect = effect(() => {
         const type = undefined;
         const filter = this.$state.filter();

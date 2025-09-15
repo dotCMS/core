@@ -83,6 +83,17 @@ export const DotContentDriveStore = signalStore(
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
             },
+            setGlobalSearch(searchValue: string) {
+                patchState(store, {
+                    filters: searchValue ? {
+                        title: searchValue
+                    } : {},
+                    pagination: {
+                        ...store.pagination(),
+                        offset: 0
+                    }
+                });
+            },
             patchFilters(filters: DotContentDriveFilters) {
                 patchState(store, {
                     filters: { ...store.filters(), ...filters },

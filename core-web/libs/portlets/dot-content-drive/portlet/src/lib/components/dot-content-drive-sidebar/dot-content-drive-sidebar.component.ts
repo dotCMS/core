@@ -1,5 +1,6 @@
 import { forkJoin, Observable } from 'rxjs';
 
+import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -25,13 +26,14 @@ import {
     buildTreeFolderNodes,
     TreeNodeItem
 } from '../../utils/tree-folder.utils';
+import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 
 @Component({
     selector: 'dot-content-drive-sidebar',
     templateUrl: './dot-content-drive-sidebar.component.html',
     styleUrl: './dot-content-drive-sidebar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent],
+    imports: [DotTreeFolderComponent, DotContentDriveTreeTogglerComponent, JsonPipe],
     providers: [DotFolderService]
 })
 export class DotContentDriveSidebarComponent {
@@ -53,6 +55,7 @@ export class DotContentDriveSidebarComponent {
         const fullPath = untracked(() => `${currentSite.hostname}${URLForlderPath}`);
 
         this.getFolderHierarchyByPath(fullPath).subscribe((folders) => {
+            debugger;
             const { rootNodes, selectedNode } = buildTreeFolderNodes(
                 folders,
                 URLForlderPath || '/'
@@ -73,6 +76,7 @@ export class DotContentDriveSidebarComponent {
         const { path } = node.data;
 
         this.#store.setPath(path);
+        this.$selectedNode.set(node);
     }
 
     /**

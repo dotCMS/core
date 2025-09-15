@@ -4,13 +4,14 @@
     <p-tree
         [value]="$folders()"
         [loading]="loading"
-        selectionMode="single"
+        selectionMode="multiple"
         loadingMode="icon"
         class="w-full h-full"
-        [styleClass]="treeStyleClasses()"
         loadingMode="icon"
-        [selection]="$selectedNode()"
+        [styleClass]="treeStyleClasses()"
+        [(selection)]="$selectedNode"
         [scrollHeight]="'auto'"
+        [metaKeySelection]="true"
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)"
         (onNodeCollapse)="onNodeCollapse.emit($event)">
@@ -41,3 +42,7 @@
         <span class="loading-text">{{ 'content.drive.loading.folders.title' | dm }}</span>
     </div>
 }
+
+<div style="position: absolute; top: 0; left: 482px; border: 1px solid red; height: 200px; z-index: 10000; font-size: 16px; font-weight: bold; background: mediumpurple;">
+    <button (click)="show()"> Show </button>
+</div>

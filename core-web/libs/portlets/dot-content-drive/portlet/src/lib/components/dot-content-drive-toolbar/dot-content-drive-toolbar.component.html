@@ -1,5 +1,8 @@
 <p-toolbar styleClass="dot-content-drive-toolbar">
-    <dot-content-drive-tree-toggler data-testid="tree-toggler" />
+    @if (!$treeExpanded()) {
+        <dot-content-drive-tree-toggler data-testid="tree-toggler" />
+    }
+
     <div class="p-toolbar-group">
         <div class="p-toolbar-group-top">
             <dot-content-drive-search-input data-testid="search-input" class="search-input" />
@@ -10,14 +13,11 @@
                 iconPos="right"
                 class="add-new-button"
                 size="small" />
-    
         </div>
-    
+
         <div class="p-toolbar-group-bottom">
-    
-    
-                <dot-content-drive-base-type-selector data-testid="base-type-selector" />
-                <dot-content-drive-content-type-field data-testid="content-type-field" />
+            <dot-content-drive-base-type-selector data-testid="base-type-selector" />
+            <dot-content-drive-content-type-field data-testid="content-type-field" />
         </div>
     </div>
 </p-toolbar>

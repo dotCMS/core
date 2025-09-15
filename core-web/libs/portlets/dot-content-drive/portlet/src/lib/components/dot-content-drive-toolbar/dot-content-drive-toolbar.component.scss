@@ -35,8 +35,8 @@
 }
 
 .p-toolbar-group-bottom {
-    display: flex;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(4.5rem, 14rem));
     width: 100%;
     gap: 1rem;
 }
