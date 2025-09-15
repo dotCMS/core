@@ -66,7 +66,6 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
 
     readonly $selectedContentTypes = signal<DotCMSContentType[]>([]);
 
-    // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991
     // This prevents the effect from being triggered when the base types are the same or filters changes
     private readonly $mappedBaseTypes = computed<string>(
         () => {
@@ -280,10 +279,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
             .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
                 const selectedContentTypes = this.$selectedContentTypes();
 
-                const allContentTypes = [
-                    ...selectedContentTypes,
-                    ...dotCMSContentTypes.sort((a, b) => a.variable.localeCompare(b.variable))
-                ];
+                const allContentTypes = [...selectedContentTypes, ...dotCMSContentTypes];
                 const contentTypes = this.filterAndDeduplicateContentTypes(allContentTypes);
 
                 this.updateState({ contentTypes, loading: false });
