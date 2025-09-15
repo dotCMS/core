@@ -14,8 +14,7 @@ import { DotTemplateBuilderStore } from './template-builder.store';
 import {
     DotGridStackNode,
     DotGridStackWidget,
-    DotTemplateLayoutProperties,
-    SYSTEM_CONTAINER_IDENTIFIER
+    DotTemplateLayoutProperties
 } from '../models/models';
 import {
     GRIDSTACK_DATA_MOCK,
@@ -189,9 +188,7 @@ describe('DotTemplateBuilderStore', () => {
         rows$.subscribe(({ rows, shouldEmit }) => {
             expect(rows.length).toBeGreaterThan(initialState.rows.length);
             expect(rows[3].subGridOpts.children[0].w).toBe(3);
-            expect(rows[3].subGridOpts.children[0].containers[0].identifier).toBe(
-                SYSTEM_CONTAINER_IDENTIFIER
-            );
+            expect(rows[3].subGridOpts.children[0].containers).toEqual([]);
             expect(shouldEmit).toEqual(true);
             done();
         });
@@ -297,11 +294,7 @@ describe('DotTemplateBuilderStore', () => {
                 id: newColumn.id,
                 parentId: parentId,
                 styleClass: undefined,
-                containers: [
-                    {
-                        identifier: SYSTEM_CONTAINER_IDENTIFIER
-                    }
-                ]
+                containers: []
             });
             expect(shouldEmit).toEqual(true);
             done();
@@ -785,7 +778,7 @@ describe('DotTemplateBuilderStore', () => {
             });
         });
 
-        it('should use system container when defaultContainer is not set', (done) => {
+        it('should use empty containers when defaultContainer is not set', (done) => {
             expect.assertions(1);
             // Ensure defaultContainer is undefined
             service.setState({
@@ -809,9 +802,7 @@ describe('DotTemplateBuilderStore', () => {
 
             rows$.subscribe(({ rows }) => {
                 const newRow = rows[rows.length - 1];
-                expect(newRow.subGridOpts.children[0].containers[0].identifier).toBe(
-                    SYSTEM_CONTAINER_IDENTIFIER
-                );
+                expect(newRow.subGridOpts.children[0].containers).toEqual([]);
                 done();
             });
         });

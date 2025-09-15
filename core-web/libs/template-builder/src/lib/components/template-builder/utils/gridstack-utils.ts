@@ -6,7 +6,6 @@ import {
     BOX_WIDTH,
     DotGridStackNode,
     DotGridStackWidget,
-    SYSTEM_CONTAINER_IDENTIFIER,
     TemplateBuilderBoxSize
 } from '../models/models';
 
@@ -16,7 +15,7 @@ const currentBoxChar = '*';
 
 export const EMPTY_ROWS_VALUE = (container?: DotContainer) => {
     const identifier = container?.path ?? container?.identifier;
-    const containers = container ? [{ identifier }] : [{ identifier: SYSTEM_CONTAINER_IDENTIFIER }];
+    const containers = container ? [{ identifier }] : [];
 
     return [
         {
@@ -103,9 +102,7 @@ export function createDotGridStackWidgetFromNode(
     defaultContainer?: DotContainer
 ): DotGridStackWidget {
     const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
-    const fallbackContainers = identifier
-        ? [{ identifier }]
-        : [{ identifier: SYSTEM_CONTAINER_IDENTIFIER }];
+    const fallbackContainers = identifier ? [{ identifier }] : [];
     const containers = node.containers ? node.containers : fallbackContainers;
     return {
         x: node.x,
