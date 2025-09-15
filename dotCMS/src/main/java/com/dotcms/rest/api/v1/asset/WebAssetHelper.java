@@ -65,7 +65,10 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
  */
 public class WebAssetHelper {
 
+    public static final String PATH_SEPARATOR = StringPool.FORWARD_SLASH;
+
     public static final String SORT_BY = "modDate";
+
     LanguageAPI languageAPI;
 
     FileAssetAPI fileAssetAPI;
@@ -617,7 +620,7 @@ public class WebAssetHelper {
         } else {
 
             if (checkout.isLive()) {
-                //if the desired state is working we need to unpublish the contentlet
+                //if the desired state is working, we need to unpublish the contentlet
                 contentletAPI.unpublish(contentletToProcess, user, false);
             } else if (!checkedIn) {
                 return contentletAPI.checkin(contentletToProcess, user, false);
@@ -634,7 +637,7 @@ public class WebAssetHelper {
      * @param folder the folder to save the file
      * @param lang the language to save the file
      * @return the contentlet
-     * @throws DotDataException any data related exception
+     * @throws DotDataException any data-related exception
      * @throws DotSecurityException any security violation exception
      */
     Contentlet makeFileAsset(final File file, final Host host, final Folder folder, final User user, final Language lang)
@@ -757,11 +760,13 @@ public class WebAssetHelper {
         }
         final Host host = assetAndPath.resolvedHost();
         final Folder resolvedFolder = assetAndPath.resolvedFolder();
-        return toAssetsFolder(applyFolderDetail(resolvedFolder, host, data, user));
+        final Folder withDetail = applyDetail(resolvedFolder, host, data);
+        folderAPI.save(withDetail, user, true);
+        return toAssetsFolder(withDetail);
     }
 
     /**
-     *
+     * Performs a folder update, the difference revolves around
      * @param pathOrInode
      * @param data
      * @param user
@@ -770,12 +775,13 @@ public class WebAssetHelper {
      * @throws DotSecurityException
      */
     @WrapInTransaction
-    public FolderView updateFolder(final String pathOrInode, final AbstractFolderDetail data,
+    public FolderView updateFolder(final String pathOrInode, final AbstractUpdateFolderDetail data,
             final User user)
             throws DotDataException, DotSecurityException {
         if(UUIDUtil.isUUID(pathOrInode)){
             final Folder folder = folderAPI.find(pathOrInode, user, false);
-            return toAssetsFolder(applyFolderDetail(folder, folder.getHost(), data, user));
+            final Folder withDetail = applyDetail(folder, folder.getHost(), data, user);
+            return toAssetsFolder(withDetail);
         }
         final String path = normalize(pathOrInode);
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
@@ -786,40 +792,45 @@ public class WebAssetHelper {
             // We can only update folders that have already been created by the user
             throw new IllegalArgumentException(String.format("The path [%s] can not be resolved as a folder", path));
         }
-        return toAssetsFolder(applyFolderDetail(resolvedFolder, host, data, user));
-    }
-
-    private static String normalize(String pathOrInode) {
-        return !pathOrInode.replaceAll("\\.+$", "")
-                .endsWith(StringPool.FORWARD_SLASH)
-                ? pathOrInode + StringPool.FORWARD_SLASH
-                : pathOrInode;
+        final Folder withDetail = applyDetail(resolvedFolder, host, data, user);
+        folderAPI.save(withDetail, user, true);
+        return toAssetsFolder(withDetail);
     }
 
     /**
+     * Normalizes a path string by:
+     * 1. Removing whitespace characters (spaces, tabs, newlines).
+     * 2. Replacing multiple slashes (/) with a single slash.
+     * 3. Ensuring the path starts with "//".
+     * 4. Ensuring the path ends with "/".
      *
-     * @param folder
-     * @param host
-     * @param meta
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param pathOrInode input string to normalize
+     * @return normalized path string
      */
-    private Folder applyFolderDetail(final Folder folder, final Host host,
-            final AbstractFolderDetail meta, final User user)
+    static String normalize(String pathOrInode) {
+        // 1. Remove whitespace (spaces, tabs, newlines)
+        String cleaned = pathOrInode.replaceAll("\\.+$", "").replaceAll("\\s+", "");
+
+        // 2. Replace multiple slashes with a single one
+        cleaned = cleaned.replaceAll("/{2,}", "/");
+
+        // 3. Ensure it starts with //
+        if (!cleaned.startsWith("//")) {
+            cleaned = "//" + cleaned.replaceAll("^/+", "");
+        }
+
+        // 4. Ensure it ends with /
+        if (!cleaned.endsWith("/")) {
+            cleaned = cleaned + "/";
+        }
+
+        return cleaned;
+    }
+
+    private Folder applyDetail(final Folder folder, final Host host,
+            final AbstractFolderDetail meta)
             throws DotDataException, DotSecurityException {
         if (null != meta) {
-
-            final String name = meta.name();
-            if (UtilMethods.isSet(name)) {
-                final String folderName = name.trim().replaceAll("^/+", "").replaceAll("/+$", "");
-                final Folder byPath = folderAPI.findFolderByPath(StringPool.FORWARD_SLASH + folderName, host, user, false);
-                if (null != byPath && UtilMethods.isSet(byPath.getInode())) {
-                    throw new ConflictException(String.format("The name [%s] on [%s] already exists. ", folderName, host.getHostname()));
-                }
-                folder.setName(folderName);
-            }
 
             final String title = meta.title();
             if (UtilMethods.isSet(title)) {
@@ -852,7 +863,35 @@ public class WebAssetHelper {
             }
         }
         folder.setHostId(host.getIdentifier());
-        folderAPI.save(folder, user, true);
+        return folder;
+    }
+
+    /**
+     *
+     * @param folder
+     * @param host
+     * @param meta
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private Folder applyDetail(final Folder folder, final Host host,
+            final AbstractUpdateFolderDetail meta, final User user)
+            throws DotDataException, DotSecurityException {
+        if (null != meta) {
+            final String name = meta.name();
+            if (UtilMethods.isSet(name)) {
+                //If the field name is used to rename the folder to something else that already exists
+                final String folderName = name.trim().replaceAll("^/+", "").replaceAll("/+$", "");
+                final Folder byPath = folderAPI.findFolderByPath(PATH_SEPARATOR + folderName, host, user, false);
+                if (null != byPath && UtilMethods.isSet(byPath.getInode())) {
+                    throw new ConflictException(String.format("The name [%s] on [%s] already exists. ", folderName, host.getHostname()));
+                }
+                folder.setName(folderName);
+            }
+        }
+        applyDetail(folder, host, meta);
         return folder;
     }
 

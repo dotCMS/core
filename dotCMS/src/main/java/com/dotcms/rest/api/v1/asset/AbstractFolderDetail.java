@@ -14,10 +14,6 @@ import org.immutables.value.Value;
 public interface AbstractFolderDetail {
 
     @Nullable
-    @JsonProperty("name")
-    String name();
-
-    @Nullable
     @JsonProperty("title")
     String title();
 

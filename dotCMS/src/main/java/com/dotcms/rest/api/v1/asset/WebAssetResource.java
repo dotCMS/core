@@ -10,7 +10,6 @@ import com.dotcms.rest.api.v1.asset.view.WebAssetEntityView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -253,7 +252,15 @@ public class WebAssetResource {
         return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 
-
+    /**
+     * create a new folder
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Path("/folders")
     @POST
     @JSONP
@@ -262,7 +269,7 @@ public class WebAssetResource {
     public Response createFolder(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final FolderForm form
+            final NewFolderForm form
     ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
@@ -273,9 +280,18 @@ public class WebAssetResource {
 
         final User user = initDataObject.getUser();
         final FolderView folder = helper.saveNewFolder(form.assetPath(), form.data(), user);
-         return Response.ok(new ResponseEntityView<>(folder)).build();
+        return Response.ok(new ResponseEntityView<>(folder)).build();
     }
 
+    /**
+     * Update a folder by path
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Path("/folders")
     @PUT
     @JSONP
@@ -284,7 +300,7 @@ public class WebAssetResource {
     public Response updateFolder(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final FolderForm form
+            final UpdateFolderForm form
     ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
