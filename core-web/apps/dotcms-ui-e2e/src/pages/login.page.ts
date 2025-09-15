@@ -27,8 +27,7 @@ export class LoginPage {
      * Navigate to login page based on environment
      */
     async navigateToLogin() {
-        const currentEnv = process.env['CURRENT_ENV'] || 'dev';
-        const loginUrl = currentEnv === 'ci' ? '/login/' : '/dotAdmin/#/public/login';
+        const loginUrl = '/dotAdmin/#/public/login';
 
         await this.page.goto(loginUrl);
         await this.page.waitForLoadState();
