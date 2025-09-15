@@ -238,7 +238,6 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                     defaultContainer
                 });
 
-                console.log('defaultContainer', this.getContainerMap(defaultContainer));
                 requestAnimationFrame(() => this.setUpGridStack());
             });
     }
