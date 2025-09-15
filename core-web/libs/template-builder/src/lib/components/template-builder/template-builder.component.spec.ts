@@ -54,14 +54,14 @@ const mockRect = {
 describe('TemplateBuilderComponent', () => {
     let spectator: Spectator<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
-    const mockContainer = containersMock[0];
     let dialog: DialogService;
-
+    let dotContainersService: DotContainersService;
     let openDialogMock: jest.SpyInstance;
+    let defaultContainerSpy: jest.SpyInstance;
+    const mockContainer = containersMock[0];
 
     const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
-
         imports: [
             NgFor,
             NgIf,
@@ -124,8 +124,9 @@ describe('TemplateBuilderComponent', () => {
 
         store = spectator.inject(DotTemplateBuilderStore, true);
         dialog = spectator.inject(DialogService);
-
         openDialogMock = jest.spyOn(dialog, 'open');
+        dotContainersService = spectator.inject(DotContainersService, true);
+        defaultContainerSpy = jest.spyOn(dotContainersService.defaultContainer$, 'pipe');
         spectator.detectChanges();
     });
 
@@ -133,6 +134,12 @@ describe('TemplateBuilderComponent', () => {
         // Store init is called on init
         const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
         expect(changeMock).not.toHaveBeenCalled();
+    });
+
+    describe('ngOnInit and defaultContainer$ subscription', () => {
+        it('should subscribe to defaultContainer$ on ngOnInit', () => {
+            expect(defaultContainerSpy).toHaveBeenCalled();
+        });
     });
 
     it("should call updateOldRows from the store when the layout changes and it's not the first time", () => {
@@ -183,23 +190,26 @@ describe('TemplateBuilderComponent', () => {
         spectator.triggerEventHandler(builderBox1, 'deleteColumn', undefined);
         expect(spectator.component.removeColumn).toHaveBeenCalled();
 
-        const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
-        const rowId = box1.nativeElement
-            .closest('dotcms-template-builder-row')
-            .getAttribute('gs-id');
+        // Wait for GridStack to be initialized via requestAnimationFrame
+        requestAnimationFrame(() => {
+            const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
+            const rowId = box1.nativeElement
+                .closest('dotcms-template-builder-row')
+                .getAttribute('gs-id');
 
-        const box1Id = box1.nativeElement.getAttribute('gs-id');
+            const box1Id = box1.nativeElement.getAttribute('gs-id');
 
-        spectator.component.removeColumn(
-            { id: box1Id, parentId: rowId },
-            box1.nativeElement,
-            rowId
-        );
-        expect(store.removeColumn).toHaveBeenCalledWith({
-            ...{ id: box1Id, parentId: rowId },
-            parentId: rowId
+            spectator.component.removeColumn(
+                { id: box1Id, parentId: rowId },
+                box1.nativeElement,
+                rowId
+            );
+            expect(store.removeColumn).toHaveBeenCalledWith({
+                ...{ id: box1Id, parentId: rowId },
+                parentId: rowId
+            });
+            done();
         });
-        done();
     });
 
     it('should call addContainer from store when triggering addContainer', (done) => {
