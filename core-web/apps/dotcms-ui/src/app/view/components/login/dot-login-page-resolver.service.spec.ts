@@ -18,9 +18,9 @@ export class MockDotLoginPageStateService {
         }
     });
 
-    set = jasmine.createSpy('set').and.returnValue(this.mockLoginInfo);
-    get = jasmine.createSpy('get').and.returnValue(this.mockLoginInfo);
-    update = jasmine.createSpy('update');
+    set = jest.fn().mockReturnValue(this.mockLoginInfo);
+    get = jest.fn().mockReturnValue(this.mockLoginInfo);
+    update = jest.fn();
 }
 
 describe('DotLoginPageResolver', () => {
@@ -45,5 +45,6 @@ describe('DotLoginPageResolver', () => {
     it('should set the dotLoginPageStateService with the correct values ', () => {
         dotLoginPageResolver.resolve();
         expect(dotLoginPageStateService.set).toHaveBeenCalledWith('');
+        expect(dotLoginPageStateService.set).toHaveBeenCalledTimes(1);
     });
 });

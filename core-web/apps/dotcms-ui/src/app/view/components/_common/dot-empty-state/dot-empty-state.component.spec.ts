@@ -72,11 +72,11 @@ describe('DotEmptyStateComponent', () => {
         const button = de.query(By.css('[data-testid="button"]'));
         const icon = de.query(By.css('[data-testid="material-icons"]'));
 
-        expect(icon.nativeElement.innerText).toBe('web');
-        expect(title.nativeElement.innerText).toEqual('Your template list is empty');
-        expect(content.nativeElement.innerText).toEqual(
+        expect(icon.nativeElement.textContent).toBe('web');
+        expect(title.nativeElement.textContent).toEqual('Your template list is empty');
+        expect(content.nativeElement.textContent).toEqual(
             "You haven't added anything yet, start by clicking the button below"
         );
-        expect(button.nativeElement.innerText).toEqual('Add New Template');
+        expect(button.nativeElement.textContent).toEqual('Add New Template');
     });
 });

@@ -92,7 +92,7 @@ describe('DotAppsCardComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-card__name')).nativeElement.innerText
+                fixture.debugElement.query(By.css('.dot-apps-card__name')).nativeElement.textContent
             ).toBe(component.app.name);
 
             expect(

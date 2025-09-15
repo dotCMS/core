@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -54,7 +54,7 @@ import { DotContentletEditorService } from '../../../view/components/dot-content
 
 @Injectable()
 class MockDotContentletEditorService {
-    edit = jasmine.createSpy('edit');
+    edit = jest.fn();
 }
 
 describe('DotContentletsComponent', () => {
@@ -134,7 +134,7 @@ describe('DotContentletsComponent', () => {
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
 
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
 
@@ -146,6 +146,7 @@ describe('DotContentletsComponent', () => {
         };
         await fixture.whenStable();
         expect(dotContentletEditorService.edit).toHaveBeenCalledWith(params);
+        expect(dotContentletEditorService.edit).toHaveBeenCalledTimes(1);
     });
 
     it('should go current portlet and reload data when modal closed', () => {
@@ -155,10 +156,11 @@ describe('DotContentletsComponent', () => {
             queryParamsHandling: 'preserve'
         });
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should call dotCustomEventHandlerService on customEvent', () => {
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle');
         const edit = de.query(By.css('dot-edit-contentlet'));
         edit.triggerEventHandler('custom', { data: 'test' });
         expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({

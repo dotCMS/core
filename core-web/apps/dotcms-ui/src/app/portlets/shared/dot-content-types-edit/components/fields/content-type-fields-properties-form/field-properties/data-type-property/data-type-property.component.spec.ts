@@ -65,7 +65,7 @@ describe('DataTypePropertyComponent', () => {
     it('should have 4 values for Radio Field', () => {
         fixture.detectChanges();
 
-        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
+        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
 
         expect(4).toEqual(pRadioButtons.length);
         expect('Text').toBe(pRadioButtons[0].componentInstance.label);
@@ -82,7 +82,7 @@ describe('DataTypePropertyComponent', () => {
         comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableSelectField';
         fixture.detectChanges();
 
-        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
+        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
 
         expect(4).toEqual(pRadioButtons.length);
         expect('Text').toBe(pRadioButtons[0].componentInstance.label);
@@ -99,7 +99,7 @@ describe('DataTypePropertyComponent', () => {
         comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableTextField';
         fixture.detectChanges();
 
-        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
+        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
 
         expect(3).toEqual(pRadioButtons.length);
         expect('Text').toBe(pRadioButtons[0].componentInstance.label);

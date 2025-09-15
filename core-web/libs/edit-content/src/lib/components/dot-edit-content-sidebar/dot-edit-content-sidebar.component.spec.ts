@@ -11,7 +11,7 @@ import { of } from 'rxjs';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TabView, TabViewModule } from 'primeng/tabview';
 
@@ -22,6 +22,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -40,7 +41,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
-import { CONTENT_TYPE_MOCK, MockResizeObserver } from '../../utils/mocks';
+import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
@@ -71,8 +72,10 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(Router),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
+            mockProvider(ConfirmationService),
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
+            mockProvider(DotVersionableService),
             mockProvider(DialogService),
             {
                 provide: DotCurrentUserService,
@@ -96,7 +99,6 @@ describe('DotEditContentSidebarComponent', () => {
     });
 
     beforeEach(() => {
-        window.ResizeObserver = MockResizeObserver;
         spectator = createComponent({ detectChanges: false });
 
         store = spectator.inject(DotEditContentStore, true);
