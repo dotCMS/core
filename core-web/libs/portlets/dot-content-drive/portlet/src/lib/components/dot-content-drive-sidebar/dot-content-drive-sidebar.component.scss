@@ -14,8 +14,8 @@
 .tree-header {
     display: flex;
     align-items: center;
-    padding: 1.25rem 1rem;
-    gap: 0.5em;
+    padding: $spacing-4 $spacing-3;
+    gap: $spacing-1;
 
     h3 {
         font-size: $font-size-default;
