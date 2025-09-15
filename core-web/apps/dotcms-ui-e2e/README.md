@@ -113,6 +113,145 @@ yarn e2e:dev --reporter=list
 3. Never interact directly with DOM in tests
 4. Centralize test data in separate files
 
+## 🗄️ **Data Management & Test Isolation**
+
+### **CRITICAL: Always Use Empty Starter**
+
+All E2E tests **MUST** assume they are running against a **clean, empty dotCMS instance** (using the `empty_20250714.zip` starter or newer). This ensures:
+
+-   ✅ **Test Isolation**: Each test runs independently
+-   ✅ **Deterministic Results**: No interference from existing data
+-   ✅ **Reproducible Failures**: Same conditions every time
+
+### **Create Your Own Test Data**
+
+**❌ NEVER rely on existing data:**
+
+```typescript
+// DON'T DO THIS - Assumes data exists
+test('Edit existing blog post', async ({ page }) => {
+    await page.goto('/content/blogs/my-existing-blog');
+    // This will fail on empty starter!
+});
+```
+
+**✅ ALWAYS create the data you need:**
+
+```typescript
+// DO THIS - Create data in the test
+test('Edit blog post', async ({ page, request }) => {
+    // 1. Create the content type if needed
+    const contentType = await createContentType(request, blogContentType);
+
+    // 2. Create the test data
+    const blog = await createContent(request, {
+        contentType: contentType.id,
+        title: 'Test Blog Post',
+        body: 'Test content'
+    });
+
+    // 3. Now test the functionality
+    await page.goto(`/content/edit/${blog.identifier}`);
+    // Test continues...
+
+    // 4. Clean up after test
+    await deleteContent(request, blog.identifier);
+});
+```
+
+### **Data Encapsulation Patterns**
+
+#### **1. Use beforeEach/afterEach for Setup/Cleanup**
+
+```typescript
+test.describe('Content Management', () => {
+    let testContent: Content;
+
+    test.beforeEach(async ({ request }) => {
+        // Create test data
+        testContent = await createTestContent(request);
+    });
+
+    test.afterEach(async ({ request }) => {
+        // Clean up test data
+        await deleteContent(request, testContent.identifier);
+    });
+
+    test('should edit content', async ({ page }) => {
+        // Use the created test data
+        await page.goto(`/content/edit/${testContent.identifier}`);
+    });
+});
+```
+
+#### **2. Create Factory Functions**
+
+```typescript
+// src/data/factories.ts
+export async function createTestBlog(request: APIRequestContext) {
+    return await createContent(request, {
+        contentType: 'Blog',
+        title: `Test Blog ${Date.now()}`,
+        body: 'Test blog content',
+        author: 'Test Author'
+    });
+}
+
+export async function createTestUser(request: APIRequestContext) {
+    return await createUser(request, {
+        email: `test-${Date.now()}@dotcms.com`,
+        firstName: 'Test',
+        lastName: 'User'
+    });
+}
+```
+
+#### **3. Use Unique Identifiers**
+
+```typescript
+// Always use timestamps or UUIDs for unique data
+const uniqueTitle = `Test Content ${Date.now()}`;
+const uniqueEmail = `user-${crypto.randomUUID()}@test.com`;
+```
+
+### **API Request Helpers**
+
+Create reusable API helpers for data management:
+
+```typescript
+// src/requests/content.ts
+export async function createContent(request: APIRequestContext, data: CreateContentData) {
+    const response = await request.post('/api/v1/content', { data });
+    return response.json();
+}
+
+export async function deleteContent(request: APIRequestContext, identifier: string) {
+    await request.delete(`/api/v1/content/${identifier}`);
+}
+
+// src/requests/users.ts
+export async function createUser(request: APIRequestContext, userData: UserData) {
+    const response = await request.post('/api/v1/users', { data: userData });
+    return response.json();
+}
+```
+
+### **Why This Approach?**
+
+1. **🔒 Isolation**: Tests don't interfere with each other
+2. **🎯 Reliability**: Tests work consistently across environments
+3. **🧹 Clean State**: Each test starts with known conditions
+4. **🔄 Repeatability**: Tests can be run multiple times
+5. **🚀 Parallel Execution**: Tests can run in parallel safely
+
+### **Environment Considerations**
+
+-   **Development**: Uses empty starter, creates data as needed
+-   **CI**: Uses empty starter, creates data as needed
+-   **Local Testing**: Always assume empty state, create required data
+
+Remember: **If your test needs data to exist, your test should create that data!**
+
 ## Environment Variables
 
 -   `CURRENT_ENV`: `dev` | `ci` (default: `dev`)

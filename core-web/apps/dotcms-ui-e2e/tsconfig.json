@@ -15,10 +15,11 @@
         "paths": {
             "@pages": ["./src/pages/index"],
             "@components": ["./src/components"],
-            "@locators/*": ["./src/locators/*"],
             "@utils/*": ["./src/utils/*"],
             "@data/*": ["./src/data/*"],
-            "@models/*": ["./src/models/*"]
+            "@models/*": ["./src/models/*"],
+            "@requests/*": ["./src/requests/*"],
+            "@tests/*": ["./src/tests/*"]
         }
     },
     "include": [
