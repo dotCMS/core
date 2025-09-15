@@ -67,9 +67,7 @@
                 <div class="template-builder-box__item">
                     <p data-testId="container-title">
                         @let identifier = item.identifier;
-                        {{
-                            containerMap?.[identifier]?.title || identifier
-                        }}
+                        {{ containerMap?.[identifier]?.title || identifier }}
                     </p>
                     <dotcms-remove-confirm-dialog
                         (deleteConfirmed)="deleteContainer.emit($index)"

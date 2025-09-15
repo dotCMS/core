@@ -11,7 +11,8 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    SYSTEM_CONTAINER_IDENTIFIER
 } from '../models/models';
 import {
     getIndexRowInItems,
@@ -54,7 +55,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly addRow = this.updater((state, newRow: DotGridStackWidget) => {
         const { rows, defaultContainer } = state;
         const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
-        const containers = identifier ? [{ identifier }] : [];
+        const containers = identifier
+            ? [{ identifier }]
+            : [{ identifier: SYSTEM_CONTAINER_IDENTIFIER }];
 
         return {
             ...state,
@@ -550,6 +553,19 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         themeId,
         shouldEmit: true
     }));
+
+    /**
+     * @description This method updates the defaultContainer
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateDefaultContainer = this.updater(
+        (state, defaultContainer: DotContainer | null) => ({
+            ...state,
+            defaultContainer,
+            shouldEmit: true
+        })
+    );
 
     // Utils methods
 
