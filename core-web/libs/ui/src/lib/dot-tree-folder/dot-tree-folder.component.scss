@@ -31,14 +31,6 @@
             color: $text-color-highlight;
         }
     }
-
-    /* 
-        Prevent the tree toggler from being clicked when the node is highlighted 
-        as it will cause the node to be unselected
-    */
-    .p-tree .p-tree-container .p-treenode .p-treenode-content.p-highlight:has(> .p-treenode-label:only-child) {
-        pointer-events: none;
-    }
 }
 
 /* Modes for toggler icon rendering */

@@ -51,7 +51,7 @@ export class DotContentDriveSidebarComponent {
         if (!currentSite) {
             return;
         }
-        const URLForlderPath = untracked(() => this.#store.path()) || '';
+        const URLForlderPath = this.#store.path() || '';
         const fullPath = untracked(() => `${currentSite.hostname}${URLForlderPath}`);
 
         this.getFolderHierarchyByPath(fullPath).subscribe((folders) => {

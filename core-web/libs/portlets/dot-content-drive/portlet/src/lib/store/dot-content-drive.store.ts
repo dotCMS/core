@@ -91,7 +91,8 @@ export const DotContentDriveStore = signalStore(
                     pagination: {
                         ...store.pagination(),
                         offset: 0
-                    }
+                    },
+                    path: DEFAULT_PATH
                 });
             },
             patchFilters(filters: DotContentDriveFilters) {
