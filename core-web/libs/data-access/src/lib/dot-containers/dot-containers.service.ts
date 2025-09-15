@@ -3,13 +3,30 @@ import { Observable, of, BehaviorSubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, switchMap, filter } from 'rxjs/operators';
+import { map, switchMap, filter } from 'rxjs/operators';
 
 import { DotConfigurationVariables, DotContainer } from '@dotcms/dotcms-models';
 
 import { DotPropertiesService } from '../dot-properties/dot-properties.service';
 
-export const CONTAINER_API_URL = '/api/v1/containers/';
+/**
+ * The id of the system container.
+ */
+export const SYSTEM_CONTAINER_ID = 'SYSTEM_CONTAINER';
+
+/**
+ * Constants for default container configuration values
+ */
+const DEFAULT_CONTAINER_CONFIG = {
+    NOT_FOUND: 'NOT_FOUND',
+    NULL_VALUE: 'null'
+};
+
+interface DefaultContainerSubject {
+    container: DotContainer | null;
+    isInitial: boolean;
+}
+
 /**
  * Provide util methods to handle containers in the system.
  * @export
@@ -17,46 +34,42 @@ export const CONTAINER_API_URL = '/api/v1/containers/';
  */
 @Injectable()
 export class DotContainersService {
-    private readonly http = inject(HttpClient);
-    private readonly dotConfigurationService = inject(DotPropertiesService);
+    readonly #http = inject(HttpClient);
+    readonly #dotConfigurationService = inject(DotPropertiesService);
 
-    private readonly DEFAULT_CONTAINER = DotConfigurationVariables.DEFAULT_CONTAINER;
-    private readonly SYSTEM_CONTAINER = 'System Container';
+    readonly #DEFAULT_CONTAINER_KEY = DotConfigurationVariables.DEFAULT_CONTAINER;
+    readonly #CONTAINER_API_URL = '/api/v1/containers/';
 
-    // Candidate for a value in the global store
-    private readonly _defaultContainer$ = new BehaviorSubject<{
-        container: DotContainer | null;
-        isInitial: boolean;
-    }>({
+    // Keep original pattern for compatibility but with better naming
+    readonly #defaultContainer$ = new BehaviorSubject<DefaultContainerSubject>({
         container: null,
         isInitial: true
     });
 
-    get defaultContainer$() {
-        return this._defaultContainer$.asObservable().pipe(
+    get defaultContainer$(): Observable<DotContainer | null> {
+        return this.#defaultContainer$.asObservable().pipe(
             filter(({ isInitial }) => !isInitial), // Skip only the initial value
             map(({ container }) => container) // Extract just the container
         );
     }
 
     constructor() {
-        this.dotConfigurationService
-            .getKey(this.DEFAULT_CONTAINER)
+        this.#dotConfigurationService
+            .getKey(this.#DEFAULT_CONTAINER_KEY)
             .pipe(
                 switchMap((title) => {
-                    const isNotSet = title === 'NOT_FOUND';
+                    const isNotSet = title === DEFAULT_CONTAINER_CONFIG.NOT_FOUND;
 
-                    if (!title || title === 'null') {
+                    if (!title || title === DEFAULT_CONTAINER_CONFIG.NULL_VALUE) {
                         return of(null);
                     }
 
-                    const searchTitle = isNotSet ? this.SYSTEM_CONTAINER : title;
-
+                    const searchTitle = isNotSet ? SYSTEM_CONTAINER_ID : title;
                     return this.getContainerByTitle(searchTitle, isNotSet);
                 })
             )
             .subscribe((container) => {
-                this._defaultContainer$.next({ container, isInitial: false });
+                this.#defaultContainer$.next({ container, isInitial: false });
             });
     }
 
@@ -74,9 +87,11 @@ export class DotContainersService {
         perPage: number,
         fetchSystemContainers = false
     ): Observable<DotContainer[]> {
-        const url = `${CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=${fetchSystemContainers}`;
+        const url = `${this.#CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=${fetchSystemContainers}`;
 
-        return this.http.get<{ entity: DotContainer[] }>(url).pipe(pluck('entity'));
+        return this.#http
+            .get<{ entity: DotContainer[] }>(url)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -87,11 +102,11 @@ export class DotContainersService {
      * @memberof DotContainersService
      */
     getContainerByTitle(title: string, system = false): Observable<DotContainer | null> {
-        const url = `${CONTAINER_API_URL}?filter=${title}&perPage=1&system=${system}`;
+        const url = `${this.#CONTAINER_API_URL}?filter=${title}&perPage=1&system=${system}`;
 
-        return this.http.get<{ entity: DotContainer[] }>(url).pipe(
-            pluck('entity'),
-            map((containers) => containers[0])
+        return this.#http.get<{ entity: DotContainer[] }>(url).pipe(
+            map((response) => response.entity),
+            map((containers) => containers?.[0] || null)
         );
     }
 }
