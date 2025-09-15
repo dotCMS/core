@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -20,8 +21,8 @@ import {
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { DotCardFieldLabelComponent } from '../../fields/dot-card-field/components/dot-card-field-label.component';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -75,7 +76,8 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentFileFieldComponent,
         DotEditContentRelationshipFieldComponent,
         DividerModule,
-        DotCardFieldLabelComponent
+        DotFieldRequiredDirective,
+        NgTemplateOutlet
     ]
 })
 export class DotEditContentFieldComponent {

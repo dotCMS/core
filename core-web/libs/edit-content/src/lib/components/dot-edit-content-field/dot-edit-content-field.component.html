@@ -4,6 +4,18 @@
 @let showLabel = $showLabel();
 @let contentTypeVariable = contentType?.variable;
 
+<ng-template #labelTemplate>
+    @if (showLabel) {
+        <label
+            [attr.data-testId]="'label-' + field.variable"
+            [checkIsRequiredControl]="field.variable"
+            [for]="field.variable"
+            dotFieldRequired>
+            {{ field.name }}
+        </label>
+    }
+</ng-template>
+
 @switch (field.fieldType) {
     @case (fieldTypes.LINE_DIVIDER) {
         <h3 class="m-0 text-gray-700">{{ field.name }}</h3>
@@ -15,13 +27,7 @@
                 [field]="field"
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-select-field>
         }
     }
@@ -31,13 +37,7 @@
                 [field]="field"
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-radio-field>
         }
     }
@@ -47,13 +47,7 @@
                 [field]="field"
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-text-field>
         }
     }
@@ -65,13 +59,7 @@
                 [contentlet]="contentlet"
                 (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-text-area>
         }
     }
@@ -81,13 +69,7 @@
                 [field]="field"
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-checkbox-field>
         }
     }
@@ -97,13 +79,7 @@
                 [field]="field"
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-multi-select-field>
         }
     }
@@ -115,13 +91,7 @@
                 [utcTimezone]="$systemTimezone()"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-calendar-field>
         }
     }
@@ -131,13 +101,7 @@
                 [formControlName]="field.variable"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-tag-field>
         }
     }
@@ -147,13 +111,7 @@
                 [field]="field"
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-json-field>
         }
     }
@@ -190,13 +148,7 @@
             <dot-edit-content-key-value
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable">
-                @if (showLabel) {
-                    <dot-card-field-label
-                        [attr.data-testId]="'label-' + field.variable"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </dot-card-field-label>
-                }
+                <ng-container [ngTemplateOutlet]="labelTemplate" />
             </dot-edit-content-key-value>
         }
     }
