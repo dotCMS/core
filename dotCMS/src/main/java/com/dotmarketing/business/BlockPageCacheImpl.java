@@ -1,7 +1,9 @@
 package com.dotmarketing.business;
 
 import com.dotcms.cache.CacheValue;
+import com.dotcms.cache.CacheValueImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -35,7 +37,7 @@ import com.dotmarketing.util.UtilMethods;
 public class BlockPageCacheImpl extends BlockPageCache {
 
 
-    private static final String PRIMARY_GROUP = "BlockDirectiveHTMLPageCache";
+    private static final String PRIMARY_GROUP = "PageCache";
 
     private DotCacheAdministrator cache = null;
 
@@ -71,8 +73,11 @@ public class BlockPageCacheImpl extends BlockPageCache {
 
         final String cacheKey = pageCacheParams.getKey();
 
-        long ttl = page.getCacheTTL()>0 ? page.getCacheTTL() * 1000 : Long.MAX_VALUE;
-        CacheValue cacheValue = new CacheValue(pageContent, ttl);
+        long ttl = page.getCacheTTL() > 0 ? page.getCacheTTL() * 1000 : 60 * 60 * 24 * 7 * 1000; // 1 week
+
+        Logger.info(this.getClass(), () -> "PageCache Put: ttl:" + ttl + " key:" + cacheKey);
+
+        CacheValue cacheValue = new CacheValueImpl(pageContent, ttl);
 
         this.cache.put(cacheKey, cacheValue, PRIMARY_GROUP);
 
@@ -90,11 +95,11 @@ public class BlockPageCacheImpl extends BlockPageCache {
 
         // Look up the cached versions of the page based on inode and moddate
         Object cachedValue = this.cache.getNoThrow(cacheKey, PRIMARY_GROUP);
-        if(cachedValue !=null &&cachedValue instanceof String){
+        if (cachedValue != null && cachedValue instanceof String) {
             return (String) cachedValue;
         }
         if (cachedValue !=null && cachedValue instanceof CacheValue) {
-            return (String) ((CacheValue) cachedValue).value;
+            return (String) ((CacheValue) cachedValue).getValue();
         }
 
         return null;

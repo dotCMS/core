@@ -1,5 +1,17 @@
 package com.dotmarketing.business.cache.provider.h22;
 
+import com.dotcms.cache.CacheValue;
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -27,17 +39,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
-import com.dotmarketing.business.cache.provider.CacheStats;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 public class H22Cache extends CacheProvider {
 
@@ -183,6 +184,12 @@ public class H22Cache extends CacheProvider {
 		try {
 			// Get the content from the group and for a given key;
 			foundObject = doSelect(fqn);
+
+            if (foundObject instanceof CacheValue && ((CacheValue) foundObject).isExpired()) {
+                removeAsync(fqn);
+                foundObject = null;
+            }
+
 			stats.group(fqn.group).hitOrMiss(foundObject);
 			stats.group(fqn.group).readTime(System.nanoTime() - start);
 		} catch (Exception e) {

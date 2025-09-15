@@ -1,10 +1,10 @@
 package com.dotmarketing.business;
 
-import java.io.Serializable;
-import java.util.Map;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.Serializable;
+import java.util.Map;
 
 public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 
@@ -37,11 +37,11 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
     }
 
     @Override
-    public void add(String key, Map<String, Serializable> value, int ttl) {
+    public void add(String key, Map<String, Serializable> value, int ttlInSeconds) {
         if (key == null || value == null || !canCache) {
             return;
         }
-        BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value, ttl);
+        BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value, ttlInSeconds);
         cache.put(key, cto, group);
 
     }
@@ -68,17 +68,22 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
             return EMPTY_MAP;
         }
 
-        BlockDirectiveCacheObject cto = (BlockDirectiveCacheObject) cache.getNoThrow(key, group);
-        if (cto == null) {
+        Object o = cache.getNoThrow(key, group);
+        if (o == null) {
+            return EMPTY_MAP;
+        }
+        if (o instanceof Map) {
+            return (Map<String, Serializable>) o;
+        }
+
+        if (!(o instanceof BlockDirectiveCacheObject)) {
             return EMPTY_MAP;
         }
 
-        if ((cto.getTtl() * 1000) +  cto.getCreated() > System.currentTimeMillis()) {
-            return cto.getMap();
-        }
+        BlockDirectiveCacheObject bdco = (BlockDirectiveCacheObject) o;
 
-        cache.removeLocalOnly(key, group, true);
-        return EMPTY_MAP;
+        return bdco.getMap();
+
     }
     
 

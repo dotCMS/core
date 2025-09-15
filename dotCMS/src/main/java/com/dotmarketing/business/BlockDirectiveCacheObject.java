@@ -1,39 +1,53 @@
 package com.dotmarketing.business;
 
+import com.dotcms.cache.CacheValue;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-
-public class BlockDirectiveCacheObject implements Serializable {
+public class BlockDirectiveCacheObject implements CacheValue {
 
 
     private static final long serialVersionUID = 1L;
     private final long created;
     private final long ttl;
-    private final ConcurrentHashMap<String, Serializable> map;
+    private final Map<String, Serializable> map;
 
 
     public long getTtl() {
         return this.ttl;
     }
 
-    public BlockDirectiveCacheObject(Map<String, Serializable> map, int  ttl) {
-
-        this.ttl = ttl;
+    public BlockDirectiveCacheObject(Map<String, Serializable> map, int ttlInSeconds) {
+        this.ttl = ttlInSeconds * 1000;
         this.created = System.currentTimeMillis();
-        this.map = (map instanceof ConcurrentHashMap) ? (ConcurrentHashMap) map : new ConcurrentHashMap(map);
+        this.map = map;
     }
 
+    @Override
+    public Object getValue() {
+        return this.map;
+    }
 
+    @Override
+    public long getTtlInMillis() {
+        return this.ttl;
+
+    }
 
     public long getCreated() {
+
         return this.created;
     }
 
     public Map<String, Serializable> getMap(){
+
         return this.map;
     }
+
+    public boolean isExpired() {
+        return this.created + this.ttl < System.currentTimeMillis();
+    }
+
 
 
 }
