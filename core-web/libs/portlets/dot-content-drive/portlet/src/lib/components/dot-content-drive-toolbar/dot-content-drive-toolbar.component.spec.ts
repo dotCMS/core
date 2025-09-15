@@ -1,5 +1,5 @@
 import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -14,6 +14,7 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
@@ -49,6 +50,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        store = spectator.inject(DotContentDriveStore, true);
     });
 
     afterEach(() => {
@@ -95,5 +97,20 @@ describe('DotContentDriveToolbarComponent', () => {
         spectator.detectChanges();
         const selector = spectator.query('[data-testid="base-type-selector"]');
         expect(selector).toBeTruthy();
+    });
+
+    describe('Tree toggler', () => {
+        it('should render the tree toggler', () => {
+            spectator.detectChanges();
+            const toggler = spectator.query('[data-testid="tree-toggler"]');
+            expect(toggler).toBeDefined();
+        });
+
+        it('should dont render the tree toggler when tree is expanded', () => {
+            store.isTreeExpanded.mockReturnValue(true);
+            spectator.detectChanges();
+            const toggler = spectator.query('[data-testid="tree-toggler"]');
+            expect(toggler).toBeFalsy();
+        });
     });
 });

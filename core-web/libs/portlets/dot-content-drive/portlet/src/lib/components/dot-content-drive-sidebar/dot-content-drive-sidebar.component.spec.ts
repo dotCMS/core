@@ -393,4 +393,12 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(folderService.getFolders).toHaveBeenCalledWith('demo.dotcms.com/test/');
         });
     });
+
+    describe('Current site hostname', () => {
+        it('should render the current site hostname', () => {
+            const currentSiteHostname = spectator.query('[data-testid="current-site-hostname"]');
+
+            expect(currentSiteHostname.innerHTML).toContain(mockSiteDetails.hostname);
+        });
+    });
 });
