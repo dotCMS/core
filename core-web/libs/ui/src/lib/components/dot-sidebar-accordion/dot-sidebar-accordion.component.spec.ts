@@ -42,6 +42,57 @@ class TestHostComponent {
     }
 }
 
+// Test host component with header content
+@Component({
+    template: `
+        <dot-sidebar-accordion
+            [initialActiveTab]="initialActiveTab"
+            (activeTabChange)="onActiveTabChange($event)"
+            data-testid="accordion-with-header-content">
+            <dot-sidebar-accordion-tab id="tab1" label="Tab 1">
+                <button
+                    slot="header-content"
+                    data-testid="tab1-header-button"
+                    (click)="onHeaderButtonClick('tab1')">
+                    Action 1
+                </button>
+                <div data-testid="tab1-content">Tab 1 Content</div>
+            </dot-sidebar-accordion-tab>
+
+            <dot-sidebar-accordion-tab id="tab2" label="Tab 2">
+                <div slot="header-content" data-testid="tab2-header-content">
+                    <span>Custom Content</span>
+                    <button data-testid="tab2-header-button" (click)="onHeaderButtonClick('tab2')">
+                        Action 2
+                    </button>
+                </div>
+                <div data-testid="tab2-content">Tab 2 Content</div>
+            </dot-sidebar-accordion-tab>
+
+            <dot-sidebar-accordion-tab id="tab3" label="Tab 3">
+                <div data-testid="tab3-content">Tab 3 Content (No Header Content)</div>
+            </dot-sidebar-accordion-tab>
+        </dot-sidebar-accordion>
+
+        <div data-testid="emitted-value">{{ lastEmittedValue }}</div>
+        <div data-testid="header-button-clicked">{{ headerButtonClicked }}</div>
+    `,
+    imports: [DotSidebarAccordionComponent, DotSidebarAccordionTabComponent]
+})
+class TestHostWithHeaderContentComponent {
+    initialActiveTab: string | null = null;
+    lastEmittedValue: string | null = null;
+    headerButtonClicked: string | null = null;
+
+    onActiveTabChange(value: string | null) {
+        this.lastEmittedValue = value;
+    }
+
+    onHeaderButtonClick(tabId: string) {
+        this.headerButtonClicked = tabId;
+    }
+}
+
 describe('DotSidebarAccordionComponent', () => {
     let spectator: Spectator<TestHostComponent>;
 
@@ -64,6 +115,8 @@ describe('DotSidebarAccordionComponent', () => {
             // Each tab should have header and content
             tabs.forEach((tab) => {
                 expect(tab.querySelector('.accordion-header')).toExist();
+                expect(tab.querySelector('.accordion-header__left')).toExist();
+                expect(tab.querySelector('.accordion-header__right')).toExist();
                 expect(tab.querySelector('.accordion-content')).toExist();
             });
         });
@@ -72,9 +125,9 @@ describe('DotSidebarAccordionComponent', () => {
             spectator = createComponent();
 
             const headers = spectator.queryAll('.accordion-header');
-            expect(headers[0].querySelector('span')).toHaveText('Tab 1');
-            expect(headers[1].querySelector('span')).toHaveText('Tab 2');
-            expect(headers[2].querySelector('span')).toHaveText('Tab 3');
+            expect(headers[0].querySelector('.accordion-header__left span')).toHaveText('Tab 1');
+            expect(headers[1].querySelector('.accordion-header__left span')).toHaveText('Tab 2');
+            expect(headers[2].querySelector('.accordion-header__left span')).toHaveText('Tab 3');
         });
 
         it('should render chevron icons in all headers', () => {
@@ -82,7 +135,7 @@ describe('DotSidebarAccordionComponent', () => {
 
             const headers = spectator.queryAll('.accordion-header');
             headers.forEach((header) => {
-                expect(header.querySelector('i.pi-chevron-down')).toExist();
+                expect(header.querySelector('.accordion-header__left i.pi-chevron-down')).toExist();
             });
         });
 
@@ -424,6 +477,161 @@ describe('DotSidebarAccordionComponent', () => {
             expect(spectator.query(byTestId('tab1-content'))).toExist();
             expect(spectator.query(byTestId('tab2-content'))).toExist();
             expect(spectator.query(byTestId('tab3-content'))).toExist();
+        });
+    });
+
+    describe('Header Content Projection', () => {
+        let spectatorWithHeaderContent: Spectator<TestHostWithHeaderContentComponent>;
+
+        const createComponentWithHeaderContent = createComponentFactory({
+            component: TestHostWithHeaderContentComponent,
+            imports: [NoopAnimationsModule]
+        });
+
+        it('should render header content in the right section', () => {
+            spectatorWithHeaderContent = createComponentWithHeaderContent();
+
+            // Tab1 should have button in header
+            const tab1HeaderRight = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(1) .accordion-header__right'
+            );
+            expect(tab1HeaderRight?.querySelector('[data-testid="tab1-header-button"]')).toExist();
+            expect(tab1HeaderRight?.querySelector('button')).toHaveText('Action 1');
+
+            // Tab2 should have custom content in header
+            const tab2HeaderRight = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(2) .accordion-header__right'
+            );
+            expect(tab2HeaderRight?.querySelector('[data-testid="tab2-header-content"]')).toExist();
+            expect(tab2HeaderRight?.querySelector('span')).toHaveText('Custom Content');
+            expect(tab2HeaderRight?.querySelector('[data-testid="tab2-header-button"]')).toExist();
+
+            // Tab3 should have empty header right section
+            const tab3HeaderRight = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(3) .accordion-header__right'
+            );
+            expect(tab3HeaderRight).toExist();
+            expect(tab3HeaderRight?.textContent?.trim()).toBe('');
+        });
+
+        it('should not trigger accordion toggle when clicking header content', () => {
+            spectatorWithHeaderContent = createComponentWithHeaderContent();
+
+            // Click on header button should not activate tab
+            const headerButton = spectatorWithHeaderContent.query(
+                '[data-testid="tab1-header-button"]'
+            );
+            spectatorWithHeaderContent.click(headerButton!);
+            spectatorWithHeaderContent.detectChanges();
+
+            // Tab should not be active
+            const tab1 = spectatorWithHeaderContent.query('.accordion-tab:nth-child(1)');
+            expect(tab1).not.toHaveClass('active');
+
+            // But button click should be registered
+            expect(spectatorWithHeaderContent.query(byTestId('header-button-clicked'))).toHaveText(
+                'tab1'
+            );
+        });
+
+        it('should allow accordion toggle when clicking left side of header', () => {
+            spectatorWithHeaderContent = createComponentWithHeaderContent();
+
+            // Click on left side (label area) should activate tab
+            const headerLeft = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(1) .accordion-header__left'
+            );
+            spectatorWithHeaderContent.click(headerLeft!);
+            spectatorWithHeaderContent.detectChanges();
+
+            // Tab should be active
+            const tab1 = spectatorWithHeaderContent.query('.accordion-tab:nth-child(1)');
+            expect(tab1).toHaveClass('active');
+
+            // Event should be emitted
+            expect(spectatorWithHeaderContent.query(byTestId('emitted-value'))).toHaveText('tab1');
+        });
+
+        it('should maintain header content when tab becomes active/inactive', () => {
+            spectatorWithHeaderContent = createComponentWithHeaderContent();
+
+            // Activate tab1
+            const headerLeft = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(1) .accordion-header__left'
+            );
+            spectatorWithHeaderContent.click(headerLeft!);
+            spectatorWithHeaderContent.detectChanges();
+
+            // Header content should still be there
+            const tab1HeaderRight = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(1) .accordion-header__right'
+            );
+            expect(tab1HeaderRight?.querySelector('[data-testid="tab1-header-button"]')).toExist();
+
+            // Switch to tab2
+            const tab2HeaderLeft = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(2) .accordion-header__left'
+            );
+            spectatorWithHeaderContent.click(tab2HeaderLeft!);
+            spectatorWithHeaderContent.detectChanges();
+
+            // Both tabs should maintain their header content
+            expect(tab1HeaderRight?.querySelector('[data-testid="tab1-header-button"]')).toExist();
+            const tab2HeaderRight = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(2) .accordion-header__right'
+            );
+            expect(tab2HeaderRight?.querySelector('[data-testid="tab2-header-content"]')).toExist();
+        });
+
+        it('should handle multiple interactive elements in header content', () => {
+            spectatorWithHeaderContent = createComponentWithHeaderContent();
+
+            // Click on span in tab2 header (should not trigger accordion)
+            const headerSpan = spectatorWithHeaderContent.query(
+                '.accordion-tab:nth-child(2) .accordion-header__right span'
+            );
+            spectatorWithHeaderContent.click(headerSpan!);
+            spectatorWithHeaderContent.detectChanges();
+
+            // Tab should not be active
+            const tab2 = spectatorWithHeaderContent.query('.accordion-tab:nth-child(2)');
+            expect(tab2).not.toHaveClass('active');
+
+            // Click on button in tab2 header
+            const headerButton = spectatorWithHeaderContent.query(
+                '[data-testid="tab2-header-button"]'
+            );
+            spectatorWithHeaderContent.click(headerButton!);
+            spectatorWithHeaderContent.detectChanges();
+
+            // Button click should be registered
+            expect(spectatorWithHeaderContent.query(byTestId('header-button-clicked'))).toHaveText(
+                'tab2'
+            );
+
+            // Tab should still not be active
+            expect(tab2).not.toHaveClass('active');
+        });
+
+        it('should render header structure correctly with and without header content', () => {
+            spectatorWithHeaderContent = createComponentWithHeaderContent();
+
+            const headers = spectatorWithHeaderContent.queryAll('.accordion-header');
+
+            // All headers should have left and right sections
+            headers.forEach((header) => {
+                expect(header.querySelector('.accordion-header__left')).toExist();
+                expect(header.querySelector('.accordion-header__right')).toExist();
+            });
+
+            // Headers with content should have non-empty right sections
+            const tab1HeaderRight = headers[0].querySelector('.accordion-header__right');
+            const tab2HeaderRight = headers[1].querySelector('.accordion-header__right');
+            const tab3HeaderRight = headers[2].querySelector('.accordion-header__right');
+
+            expect(tab1HeaderRight?.children.length).toBeGreaterThan(0);
+            expect(tab2HeaderRight?.children.length).toBeGreaterThan(0);
+            expect(tab3HeaderRight?.children.length).toBe(0); // No header content for tab3
         });
     });
 });

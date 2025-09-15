@@ -13,6 +13,15 @@ import {
     DotPagination
 } from '@dotcms/dotcms-models';
 
+const generateContentTypeFilter = (type: string) => {
+    return type.length > 0
+        ? type
+              .split(',')
+              .map((item) => `&type=${item}`)
+              .join('')
+        : '';
+};
+
 @Injectable()
 export class DotContentTypeService {
     readonly #httpClient = inject(HttpClient);
@@ -40,7 +49,9 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
             }>(
-                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${type ? `&type=${type}` : ''}`
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${generateContentTypeFilter(
+                    type
+                )}`
             )
             .pipe(pluck('entity'));
     }
@@ -48,7 +59,7 @@ export class DotContentTypeService {
     /**
      *Get the content types from the endpoint
      *
-     * @param {*} { filter = '', page = 40, type = '' }
+     * @param {*} { filter = '', page = 40, type = [] }
      * @return {*}  {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
@@ -61,7 +72,9 @@ export class DotContentTypeService {
                 entity: DotCMSContentType[];
                 pagination: DotPagination;
             }>(
-                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${type ? `&type=${type}` : ''}`
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${generateContentTypeFilter(
+                    type
+                )}`
             )
             .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
     }
@@ -177,7 +190,7 @@ export class DotContentTypeService {
         return this.#httpClient
             .get<{
                 entity: DotCMSContentType[];
-            }>(`/api/v1/contenttype?type=${type}&per_page=${per_page}`)
+            }>(`/api/v1/contenttype?per_page=${per_page}${generateContentTypeFilter(type)}`)
             .pipe(pluck('entity'));
     }
 

@@ -1,37 +1,42 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-
-import { DotVersionableService } from './dot-versionable.service';
-
-const mockResponse = { entity: { inode: '123' } };
+import { DotVersionableService, DotVersionable } from './dot-versionable.service';
 
 describe('DotVersionableService', () => {
+    let spectator: SpectatorHttp<DotVersionableService>;
     let service: DotVersionableService;
-    let httpMock: HttpTestingController;
+
+    const mockVersionableEntity = { inode: '123' };
+    const mockDeleteEntity = { success: true };
+
+    const createHttp = createHttpFactory(DotVersionableService);
 
     beforeEach(() => {
-        TestBed.configureTestingModule({});
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotVersionableService
-            ]
-        });
-        service = TestBed.inject(DotVersionableService);
-        httpMock = getTestBed().get(HttpTestingController);
+        spectator = createHttp();
+        service = spectator.service;
     });
 
-    it('should bring back version', () => {
-        service.bringBack('123').subscribe((res) => {
-            expect(res).toEqual(mockResponse.entity);
+    it('should bring back version successfully', (done) => {
+        const mockResponse = { entity: mockVersionableEntity };
+
+        service.bringBack('123').subscribe((res: DotVersionable) => {
+            expect(res).toEqual(mockVersionableEntity);
+            done();
         });
 
-        const req = httpMock.expectOne('/api/v1/versionables/123/_bringback');
-        expect(req.request.method).toBe('PUT');
+        const req = spectator.expectOne('/api/v1/versionables/123/_bringback', HttpMethod.PUT);
+        req.flush(mockResponse);
+    });
+
+    it('should delete version successfully', (done) => {
+        const mockResponse = { entity: mockDeleteEntity };
+
+        service.deleteVersion('123').subscribe((res) => {
+            expect(res).toEqual(mockDeleteEntity);
+            done();
+        });
+
+        const req = spectator.expectOne('/api/v1/versionables/123', HttpMethod.DELETE);
         req.flush(mockResponse);
     });
 });

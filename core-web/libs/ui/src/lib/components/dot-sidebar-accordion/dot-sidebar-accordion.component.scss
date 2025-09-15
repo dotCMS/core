@@ -41,12 +41,14 @@
                 background: transparent; // No hover effect for disabled tabs
             }
 
-            span {
-                color: $color-palette-gray-500; // Muted text color
-            }
+            &__left {
+                i {
+                    color: $color-palette-gray-400; // Muted icon color
+                }
 
-            i {
-                color: $color-palette-gray-400; // Muted icon color
+                span {
+                    color: $color-palette-gray-500; // Muted text color
+                }
             }
         }
     }
@@ -108,24 +110,45 @@
         pointer-events: none;
     }
 
-    span {
-        font-size: $font-size-lmd;
-        font-weight: $font-weight-medium-bold;
-        color: $black;
+    &__left {
+        display: flex;
+        align-items: center;
         flex: 1;
+        min-width: 0; // Allow text truncation if needed
+
+        span {
+            font-size: $font-size-lmd;
+            font-weight: $font-weight-medium-bold;
+            color: $black;
+            flex: 1;
+            min-width: 0; // Allow text truncation
+        }
+
+        i {
+            font-size: $font-size-sm;
+            color: $color-palette-primary;
+            margin-right: $spacing-2;
+            flex-shrink: 0; // Prevent icon from shrinking
+            transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            will-change: transform; // GPU optimization
+        }
     }
 
-    i {
-        font-size: $font-size-sm;
-        color: $color-palette-primary;
-        margin-left: auto;
-        transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-        will-change: transform; // GPU optimization
+    &__right {
+        display: flex;
+        align-items: center;
+        margin-left: $spacing-2;
+        flex-shrink: 0; // Prevent right content from shrinking
+
+        // Ensure right content doesn't interfere with accordion toggle
+        > * {
+            pointer-events: auto;
+        }
     }
 }
 
 // Chevron rotation when tab is active
-.accordion-tab.active .accordion-header i {
+.accordion-tab.active .accordion-header__left i {
     transform: rotate(180deg);
 }
 
