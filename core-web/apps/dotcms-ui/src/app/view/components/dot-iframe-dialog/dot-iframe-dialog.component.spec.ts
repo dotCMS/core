@@ -65,7 +65,7 @@ const fakeEvent = () => {
     return {
         target: {
             contentWindow: {
-                focus: jasmine.createSpy('focus')
+                focus: jest.fn()
             }
         }
     };
@@ -160,12 +160,12 @@ describe('DotIframeDialogComponent', () => {
 
             describe('events', () => {
                 beforeEach(() => {
-                    spyOn(component.beforeClose, 'emit');
-                    spyOn(component.shutdown, 'emit');
-                    spyOn(component.custom, 'emit');
-                    spyOn(component.keyWasDown, 'emit');
-                    spyOn(component.charge, 'emit');
-                    spyOn(dialog.componentInstance, 'close');
+                    jest.spyOn(component.beforeClose, 'emit');
+                    jest.spyOn(component.shutdown, 'emit');
+                    jest.spyOn(component.custom, 'emit');
+                    jest.spyOn(component.keyWasDown, 'emit');
+                    jest.spyOn(component.charge, 'emit');
+                    jest.spyOn(dialog.componentInstance, 'close');
                 });
 
                 describe('dot-iframe', () => {
@@ -182,6 +182,7 @@ describe('DotIframeDialogComponent', () => {
                         });
 
                         expect(component.charge.emit).toHaveBeenCalledWith(mockEvent);
+                        expect(component.charge.emit).toHaveBeenCalledTimes(1);
                         expect<any>(component.keyWasDown.emit).toHaveBeenCalledWith({
                             hello: 'world'
                         });
@@ -243,7 +244,7 @@ describe('DotIframeDialogComponent', () => {
             hostFixture.detectChanges();
             dialog = de.query(By.css('dot-dialog'));
             dialogComponent = dialog.componentInstance;
-            spyOn(component.beforeClose, 'emit');
+            jest.spyOn(component.beforeClose, 'emit');
         });
 
         it('should emit beforeClose when a observer is set', () => {

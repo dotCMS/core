@@ -6,7 +6,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
@@ -65,7 +65,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
 
     it('should call HTTP service when button is clicked with empty input', () => {
         // Mock HTTP response
-        spyOn(httpClient, 'get').and.returnValue(of('generated-string-value'));
+        jest.spyOn(httpClient, 'get').mockReturnValue(of('generated-string-value'));
 
         spectator.detectChanges();
 
@@ -85,7 +85,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         it('should generate new string when user confirms (YES)', async () => {
             // Arrange
             const mockGeneratedValue = 'new-generated-value';
-            spyOn(httpClient, 'get').and.returnValue(of(mockGeneratedValue));
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
 
             spectator.detectChanges();
             spectator.component.$value.set('existing-value');
@@ -123,7 +123,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.component.$value.set(originalValue);
 
             // Create spy for httpClient.get to verify it's not called
-            const httpGetSpy = spyOn(httpClient, 'get');
+            const httpGetSpy = jest.spyOn(httpClient, 'get');
 
             const button = spectator.query(byTestId('generate-button'));
 
@@ -152,7 +152,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         it('should bypass confirmation and generate directly when input is empty', async () => {
             // Arrange
             const mockGeneratedValue = 'generated-value';
-            spyOn(httpClient, 'get').and.returnValue(of(mockGeneratedValue));
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input
@@ -184,14 +184,14 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         it('should handle confirmation accept scenario', () => {
             // Arrange
             const mockGeneratedValue = 'accepted-generated-value';
-            spyOn(httpClient, 'get').and.returnValue(of(mockGeneratedValue));
+            jest.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
 
             const originalValue = 'original-value';
             spectator.detectChanges();
             spectator.component.$value.set(originalValue);
 
             let capturedConfig: any;
-            spyOn(confirmationService, 'confirm').and.callFake((config) => {
+            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
                 capturedConfig = config;
 
                 return confirmationService;
@@ -220,10 +220,10 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.component.$value.set(originalValue);
 
             // Create spy for httpClient.get to verify it's not called
-            const httpGetSpy = spyOn(httpClient, 'get');
+            const httpGetSpy = jest.spyOn(httpClient, 'get');
 
             let capturedConfig: any;
-            spyOn(confirmationService, 'confirm').and.callFake((config) => {
+            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
                 capturedConfig = config;
 
                 return confirmationService;
@@ -250,7 +250,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         it('should show loading state during string generation', () => {
             // Arrange
             const responseSubject = new Subject<string>();
-            spyOn(httpClient, 'get').and.returnValue(responseSubject.asObservable());
+            jest.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
@@ -274,7 +274,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             // Arrange
             const responseSubject = new Subject<string>();
             const mockGeneratedValue = 'generated-value';
-            spyOn(httpClient, 'get').and.returnValue(responseSubject.asObservable());
+            jest.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
@@ -342,8 +342,8 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             // Arrange
             const responseSubject = new Subject<string>();
             const mockError = new Error('HTTP Error');
-            spyOn(httpClient, 'get').and.returnValue(responseSubject.asObservable());
-            spyOn(console, 'error'); // Spy on console.error to avoid console output
+            jest.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
+            jest.spyOn(console, 'error'); // Spy on console.error to avoid console output
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
@@ -367,6 +367,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             // Assert - Loading state should be reset after error
             expect(spectator.component.$isLoading()).toBe(false);
             expect(console.error).toHaveBeenCalledWith('Error generating string:', mockError);
+            expect(console.error).toHaveBeenCalledTimes(1);
         });
     });
 });

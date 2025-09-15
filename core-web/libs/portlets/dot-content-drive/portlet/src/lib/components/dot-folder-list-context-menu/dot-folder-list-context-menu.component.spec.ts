@@ -12,6 +12,7 @@ import {
     DotMessageService,
     DotRenderMode,
     DotSystemConfigService,
+    DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
@@ -31,6 +32,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
+    let dotWizardService: SpyObject<DotWizardService>;
+    let workflowsActionsFireService: SpyObject<DotWorkflowActionsFireService>;
 
     const mockContentlet = createFakeContentlet();
 
@@ -65,6 +68,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 }
             }),
             mockProvider(DotSystemConfigService),
+            mockProvider(DotWizardService, {
+                open: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
@@ -75,6 +81,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
         store = spectator.inject(DotContentDriveStore, true);
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
+        dotWizardService = spectator.inject(DotWizardService);
+        workflowsActionsFireService = spectator.inject(DotWorkflowActionsFireService);
     });
 
     afterEach(() => {
@@ -231,6 +239,41 @@ describe('DotFolderListViewContextMenuComponent', () => {
             spectator.detectChanges();
 
             expect(component.$memoizedMenuItems()).toEqual({});
+        });
+    });
+
+    describe('wizard', () => {
+        const mockEvent = new MouseEvent('contextmenu');
+        it('should open the wizard', async () => {
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+
+            // Assign Workflow
+            items[1].command?.({} as unknown as MenuItemCommandEvent);
+
+            expect(dotWizardService.open).toHaveBeenCalled();
+        });
+
+        it('should fire the workflow action after the wizard is closed', async () => {
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+
+            // Assign Workflow
+            items[1].command?.({} as unknown as MenuItemCommandEvent);
+
+            dotWizardService.open.mockReturnValue(of({}));
+
+            expect(workflowsActionsFireService.fireTo).toHaveBeenCalled();
         });
     });
 });

@@ -40,7 +40,7 @@ describe('DotLargeMessageDisplayComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(TestHostComponent);
         dotcmsEventsServiceMock = fixture.debugElement.injector.get(DotcmsEventsService);
-        spyOn(dotcmsEventsServiceMock, 'subscribeTo').and.callThrough();
+        jest.spyOn(dotcmsEventsServiceMock, 'subscribeTo');
 
         fixture.detectChanges();
     });
@@ -83,7 +83,7 @@ describe('DotLargeMessageDisplayComponent', () => {
             const bodyElem = fixture.debugElement.query(By.css('.dialog-message__body'));
             const h1 = bodyElem.nativeElement.querySelector('h1');
             const script = bodyElem.nativeElement.querySelector('script');
-            expect(h1.innerText).toBe('Hello World');
+            expect(h1.textContent).toBe('Hello World');
             expect(script.getAttribute('type')).toBe('text/javascript');
             expect(script.innerHTML).toBe('console.log("abc")');
             done();

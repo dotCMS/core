@@ -52,7 +52,7 @@ describe('DotMaxlengthDirective', () => {
 
     it('should prevent default when max length is reached', fakeAsync(() => {
         const event = new Event('keypress');
-        spyOn(event, 'preventDefault');
+        jest.spyOn(event, 'preventDefault');
         element.nativeElement.textContent = '12345678901';
         element.nativeElement.dispatchEvent(event);
         tick(2);

@@ -134,23 +134,11 @@
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "main": "apps/dotcms-ui/src/test.ts",
-                "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
-                "karmaConfig": "apps/dotcms-ui/karma.conf.js",
-                "polyfills": "apps/dotcms-ui/src/polyfills.ts",
-                "styles": ["libs/dotcms-scss/angular/styles.scss"],
-                "scripts": [],
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular"]
-                }
-            },
-            "configurations": {
-                "development": {
-                    "watch": true,
-                    "browsers": "Chrome"
-                }
+                "jestConfig": "apps/dotcms-ui/jest.config.ts",
+                "passWithNoTests": false
             }
         },
         "storybook": {

@@ -66,6 +66,22 @@ describe('DotContentletService', () => {
         req.flush({ entity: [...responseData] });
     });
 
+    it('should call the BE with correct endpoint url and method for getContentTypes() with multiple types', (done) => {
+        dotContentTypeService
+            .getContentTypes({
+                type: 'contentType,contentTypeB'
+            })
+            .subscribe((contentTypes: DotCMSContentType[]) => {
+                expect(contentTypes).toEqual(responseData);
+                done();
+            });
+        const req = httpMock.expectOne(
+            '/api/v1/contenttype?filter=&orderby=name&direction=ASC&per_page=40&type=contentType&type=contentTypeB'
+        );
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [...responseData] });
+    });
+
     it('should get all content types excluding the RECENT ones for getAllContentTypes()', (done) => {
         const types = mockDotContentlet.filter(
             (structure: StructureTypeView) => !isRecentContentType(structure)
@@ -129,6 +145,31 @@ describe('DotContentletService', () => {
 
         const req = httpMock.expectOne(
             `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}&type=${type}`
+        );
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [...responseData], pagination });
+    });
+    it('should call the BE with correct endpoint and map pagination for getContentTypesWithPagination() with multiple types', (done) => {
+        const filter = 'blog';
+        const page = 20;
+        const type = 'contentType,contentTypeB';
+
+        const pagination: DotPagination = {
+            currentPage: 1,
+            perPage: page,
+            totalEntries: 4
+        };
+
+        dotContentTypeService
+            .getContentTypesWithPagination({ filter, page, type })
+            .subscribe(({ contentTypes, pagination: resultPagination }) => {
+                expect(contentTypes).toEqual(responseData);
+                expect(resultPagination).toEqual(pagination);
+                done();
+            });
+
+        const req = httpMock.expectOne(
+            `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}&type=contentType&type=contentTypeB`
         );
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...responseData], pagination });
@@ -234,7 +275,40 @@ describe('DotContentletService', () => {
                 done();
             });
 
-        const req = httpMock.expectOne('/api/v1/contenttype?type=contentType&per_page=200');
+        const req = httpMock.expectOne('/api/v1/contenttype?per_page=200&type=contentType');
+        expect(req.request.method).toBe('GET');
+
+        req.flush({ entity: [contenttypeA, contentTypeB] });
+    });
+
+    it('should get content by multiple types', (done) => {
+        const contenttypeA: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
+            clazz: 'hello-class-one' as DotCMSClazz,
+            defaultType: false,
+            fixed: false,
+            id: '123',
+            owner: 'user',
+            system: false
+        };
+
+        const contentTypeB: DotCMSContentType = {
+            ...contenttypeA,
+            clazz: 'hello-class-two' as DotCMSClazz,
+            id: '456',
+            owner: 'user1'
+        };
+
+        dotContentTypeService
+            .getByTypes('contentType,contentTypeB', 200)
+            .subscribe((contentType: DotCMSContentType[]) => {
+                expect(contentType).toEqual([contenttypeA, contentTypeB]);
+                done();
+            });
+
+        const req = httpMock.expectOne(
+            '/api/v1/contenttype?per_page=200&type=contentType&type=contentTypeB'
+        );
         expect(req.request.method).toBe('GET');
 
         req.flush({ entity: [contenttypeA, contentTypeB] });

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -62,7 +62,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {
-    view = jasmine.createSpy('view');
+    view = jest.fn();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -152,7 +152,7 @@ describe('DotWorkflowTaskComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
@@ -164,16 +164,19 @@ describe('DotWorkflowTaskComponent', () => {
         };
 
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
+        expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
     });
 
     it('should redirect to /workflow and refresh data when modal closed', () => {
         taskDetail.triggerEventHandler('shutdown', {});
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should redirect to /workflow when edit-task-executed-workflow event is triggered', () => {
-        spyOn(component, 'onCloseWorkflowTaskEditor');
+        jest.spyOn(component, 'onCloseWorkflowTaskEditor');
         taskDetail.triggerEventHandler('custom', {
             detail: {
                 name: 'edit-task-executed-workflow'
@@ -189,11 +192,13 @@ describe('DotWorkflowTaskComponent', () => {
             }
         });
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should call to dotCustomEventHandlerService with the correct callbaack', () => {
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle');
         const mockEvent = {
             detail: {
                 name: 'workflow-wizard',
