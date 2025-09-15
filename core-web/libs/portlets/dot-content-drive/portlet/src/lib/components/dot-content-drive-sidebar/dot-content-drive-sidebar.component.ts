@@ -1,6 +1,5 @@
 import { forkJoin, Observable } from 'rxjs';
 
-import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -33,7 +32,7 @@ import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolba
     templateUrl: './dot-content-drive-sidebar.component.html',
     styleUrl: './dot-content-drive-sidebar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent, DotContentDriveTreeTogglerComponent, JsonPipe],
+    imports: [DotTreeFolderComponent, DotContentDriveTreeTogglerComponent],
     providers: [DotFolderService]
 })
 export class DotContentDriveSidebarComponent {
@@ -75,7 +74,6 @@ export class DotContentDriveSidebarComponent {
         const { path } = node.data;
 
         this.#store.setPath(path);
-        this.$selectedNode.set(node);
     }
 
     /**
