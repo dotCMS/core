@@ -73,10 +73,11 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         const contentType = this.$state.contentTypes();
 
         // Get contentTypes using the contentTypesParam
-        const contentTypes = contentType.filter((item) => contentTypesParam.includes(item.variable));
-        
-        return contentTypes ?? [];
+        const contentTypes = contentType.filter((item) =>
+            contentTypesParam.includes(item.variable)
+        );
 
+        return contentTypes ?? [];
     });
 
     // We need to map the numbers to the base types, ticket: https://github.com/dotCMS/core/issues/32991

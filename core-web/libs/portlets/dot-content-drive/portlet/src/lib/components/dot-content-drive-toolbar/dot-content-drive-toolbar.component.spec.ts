@@ -19,7 +19,8 @@ describe('DotContentDriveToolbarComponent', () => {
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                isTreeExpanded: jest.fn().mockReturnValue(true),
+                // Tree collapsed at start to render the toggle button on toolbar
+                isTreeExpanded: jest.fn().mockReturnValue(false),
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -74,8 +75,8 @@ describe('DotContentDriveToolbarComponent', () => {
 
     it('should render start and end groups', () => {
         spectator.detectChanges();
-        expect(spectator.query('.p-toolbar-group-start')).toBeTruthy();
-        expect(spectator.query('.p-toolbar-group-end')).toBeTruthy();
+        expect(spectator.query('.p-toolbar-group-top')).toBeTruthy();
+        expect(spectator.query('.p-toolbar-group-bottom')).toBeTruthy();
     });
 
     it('should render the content type field', () => {

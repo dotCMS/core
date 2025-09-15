@@ -1,7 +1,7 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { Component,  inject, linkedSignal, } from '@angular/core';
+import { Component, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -29,7 +29,9 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 export class DotContentDriveBaseTypeSelectorComponent {
     $selectedBaseTypes = linkedSignal<string[]>(() => {
         const baseTypes = this.#store.getFilterValue('baseType') as string[];
-        return baseTypes?.length > 0 ? baseTypes.map((key) => MAP_NUMBERS_TO_BASE_TYPES[key]).filter(Boolean) : [];
+        return baseTypes?.length > 0
+            ? baseTypes.map((key) => MAP_NUMBERS_TO_BASE_TYPES[key]).filter(Boolean)
+            : [];
     });
 
     readonly #store = inject(DotContentDriveStore);
@@ -40,8 +42,6 @@ export class DotContentDriveBaseTypeSelectorComponent {
     });
 
     protected readonly MULTISELECT_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
-
-    
 
     ngOnInit() {
         this.getCurrentBaseTypes();
