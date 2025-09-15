@@ -238,6 +238,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                     defaultContainer
                 });
 
+                console.log('defaultContainer', this.getContainerMap(defaultContainer));
                 requestAnimationFrame(() => this.setUpGridStack());
             });
     }
@@ -347,7 +348,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     }
 
     ngOnDestroy(): void {
-        this.grid.destroy(true);
+        this.grid?.destroy(true);
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -561,9 +562,11 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             return this.containerMap;
         }
 
+        const key = defaultContainer.path ?? defaultContainer.identifier;
+
         return {
             ...this.containerMap,
-            [defaultContainer.identifier]: { ...defaultContainer }
+            [key]: { ...defaultContainer }
         };
     }
 }

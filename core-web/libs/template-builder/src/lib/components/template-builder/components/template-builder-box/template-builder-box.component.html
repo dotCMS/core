@@ -66,9 +66,9 @@
             @for (item of items; track $index) {
                 <div class="template-builder-box__item">
                     <p data-testId="container-title">
+                        @let identifier = item.identifier;
                         {{
-                            (containerMap && containerMap[item.identifier]?.title) ||
-                                item.identifier
+                            containerMap?.[identifier]?.title || identifier
                         }}
                     </p>
                     <dotcms-remove-confirm-dialog

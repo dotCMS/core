@@ -53,7 +53,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly addRow = this.updater((state, newRow: DotGridStackWidget) => {
         const { rows, defaultContainer } = state;
-        const identifier = defaultContainer?.identifier;
+        const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
         const containers = identifier ? [{ identifier }] : [];
 
         return {

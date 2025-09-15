@@ -6,7 +6,6 @@ import {
     BOX_WIDTH,
     DotGridStackNode,
     DotGridStackWidget,
-    SYSTEM_CONTAINER_IDENTIFIER,
     TemplateBuilderBoxSize
 } from '../models/models';
 
@@ -15,6 +14,9 @@ const boxChar = '#';
 const currentBoxChar = '*';
 
 export const EMPTY_ROWS_VALUE = (container?: DotContainer) => {
+    const identifier = container?.path ?? container?.identifier;
+    const containers = container ? [{ identifier }] : [];
+
     return [
         {
             w: 12,
@@ -30,11 +32,7 @@ export const EMPTY_ROWS_VALUE = (container?: DotContainer) => {
                         x: 0,
                         id: uuid(),
                         styleClass: [],
-                        containers: [
-                            {
-                                identifier: container?.identifier || SYSTEM_CONTAINER_IDENTIFIER
-                            }
-                        ]
+                        containers
                     }
                 ]
             },
@@ -103,17 +101,16 @@ export function createDotGridStackWidgetFromNode(
     node: DotGridStackNode,
     defaultContainer?: DotContainer
 ): DotGridStackWidget {
+    const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
+    const fallbackContainers = identifier ? [{ identifier }] : [];
+    const containers = node.containers ? node.containers : fallbackContainers;
     return {
         x: node.x,
         id: node.id || uuid(),
         parentId: node.grid?.parentGridItem?.id as string,
         w: node.w,
         styleClass: node.styleClass,
-        containers: node.containers ?? [
-            {
-                identifier: defaultContainer?.identifier || SYSTEM_CONTAINER_IDENTIFIER
-            }
-        ],
+        containers,
         y: node.y
     } as DotGridStackWidget;
 }

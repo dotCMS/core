@@ -21,6 +21,7 @@ export class DotContainersService {
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
     private readonly DEFAULT_CONTAINER = DotConfigurationVariables.DEFAULT_CONTAINER;
+    private readonly SYSTEM_CONTAINER = 'System Container';
 
     // Candidate for a value in the global store
     private readonly _defaultContainer$ = new BehaviorSubject<{
@@ -42,12 +43,16 @@ export class DotContainersService {
         this.dotConfigurationService
             .getKey(this.DEFAULT_CONTAINER)
             .pipe(
-                switchMap((containerTitle) => {
-                    if (!containerTitle) {
+                switchMap((title) => {
+                    const isNotSet = title === 'NOT_FOUND';
+
+                    if (!title || title === 'null') {
                         return of(null);
                     }
 
-                    return this.getContainerByTitle(containerTitle);
+                    const searchTitle = isNotSet ? this.SYSTEM_CONTAINER : title;
+
+                    return this.getContainerByTitle(searchTitle, isNotSet);
                 })
             )
             .subscribe((container) => {
@@ -81,8 +86,8 @@ export class DotContainersService {
      * @return {*}  {Observable<DotContainer>}
      * @memberof DotContainersService
      */
-    getContainerByTitle(title: string): Observable<DotContainer | null> {
-        const url = `${CONTAINER_API_URL}?filter=${title}&perPage=1`;
+    getContainerByTitle(title: string, system = false): Observable<DotContainer | null> {
+        const url = `${CONTAINER_API_URL}?filter=${title}&perPage=1&system=${system}`;
 
         return this.http.get<{ entity: DotContainer[] }>(url).pipe(
             pluck('entity'),
