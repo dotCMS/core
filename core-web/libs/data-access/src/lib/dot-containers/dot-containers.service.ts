@@ -32,7 +32,9 @@ interface DefaultContainerSubject {
  * @export
  * @class DotContainersService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotContainersService {
     readonly #http = inject(HttpClient);
     readonly #dotConfigurationService = inject(DotPropertiesService);
@@ -40,7 +42,6 @@ export class DotContainersService {
     readonly #DEFAULT_CONTAINER_KEY = DotConfigurationVariables.DEFAULT_CONTAINER;
     readonly #CONTAINER_API_URL = '/api/v1/containers/';
 
-    // Keep original pattern for compatibility but with better naming
     readonly #defaultContainer$ = new BehaviorSubject<DefaultContainerSubject>({
         container: null,
         isInitial: true
@@ -48,8 +49,8 @@ export class DotContainersService {
 
     get defaultContainer$(): Observable<DotContainer | null> {
         return this.#defaultContainer$.asObservable().pipe(
-            filter(({ isInitial }) => !isInitial), // Skip only the initial value
-            map(({ container }) => container) // Extract just the container
+            filter(({ isInitial }) => !isInitial),
+            map(({ container }) => container)
         );
     }
 
