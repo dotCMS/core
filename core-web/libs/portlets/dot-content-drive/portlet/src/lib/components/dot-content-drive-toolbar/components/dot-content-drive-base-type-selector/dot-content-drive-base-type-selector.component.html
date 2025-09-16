@@ -9,12 +9,12 @@
     (onChange)="onChange()"
     [resetFilterOnHide]="true"
     [scrollHeight]="MULTISELECT_SCROLL_HEIGHT">
-    <ng-template pTemplate="filter">
+    <ng-template pTemplate="filter" let-context>
         <div class="flex items-center gap-2 w-full">
-            <p-checkbox [binary]="true" inputId="binary" />
+            <p-checkbox [binary]="true" inputId="binary" (onChange)="toggleCheckAll($event)" />
             <p-iconField iconPosition="right" class="flex-1">
                 <p-inputIcon styleClass="pi pi-search" />
-                <input type="text" placeholder="Search" class="w-full" (input)="changedFilter()" />
+                <input type="text" pInputText #input placeholder="Search" class="w-full" (input)="onFilter($event)" />
             </p-iconField>
         </div>
     </ng-template>

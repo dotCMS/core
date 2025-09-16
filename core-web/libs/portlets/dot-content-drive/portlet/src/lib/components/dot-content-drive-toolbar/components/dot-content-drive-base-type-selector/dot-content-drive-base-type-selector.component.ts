@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { Component, inject, linkedSignal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { CheckboxModule } from 'primeng/checkbox';
+import { CheckboxChangeEvent, CheckboxModule } from 'primeng/checkbox';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -109,8 +109,11 @@ export class DotContentDriveBaseTypeSelectorComponent {
             });
     }
 
-    changedFilter() {
-        // eslint-disable-next-line no-console
-        console.log(this.$multiSelect());
+    protected onFilter(value: Event) {
+        this.$multiSelect().onFilterInputChange(value as KeyboardEvent);
+    }
+
+    protected toggleCheckAll(event: CheckboxChangeEvent) {
+        this.$multiSelect().onToggleAll(event.originalEvent);
     }
 }
