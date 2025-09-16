@@ -1,13 +1,12 @@
 package com.dotmarketing.business;
 
 import com.dotmarketing.exception.DotRuntimeException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicLong;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Unit test for PageCacheParameters class.
@@ -44,21 +43,21 @@ public class PageCacheParametersTest {
     public void testConstructorWithValidParams() {
         PageCacheParameters params = new PageCacheParameters("param1", "param2", "param3");
         String key = params.getKey();
-        Assert.assertEquals("param1_param2_param3", key);
+        Assert.assertEquals("param1,param2,param3", key);
     }
 
     @Test
     public void testConstructorWithNullParams() {
         PageCacheParameters params = new PageCacheParameters("param1", null, "param3", null);
         String key = params.getKey();
-        Assert.assertEquals("param1_param3", key);
+        Assert.assertEquals("param1,param3", key);
     }
 
     @Test
     public void testConstructorWithEmptyParams() {
         PageCacheParameters params = new PageCacheParameters("param1", "", "param3");
         String key = params.getKey();
-        Assert.assertEquals("param1_param3", key);
+        Assert.assertEquals("param1,param3", key);
     }
 
     @Test(expected = DotRuntimeException.class)
@@ -77,7 +76,7 @@ public class PageCacheParametersTest {
     public void testConstructorWithWhitespaceParams() {
         PageCacheParameters params = new PageCacheParameters("param1", "   ", "param3", "\t");
         String key = params.getKey();
-        Assert.assertEquals("param1_param3", key);
+        Assert.assertEquals("param1,param3", key);
     }
 
     @Test
@@ -258,7 +257,7 @@ public class PageCacheParametersTest {
     public void testGetKeyWithSpecialCharacters() {
         PageCacheParameters params = new PageCacheParameters("param with spaces", "param-with-dashes", "param_with_underscores");
         String key = params.getKey();
-        Assert.assertEquals("param with spaces_param-with-dashes_param_with_underscores", key);
+        Assert.assertEquals("param with spaces,param-with-dashes,param_with_underscores", key);
     }
 
     @Test

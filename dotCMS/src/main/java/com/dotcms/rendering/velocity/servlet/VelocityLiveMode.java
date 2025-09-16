@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
@@ -28,16 +30,19 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.nio.charset.StandardCharsets;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Date;
-import org.apache.velocity.context.Context;
+import java.util.Optional;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
-import java.io.*;
-import java.util.Optional;
+import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
 
@@ -135,7 +140,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                         .remove(new VelocityResourceKey((HTMLPageAsset) htmlPage, PageMode.LIVE,
                                 htmlPage.getLanguageId()));
             }
-            int statusCode = response.getStatus();
+
             // Begin page caching
             String userId = (user != null) ? user.getUserId() : APILocator.getUserAPI().getAnonymousUser().getUserId();
             String language = String.valueOf(langId);
