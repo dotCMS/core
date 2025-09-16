@@ -9,6 +9,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.List;
+import java.util.Map;
+
 import static com.dotmarketing.util.PortletID.ANALYTICS_DASHBOARD;
 import static com.dotmarketing.util.PortletID.SITES;
 
@@ -94,19 +97,42 @@ public class Task250910AddAnalyticsDashboardPortletToMenu implements StartupTask
      * @throws DotDataException An error occurred while querying the database.
      */
     private String getMenuGroupForPortlet() throws DotDataException {
-        String layoutId = new DotConnect().setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'site manager'")
-                .loadObjectResults().get(0).getOrDefault("id", "").toString();
-        if (UtilMethods.isSet(layoutId)) {
-            return layoutId;
+        // Try Site Manager layout first
+        List<Map<String, Object>> results = new DotConnect()
+                .setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'site manager'")
+                .loadObjectResults();
+        
+        if (!results.isEmpty()) {
+            String layoutId = results.get(0).getOrDefault("id", "").toString();
+            if (UtilMethods.isSet(layoutId)) {
+                return layoutId;
+            }
         }
-        layoutId = new DotConnect().setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'marketing'")
-                .loadObjectResults().get(0).getOrDefault("id", "").toString();
-        if (UtilMethods.isSet(layoutId)) {
-            return layoutId;
+        
+        // Try Marketing layout second
+        results = new DotConnect()
+                .setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'marketing'")
+                .loadObjectResults();
+        
+        if (!results.isEmpty()) {
+            String layoutId = results.get(0).getOrDefault("id", "").toString();
+            if (UtilMethods.isSet(layoutId)) {
+                return layoutId;
+            }
         }
-        return new DotConnect().setSQL("SELECT layout_id FROM cms_layouts_portlets WHERE portlet_id = ?")
+        
+        // Fall back to layout containing SITES portlet
+        results = new DotConnect()
+                .setSQL("SELECT layout_id FROM cms_layouts_portlets WHERE portlet_id = ?")
                 .addParam(SITES.toString())
-                .loadObjectResults().get(0).getOrDefault("layout_id", "").toString();
+                .loadObjectResults();
+        
+        if (!results.isEmpty()) {
+            return results.get(0).getOrDefault("layout_id", "").toString();
+        }
+        
+        Logger.warn(this, "No suitable layout found for Analytics Dashboard portlet");
+        return null;
     }
 
 }
