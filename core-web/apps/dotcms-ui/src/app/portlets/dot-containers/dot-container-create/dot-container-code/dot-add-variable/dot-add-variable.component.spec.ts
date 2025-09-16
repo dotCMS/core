@@ -215,7 +215,7 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -223,7 +223,7 @@ describe('DotAddVariableComponent', () => {
                     useValue: {
                         data: {
                             contentTypeVariable: 'contentType',
-                            onSave: jasmine.createSpy()
+                            onSave: jest.fn()
                         }
                     }
                 },
@@ -244,7 +244,7 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: DotContentTypeService,
                     useValue: {
-                        getContentType: jasmine.createSpy().and.returnValue(of(mockContentTypes))
+                        getContentType: jest.fn().mockReturnValue(of(mockContentTypes))
                     }
                 },
                 DotAlertConfirmService,

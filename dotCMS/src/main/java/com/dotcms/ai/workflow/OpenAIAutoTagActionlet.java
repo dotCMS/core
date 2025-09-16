@@ -57,7 +57,7 @@ public class OpenAIAutoTagActionlet extends WorkFlowActionlet {
 
     @Override
     public String getName() {
-        return "AI Auto-Tag Content";
+        return "AI - Auto-Tag Content";
     }
 
     @Override

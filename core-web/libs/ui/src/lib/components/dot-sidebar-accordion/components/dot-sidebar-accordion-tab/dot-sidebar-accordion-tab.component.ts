@@ -16,6 +16,14 @@ import { ChangeDetectionStrategy, Component, input, TemplateRef, ViewChild } fro
  * <dot-sidebar-accordion-tab id="settings" label="Settings" [disabled]="true">
  *   <div>Disabled tab content</div>
  * </dot-sidebar-accordion-tab>
+ *
+ * <dot-sidebar-accordion-tab id="actions" label="Actions">
+ *   <!-- Dynamic header content (icons, buttons, menus, etc.) -->
+ *   <p-button slot="header-content" icon="pi pi-cog" [text]="true" size="small"></p-button>
+ *
+ *   <!-- Tab content -->
+ *   <div>Actions tab content</div>
+ * </dot-sidebar-accordion-tab>
  * ```
  */
 @Component({
@@ -24,6 +32,9 @@ import { ChangeDetectionStrategy, Component, input, TemplateRef, ViewChild } fro
     template: `
         <ng-template #tabContent>
             <ng-content></ng-content>
+        </ng-template>
+        <ng-template #headerContent>
+            <ng-content select="[slot=header-content]"></ng-content>
         </ng-template>
     `,
     styles: [
@@ -59,4 +70,10 @@ export class DotSidebarAccordionTabComponent {
      */
     @ViewChild('tabContent', { static: true })
     tabContent!: TemplateRef<unknown>;
+
+    /**
+     * Template reference for the header content (optional dynamic content)
+     */
+    @ViewChild('headerContent', { static: true })
+    headerContent!: TemplateRef<unknown>;
 }

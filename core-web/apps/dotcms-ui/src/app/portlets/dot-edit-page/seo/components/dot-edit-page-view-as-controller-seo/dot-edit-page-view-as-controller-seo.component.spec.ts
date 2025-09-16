@@ -177,7 +177,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
 
     describe('community license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -193,10 +193,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
 
     describe('enterprise license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-            spyOn(component, 'changePersonaHandler').and.callThrough();
-            spyOn(component, 'changeDeviceHandler').and.callThrough();
-            spyOn(component, 'changeLanguageHandler').and.callThrough();
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(component, 'changePersonaHandler');
+            jest.spyOn(component, 'changeDeviceHandler');
+            jest.spyOn(component, 'changeLanguageHandler');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -234,6 +234,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             personaSelector.selected.emit(mockDotPersona);
 
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.changePersonaHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should have Language selector', () => {
@@ -255,6 +256,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
+            expect(component.changeLanguageHandler).toHaveBeenCalledTimes(1);
         });
     });
 });

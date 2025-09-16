@@ -45,8 +45,8 @@ const queryParams = new BehaviorSubject<Params>({});
 
 @Injectable()
 class MockDotLoginPageStateService {
-    update = jasmine.createSpy('update');
-    set = jasmine.createSpy('set').and.returnValue(of(mockLoginInfo));
+    update = jest.fn();
+    set = jest.fn().mockReturnValue(of(mockLoginInfo));
     get = () => subject;
 }
 
@@ -112,7 +112,7 @@ describe('DotLoginComponent', () => {
         dotFormatDateService = de.injector.get(DotFormatDateService);
         dotMessageService = de.injector.get(DotMessageService);
         loginPageStateService = de.injector.get(DotLoginPageStateService);
-        spyOn(dotMessageService, 'init');
+        jest.spyOn(dotMessageService, 'init');
     });
 
     describe('Functionality', () => {
@@ -154,7 +154,9 @@ describe('DotLoginComponent', () => {
             pDropDown.triggerEventHandler('onChange', { value: 'es_ES' });
 
             expect(dotMessageService.init).toHaveBeenCalledWith({ language: 'es_ES' });
+            expect(dotMessageService.init).toHaveBeenCalledTimes(1);
             expect(loginPageStateService.update).toHaveBeenCalledWith('es_ES');
+            expect(loginPageStateService.update).toHaveBeenCalledTimes(1);
         });
 
         it('should have a link to forgot password', () => {
@@ -176,9 +178,9 @@ describe('DotLoginComponent', () => {
 
         it('should make a login request correctly and redirect after login', () => {
             component.loginForm.setValue(credentials);
-            spyOn(dotFormatDateService, 'setLang');
-            spyOn(dotRouterService, 'goToMain');
-            spyOn<any>(loginService, 'loginUser').and.returnValue(
+            jest.spyOn(dotFormatDateService, 'setLang');
+            jest.spyOn(dotRouterService, 'goToMain');
+            jest.spyOn<any>(loginService, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -189,14 +191,17 @@ describe('DotLoginComponent', () => {
             expect(signInButton.nativeElement.disabled).toBeFalsy();
             signInButton.triggerEventHandler('click', {});
             expect(loginService.loginUser).toHaveBeenCalledWith(credentials);
+            expect(loginService.loginUser).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
+            expect(dotRouterService.goToMain).toHaveBeenCalledTimes(1);
             expect(dotFormatDateService.setLang).toHaveBeenCalledWith('en_US');
+            expect(dotFormatDateService.setLang).toHaveBeenCalledTimes(1);
         });
 
         it('should disable fields while waiting login response', async () => {
             component.loginForm.setValue(credentials);
-            spyOn(dotRouterService, 'goToMain');
-            spyOn<any>(loginService, 'loginUser').and.returnValue(
+            jest.spyOn(dotRouterService, 'goToMain');
+            jest.spyOn<any>(loginService, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -245,7 +250,7 @@ describe('DotLoginComponent', () => {
 
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
-            spyOn(loginService, 'loginUser').and.returnValue(
+            jest.spyOn(loginService, 'loginUser').mockReturnValue(
                 throwError({ status: 400, error: { errors: [{ message: 'error message' }] } })
             );
             signInButton.triggerEventHandler('click', {});
@@ -254,7 +259,7 @@ describe('DotLoginComponent', () => {
                 By.css('[data-testId="message"]')
             ).nativeElement;
             expect(message).toHaveClass('p-invalid');
-            expect(message.innerText).toEqual('error message');
+            expect(message.textContent).toEqual('error message');
         });
     });
 
@@ -266,7 +271,7 @@ describe('DotLoginComponent', () => {
                 By.css('[data-testId="message"]')
             ).nativeElement;
             expect(message).toHaveClass('success');
-            expect(message.innerText).toEqual('Your password has been successfully changed');
+            expect(message.textContent).toEqual('Your password has been successfully changed');
         });
 
         it('should show email reset notification', () => {
@@ -276,7 +281,7 @@ describe('DotLoginComponent', () => {
                 By.css('[data-testId="message"]')
             ).nativeElement;
             expect(message).toHaveClass('success');
-            expect(message.innerText).toEqual(
+            expect(message.textContent).toEqual(
                 'An Email with instructions has been sent to test@email.com.'
             );
         });
