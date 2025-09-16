@@ -1,13 +1,12 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { ControlContainer, FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotCategoryFieldDialogComponent } from './components/dot-category-field-dialog/dot-category-field-dialog.component';
 import { DotEditContentCategoryFieldComponent } from './dot-edit-content-category-field.component';
@@ -23,53 +22,51 @@ import { DotCategoryFieldKeyValueObj } from './models/dot-category-field.models'
 import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
 
-import { createFormGroupDirectiveMock } from '../../utils/mocks';
+import { MockFormComponent } from '../../utils/mocks';
 
 const FAKE_FORM_GROUP = new FormGroup({
     [CATEGORY_FIELD_VARIABLE_NAME]: new FormControl()
 });
 
 describe('DotEditContentCategoryFieldComponent', () => {
-    let spectator: Spectator<DotEditContentCategoryFieldComponent>;
+    let spectator: SpectatorHost<DotEditContentCategoryFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof CategoryFieldStore>;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotEditContentCategoryFieldComponent,
-        imports: [MockComponent(DotCategoryFieldDialogComponent)],
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP)
-            },
-            mockProvider(CategoriesService)
-        ],
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule, MockComponent(DotCategoryFieldDialogComponent)],
         providers: [
             mockProvider(DotMessageService),
             mockProvider(HttpClient),
             mockProvider(DotHttpErrorManagerService)
-        ]
-    });
-
-    afterEach(() => {
-        jest.resetAllMocks();
+        ],
+        componentProviders: [
+            mockProvider(CategoriesService, {
+                getSelectedHierarchy: jest.fn().mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))
+            }),
+            CategoryFieldStore
+        ],
+        detectChanges: false
     });
 
     describe('Elements', () => {
         describe('With selected', () => {
             beforeEach(() => {
-                spectator = createComponent({
-                    props: {
-                        contentlet: CATEGORY_FIELD_CONTENTLET_MOCK,
-                        field: CATEGORY_FIELD_MOCK
-                    } as unknown,
-                    providers: [
-                        mockProvider(CategoriesService, {
-                            getSelectedHierarchy: jest
-                                .fn()
-                                .mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))
-                        })
-                    ]
-                });
+                spectator = createHost(
+                    `<form [formGroup]="formGroup">
+                        <dot-edit-content-category-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    </form>`,
+                    {
+                        hostProps: {
+                            formGroup: FAKE_FORM_GROUP,
+                            field: CATEGORY_FIELD_MOCK,
+                            contentlet: CATEGORY_FIELD_CONTENTLET_MOCK
+                        }
+                    }
+                );
+
+                spectator.detectChanges();
             });
 
             it('should render a button for selecting categories', () => {
@@ -90,7 +87,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
 
                 // Manually call writeValue to simulate Angular forms integration
-                spectator.component.writeValue(expectedInodes);
+                spectator.hostComponent.setValue(expectedInodes);
                 spectator.detectChanges();
 
                 // Verify the store has the correct selected categories
@@ -100,17 +97,26 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
         describe('No selected', () => {
             it('should not display the category list with chips when there are no categories', () => {
-                spectator = createComponent({
-                    props: {
-                        contentlet: [] as unknown as DotCMSContentlet,
-                        field: CATEGORY_FIELD_MOCK
-                    } as unknown,
-                    providers: [
-                        mockProvider(CategoriesService, {
-                            getSelectedHierarchy: jest.fn().mockReturnValue(of([]))
-                        })
-                    ]
-                });
+                spectator = createHost(
+                    `<form [formGroup]="formGroup">
+                        <dot-edit-content-category-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    </form>`,
+                    {
+                        hostProps: {
+                            formGroup: FAKE_FORM_GROUP,
+                            field: CATEGORY_FIELD_MOCK,
+                            contentlet: {
+                                ...CATEGORY_FIELD_CONTENTLET_MOCK,
+                                [CATEGORY_FIELD_VARIABLE_NAME]: []
+                            }
+                        },
+                        providers: [
+                            mockProvider(CategoriesService, {
+                                getSelectedHierarchy: jest.fn().mockReturnValue(of([]))
+                            })
+                        ]
+                    }
+                );
 
                 spectator.detectChanges();
 
@@ -121,23 +127,24 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
     describe('Interactions', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    contentlet: CATEGORY_FIELD_CONTENTLET_MOCK,
-                    field: CATEGORY_FIELD_MOCK
-                } as unknown,
-                providers: [
-                    mockProvider(CategoriesService, {
-                        getSelectedHierarchy: jest.fn().mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))
-                    })
-                ]
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-category-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: FAKE_FORM_GROUP,
+                        field: CATEGORY_FIELD_MOCK,
+                        contentlet: CATEGORY_FIELD_CONTENTLET_MOCK
+                    }
+                }
+            );
 
             store = spectator.inject(CategoryFieldStore, true);
 
             // Initialize form control with mock data
             const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
-            FAKE_FORM_GROUP.get(CATEGORY_FIELD_VARIABLE_NAME)?.setValue(expectedInodes);
+            spectator.hostComponent.setValue(expectedInodes);
 
             spectator.detectChanges();
         });
@@ -196,8 +203,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             expect(selectBtn.disabled).toBe(false);
 
             // Check if the form has the correct value - should maintain the initial values
-            const formControl = FAKE_FORM_GROUP.get(CATEGORY_FIELD_VARIABLE_NAME);
-            const categoryValue = formControl?.value;
+            const categoryValue = spectator.hostComponent.getValue();
             const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
             expect(categoryValue).toEqual(expectedInodes);
         }));
@@ -211,8 +217,6 @@ describe('DotEditContentCategoryFieldComponent', () => {
             };
 
             // Spy on the onChange callback to verify it gets called
-            const onChangeSpy = jest.fn();
-            spectator.component.registerOnChange(onChangeSpy);
 
             store.openDialog();
             store.addSelected(newItem);
@@ -229,14 +233,10 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             // Verify the onChange callback was called with the correct values
             const expectedInodes = expectedSelectedCategories.map((cat) => cat.inode);
-            expect(onChangeSpy).toHaveBeenCalledWith(expectedInodes);
+            expect(spectator.hostComponent.getValue()).toEqual(expectedInodes);
         }));
 
         it('should set form control value when removing a category', fakeAsync(() => {
-            // Spy on the onChange callback to verify it gets called
-            const onChangeSpy = jest.fn();
-            spectator.component.registerOnChange(onChangeSpy);
-
             // Get the current store selected items
             const initialSelectedItems = store.selected();
             expect(initialSelectedItems.length).toBe(2);
@@ -256,7 +256,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             // Verify the onChange callback was called with the correct values
             const expectedInodes = updatedSelectedItems.map((cat) => cat.inode);
-            expect(onChangeSpy).toHaveBeenCalledWith(expectedInodes);
+            expect(spectator.hostComponent.getValue()).toEqual(expectedInodes);
         }));
     });
 });

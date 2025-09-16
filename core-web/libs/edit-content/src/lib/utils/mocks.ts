@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import {
     AsyncValidator,
     FormControl,
@@ -869,6 +870,38 @@ export const createFormGroupDirectiveMock = (
 
     return formGroupDirectiveMock;
 };
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
+
+    setValue(value: unknown) {
+        this.getFormControl()?.setValue(value);
+    }
+
+    setDisabledState(disabled: boolean) {
+        const control = this.getFormControl();
+        if (disabled) {
+            control?.disable();
+        } else {
+            control?.enable();
+        }
+    }
+
+    getValue() {
+        return this.getFormControl()?.value;
+    }
+
+    getFormControl() {
+        return this.formGroup.get(this.field.variable) as FormControl;
+    }
+}
 
 function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
     let fields = [];

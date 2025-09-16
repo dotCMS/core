@@ -2,9 +2,8 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { SpectatorHost, createHostFactory, mockProvider, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { mockMatchMedia } from '@dotcms/utils-testing';
 
@@ -13,37 +12,11 @@ import { HostFolderFiledStore } from './store/host-folder-field.store';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
-    FORM_GROUP_MOCK,
     TREE_SELECT_SITES_MOCK,
     TREE_SELECT_MOCK,
-    HOST_FOLDER_TEXT_MOCK
+    HOST_FOLDER_TEXT_MOCK,
+    MockFormComponent
 } from '../../utils/mocks';
-
-@Component({
-    standalone: false,
-    selector: 'dot-custom-host',
-    template: ''
-})
-class MockFormComponent {
-    formGroup = FORM_GROUP_MOCK;
-    field = HOST_FOLDER_TEXT_MOCK;
-
-    setValue(value: string) {
-        this.formGroup.get(this.field.variable)?.setValue(value);
-    }
-
-    setDisabledState(disabled: boolean) {
-        if (disabled) {
-            this.formGroup.get(this.field.variable)?.disable();
-        } else {
-            this.formGroup.get(this.field.variable)?.enable();
-        }
-    }
-
-    getValue() {
-        return this.formGroup.get(this.field.variable)?.value;
-    }
-}
 
 describe('DotEditContentHostFolderFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentHostFolderFieldComponent, MockFormComponent>;
@@ -69,7 +42,15 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
                 <dot-edit-content-host-folder-field [field]="field" [formControlName]="field.variable" />
-            </form>`
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [HOST_FOLDER_TEXT_MOCK.variable]: new FormControl()
+                    }),
+                    field: HOST_FOLDER_TEXT_MOCK
+                }
+            }
         );
         store = spectator.inject(HostFolderFiledStore, true);
         service = spectator.inject(DotEditContentService);
