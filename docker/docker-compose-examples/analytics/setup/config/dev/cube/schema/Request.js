@@ -1,5 +1,7 @@
 /**
- * Request Cube - General Analytics Data
+ * This model is used for conversions or data that do not require analyzing the full session history. Its scope is limited to a single request.
+ *
+ * Currently, this model is not used for A/B Testing.
  * 
  * SECURITY: This cube implements defense-in-depth security filtering:
  * - Layer 1 (Base SQL): FILTER_PARAMS provide customer_id/cluster_id filtering at SQL level  
@@ -235,7 +237,7 @@ cube('request', {
       sql: `context_site_key`, 
       type: `string`,
       title: 'Site Key',
-      description: 'dotCMS site key/hostname'
+      description: 'dotCMS site key generate iun the COntent Analytics App'
     },
     languageId: { 
       sql: `language_id`, 
@@ -342,7 +344,7 @@ cube('request', {
       title: 'Unique Sessions',
       description: 'Total number of unique user sessions'
     },
-    totalRequests: {
+    totalRequest: {
       sql: `request_id`,
       type: `countDistinct`,
       title: 'Unique Requests',

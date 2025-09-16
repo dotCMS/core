@@ -1,5 +1,13 @@
 /**
- * Events Cube - A/B Testing Analytics
+ * This model is used to calculate session-level conversions. In other words, it handles metrics
+ * that require information from the entire session, such as bounce rate or exit rate.
+ * To compute these, all pageviews generated within a single session must be analyzed.
+ *
+ * The current name of this model is misleading — it should ideally be renamed to Session.
+ *
+ * At the moment, the model is only used for A/B Testing Analytics.
+ * However, in the future, it should also support general Analytics. To achieve this,
+ * we will first need to decouple it from experiment-specific data, such as the isExperimentPage attribute.
  * 
  * SECURITY: This cube implements defense-in-depth security filtering:
  * - Layer 1 (Base SQL): FILTER_PARAMS provide customer_id/cluster_id filtering at SQL level
