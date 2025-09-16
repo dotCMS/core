@@ -1,7 +1,10 @@
 package com.dotcms.analytics.track;
 
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
-import com.dotcms.analytics.track.matchers.*;
+import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
+import com.dotcms.analytics.track.matchers.RequestMatcher;
+import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.featureflag.FeatureFlagName;
@@ -83,7 +86,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
         this.whiteBlackList = whiteBlackList;
         this.isTurnedOn = isTurnedOn;
-        addRequestMatcher(requestMatchers);
         this.caLib = Lazy.of(() -> FileUtil.toStringFromResourceAsStreamNoThrown(AUTO_INJECT_LIB_CLASS_PATH));
         this.analyticsWebAPI = analyticsWebAPI;
         this.webEventsCollectorServiceFactory = webEventsCollectorServiceFactory;
