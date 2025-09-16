@@ -72,7 +72,7 @@ public class AssetPathResolver {
         try {
             Logger.debug(this, String.format("Resolving url: [%s] " , url));
             final URI uri = new URI(url);
-            final Optional<Host> siteByName = resolveHosBytName(uri.getHost(), user);
+            final Optional<Host> siteByName = resolveHostByName(uri.getHost(), user);
             if(siteByName.isEmpty()){
                 throw new NotFoundException(String.format("Unable to determine a valid host from uri: [%s].", url));
             }
@@ -130,7 +130,7 @@ public class AssetPathResolver {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<Host> resolveHosBytName(final String hostName, final User user) throws DotDataException, DotSecurityException {
+    Optional<Host> resolveHostByName(final String hostName, final User user) throws DotDataException, DotSecurityException {
             Preconditions.checkNotEmpty(hostName,IllegalArgumentException.class, String.format("can not resolve a valid hostName [%s]", hostName));
             final Host siteByName = hostAPI.findByName(hostName, user, false);
             if (null != siteByName && UtilMethods.isSet(siteByName.getIdentifier())) {
