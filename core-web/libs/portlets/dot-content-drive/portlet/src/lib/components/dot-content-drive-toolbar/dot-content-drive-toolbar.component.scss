@@ -7,6 +7,16 @@
             justify-content: normal;
         }
 
+        p-toolbar.sidebar-expanded {
+            .p-toolbar {
+                dot-content-drive-tree-toggler {
+                    visibility: hidden;
+                    width: 0;
+                    min-width: 0;
+                }
+            }
+        }
+
         .dot-content-drive-toolbar {
             background-color: $color-palette-gray-100;
             border: none;
@@ -14,6 +24,14 @@
             gap: $spacing-1;
         }
     }
+}
+
+dot-content-drive-tree-toggler {
+    display: flex;
+    visibility: visible;
+    width: 100%;
+
+    transition: all 0.3s ease-in-out;
 }
 
 .p-toolbar-group {
