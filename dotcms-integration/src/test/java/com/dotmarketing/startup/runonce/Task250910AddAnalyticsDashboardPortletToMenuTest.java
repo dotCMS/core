@@ -21,7 +21,6 @@ import static org.junit.Assert.assertTrue;
  * @author Jose Castro
  * @since Sep 11th, 2025
  */
-@Ignore
 public class Task250910AddAnalyticsDashboardPortletToMenuTest {
 
     @BeforeClass
