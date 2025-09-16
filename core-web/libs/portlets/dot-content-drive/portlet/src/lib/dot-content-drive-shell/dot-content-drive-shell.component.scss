@@ -5,7 +5,7 @@
     grid-template-columns: min-content 1fr min-content;
 
     /* This is the height according to figma for the first row */
-    grid-template-rows: 4.375rem 1fr;
+    grid-template-rows: 7.125rem 1fr; //114px 1fr
     grid-template-areas:
         "tree toolbar detail"
         "tree list    detail";

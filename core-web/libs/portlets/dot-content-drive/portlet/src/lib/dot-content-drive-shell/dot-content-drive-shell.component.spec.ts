@@ -72,7 +72,8 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
                     currentSite: jest.fn(),
-                    isTreeExpanded: jest.fn().mockReturnValue(true),
+                    // Tree collapsed at start to render the toggle button on toolbar
+                    isTreeExpanded: jest.fn().mockReturnValue(false),
                     removeFilter: jest.fn(),
                     getFilterValue: jest.fn(),
                     $searchParams: jest.fn(),
