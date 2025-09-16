@@ -9,7 +9,8 @@ import {
     DestroyRef,
     OnInit,
     computed,
-    linkedSignal
+    linkedSignal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -52,7 +53,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #contentTypesService = inject(DotContentTypeService);
-    readonly #searchSubject = new Subject<{ type?: string; filter: string }>();
+    readonly #searchSubject = new Subject<{ baseType?: string; filter: string }>();
 
     protected readonly MULTISELECT_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
 
@@ -99,12 +100,24 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     );
 
     readonly getContentTypesEffect = effect(() => {
-        const type = this.$mappedBaseTypes();
+        const baseType = this.$mappedBaseTypes();
 
         const filter = this.$state.filter();
 
+        //Filter the selected content types based on the base types, if there are no base types, all content types are shown
+        if (baseType?.length) {
+            untracked(() => {
+                this.$selectedContentTypes.update((selectedContentTypes) =>
+                    selectedContentTypes.filter(({ baseType: baseTypeItem }) =>
+                        baseType.split(',').includes(baseTypeItem)
+                    )
+                );
+                this.onChange(); // Trigger a manual change to update the store
+            });
+        }
+
         // Push the request parameters to the debounced stream
-        this.#searchSubject.next({ type, filter });
+        this.#searchSubject.next({ baseType, filter });
     });
     readonly fechingItems = computed(() => {
         return this.$state.loading() && this.$state.canLoadMore();
@@ -273,7 +286,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 tap(() => this.updateState({ loading: true })),
                 debounceTime(DEBOUNCE_TIME),
                 takeUntilDestroyed(this.#destroyRef),
-                switchMap(({ filter, type }) =>
+                switchMap(({ filter, baseType: type }) =>
                     this.#contentTypesService
                         .getContentTypes({ filter, type })
                         .pipe(catchError(() => of([])))
@@ -281,6 +294,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
             )
             .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
                 const selectedContentTypes = this.$selectedContentTypes();
+
                 const allContentTypes = [...selectedContentTypes, ...dotCMSContentTypes];
                 const contentTypes = this.filterAndDeduplicateContentTypes(allContentTypes);
 
