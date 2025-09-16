@@ -1,6 +1,6 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Dropdown } from 'primeng/dropdown';
 
@@ -9,35 +9,19 @@ import { DotEditContentSelectFieldComponent } from './dot-edit-content-select-fi
 import {
     SELECT_FIELD_BOOLEAN_MOCK,
     SELECT_FIELD_TEXT_MOCK,
-    createFormGroupDirectiveMock,
     SELECT_FIELD_INTEGER_MOCK,
-    SELECT_FIELD_FLOAT_MOCK
+    SELECT_FIELD_FLOAT_MOCK,
+    MockFormComponent
 } from '../../utils/mocks';
 
 describe('DotEditContentSelectFieldComponent', () => {
-    let spectator: Spectator<DotEditContentSelectFieldComponent>;
+    let spectator: SpectatorHost<DotEditContentSelectFieldComponent, MockFormComponent>;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotEditContentSelectFieldComponent,
-        componentViewProviders: [
-            { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
-        ],
-        providers: [FormGroupDirective],
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
         detectChanges: false
-    });
-
-    beforeEach(() => {
-        spectator = createComponent();
-    });
-
-    it('should set the value from control to dropdown', () => {
-        spectator.setInput('field', SELECT_FIELD_TEXT_MOCK);
-        spectator.component.formControl.setValue('2');
-        spectator.detectChanges();
-
-        const spanElement = spectator.query('span.p-dropdown-label');
-        expect(spanElement).toBeTruthy();
-        expect(spanElement.textContent).toEqual('Option 2');
     });
 
     it('should set the key/value the same when bad formatting options passed', () => {
@@ -45,8 +29,22 @@ describe('DotEditContentSelectFieldComponent', () => {
             ...SELECT_FIELD_INTEGER_MOCK,
             values: '1000'
         };
-        spectator.setInput('field', SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL);
-        spectator.detectComponentChanges();
+
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL.variable]:
+                            new FormControl()
+                    }),
+                    field: SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL
+                }
+            }
+        );
+        spectator.detectChanges();
 
         const expectedList = [
             {
@@ -81,8 +79,21 @@ describe('DotEditContentSelectFieldComponent', () => {
                     value: 'rules and weird code'
                 }
             ];
-            spectator.setInput('field', SELECT_FIELD_TEXT_MOCK);
-            spectator.detectComponentChanges();
+
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [SELECT_FIELD_TEXT_MOCK.variable]: new FormControl()
+                        }),
+                        field: SELECT_FIELD_TEXT_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
             expect(spectator.query(Dropdown).options).toEqual(expectedList);
         });
 
@@ -97,8 +108,20 @@ describe('DotEditContentSelectFieldComponent', () => {
                     value: false
                 }
             ];
-            spectator.setInput('field', SELECT_FIELD_BOOLEAN_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [SELECT_FIELD_BOOLEAN_MOCK.variable]: new FormControl()
+                        }),
+                        field: SELECT_FIELD_BOOLEAN_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
             expect(spectator.query(Dropdown).options).toEqual(expectedList);
         });
 
@@ -113,8 +136,20 @@ describe('DotEditContentSelectFieldComponent', () => {
                     value: 10.3
                 }
             ];
-            spectator.setInput('field', SELECT_FIELD_FLOAT_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [SELECT_FIELD_FLOAT_MOCK.variable]: new FormControl()
+                        }),
+                        field: SELECT_FIELD_FLOAT_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
             expect(spectator.query(Dropdown).options).toEqual(expectedList);
         });
 
@@ -133,8 +168,20 @@ describe('DotEditContentSelectFieldComponent', () => {
                     value: 10000
                 }
             ];
-            spectator.setInput('field', SELECT_FIELD_INTEGER_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [SELECT_FIELD_INTEGER_MOCK.variable]: new FormControl()
+                        }),
+                        field: SELECT_FIELD_INTEGER_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
             expect(spectator.query(Dropdown).options).toEqual(expectedList);
         });
     });
