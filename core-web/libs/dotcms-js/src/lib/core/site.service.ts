@@ -114,7 +114,10 @@ export class SiteService {
      * @memberof SiteService
      */
     get currentSite$(): Observable<Site> {
-        return this._currentSite$.asObservable().pipe(startWith(this.selectedSite));
+        return this._currentSite$.asObservable().pipe(
+            startWith(this.selectedSite),
+            filter((site) => !!site)
+        );
     }
 
     /**
