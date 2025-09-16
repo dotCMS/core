@@ -31,10 +31,8 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-<<<<<<< Updated upstream
 import java.nio.charset.StandardCharsets;
 import org.apache.velocity.context.Context;
-=======
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -48,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
->>>>>>> Stashed changes
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
