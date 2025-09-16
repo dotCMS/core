@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveBaseTypeSelectorComponent } from './components/dot-content-drive-base-type-selector/dot-content-drive-base-type-selector.component';
 import { DotContentDriveContentTypeFieldComponent } from './components/dot-content-drive-content-type-field/dot-content-drive-content-type-field.component';
@@ -18,15 +23,38 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
         DotContentDriveTreeTogglerComponent,
         DotContentDriveBaseTypeSelectorComponent,
         DotContentDriveContentTypeFieldComponent,
-        DotContentDriveSearchInputComponent
+        DotContentDriveSearchInputComponent,
+        DotMessagePipe,
+        MenuModule
     ],
-    providers: [],
     templateUrl: './dot-content-drive-toolbar.component.html',
     styleUrl: './dot-content-drive-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
+    readonly #dotMessageService = inject(DotMessageService);
+
+    readonly items: MenuItem[] = [
+        {
+            label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
+            command: () => {
+                alert('Folder');
+            }
+        },
+        {
+            label: this.#dotMessageService.get('content-drive.add-new.context-menu.image')
+        },
+        {
+            label: this.#dotMessageService.get('content-drive.add-new.context-menu.video')
+        },
+        {
+            label: this.#dotMessageService.get('content-drive.add-new.context-menu.page')
+        },
+        {
+            label: this.#dotMessageService.get('content-drive.add-new.context-menu.content-item')
+        }
+    ];
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
 }

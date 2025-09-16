@@ -2,18 +2,17 @@
     @if (!$treeExpanded()) {
         <dot-content-drive-tree-toggler data-testid="tree-toggler" />
     }
-
     <div class="p-toolbar-group">
         <div class="p-toolbar-group-top">
             <dot-content-drive-search-input data-testid="search-input" class="search-input" />
-            <!-- Remember to add the dot message to the label -->
             <p-button
-                label="Add New"
+                [label]="'content-drive.add-new' | dm"
                 icon="pi pi-chevron-down"
                 iconPos="right"
                 class="add-new-button"
                 data-testid="add-new-button"
-                size="small" />
+                (click)="menu.toggle($event)"
+                #button />
         </div>
 
         <div class="p-toolbar-group-bottom">
@@ -22,3 +21,5 @@
         </div>
     </div>
 </p-toolbar>
+
+<p-menu [model]="items" #menu data-testId="actionsMenu" [popup]="true"></p-menu>
