@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -7,6 +7,8 @@ import { DotContentDriveBaseTypeSelectorComponent } from './components/dot-conte
 import { DotContentDriveContentTypeFieldComponent } from './components/dot-content-drive-content-type-field/dot-content-drive-content-type-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
+
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 @Component({
     selector: 'dot-content-drive-toolbar',
@@ -23,4 +25,8 @@ import { DotContentDriveTreeTogglerComponent } from './components/dot-content-dr
     styleUrl: './dot-content-drive-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveToolbarComponent {}
+export class DotContentDriveToolbarComponent {
+    readonly #store = inject(DotContentDriveStore);
+
+    readonly $treeExpanded = this.#store.isTreeExpanded;
+}

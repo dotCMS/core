@@ -162,7 +162,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         it('should configure p-scroller with correct properties', () => {
             const scroller = spectator.query('p-scroller');
             expect(scroller).toBeTruthy();
-            expect(scroller.getAttribute('ng-reflect-item-size')).toBe('85');
+            expect(scroller.getAttribute('ng-reflect-item-size')).toBe('83');
             expect(scroller.getAttribute('ng-reflect-lazy')).toBe('true');
             expect(scroller.getAttribute('scrollHeight')).toBe('100%');
         });

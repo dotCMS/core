@@ -43,7 +43,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     private final Function<Host,String> analyticsKeyFunction;
 
     public AnalyticsWebAPIImpl() {
-        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)), // injection turn on by default
+        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, false)), // injection turn on by default
                 WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
                 APILocator::systemUser, currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
     }
