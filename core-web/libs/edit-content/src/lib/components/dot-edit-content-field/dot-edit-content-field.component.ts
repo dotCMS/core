@@ -12,7 +12,6 @@ import { ControlContainer, FormGroup, ReactiveFormsModule } from '@angular/forms
 
 import { DividerModule } from 'primeng/divider';
 
-import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -23,7 +22,8 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
+import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
+import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
@@ -40,7 +40,6 @@ import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
-import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 @Component({
@@ -64,13 +63,13 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentTagFieldComponent,
         DotEditContentCheckboxFieldComponent,
         DotEditContentMultiSelectFieldComponent,
-        DotEditContentBinaryFieldComponent,
+        DotBinaryFieldWrapperComponent,
         DotEditContentJsonFieldComponent,
         DotEditContentCustomFieldComponent,
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentHostFolderFieldComponent,
         DotEditContentCategoryFieldComponent,
-        BlockEditorModule,
+        DotEditContentBlockEditorComponent,
         DotEditContentKeyValueComponent,
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentFileFieldComponent,
@@ -118,11 +117,6 @@ export class DotEditContentFieldComponent {
      * The field types.
      */
     readonly fieldTypes = FIELD_TYPES;
-
-    /**
-     * The calendar types.
-     */
-    readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 
     /**
      * Whether to show the label.

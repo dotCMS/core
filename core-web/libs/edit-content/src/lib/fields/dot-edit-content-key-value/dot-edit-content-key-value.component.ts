@@ -1,20 +1,35 @@
-import { Component, ChangeDetectionStrategy, signal, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, input, OnInit } from '@angular/core';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
+import { DotKeyValue, DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseFieldComponent } from '../shared/base-field.component';
 
 @Component({
     selector: 'dot-edit-content-key-value',
-    imports: [DotKeyValueComponent],
+    imports: [
+        DotKeyValueComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-edit-content-key-value.component.html',
     styleUrl: './dot-edit-content-key-value.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentKeyValueComponent extends BaseFieldComponent {
+export class DotEditContentKeyValueComponent extends BaseFieldComponent implements OnInit {
     $initialValue = signal<DotKeyValue[]>([]);
-    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+
+    ngOnInit(): void {
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
+        });
+    }
 
     updateField(value: DotKeyValue[]): void {
         const keyValue = value.reduce((acc, item) => {

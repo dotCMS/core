@@ -3,13 +3,12 @@
 <dot-card-field [hasError]="hasError">
     <ng-content />
     <dot-card-field-content>
-        <p-multiSelect
-            [class.ng-invalid]="hasError"
-            [class.ng-dirty]="hasError"
-            [options]="$options()"
+        <dot-edit-content-binary-field
             [formControl]="formControl"
-            optionLabel="label"
-            optionValue="value" />
+            [contentlet]="$contentlet()"
+            [field]="field"
+            (valueUpdated)="valueUpdated.emit($event)"
+            [attr.data-testId]="'field-' + field.variable" />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (hasError) {

@@ -1,6 +1,6 @@
 <div class="dot-wysiwyg-tinymce__container">
     <editor
-        [formControlName]="$field().variable"
+        [formControl]="formControl"
         [init]="$editorConfig()"
         (onInit)="handleEditorInit($event)" />
 </div>
