@@ -14,6 +14,7 @@ public final class IndexContentTypeRequest {
     private final Long languageId;
     private final Integer pageSize;
     private final Integer batchSize;
+    private final String embeddingProviderKey;
 
     private IndexContentTypeRequest(Builder builder) {
         this.host = builder.host;
@@ -21,6 +22,7 @@ public final class IndexContentTypeRequest {
         this.languageId = builder.languageId;
         this.pageSize = builder.pageSize;
         this.batchSize = builder.batchSize;
+        this.embeddingProviderKey = builder.embeddingProviderKey;
     }
 
     public static Builder builder() {
@@ -46,6 +48,14 @@ public final class IndexContentTypeRequest {
 
     public Optional<Integer> getBatchSize() {
         return Optional.ofNullable(batchSize);
+    }
+
+    public Optional<String> getIndexName() {
+        return Optional.empty();
+    }
+
+    public Optional<String> getEmbeddingProviderKey() {
+        return Optional.ofNullable(embeddingProviderKey);
     }
 
     // equals(), hashCode(), toString()
@@ -77,13 +87,6 @@ public final class IndexContentTypeRequest {
                 '}';
     }
 
-    public Optional<String> getIndexName() {
-        return Optional.empty();
-    }
-
-    public Optional<String> getEmbeddingProviderKey() {
-        return Optional.empty();
-    }
 
     // Builder Class
     public static final class Builder {
@@ -97,8 +100,15 @@ public final class IndexContentTypeRequest {
         private Integer pageSize;
         @JsonProperty()
         private Integer batchSize;
+        @JsonProperty()
+        private String embeddingProviderKey;
 
         private Builder() {}
+
+        public Builder withEmbeddingProviderKey(String embeddingProviderKey) {
+            this.embeddingProviderKey = embeddingProviderKey;
+            return this;
+        }
 
         public Builder withHost(String host) {
             this.host = host;

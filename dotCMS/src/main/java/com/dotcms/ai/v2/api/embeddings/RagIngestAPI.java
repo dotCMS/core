@@ -8,5 +8,5 @@ public interface RagIngestAPI {
      * @param contentTypeRagIndexRequest v
      * @return int how many rows added
      */
-    int indexContentType(ContentTypeRagIndexRequest contentTypeRagIndexRequest);
+    int indexContentType(ContentTypeRagIndexRequest contentTypeRagIndexRequest); // todo: this should be receive an event listener or so to track the progress and error on streaming mode
 }

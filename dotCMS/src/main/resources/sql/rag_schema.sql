@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS dot_ai_content_metadata(
 CREATE TABLE IF NOT EXISTS dot_ai_embeddings(
                                                 id BIGSERIAL PRIMARY KEY,
                                                 metadata_id BIGINT NOT NULL REFERENCES dot_ai_content_metadata(id) ON DELETE CASCADE,
+                                               -- metadata_id BIGINT NOT NULL,
                                                 model_name VARCHAR(255) NOT NULL,
                                                 dimensions INT NOT NULL,
                                                 embedding VECTOR NOT NULL

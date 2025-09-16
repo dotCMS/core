@@ -1,11 +1,15 @@
 package com.dotcms.ai.v2.rest;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+@JsonDeserialize(builder = RagSearchRequest.Builder.class)
 public final class RagSearchRequest {
 
     private final String query;
@@ -107,14 +111,23 @@ public final class RagSearchRequest {
     }
 
     public static final class Builder {
+        @JsonProperty(required = true)
         private String query;
+        @JsonProperty()
         private String site;
+        @JsonProperty()
         private List<String> contentTypes;
+        @JsonProperty()
         private String languageId;
+        @JsonProperty()
         private String identifier;
+        @JsonProperty()
         private Integer limit;
+        @JsonProperty()
         private Integer offset;
+        @JsonProperty()
         private Double threshold;
+        @JsonProperty()
         private Map<String, Object> options;
 
         private Builder() {}

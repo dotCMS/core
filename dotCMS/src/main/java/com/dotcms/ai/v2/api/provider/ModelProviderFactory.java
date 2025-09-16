@@ -21,7 +21,7 @@ public class ModelProviderFactory {
 
     public ModelProviderFactory() {
         this(List.of(new OpenAiModelProvider(), // Open AI LLM and Streaming
-                new OpenAiModelProvider(Model.OPEN_AI_GPT_40.getProviderName()), // Open AI Embbeding model
+                new OpenAiModelProvider(Model.OPEN_AI_TEXT_EMBEDDING_3_SMALL.getProviderName()), // Open AI Embbeding model
                 new AnthropicModelProvider()));
     }
 

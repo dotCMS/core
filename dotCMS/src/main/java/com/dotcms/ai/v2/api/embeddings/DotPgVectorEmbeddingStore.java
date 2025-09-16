@@ -169,9 +169,16 @@ public class DotPgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
             return Collections.emptyList();
         }
 
-        try (Connection db = dataSource.getConnection()) {
+        boolean autoCommit = true;
+        int isolation = 0;
+        Connection connection = null;
+        try  {
 
-            db.setAutoCommit(false);
+            connection = dataSource.getConnection();
+            autoCommit = connection.getAutoCommit();
+            isolation = connection.getTransactionIsolation();
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             final List<String> generatedIds = new ArrayList<>(embeddings.size());
             for (int i = 0; i < embeddings.size(); i++) {
 
@@ -179,21 +186,32 @@ public class DotPgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
                 final TextSegment textSegment = segments.get(i);
                 // 1) Upsert metadata row
                 final ContentMetadataDTO meta = buildMetadataFromSegment(textSegment);
-                final long metadataId = contentMetadataFactory.upsert(db, meta);
+                final long metadataId = contentMetadataFactory.upsert(connection, meta);
                 // 2) Insert/Upsert embedding row
                 final float[] vec = ArrayUtils.toPrimitive(embedding.vectorAsList().toArray(new Float[]{}));
                 if (vec.length != dimension) { // the model dimension and the vector should match
                     throw new IllegalArgumentException("Embedding dimension mismatch: " + vec.length +
                             " != " + dimension + " (model=" + modelNameFromSegment(textSegment) + ")");
                 }
-                final long embId = embeddingsFactory.upsert(db, EmbeddingInput.of(metadataId, modelNameFromSegment(textSegment), dimension, vec));
+                final long embId = embeddingsFactory.upsert(connection, EmbeddingInput.of(metadataId, modelNameFromSegment(textSegment), dimension, vec));
                 generatedIds.add(String.valueOf(embId));
             }
-            db.commit();  // batching
+
+            connection.commit();  // batching
             return generatedIds;
         } catch (SQLException | DotDataException ex) {
 
+            try { connection.rollback(); } catch (Exception ignore) {}
             throw new RuntimeException("Failed to add embeddings", ex);
+        } finally {
+            if (null != connection) {
+
+                try {
+                    connection.setAutoCommit(autoCommit);
+                    connection.setTransactionIsolation(isolation);
+                } catch (Exception ignore) {}
+                CloseUtils.closeQuietly(connection);
+            }
         }
     }
 

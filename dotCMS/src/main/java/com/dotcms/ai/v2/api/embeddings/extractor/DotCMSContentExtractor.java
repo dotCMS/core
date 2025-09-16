@@ -57,7 +57,7 @@ public class DotCMSContentExtractor implements ContentExtractor {
             throw new EmbeddingException("Couldn't extract the content for the contentlet: " + contentlet.getIdentifier() +
                         " content type: " + contentType.variable());
         }
-        return null;
+        return extractTextOpt.get();
     }
 
     private ExtractorContextInfo retrieveContextInfo() {
@@ -102,10 +102,15 @@ public class DotCMSContentExtractor implements ContentExtractor {
 
         for (Contentlet contentlet : contentlets) {
 
-            final String extractTextContent = extractContent(contentlet, contentType);
+            try {
+                final String extractTextContent = extractContent(contentlet, contentType);
 
-            extractedContents.add(ExtractedContent.of(contentlet.getInode(), contentlet.getIdentifier(), contentlet.getLanguageId(),
-                    contentlet.getHost(), contentlet.getVariantId(), contentType.variable(), contentlet.getTitle(), extractTextContent));
+                extractedContents.add(ExtractedContent.of(contentlet.getInode(), contentlet.getIdentifier(), contentlet.getLanguageId(),
+                        contentlet.getHost(), contentlet.getVariantId(), contentType.variable(), contentlet.getTitle(), extractTextContent));
+            } catch (Exception e) {
+                Logger.debug(this, ()-> "Error extracting content from contentlet: " + contentlet.getIdentifier() +
+                        ", content type: " + contentTypeVarname + ", msg: " + e.getMessage());
+            }
         }
 
         return extractedContents;

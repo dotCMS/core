@@ -7,6 +7,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
+import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_4_O_MINI;
@@ -54,6 +55,7 @@ public class OpenAiModelProvider implements  ModelProvider {
         return OpenAiEmbeddingModel.builder()
                 .apiKey(config.get(ModelConfig.API_KEY))
                 .modelName(config.getOrDefault(ModelConfig.MODEL, TEXT_EMBEDDING_3_SMALL.name()))
+                .dimensions(TEXT_EMBEDDING_3_SMALL.dimension()) // this since to be hardcoded
                 .build();
     }
 }

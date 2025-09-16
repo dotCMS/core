@@ -1,7 +1,10 @@
 package com.dotcms.ai.v2.rest;
 
+import com.dotcms.ai.v2.api.SimilarityOperator;
 import com.dotcms.ai.v2.api.embeddings.ContentTypeRagIndexRequest;
+import com.dotcms.ai.v2.api.embeddings.DotPgVectorEmbeddingStore;
 import com.dotcms.ai.v2.api.embeddings.RagIngestAPI;
+import com.dotcms.ai.v2.api.embeddings.retrieval.EmbeddingStoreRetriever;
 import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievalQuery;
 import com.dotcms.ai.v2.api.embeddings.retrieval.RetrievedChunk;
 import com.dotcms.ai.v2.api.embeddings.retrieval.Retriever;
@@ -12,6 +15,9 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.inject.Inject;
@@ -60,9 +66,9 @@ public class RagResource {
             return;
         }
 
-        final int pageSize  = request.getPageSize()  == null && request.getPageSize().isPresent()?
+        final int pageSize  = request.getPageSize()  == null || request.getPageSize().isEmpty()?
                 50  : Math.max(1, request.getPageSize().get());
-        final int batchSize = request.getBatchSize() == null && request.getBatchSize().isPresent()?
+        final int batchSize = request.getBatchSize() == null || request.getBatchSize().isEmpty()?
                 128 : Math.max(1, request.getBatchSize().get());
         // todo: this should reach into a configuration and retrieve the one, by now we are using the open ai
         // eventually if do not send any provider key we can try onnix, but it is ok to hardcode by now
@@ -114,7 +120,26 @@ public class RagResource {
             throw new BadRequestException("query is required");
         }
 
-        final Retriever retriever = null; // todo: build the retriever here
+        // todo: this should reach into a configuration and retrieve the one, by now we are using the open ai
+        // eventually if do not send any provider key we can try onnix, but it is ok to hardcode by now
+        final ModelConfig modelConfig = Model.OPEN_AI_TEXT_EMBEDDING_3_SMALL.toConfig(Config.getStringProperty("OPEN_AI_API_KEY"));
+
+
+        final EmbeddingModel embeddingModel = this.modelProviderFactory.getEmbedding(/*ragSearchRequest.getEmbeddinModelProviderKey()*/
+                Model.OPEN_AI_TEXT_EMBEDDING_3_SMALL.getProviderName(), modelConfig);
+        final EmbeddingStore<TextSegment> store = DotPgVectorEmbeddingStore.builder()
+                .indexName(/*request.getIndexName()!=null?request.getIndexName():"default"*/"default")
+                .dimension(embeddingModel.dimension())
+                .operator(SimilarityOperator.COSINE) // todo: by now cosine by the user should have the ability to send it  // o INNER_PRODUCT/EUCLIDEAN
+                .build();
+        final Retriever retriever = EmbeddingStoreRetriever.builder()
+                .store(store)
+                .embeddingModel(embeddingModel)
+                .defaultLimit(8) // check all these values
+                .maxLimit(64)
+                .overfetchFactor(3)
+                .defaultThreshold(0.75)
+                .build();
         final RetrievalQuery.Builder retrievalQueryBuilder = RetrievalQuery.builder();
         retrievalQueryBuilder.prompt(ragSearchRequest.getQuery());
         ragSearchRequest.getSite().ifPresent(retrievalQueryBuilder::site);

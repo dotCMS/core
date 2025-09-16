@@ -22,17 +22,17 @@ import java.util.Map;
 public class EmbeddingsFactoryImpl implements EmbeddingsFactory {
 
     private static final String INSERT_SQL =
-            "INSERT INTO dot_embeddings (metadata_id, model_name, dimensions, embedding) " +
+            "INSERT INTO dot_ai_embeddings (metadata_id, model_name, dimensions, embedding) " +
                     "VALUES (?, ?, ?, CAST(? AS vector)) RETURNING id";
 
     private static final String UPSERT_SQL =
             // If you want to avoid duplicates per (metadata_id, model_name), add a unique index and use ON CONFLICT
-            "INSERT INTO dot_embeddings (metadata_id, model_name, dimensions, embedding) " +
+            "INSERT INTO dot_ai_embeddings (metadata_id, model_name, dimensions, embedding) " +
                     "VALUES (?, ?, ?, CAST(? AS vector)) " +
                     "RETURNING id";
 
     private static final String DELETE_BY_METADATA_SQL =
-            "DELETE FROM dot_embeddings WHERE metadata_id=?";
+            "DELETE FROM dot_ai_embeddings WHERE metadata_id=?";
 
     /**
      * Inserts a new embedding row.
@@ -77,12 +77,22 @@ public class EmbeddingsFactoryImpl implements EmbeddingsFactory {
     public long upsert(final EmbeddingInput embeddingInput)
             throws  DotDataException {
 
+        try (Connection connection = DbConnectionFactory.getPGVectorConnection()) {
+            return upsert(connection, embeddingInput);
+        } catch (SQLException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotDataException(e);
+        }
+    }
+
+    @Override
+    public long upsert(final Connection connection, final EmbeddingInput embeddingInput) throws DotDataException {
         final long metadataId = embeddingInput.getMetadataId();
         final String modelName = embeddingInput.getModelName();
         final int dimensions = embeddingInput.getDimensions();
         final float[] embedding = embeddingInput.getEmbedding();
 
-        try (Connection connection = DbConnectionFactory.getPGVectorConnection()) {
+        try {
 
             final List<Map<String, Object>> rows = new DotConnect()
                     .setSQL(UPSERT_SQL)
@@ -99,15 +109,10 @@ public class EmbeddingsFactoryImpl implements EmbeddingsFactory {
             }
 
             return 0l;
-        } catch (SQLException e) {
+        } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotDataException(e);
         }
-    }
-
-    @Override
-    public long upsert(Connection connection, EmbeddingInput embeddingInput) throws DotDataException {
-        return 0;
     }
 
     /**

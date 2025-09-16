@@ -49,35 +49,40 @@ public class ContentMetadataFactoryImpl implements ContentMetadataFactory {
     @Override
     public long upsert(final ContentMetadataDTO contentMetadataDTO) throws DotDataException {
 
-        Logger.debug(this, ()-> "Doing upsert over: " + contentMetadataDTO);
         try (Connection connection = DbConnectionFactory.getPGVectorConnection()) {
-
-            final List<Map<String, Object>> rows = new DotConnect()
-            .setSQL(UPSERT_SQL)
-            .addParam(contentMetadataDTO.getInode())
-            .addParam(contentMetadataDTO.getIdentifier())
-            .addParam(contentMetadataDTO.getLanguage())
-            .addParam(contentMetadataDTO.getHost())
-            .addParam(contentMetadataDTO.getVariant())
-            .addParam(contentMetadataDTO.getContentType())
-            .addParam(contentMetadataDTO.getIndexName())
-            .addParam(contentMetadataDTO.getTitle())
-            .addParam(contentMetadataDTO.getExtractedText())
-            .addParam(contentMetadataDTO.getExtractedTextHash())
-            .addParam(contentMetadataDTO.getTokenCount())
-            .loadObjectResults(connection);
-
-            final Object idVal = rows.get(0).get("id");
-            return ((Number) idVal).longValue();
-        } catch (SQLException e) {
+            return upsert(connection, contentMetadataDTO);
+        }catch (SQLException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotDataException(e);
         }
     }
 
     @Override
-    public long upsert(Connection connection, ContentMetadataDTO contentMetadataDTO) throws DotDataException {
-        return 0;
+    public long upsert(final Connection connection, final ContentMetadataDTO contentMetadataDTO) throws DotDataException {
+        Logger.debug(this, ()-> "Doing upsert over: " + contentMetadataDTO);
+        try {
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL(UPSERT_SQL)
+                    .addParam(contentMetadataDTO.getInode())
+                    .addParam(contentMetadataDTO.getIdentifier())
+                    .addParam(contentMetadataDTO.getLanguage())
+                    .addParam(contentMetadataDTO.getHost())
+                    .addParam(contentMetadataDTO.getVariant())
+                    .addParam(contentMetadataDTO.getContentType())
+                    .addParam(contentMetadataDTO.getIndexName())
+                    .addParam(contentMetadataDTO.getTitle())
+                    .addParam(contentMetadataDTO.getExtractedText())
+                    .addParam(contentMetadataDTO.getExtractedTextHash())
+                    .addParam(contentMetadataDTO.getTokenCount())
+                    .loadObjectResults(connection);
+
+            final Object idVal = rows.get(0).get("id");
+            return ((Number) idVal).longValue();
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotDataException(e);
+        }
     }
 
     /**
