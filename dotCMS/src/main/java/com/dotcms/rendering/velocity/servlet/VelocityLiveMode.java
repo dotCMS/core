@@ -167,6 +167,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                                     "pageInode:" + htmlPage.getInode(),
                                     "modDate:" + modDate.getTime(),
                                     "vanity:" + vanityUrl,
+                                    "originalUrl:" + originalUrl,
                                     "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
                                     );
             

@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.cache.CacheValue;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Map;
 
 public class BlockDirectiveCacheObject implements CacheValue {
@@ -17,8 +18,8 @@ public class BlockDirectiveCacheObject implements CacheValue {
         return this.ttl;
     }
 
-    public BlockDirectiveCacheObject(Map<String, Serializable> map, int ttlInSeconds) {
-        this.ttl = ttlInSeconds * 1000;
+    public BlockDirectiveCacheObject(Map<String, Serializable> map, Duration ttlDuration) {
+        this.ttl = ttlDuration.toMillis();
         this.created = System.currentTimeMillis();
         this.map = map;
     }

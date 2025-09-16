@@ -4,6 +4,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Map;
 
 public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
@@ -37,11 +38,11 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
     }
 
     @Override
-    public void add(String key, Map<String, Serializable> value, int ttlInSeconds) {
+    public void add(String key, Map<String, Serializable> value, Duration ttl) {
         if (key == null || value == null || !canCache) {
             return;
         }
-        BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value, ttlInSeconds);
+        BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value, ttl);
         cache.put(key, cto, group);
 
     }
@@ -82,6 +83,10 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 
         BlockDirectiveCacheObject bdco = (BlockDirectiveCacheObject) o;
 
+        if(bdco.isExpired()){
+            cache.remove(key, group);
+            return EMPTY_MAP;
+        }
         return bdco.getMap();
 
     }
