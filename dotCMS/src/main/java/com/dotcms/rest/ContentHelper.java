@@ -727,8 +727,8 @@ public class ContentHelper {
 
             if (relatedContent.getContentType() != null &&
                 relatedContent.getContentType().fields().stream().anyMatch(f ->
-                Objects.equals(f.variable(), field.variable()) && !f.type().equals(RelationshipField.class))) {
-                
+                f.variable().equals(field.variable()) && !f.type().equals(RelationshipField.class))) {
+
                 relatedContent.setProperty(field.name(), originalValue);
             }
 
