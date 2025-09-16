@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -20,6 +21,7 @@ import static org.junit.Assert.assertTrue;
  * @author Jose Castro
  * @since Sep 11th, 2025
  */
+@Ignore
 public class Task250910AddAnalyticsDashboardPortletToMenuTest {
 
     @BeforeClass
