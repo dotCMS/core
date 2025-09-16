@@ -26,22 +26,23 @@ public class Task250910AddAnalyticsDashboardPortletToMenu implements StartupTask
 
     @Override
     public boolean forceRun() {
-        try {
-            final String layoutID = this.getMenuGroupForPortlet();
-            if (UtilMethods.isNotSet(layoutID)) {
-                Logger.warn(this, "The 'Analytics Dashboard' portlet could not be automatically added to any of the expected Menu Groups. " +
-                        "Please add it manually");
-                return false;
-            }
-            final String analyticsDashboardPortlet = new DotConnect()
-                                    .setSQL("SELECT id FROM cms_layouts_portlets WHERE portlet_id = ?")
-                                    .addParam(ANALYTICS_DASHBOARD.toString())
-                                    .getString("id");
-            return UtilMethods.isNotSet(analyticsDashboardPortlet);
-        } catch (final DotDataException e) {
-            Logger.error(this, String.format("An error occurred when adding the 'Analytics Dashboard' portlet. " +
-                    "Please add it manually: %s", ExceptionUtil.getErrorMessage(e)), e);
-        }
+//         TODO: Let's enable this back when it's ready for GTM, we will need to rename the UT as well.
+//        try {
+//            final String layoutID = this.getMenuGroupForPortlet();
+//            if (UtilMethods.isNotSet(layoutID)) {
+//                Logger.warn(this, "The 'Analytics Dashboard' portlet could not be automatically added to any of the expected Menu Groups. " +
+//                        "Please add it manually");
+//                return false;
+//            }
+//            final String analyticsDashboardPortlet = new DotConnect()
+//                                    .setSQL("SELECT id FROM cms_layouts_portlets WHERE portlet_id = ?")
+//                                    .addParam(ANALYTICS_DASHBOARD.toString())
+//                                    .getString("id");
+//            return UtilMethods.isNotSet(analyticsDashboardPortlet);
+//        } catch (final DotDataException e) {
+//            Logger.error(this, String.format("An error occurred when adding the 'Analytics Dashboard' portlet. " +
+//                    "Please add it manually: %s", ExceptionUtil.getErrorMessage(e)), e);
+//        }
         return false;
     }
 
