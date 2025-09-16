@@ -194,9 +194,10 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should emit the selected persona', () => {
-        spyOn(component.selected, 'emit');
+        jest.spyOn(component.selected, 'emit');
         dropdown.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should call filter change with keyword', () => {
@@ -205,13 +206,14 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call page change', () => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([{ ...mockDotPersona }]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([{ ...mockDotPersona }]));
         dropdown.triggerEventHandler('pageChange', {
             filter: '',
             first: 10,
             rows: 10
         });
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     });
 
     it('should set dot-searchable-dropdown with right attributes', () => {
@@ -230,7 +232,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call toggle when selected dot-persona-selected-item', async () => {
-        spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
+        jest.spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
         await hostFixture.whenStable();
 
         const selectedItem = hostFixture.debugElement.query(By.css('dot-persona-selected-item'));
@@ -259,17 +261,18 @@ describe('DotPersonaSelectorComponent', () => {
     it('should execute "change" event from dot-persona-selector-option', async () => {
         await hostFixture.whenStable();
 
-        spyOn(component.selected, 'emit');
+        jest.spyOn(component.selected, 'emit');
         openOverlay();
         const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
         personaOption.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     xit('should execute "delete" event from dot-persona-selector-option', async () => {
         await hostFixture.whenStable();
 
-        spyOn(component.delete, 'emit');
+        jest.spyOn(component.delete, 'emit');
         openOverlay();
         const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
         personaOption.triggerEventHandler('delete', defaultPersona);
@@ -290,7 +293,7 @@ describe('DotPersonaSelectorComponent', () => {
             openOverlay();
             const addPersonaIcon = dropdown.query(By.css('p-button'));
 
-            spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
+            jest.spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
 
             dropdown.triggerEventHandler('filterChange', 'Bill');
             addPersonaIcon.nativeElement.click();
@@ -303,15 +306,17 @@ describe('DotPersonaSelectorComponent', () => {
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {
-            spyOn(component.selected, 'emit');
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([mockDotPersona]));
-            spyOn(dropdown.componentInstance, 'resetPanelMinHeight');
+            jest.spyOn(component.selected, 'emit');
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([mockDotPersona]));
+            jest.spyOn(dropdown.componentInstance, 'resetPanelMinHeight');
 
             personaDialog.createdPersona.emit(defaultPersona);
 
             expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+            expect(component.selected.emit).toHaveBeenCalledTimes(1);
             expect(paginatorService.filter).toEqual('');
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
             expect(dropdown.componentInstance.resetPanelMinHeight).toHaveBeenCalled();
         });
     });
@@ -324,14 +329,14 @@ describe('DotPersonaSelectorComponent', () => {
         });
 
         it('should call hide event on hide persona list', () => {
-            spyOn(iframeOverlayService, 'hide');
+            jest.spyOn(iframeOverlayService, 'hide');
             dropdown.triggerEventHandler('hide', {});
 
             expect(iframeOverlayService.hide).toHaveBeenCalled();
         });
 
         it('should call show event on show persona list', () => {
-            spyOn(iframeOverlayService, 'show');
+            jest.spyOn(iframeOverlayService, 'show');
             dropdown.triggerEventHandler('display', {});
 
             expect(iframeOverlayService.show).toHaveBeenCalled();

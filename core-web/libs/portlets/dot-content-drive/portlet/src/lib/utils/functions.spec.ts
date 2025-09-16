@@ -1,7 +1,15 @@
 import { describe, it, expect } from '@jest/globals';
 
-import { decodeFilters, encodeFilters, decodeByFilterKey } from './functions';
+import { createFakeSite } from '@dotcms/utils-testing';
 
+import {
+    decodeFilters,
+    encodeFilters,
+    decodeByFilterKey,
+    buildContentDriveQuery
+} from './functions';
+
+import { SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
@@ -222,6 +230,348 @@ describe('Utility Functions', () => {
             const decoded = decodeFilters(encoded);
 
             expect(decoded).toEqual(original);
+        });
+    });
+
+    describe('buildContentDriveQuery', () => {
+        // const mockSite: SiteEntity = {
+        //     aliases: '',
+        //     archived: false,
+        //     categoryId: '',
+        //     contentTypeId: '',
+        //     default: false,
+        //     dotAsset: false,
+        //     fileAsset: false,
+        //     folder: '/',
+        //     form: false,
+        //     host: 'test-site.com',
+        //     hostThumbnail: null,
+        //     hostname: 'test-site.com',
+        //     htmlpage: false,
+        //     identifier: 'test-site-123',
+        //     indexPolicyDependencies: '',
+        //     inode: 'test-inode',
+        //     keyValue: false,
+        //     languageId: 1,
+        //     languageVariable: false,
+        //     live: true,
+        //     locked: false,
+        //     lowIndexPriority: false,
+        //     modDate: 1234567890,
+        //     modUser: 'test-user',
+        //     name: 'Test Site',
+        //     new: false,
+        //     owner: 'admin',
+        //     parent: false,
+        //     permissionId: 'permission-123',
+        //     permissionType: 'INDIVIDUAL',
+        //     persona: false,
+        //     sortOrder: 0,
+        //     structureInode: 'structure-123',
+        //     systemHost: false,
+        //     tagStorage: 'SCHEMA',
+        //     title: 'Test Site',
+        //     titleImage: null,
+        //     type: 'HOST',
+        //     vanityUrl: false,
+        //     variantId: '',
+        //     versionId: 'version-123',
+        //     working: true
+        // };
+
+        const mockSite = createFakeSite({
+            aliases: '',
+            archived: false,
+            categoryId: '',
+            contentTypeId: '',
+            default: false,
+            dotAsset: false,
+            fileAsset: false,
+            folder: '/',
+            form: false,
+            host: 'test-site.com',
+            hostThumbnail: null,
+            hostname: 'test-site.com',
+            htmlpage: false,
+            identifier: 'test-site-123',
+            indexPolicyDependencies: '',
+            inode: 'test-inode',
+            keyValue: false,
+            languageId: 1,
+            languageVariable: false,
+            live: true,
+            locked: false,
+            lowIndexPriority: false,
+            modDate: 1234567890,
+            modUser: 'test-user',
+            name: 'Test Site',
+            new: false,
+            owner: 'admin',
+            parent: false,
+            permissionId: 'permission-123',
+            permissionType: 'INDIVIDUAL',
+            persona: false,
+            sortOrder: 0,
+            structureInode: 'structure-123',
+            systemHost: false,
+            tagStorage: 'SCHEMA',
+            title: 'Test Site',
+            titleImage: null,
+            type: 'HOST',
+            vanityUrl: false,
+            variantId: '',
+            versionId: 'version-123',
+            working: true
+        });
+
+        it('should build basic query with site and default filters', () => {
+            const result = buildContentDriveQuery({
+                currentSite: mockSite
+            });
+
+            // Should include base query, site filter, and default working/variant filters
+            expect(result).toContain(
+                '+systemType:false -contentType:forms -contentType:Host +deleted:false'
+            );
+            expect(result).toContain(
+                `+(conhost:${mockSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+            );
+        });
+
+        it('should add path filter when path is provided', () => {
+            const testPath = '/test/path';
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                path: testPath
+            });
+
+            expect(result).toContain(`parentPath:${testPath}`);
+        });
+
+        it('should not add path filter when path is undefined', () => {
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                path: undefined
+            });
+
+            expect(result).not.toContain('parentPath:');
+        });
+
+        it('should handle single value filters correctly', () => {
+            const filters: DotContentDriveFilters = {
+                status: 'published',
+                language: 'en'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            expect(result).toContain('status:published');
+            expect(result).toContain('language:en');
+        });
+
+        it('should handle multiselect filters with single value', () => {
+            const filters: DotContentDriveFilters = {
+                contentType: ['Blog']
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            expect(result).toContain('+contentType:Blog');
+        });
+
+        it('should handle multiselect filters with multiple values', () => {
+            const filters: DotContentDriveFilters = {
+                contentType: ['Blog', 'News', 'Article']
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            expect(result).toContain('+contentType:(Blog OR News OR Article)');
+        });
+
+        it('should handle baseType multiselect filters correctly', () => {
+            const filters: DotContentDriveFilters = {
+                baseType: ['1', '2']
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            expect(result).toContain('+baseType:(1 OR 2)');
+        });
+
+        it('should handle title filter with special search logic', () => {
+            const filters: DotContentDriveFilters = {
+                title: 'test search'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            // Should include catchall search
+            expect(result).toContain('+catchall:*test search*');
+            // Should include title_dotraw search with boost
+            expect(result).toContain('title_dotraw:*test search*^5');
+            // Should include exact title search with higher boost
+            expect(result).toContain("title:'test search'^15");
+            // Should include individual word searches
+            expect(result).toContain('title:test^5');
+            expect(result).toContain('title:search^5');
+        });
+
+        it('should handle title filter with single word', () => {
+            const filters: DotContentDriveFilters = {
+                title: 'blog'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            expect(result).toContain('+catchall:*blog*');
+            expect(result).toContain('title_dotraw:*blog*^5');
+            expect(result).toContain("title:'blog'^15");
+            expect(result).toContain('title:blog^5');
+        });
+
+        it('should filter out empty words in title search', () => {
+            const filters: DotContentDriveFilters = {
+                title: 'test  search   with   spaces'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            // Should include individual words but not empty strings
+            expect(result).toContain('title:test^5');
+            expect(result).toContain('title:search^5');
+            expect(result).toContain('title:with^5');
+            expect(result).toContain('title:spaces^5');
+        });
+
+        it('should ignore filters with undefined values', () => {
+            const filters: DotContentDriveFilters = {
+                contentType: ['Blog'],
+                status: undefined,
+                language: 'en'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            expect(result).toContain('+contentType:Blog');
+            expect(result).toContain('language:en');
+            expect(result).not.toContain('status:');
+        });
+
+        it('should handle mixed filter types correctly', () => {
+            const filters: DotContentDriveFilters = {
+                contentType: ['Blog', 'News'],
+                baseType: ['1'],
+                title: 'search term',
+                status: 'published',
+                language: 'en'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                path: '/content',
+                filters
+            });
+
+            // Should include all filter types
+            expect(result).toContain('parentPath:/content');
+            expect(result).toContain('+contentType:(Blog OR News)');
+            expect(result).toContain('+baseType:1');
+            expect(result).toContain('+catchall:*search term*');
+            expect(result).toContain('status:published');
+            expect(result).toContain('language:en');
+        });
+
+        it('should handle empty filters object', () => {
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters: {}
+            });
+
+            // Should only include base query and site filters
+            expect(result).toContain(
+                '+systemType:false -contentType:forms -contentType:Host +deleted:false'
+            );
+            expect(result).toContain(
+                `+(conhost:${mockSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+            );
+        });
+
+        it('should handle filters with empty arrays', () => {
+            const filters: DotContentDriveFilters = {
+                contentType: [],
+                baseType: []
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                filters
+            });
+
+            // Empty arrays should result in empty OR chains
+            expect(result).toContain('+contentType:');
+            expect(result).toContain('+baseType:');
+        });
+
+        it('should work with SYSTEM_HOST as current site', () => {
+            const result = buildContentDriveQuery({
+                currentSite: SYSTEM_HOST
+            });
+
+            expect(result).toContain(
+                `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+            );
+        });
+
+        it('should handle complex real-world scenario', () => {
+            const filters: DotContentDriveFilters = {
+                contentType: ['Blog', 'NewsArticle'],
+                baseType: ['1', '2'],
+                title: 'dotCMS content management',
+                status: 'published',
+                languageId: '1'
+            };
+
+            const result = buildContentDriveQuery({
+                currentSite: mockSite,
+                path: '/site/content/blog',
+                filters
+            });
+
+            // Verify all components are present
+            expect(result).toContain('parentPath:/site/content/blog');
+            expect(result).toContain('+contentType:(Blog OR NewsArticle)');
+            expect(result).toContain('+baseType:(1 OR 2)');
+            expect(result).toContain('+catchall:*dotCMS content management*');
+            expect(result).toContain('title:dotCMS^5');
+            expect(result).toContain('title:content^5');
+            expect(result).toContain('title:management^5');
+            expect(result).toContain('status:published');
+            expect(result).toContain('languageId:1');
         });
     });
 });
