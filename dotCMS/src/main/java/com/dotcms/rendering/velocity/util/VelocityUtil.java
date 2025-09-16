@@ -478,9 +478,7 @@ public class VelocityUtil {
      */
     public static boolean shouldPageCache(final HttpServletRequest request, final IHTMLPage page)
             throws DotDataException, DotSecurityException {
-        if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
-            return false;
-        }
+
         if (page == null || page.getCacheTTL() < 1) {
             return false;
         }
