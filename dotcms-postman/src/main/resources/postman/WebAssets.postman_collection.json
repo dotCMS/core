@@ -1583,7 +1583,7 @@
 							"    pm.response.to.have.status(404);",
 							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.message).to.include('not found');",
+							"    pm.expect(jsonData.message).to.include('Unable to determine a valid folder or asset from uri:');",
 							"});"
 						],
 						"type": "text/javascript"
