@@ -369,6 +369,7 @@ public class WebAssetHelper {
                 .modDate(folder.getModDate().toInstant())
                 .identifier(folder.getIdentifier())
                 .inode(folder.getInode())
+                .sortOrder(folder.getSortOrder())
                 .build();
     }
 
@@ -850,7 +851,7 @@ public class WebAssetHelper {
                                     + "] must be a valid content type of BaseType FILE-ASSET."
                     );
                 }
-                folder.setDefaultFileType(meta.defaultAssetType());
+                folder.setDefaultFileType(contentType.id());
             }
 
             if (UtilMethods.isSet(meta.fileMasks())) {
@@ -858,9 +859,7 @@ public class WebAssetHelper {
             }
 
             final Integer sortOrder = meta.sortOrder();
-            if (null != sortOrder) {
-                folder.setSortOrder(sortOrder);
-            }
+            folder.setSortOrder(Objects.requireNonNullElse(sortOrder,  folder.getSortOrder()));
         }
         folder.setHostId(host.getIdentifier());
         return folder;

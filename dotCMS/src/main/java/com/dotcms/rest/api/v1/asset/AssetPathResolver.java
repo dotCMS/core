@@ -132,7 +132,7 @@ public class AssetPathResolver {
      */
     Optional<Host> resolveHosBytName(final String hostName, final User user) throws DotDataException, DotSecurityException {
             Preconditions.checkNotEmpty(hostName,IllegalArgumentException.class, String.format("can not resolve a valid hostName [%s]", hostName));
-            final Host siteByName = hostAPI.findByName(hostName, user, false);
+            final Host siteByName = hostAPI.resolveHostName(hostName, user, false);
             if (null != siteByName && UtilMethods.isSet(siteByName.getIdentifier())) {
                 return Optional.of(siteByName);
             }

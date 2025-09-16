@@ -19,8 +19,7 @@ public interface AbstractFolderDetail {
 
     @Nullable
     @JsonProperty("sortOrder")
-    @Value.Default
-    default Integer sortOrder() { return 0; }
+    Integer sortOrder();
 
     @Nullable
     @JsonProperty("showOnMenu")
