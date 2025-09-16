@@ -19,8 +19,8 @@ public class BlockDirectiveCacheObject implements CacheValue {
     }
 
     public BlockDirectiveCacheObject(Map<String, Serializable> map, Duration ttlDuration) {
-        this.ttl = ttlDuration.toMillis();
         this.created = System.currentTimeMillis();
+        this.ttl = ttlDuration.toMillis();
         this.map = map;
     }
 
@@ -46,7 +46,7 @@ public class BlockDirectiveCacheObject implements CacheValue {
     }
 
     public boolean isExpired() {
-        return this.created + this.ttl < System.currentTimeMillis();
+        return this.created + this.ttl <= System.currentTimeMillis();
     }
 
 
