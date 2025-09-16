@@ -2812,7 +2812,8 @@ paths:
   /v1/analytics/content/_query/cube:
     post:
       description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using a CubeJS JSON query."
+        \ engagement data is tracked, using a CubeJS JSON query.**Note:** This endpoint\
+        \ is in **beta** and may change."
       operationId: postContentAnalyticsQuery
       requestBody:
         content:
@@ -2836,12 +2837,13 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Retrieve Content Analytics data
+      summary: Retrieve Content Analytics data (Beta)
       tags:
       - Content Analytics
   /v1/analytics/content/event:
     post:
-      description: receives a custom event payload and fires the event to the collectors
+      description: receives a custom event payload and fires the event to the collectors.
+        **Note:** This endpoint is in **beta** and may change.
       operationId: fireUserCustomEvent
       requestBody:
         content:
@@ -2864,7 +2866,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire an user custom event.
+      summary: Fire an user custom event (Beta).
       tags:
       - Content Analytics
   /v1/analytics/content/sitekey/generate/{siteId}:
