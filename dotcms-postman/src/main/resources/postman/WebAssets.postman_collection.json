@@ -1301,7 +1301,7 @@
 							"    pm.response.to.have.status(400);",
 							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.message).to.include('UUID');",
+							"    pm.expect(jsonData.error).to.include('UUID');",
 							"});"
 						],
 						"type": "text/javascript"
