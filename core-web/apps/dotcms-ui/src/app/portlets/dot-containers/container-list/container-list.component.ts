@@ -13,7 +13,7 @@ import {
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
@@ -65,9 +65,9 @@ export class ContainerListComponent implements OnDestroy {
             this.selectedContainers = [];
         });
 
-        this.siteService.switchSite$
-            .pipe(skip(1)) // Skip initialization
-            .subscribe(({ identifier }) => this.#store.getContainersByHost(identifier));
+        this.siteService.switchSite$.subscribe(({ identifier }) =>
+            this.#store.getContainersByHost(identifier)
+        );
     }
 
     ngOnDestroy(): void {

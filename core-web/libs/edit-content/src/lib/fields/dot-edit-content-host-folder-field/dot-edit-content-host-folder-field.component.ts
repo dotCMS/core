@@ -88,24 +88,13 @@ export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent i
         });
     }
 
-    /**
-     * Sets the disabled state of the control.
-     *
-     * @param isDisabled The disabled state to set.
-     */
-    setDisabledState(isDisabled: boolean): void {
-        if (isDisabled) {
-            this.pathControl.disable({ emitEvent: false });
-        } else {
-            this.pathControl.enable({ emitEvent: false });
-        }
-    }
-
     readonly handlePathToSaveChange = signalMethod<string>((pathToSave) => {
-        if (this.onChange) {
-            this.onChange(pathToSave);
-            this.onTouched();
+        if (!this.onChange || !pathToSave) {
+            return;
         }
+
+        this.onChange(pathToSave);
+        this.onTouched();
     });
 
     readonly handleNodeSelectedChange = signalMethod<TreeNodeItem>((nodeSelected) => {
@@ -127,4 +116,17 @@ export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent i
             treeSelect.cd.detectChanges();
         }
     });
+
+    /**
+     * Sets the disabled state of the control.
+     *
+     * @param isDisabled The disabled state to set.
+     */
+    setDisabledState(isDisabled: boolean): void {
+        if (isDisabled) {
+            this.pathControl.disable({ emitEvent: false });
+        } else {
+            this.pathControl.enable({ emitEvent: false });
+        }
+    }
 }
