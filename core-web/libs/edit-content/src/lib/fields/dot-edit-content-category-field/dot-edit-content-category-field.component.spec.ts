@@ -61,7 +61,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
                     props: {
                         contentlet: CATEGORY_FIELD_CONTENTLET_MOCK,
                         field: CATEGORY_FIELD_MOCK
-                    },
+                    } as unknown,
                     providers: [
                         mockProvider(CategoriesService, {
                             getSelectedHierarchy: jest
@@ -104,7 +104,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
                     props: {
                         contentlet: [] as unknown as DotCMSContentlet,
                         field: CATEGORY_FIELD_MOCK
-                    },
+                    } as unknown,
                     providers: [
                         mockProvider(CategoriesService, {
                             getSelectedHierarchy: jest.fn().mockReturnValue(of([]))
@@ -125,7 +125,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 props: {
                     contentlet: CATEGORY_FIELD_CONTENTLET_MOCK,
                     field: CATEGORY_FIELD_MOCK
-                },
+                } as unknown,
                 providers: [
                     mockProvider(CategoriesService, {
                         getSelectedHierarchy: jest.fn().mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))

@@ -70,7 +70,7 @@ export class DotEditContentCategoryFieldComponent extends BaseFieldComponent imp
      * Represents a DotCMS contentlet and is a required input
      * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
-    contentlet = input.required<DotCMSContentlet>();
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
     protected $isDisabled = signal(false);
 
@@ -91,7 +91,7 @@ export class DotEditContentCategoryFieldComponent extends BaseFieldComponent imp
         // The contentlet data will come through ControlValueAccessor's writeValue
         this.store.load({
             field: this.$field(),
-            contentlet: this.contentlet()
+            contentlet: this.$contentlet()
         });
 
         // Effect to sync selected categories with form control

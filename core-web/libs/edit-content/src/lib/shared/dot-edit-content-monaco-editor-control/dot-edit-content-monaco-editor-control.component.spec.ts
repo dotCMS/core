@@ -107,7 +107,7 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
     it('should register Velocity language when Monaco is loaded', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const registerSpy = jest.spyOn(component as any, 'registerVelocityLanguage');
-        component.ngOnInit();
+        spectator.detectChanges();
         expect(registerSpy).toHaveBeenCalled();
     });
 });
