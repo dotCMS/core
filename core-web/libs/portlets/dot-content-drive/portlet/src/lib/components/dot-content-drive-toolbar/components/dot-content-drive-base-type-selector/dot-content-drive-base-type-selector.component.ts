@@ -1,11 +1,14 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { Component, inject, linkedSignal } from '@angular/core';
+import { Component, inject, linkedSignal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
-import { MultiSelectModule } from 'primeng/multiselect';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
+import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { debounceTime, distinctUntilChanged, map, take } from 'rxjs/operators';
 
@@ -23,7 +26,15 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     selector: 'dot-content-drive-base-type-selector',
     templateUrl: './dot-content-drive-base-type-selector.component.html',
     styleUrl: './dot-content-drive-base-type-selector.component.scss',
-    imports: [MultiSelectModule, FormsModule, CheckboxModule, DotMessagePipe],
+    imports: [
+        MultiSelectModule,
+        FormsModule,
+        CheckboxModule,
+        DotMessagePipe,
+        IconFieldModule,
+        InputIconModule,
+        InputTextModule
+    ],
     standalone: true
 })
 export class DotContentDriveBaseTypeSelectorComponent {
@@ -36,6 +47,8 @@ export class DotContentDriveBaseTypeSelectorComponent {
 
     readonly #store = inject(DotContentDriveStore);
     readonly #dotContentTypeService = inject(DotContentTypeService);
+
+    readonly $multiSelect = viewChild<MultiSelect>(MultiSelect);
 
     readonly $state = signalState({
         baseTypes: []
@@ -94,5 +107,10 @@ export class DotContentDriveBaseTypeSelectorComponent {
                     this.#store.removeFilter('baseType');
                 }
             });
+    }
+
+    changedFilter() {
+        // eslint-disable-next-line no-console
+        console.log(this.$multiSelect());
     }
 }

@@ -8,4 +8,14 @@
     [showToggleAll]="true"
     (onChange)="onChange()"
     [resetFilterOnHide]="true"
-    [scrollHeight]="MULTISELECT_SCROLL_HEIGHT" />
+    [scrollHeight]="MULTISELECT_SCROLL_HEIGHT">
+    <ng-template pTemplate="filter">
+        <div class="flex items-center gap-2 w-full">
+            <p-checkbox [binary]="true" inputId="binary" />
+            <p-iconField iconPosition="right" class="flex-1">
+                <p-inputIcon styleClass="pi pi-search" />
+                <input type="text" placeholder="Search" class="w-full" (input)="changedFilter()" />
+            </p-iconField>
+        </div>
+    </ng-template>
+</p-multiSelect>
