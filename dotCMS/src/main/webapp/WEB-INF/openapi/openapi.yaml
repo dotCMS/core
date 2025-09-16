@@ -3737,6 +3737,37 @@ paths:
           description: default response
       tags:
       - Web Assets
+  /v1/assets/folders:
+    post:
+      operationId: createFolder
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/NewFolderForm"
+      responses:
+        default:
+          content:
+            application/javascript: {}
+            application/json: {}
+          description: default response
+      tags:
+      - Web Assets
+    put:
+      operationId: updateFolder
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/UpdateFolderForm"
+      responses:
+        default:
+          content:
+            application/javascript: {}
+            application/json: {}
+          description: default response
+      tags:
+      - Web Assets
   /v1/assets/folders/_delete:
     post:
       operationId: deleteFolder
@@ -20303,6 +20334,29 @@ components:
           type: string
         whereToSend:
           type: string
+    FolderDetail:
+      type: object
+      properties:
+        defaultAssetType:
+          type: string
+        fileMasks:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        title:
+          type: string
     ForbiddenException:
       type: object
       properties:
@@ -21156,6 +21210,17 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListString:
+      type: array
+      items:
+        type: string
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: string
+        last:
+          type: string
     ImmutableListVariantResult:
       type: array
       items:
@@ -21872,6 +21937,13 @@ components:
             type: string
           variable:
             type: string
+    NewFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        data:
+          $ref: "#/components/schemas/FolderDetail"
     OpenFolderForm:
       type: object
       properties:
@@ -26024,6 +26096,38 @@ components:
       properties:
         field:
           $ref: "#/components/schemas/Field"
+    UpdateFolderDetail:
+      type: object
+      properties:
+        defaultAssetType:
+          type: string
+        fileMasks:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        name:
+          type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        title:
+          type: string
+    UpdateFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        data:
+          $ref: "#/components/schemas/UpdateFolderDetail"
     UpdateTagForm:
       type: object
       properties:

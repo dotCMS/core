@@ -59,20 +59,20 @@ public class AssetPathResolver {
 
     /**
      * Main entry point for resolving a path to an asset. This method will attempt to resolve the path to a folder or
-     * @param url
-     * @param user
-     * @param createMissingFolders
-     * @return
+     * @param url url to resolve e.g //demo.dotcms.com/pdf/
+     * @param user dotCMS user
+     * @param createAnyMissingFolders if true, it will create any missing folders
+     * @return {@link ResolvedAssetAndPath}
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public ResolvedAssetAndPath resolve(final String url, final User user, final boolean createMissingFolders)
+    public ResolvedAssetAndPath resolve(final String url, final User user, final boolean createAnyMissingFolders)
             throws DotDataException, DotSecurityException {
 
         try {
             Logger.debug(this, String.format("Resolving url: [%s] " , url));
             final URI uri = new URI(url);
-            final Optional<Host> siteByName = resolveHosBytName(uri.getHost(), user);
+            final Optional<Host> siteByName = resolveHostByName(uri.getHost(), user);
             if(siteByName.isEmpty()){
                 throw new NotFoundException(String.format("Unable to determine a valid host from uri: [%s].", url));
             }
@@ -87,9 +87,9 @@ public class AssetPathResolver {
             //This line determines if the path is a folder
             final Optional<Folder> folder = resolveExistingFolder(decodedPath, host, user);
             if(folder.isEmpty()){
-                //if we've got this far we need to verify if the path is an asset. The folder will be expected to be the parent folder
+                //if we've got this far, we need to verify if the path is an asset. The folder will be expected to be the parent folder
                 Optional<FolderAndAsset> folderAndAsset = resolveAssetAndFolder(decodedPath, host,
-                        user, createMissingFolders);
+                        user, createAnyMissingFolders);
                 if(folderAndAsset.isEmpty()){
                     throw new NotFoundInDbException(String.format("Unable to determine a valid folder or asset from uri: [%s].", url));
                 }
@@ -100,10 +100,11 @@ public class AssetPathResolver {
                         .resolvedFolder(folderAsset.folder())
                         .path(decodedPath)
                         .asset(folderAsset.asset())
+                        .newFolder(true)
                         .build();
             }
 
-            //if we succeed to determine a valid folder from the path then we resolve the last bit as an asset name
+            //if we succeed to determine a valid folder from the path, then we resolve the last bit as an asset name
             final String resource = uri.getRawQuery() != null ?
                     uri.getRawPath() + "?" + uri.getRawQuery() : uri.getRawPath();
             final Optional<String> asset = asset(folder.get(), resource);
@@ -113,7 +114,6 @@ public class AssetPathResolver {
                     .host(host.getHostname())
                     .resolvedFolder(folder.get())
                     .path(decodedPath);
-
             asset.ifPresent(builder::asset);
             return builder.build();
         } catch (URISyntaxException e) {
@@ -130,13 +130,10 @@ public class AssetPathResolver {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<Host> resolveHosBytName(final String hostName, final User user) throws DotDataException, DotSecurityException {
+    Optional<Host> resolveHostByName(final String hostName, final User user) throws DotDataException, DotSecurityException {
             Preconditions.checkNotEmpty(hostName,IllegalArgumentException.class, String.format("can not resolve a valid hostName [%s]", hostName));
-            final Host siteByName = hostAPI.findByName(hostName, user, false);
-            if (null != siteByName && UtilMethods.isSet(siteByName.getIdentifier())) {
-                return Optional.of(siteByName);
-            }
-            return Optional.empty();
+            // if requested by a limited user, resolveHostNameWithoutDefault it will throw a security exception
+            return hostAPI.resolveHostNameWithoutDefault(hostName, user, false);
     }
 
     /**
@@ -171,18 +168,18 @@ public class AssetPathResolver {
      * @throws DotSecurityException
      */
     Optional<FolderAndAsset> resolveAssetAndFolder(final String decodedRawPath, final Host host,
-            final User user, final boolean createMissingFolder)
+            final User user, final boolean createAnyMissingFolder)
             throws DotDataException, DotSecurityException {
 
         final String startsWithForwardSlash = "^\\/[a-zA-Z0-9\\.\\-]+$";
-        // if our path starts with / followed by a string  then we're looking at file asset in the root folder
+        // if our path starts with / followed by a string, then we're looking at file asset in the root folder
         if (decodedRawPath.matches(startsWithForwardSlash)) {
             final String[] split = decodedRawPath.split(FORWARD_SLASH, 2);
             return  Optional.of(
                     FolderAndAsset.builder().folder(folderAPI.findSystemFolder()).asset(split[1]).build()
            );
         }
-        //if we're not looking at the root folder then we need to extract the parent folder and the asset name
+        //if we're not looking at the root folder, then we need to extract the parent folder and the asset name
         final int index = decodedRawPath.lastIndexOf(FORWARD_SLASH);
         if(index == -1){
             return Optional.empty();
@@ -200,7 +197,7 @@ public class AssetPathResolver {
             );
         }
 
-       if(createMissingFolder){
+       if(createAnyMissingFolder){
            final Folder folder = folderAPI.createFolders(folderPath, host, user, false);
            return Optional.of(
                    FolderAndAsset.builder().folder(folder).asset(assetName).build()
