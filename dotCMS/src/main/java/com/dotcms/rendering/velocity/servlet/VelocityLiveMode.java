@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.concurrent.DotConcurrentException;
@@ -31,8 +33,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.nio.charset.StandardCharsets;
-import org.apache.velocity.context.Context;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -49,10 +49,7 @@ import java.util.Optional;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
-import java.io.*;
-import java.util.Optional;
+import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
 
@@ -161,12 +158,16 @@ public class VelocityLiveMode extends VelocityModeHandler {
         if (v.isPresent() && v.get().getPersona() != null) {
             persona = v.get().getPersona().getKeyTag();
         }
-        final String originalUrl = (String)  request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) ;
         Date modDate = htmlPage.getModDate()!=null ? htmlPage.getModDate() : new Date(0);
 
 
 
         List<String> pageCacheKeys = new ArrayList<>();
+        // we only add the originalUrl if the response is a success, allowing us to cache 404 effectively
+        if (response.getStatus() >= 200 && response.getStatus() < 300) {
+            final String originalUrl = (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI);
+            pageCacheKeys.add("originalUrl:" + originalUrl);
+        }
         pageCacheKeys.add("user:" + userId);
         pageCacheKeys.add("lang:" + language);
         pageCacheKeys.add("urlMap:" + urlMap);
@@ -177,10 +178,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
         pageCacheKeys.add("vanity:" + vanityUrl);
         pageCacheKeys.add("variant:" + WebAPILocator.getVariantWebAPI().currentVariantId());
         pageCacheKeys.add("status:" + response.getStatus());
-        // we only add the originalUrl if the response is a success, allowing us to cache 404 effectively
-        if(response.getStatus() >=200 && response.getStatus() < 300){
-            pageCacheKeys.add("originalUrl:" + originalUrl);
-        }
 
         final PageCacheParameters cacheParameters =
                 new PageCacheParameters(pageCacheKeys.toArray(new String[0]));
