@@ -167,7 +167,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     });
 
     readonly isFavoritePanelCollaped$: Observable<boolean> = this.select((state) => {
-        return state?.favoritePages?.collapsed ?? false;
+        return state?.favoritePages?.collapsed;
     });
 
     readonly isPagesLoading$: Observable<boolean> = this.select(
@@ -214,7 +214,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly keywordValue$: Observable<string> = this.select(({ pages }) => pages?.keyword || '');
 
     readonly languageIdValue$: Observable<number> = this.select(({ pages }) =>
-        parseInt(pages?.languageId || '0', 10)
+        parseInt(pages?.languageId || '1', 10)
     );
 
     readonly showArchivedValue$: Observable<boolean> = this.select(
@@ -919,7 +919,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private getLocalStorageFavoritePanelParams(): Observable<boolean> {
         const collapsed =
             JSON.parse(this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)) ??
-            false;
+            true;
 
         return of(collapsed);
     }
@@ -1055,7 +1055,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             collapsed:
                 JSON.parse(
                     this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
-                ) ?? false
+                ) ?? true
         };
     }
 
