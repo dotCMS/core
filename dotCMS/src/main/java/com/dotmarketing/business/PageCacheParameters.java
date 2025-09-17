@@ -137,7 +137,7 @@ public class PageCacheParameters {
     public String getKey() {
 
         final String key = String.join(",", this.params);
-        Logger.info(this.getClass(), () -> "page_cache_key:" + key);
+        Logger.debug(this.getClass(), () -> "page_cache_key:" + key);
         if( UtilMethods.isEmpty(key)){
             throw new DotRuntimeException("Page cache key is empty");
         }
