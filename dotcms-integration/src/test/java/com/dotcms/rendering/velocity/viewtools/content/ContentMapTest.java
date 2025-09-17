@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.rendering.velocity.RecycledHttpServletRequest;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -33,7 +34,9 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -457,6 +460,32 @@ public class ContentMapTest extends IntegrationTestBase {
                 .contentTypeId(contentTypeId).build();
 
         return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} applied on a request on context recycled
+     * Given Scenario: Tries to recover a property, but the request is already recycled
+     * ExpectedResult: The recycled request should not broke the get
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGetRecycledRequest() throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllContent(1, 5);
+        if(contentlets.isEmpty()) {
+            throw new DotDataException("No contentlets found");
+        }
+
+        final Contentlet content = contentlets.get(0);
+        final User user = APILocator.systemUser();
+        final boolean EDIT_OR_PREVIEW_MODE = true;
+        final Host host = APILocator.systemHost();
+        final Context context = new VelocityContext(Map.of("request", new RecycledHttpServletRequest(null)));
+        final ContentMap contentMap = new ContentMap(content, user, EDIT_OR_PREVIEW_MODE, host, context);
+
+        final Object title = contentMap.get("title");
+        Assert.assertNotNull(title);
     }
 
 }
