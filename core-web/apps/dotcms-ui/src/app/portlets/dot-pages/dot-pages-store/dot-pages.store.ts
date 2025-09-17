@@ -107,6 +107,32 @@ export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
 
 export const SESSION_STORAGE_FAVORITES_KEY = 'FavoritesSearchTerms';
 
+const initialState: DotPagesState = {
+    favoritePages: {
+        collapsed: false,
+        items: [],
+        showLoadMoreButton: false,
+        total: 0
+    },
+    environments: false,
+    isEnterprise: false,
+    languages: [],
+    loggedUser: {
+        canRead: { contentlets: false, htmlPages: false },
+        canWrite: { contentlets: false, htmlPages: false },
+        id: ''
+    },
+    pages: {
+        items: [],
+        keyword: '',
+        languageId: '',
+        archived: false,
+        status: ComponentStatus.INIT
+    },
+    pageTypes: [],
+    portletStatus: ComponentStatus.INIT
+};
+
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
     private dotCurrentUser = inject(DotCurrentUserService);
@@ -130,34 +156,34 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private dotLocalstorageService = inject(DotLocalstorageService);
     private dotPropertiesService = inject(DotPropertiesService);
 
-    readonly getStatus$ = this.select((state) => state.pages.status);
+    readonly getStatus$ = this.select((state) => state?.pages?.status || ComponentStatus.INIT);
 
     readonly getFilterParams$: Observable<DotSessionStorageFilter> = this.select((state) => {
         return {
-            languageId: state.pages.languageId,
-            keyword: state.pages.keyword,
-            archived: state.pages.archived
+            languageId: state?.pages?.languageId || '',
+            keyword: state?.pages?.keyword || '',
+            archived: state?.pages?.archived || false
         };
     });
 
     readonly isFavoritePanelCollaped$: Observable<boolean> = this.select((state) => {
-        return state.favoritePages.collapsed;
+        return state?.favoritePages?.collapsed;
     });
 
     readonly isPagesLoading$: Observable<boolean> = this.select(
         (state) =>
-            state.pages.status === ComponentStatus.LOADING ||
-            state.pages.status === ComponentStatus.INIT
+            state?.pages?.status === ComponentStatus.LOADING ||
+            state?.pages?.status === ComponentStatus.INIT
     );
 
     readonly isPortletLoading$: Observable<boolean> = this.select(
         (state) =>
-            state.portletStatus === ComponentStatus.LOADING ||
-            state.portletStatus === ComponentStatus.INIT
+            state?.portletStatus === ComponentStatus.LOADING ||
+            state?.portletStatus === ComponentStatus.INIT
     );
 
     readonly actionMenuDomId$: Observable<string> = this.select(
-        ({ pages }) => pages.actionMenuDomId
+        ({ pages }) => pages?.actionMenuDomId
     ).pipe(filter((i) => i !== null));
 
     readonly languageOptions$: Observable<SelectItem[]> = this.select(
@@ -185,13 +211,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
     );
 
-    readonly keywordValue$: Observable<string> = this.select(({ pages }) => pages.keyword);
+    readonly keywordValue$: Observable<string> = this.select(({ pages }) => pages?.keyword || '');
 
     readonly languageIdValue$: Observable<number> = this.select(({ pages }) =>
-        parseInt(pages.languageId, 10)
+        parseInt(pages?.languageId || '1', 10)
     );
 
-    readonly showArchivedValue$: Observable<boolean> = this.select(({ pages }) => pages.archived);
+    readonly showArchivedValue$: Observable<boolean> = this.select(
+        ({ pages }) => pages?.archived || false
+    );
 
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
@@ -462,7 +490,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     );
 
     constructor() {
-        super(null);
+        super(initialState);
     }
 
     /**
