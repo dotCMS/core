@@ -34,17 +34,17 @@ import com.dotmarketing.util.UtilMethods;
  * @since 10-17-2014
  *
  */
-public class BlockPageCacheImpl extends BlockPageCache {
+public class StaticPageCacheImpl extends StaticPageCache {
 
 
-    private static final String PRIMARY_GROUP = "PageCache";
+    private static final String PRIMARY_GROUP = "StaticPageCache";
 
     private DotCacheAdministrator cache = null;
 
     /**
      * Default constructor. Initializes the internal caching structures.
      */
-    public BlockPageCacheImpl() {
+    public StaticPageCacheImpl() {
         this.cache = CacheLocator.getCacheAdministrator();
 
     }

@@ -37,6 +37,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 
@@ -54,8 +55,8 @@ public class H22Cache extends CacheProvider {
     final private LinkedBlockingQueue<Runnable> asyncTaskQueue = new LinkedBlockingQueue<>();
     final private ExecutorService executorService = new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10, TimeUnit.SECONDS, asyncTaskQueue ,namedThreadFactory);
 
-    
-	private Boolean isInitialized = false;
+
+    private AtomicBoolean isInitialized = new AtomicBoolean(false);
 
 	final static String TABLE_PREFIX = "cach_table_";
 
@@ -113,23 +114,24 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public void init() throws Exception {
 
-		// init the databases
-		for (int i = 0; i < numberOfDbs; i++) {
-			getPool(i, true);
-		}
-		isInitialized = true;
+        if (isInitialized.compareAndSet(false, true)) {
+            // init the databases
+            for (int i = 0; i < numberOfDbs; i++) {
+                getPool(i, true);
+            }
+        }
 
 	}
 
 	@Override
 	public boolean isInitialized() throws Exception {
-		return isInitialized;
+        return isInitialized.get();
 	}
 
 	@Override
 	public void put(final String group, final String key, final Object content) {
 		// Don't accept new cache operations during shutdown
-		if (!isInitialized || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+        if (!isInitialized.get() || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
 			return;
 		}
 		// Building the key
@@ -172,7 +174,7 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public Object get(String group, String key) {
 		// Don't accept new cache operations during shutdown
-		if (!isInitialized || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+        if (!isInitialized.get() || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
 			return null;
 		}
 
@@ -410,7 +412,7 @@ public class H22Cache extends CacheProvider {
 
 	@Override
 	public void shutdown() {
-		isInitialized = false;
+        isInitialized.set(false);
 		// don't trash on shutdown - just close existing pools without creating new ones
 		shutdownPools();
 	}
@@ -473,7 +475,7 @@ public class H22Cache extends CacheProvider {
 
 	private Optional<H22HikariPool> getPool(final int dbNum, final boolean startup) throws SQLException {
 		// Don't create new pools during shutdown
-		if (!isInitialized && com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+        if (!isInitialized.get() && com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
 			return Optional.empty();
 		}
 

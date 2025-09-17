@@ -12,7 +12,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
  * @since 10-17-2014
  *
  */
-public abstract class BlockPageCache implements Cachable {
+public abstract class StaticPageCache implements Cachable {
 
 	@Override
 	public abstract String getPrimaryGroup();
