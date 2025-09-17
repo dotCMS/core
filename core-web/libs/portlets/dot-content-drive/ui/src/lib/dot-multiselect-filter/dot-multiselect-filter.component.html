@@ -1,0 +1,17 @@
+<div class="flex items-center gap-2 w-full">
+    <p-checkbox
+        [binary]="true"
+        inputId="selectAllFilter"
+        (onChange)="toggleCheckAll($event)"
+        [ngModel]="allSelected" />
+    <p-iconField iconPosition="right" class="flex-1">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input
+            type="text"
+            pInputText
+            #filterInput
+            [placeholder]="filterPlaceholder()"
+            class="w-full"
+            (input)="onFilter($event)" />
+    </p-iconField>
+</div>

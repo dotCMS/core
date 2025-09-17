@@ -4,15 +4,12 @@ import { of } from 'rxjs';
 import { Component, inject, linkedSignal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { CheckboxChangeEvent, CheckboxModule } from 'primeng/checkbox';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { debounceTime, distinctUntilChanged, map, take } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
+import { DotMultiSelectFilterComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -26,16 +23,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     selector: 'dot-content-drive-base-type-selector',
     templateUrl: './dot-content-drive-base-type-selector.component.html',
     styleUrl: './dot-content-drive-base-type-selector.component.scss',
-    imports: [
-        MultiSelectModule,
-        FormsModule,
-        CheckboxModule,
-        DotMessagePipe,
-        IconFieldModule,
-        InputIconModule,
-        InputTextModule
-    ],
-    standalone: true
+    imports: [MultiSelectModule, FormsModule, DotMessagePipe, DotMultiSelectFilterComponent]
 })
 export class DotContentDriveBaseTypeSelectorComponent {
     $selectedBaseTypes = linkedSignal<string[]>(() => {
@@ -49,7 +37,6 @@ export class DotContentDriveBaseTypeSelectorComponent {
     readonly #dotContentTypeService = inject(DotContentTypeService);
 
     readonly $multiSelect = viewChild<MultiSelect>(MultiSelect);
-
     readonly $state = signalState({
         baseTypes: []
     });
@@ -107,13 +94,5 @@ export class DotContentDriveBaseTypeSelectorComponent {
                     this.#store.removeFilter('baseType');
                 }
             });
-    }
-
-    protected onFilter(value: Event) {
-        this.$multiSelect().onFilterInputChange(value as KeyboardEvent);
-    }
-
-    protected toggleCheckAll(event: CheckboxChangeEvent) {
-        this.$multiSelect().onToggleAll(event.originalEvent);
     }
 }
