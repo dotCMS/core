@@ -1,5 +1,7 @@
 import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 
+import { DIALOG_TYPE } from './constants';
+
 /**
  * The status of the content drive.
  *
@@ -68,6 +70,11 @@ export interface DotContentDriveContextMenu {
     triggeredEvent: Event;
     contentlet: DotContentDriveItem;
     showAddToBundle: boolean;
+}
+
+export interface DotContentDriveDialog {
+    type: keyof typeof DIALOG_TYPE;
+    header: string;
 }
 
 /**

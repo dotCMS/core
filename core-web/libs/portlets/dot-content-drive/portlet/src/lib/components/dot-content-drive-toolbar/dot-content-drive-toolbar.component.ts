@@ -13,6 +13,7 @@ import { DotContentDriveContentTypeFieldComponent } from './components/dot-conte
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 
+import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 @Component({
@@ -39,7 +40,10 @@ export class DotContentDriveToolbarComponent {
         {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
             command: () => {
-                alert('Folder');
+                this.#store.setDialog({
+                    type: DIALOG_TYPE.FOLDER,
+                    header: this.#dotMessageService.get('content-drive.dialog.folder.header')
+                });
             }
         },
         {
