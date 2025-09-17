@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
