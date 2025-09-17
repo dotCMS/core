@@ -95,6 +95,7 @@ export type DotKnownContentDriveFilters = {
     baseType: string[];
     contentType: string[];
     title: string;
+    languageId: string[];
 };
 
 /**

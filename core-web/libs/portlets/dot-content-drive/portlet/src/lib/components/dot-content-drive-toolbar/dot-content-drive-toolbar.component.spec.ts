@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
@@ -41,6 +41,9 @@ describe('DotContentDriveToolbarComponent', () => {
                     })
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of())
             }),
             provideHttpClient(),
             mockProvider(DotMessageService, new MockDotMessageService({}))
@@ -96,6 +99,12 @@ describe('DotContentDriveToolbarComponent', () => {
     it('should render the base type selector', () => {
         spectator.detectChanges();
         const selector = spectator.query('[data-testid="base-type-selector"]');
+        expect(selector).toBeTruthy();
+    });
+
+    it('should render the language selector', () => {
+        spectator.detectChanges();
+        const selector = spectator.query('[data-testid="language-field"]');
         expect(selector).toBeTruthy();
     });
 
