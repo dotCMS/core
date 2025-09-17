@@ -3,6 +3,7 @@ import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngn
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -106,11 +107,12 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should dont render the tree toggler when tree is expanded', () => {
+        it('should add the hidden class to the tree toggler when tree is expanded', () => {
             store.isTreeExpanded.mockReturnValue(true);
             spectator.detectChanges();
-            const toggler = spectator.query('[data-testid="tree-toggler"]');
-            expect(toggler).toBeFalsy();
+            const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
+            expect(toggler).toBeDefined();
+            expect(toggler?.classes.hidden).toBe(true);
         });
     });
 });

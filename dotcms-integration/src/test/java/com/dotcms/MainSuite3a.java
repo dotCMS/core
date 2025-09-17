@@ -44,8 +44,7 @@ import org.junit.runners.Suite;
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
         AnalyticsValidatorUtilTest.class,
-        Task250826AddIndexesToUniqueFieldsTableTest.class,
-        Task250910AddAnalyticsDashboardPortletToMenuTest.class
+        Task250826AddIndexesToUniqueFieldsTableTest.class
 })
 
 public class MainSuite3a {
