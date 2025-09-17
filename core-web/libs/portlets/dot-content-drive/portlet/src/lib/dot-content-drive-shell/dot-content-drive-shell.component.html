@@ -29,3 +29,21 @@
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
 <div class="detail-view center-content"></div>
+<p-dialog
+    [visible]="!!$dialog()"
+    [header]="$dialog()?.header"
+    [draggable]="false"
+    [resizable]="false"
+    [modal]="true"
+    appendTo="body"
+    data-testId="dialog"
+    (visibleChange)="onHideDialog()">
+    @switch ($dialog()?.type) {
+        @case (DIALOG_TYPE.FOLDER) {
+            <div>Folder dialog</div>
+        }
+        @default {
+            <div>Default dialog</div>
+        }
+    }
+</p-dialog>

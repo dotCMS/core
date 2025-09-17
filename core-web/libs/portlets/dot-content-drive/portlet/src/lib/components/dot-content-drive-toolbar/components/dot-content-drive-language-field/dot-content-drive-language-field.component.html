@@ -8,4 +8,10 @@
     [showToggleAll]="true"
     (onChange)="onChange()"
     [resetFilterOnHide]="true"
-    [scrollHeight]="MULTISELECT_SCROLL_HEIGHT" />
+    [scrollHeight]="MULTISELECT_SCROLL_HEIGHT">
+    <ng-template pTemplate="item" let-item>
+        <div class="flex items-center gap-2 w-full" data-testid="language-item">
+            {{ item.language }} ({{ item.isoCode ?? item.countryCode }})
+        </div>
+    </ng-template>
+</p-multiSelect>
