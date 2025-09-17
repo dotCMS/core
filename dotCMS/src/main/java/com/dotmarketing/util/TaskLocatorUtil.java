@@ -589,7 +589,6 @@ public class TaskLocatorUtil {
         .add(Task250604UpdateFolderInodes.class)
         .add(Task250826AddIndexesToUniqueFieldsTable.class)
         .add(Task250828CreateCustomAttributeTable.class)
-        .add(Task250910AddAnalyticsDashboardPortletToMenu.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

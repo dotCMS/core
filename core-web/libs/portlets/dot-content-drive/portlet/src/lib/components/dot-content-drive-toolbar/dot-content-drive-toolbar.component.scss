@@ -5,6 +5,20 @@
         .p-toolbar {
             padding: $spacing-1 $spacing-3;
             justify-content: normal;
+
+            dot-content-drive-tree-toggler {
+                display: flex;
+                visibility: visible;
+                width: 100%;
+
+                transition: all 0.3s ease-in-out;
+
+                &.sidebar-expanded {
+                    visibility: hidden;
+                    width: 0;
+                    min-width: 0;
+                }
+            }
         }
 
         .dot-content-drive-toolbar {
@@ -12,6 +26,7 @@
             border: none;
             border-bottom: 1px solid $color-palette-gray-300;
             gap: $spacing-1;
+            height: 100%;
         }
     }
 }

@@ -3,8 +3,9 @@ import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngn
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
@@ -41,6 +42,9 @@ describe('DotContentDriveToolbarComponent', () => {
                     })
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of())
             }),
             provideHttpClient(),
             mockProvider(DotMessageService, new MockDotMessageService({}))
@@ -99,6 +103,12 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(selector).toBeTruthy();
     });
 
+    it('should render the language selector', () => {
+        spectator.detectChanges();
+        const selector = spectator.query('[data-testid="language-field"]');
+        expect(selector).toBeTruthy();
+    });
+
     describe('Tree toggler', () => {
         it('should render the tree toggler', () => {
             spectator.detectChanges();
@@ -106,11 +116,12 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should dont render the tree toggler when tree is expanded', () => {
+        it('should add the hidden class to the tree toggler when tree is expanded', () => {
             store.isTreeExpanded.mockReturnValue(true);
             spectator.detectChanges();
-            const toggler = spectator.query('[data-testid="tree-toggler"]');
-            expect(toggler).toBeFalsy();
+            const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
+            expect(toggler).toBeDefined();
+            expect(toggler?.classes.hidden).toBe(true);
         });
     });
 });
