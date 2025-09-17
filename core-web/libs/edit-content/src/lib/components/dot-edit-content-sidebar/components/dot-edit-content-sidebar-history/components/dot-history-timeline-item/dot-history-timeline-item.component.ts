@@ -106,15 +106,15 @@ export class DotHistoryTimelineItemComponent {
             //             item
             //         })
             // },
-            // {
-            //     label: labels.restore,
-            //     visible: !isCurrentItem, // Hide restore for the current version
-            //     command: () =>
-            //         this.actionTriggered.emit({
-            //             type: DotHistoryTimelineItemActionType.RESTORE,
-            //             item
-            //         })
-            // },
+            {
+                label: labels.restore,
+                disabled: item.live,
+                command: () =>
+                    this.actionTriggered.emit({
+                        type: DotHistoryTimelineItemActionType.RESTORE,
+                        item
+                    })
+            },
             // {
             //     label: labels.compare,
             //     disabled: true,

@@ -5,6 +5,7 @@ import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -44,13 +45,14 @@ export function withHistory() {
                 confirmationService = inject(ConfirmationService),
                 dotVersionableService = inject(DotVersionableService),
                 messageService = inject(MessageService),
-                dotMessageService = inject(DotMessageService)
+                dotMessageService = inject(DotMessageService),
+                router = inject(Router)
             ) => {
                 /**
                  * Deletes a version by inode and reloads the versions list reactively
                  * @param inode - The inode of the version to delete
                  */
-                const deleteVersionMethod = rxMethod<string>(
+                const deleteVersion = rxMethod<string>(
                     pipe(
                         switchMap((inode) =>
                             dotVersionableService.deleteVersion(inode).pipe(
@@ -109,6 +111,36 @@ export function withHistory() {
                                 })
                             )
                         )
+                    )
+                );
+
+                const restoreVersion = rxMethod<string>(
+                    pipe(
+                        switchMap((inode) => {
+                            const currentContentlet = store.contentlet();
+
+                            return dotVersionableService.bringBack(inode).pipe(
+                                tapResponse({
+                                    next: (restoredVersion) => {
+                                        // Navigate to the restored version if the inode has changed and not in dialog mode
+                                        const isDialogMode = store.isDialogMode();
+                                        if (
+                                            !isDialogMode &&
+                                            restoredVersion.inode !== currentContentlet?.inode
+                                        ) {
+                                            router.navigate(['/content', restoredVersion.inode], {
+                                                replaceUrl: true,
+                                                queryParamsHandling: 'preserve'
+                                            });
+                                        }
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        // Handle restoration errors
+                                        errorManager.handle(error);
+                                    }
+                                })
+                            );
+                        })
                     )
                 );
 
@@ -221,7 +253,12 @@ export function withHistory() {
                     /**
                      * Exposes the delete version method for external use
                      */
-                    deleteVersion: deleteVersionMethod,
+                    deleteVersion: deleteVersion,
+
+                    /**
+                     * Exposes the restore version method for external use
+                     */
+                    restoreVersion: restoreVersion,
 
                     /**
                      * Handles history timeline item actions
@@ -236,7 +273,27 @@ export function withHistory() {
 
                                 break;
                             case DotHistoryTimelineItemActionType.RESTORE:
-                                // TODO: Implement restore functionality
+                                confirmationService.confirm({
+                                    message: dotMessageService.get(
+                                        'edit.content.sidebar.history.restore.confirm.message'
+                                    ),
+                                    header: dotMessageService.get(
+                                        'edit.content.sidebar.history.restore.confirm.header'
+                                    ),
+                                    icon: 'pi pi-exclamation-triangle text-warning-yellow',
+                                    acceptLabel: dotMessageService.get(
+                                        'edit.content.sidebar.history.restore.confirm.accept'
+                                    ),
+                                    rejectLabel: dotMessageService.get(
+                                        'edit.content.sidebar.history.restore.confirm.reject'
+                                    ),
+                                    acceptIcon: 'hidden',
+                                    rejectIcon: 'hidden',
+                                    rejectButtonStyleClass: 'p-button-outlined',
+                                    accept: () => {
+                                        restoreVersion(action.item.inode);
+                                    }
+                                });
 
                                 break;
                             case DotHistoryTimelineItemActionType.COMPARE:
@@ -262,7 +319,7 @@ export function withHistory() {
                                     rejectIcon: 'hidden',
                                     rejectButtonStyleClass: 'p-button-outlined',
                                     accept: () => {
-                                        deleteVersionMethod(action.item.inode);
+                                        deleteVersion(action.item.inode);
                                     }
                                 });
                                 break;
