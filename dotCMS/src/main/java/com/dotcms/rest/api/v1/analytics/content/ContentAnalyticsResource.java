@@ -94,10 +94,10 @@ public class ContentAnalyticsResource {
      */
     @Operation(
             operationId = "postContentAnalyticsQuery",
-            summary = "Retrieve Content Analytics data (Beta)",
+            summary = "Retrieve Content Analytics data **(Beta)**",
             description = "Returns information of specific dotCMS objects whose health and " +
                     "engagement data is tracked, using a CubeJS JSON query." +
-                    "**Note:** This endpoint is in **beta** and may change.",
+                    " **Note:** This endpoint is in **beta** and may change.",
             tags = {"Content Analytics"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data " +
@@ -164,7 +164,7 @@ public class ContentAnalyticsResource {
      */
     @Operation(
             operationId = "fireUserCustomEvent",
-            summary = "Fire an user custom event (Beta).",
+            summary = "Fire an user custom event **(Beta)**.",
             description = "receives a custom event payload and fires the event to the collectors. " +
                     "**Note:** This endpoint is in **beta** and may change.",
             tags = {"Content Analytics"},
