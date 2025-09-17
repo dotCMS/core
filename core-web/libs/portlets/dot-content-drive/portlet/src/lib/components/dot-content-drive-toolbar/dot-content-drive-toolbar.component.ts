@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -36,7 +36,7 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly items: MenuItem[] = [
+    readonly $items = signal<MenuItem[]>([
         {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
             command: () => {
@@ -58,7 +58,7 @@ export class DotContentDriveToolbarComponent {
         {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.content-item')
         }
-    ];
+    ]);
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
 }

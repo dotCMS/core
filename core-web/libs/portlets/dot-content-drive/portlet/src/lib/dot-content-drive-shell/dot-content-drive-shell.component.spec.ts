@@ -93,7 +93,9 @@ describe('DotContentDriveShellComponent', () => {
                     setSort: jest.fn(),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
-                    dialog: jest.fn().mockReturnValue(undefined)
+                    dialog: jest.fn().mockReturnValue(undefined),
+                    setDialog: jest.fn(),
+                    resetDialog: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -327,6 +329,19 @@ describe('DotContentDriveShellComponent', () => {
                 field: 'modDate',
                 order: DotContentDriveSortOrder.ASC
             });
+        });
+    });
+
+    describe('onHideDialog', () => {
+        it('should reset the dialog state', () => {
+            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+
+            const dialog = spectator.query('[data-testid="dialog"]');
+            dialog.dispatchEvent(new Event('visibleChange'));
+            spectator.detectChanges();
+
+            expect(store.resetDialog).toHaveBeenCalled();
         });
     });
 });
