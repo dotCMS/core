@@ -163,12 +163,12 @@ describe('DotWizardComponent', () => {
 
     describe('multiple steps', () => {
         let formOneFirst: DebugElement;
-        let formOneFirstSPy: jasmine.Spy;
+        let formOneFirstSPy: jest.SpyInstance;
 
         beforeEach(fakeAsync(() => {
             fixture = TestBed.createComponent(DotWizardComponent);
             component = fixture.componentInstance;
-            spyOn(component, 'getWizardComponent').and.callFake((type: string) => {
+            jest.spyOn(component, 'getWizardComponent').mockImplementation((type: string) => {
                 return MOCK_WIZARD_COMPONENT_MAP[type];
             });
             fixture.detectChanges();
@@ -178,7 +178,7 @@ describe('DotWizardComponent', () => {
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
             tick(0); // interval time to render the elements.
             formOneFirst = fixture.debugElement.query(By.css('.formOneFirst'));
-            formOneFirstSPy = spyOn(formOneFirst.nativeElement, 'focus');
+            formOneFirstSPy = jest.spyOn(formOneFirst.nativeElement, 'focus');
             tick(1001); // interval time to focus first element.
             fixture.detectChanges();
             acceptButton = fixture.debugElement.query(
@@ -202,8 +202,8 @@ describe('DotWizardComponent', () => {
         });
 
         it('should load buttons', () => {
-            expect(acceptButton.nativeElement.innerText).toEqual('Next');
-            expect(closeButton.nativeElement.innerText).toEqual('Previous');
+            expect(acceptButton.nativeElement.textContent).toEqual('Next');
+            expect(closeButton.nativeElement.textContent).toEqual('Previous');
             expect(closeButton.nativeElement.disabled).toEqual(true);
             expect(acceptButton.nativeElement.disabled).toEqual(true);
         });
@@ -215,8 +215,8 @@ describe('DotWizardComponent', () => {
         });
 
         it('should focus next/send action, after tab in the last item of the form', () => {
-            const preventDefaultSpy = jasmine.createSpy('spy');
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const preventDefaultSpy = jest.fn();
+            const stopPropagationSpy = jest.fn();
             const mockEvent = {
                 target: 'match',
                 composedPath: () => [
@@ -234,7 +234,7 @@ describe('DotWizardComponent', () => {
                 preventDefault: preventDefaultSpy,
                 stopPropagation: stopPropagationSpy
             };
-            spyOn(acceptButton.nativeElement, 'focus');
+            jest.spyOn(acceptButton.nativeElement, 'focus');
             formsContainer.triggerEventHandler('keydown.tab', { ...mockEvent });
             expect(preventDefaultSpy).toHaveBeenCalled();
             expect(acceptButton.nativeElement.focus).toHaveBeenCalled();
@@ -245,11 +245,11 @@ describe('DotWizardComponent', () => {
             form2.valid.emit(true);
             acceptButton.triggerEventHandler('click', {});
             fixture.detectChanges();
-            expect(acceptButton.nativeElement.innerText).toEqual('Send');
+            expect(acceptButton.nativeElement.textContent).toEqual('Send');
             expect(acceptButton.nativeElement.disabled).toEqual(false);
         });
         it('should consolidate forms values and send them on send ', () => {
-            spyOn(dotWizardService, 'output$');
+            jest.spyOn(dotWizardService, 'output$');
 
             const commentAndAssignFormValue = {
                 assign: 'Jose',

@@ -88,7 +88,7 @@ export class DotEditContentToolbarHtmlService {
     bindContentletEvents(doc: Document): void {
         doc.addEventListener('mouseover', (e) => {
             const contentlet: HTMLElement = (e.target as Element).closest(
-                '[data-dot-object="contentlet"]:not([data-dot-toolbar="true"]'
+                '[data-dot-object="contentlet"]:not([data-dot-toolbar="true"])'
             );
 
             if (contentlet) {

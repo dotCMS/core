@@ -18,6 +18,7 @@ describe('DotContainerContentletService', () => {
     let injector: TestBed;
     let dotContainerContentletService: DotContainerContentletService;
     let httpMock: HttpTestingController;
+    let dotSessionStorageService: DotSessionStorageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -31,6 +32,7 @@ describe('DotContainerContentletService', () => {
         injector = getTestBed();
         dotContainerContentletService = injector.get(DotContainerContentletService);
         httpMock = injector.get(HttpTestingController);
+        dotSessionStorageService = injector.get(DotSessionStorageService);
     });
 
     it('should do a request for get the contentlet html code', () => {
@@ -98,7 +100,8 @@ describe('DotContainerContentletService', () => {
     });
 
     it('should do a request for get the contentlet html code in a specific variant', () => {
-        window.sessionStorage.setItem('variantName', 'Testing');
+        // Mock the DotSessionStorageService to return the Testing variant
+        jest.spyOn(dotSessionStorageService, 'getVariationId').mockReturnValue('Testing');
 
         const pageContainer: DotPageContainer = {
             identifier: '1',
@@ -140,6 +143,6 @@ describe('DotContainerContentletService', () => {
 
     afterEach(() => {
         httpMock.verify();
-        window.sessionStorage.removeItem('variantName');
+        jest.clearAllMocks();
     });
 });

@@ -58,7 +58,11 @@
             <!-- Timeline Item Header -->
             <div class="dot-history-timeline-item__header">
                 <span class="dot-history-timeline-item__time-relative" data-testid="time-display">
-                    {{ $item().modDate | dotRelativeDate }}
+                    @if ($isCurrentItem()) {
+                        {{ 'edit.content.sidebar.history.menu.current' | dm }}
+                    } @else {
+                        {{ $item().modDate | dotRelativeDate }}
+                    }
                 </span>
 
                 <div class="dot-history-timeline-item__time-section">
@@ -97,13 +101,19 @@
         </div>
 
         <!-- Actions Button - Positioned independently -->
-        <div class="dot-history-timeline-item__actions">
-            <p-button
-                icon="pi pi-ellipsis-v"
-                styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
-                (click)="versionMenu.toggle($event)"
-                data-testid="version-menu-button"></p-button>
-            <p-menu #versionMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true"></p-menu>
-        </div>
+        @if ($menuItems().length > 0) {
+            <div class="dot-history-timeline-item__actions">
+                <p-button
+                    icon="pi pi-ellipsis-v"
+                    styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
+                    (click)="versionMenu.toggle($event)"
+                    data-testid="version-menu-button"></p-button>
+                <p-menu
+                    #versionMenu
+                    [appendTo]="'body'"
+                    [model]="$menuItems()"
+                    [popup]="true"></p-menu>
+            </div>
+        }
     </div>
 </div>
