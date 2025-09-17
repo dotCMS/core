@@ -1,8 +1,9 @@
 import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -14,12 +15,14 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                isTreeExpanded: jest.fn().mockReturnValue(true),
+                // Tree collapsed at start to render the toggle button on toolbar
+                isTreeExpanded: jest.fn().mockReturnValue(false),
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -48,6 +51,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        store = spectator.inject(DotContentDriveStore, true);
     });
 
     afterEach(() => {
@@ -74,8 +78,8 @@ describe('DotContentDriveToolbarComponent', () => {
 
     it('should render start and end groups', () => {
         spectator.detectChanges();
-        expect(spectator.query('.p-toolbar-group-start')).toBeTruthy();
-        expect(spectator.query('.p-toolbar-group-end')).toBeTruthy();
+        expect(spectator.query('.p-toolbar-group-top')).toBeTruthy();
+        expect(spectator.query('.p-toolbar-group-bottom')).toBeTruthy();
     });
 
     it('should render the content type field', () => {
@@ -94,5 +98,21 @@ describe('DotContentDriveToolbarComponent', () => {
         spectator.detectChanges();
         const selector = spectator.query('[data-testid="base-type-selector"]');
         expect(selector).toBeTruthy();
+    });
+
+    describe('Tree toggler', () => {
+        it('should render the tree toggler', () => {
+            spectator.detectChanges();
+            const toggler = spectator.query('[data-testid="tree-toggler"]');
+            expect(toggler).toBeDefined();
+        });
+
+        it('should add the hidden class to the tree toggler when tree is expanded', () => {
+            store.isTreeExpanded.mockReturnValue(true);
+            spectator.detectChanges();
+            const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
+            expect(toggler).toBeDefined();
+            expect(toggler?.classes.hidden).toBe(true);
+        });
     });
 });
