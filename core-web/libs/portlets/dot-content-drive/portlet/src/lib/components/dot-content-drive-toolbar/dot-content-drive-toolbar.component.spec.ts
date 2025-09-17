@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
@@ -44,6 +44,9 @@ describe('DotContentDriveToolbarComponent', () => {
                     })
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of())
             }),
             provideHttpClient()
         ],
