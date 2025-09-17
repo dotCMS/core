@@ -30,6 +30,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -142,34 +143,9 @@ public class VelocityLiveMode extends VelocityModeHandler {
             }
 
             // Begin page caching
-            String userId = (user != null) ? user.getUserId() : APILocator.getUserAPI().getAnonymousUser().getUserId();
-            String language = String.valueOf(langId);
-            String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-            String vanityUrl =  request.getAttribute(VANITY_URL_OBJECT)!=null ? ((CachedVanityUrl)request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId : "";
-            String queryString = PageCacheParameters.filterQueryString(request.getQueryString());
-            String persona = null;
-            Optional<Visitor> v = visitorAPI.getVisitor(request, false);
-            if (v.isPresent() && v.get().getPersona() != null) {
-                persona = v.get().getPersona().getKeyTag();
-            }
-            final String originalUrl = (String)  request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) ;
-            
-            Date modDate = htmlPage.getModDate()!=null ? htmlPage.getModDate() : new Date(0);
-            
             final Context context = VelocityUtil.getInstance().getContext(request, response);
 
-            final PageCacheParameters cacheParameters =
-                    new PageCacheParameters("user:" + userId,
-                                    "lang:" + language,
-                                    "urlmap:" + urlMap,
-                                    "query:" + queryString,
-                                    "persona:" + persona,
-                                    "pageInode:" + htmlPage.getInode(),
-                                    "modDate:" + modDate.getTime(),
-                                    "vanity:" + vanityUrl,
-                                    "originalUrl:" + originalUrl,
-                                    "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
-                                    );
+            final PageCacheParameters cacheParameters = buildCacheParameters(langId, htmlPage);
             
             final boolean shouldCache = VelocityUtil.shouldPageCache(request, htmlPage);
 
@@ -220,14 +196,48 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
 
-    User getUser() {
-        User user = null;
-        final HttpSession session = request.getSession(false);
-
-        if (session != null) {
-            user = (User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+    /**
+     * Builds PageCacheParameters with all necessary cache keys for page caching.
+     *
+     * @param langId the language ID
+     * @param htmlPage the HTML page being served
+     * @return PageCacheParameters instance with all cache keys
+     */
+    private PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
+        String userId = (getUser() != null) ? getUser().getUserId() : "anonymous";
+        String language = String.valueOf(langId);
+        String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+        String vanityUrl = request.getAttribute(VANITY_URL_OBJECT) != null 
+            ? ((CachedVanityUrl) request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId 
+            : "";
+        String queryString = PageCacheParameters.filterQueryString(request.getQueryString());
+        String persona = null;
+        Optional<Visitor> v = visitorAPI.getVisitor(request, false);
+        if (v.isPresent() && v.get().getPersona() != null) {
+            persona = v.get().getPersona().getKeyTag();
         }
-
-        return user;
+        final String originalUrl = (response.getStatus() < 300) 
+            ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) 
+            : "";
+        
+        Date modDate = htmlPage.getModDate() != null ? htmlPage.getModDate() : new Date(0);
+        
+        return new PageCacheParameters("user:" + userId,
+                "lang:" + language,
+                "urlmap:" + urlMap,
+                "query:" + queryString,
+                "persona:" + persona,
+                "pageInode:" + htmlPage.getInode(),
+                "modDate:" + modDate.getTime(),
+                "vanity:" + vanityUrl,
+                "originalUrl:" + originalUrl,
+                "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
+        );
     }
+
+    User getUser() {
+        return PortalUtil.getUser(request);
+    }
+
+
 }
