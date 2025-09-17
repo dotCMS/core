@@ -1,55 +1,42 @@
-import { describe, test } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { SpectatorHost, createHostFactory, byTestId } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
-
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
 import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 
-import { TEXT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { MockFormComponent, TEXT_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentTextFieldComponent', () => {
-    let spectator: Spectator<DotEditContentTextFieldComponent>;
+    let spectator: SpectatorHost<DotEditContentTextFieldComponent, MockFormComponent>;
     let textInput: Element;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotEditContentTextFieldComponent,
-        imports: [CommonModule, ReactiveFormsModule, InputTextModule, DotFieldRequiredDirective],
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
-            }
-        ],
-        providers: [FormGroupDirective]
-    });
-    beforeEach(() => {
-        spectator = createComponent({
-            detectChanges: false,
-            props: {
-                field: TEXT_FIELD_MOCK
-            } as unknown
-        });
-        spectator.detectChanges();
-        textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule, InputTextModule],
+        detectChanges: false
     });
 
-    test.each([
-        {
-            variable: TEXT_FIELD_MOCK.variable,
-            attribute: 'id'
-        },
-        {
-            variable: TEXT_FIELD_MOCK.variable,
-            attribute: 'ng-reflect-name'
-        }
-    ])('should have the $variable as $attribute', ({ variable, attribute }) => {
-        expect(textInput.getAttribute(attribute)).toBe(variable);
+    it('should have the variable as id', () => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [formControlName]="field.variable" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [TEXT_FIELD_MOCK.variable]: new FormControl('one')
+                    }),
+                    field: TEXT_FIELD_MOCK
+                }
+            }
+        );
+        spectator.detectChanges();
+        textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
+        expect(textInput.getAttribute('id')).toBe(TEXT_FIELD_MOCK.variable);
     });
 
     describe.each([
@@ -66,11 +53,23 @@ describe('DotEditContentTextFieldComponent', () => {
         const options = INPUT_TEXT_OPTIONS[dataType];
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    field: { ...TEXT_FIELD_MOCK, dataType }
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: {
+                            ...TEXT_FIELD_MOCK,
+                            dataType
+                        }
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
         });
