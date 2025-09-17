@@ -17115,6 +17115,91 @@ paths:
       summary: Create tags
       tags:
       - Tags
+  /v2/tags/export:
+    get:
+      description: Export tags to CSV or JSON format. Supports the same filtering
+        as list/search endpoint with configurable export format.
+      operationId: exportTags
+      parameters:
+      - description: Export format
+        example: csv
+        in: query
+        name: format
+        schema:
+          type: string
+          default: csv
+          enum:
+          - csv
+          - json
+      - description: Include global tags
+        example: false
+        in: query
+        name: global
+        schema:
+          type: boolean
+          default: false
+      - description: Filter by specific host/site
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: query
+        name: siteId
+        schema:
+          type: string
+      - description: Tag name filter (LIKE search)
+        example: market
+        in: query
+        name: filter
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json: {}
+            text/csv: {}
+          description: File download initiated with appropriate content type
+        "400":
+          content:
+            application/json: {}
+          description: Invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - Insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Export tags
+      tags:
+      - Tags
+  /v2/tags/export/template:
+    get:
+      description: Download a CSV template file with headers and example data for
+        tag imports. No parameters required.
+      operationId: downloadTemplate
+      responses:
+        "200":
+          content:
+            text/csv: {}
+          description: CSV template file download
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - Insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Template generation error
+      summary: Download tag import template
+      tags:
+      - Tags
   /v2/tags/import:
     post:
       description: Imports tags from a CSV file with row-level error reporting. Returns
