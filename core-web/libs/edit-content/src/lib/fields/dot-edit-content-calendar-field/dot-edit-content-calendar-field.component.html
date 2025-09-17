@@ -35,9 +35,7 @@
             [attr.aria-describedby]="field.hint ? 'hint-' + variable : null" />
     </dot-card-field-content>
     <dot-card-field-footer>
-        <div
-            class="flex justify-content-between align-items-center"
-            data-testid="calendar-field-hints">
+        <div class="flex justify-content-between align-items-center">
             <div class="flex-grow-1">
                 @if (hasError) {
                     <div class="error-message">
@@ -48,7 +46,7 @@
                 }
 
                 @if (!hasError && field.hint) {
-                    <div class="hint-message">
+                    <div class="hint-message" data-testid="calendar-field-hints">
                         <small
                             [attr.data-testId]="'hint-' + field.variable"
                             data-testid="calendar-field-hint">
@@ -58,7 +56,11 @@
                 }
             </div>
             @if (showTimezoneInfo && systemTimezone) {
-                <small class="text-gray-700" role="status" aria-live="polite">
+                <small
+                    data-testid="calendar-field-timezone"
+                    class="text-gray-700"
+                    role="status"
+                    aria-live="polite">
                     {{ systemTimezone.label }}
                 </small>
             }

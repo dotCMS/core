@@ -15,19 +15,17 @@ import {
 } from './dot-edit-content-text-area.constants';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
-import { MockFormComponent } from '../../utils/mocks';
 
 const TEXT_AREA_FIELD_MOCK = createFakeTextAreaField({
     variable: 'someTextArea'
 });
 
 describe('DotEditContentTextAreaComponent', () => {
-    let spectator: SpectatorHost<DotEditContentTextAreaComponent, MockFormComponent>;
+    let spectator: SpectatorHost<DotEditContentTextAreaComponent>;
     let textArea: Element;
 
     const createHost = createHostFactory({
         component: DotEditContentTextAreaComponent,
-        host: MockFormComponent,
         imports: [ReactiveFormsModule],
         detectChanges: false,
         componentMocks: [
