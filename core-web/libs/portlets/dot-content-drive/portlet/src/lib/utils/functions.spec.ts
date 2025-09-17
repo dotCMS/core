@@ -553,7 +553,7 @@ describe('Utility Functions', () => {
                 baseType: ['1', '2'],
                 title: 'dotCMS content management',
                 status: 'published',
-                languageId: '1'
+                languageId: ['1']
             };
 
             const result = buildContentDriveQuery({

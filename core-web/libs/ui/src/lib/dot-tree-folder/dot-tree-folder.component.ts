@@ -32,11 +32,21 @@ export class DotTreeFolderComponent {
     $loading = input.required<boolean>({ alias: 'loading' });
 
     /**
-     * A signal that represents the selected node.
+     * A signal that represents the currently selected node in the tree.
      *
-     * @type {InputSignal<TreeNode | null>}
+     * The transform function is used to convert a single TreeNode or null into an array
+     * because PrimeNG's p-tree component expects the selection to be an array of TreeNodes,
+     * even when in single selection mode. This allows us to maintain a cleaner API where
+     * consumers can pass a single node while internally handling PrimeNG's requirements.
+     *
+     * @type {InputSignal<TreeNode | TreeNode[] | null, TreeNode | null>}
      */
-    $selectedNode = input.required<TreeNode>({ alias: 'selectedNode' });
+    $selectedNode = input<TreeNode | TreeNode[] | null, TreeNode | null>(null, {
+        alias: 'selectedNode',
+        transform: (value: TreeNode | null): TreeNode[] => {
+            return value ? [value] : [];
+        }
+    });
 
     /**
      * Controls whether the folder icon should be shown only on the first root node's toggler.

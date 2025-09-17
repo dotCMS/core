@@ -91,3 +91,8 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
 export const DEBOUNCE_TIME = 500;
 
 export const PANEL_SCROLL_HEIGHT = '25rem';
+
+// Dialog type
+export const DIALOG_TYPE = {
+    FOLDER: 'FOLDER'
+} as const;

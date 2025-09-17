@@ -145,27 +145,33 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.setInput('itemIndex', 1);
             spectator.detectChanges(); // Trigger change detection
 
-            // Verify that $isCurrentItem() is working correctly
-            expect(spectator.component.$isCurrentItem()).toBe(false);
-
             const timeDisplay = spectator.query(byTestId('time-display'));
 
             expect(timeDisplay.textContent?.trim()).not.toBe('Current');
         });
 
-        it('should hide delete action for current item', () => {
-            // Default itemIndex is 0 (current item)
+        it('should disable delete action for live items', () => {
+            // Item is live by default
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for current item
+            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for live items
         });
 
-        it('should show delete action for non-current items', () => {
-            // Set itemIndex to 1 to make it non-current
-            spectator.setInput('itemIndex', 1);
-            spectator.detectChanges(); // Trigger change detection
+        it('should disable delete action for working items', () => {
+            // Set item to working
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
+            spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems[0].disabled).toBe(false); // Delete should be enabled for non-current items
+            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for working items
+        });
+
+        it('should enable delete action for archived items', () => {
+            // Set item to archived (neither live nor working)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            expect(menuItems[0].disabled).toBe(false); // Delete should be enabled for archived items
         });
     });
 
@@ -187,52 +193,42 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.component.$timelineMarkerClass()).toBe('');
         });
 
-        it('should compute menu items with correct actions for current item', () => {
-            // Default itemIndex is 0 (current item)
+        it('should compute menu items with correct actions for live item', () => {
+            // Item is live by default
             const menuItems = spectator.component.$menuItems();
 
             expect(menuItems).toHaveLength(1);
             expect(menuItems[0].label).toBe('Delete');
-            expect(menuItems[0].disabled).toBe(true); // Current item should have delete disabled
+            expect(menuItems[0].disabled).toBe(true); // Live item should have delete disabled
         });
 
-        it('should compute menu items with correct actions for non-current item', () => {
-            // Set itemIndex to 1 to make it non-current
-            spectator.setInput('itemIndex', 1);
-            spectator.detectChanges(); // Trigger change detection
+        it('should compute menu items with correct actions for archived item', () => {
+            // Set item to archived (neither live nor working)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
 
             expect(menuItems).toHaveLength(1);
             expect(menuItems[0].label).toBe('Delete');
-            expect(menuItems[0].disabled).toBe(false); // Non-current item should have delete enabled
-        });
-
-        it('should determine if item is current based on itemIndex', () => {
-            // Default itemIndex is 0, so should be current
-            expect(spectator.component.$isCurrentItem()).toBe(true);
-
-            // Set itemIndex to 1, should not be current
-            spectator.setInput('itemIndex', 1);
-            spectator.detectChanges(); // Trigger change detection
-            expect(spectator.component.$isCurrentItem()).toBe(false);
+            expect(menuItems[0].disabled).toBe(false); // Archived item should have delete enabled
         });
     });
 
     describe('Event Emission', () => {
         it('should emit actionTriggered when menu actions are triggered', () => {
-            // Set itemIndex to 1 to make it non-current (so delete action is visible)
-            spectator.setInput('itemIndex', 1);
-            spectator.detectChanges(); // Trigger change detection
+            // Set item to archived to enable delete action
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
 
             const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
             const menuItems = spectator.component.$menuItems();
 
-            // Test delete action (only available action for non-current items)
+            // Test delete action (enabled for archived items)
             menuItems[0].command();
             expect(actionSpy).toHaveBeenCalledWith({
                 type: DotHistoryTimelineItemActionType.DELETE,
-                item: mockVersionItem
+                item: { ...mockVersionItem, live: false, working: false }
             });
         });
     });

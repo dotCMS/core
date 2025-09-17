@@ -72,12 +72,6 @@ export class DotHistoryTimelineItemComponent {
     $itemIndex = input<number>(0, { alias: 'itemIndex' });
 
     /**
-     * Computed signal that determines if this is the current (most recent) item
-     * Based on itemIndex being 0 (first item in the timeline)
-     */
-    readonly $isCurrentItem = computed(() => this.$itemIndex() === 0);
-
-    /**
      * Event emitted when an action is triggered on the timeline item
      */
     actionTriggered = output<DotHistoryTimelineItemAction>();
@@ -101,7 +95,6 @@ export class DotHistoryTimelineItemComponent {
     readonly $menuItems = computed(() => {
         const labels = this.$labels();
         const item = this.$item();
-        const isCurrentItem = this.$isCurrentItem();
 
         return [
             // { // TODO: enable them as is implemented.
@@ -133,7 +126,7 @@ export class DotHistoryTimelineItemComponent {
             // },
             {
                 label: labels.delete,
-                disabled: isCurrentItem, // disable the delete button for the current version
+                disabled: item.working || item.live, // disable the delete button for working or live versions
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,

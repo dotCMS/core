@@ -9,7 +9,7 @@
                 [icon]="rowIcon"
                 [gridstackOptions]="rowOptions"
                 data-widget-type="row"
-                data-testId="add-row"></dotcms-add-widget>
+                data-testId="add-row" />
             <dotcms-add-widget
                 [label]="'dot.template.builder.add.box' | dm"
                 [gridstackOptions]="boxOptions"
@@ -18,8 +18,8 @@
                 id="box-picker"
                 #addBox
                 data-widget-type="col"
-                data-testId="add-box"></dotcms-add-widget>
-            <p-divider layout="vertical"></p-divider>
+                data-testId="add-box" />
+            <p-divider layout="vertical" />
             <dotcms-template-builder-actions
                 (selectTheme)="openThemeSelectorDynamicDialog()"
                 [layoutProperties]="vm.layoutProperties"

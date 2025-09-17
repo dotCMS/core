@@ -9,6 +9,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.List;
+import java.util.Map;
+
 import static com.dotmarketing.util.PortletID.ANALYTICS_DASHBOARD;
 import static com.dotmarketing.util.PortletID.SITES;
 
@@ -23,22 +26,23 @@ public class Task250910AddAnalyticsDashboardPortletToMenu implements StartupTask
 
     @Override
     public boolean forceRun() {
-        try {
-            final String layoutID = this.getMenuGroupForPortlet();
-            if (UtilMethods.isNotSet(layoutID)) {
-                Logger.warn(this, "The 'Analytics Dashboard' portlet could not be automatically added to any of the expected Menu Groups. " +
-                        "Please add it manually");
-                return false;
-            }
-            final String analyticsDashboardPortlet = new DotConnect()
-                                    .setSQL("SELECT id FROM cms_layouts_portlets WHERE portlet_id = ?")
-                                    .addParam(ANALYTICS_DASHBOARD.toString())
-                                    .getString("id");
-            return UtilMethods.isNotSet(analyticsDashboardPortlet);
-        } catch (final DotDataException e) {
-            Logger.error(this, String.format("An error occurred when adding the 'Analytics Dashboard' portlet. " +
-                    "Please add it manually: %s", ExceptionUtil.getErrorMessage(e)), e);
-        }
+//         TODO: Let's enable this back when it's ready for GTM, we will need to rename the UT as well.
+//        try {
+//            final String layoutID = this.getMenuGroupForPortlet();
+//            if (UtilMethods.isNotSet(layoutID)) {
+//                Logger.warn(this, "The 'Analytics Dashboard' portlet could not be automatically added to any of the expected Menu Groups. " +
+//                        "Please add it manually");
+//                return false;
+//            }
+//            final String analyticsDashboardPortlet = new DotConnect()
+//                                    .setSQL("SELECT id FROM cms_layouts_portlets WHERE portlet_id = ?")
+//                                    .addParam(ANALYTICS_DASHBOARD.toString())
+//                                    .getString("id");
+//            return UtilMethods.isNotSet(analyticsDashboardPortlet);
+//        } catch (final DotDataException e) {
+//            Logger.error(this, String.format("An error occurred when adding the 'Analytics Dashboard' portlet. " +
+//                    "Please add it manually: %s", ExceptionUtil.getErrorMessage(e)), e);
+//        }
         return false;
     }
 
@@ -94,19 +98,42 @@ public class Task250910AddAnalyticsDashboardPortletToMenu implements StartupTask
      * @throws DotDataException An error occurred while querying the database.
      */
     private String getMenuGroupForPortlet() throws DotDataException {
-        String layoutId = new DotConnect().setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'site manager'")
-                .loadObjectResults().get(0).getOrDefault("id", "").toString();
-        if (UtilMethods.isSet(layoutId)) {
-            return layoutId;
+        // Try Site Manager layout first
+        List<Map<String, Object>> results = new DotConnect()
+                .setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'site manager'")
+                .loadObjectResults();
+        
+        if (!results.isEmpty()) {
+            String layoutId = results.get(0).getOrDefault("id", "").toString();
+            if (UtilMethods.isSet(layoutId)) {
+                return layoutId;
+            }
         }
-        layoutId = new DotConnect().setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'marketing'")
-                .loadObjectResults().get(0).getOrDefault("id", "").toString();
-        if (UtilMethods.isSet(layoutId)) {
-            return layoutId;
+        
+        // Try Marketing layout second
+        results = new DotConnect()
+                .setSQL("SELECT id FROM cms_layout WHERE LOWER(layout_name) = 'marketing'")
+                .loadObjectResults();
+        
+        if (!results.isEmpty()) {
+            String layoutId = results.get(0).getOrDefault("id", "").toString();
+            if (UtilMethods.isSet(layoutId)) {
+                return layoutId;
+            }
         }
-        return new DotConnect().setSQL("SELECT layout_id FROM cms_layouts_portlets WHERE portlet_id = ?")
+        
+        // Fall back to layout containing SITES portlet
+        results = new DotConnect()
+                .setSQL("SELECT layout_id FROM cms_layouts_portlets WHERE portlet_id = ?")
                 .addParam(SITES.toString())
-                .loadObjectResults().get(0).getOrDefault("layout_id", "").toString();
+                .loadObjectResults();
+        
+        if (!results.isEmpty()) {
+            return results.get(0).getOrDefault("layout_id", "").toString();
+        }
+        
+        Logger.warn(this, "No suitable layout found for Analytics Dashboard portlet");
+        return null;
     }
 
 }

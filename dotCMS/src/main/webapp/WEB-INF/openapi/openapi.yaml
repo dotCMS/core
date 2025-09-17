@@ -2809,88 +2809,12 @@ paths:
           description: default response
       tags:
       - AI
-  /v1/analytics/content:
-    post:
-      description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using Path Parameters instead of a CubeJS JSON\
-        \ query. This helps abstract the complexity of the underlying JSON format\
-        \ for users that need an easier way to query for specific data."
-      operationId: postContentAnalyticsSimpleQuery
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
-                type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                measures: request.count request.totalSessions
-                dimensions: request.host request.whatAmI request.url
-                timeDimensions: request.createdAt:day:Last month
-                filters: "request.totalRequest gt 0:request.whatAmI contains PAGE,FILE"
-                order: request.count asc:request.createdAt asc
-                limit: 15
-                offset: 0
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "401":
-          description: Unauthorized
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Returns Content Analytics data
-      tags:
-      - Content Analytics
-  /v1/analytics/content/_query:
-    post:
-      description: Returns information of specific dotCMS objects whose health and
-        engagement data is tracked. This method takes a specific less verbose JSON
-        format to query the data.
-      operationId: postContentAnalyticsQuery
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/QueryForm"
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                query:
-                  measures:
-                  - request.count
-                  order: request.count DESC
-                  dimensions:
-                  - request.url
-                  - request.pageId
-                  - request.pageTitle
-                  filters: "request.whatAmI = ['PAGE']"
-                  limit: 100
-                  offset: 1
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "403":
-          description: Forbidden
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Retrieve Content Analytics data
-      tags:
-      - Content Analytics
   /v1/analytics/content/_query/cube:
     post:
       description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using a CubeJS JSON query."
-      operationId: postContentAnalyticsQuery_1
+        \ engagement data is tracked, using a CubeJS JSON query. **Note:** This endpoint\
+        \ is in **beta** and may change."
+      operationId: postContentAnalyticsQuery
       requestBody:
         content:
           application/json:
@@ -2913,12 +2837,13 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Retrieve Content Analytics data
+      summary: Retrieve Content Analytics data **(Beta)**
       tags:
       - Content Analytics
   /v1/analytics/content/event:
     post:
-      description: receives a custom event payload and fires the event to the collectors
+      description: receives a custom event payload and fires the event to the collectors.
+        **Note:** This endpoint is in **beta** and may change.
       operationId: fireUserCustomEvent
       requestBody:
         content:
@@ -2941,7 +2866,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire an user custom event.
+      summary: Fire an user custom event **(Beta)**.
       tags:
       - Content Analytics
   /v1/analytics/content/sitekey/generate/{siteId}:
@@ -3729,6 +3654,37 @@ paths:
           '*/*':
             schema:
               $ref: "#/components/schemas/AssetsRequestForm"
+      responses:
+        default:
+          content:
+            application/javascript: {}
+            application/json: {}
+          description: default response
+      tags:
+      - Web Assets
+  /v1/assets/folders:
+    post:
+      operationId: createFolder
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/NewFolderForm"
+      responses:
+        default:
+          content:
+            application/javascript: {}
+            application/json: {}
+          description: default response
+      tags:
+      - Web Assets
+    put:
+      operationId: updateFolder
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/UpdateFolderForm"
       responses:
         default:
           content:
@@ -17084,6 +17040,91 @@ paths:
       summary: Create tags
       tags:
       - Tags
+  /v2/tags/export:
+    get:
+      description: Export tags to CSV or JSON format. Supports the same filtering
+        as list/search endpoint with configurable export format.
+      operationId: exportTags
+      parameters:
+      - description: Export format
+        example: csv
+        in: query
+        name: format
+        schema:
+          type: string
+          default: csv
+          enum:
+          - csv
+          - json
+      - description: Include global tags
+        example: false
+        in: query
+        name: global
+        schema:
+          type: boolean
+          default: false
+      - description: Filter by specific host/site
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: query
+        name: siteId
+        schema:
+          type: string
+      - description: Tag name filter (LIKE search)
+        example: market
+        in: query
+        name: filter
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json: {}
+            text/csv: {}
+          description: File download initiated with appropriate content type
+        "400":
+          content:
+            application/json: {}
+          description: Invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - Insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Export tags
+      tags:
+      - Tags
+  /v2/tags/export/template:
+    get:
+      description: Download a CSV template file with headers and example data for
+        tag imports. No parameters required.
+      operationId: downloadTemplate
+      responses:
+        "200":
+          content:
+            text/csv: {}
+          description: CSV template file download
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - Insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Template generation error
+      summary: Download tag import template
+      tags:
+      - Tags
   /v2/tags/import:
     post:
       description: Imports tags from a CSV file with row-level error reporting. Returns
@@ -18060,31 +18101,6 @@ components:
           $ref: "#/components/schemas/PushPublishBean"
         pushPublishBean:
           $ref: "#/components/schemas/PushPublishBean"
-    AnalyticsQuery:
-      type: object
-      properties:
-        dimensions:
-          type: array
-          items:
-            type: string
-          uniqueItems: true
-        filters:
-          type: string
-        limit:
-          type: integer
-          format: int64
-        measures:
-          type: array
-          items:
-            type: string
-          uniqueItems: true
-        offset:
-          type: integer
-          format: int64
-        order:
-          type: string
-        timeDimensions:
-          type: string
     Announcement:
       type: object
       properties:
@@ -20303,6 +20319,29 @@ components:
           type: string
         whereToSend:
           type: string
+    FolderDetail:
+      type: object
+      properties:
+        defaultAssetType:
+          type: string
+        fileMasks:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        title:
+          type: string
     ForbiddenException:
       type: object
       properties:
@@ -21156,6 +21195,17 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListString:
+      type: array
+      items:
+        type: string
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: string
+        last:
+          type: string
     ImmutableListVariantResult:
       type: array
       items:
@@ -21872,6 +21922,13 @@ components:
             type: string
           variable:
             type: string
+    NewFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        data:
+          $ref: "#/components/schemas/FolderDetail"
     OpenFolderForm:
       type: object
       properties:
@@ -22391,11 +22448,6 @@ components:
         quantile:
           type: number
           format: double
-    QueryForm:
-      type: object
-      properties:
-        query:
-          $ref: "#/components/schemas/AnalyticsQuery"
     RadioField:
       type: object
       allOf:
@@ -26024,6 +26076,38 @@ components:
       properties:
         field:
           $ref: "#/components/schemas/Field"
+    UpdateFolderDetail:
+      type: object
+      properties:
+        defaultAssetType:
+          type: string
+        fileMasks:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        name:
+          type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        title:
+          type: string
+    UpdateFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        data:
+          $ref: "#/components/schemas/UpdateFolderDetail"
     UpdateTagForm:
       type: object
       properties:

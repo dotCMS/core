@@ -1,7 +1,7 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { Component, inject, model } from '@angular/core';
+import { Component, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -27,7 +27,12 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     standalone: true
 })
 export class DotContentDriveBaseTypeSelectorComponent {
-    $selectedBaseTypes = model<string[]>([]);
+    $selectedBaseTypes = linkedSignal<string[]>(() => {
+        const baseTypes = this.#store.getFilterValue('baseType') as string[];
+        return baseTypes?.length > 0
+            ? baseTypes.map((key) => MAP_NUMBERS_TO_BASE_TYPES[key]).filter(Boolean)
+            : [];
+    });
 
     readonly #store = inject(DotContentDriveStore);
     readonly #dotContentTypeService = inject(DotContentTypeService);

@@ -40,11 +40,7 @@ export class DotContentDriveSearchInputComponent implements OnInit {
             )
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
-                if (searchValue) {
-                    this.#store.patchFilters({ title: searchValue });
-                } else {
-                    this.#store.removeFilter('title');
-                }
+                this.#store.setGlobalSearch(searchValue);
             });
     }
 }

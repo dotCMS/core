@@ -1,6 +1,6 @@
 import { patchState, signalStoreFeature, withMethods, type, withState } from '@ngrx/signals';
 
-import { DotContentDriveContextMenu, DotContentDriveState } from '../../shared/models';
+import { DotContentDriveContextMenu, DotContentDriveState } from '../../../shared/models';
 
 interface WithContextMenuState {
     contextMenu: DotContentDriveContextMenu | null;

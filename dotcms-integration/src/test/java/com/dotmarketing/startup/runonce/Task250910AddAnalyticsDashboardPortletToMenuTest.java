@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -51,6 +52,53 @@ public class Task250910AddAnalyticsDashboardPortletToMenuTest {
         upgradeTask.executeUpgrade();
         assertFalse("The 'Analytics Dashboard' has already been added, so the UT must NOT run again",
                 upgradeTask.forceRun());
+    }
+
+    @Test
+    public void testForceRunHandlesEmptyLayouts() throws Exception {
+        // Test that forceRun() gracefully handles cases where no suitable layout exists
+        // This simulates the IndexOutOfBoundsException scenario we fixed
+        
+        // Store original layouts to restore later
+        final String backupSiteManager = new DotConnect()
+                .setSQL("SELECT layout_name FROM cms_layout WHERE LOWER(layout_name) = 'site manager'")
+                .getString("layout_name");
+        final String backupMarketing = new DotConnect()
+                .setSQL("SELECT layout_name FROM cms_layout WHERE LOWER(layout_name) = 'marketing'")
+                .getString("layout_name");
+        
+        try {
+            // Temporarily rename layouts to simulate missing layouts
+            if (backupSiteManager != null) {
+                new DotConnect()
+                        .setSQL("UPDATE cms_layout SET layout_name = 'temp_site_manager' WHERE LOWER(layout_name) = 'site manager'")
+                        .loadResult();
+            }
+            if (backupMarketing != null) {
+                new DotConnect()
+                        .setSQL("UPDATE cms_layout SET layout_name = 'temp_marketing' WHERE LOWER(layout_name) = 'marketing'")
+                        .loadResult();
+            }
+            
+            final Task250910AddAnalyticsDashboardPortletToMenu upgradeTask = new Task250910AddAnalyticsDashboardPortletToMenu();
+            
+            // This should not throw IndexOutOfBoundsException and should return false
+            // if no suitable layout is found (falls back to SITES portlet layout)
+            upgradeTask.forceRun();
+            
+        } finally {
+            // Restore original layout names
+            if (backupSiteManager != null) {
+                new DotConnect()
+                        .setSQL("UPDATE cms_layout SET layout_name = 'Site Manager' WHERE layout_name = 'temp_site_manager'")
+                        .loadResult();
+            }
+            if (backupMarketing != null) {
+                new DotConnect()
+                        .setSQL("UPDATE cms_layout SET layout_name = 'Marketing' WHERE layout_name = 'temp_marketing'")
+                        .loadResult();
+            }
+        }
     }
 
 }

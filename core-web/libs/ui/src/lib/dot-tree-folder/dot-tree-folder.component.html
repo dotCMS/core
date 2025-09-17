@@ -4,13 +4,14 @@
     <p-tree
         [value]="$folders()"
         [loading]="loading"
-        selectionMode="single"
+        selectionMode="multiple"
         loadingMode="icon"
         class="w-full h-full"
-        [styleClass]="treeStyleClasses()"
         loadingMode="icon"
+        [styleClass]="treeStyleClasses()"
         [selection]="$selectedNode()"
         [scrollHeight]="'auto'"
+        [metaKeySelection]="true"
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)"
         (onNodeCollapse)="onNodeCollapse.emit($event)">

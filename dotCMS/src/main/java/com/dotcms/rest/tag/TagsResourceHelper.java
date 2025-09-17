@@ -25,16 +25,26 @@ import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 
 /**
  * Provides common-use or utility methods for the {@link com.dotcms.rest.api.v2.tags.TagResource}
@@ -435,6 +445,181 @@ public class TagsResourceHelper {
     public static RestTag toRestTag(final Tag tag) {
         final TagTransform transform = new TagTransform();
         return transform.appToRest(tag);
+    }
+
+    /**
+     * Exports tags in the specified format (CSV or JSON).
+     * Uses the same filtering logic as the list endpoint.
+     *
+     * @param request  The HTTP request
+     * @param response The HTTP response (unused in streaming approach)
+     * @param format   The export format (csv or json)
+     * @param global   Include global/system tags
+     * @param siteId   Filter by specific host/site
+     * @param filter   Tag name filter (LIKE search)
+     * @param user     The user performing the export
+     * @return Response object with streaming output
+     *
+     * @throws DotDataException     An error occurred when retrieving Tag data
+     * @throws DotSecurityException The user does not have required permissions
+     */
+    public Response exportTags(
+        final HttpServletRequest request,
+        final HttpServletResponse response,
+        final String format,
+        final Boolean global,
+        final String siteId,
+        final String filter,
+        final User user
+    ) throws DotDataException, DotSecurityException {
+        
+        // Use the same site resolution as list endpoint
+        final String resolvedSiteId = resolveSiteParameter(siteId, user, request);
+        
+        // Get all filtered tags (no pagination for export)
+        final String tagFilter = UtilMethods.isSet(filter) ? filter : "";
+        final List<Tag> tags = tagAPI.getFilteredTags(
+            tagFilter,
+            resolvedSiteId,
+            global,
+            "tagname",  // default sort
+            0,          // start from beginning
+            -1          // get all results
+        );
+        
+        Logger.info(TagsResourceHelper.class, 
+            String.format("User '%s' exporting %d tags in %s format", user.getUserId(), tags.size(), format));
+        
+        // Create streaming output
+        StreamingOutput stream = output -> {
+            try {
+                if ("json".equalsIgnoreCase(format)) {
+                    writeTagsAsJson(output, tags, user);
+                } else {
+                    writeTagsAsCsv(output, tags);
+                }
+            } catch (Exception e) {
+                throw new IOException("Error writing tags to stream", e);
+            }
+        };
+        
+        // Determine content type and filename
+        String mimeType = "json".equalsIgnoreCase(format) ? 
+            MediaType.APPLICATION_JSON : "text/csv";
+        String filename = String.format("tags-export-%s.%s",
+            UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd"), format);
+        
+        return Response.ok(stream, mimeType)
+            .header("Content-Disposition", 
+                String.format("attachment; filename=\"%s\"", filename))
+            .build();
+    }
+
+    /**
+     * Writes tags as CSV to output stream.
+     *
+     * @param output The output stream
+     * @param tags   The list of tags to export
+     *
+     * @throws IOException An error occurred during CSV generation
+     */
+    private void writeTagsAsCsv(
+        final java.io.OutputStream output,
+        final List<Tag> tags
+    ) throws IOException {
+        
+        try (final PrintWriter writer = new PrintWriter(output)) {
+            // Write CSV header
+            writer.println("\"Tag Name\",\"Host ID\"");
+            
+            // Write tag data
+            for (final Tag tag : tags) {
+                writer.printf("\"%s\",\"%s\"%n",
+                    escapeCsvValue(tag.getTagName()),
+                    tag.getHostId()
+                );
+            }
+            writer.flush();
+        }
+    }
+
+    /**
+     * Writes tags as JSON to output stream.
+     *
+     * @param output The output stream
+     * @param tags   The list of tags to export
+     * @param user   The user performing the export (for host name resolution)
+     *
+     * @throws IOException       An error occurred during JSON generation
+     * @throws DotDataException  An error occurred retrieving host information
+     */
+    private void writeTagsAsJson(
+        final java.io.OutputStream output,
+        final List<Tag> tags,
+        final User user
+    ) throws IOException, DotDataException {
+        
+        // Build JSON structure with tag details
+        final List<Map<String, Object>> tagList = new ArrayList<>();
+        for (final Tag tag : tags) {
+            final Map<String, Object> tagData = new HashMap<>();
+            tagData.put("tagName", tag.getTagName());
+            tagData.put("hostId", tag.getHostId());
+            
+            // Try to add host name for better context
+            Try.of(() -> hostAPI.find(tag.getHostId(), user, false))
+                .onSuccess(host -> {
+                    if (host != null) {
+                        tagData.put("hostName", host.getHostname());
+                    }
+                });
+            
+            tagList.add(tagData);
+        }
+        
+        // Write JSON using DotObjectMapperProvider
+        final Map<String, Object> result = Map.of("tags", tagList);
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        mapper.writeValue(output, result);
+    }
+
+    /**
+     * Downloads a CSV template for tag imports.
+     *
+     * @param response The HTTP response (unused in streaming approach)
+     * @return Response object with template content
+     */
+    public Response downloadImportTemplate(final HttpServletResponse response) {
+        
+        StreamingOutput stream = output -> {
+            try (final PrintWriter writer = new PrintWriter(output)) {
+                writer.println("# dotCMS Tag Import Template");
+                writer.println("# Required columns: Tag Name, Host ID");
+                writer.println("Tag Name,Host ID");
+                writer.println("\"Example Tag\",\"SYSTEM_HOST\"");
+                writer.println("\"Site Specific Tag\",\"48190c8c-42c4-46af-8d1a-0cd5db894797\"");
+                writer.flush();
+            }
+        };
+        
+        return Response.ok(stream, "text/csv")
+            .header("Content-Disposition", 
+                "attachment; filename=\"tag-import-template.csv\"")
+            .build();
+    }
+
+    /**
+     * Escapes special characters in CSV values.
+     *
+     * @param value The value to escape
+     * @return The escaped value
+     */
+    private String escapeCsvValue(final String value) {
+        if (value == null) {
+            return "";
+        }
+        // Escape quotes by doubling them
+        return value.replace("\"", "\"\"");
     }
 
 }

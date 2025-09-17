@@ -2,8 +2,10 @@ package com.dotcms.rest.api.v1.asset;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetEntityView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotmarketing.exception.DotDataException;
@@ -250,5 +252,66 @@ public class WebAssetResource {
         return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 
+    /**
+     * create a new folder
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Path("/folders")
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response createFolder(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final NewFolderForm form
+    ) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+        final FolderView folder = helper.saveNewFolder(form.assetPath(), form.data(), user);
+        return Response.ok(new ResponseEntityView<>(folder)).build();
+    }
+
+    /**
+     * Update a folder by path
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Path("/folders")
+    @PUT
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response updateFolder(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final UpdateFolderForm form
+    ) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+        final FolderView folder = helper.updateFolder(form.assetPath(), form.data(), user);
+        return Response.ok(new ResponseEntityView<>(folder)).build();
+    }
 
 }
