@@ -5,11 +5,11 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
-import { DotContentTypeService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
+import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES } from '../../shared/mocks';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
@@ -27,7 +27,9 @@ describe('DotContentDriveToolbarComponent', () => {
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
-                filters: jest.fn().mockReturnValue({})
+                filters: jest.fn().mockReturnValue({}),
+                setDialog: jest.fn(),
+                resetDialog: jest.fn()
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -46,8 +48,7 @@ describe('DotContentDriveToolbarComponent', () => {
             mockProvider(DotLanguagesService, {
                 get: jest.fn().mockReturnValue(of())
             }),
-            provideHttpClient(),
-            mockProvider(DotMessageService, new MockDotMessageService({}))
+            provideHttpClient()
         ],
         detectChanges: false
     });
@@ -55,6 +56,7 @@ describe('DotContentDriveToolbarComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         store = spectator.inject(DotContentDriveStore, true);
+        spectator.detectChanges();
     });
 
     afterEach(() => {
@@ -62,43 +64,36 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     it('should render toolbar container', () => {
-        spectator.detectChanges();
         const toolbar = spectator.query('.dot-content-drive-toolbar');
         expect(toolbar).toBeTruthy();
     });
 
     it('should render the tree toggler', () => {
-        spectator.detectChanges();
         const toggler = spectator.query('[data-testid="tree-toggler"]');
         expect(toggler).toBeTruthy();
     });
 
     it('should render the Add New button', () => {
-        spectator.detectChanges();
         const button = spectator.query('[data-testid="add-new-button"]');
         expect(button).toBeTruthy();
     });
 
     it('should render start and end groups', () => {
-        spectator.detectChanges();
         expect(spectator.query('.p-toolbar-group-top')).toBeTruthy();
         expect(spectator.query('.p-toolbar-group-bottom')).toBeTruthy();
     });
 
     it('should render the content type field', () => {
-        spectator.detectChanges();
         const field = spectator.query('[data-testid="content-type-field"]');
         expect(field).toBeTruthy();
     });
 
     it('should render the search input', () => {
-        spectator.detectChanges();
         const input = spectator.query('[data-testid="search-input"]');
         expect(input).toBeTruthy();
     });
 
     it('should render the base type selector', () => {
-        spectator.detectChanges();
         const selector = spectator.query('[data-testid="base-type-selector"]');
         expect(selector).toBeTruthy();
     });
@@ -111,7 +106,6 @@ describe('DotContentDriveToolbarComponent', () => {
 
     describe('Tree toggler', () => {
         it('should render the tree toggler', () => {
-            spectator.detectChanges();
             const toggler = spectator.query('[data-testid="tree-toggler"]');
             expect(toggler).toBeDefined();
         });
@@ -122,6 +116,23 @@ describe('DotContentDriveToolbarComponent', () => {
             const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
             expect(toggler).toBeDefined();
             expect(toggler?.classes.hidden).toBe(true);
+        });
+    });
+
+    describe('$items', () => {
+        it('should call setDialog for folders', () => {
+            const items = spectator.component.$items();
+
+            const foldersItem = items.find(
+                (item) => item.label == 'content-drive.add-new.context-menu.folder'
+            );
+
+            foldersItem?.command({});
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.FOLDER,
+                header: 'content-drive.dialog.folder.header'
+            });
         });
     });
 });
