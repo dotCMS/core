@@ -1,0 +1,11 @@
+<p-multiSelect
+    [(ngModel)]="$selectedLanguages"
+    [options]="$state.languages()"
+    optionLabel="language"
+    display="chip"
+    optionValue="id"
+    [placeholder]="'content-drive.language-selector.placeholder' | dm"
+    [showToggleAll]="true"
+    (onChange)="onChange()"
+    [resetFilterOnHide]="true"
+    [scrollHeight]="MULTISELECT_SCROLL_HEIGHT" />

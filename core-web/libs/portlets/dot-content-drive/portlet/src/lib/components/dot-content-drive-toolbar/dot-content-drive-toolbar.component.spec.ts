@@ -95,6 +95,12 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(selector).toBeTruthy();
     });
 
+    it('should render the language selector', () => {
+        spectator.detectChanges();
+        const selector = spectator.query('[data-testid="language-field"]');
+        expect(selector).toBeTruthy();
+    });
+
     describe('Tree toggler', () => {
         it('should render the tree toggler', () => {
             const toggler = spectator.query('[data-testid="tree-toggler"]');

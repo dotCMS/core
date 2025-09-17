@@ -18,7 +18,8 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    DotRouterService
+    DotRouterService,
+    DotLanguagesService
 } from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -57,6 +58,9 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(DotSystemConfigService),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of())
             }),
             provideHttpClient()
         ],
