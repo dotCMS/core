@@ -1,4 +1,4 @@
-import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator';
+import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
@@ -83,81 +83,82 @@ describe('Guards', () => {
         dotRouterService = spectator.inject(DotRouterService);
         dotContentTypeService = spectator.inject(DotContentTypeService);
         dotContentletService = spectator.inject(DotContentletService);
+
+        // Clear all spies before each test
+        jest.clearAllMocks();
     });
 
     describe('newEditContentForContentTypeGuard', () => {
-        it('should return true when CONTENT_EDITOR2_ENABLED is false', (done) => {
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+        it('should return true when CONTENT_EDITOR2_ENABLED is false', async () => {
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK));
 
             spectator.detectChanges();
 
-            spectator.router.navigate(['new', 'Blog']).then((success) => {
-                expect(spyContentType).toHaveBeenCalledWith('Blog');
-                expect(success).toBe(true);
-                done();
-            });
+            const success = await spectator.router.navigate(['new', 'Blog']);
+            expect(spyContentType).toHaveBeenCalledWith('Blog');
+            expect(spyContentType).toHaveBeenCalledTimes(1);
+            expect(success).toBe(true);
         });
 
-        it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', (done) => {
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+        it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', async () => {
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK));
 
-            const spyRouter = spyOn(dotRouterService, 'goToURL');
+            const spyRouter = jest.spyOn(dotRouterService, 'goToURL');
 
             spectator.detectChanges();
 
-            spectator.router.navigate(['new', 'Blog']).then((success) => {
-                expect(success).toBe(false);
-                expect(spyContentType).toHaveBeenCalledWith('Blog');
-                expect(spyRouter).toHaveBeenCalledWith('content/new/Blog');
-                done();
-            });
+            const success = await spectator.router.navigate(['new', 'Blog']);
+            expect(success).toBe(false);
+            expect(spyContentType).toHaveBeenCalledWith('Blog');
+            expect(spyContentType).toHaveBeenCalledTimes(1);
+            expect(spyRouter).toHaveBeenCalledWith('content/new/Blog');
+            expect(spyRouter).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('newEditContentForContentletGuard', () => {
-        it('should return true when CONTENT_EDITOR2_ENABLED is false', (done) => {
-            const spyContentlet = spyOn(
-                dotContentletService,
-                'getContentletByInode'
-            ).and.returnValue(of(CONTENTLET_MOCK));
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+        it('should return true when CONTENT_EDITOR2_ENABLED is false', async () => {
+            const spyContentlet = jest
+                .spyOn(dotContentletService, 'getContentletByInode')
+                .mockReturnValue(of(CONTENTLET_MOCK));
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK));
 
             spectator.detectChanges();
 
-            spectator.router.navigate(['1234']).then((success) => {
-                expect(success).toBe(true);
-                expect(spyContentlet).toHaveBeenCalledWith('1234');
-                expect(spyContentType).toHaveBeenCalledWith('Blog');
-                done();
-            });
+            const success = await spectator.router.navigate(['1234']);
+            expect(success).toBe(true);
+            expect(spyContentlet).toHaveBeenCalledWith('1234');
+            expect(spyContentlet).toHaveBeenCalledTimes(1);
+            expect(spyContentType).toHaveBeenCalledWith('Blog');
+            expect(spyContentType).toHaveBeenCalledTimes(1);
         });
 
-        it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', (done) => {
-            const spyContentlet = spyOn(
-                dotContentletService,
-                'getContentletByInode'
-            ).and.returnValue(of(CONTENTLET_MOCK));
-            const spyContentType = spyOn(dotContentTypeService, 'getContentType').and.returnValue(
-                of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK)
-            );
+        it('should redirect to the new Edit Content portlet when CONTENT_EDITOR2_ENABLED is true', async () => {
+            const spyContentlet = jest
+                .spyOn(dotContentletService, 'getContentletByInode')
+                .mockReturnValue(of(CONTENTLET_MOCK));
+            const spyContentType = jest
+                .spyOn(dotContentTypeService, 'getContentType')
+                .mockReturnValue(of(CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK));
 
-            const spyRouter = spyOn(dotRouterService, 'goToURL');
+            const spyRouter = jest.spyOn(dotRouterService, 'goToURL');
 
             spectator.detectChanges();
 
-            spectator.router.navigate(['1234']).then((success) => {
-                expect(success).toBe(false);
-                expect(spyContentlet).toHaveBeenCalledWith('1234');
-                expect(spyContentType).toHaveBeenCalledWith('Blog');
-                expect(spyRouter).toHaveBeenCalledWith('content/1234');
-                done();
-            });
+            const success = await spectator.router.navigate(['1234']);
+            expect(success).toBe(false);
+            expect(spyContentlet).toHaveBeenCalledWith('1234');
+            expect(spyContentlet).toHaveBeenCalledTimes(1);
+            expect(spyContentType).toHaveBeenCalledWith('Blog');
+            expect(spyContentType).toHaveBeenCalledTimes(1);
+            expect(spyRouter).toHaveBeenCalledWith('content/1234');
+            expect(spyRouter).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -27,15 +27,9 @@
 }
 
 // Custom timeline styles for PrimeNG Scroller
-.dot-edit-content-sidebar-history__scroller {
-    height: 100%;
-    width: 100%;
-
-    ::ng-deep {
-        .p-scroller-content {
-            width: 100%;
-            padding-top: $spacing-2;
-        }
+::ng-deep .dot-edit-content-sidebar-history__scroller {
+    .p-scroller-content {
+        padding-top: $spacing-1;
     }
 }
 

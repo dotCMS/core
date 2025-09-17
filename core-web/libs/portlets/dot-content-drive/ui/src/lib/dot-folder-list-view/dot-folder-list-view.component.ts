@@ -10,11 +10,12 @@ import {
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { HEADER_COLUMNS } from '../shared/constants';
@@ -22,12 +23,13 @@ import { HEADER_COLUMNS } from '../shared/constants';
 @Component({
     selector: 'dot-folder-list-view',
     imports: [
-        TableModule,
+        ButtonModule,
+        ChipModule,
+        DotContentletStatusPipe,
+        DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
-        DotMessagePipe,
-        DotContentletStatusPipe,
-        ChipModule
+        TableModule
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
@@ -42,6 +44,8 @@ export class DotFolderListViewComponent {
     selectionChange = output<DotContentDriveItem[]>();
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
+    rightClick = output<ContextMenuData>();
+    doubleClick = output<DotContentDriveItem>();
 
     selectedItems: DotContentDriveItem[] = [];
     readonly MIN_ROWS_PER_PAGE = 20;
@@ -60,6 +64,10 @@ export class DotFolderListViewComponent {
      * Used by PrimeNG Table for pagination state management.
      */
     protected readonly $currentPageFirstRowIndex = signal<number>(0);
+
+    /**
+     * Effect that handles pagination state management
+     */
     protected readonly firstEffect = effect(() => {
         const showPagination = this.$showPagination();
         if (showPagination) {
@@ -67,16 +75,45 @@ export class DotFolderListViewComponent {
         }
     });
 
+    /**
+     * Handles right click on a content item to show context menu
+     * @param event The mouse event
+     * @param contentlet The content item that was right clicked
+     */
+    onContextMenu(event: Event, contentlet: DotContentDriveItem) {
+        event.preventDefault();
+        this.rightClick.emit({ event, contentlet });
+    }
+
+    /**
+     * Handles pagination events from the PrimeNG Table
+     * @param event The lazy load event containing pagination info
+     */
     onPage(event: LazyLoadEvent) {
         this.$currentPageFirstRowIndex.set(event.first);
         this.paginate.emit(event);
     }
 
+    /**
+     * Handles selection changes in the table and emits selected items
+     */
     onSelectionChange() {
         this.selectionChange.emit(this.selectedItems);
     }
 
+    /**
+     * Handles sort events from the PrimeNG Table
+     * @param event The sort event containing sort field and order
+     */
     onSort(event: SortEvent) {
         this.sort.emit(event);
+    }
+
+    /**
+     * Handles double click on a content item
+     * @param contentlet The content item that was double clicked
+     */
+    onDoubleClick(contentlet: DotContentDriveItem) {
+        this.doubleClick.emit(contentlet);
     }
 }

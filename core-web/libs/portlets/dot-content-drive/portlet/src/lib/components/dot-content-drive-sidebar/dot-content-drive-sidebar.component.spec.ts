@@ -90,7 +90,6 @@ describe('DotContentDriveSidebarComponent', () => {
                 isTreeExpanded: jest.fn().mockReturnValue(true),
                 removeFilter: jest.fn(),
                 getFilterValue: jest.fn(),
-                $query: jest.fn(),
                 setIsTreeExpanded: jest.fn(),
                 path: jest.fn().mockReturnValue('/test/path'),
                 setItems: jest.fn(),
@@ -98,7 +97,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 setPagination: jest.fn(),
                 setSort: jest.fn(),
                 patchFilters: jest.fn(),
-                setPath: jest.fn()
+                setPath: jest.fn(),
+                $searchParams: jest.fn(),
+                contextMenu: jest.fn().mockReturnValue(null)
             })
         ]
     });
@@ -148,7 +149,8 @@ describe('DotContentDriveSidebarComponent', () => {
 
         it('should pass correct selectedNode input to dot-tree-folder', () => {
             const treeComponent = spectator.query(DotTreeFolderComponent);
-            expect(treeComponent?.$selectedNode()).toEqual(mockTreeNodes[1]);
+            const selectedNode = mockTreeNodes[1];
+            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
         });
 
         it('should pass showFolderIconOnFirstOnly as true to dot-tree-folder', () => {
@@ -171,6 +173,8 @@ describe('DotContentDriveSidebarComponent', () => {
                 }
             ];
 
+            const selectedNode = newTreeNodes[0];
+
             component.$folders.set(newTreeNodes);
             component.$selectedNode.set(newTreeNodes[0]);
             component.$loading.set(true);
@@ -178,7 +182,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             const treeComponent = spectator.query(DotTreeFolderComponent);
             expect(treeComponent?.$folders()).toEqual(newTreeNodes);
-            expect(treeComponent?.$selectedNode()).toEqual(newTreeNodes[0]);
+            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
             expect(treeComponent?.$loading()).toBe(true);
         });
     });
@@ -387,6 +391,14 @@ describe('DotContentDriveSidebarComponent', () => {
             };
             spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', expandEvent);
             expect(folderService.getFolders).toHaveBeenCalledWith('demo.dotcms.com/test/');
+        });
+    });
+
+    describe('Current site hostname', () => {
+        it('should render the current site hostname', () => {
+            const currentSiteHostname = spectator.query('[data-testid="current-site-hostname"]');
+
+            expect(currentSiteHostname.innerHTML).toContain(mockSiteDetails.hostname);
         });
     });
 });

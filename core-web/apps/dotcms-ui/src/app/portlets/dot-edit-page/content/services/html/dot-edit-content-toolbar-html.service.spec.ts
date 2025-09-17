@@ -139,7 +139,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                 describe('without license', () => {
                     beforeEach(() => {
                         const dotLicenseService = TestBed.inject(DotLicenseService);
-                        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(
+                        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(
                             observableOf(false)
                         );
                     });
@@ -250,8 +250,6 @@ describe('DotEditContentToolbarHtmlService', () => {
             it('should not have add actions', () => {
                 expect(menuItems.length).toEqual(0);
             });
-
-            xit('should bind events');
         });
     });
 
@@ -259,14 +257,18 @@ describe('DotEditContentToolbarHtmlService', () => {
         let htmlElement: HTMLHtmlElement;
 
         beforeEach(() => {
-            testDoc = document.implementation.createDocument(
-                'http://www.w3.org/1999/xhtml',
-                'html',
-                null
-            );
+            // Use the global document instead of creating a new one for Jest/JSDOM compatibility
+            testDoc = document;
             dummyContainer = testDoc.createElement('div');
-            htmlElement = testDoc.getElementsByTagName('html')[0];
+            htmlElement = testDoc.body; // Use body instead of html element
             service.bindContentletEvents(testDoc);
+        });
+
+        afterEach(() => {
+            // Clean up DOM after each test
+            if (htmlElement && dummyContainer && htmlElement.contains(dummyContainer)) {
+                htmlElement.removeChild(dummyContainer);
+            }
         });
 
         describe('default', () => {
@@ -373,7 +375,34 @@ describe('DotEditContentToolbarHtmlService', () => {
 
                 it('should have button', () => {
                     const el = testDoc.querySelector('.large-column');
-                    el.dispatchEvent(mouseoverEvent);
+                    expect(el).toBeTruthy();
+
+                    // Verify the parent contentlet element has the right attributes
+                    const contentletEl = testDoc.querySelector('[data-dot-object="contentlet"]');
+                    expect(contentletEl).toBeTruthy();
+                    expect(contentletEl.getAttribute('data-dot-can-edit')).toBe('false');
+                    expect(contentletEl.getAttribute('data-dot-has-page-lang-version')).toBe(
+                        'true'
+                    );
+
+                    // Verify the vtl-file element exists
+                    const vtlFileEl = testDoc.querySelector('[data-dot-object="vtl-file"]');
+                    expect(vtlFileEl).toBeTruthy();
+                    expect(vtlFileEl.getAttribute('data-dot-can-edit')).toBe('true');
+
+                    // Create a new event with proper bubbling for Jest/JSDOM
+                    const mouseEvent = new MouseEvent('mouseover', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: testDoc.defaultView
+                    });
+
+                    // Dispatch event - it should bubble up to the document level
+                    el.dispatchEvent(mouseEvent);
+
+                    // Verify that the contentlet now has the toolbar attribute
+                    expect(contentletEl.getAttribute('data-dot-toolbar')).toBe('true');
+
                     expect(testDoc.querySelectorAll('.dotedit-contentlet__code').length).toEqual(1);
                 });
 

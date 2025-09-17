@@ -3737,6 +3737,37 @@ paths:
           description: default response
       tags:
       - Web Assets
+  /v1/assets/folders:
+    post:
+      operationId: createFolder
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/NewFolderForm"
+      responses:
+        default:
+          content:
+            application/javascript: {}
+            application/json: {}
+          description: default response
+      tags:
+      - Web Assets
+    put:
+      operationId: updateFolder
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/UpdateFolderForm"
+      responses:
+        default:
+          content:
+            application/javascript: {}
+            application/json: {}
+          description: default response
+      tags:
+      - Web Assets
   /v1/assets/folders/_delete:
     post:
       operationId: deleteFolder
@@ -17086,19 +17117,40 @@ paths:
       - Tags
   /v2/tags/import:
     post:
+      description: Imports tags from a CSV file with row-level error reporting. Returns
+        detailed statistics and error information for each failed row.
       operationId: importTags_1
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: "CSV file with tag data in format: tag_name,host_id"
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityTagOperationView"
+          description: Import completed with detailed results
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid file format or content
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Import tags from CSV file
       tags:
       - Tags
   /v2/tags/inode/{inode}:
@@ -20282,6 +20334,29 @@ components:
           type: string
         whereToSend:
           type: string
+    FolderDetail:
+      type: object
+      properties:
+        defaultAssetType:
+          type: string
+        fileMasks:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        title:
+          type: string
     ForbiddenException:
       type: object
       properties:
@@ -21135,6 +21210,17 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListString:
+      type: array
+      items:
+        type: string
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: string
+        last:
+          type: string
     ImmutableListVariantResult:
       type: array
       items:
@@ -21851,6 +21937,13 @@ components:
             type: string
           variable:
             type: string
+    NewFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        data:
+          $ref: "#/components/schemas/FolderDetail"
     OpenFolderForm:
       type: object
       properties:
@@ -23795,6 +23888,31 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityTagOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -25978,6 +26096,38 @@ components:
       properties:
         field:
           $ref: "#/components/schemas/Field"
+    UpdateFolderDetail:
+      type: object
+      properties:
+        defaultAssetType:
+          type: string
+        fileMasks:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        name:
+          type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        title:
+          type: string
+    UpdateFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        data:
+          $ref: "#/components/schemas/UpdateFolderDetail"
     UpdateTagForm:
       type: object
       properties:

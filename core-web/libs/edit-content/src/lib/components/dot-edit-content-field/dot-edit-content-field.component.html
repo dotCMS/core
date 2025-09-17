@@ -153,6 +153,7 @@
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-host-folder-field
                 [field]="field"
+                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }

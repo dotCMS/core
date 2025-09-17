@@ -8,7 +8,9 @@ import {
     untracked
 } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
@@ -23,7 +25,10 @@ import { DotEditContentSidebarSectionComponent } from './components/dot-edit-con
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
-import { DotWorkflowState } from '../../models/dot-edit-content.model';
+import {
+    DotWorkflowState,
+    DotHistoryTimelineItemAction
+} from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 
 /**
@@ -35,6 +40,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     templateUrl: './dot-edit-content-sidebar.component.html',
     styleUrls: ['./dot-edit-content-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [ConfirmationService],
     imports: [
         DotMessagePipe,
         DotEditContentSidebarInformationComponent,
@@ -43,6 +49,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         TabViewInsertDirective,
         DotEditContentSidebarSectionComponent,
         DotCopyButtonComponent,
+        ConfirmDialogModule,
         DialogModule,
         DropdownModule,
         ButtonModule,
@@ -156,5 +163,13 @@ export class DotEditContentSidebarComponent {
         if (identifier) {
             this.$store.loadVersions({ identifier, page });
         }
+    }
+
+    /**
+     * Handles timeline item actions from history component
+     * @param action - The action object containing type and item data
+     */
+    onTimelineItemAction(action: DotHistoryTimelineItemAction) {
+        this.$store.handleHistoryAction(action);
     }
 }

@@ -62,6 +62,11 @@ export class CoreWebServiceMock {
             options.method = 'GET';
         }
 
+        // Ensure url is defined to avoid HttpRequest constructor errors
+        if (!options.url) {
+            options.url = '';
+        }
+
         const optionsArgs = {
             headers: new HttpHeaders(),
             params: new HttpParams()

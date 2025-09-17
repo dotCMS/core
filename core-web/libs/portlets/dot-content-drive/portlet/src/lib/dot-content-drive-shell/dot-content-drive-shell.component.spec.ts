@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -8,18 +8,24 @@ import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import {
     DotContentSearchService,
     DotContentTypeService,
     DotSiteService,
-    DotSystemConfigService
+    DotSystemConfigService,
+    DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowsActionsService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
+import { DEFAULT_PAGINATION } from '../shared/constants';
 import {
     MOCK_ITEMS,
     MOCK_ROUTE,
@@ -32,7 +38,6 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
-    let contentSearchService: jest.Mocked<DotContentSearchService>;
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
@@ -67,10 +72,11 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
                     currentSite: jest.fn(),
-                    isTreeExpanded: jest.fn().mockReturnValue(true),
+                    // Tree collapsed at start to render the toggle button on toolbar
+                    isTreeExpanded: jest.fn().mockReturnValue(false),
                     removeFilter: jest.fn(),
                     getFilterValue: jest.fn(),
-                    $query: jest.fn(),
+                    $searchParams: jest.fn(),
                     items: jest.fn().mockReturnValue(MOCK_ITEMS),
                     pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
                     setIsTreeExpanded: jest.fn(),
@@ -85,7 +91,8 @@ describe('DotContentDriveShellComponent', () => {
                     setStatus: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
-                    patchFilters: jest.fn()
+                    patchFilters: jest.fn(),
+                    contextMenu: jest.fn().mockReturnValue(null)
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -110,10 +117,17 @@ describe('DotContentDriveShellComponent', () => {
                             }
                         })
                     )
-                })
+                }),
+                mockProvider(DotWorkflowsActionsService),
+                mockProvider(DotWorkflowActionsFireService),
+                mockProvider(DotWorkflowEventHandlerService),
+                mockProvider(MessageService, {
+                    messageObserver: of({}),
+                    clearObserver: of({})
+                }),
+                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
             ]
         });
-        contentSearchService = spectator.inject(DotContentSearchService);
         store = spectator.inject(DotContentDriveStore, true);
         router = spectator.inject(Router);
         location = spectator.inject(Location);
@@ -121,83 +135,6 @@ describe('DotContentDriveShellComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
-    });
-
-    describe('Content Loading Effect', () => {
-        beforeEach(() => {
-            jest.restoreAllMocks();
-        });
-
-        it('should not fetch content when store has a SYSTEM_HOST site', () => {
-            store.currentSite.mockReturnValue(SYSTEM_HOST);
-            spectator.detectChanges();
-
-            expect(contentSearchService.get).not.toHaveBeenCalled();
-            expect(store.setItems).not.toHaveBeenCalled();
-        });
-
-        it('should fetch content when store has a non-SYSTEM_HOST site', () => {
-            // Setup store mock to simulate the effect running
-            store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            store.$query.mockReturnValue('+testField:testValue');
-
-            spectator.detectChanges();
-
-            expect(contentSearchService.get).toHaveBeenCalledWith({
-                query: '+testField:testValue',
-                limit: DEFAULT_PAGINATION.limit,
-                offset: DEFAULT_PAGINATION.offset,
-                sort: 'modDate asc'
-            });
-
-            expect(store.setItems).toHaveBeenCalledWith(MOCK_ITEMS, MOCK_ITEMS.length);
-        });
-
-        it('should handle errors from content search service', () => {
-            // Setup store mock
-            store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            store.$query.mockReturnValue('test query');
-
-            // Mock error from content search
-            jest.spyOn(contentSearchService, 'get').mockReturnValue(
-                throwError(() => new Error('Failed to get content'))
-            );
-
-            spectator.detectChanges();
-
-            expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.ERROR);
-            expect(store.setItems).not.toHaveBeenCalled();
-        });
-
-        it('should handle sorting', () => {
-            // Setup store mock
-            store.currentSite.mockReturnValue(MOCK_SITES[1]);
-            store.sort.mockReturnValue({ field: 'baseType', order: DotContentDriveSortOrder.DESC });
-            store.$query.mockReturnValue('+testField:testValue');
-            spectator.detectChanges();
-
-            expect(contentSearchService.get).toHaveBeenCalledWith({
-                query: '+testField:testValue',
-                limit: DEFAULT_PAGINATION.limit,
-                offset: DEFAULT_PAGINATION.offset,
-                sort: 'baseType desc'
-            });
-        });
-
-        it('should handle pagination', () => {
-            // Setup store mock
-            store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            store.pagination.mockReturnValue({ limit: 10, offset: 0 });
-            store.$query.mockReturnValue('+testField:testValue');
-            spectator.detectChanges();
-
-            expect(contentSearchService.get).toHaveBeenCalledWith({
-                query: '+testField:testValue',
-                limit: 10,
-                offset: 0,
-                sort: 'modDate asc'
-            });
-        });
     });
 
     describe('Query Params Update Effect', () => {

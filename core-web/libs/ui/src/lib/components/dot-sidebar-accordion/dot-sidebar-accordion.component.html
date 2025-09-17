@@ -12,8 +12,13 @@
                 class="accordion-header"
                 (click)="toggleTab(tab.$id())"
                 [class.accordion-header--disabled]="$isTransitioning() || isTabDisabled(tab.$id())">
-                <span>{{ tab.$label() }}</span>
-                <i class="pi pi-chevron-down"></i>
+                <div class="accordion-header__left">
+                    <i class="pi pi-chevron-down"></i>
+                    <span>{{ tab.$label() }}</span>
+                </div>
+                <div class="accordion-header__right" (click)="$event.stopPropagation()">
+                    <ng-container *ngTemplateOutlet="tab.headerContent"></ng-container>
+                </div>
             </div>
             <div
                 class="accordion-content"

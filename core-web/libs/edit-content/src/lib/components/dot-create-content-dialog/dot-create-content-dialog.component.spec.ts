@@ -14,6 +14,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -67,7 +68,8 @@ describe('DotEditContentDialogComponent', () => {
             mockProvider(DotLanguagesService, {
                 getDefault: jest.fn(() => of({}))
             }),
-            mockProvider(DialogService)
+            mockProvider(DialogService),
+            mockProvider(DotVersionableService)
         ],
         schemas: [NO_ERRORS_SCHEMA]
     });

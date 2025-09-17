@@ -22,7 +22,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockProvider(DotContentDriveStore, {
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
-                getFilterValue: jest.fn()
+                getFilterValue: jest.fn(),
+                setGlobalSearch: jest.fn()
             })
         ],
         detectChanges: false
@@ -80,7 +81,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         });
     });
 
-    describe('Search Action', () => {
+    describe('Global Search Action', () => {
         beforeEach(() => {
             spectator.detectChanges();
         });
@@ -91,7 +92,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('search term', input);
             tick(500);
 
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: 'search term' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('search term');
         }));
 
         it('should call removeFilter when input is empty', fakeAsync(() => {
@@ -100,7 +101,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('   ', input);
             tick(500);
 
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('title');
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('');
         }));
 
         it('should debounce input changes by 500ms', fakeAsync(() => {
@@ -114,7 +115,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             expect(mockStore.patchFilters).not.toHaveBeenCalled();
 
             tick(1);
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: 'test' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('test');
         }));
 
         it('should trim whitespace from input values', fakeAsync(() => {
@@ -123,7 +124,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('  trimmed value  ', input);
             tick(500);
 
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: 'trimmed value' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('trimmed value');
         }));
 
         it('should handle special characters correctly', fakeAsync(() => {
@@ -133,7 +134,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement(specialChars, input);
             tick(500);
 
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: specialChars });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith(specialChars);
         }));
     });
 
