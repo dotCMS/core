@@ -26,6 +26,7 @@ import {
     DotCMSContentType,
     DotPagination
 } from '@dotcms/dotcms-models';
+import { DotMultiSelectFilterComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -44,7 +45,13 @@ type DotContentDriveContentTypeFieldState = {
 
 @Component({
     selector: 'dot-content-drive-content-type-field',
-    imports: [MultiSelectModule, FormsModule, SkeletonModule, DotMessagePipe],
+    imports: [
+        MultiSelectModule,
+        FormsModule,
+        SkeletonModule,
+        DotMultiSelectFilterComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-content-drive-content-type-field.component.html',
     styleUrl: './dot-content-drive-content-type-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

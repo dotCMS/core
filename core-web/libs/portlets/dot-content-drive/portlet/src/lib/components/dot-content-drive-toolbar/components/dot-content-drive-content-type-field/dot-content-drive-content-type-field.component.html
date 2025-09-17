@@ -21,6 +21,9 @@
             {{ item.name }}
         </div>
     </ng-template>
+    <ng-template pTemplate="filter" let-context>
+        <dot-multiselect-filter />
+    </ng-template>
     <ng-template pTemplate="footer">
         @if (fechingItems()) {
             <div class="footer">

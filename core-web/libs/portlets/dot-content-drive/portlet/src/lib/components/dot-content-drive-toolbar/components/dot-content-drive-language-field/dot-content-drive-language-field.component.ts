@@ -10,6 +10,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotMultiSelectFilterComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
@@ -17,7 +18,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 
 @Component({
     selector: 'dot-content-drive-language-field',
-    imports: [MultiSelectModule, FormsModule, DotMessagePipe],
+    imports: [MultiSelectModule, FormsModule, DotMultiSelectFilterComponent, DotMessagePipe],
     templateUrl: './dot-content-drive-language-field.component.html',
     styleUrls: ['./dot-content-drive-language-field.component.scss']
 })
