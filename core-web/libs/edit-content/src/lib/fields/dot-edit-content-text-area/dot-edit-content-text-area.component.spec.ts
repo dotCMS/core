@@ -5,10 +5,14 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
-import { createFakeContentlet, createFakeTextAreaField } from '@dotcms/utils-testing';
+import {
+    createFakeContentlet,
+    createFakeTextAreaField,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { DotEditContentTextAreaComponent } from './dot-edit-content-text-area.component';
 import {
@@ -50,7 +54,11 @@ describe('DotEditContentTextAreaComponent', () => {
         providers: [
             mockProvider(DotLanguagesService),
             provideHttpClient(),
-            provideHttpClientTesting()
+            provideHttpClientTesting(),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
         ]
     });
 
