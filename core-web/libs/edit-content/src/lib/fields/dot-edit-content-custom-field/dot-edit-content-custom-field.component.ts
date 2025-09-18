@@ -76,6 +76,15 @@ export class DotEditContentCustomFieldComponent extends BaseFieldComponent imple
      * The iframe element to render the custom field in.
      */
     $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
+    /**
+     * Whether to show the label.
+     */
+    $showLabel = computed(() => {
+        const field = this.$field();
+        if (!field) return true;
+
+        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
+    });
 
     /**
      * The window object.
@@ -135,8 +144,7 @@ export class DotEditContentCustomFieldComponent extends BaseFieldComponent imple
      * The minimum height for the container based on whether the label is shown or not.
      */
     $minContainerHeight = computed(() => {
-        // return this.$showLabel() ? '40px' : '17px';
-        return '40px';
+        return this.$showLabel() ? '40px' : '17px';
     });
 
     /**
