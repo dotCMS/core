@@ -39,7 +39,7 @@ public class ContentTypeTest extends ContentTypeBaseTest {
                 .host(APILocator.systemHost())
                 .nextPersisted();
 
-        assertEquals("The content type host name should system stime name", Host.SYSTEM_HOST_SITENAME, type.folderPath());
+        assertEquals("The content type host site name should system host site", Host.SYSTEM_HOST_SITENAME, type.folderPath());
     }
 
     /**
