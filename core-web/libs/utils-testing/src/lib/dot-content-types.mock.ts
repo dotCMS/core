@@ -39,7 +39,7 @@ import {
     DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
-import { EMPTY_FIELD } from '@dotcms/utils';
+import { EMPTY_SYSTEM_FIELD } from '@dotcms/utils';
 
 export const dotcmsContentTypeBasicMock = {
     baseType: null,
@@ -70,7 +70,7 @@ export const dotcmsContentTypeBasicMock = {
 } as unknown as DotCMSContentType;
 
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
-    ...EMPTY_FIELD
+    ...EMPTY_SYSTEM_FIELD
 };
 
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
