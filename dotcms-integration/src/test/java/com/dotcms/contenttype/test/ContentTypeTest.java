@@ -2,7 +2,13 @@ package com.dotcms.contenttype.test;
 
 import static org.junit.Assert.assertEquals;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import org.junit.Test;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
@@ -15,7 +21,26 @@ import io.vavr.control.Try;
 
 public class ContentTypeTest extends ContentTypeBaseTest {
 
+    /**
+     * This tests that calling type.fields() returns valid fields and that calling type.fields(Class
+     * clazz) returns a subset of those fields
+     *
+     * @throws Exception
+     */
 
+    @Test
+    public void test_content_type_living_in_system_host() throws Exception {
+
+        final String name = "test"+ UUID.randomUUID().toString();
+        ContentType type = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.FORM)
+                .name(name)
+                .velocityVarName(name)
+                .host(APILocator.systemHost())
+                .nextPersisted();
+
+        assertEquals("The content type host name should system stime name", Host.SYSTEM_HOST_SITENAME, type.folderPath());
+    }
 
     /**
      * This tests that calling type.fields() returns valid fields and that calling type.fields(Class

@@ -18,6 +18,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -350,15 +351,19 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
               final String hostName =
                       UUIDUtil.isUUID(host) ?
                               hostAPI.find(host, APILocator.systemUser(), false).getHostname() :
-                              Host.SYSTEM_HOST.equals(host)?
-                                                     Host.SYSTEM_HOST_SITENAME: hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+                              resolveHostNameOrSystemHost(host, hostAPI);
               final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
               return String.format("%s%s%s", hostName, StringPool.COLON, path);
             }
     ).getOrNull();
   }
 
-  /**
+    private static String resolveHostNameOrSystemHost(final String host, final HostAPI hostAPI) throws DotDataException, DotSecurityException {
+        return Host.SYSTEM_HOST.equals(host) ?
+                Host.SYSTEM_HOST_SITENAME : hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+    }
+
+    /**
    * The code below serves as
    * @return
    */
