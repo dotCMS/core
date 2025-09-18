@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -95,6 +96,16 @@ public interface LanguageAPI {
 	 * @return
 	 */
 	public Language getLanguage(long id);
+
+    /**
+     * Returns a Language by its ID or ISO code.
+     *
+     * @param id The Language ID or ISO code.
+     *
+     * @return An Optional containing the requested {@link Language}, or an empty Optional if no
+     * Language matches the specific ID/ISO code.
+     */
+    Optional<Language> getLanguageByIdOrIsoCode(final Object id);
 
 	/**
 	 * 
