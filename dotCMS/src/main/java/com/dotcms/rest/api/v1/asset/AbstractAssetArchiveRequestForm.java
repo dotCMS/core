@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.asset;
 
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -10,17 +9,17 @@ import org.immutables.value.Value;
 
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonSerialize(as = AssetInfoRequestForm.class)
-@JsonDeserialize(as = AssetInfoRequestForm.class)
-@Schema(description = "Asset information request form")
-public interface AbstractAssetInfoRequestForm {
+@JsonSerialize(as = AssetArchiveRequestForm.class)
+@JsonDeserialize(as = AssetArchiveRequestForm.class)
+@Schema(description = "Request form for archiving an asset to make it inactive while preserving it")
+public interface AbstractAssetArchiveRequestForm extends AbstractAssetInfoRequestForm {
 
+    @Override
     @JsonProperty("assetPath")
     @Schema(
-        description = "Full path to the asset (file or folder) including site and folder structure. Folders must end-up with `/`",
-        example = "//demo.dotcms.com/my-new-folder/",
+        description = "Full path to the asset (file) to be archived",
+        example = "//demo.dotcms.com/temp/temp-presentation.pptx",
         requiredMode = RequiredMode.REQUIRED
     )
     String assetPath();
-
 }

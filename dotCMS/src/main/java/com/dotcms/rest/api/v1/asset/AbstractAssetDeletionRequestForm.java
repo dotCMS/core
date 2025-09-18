@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.asset;
 
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -10,17 +9,17 @@ import org.immutables.value.Value;
 
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonSerialize(as = AssetInfoRequestForm.class)
-@JsonDeserialize(as = AssetInfoRequestForm.class)
-@Schema(description = "Asset information request form")
-public interface AbstractAssetInfoRequestForm {
+@JsonSerialize(as = AssetDeletionRequestForm.class)
+@JsonDeserialize(as = AssetDeletionRequestForm.class)
+@Schema(description = "Request form for deleting an asset permanently from the system")
+public interface AbstractAssetDeletionRequestForm extends AbstractAssetInfoRequestForm {
 
+    @Override
     @JsonProperty("assetPath")
     @Schema(
-        description = "Full path to the asset (file or folder) including site and folder structure. Folders must end-up with `/`",
-        example = "//demo.dotcms.com/my-new-folder/",
+        description = "Full path to the asset (file) to be deleted permanently",
+        example = "//demo.dotcms.com/uploads/old-document.pdf",
         requiredMode = RequiredMode.REQUIRED
     )
     String assetPath();
-
 }

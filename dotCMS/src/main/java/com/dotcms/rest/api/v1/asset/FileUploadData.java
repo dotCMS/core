@@ -2,28 +2,43 @@ package com.dotcms.rest.api.v1.asset;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
 /**
- * Assets Request Form is a json representation of a request to get assets
+ * File upload form data for multipart/form-data requests
  */
+@Schema(description = "File upload form data with asset path and optional details")
 public class FileUploadData {
 
     @FormDataParam("file")
+    @Schema(description = "File input stream to upload", required = true)
     private InputStream fileInputStream;
 
     @FormDataParam("file")
+    @Schema(description = "File content disposition information", hidden = true)
     private FormDataContentDisposition contentDisposition;
 
     @FormDataParam("assetPath")
+    @Schema(
+        description = "Full path where the asset should be stored including site and folder structure",
+        example = "//demo.dotcms.com/application/assets/my-file.pdf",
+        required = true
+    )
     private String assetPath;
 
     @FormDataParam("detail")
+    @Schema(
+        description = "JSON string containing file metadata and additional details",
+        example = "{\"title\":\"My Document\",\"description\":\"Important document\",\"tags\":[\"document\",\"important\"]}",
+        required = false
+    )
     private String jsonDetail;
 
     @FormDataParam("detail")
+    @Schema(description = "Parsed file upload detail object", hidden = true)
     private FileUploadDetail detail;
 
     public InputStream getFileInputStream() {

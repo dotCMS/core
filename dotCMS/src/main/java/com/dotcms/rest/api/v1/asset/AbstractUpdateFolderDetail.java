@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.asset;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.swagger.v3.oas.annotations.media.Schema;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -10,6 +11,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = UpdateFolderDetail.class)
 @JsonDeserialize(as = UpdateFolderDetail.class)
+@Schema(description = "Folder update details including all base folder properties plus optional name change")
 public interface AbstractUpdateFolderDetail extends AbstractFolderDetail {
 
     /**
@@ -18,6 +20,11 @@ public interface AbstractUpdateFolderDetail extends AbstractFolderDetail {
      */
     @Nullable
     @JsonProperty("name")
+    @Schema(
+        description = "New name for the folder. If provided, the folder will be renamed. The name is derived from the path if not specified",
+        example = "my-renamed-folder",
+        required = false
+    )
     String name();
 
 }
