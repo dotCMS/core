@@ -101,6 +101,7 @@
 
         .p-multiselect-close {
             @extend #field-panel-icon-close;
+            display: none;
         }
     }
 
