@@ -1,8 +1,11 @@
 import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
+import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Dropdown } from 'primeng/dropdown';
+
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentSelectFieldComponent } from './dot-edit-content-select-field.component';
 
@@ -10,9 +13,19 @@ import {
     SELECT_FIELD_BOOLEAN_MOCK,
     SELECT_FIELD_TEXT_MOCK,
     SELECT_FIELD_INTEGER_MOCK,
-    SELECT_FIELD_FLOAT_MOCK,
-    MockFormComponent
+    SELECT_FIELD_FLOAT_MOCK
 } from '../../utils/mocks';
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
 
 describe('DotEditContentSelectFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentSelectFieldComponent, MockFormComponent>;

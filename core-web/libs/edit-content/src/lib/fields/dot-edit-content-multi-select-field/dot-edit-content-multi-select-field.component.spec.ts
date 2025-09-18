@@ -1,12 +1,26 @@
 import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
 
+import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { MultiSelect, MultiSelectItem } from 'primeng/multiselect';
 
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
 import { DotEditContentMultiSelectFieldComponent } from './dot-edit-content-multi-select-field.component';
 
-import { MULTI_SELECT_FIELD_MOCK, MockFormComponent } from '../../utils/mocks';
+import { MULTI_SELECT_FIELD_MOCK } from '../../utils/mocks';
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
 
 // https://jestjs.io/docs/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
 Object.defineProperty(window, 'matchMedia', {

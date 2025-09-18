@@ -1,12 +1,26 @@
 import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
 
+import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Checkbox } from 'primeng/checkbox';
 
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
 import { DotEditContentCheckboxFieldComponent } from './dot-edit-content-checkbox-field.component';
 
-import { CHECKBOX_FIELD_MOCK, MockFormComponent } from '../../utils/mocks';
+import { CHECKBOX_FIELD_MOCK } from '../../utils/mocks';
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
 
 describe('DotEditContentCheckboxFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentCheckboxFieldComponent, MockFormComponent>;

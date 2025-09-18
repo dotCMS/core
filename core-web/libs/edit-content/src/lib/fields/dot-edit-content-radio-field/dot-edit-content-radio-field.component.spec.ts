@@ -1,8 +1,11 @@
 import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
+import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { RadioButton } from 'primeng/radiobutton';
+
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentRadioFieldComponent } from './dot-edit-content-radio-field.component';
 
@@ -10,9 +13,19 @@ import {
     RADIO_FIELD_BOOLEAN_MOCK,
     RADIO_FIELD_FLOAT_MOCK,
     RADIO_FIELD_INTEGER_MOCK,
-    RADIO_FIELD_TEXT_MOCK,
-    MockFormComponent
+    RADIO_FIELD_TEXT_MOCK
 } from '../../utils/mocks';
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
 
 describe('DotEditContentRadioFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentRadioFieldComponent, MockFormComponent>;

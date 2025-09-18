@@ -1,13 +1,27 @@
 import { SpectatorHost, createHostFactory, byTestId } from '@ngneat/spectator';
 
+import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
 import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 
-import { MockFormComponent, TEXT_FIELD_MOCK } from '../../utils/mocks';
+import { TEXT_FIELD_MOCK } from '../../utils/mocks';
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
 
 describe('DotEditContentTextFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentTextFieldComponent, MockFormComponent>;

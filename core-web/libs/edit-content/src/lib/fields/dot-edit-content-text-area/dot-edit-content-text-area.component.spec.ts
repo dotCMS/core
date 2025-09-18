@@ -2,9 +2,11 @@ import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngnea
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotLanguagesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { createFakeContentlet, createFakeTextAreaField } from '@dotcms/utils-testing';
 
@@ -20,12 +22,25 @@ const TEXT_AREA_FIELD_MOCK = createFakeTextAreaField({
     variable: 'someTextArea'
 });
 
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
+}
+
 describe('DotEditContentTextAreaComponent', () => {
-    let spectator: SpectatorHost<DotEditContentTextAreaComponent>;
+    let spectator: SpectatorHost<DotEditContentTextAreaComponent, MockFormComponent>;
     let textArea: Element;
 
     const createHost = createHostFactory({
         component: DotEditContentTextAreaComponent,
+        host: MockFormComponent,
         imports: [ReactiveFormsModule],
         detectChanges: false,
         componentMocks: [

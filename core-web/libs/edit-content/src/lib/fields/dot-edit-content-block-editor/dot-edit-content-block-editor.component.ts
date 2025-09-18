@@ -10,11 +10,6 @@ import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-ca
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseFieldComponent } from '../shared/base-field.component';
 
-/**
- * JSON field editor component that uses Monaco Editor for JSON content editing.
- * Uses DotEditContentMonacoEditorControl for editor functionality with JSON language forced.
- * Supports language variable insertion through DotLanguageVariableSelectorComponent.
- */
 @Component({
     selector: 'dot-edit-content-block-editor',
     imports: [

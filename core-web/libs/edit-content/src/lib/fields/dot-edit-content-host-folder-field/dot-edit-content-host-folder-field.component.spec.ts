@@ -2,26 +2,35 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { SpectatorHost, createHostFactory, mockProvider, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import {
-    TREE_SELECT_SITES_MOCK,
-    TREE_SELECT_MOCK,
-    HOST_FOLDER_TEXT_MOCK,
-    MockFormComponent
-} from '../../utils/mocks';
+import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK, HOST_FOLDER_TEXT_MOCK } from '../../utils/mocks';
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
 
 describe('DotEditContentHostFolderFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentHostFolderFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof HostFolderFiledStore>;
     let service: SpyObject<DotEditContentService>;
+    let hostFormControl: FormControl;
 
     const createHost = createHostFactory({
         component: DotEditContentHostFolderFieldComponent,
@@ -54,6 +63,9 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         );
         store = spectator.inject(HostFolderFiledStore, true);
         service = spectator.inject(DotEditContentService);
+        hostFormControl = spectator.hostComponent.formGroup.get(
+            HOST_FOLDER_TEXT_MOCK.variable
+        ) as FormControl;
         mockMatchMedia();
     });
 
@@ -88,7 +100,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     describe('The init value with the root path', () => {
         it('should show a root path', fakeAsync(() => {
             const nodeSelected = TREE_SELECT_SITES_MOCK[0];
-            spectator.hostComponent.setValue(null);
+            hostFormControl.setValue(null);
             spectator.detectChanges();
 
             store.chooseNode({
@@ -97,14 +109,14 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             });
             spectator.detectChanges();
 
-            expect(spectator.hostComponent.getValue()).toBe('demo.dotcms.com:/');
+            expect(hostFormControl.value).toBe('demo.dotcms.com:/');
             expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);
             expect(spectator.component.$treeSelect().value.label).toBe(nodeSelected.label);
         }));
 
         it('should show a path selected with the two levels', fakeAsync(() => {
             const nodeSelected = TREE_SELECT_MOCK[0].children[0].children[0];
-            spectator.hostComponent.setValue(null);
+            hostFormControl.setValue(null);
             spectator.detectChanges();
 
             service.buildTreeByPaths.mockReturnValue(
@@ -119,7 +131,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             });
             spectator.detectChanges();
 
-            expect(spectator.hostComponent.getValue()).toBe('demo.dotcms.com:/level1/child1/');
+            expect(hostFormControl.value).toBe('demo.dotcms.com:/level1/child1/');
             expect(spectator.component.pathControl.value.key).toBe(nodeSelected.key);
             expect(spectator.component.$treeSelect().value.label).toBe(nodeSelected.label);
         }));
@@ -135,7 +147,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(spectator.component.pathControl.disabled).toBe(false);
 
             // Disable the main form control
-            spectator.hostComponent.setDisabledState(true);
+            hostFormControl.disable();
             tick(50);
 
             // Path control should be disabled automatically
@@ -147,12 +159,12 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             tick(50);
 
             // Start with disabled controls
-            spectator.hostComponent.setDisabledState(true);
+            hostFormControl.disable();
             tick(50);
             expect(spectator.component.pathControl.disabled).toBe(true);
 
             // Enable the main form control
-            spectator.hostComponent.setDisabledState(false);
+            hostFormControl.enable();
             tick(50);
 
             // Path control should be enabled automatically
@@ -171,7 +183,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(spectator.component.pathControl.disabled).toBe(false);
 
             // Disable the main form control
-            spectator.hostComponent.setDisabledState(true);
+            hostFormControl.disable();
             tick(50);
             spectator.detectChanges();
 
