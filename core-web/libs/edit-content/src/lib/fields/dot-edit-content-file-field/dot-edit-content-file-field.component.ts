@@ -465,7 +465,7 @@ export class DotEditContentFileFieldComponent
     }
 
     readonly handleValueChange = signalMethod<string>((value) => {
-        if (!this.onChange || !value) {
+        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
             return;
         }
 

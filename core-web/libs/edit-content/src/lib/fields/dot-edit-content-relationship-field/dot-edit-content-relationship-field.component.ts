@@ -325,7 +325,7 @@ export class DotEditContentRelationshipFieldComponent extends BaseFieldComponent
      * @param value - The value to update.
      */
     readonly updateValueField = signalMethod<string>((value) => {
-        if (!value || !this.onChange || !this.onTouched) {
+        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
             return;
         }
 

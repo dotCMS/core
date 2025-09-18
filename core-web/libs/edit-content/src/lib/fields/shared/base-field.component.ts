@@ -17,7 +17,7 @@ import { filter } from 'rxjs/operators';
  * Note: Child components must define the $field input property.
  */
 export abstract class BaseFieldComponent implements ControlValueAccessor {
-    protected ngControl = inject(NgControl, { self: true, optional: true });
+    protected ngControl = inject(NgControl, { self: true });
     protected changeDetectorRef = inject(ChangeDetectorRef);
     protected destroyRef = inject(DestroyRef);
 

@@ -89,7 +89,7 @@ export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent i
     }
 
     readonly handlePathToSaveChange = signalMethod<string>((pathToSave) => {
-        if (!this.onChange || !pathToSave) {
+        if (pathToSave === null || pathToSave === undefined || !this.onChange || !this.onTouched) {
             return;
         }
 
