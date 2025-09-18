@@ -350,7 +350,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
               final String hostName =
                       UUIDUtil.isUUID(host) ?
                               hostAPI.find(host, APILocator.systemUser(), false).getHostname() :
-                              hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+                              Host.SYSTEM_HOST.equals(host)?
+                                                     Host.SYSTEM_HOST_SITENAME: hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
               final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
               return String.format("%s%s%s", hostName, StringPool.COLON, path);
             }
