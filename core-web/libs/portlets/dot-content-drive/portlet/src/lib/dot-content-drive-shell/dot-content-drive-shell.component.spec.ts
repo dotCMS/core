@@ -26,7 +26,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DEFAULT_PAGINATION } from '../shared/constants';
+import { DEFAULT_PAGINATION, DIALOG_TYPE } from '../shared/constants';
 import {
     MOCK_ITEMS,
     MOCK_ROUTE,
@@ -96,7 +96,10 @@ describe('DotContentDriveShellComponent', () => {
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
                     patchFilters: jest.fn(),
-                    contextMenu: jest.fn().mockReturnValue(null)
+                    contextMenu: jest.fn().mockReturnValue(null),
+                    dialog: jest.fn().mockReturnValue(undefined),
+                    setDialog: jest.fn(),
+                    resetDialog: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -235,6 +238,22 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(treeSelector).toBeTruthy();
         });
+
+        it('should have a dialog when dialog is set', () => {
+            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+
+            const dialog = spectator.query('[data-testid="dialog"]');
+            expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+        });
+
+        it('should not have a dialog when dialog is not set', () => {
+            store.dialog.mockReturnValue(undefined);
+            spectator.detectChanges();
+
+            const dialog = spectator.query('[data-testid="dialog"]');
+            expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
+        });
     });
 
     describe('onPaginate', () => {
@@ -314,6 +333,19 @@ describe('DotContentDriveShellComponent', () => {
                 field: 'modDate',
                 order: DotContentDriveSortOrder.ASC
             });
+        });
+    });
+
+    describe('onHideDialog', () => {
+        it('should reset the dialog state', () => {
+            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+
+            const dialog = spectator.query('[data-testid="dialog"]');
+            dialog.dispatchEvent(new Event('visibleChange'));
+            spectator.detectChanges();
+
+            expect(store.resetDialog).toHaveBeenCalled();
         });
     });
 });

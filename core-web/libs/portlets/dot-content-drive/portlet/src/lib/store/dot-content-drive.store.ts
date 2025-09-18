@@ -17,7 +17,8 @@ import { DotContentSearchService } from '@dotcms/data-access';
 import { DotContentDriveItem, ESContent } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { withContextMenu } from './features/withContextMenu';
+import { withContextMenu } from './features/context-menu/withContextMenu';
+import { withDialog } from './features/dialog/withDialog';
 
 import {
     DEFAULT_PAGINATION,
@@ -205,5 +206,6 @@ export const DotContentDriveStore = signalStore(
             }
         };
     }),
-    withContextMenu()
+    withContextMenu(),
+    withDialog()
 );

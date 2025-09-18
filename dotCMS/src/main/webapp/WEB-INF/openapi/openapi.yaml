@@ -2809,88 +2809,12 @@ paths:
           description: default response
       tags:
       - AI
-  /v1/analytics/content:
-    post:
-      description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using Path Parameters instead of a CubeJS JSON\
-        \ query. This helps abstract the complexity of the underlying JSON format\
-        \ for users that need an easier way to query for specific data."
-      operationId: postContentAnalyticsSimpleQuery
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
-                type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                measures: request.count request.totalSessions
-                dimensions: request.host request.whatAmI request.url
-                timeDimensions: request.createdAt:day:Last month
-                filters: "request.totalRequest gt 0:request.whatAmI contains PAGE,FILE"
-                order: request.count asc:request.createdAt asc
-                limit: 15
-                offset: 0
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "401":
-          description: Unauthorized
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Returns Content Analytics data
-      tags:
-      - Content Analytics
-  /v1/analytics/content/_query:
-    post:
-      description: Returns information of specific dotCMS objects whose health and
-        engagement data is tracked. This method takes a specific less verbose JSON
-        format to query the data.
-      operationId: postContentAnalyticsQuery
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/QueryForm"
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                query:
-                  measures:
-                  - request.count
-                  order: request.count DESC
-                  dimensions:
-                  - request.url
-                  - request.pageId
-                  - request.pageTitle
-                  filters: "request.whatAmI = ['PAGE']"
-                  limit: 100
-                  offset: 1
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "403":
-          description: Forbidden
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Retrieve Content Analytics data
-      tags:
-      - Content Analytics
   /v1/analytics/content/_query/cube:
     post:
       description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using a CubeJS JSON query."
-      operationId: postContentAnalyticsQuery_1
+        \ engagement data is tracked, using a CubeJS JSON query. **Note:** This endpoint\
+        \ is in **beta** and may change."
+      operationId: postContentAnalyticsQuery
       requestBody:
         content:
           application/json:
@@ -2913,12 +2837,13 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Retrieve Content Analytics data
+      summary: Retrieve Content Analytics data **(Beta)**
       tags:
       - Content Analytics
   /v1/analytics/content/event:
     post:
-      description: receives a custom event payload and fires the event to the collectors
+      description: receives a custom event payload and fires the event to the collectors.
+        **Note:** This endpoint is in **beta** and may change.
       operationId: fireUserCustomEvent
       requestBody:
         content:
@@ -2941,7 +2866,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire an user custom event.
+      summary: Fire an user custom event **(Beta)**.
       tags:
       - Content Analytics
   /v1/analytics/content/sitekey/generate/{siteId}:
@@ -18311,31 +18236,6 @@ components:
           $ref: "#/components/schemas/PushPublishBean"
         pushPublishBean:
           $ref: "#/components/schemas/PushPublishBean"
-    AnalyticsQuery:
-      type: object
-      properties:
-        dimensions:
-          type: array
-          items:
-            type: string
-          uniqueItems: true
-        filters:
-          type: string
-        limit:
-          type: integer
-          format: int64
-        measures:
-          type: array
-          items:
-            type: string
-          uniqueItems: true
-        offset:
-          type: integer
-          format: int64
-        order:
-          type: string
-        timeDimensions:
-          type: string
     Announcement:
       type: object
       properties:
@@ -22752,11 +22652,6 @@ components:
         quantile:
           type: number
           format: double
-    QueryForm:
-      type: object
-      properties:
-        query:
-          $ref: "#/components/schemas/AnalyticsQuery"
     RadioField:
       type: object
       allOf:
