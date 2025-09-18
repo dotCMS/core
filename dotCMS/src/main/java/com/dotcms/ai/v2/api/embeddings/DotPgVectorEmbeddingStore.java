@@ -221,8 +221,8 @@ public class DotPgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
             "SELECT e.id AS emb_id, %s AS score, " +
                     "m.id AS metadata_id, m.identifier, m.language, m.host, m.variant, m.content_type, " +
                     "m.index_name, m.title, m.extracted_text " +
-                    "FROM dot_embeddings e " +
-                    "JOIN dot_content_metadata m ON m.id = e.metadata_id " +
+                    "FROM dot_ai_embeddings e " +
+                    "JOIN dot_ai_content_metadata m ON m.id = e.metadata_id " +
                     "WHERE m.index_name = ? ";
 
     private static final String ORDER_LIMIT = " ORDER BY score DESC LIMIT ? OFFSET ? ";
@@ -243,17 +243,17 @@ public class DotPgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
             final String scoreExpr = scoreExpression(operator, "e.embedding", ":query");
             String sql = String.format(BASE_SELECT, scoreExpr) + ORDER_LIMIT;
             final DotConnect dc = new DotConnect();
+            // Named param :query not supported by DotConnect; inlining literal vector:
+            // Workaround: replace ':query' in SQL with the literal before setSQL
+            final String queryVecLiteral = PgVectorSql.toVectorLiteral(toFloatArray(request.queryEmbedding()));
+            sql = sql.replace(":query", "CAST('" + queryVecLiteral + "' AS vector)");
             dc.setSQL(sql);
             // Param 1: index name
             dc.addParam(indexName);
             // Param 2: limit
             dc.addParam(maxResults);
             dc.addParam(offset);
-            // Named param :query not supported by DotConnect; inlining literal vector:
-            // Workaround: replace ':query' in SQL with the literal before setSQL
-            final String queryVecLiteral = PgVectorSql.toVectorLiteral(toFloatArray(request.queryEmbedding()));
-            sql = sql.replace(":query", "CAST('" + queryVecLiteral + "' AS vector)");
-            dc.setSQL(sql);
+            Logger.debug(this,  "Embedding sql: " + sql);
 
             final List<Map<String, Object>> rows = dc.loadObjectResults(db); // extract the similar info from our db
             final List<EmbeddingMatch<TextSegment>> matches = new ArrayList<>();

@@ -137,8 +137,8 @@ public class RagResource {
                 .embeddingModel(embeddingModel)
                 .defaultLimit(8) // check all these values
                 .maxLimit(64)
-                .overfetchFactor(3)
-                .defaultThreshold(0.75)
+                .overfetchFactor(3) // todo: what is this
+                .defaultThreshold(0.75) // todo: what is this
                 .build();
         final RetrievalQuery.Builder retrievalQueryBuilder = RetrievalQuery.builder();
         retrievalQueryBuilder.prompt(ragSearchRequest.getQuery());
