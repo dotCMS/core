@@ -4,11 +4,13 @@ import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     computed,
     DestroyRef,
     ElementRef,
     EventEmitter,
+    forwardRef,
     inject,
     Input,
     OnDestroy,
@@ -19,6 +21,7 @@ import {
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -59,7 +62,6 @@ import { getUiMessage } from './utils/binary-field-utils';
 
 import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
-import { BaseFieldComponent } from '../shared/base-field.component';
 
 export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions = {
     ...DEFAULT_MONACO_CONFIG,
@@ -94,20 +96,26 @@ type SystemOptionsType = {
         DotBinaryFieldEditImageService,
         DotBinaryFieldStore,
         DotLicenseService,
-        DotBinaryFieldValidatorService
+        DotBinaryFieldValidatorService,
+        DotAiService,
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentBinaryFieldComponent)
+        }
     ],
     templateUrl: './dot-edit-content-binary-field.component.html',
     styleUrls: ['./dot-edit-content-binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentBinaryFieldComponent
-    extends BaseFieldComponent
-    implements OnInit, AfterViewInit, OnDestroy
+    implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
 {
     readonly #dotBinaryFieldStore = inject(DotBinaryFieldStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotBinaryFieldEditImageService = inject(DotBinaryFieldEditImageService);
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
+    readonly #cd = inject(ChangeDetectorRef);
     readonly #dotAiService = inject(DotAiService);
     readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
@@ -156,6 +164,8 @@ export class DotEditContentBinaryFieldComponent
             ...this.parseCustomMonacoOptions(field?.fieldVariables)
         };
     });
+    private onChange: (value: string) => void;
+    private onTouched: () => void;
     private tempId = '';
 
     systemOptions = signal<SystemOptionsType>({
@@ -165,7 +175,6 @@ export class DotEditContentBinaryFieldComponent
     });
 
     constructor() {
-        super();
         this.#dotMessageService.init();
     }
 
@@ -207,10 +216,6 @@ export class DotEditContentBinaryFieldComponent
             .subscribe((temp) => this.#dotBinaryFieldStore.setFileFromTemp(temp));
 
         this.#dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
-
-        this.statusChanges$.subscribe(() => {
-            this.changeDetectorRef.detectChanges();
-        });
     }
 
     ngAfterViewInit() {
@@ -226,12 +231,20 @@ export class DotEditContentBinaryFieldComponent
             fieldVariable: this.variable
         });
 
-        this.changeDetectorRef.detectChanges();
+        this.#cd.detectChanges();
     }
 
     writeValue(value: string): void {
         this.value = value;
         this.#dotBinaryFieldStore.setValue(value);
+    }
+
+    registerOnChange(fn: (value: string) => void) {
+        this.onChange = fn;
+    }
+
+    registerOnTouched(fn: () => void) {
+        this.onTouched = fn;
     }
 
     setDisabledState(isDisabled: boolean): void {
@@ -442,7 +455,7 @@ export class DotEditContentBinaryFieldComponent
         this.#dotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.#dotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
         this.systemOptions.set(JSON.parse(systemOptions));
-        this.changeDetectorRef.detectChanges();
+        this.#cd.detectChanges();
     }
 
     /**

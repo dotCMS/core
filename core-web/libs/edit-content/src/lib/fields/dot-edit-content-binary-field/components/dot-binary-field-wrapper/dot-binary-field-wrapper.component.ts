@@ -40,4 +40,11 @@ export class DotBinaryFieldWrapperComponent extends BaseFieldComponent {
     writeValue(_: unknown): void {
         // Do nothing
     }
+
+    constructor() {
+        super();
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
+        });
+    }
 }
