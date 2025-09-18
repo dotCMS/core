@@ -19,21 +19,24 @@ const MOCK_LANGUAGES: DotLanguage[] = [
         languageCode: 'en',
         countryCode: 'US',
         language: 'English',
-        country: 'United States'
+        country: 'United States',
+        isoCode: 'en-US'
     }),
     createFakeLanguage({
         id: 2,
         languageCode: 'es',
         countryCode: 'ES',
         language: 'Spanish',
-        country: 'Spain'
+        country: 'Spain',
+        isoCode: 'es-ES'
     }),
     createFakeLanguage({
         id: 3,
         languageCode: 'fr',
         countryCode: 'FR',
         language: 'French',
-        country: 'France'
+        country: 'France',
+        isoCode: 'fr-FR'
     })
 ];
 

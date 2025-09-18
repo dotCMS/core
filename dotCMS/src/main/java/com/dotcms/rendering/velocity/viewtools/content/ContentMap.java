@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -8,6 +9,7 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -197,7 +199,7 @@ public class ContentMap implements Serializable {
 	 */
 	private Object get(final String fieldVariableName, final Boolean parseVelocity) {
 		try {
-			final boolean respectFrontEndRoles = PageMode.get(Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms;
+			final boolean respectFrontEndRoles = isRespectFrontEndRoles();
 			Object ret = null;
 			Field f = retriveField(fieldVariableName);
 			if(f==null){
@@ -428,7 +430,23 @@ public class ContentMap implements Serializable {
 		}
 	}
 
-	/***
+    private boolean isRespectFrontEndRoles() {
+
+        // first try
+        HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (null == request) {
+
+            request = (HttpServletRequest) context.get("request");
+            // check if the request from context is recycled
+            request = null != request && RequestUtil.INSTANCE.isRecycledRequest(request)?
+                    null:  // if it is recycled we discard the requst
+                    request;
+        }
+
+        return  PageMode.get(request).respectAnonPerms;
+    }
+
+    /***
 	 * Given a relationship field, returns a ContentMap object if this side of the relationship
 	 * allows only one (see {@link ContentletRelationshipRecords#doesAllowOnlyOne()}),
 	 * according to the relationship cardinality. Otherwise, a list of ContentMap
