@@ -17,8 +17,8 @@ public interface AbstractAssetInfoRequestForm {
 
     @JsonProperty("assetPath")
     @Schema(
-        description = "Full path to the asset (file or folder) including site and folder structure. Folders must end-up with `/`",
-        example = "//demo.dotcms.com/my-new-folder/",
+        description = "Full path to the asset including site and folder structure.",
+        example = "//demo.dotcms.com/my-new-folder/important-presentation.ppt",
         requiredMode = RequiredMode.REQUIRED
     )
     String assetPath();
