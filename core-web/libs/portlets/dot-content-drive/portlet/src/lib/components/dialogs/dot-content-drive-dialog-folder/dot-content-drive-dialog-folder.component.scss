@@ -1,0 +1,35 @@
+:host {
+    display: block;
+    min-height: 36rem; //576px
+    min-width: 36rem; //768px
+
+    ::ng-deep {
+        .p-dropdown {
+            display: flex;
+        }
+    }
+}
+
+
+.folder-dialog-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.folder-dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+
+
+.folder-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}

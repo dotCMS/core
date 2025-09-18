@@ -1,0 +1,85 @@
+<p-tabView [formGroup]="folderForm">
+    <p-tabPanel header="General" class="folder-dialog-content">
+            <div class="folder-dialog-field">
+                <label for="title">Title</label>
+                <input
+                    pInputText
+                    id="title"
+                    aria-describedby="title-help"
+                    formControlName="title"
+                >
+
+            </div>
+
+            <div class="folder-dialog-field">
+                <label for="url">URL</label>
+                <input
+                    pInputText
+                    id="url"
+                    aria-describedby="url-help"
+                    formControlName="url"
+                >
+            </div>
+    </p-tabPanel>
+    <!-- TODO: Add translations on both tabs headers -->
+    <p-tabPanel header="Advanced Configuration" class="content">
+        <div class="folder-dialog-field">
+            <label for="sortOrder">Sort Order</label>
+            <p-dropdown 
+                [options]="[]" 
+                [loading]="false"
+                id="sortOrder"
+                aria-describedby="sortOrder-help"
+                placeholder="Select a Sort Order"
+                formControlName="sortOrder"
+            />
+        </div>
+
+        <div class="folder-dialog-field">
+            <label for="allowedFileExtensions">Allowed File Extensions</label>
+            <input
+                pInputText
+                id="allowedFileExtensions"
+                aria-describedby="allowedFileExtensions-help"
+                formControlName="allowedFileExtensions"
+            >
+            <small id="allowedFileExtensions-help">Add a comma separated list, e.g. "*.jpg, *gif, *.bmp, *.png"</small>
+        </div>
+
+        <div class="folder-dialog-field">
+            <label for="defaultFileAssetType">Default File Asset Type</label>
+            <p-dropdown 
+                [options]="[]" 
+                [loading]="false"
+                id="defaultFileAssetType"
+                aria-describedby="defaultFileAssetType-help"
+                placeholder="Select a Default File Asset Type" 
+                formControlName="defaultFileAssetType"
+            />
+        </div>
+
+
+        <div class="folder-dialog-field">
+            <label for="showOnMenu">Show on Menu</label>
+            <p-inputSwitch 
+                id="showOnMenu"
+                aria-describedby="showOnMenu-help"  
+                formControlName="showOnMenu"
+            />
+        </div>
+
+    </p-tabPanel>
+</p-tabView>
+
+<div class="folder-dialog-footer">
+    <button pButton type="button" label="Cancel" class="p-button-outlined" ></button>
+    <button pButton type="button" label="Create" class="p-button-primary" (click)="createFolder()"></button>
+</div>
+
+<pre style="height: 200px; overflow-y: auto; position: absolute; bottom: 0; left: 0;"><code>
+    {{ folderForm.value | json }}
+    Path: {{ $currentPath() }}
+    Host: {{ $hostName() }}
+
+    Current site: {{ $currentSite() | json }}
+</code></pre>
