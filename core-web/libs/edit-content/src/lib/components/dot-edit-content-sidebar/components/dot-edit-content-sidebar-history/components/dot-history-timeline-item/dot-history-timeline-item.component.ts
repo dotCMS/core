@@ -72,6 +72,12 @@ export class DotHistoryTimelineItemComponent {
     $itemIndex = input<number>(0, { alias: 'itemIndex' });
 
     /**
+     * Whether this timeline item is currently active (being viewed)
+     * @readonly
+     */
+    $isActive = input<boolean>(false, { alias: 'isActive' });
+
+    /**
      * Event emitted when an action is triggered on the timeline item
      */
     actionTriggered = output<DotHistoryTimelineItemAction>();
@@ -81,7 +87,6 @@ export class DotHistoryTimelineItemComponent {
      * Contains static translations for menu labels
      */
     private readonly $labels = signal({
-        preview: this.dotMessageService.get('edit.content.sidebar.history.menu.preview'),
         restore: this.dotMessageService.get('edit.content.sidebar.history.menu.restore'),
         compare: this.dotMessageService.get('edit.content.sidebar.history.menu.compare'),
         delete: this.dotMessageService.get('edit.content.sidebar.history.menu.delete')
@@ -97,15 +102,6 @@ export class DotHistoryTimelineItemComponent {
         const item = this.$item();
 
         return [
-            // { // TODO: enable them as is implemented.
-            //     label: labels.preview,
-            //     disabled: true,
-            //     command: () =>
-            //         this.actionTriggered.emit({
-            //             type: DotHistoryTimelineItemActionType.PREVIEW,
-            //             item
-            //         })
-            // },
             {
                 label: labels.restore,
                 disabled: item.live,

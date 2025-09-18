@@ -1,3 +1,5 @@
+@let historicalVersionInode = $historicalVersionInode();
+
 <section role="region" aria-label="Content Version History">
     <dot-sidebar-accordion
         [initialActiveTab]="'versions'"
@@ -42,6 +44,13 @@
                                 <dot-history-timeline-item
                                     [item]="item"
                                     [itemIndex]="getRealIndex(item)"
+                                    [isActive]="historicalVersionInode === item.inode"
+                                    (click)="
+                                        onTimelineItemAction({
+                                            type: DotHistoryTimelineItemActionType.VIEW,
+                                            item
+                                        })
+                                    "
                                     (actionTriggered)="
                                         onTimelineItemAction($event)
                                     "></dot-history-timeline-item>

@@ -160,6 +160,14 @@ export class DotEditContentFormComponent implements OnInit {
     form!: FormGroup;
 
     /**
+     * Flag to track if form listener has been initialized to avoid multiple subscriptions
+     *
+     * @private
+     * @memberof DotEditContentFormComponent
+     */
+    private formListenerInitialized = false;
+
+    /**
      * Computed property that determines if the content type has only one tab.
      *
      * @memberof DotEditContentFormComponent
@@ -187,15 +195,37 @@ export class DotEditContentFormComponent implements OnInit {
 
     constructor() {
         /**
-         * Effect that enables or disables the form based on the loading state.
+         * Effect that reinitializes the form when contentlet changes (e.g., when viewing historical versions)
+         *
+         * This effect listens for changes in the contentlet and reinitializes the form
+         * to reflect the new content data.
+         */
+        effect(() => {
+            const contentlet = this.$store.contentlet();
+            const tabs = this.$store.tabs();
+
+            // Only reinitialize if we have both contentlet and tabs, and form exists
+            if (contentlet && tabs.length > 0 && this.form) {
+                this.initializeForm();
+                this.initializeFormListener();
+            }
+        });
+
+        /**
+         * Effect that enables or disables the form based on the loading state and historical view.
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
+            const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
+            const contentlet = this.$store.contentlet();
 
-            if (isLoading) {
-                this.form.disable();
-            } else {
-                this.form.enable();
+            // Only apply state changes if form exists
+            if (this.form && contentlet) {
+                if (isLoading || isViewingHistoricalVersion) {
+                    this.form.disable();
+                } else {
+                    this.form.enable();
+                }
             }
         });
 
@@ -228,14 +258,19 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Initializes a listener for form value changes.
+     * Only creates the listener once to avoid multiple subscriptions.
      *
      * @private
      * @memberof DotEditContentFormComponent
      */
     private initializeFormListener() {
-        this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((value) => {
-            this.onFormChange(value);
-        });
+        // Only initialize listener once
+        if (!this.formListenerInitialized) {
+            this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((value) => {
+                this.onFormChange(value);
+            });
+            this.formListenerInitialized = true;
+        }
     }
 
     /**
