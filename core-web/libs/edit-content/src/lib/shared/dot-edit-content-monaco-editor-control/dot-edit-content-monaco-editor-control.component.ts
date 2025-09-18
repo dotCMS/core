@@ -3,21 +3,22 @@ import {
     MonacoEditorLoaderService,
     MonacoEditorModule
 } from '@materia-ui/ngx-monaco-editor';
-import { signalMethod } from '@ngrx/signals';
 
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     inject,
     input,
     NgZone,
     OnDestroy,
+    OnInit,
     signal,
     viewChild
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
 
@@ -30,7 +31,6 @@ import {
     isMarkdown,
     isVelocity
 } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.utils';
-import { BaseFieldComponent } from '../../fields/shared/base-field.component';
 import {
     AvailableLanguageMonaco,
     DEFAULT_MONACO_CONFIG,
@@ -57,14 +57,24 @@ interface WindowWithMonaco extends Window {
     imports: [MonacoEditorModule, PaginatorModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-monaco-editor-control.component.html',
     styleUrl: './dot-edit-content-monaco-editor-control.component.scss',
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentMonacoEditorControlComponent
-    extends BaseFieldComponent
-    implements OnDestroy
-{
+export class DotEditContentMonacoEditorControlComponent implements OnDestroy, OnInit {
     #monacoLoaderService: MonacoEditorLoaderService = inject(MonacoEditorLoaderService);
     #ngZone: NgZone = inject(NgZone);
+    #destroyRef = inject(DestroyRef);
+    #controlContainer: ControlContainer = inject(ControlContainer);
+
+    /**
+     * Form control reference
+     */
+    #formControl: FormControl;
 
     /**
      * Holds a reference to the MonacoEditorComponent.
@@ -130,18 +140,21 @@ export class DotEditContentMonacoEditorControlComponent
      */
     #contentChangeDisposable: monaco.IDisposable | null = null;
 
-    /**
-     * A signal that holds the loading state of the Monaco editor.
-     * It starts as null and can be assigned a boolean value that will be used
-     * to determine if the Monaco editor is loaded.
-     */
-    $isMonacoLoaded = toSignal(this.#monacoLoaderService.isMonacoLoaded$, {
-        requireSync: true
-    });
+    ngOnInit() {
+        this.#monacoLoaderService.isMonacoLoaded$
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((isLoaded) => {
+                if (isLoaded) {
+                    this.registerVelocityLanguage();
 
-    constructor() {
-        super();
-        this.handleMonacoLoaded(this.$isMonacoLoaded);
+                    // Get reference to the parent form control
+                    const fieldName = this.$field().variable;
+                    const control = this.#controlContainer.control.get(fieldName);
+                    if (control instanceof FormControl) {
+                        this.#formControl = control;
+                    }
+                }
+            });
     }
 
     /**
@@ -274,21 +287,4 @@ export class DotEditContentMonacoEditorControlComponent
 
         this.setLanguage(detectedLanguage || AvailableLanguageMonaco.PlainText);
     }
-
-    writeValue(_: unknown): void {
-        // noop
-    }
-
-    /**
-     * Handles the loading state of the Monaco editor.
-     *
-     * @param {boolean} isLoaded - The loading state of the Monaco editor.
-     */
-    readonly handleMonacoLoaded = signalMethod<boolean>((isLoaded) => {
-        if (!isLoaded) {
-            return;
-        }
-
-        this.registerVelocityLanguage();
-    });
 }

@@ -108,6 +108,7 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const registerSpy = jest.spyOn(component as any, 'registerVelocityLanguage');
         spectator.detectChanges();
+        spectator.component.ngOnInit();
         expect(registerSpy).toHaveBeenCalled();
     });
 });
