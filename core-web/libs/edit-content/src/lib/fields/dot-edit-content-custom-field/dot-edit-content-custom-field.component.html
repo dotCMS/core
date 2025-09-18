@@ -71,6 +71,19 @@
             }
         </div>
     </dot-card-field-content>
+    @if (field.hint) {
+        <dot-card-field-footer>
+            <div class="flex justify-content-between align-items-center">
+                <div class="hint-message">
+                    <small
+                        [attr.data-testId]="'hint-' + field.variable"
+                        data-testid="calendar-field-hint">
+                        {{ field.hint }}
+                    </small>
+                </div>
+            </div>
+        </dot-card-field-footer>
+    }
 </dot-card-field>
 
 @if ($isFullscreen()) {

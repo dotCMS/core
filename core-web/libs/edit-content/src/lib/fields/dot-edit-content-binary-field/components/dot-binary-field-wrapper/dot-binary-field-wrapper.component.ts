@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -28,7 +28,7 @@ import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binar
     templateUrl: './dot-binary-field-wrapper.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldWrapperComponent extends BaseFieldComponent {
+export class DotBinaryFieldWrapperComponent extends BaseFieldComponent implements OnInit {
     $field = input.required<DotCMSContentTypeField>({
         alias: 'field'
     });
@@ -41,8 +41,7 @@ export class DotBinaryFieldWrapperComponent extends BaseFieldComponent {
         // Do nothing
     }
 
-    constructor() {
-        super();
+    ngOnInit(): void {
         this.statusChanges$.subscribe(() => {
             this.changeDetectorRef.detectChanges();
         });

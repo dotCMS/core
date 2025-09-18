@@ -26,6 +26,7 @@ import { CustomFieldConfig } from '../../models/dot-edit-content-custom-field.in
 import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { createCustomFieldConfig } from '../../utils/functions.util';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
 import { BaseFieldComponent } from '../shared/base-field.component';
@@ -44,7 +45,8 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DialogModule,
         ReactiveFormsModule,
         DotCardFieldComponent,
-        DotCardFieldContentComponent
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent
     ],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],

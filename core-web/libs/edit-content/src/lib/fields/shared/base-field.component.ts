@@ -58,16 +58,26 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
 
     get hasError(): boolean {
         const control = this.formControl;
+        if (!control) {
+            return false;
+        }
         return !!(control.invalid && control.touched);
     }
 
     get isRequired(): boolean {
         const control = this.formControl;
+        if (!control) {
+            return false;
+        }
         return control.hasValidator(Validators.required);
     }
 
     get isDisabled(): boolean {
-        return this.formControl.disabled;
+        const control = this.formControl;
+        if (!control) {
+            return false;
+        }
+        return control.disabled;
     }
 
     get formControl(): FormControl {

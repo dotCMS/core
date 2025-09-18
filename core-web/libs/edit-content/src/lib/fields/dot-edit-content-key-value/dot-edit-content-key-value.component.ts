@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, input, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, input } from '@angular/core';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotKeyValue, DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
@@ -21,15 +21,9 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     styleUrl: './dot-edit-content-key-value.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentKeyValueComponent extends BaseFieldComponent implements OnInit {
+export class DotEditContentKeyValueComponent extends BaseFieldComponent {
     $initialValue = signal<DotKeyValue[]>([]);
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
-    ngOnInit(): void {
-        this.statusChanges$.subscribe(() => {
-            this.changeDetectorRef.detectChanges();
-        });
-    }
 
     updateField(value: DotKeyValue[]): void {
         const keyValue = value.reduce((acc, item) => {

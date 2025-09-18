@@ -25,7 +25,6 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FieldType } from '../../models/dot-edit-content-field.type';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
-import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseFieldComponent } from '../shared/base-field.component';
 
@@ -56,7 +55,6 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         ReactiveFormsModule,
         DotMessagePipe,
         DotCardFieldComponent,
-        DotCardFieldLabelComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent
     ],
