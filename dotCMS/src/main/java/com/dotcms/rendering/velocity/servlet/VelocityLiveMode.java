@@ -38,6 +38,7 @@ import java.util.Date;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
@@ -218,7 +219,14 @@ public class VelocityLiveMode extends VelocityModeHandler {
     }
 
     User getUser() {
-        return PortalUtil.getUser(request);
+        User user = null;
+        final HttpSession session = request.getSession(false);
+
+        if (session != null) {
+            user = (User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+        }
+
+        return user;
     }
 
 
