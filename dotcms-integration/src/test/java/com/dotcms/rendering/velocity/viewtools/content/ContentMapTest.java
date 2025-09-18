@@ -10,6 +10,8 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rendering.velocity.RecycledHttpServletRequest;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -40,6 +42,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -481,7 +484,7 @@ public class ContentMapTest extends IntegrationTestBase {
         final User user = APILocator.systemUser();
         final boolean EDIT_OR_PREVIEW_MODE = true;
         final Host host = APILocator.systemHost();
-        final Context context = new VelocityContext(Map.of("request", new RecycledHttpServletRequest(null)));
+        final Context context = new VelocityContext(Map.of("request", new RecycledHttpServletRequest(new MockAttributeRequest(mock(HttpServletRequest.class)))));
         final ContentMap contentMap = new ContentMap(content, user, EDIT_OR_PREVIEW_MODE, host, context);
 
         final Object title = contentMap.get("title");
