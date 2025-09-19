@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpServletRequest;
@@ -91,7 +92,7 @@ public class CacheBlockDirective2 extends DotDirective {
 			node.jjtGetChild(2).render(localContext, content);
 			
 			savedMap.put(BlockDirectiveCache.PAGE_CONTENT_KEY, content.toString());
-			CacheLocator.getBlockDirectiveCache().add(key, savedMap, ttl);
+			CacheLocator.getBlockDirectiveCache().add(key, savedMap, Duration.ofSeconds(ttl));
 			
 		}else {
 		    savedMap.forEach(context::put);

@@ -1,13 +1,13 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -16,27 +16,30 @@ import com.dotmarketing.business.PageCacheParameters;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.nio.charset.StandardCharsets;
-import org.apache.velocity.context.Context;
+import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Date;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
-import java.io.*;
-import java.util.Optional;
+import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
 
@@ -72,8 +75,9 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     @Override
     public final void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
 
-        LicenseUtil.startLiveMode();
         try {
 
             // Find the current language
@@ -117,17 +121,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
             // Fire the page rules until we know we have permission.
             RulesEngine.fireRules(request, response, htmlPage, Rule.FireOn.EVERY_PAGE);
 
-            Logger.debug(this.getClass(), "Recording the ClickStream");
-            if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-                if (user != null) {
-
-                        ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
-                    
-                } else {
-                    ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
-                }
-            }
-
             //Validate if template is publish, if not remove page from cache
             if (!UtilMethods.isSet(APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(),APILocator.systemUser(),false).getInode())) {
                 CacheLocator.getVeloctyResourceCache()
@@ -136,36 +129,12 @@ public class VelocityLiveMode extends VelocityModeHandler {
             }
 
             // Begin page caching
-            String userId = (user != null) ? user.getUserId() : APILocator.getUserAPI().getAnonymousUser().getUserId();
-            String language = String.valueOf(langId);
-            String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-            String vanityUrl =  request.getAttribute(VANITY_URL_OBJECT)!=null ? ((CachedVanityUrl)request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId : "";
-            String queryString = request.getQueryString();
-            String persona = null;
-            Optional<Visitor> v = visitorAPI.getVisitor(request, false);
-            if (v.isPresent() && v.get().getPersona() != null) {
-                persona = v.get().getPersona().getKeyTag();
-            }
-            final String originalUrl = (String)  request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) ;
-            
-            
-            
             final Context context = VelocityUtil.getInstance().getContext(request, response);
 
-            final PageCacheParameters cacheParameters =
-                    new PageCacheParameters(userId,
-                                    language,
-                                    urlMap,
-                                    queryString,
-                                    persona,
-                                    originalUrl,
-                                    htmlPage.getInode(),
-                                    String.valueOf(htmlPage.getModDate()),
-                                    vanityUrl,
-                                    WebAPILocator.getVariantWebAPI().currentVariantId()
-                                    );
+            final PageCacheParameters cacheParameters = buildCacheParameters(langId, htmlPage);
             
             final boolean shouldCache = VelocityUtil.shouldPageCache(request, htmlPage);
+
             if(response.getHeader("Cache-Control")==null) {
                 // set cache control headers based on page cache
                 final String cacheControl = htmlPage.getCacheTTL() >= 0 ? "max-age=" +  htmlPage.getCacheTTL() : "no-cache";
@@ -189,8 +158,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                     ContentSecurityPolicyUtil.addHeader(response);
                 }
 
-                HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-                HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
 
                 this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
@@ -207,11 +175,48 @@ public class VelocityLiveMode extends VelocityModeHandler {
             }
         } finally {
             stringWriterLocal.get().getBuffer().setLength(0);
-            LicenseUtil.stopLiveMode();
         }
     }
 
 
+
+    /**
+     * Builds PageCacheParameters with all necessary cache keys for page caching.
+     *
+     * @param langId the language ID
+     * @param htmlPage the HTML page being served
+     * @return PageCacheParameters instance with all cache keys
+     */
+    private PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
+        String userId = (getUser() != null) ? getUser().getUserId() : "anonymous";
+        String language = String.valueOf(langId);
+        String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+        String vanityUrl = request.getAttribute(VANITY_URL_OBJECT) != null 
+            ? ((CachedVanityUrl) request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId 
+            : "";
+        String queryString = PageCacheParameters.filterQueryString(request.getQueryString());
+        String persona = Try.of(() -> visitorAPI.getVisitor(request, false).get().getPersona().getKeyTag())
+                .getOrElse("");
+
+        final String originalUrl = (response.getStatus() < 300) 
+            ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) 
+            : "";
+        
+        Date modDate = htmlPage.getModDate() != null ? htmlPage.getModDate() : new Date(0);
+
+        return new PageCacheParameters(
+                "user:" + userId,
+                "lang:" + language,
+                "urlmap:" + urlMap,
+                "query:" + queryString,
+                "persona:" + persona,
+                "pageInode:" + htmlPage.getInode(),
+                "modDate:" + modDate.getTime(),
+                "vanity:" + vanityUrl,
+                "originalUrl:" + originalUrl,
+                "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
+        );
+    }
 
     User getUser() {
         User user = null;
@@ -223,4 +228,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
         return user;
     }
+
+
 }
