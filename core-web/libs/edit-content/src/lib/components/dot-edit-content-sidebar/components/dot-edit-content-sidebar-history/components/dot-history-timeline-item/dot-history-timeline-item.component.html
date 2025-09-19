@@ -62,7 +62,7 @@
             <!-- Timeline Item Header -->
             <div class="dot-history-timeline-item__header">
                 <span class="dot-history-timeline-item__time-relative" data-testid="time-display">
-                    @if ($itemIndex() === 0) {
+                    @if ($item().working) {
                         {{ 'edit.content.sidebar.history.menu.current' | dm }}
                     } @else {
                         {{ $item().modDate | dotRelativeDate }}

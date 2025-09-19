@@ -1,3 +1,5 @@
+import { Subscription } from 'rxjs';
+
 import { animate, style, transition, trigger } from '@angular/animations';
 import { NgTemplateOutlet } from '@angular/common';
 import {
@@ -160,12 +162,12 @@ export class DotEditContentFormComponent implements OnInit {
     form!: FormGroup;
 
     /**
-     * Flag to track if form listener has been initialized to avoid multiple subscriptions
+     * Subscription for form value changes - using this to manage the listener lifecycle
      *
      * @private
      * @memberof DotEditContentFormComponent
      */
-    private formListenerInitialized = false;
+    private formValueSubscription?: Subscription;
 
     /**
      * Computed property that determines if the content type has only one tab.
@@ -258,19 +260,21 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Initializes a listener for form value changes.
-     * Only creates the listener once to avoid multiple subscriptions.
+     * Automatically handles cleanup of previous subscriptions to avoid memory leaks.
      *
      * @private
      * @memberof DotEditContentFormComponent
      */
     private initializeFormListener() {
-        // Only initialize listener once
-        if (!this.formListenerInitialized) {
-            this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((value) => {
+        // Clean up any existing subscription before creating a new one
+        this.formValueSubscription?.unsubscribe?.();
+
+        // Create new subscription
+        this.formValueSubscription = this.form.valueChanges
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((value) => {
                 this.onFormChange(value);
             });
-            this.formListenerInitialized = true;
-        }
     }
 
     /**

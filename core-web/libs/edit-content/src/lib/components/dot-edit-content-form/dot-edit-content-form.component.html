@@ -98,10 +98,9 @@
                 <!-- Historical version actions - only Restore -->
                 <button
                     pButton
-                    class="p-button-sm"
                     (click)="$store.restoreCurrentHistoricalVersion()"
                     data-testId="restore-historical-version-button">
-                    {{ 'edit.content.sidebarhistory.restore' | dm }}
+                    {{ 'edit.content.sidebar.history.restore' | dm }}
                 </button>
                 <!-- Compare button hidden as requested -->
             } @else {

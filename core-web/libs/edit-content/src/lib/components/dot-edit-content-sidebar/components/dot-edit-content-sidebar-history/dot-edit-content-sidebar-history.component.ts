@@ -110,13 +110,6 @@ export class DotEditContentSidebarHistoryComponent {
     });
 
     /**
-     * Handle timeline item actions by emitting them to parent component
-     */
-    onTimelineItemAction(action: DotHistoryTimelineItemAction): void {
-        this.timelineItemAction.emit(action);
-    }
-
-    /**
      * Handle infinite scroll when user scrolls near the end
      */
     onScrollIndexChange(event: ScrollerLazyLoadEvent): void {
