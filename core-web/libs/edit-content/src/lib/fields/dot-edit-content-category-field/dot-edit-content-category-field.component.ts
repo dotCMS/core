@@ -3,14 +3,13 @@ import {
     Component,
     computed,
     effect,
-    forwardRef,
     inject,
     Injector,
     input,
     OnInit,
     signal
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -21,6 +20,11 @@ import { DotCategoryFieldChipsComponent } from './components/dot-category-field-
 import { DotCategoryFieldDialogComponent } from './components/dot-category-field-dialog/dot-category-field-dialog.component';
 import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
+
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 /**
  * @class
@@ -37,7 +41,11 @@ import { CategoryFieldStore } from './store/content-category-field.store';
         ButtonModule,
         DotMessagePipe,
         DotCategoryFieldChipsComponent,
-        DotCategoryFieldDialogComponent
+        DotCategoryFieldDialogComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
@@ -47,17 +55,9 @@ import { CategoryFieldStore } from './store/content-category-field.store';
         '[class.dot-category-field__container]': '!$hasSelectedCategories()',
         '[class.dot-category-field__container--disabled]': '$isDisabled()'
     },
-    providers: [
-        CategoriesService,
-        CategoryFieldStore,
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentCategoryFieldComponent),
-            multi: true
-        }
-    ]
+    providers: [CategoriesService, CategoryFieldStore]
 })
-export class DotEditContentCategoryFieldComponent implements OnInit, ControlValueAccessor {
+export class DotEditContentCategoryFieldComponent extends BaseFieldComponent implements OnInit {
     readonly store = inject(CategoryFieldStore);
     readonly #injector = inject(Injector);
 
@@ -65,20 +65,13 @@ export class DotEditContentCategoryFieldComponent implements OnInit, ControlValu
      * The `field` variable is of type `DotCMSContentTypeField` and is a required input.
      * @description The variable represents a field of a DotCMS content type and is a required input.
      */
-    field = input.required<DotCMSContentTypeField>();
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     /**
      * Represents a DotCMS contentlet and is a required input
      * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
-    contentlet = input.required<DotCMSContentlet>();
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
-    // ControlValueAccessor callbacks
-    private onChange: (value: string[]) => void = () => {
-        // Callback will be set by registerOnChange
-    };
-    private onTouched: () => void = () => {
-        // Callback will be set by registerOnTouched
-    };
     protected $isDisabled = signal(false);
 
     /**
@@ -97,8 +90,8 @@ export class DotEditContentCategoryFieldComponent implements OnInit, ControlValu
         // Initialize the store with field information only
         // The contentlet data will come through ControlValueAccessor's writeValue
         this.store.load({
-            field: this.field(),
-            contentlet: this.contentlet()
+            field: this.$field(),
+            contentlet: this.$contentlet()
         });
 
         // Effect to sync selected categories with form control
@@ -114,6 +107,10 @@ export class DotEditContentCategoryFieldComponent implements OnInit, ControlValu
                 injector: this.#injector
             }
         );
+
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
+        });
     }
 
     /**
@@ -149,24 +146,6 @@ export class DotEditContentCategoryFieldComponent implements OnInit, ControlValu
 
         // Update store with the new value
         this.store.setSelectedFromInodes(value);
-    }
-
-    /**
-     * Registers a callback function that is called when the control's value changes in the UI.
-     *
-     * @param fn - The callback function to register
-     */
-    registerOnChange(fn: (value: string[]) => void): void {
-        this.onChange = fn;
-    }
-
-    /**
-     * Registers a callback function that is called when the control is marked as touched in the UI.
-     *
-     * @param fn - The callback function to register
-     */
-    registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
     }
 
     /**

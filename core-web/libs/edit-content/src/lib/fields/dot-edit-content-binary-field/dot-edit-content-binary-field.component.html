@@ -1,15 +1,13 @@
 @if (vm$ | async; as vm) {
     <div
-        [ngClass]="{
-            'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING,
-            'binary-field__container--empty': vm.status === BinaryFieldStatus.INIT,
-            'binary-field__container--disabled': $disabled()
-        }"
+        [class.binary-field__container--disabled]="$disabled()"
+        [class.binary-field__container--uploading]="vm.status === BinaryFieldStatus.UPLOADING"
+        [class.binary-field__container--empty]="vm.status === BinaryFieldStatus.INIT"
         class="binary-field__container">
         @switch (vm.status) {
             @case (BinaryFieldStatus.INIT) {
                 <div
-                    [ngClass]="{ 'binary-field__drop-zone--active': vm.dropZoneActive }"
+                    [class.binary-field__drop-zone--active]="vm.dropZoneActive"
                     class="binary-field__drop-zone">
                     <dot-drop-zone
                         (fileDragLeave)="setDropZoneActiveState(false)"

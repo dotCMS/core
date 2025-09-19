@@ -1,6 +1,6 @@
 @use "variables" as *;
 :host {
-    &.dot-wysiwyg__wrapper {
+    .dot-wysiwyg__wrapper {
         display: flex;
         gap: $spacing-1;
         flex-direction: column;
