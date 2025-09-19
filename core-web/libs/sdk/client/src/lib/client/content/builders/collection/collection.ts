@@ -1,3 +1,5 @@
+import { DotCMSClientConfig } from '@dotcms/types';
+
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
@@ -8,9 +10,10 @@ import {
     OnFullfilled,
     OnRejected
 } from '../../shared/types';
-import { sanitizeQueryForContentType } from '../../shared/utils';
+import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
+import { sanitizeQuery } from '../query/utils';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -34,19 +37,19 @@ export class CollectionBuilder<T = unknown> {
     #languageId: number | string = 1;
     #draft = false;
 
-    #serverUrl: string;
     #requestOptions: ClientOptions;
+    #config: DotCMSClientConfig;
 
     /**
      * Creates an instance of CollectionBuilder.
      * @param {ClientOptions} requestOptions Options for the client request.
-     * @param {string} serverUrl The server URL.
+     * @param {DotCMSClientConfig} config The client configuration.
      * @param {string} contentType The content type to fetch.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string) {
+    constructor(requestOptions: ClientOptions, config: DotCMSClientConfig, contentType: string) {
         this.#requestOptions = requestOptions;
-        this.#serverUrl = serverUrl;
+        this.#config = config;
         this.#contentType = contentType;
 
         // Build the default query with the contentType field
@@ -83,7 +86,18 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     private get url() {
-        return `${this.#serverUrl}${CONTENT_API_URL}`;
+        return `${this.#config.dotcmsUrl}${CONTENT_API_URL}`;
+    }
+
+    /**
+     * Returns the site ID from the configuration.
+     *
+     * @readonly
+     * @private
+     * @memberof CollectionBuilder
+     */
+    private get siteId() {
+        return this.#config.siteId;
     }
 
     /**
@@ -384,13 +398,7 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     private fetch(): Promise<Response> {
-        const finalQuery = this.currentQuery
-            .field('languageId')
-            .equals(this.#languageId.toString())
-            .field('live')
-            .equals((!this.#draft).toString())
-            .build();
-
+        const finalQuery = this.getFinalQuery();
         const sanitizedQuery = sanitizeQueryForContentType(finalQuery, this.#contentType);
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
@@ -413,5 +421,61 @@ export class CollectionBuilder<T = unknown> {
                 //allCategoriesInfo: This exist but we currently don't use it
             })
         });
+    }
+
+    /**
+     * Builds the final Lucene query string by combining the base query with required system constraints.
+     *
+     * This method constructs the complete query by:
+     * 1. Adding language ID filter to ensure content matches the specified language
+     * 2. Adding live/draft status filter based on the draft flag
+     * 3. Optionally adding site ID constraint if conditions are met
+     *
+     * Site ID constraint is added only when:
+     * - Query doesn't already contain a positive site constraint (+conhost)
+     * - Query doesn't explicitly exclude the current site ID (-conhost:currentSiteId)
+     * - Site ID is configured in the system
+     *
+     * @private
+     * @returns {string} The complete Lucene query string ready for the Content API
+     * @memberof CollectionBuilder
+     *
+     * @example
+     * // For live content in language 1 with site ID 123:
+     * // Returns: "+contentType:Blog +languageId:1 +live:true +conhost:123"
+     *
+     * @example
+     * // For draft content without site constraint:
+     * // Returns: "+contentType:Blog +languageId:1 +live:false"
+     *
+     * @example
+     * // For content with explicit exclusion of current site (site ID 123):
+     * // Query: "+contentType:Blog -conhost:123"
+     * // Returns: "+contentType:Blog -conhost:123 +languageId:1 +live:true" (no site ID added)
+     *
+     * @example
+     * // For content with exclusion of different site (site ID 456, current is 123):
+     * // Query: "+contentType:Blog -conhost:456"
+     * // Returns: "+contentType:Blog -conhost:456 +languageId:1 +live:true +conhost:123" (site ID still added)
+     */
+    private getFinalQuery(): string {
+        // Build base query with language and live/draft constraints
+        const baseQuery = this.currentQuery
+            .field('languageId')
+            .equals(this.#languageId.toString())
+            .field('live')
+            .equals((!this.#draft).toString())
+            .build();
+
+        // Check if site ID constraint should be added using utility function
+        const shouldAddSiteId = shouldAddSiteIdConstraint(baseQuery, this.siteId);
+
+        // Add site ID constraint if needed
+        if (shouldAddSiteId) {
+            const queryWithSiteId = `${baseQuery} +conhost:${this.siteId}`;
+            return sanitizeQuery(queryWithSiteId);
+        }
+
+        return baseQuery;
     }
 }
