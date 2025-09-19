@@ -31,7 +31,7 @@ public class ContentTypeTest extends ContentTypeBaseTest {
     @Test
     public void test_content_type_living_in_system_host() throws Exception {
 
-        final String name = "test"+ UUID.randomUUID().toString();
+        final String name = "test"+ System.currentTimeMillis();
         ContentType type = new ContentTypeDataGen()
                 .baseContentType(BaseContentType.FORM)
                 .name(name)
