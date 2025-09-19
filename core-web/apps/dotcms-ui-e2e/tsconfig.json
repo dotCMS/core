@@ -10,7 +10,17 @@
         "noImplicitOverride": true,
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+        "baseUrl": ".",
+        "paths": {
+            "@pages": ["./src/pages/index"],
+            "@components": ["./src/components"],
+            "@utils/*": ["./src/utils/*"],
+            "@data/*": ["./src/data/*"],
+            "@models/*": ["./src/models/*"],
+            "@requests/*": ["./src/requests/*"],
+            "@tests/*": ["./src/tests/*"]
+        }
     },
     "include": [
         "**/*.ts",

@@ -140,6 +140,8 @@ dotsecure
 /core-web/out*/
 dist-docs/
 **/test-reports/
+core-web/apps/dotcms-ui-e2e/playwright-report
+core-web/apps/dotcms-ui-e2e/test-results
 
 #env
 /core-web/**/.env
