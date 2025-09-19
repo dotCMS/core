@@ -700,8 +700,9 @@ describe('Load fields and drag and drop', () => {
 
     it('should handler editField event', () => {
         const field = {
-            clazz: 'classField',
-            name: 'nameField'
+            id: '5',
+            clazz: DotCMSClazzes.TEXT,
+            name: 'field 5'
         };
         const spy = jest.spyOn(comp, 'editFieldHandler');
 

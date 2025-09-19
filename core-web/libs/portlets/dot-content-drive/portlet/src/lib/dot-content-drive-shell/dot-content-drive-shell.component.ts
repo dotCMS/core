@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/cor
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
@@ -13,7 +14,7 @@ import { DotAddToBundleComponent } from '@dotcms/ui';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
-import { SORT_ORDER } from '../shared/constants';
+import { DIALOG_TYPE, SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -27,7 +28,8 @@ import { encodeFilters } from '../utils/functions';
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
-        ToastModule
+        ToastModule,
+        DialogModule
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -47,7 +49,10 @@ export class DotContentDriveShellComponent {
     readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $contextMenuData = this.#store.contextMenu;
 
+    readonly $dialog = this.#store.dialog;
+
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
+    readonly DIALOG_TYPE = DIALOG_TYPE;
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -119,5 +124,12 @@ export class DotContentDriveShellComponent {
      */
     protected cancelAddToBundle() {
         this.#store.setShowAddToBundle(false);
+    }
+
+    /**
+     * Handles dialog hide event to reset the dialog state
+     */
+    protected onHideDialog() {
+        this.#store.resetDialog();
     }
 }
