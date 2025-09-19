@@ -94,5 +94,6 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 
 // Dialog type
 export const DIALOG_TYPE = {
-    FOLDER: 'FOLDER'
+    FOLDER: 'FOLDER',
+    MESSAGE: 'MESSAGE'
 } as const;

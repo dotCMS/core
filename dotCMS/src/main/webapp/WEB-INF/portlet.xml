@@ -98,7 +98,6 @@
         <display-name>Pages</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
-
     <portlet>
         <portlet-name>html-pages</portlet-name>
         <display-name>HTML Pages Manager</display-name>
@@ -509,6 +508,11 @@
     <portlet>
         <portlet-name>analytics-dashboard</portlet-name>
         <display-name>Analytics Dashboard</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+    <portlet>
+        <portlet-name>content-drive</portlet-name>
+        <display-name>Content Drive</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 </portlet-app>

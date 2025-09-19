@@ -11,7 +11,7 @@
                 visibility: visible;
                 width: 100%;
 
-                transition: all 0.3s ease-in-out;
+                transition: all $content-drive-animation-speed $content-drive-animation-ease;
 
                 &.sidebar-expanded {
                     visibility: hidden;
