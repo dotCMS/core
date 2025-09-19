@@ -1,21 +1,14 @@
-@let options = $options();
 @let field = $field();
 
 <dot-card-field [hasError]="hasError">
     <ng-content />
     <dot-card-field-content>
-        <div class="flex flex-column gap-2">
-            @for (option of options; track $index) {
-                <p-radioButton
-                    [inputId]="field.variable + '_' + option.value"
-                    [name]="field.variable"
-                    [class.ng-invalid]="hasError"
-                    [class.ng-dirty]="hasError"
-                    [value]="option.value"
-                    [label]="option.label"
-                    [formControl]="formControl" />
-            }
-        </div>
+        <dot-edit-content-binary-field
+            [formControl]="formControl"
+            [contentlet]="$contentlet()"
+            [field]="field"
+            (valueUpdated)="valueUpdated.emit($event)"
+            [attr.data-testId]="'field-' + field.variable" />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (hasError) {

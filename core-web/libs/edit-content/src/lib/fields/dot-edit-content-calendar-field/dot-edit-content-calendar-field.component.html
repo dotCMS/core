@@ -6,55 +6,62 @@
 @let systemTimezone = $systemTimezone();
 
 @let showTimezoneInfo = $showTimezoneInfo();
-@let internalValue = $internalValue();
-@let isDisabled = $isDisabled();
 
-<div class="w-full" data-testid="calendar-field-container">
-    <p-calendar
-        class="w-full"
-        [ngModel]="internalValue"
-        (ngModelChange)="onCalendarChange($event)"
-        [ngModelOptions]="{ standalone: true }"
-        [defaultDate]="$defaultDate()"
-        [timeOnly]="fieldTypeConfig.timeOnly"
-        [showTime]="fieldTypeConfig.showTime"
-        [disabled]="isDisabled"
-        [id]="'calendar-id-' + variable"
-        [inputId]="variable"
-        [attr.data-testid]="'calendar-input-' + variable"
-        [showIcon]="true"
-        [icon]="fieldTypeConfig.icon"
-        [showButtonBar]="true"
-        [showClear]="$isExpireDateField()"
-        [placeholder]="
-            $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
-        "
-        [attr.aria-label]="name"
-        [attr.aria-describedby]="field.hint ? 'hint-' + variable : null" />
-
-    @if (field.hint || showTimezoneInfo) {
-        <div
-            class="flex justify-content-between align-items-center"
-            data-testid="calendar-field-hints">
+<dot-card-field [hasError]="hasError">
+    <ng-content />
+    <dot-card-field-content>
+        <p-calendar
+            class="w-full"
+            [class.ng-invalid]="hasError"
+            [class.ng-dirty]="hasError"
+            [formControl]="internalFormControl"
+            [defaultDate]="$defaultDate()"
+            [timeOnly]="fieldTypeConfig.timeOnly"
+            [showTime]="fieldTypeConfig.showTime"
+            (onSelect)="onCalendarChange($event)"
+            [id]="'calendar-id-' + variable"
+            [inputId]="variable"
+            [attr.data-testid]="'calendar-input-' + variable"
+            [showIcon]="true"
+            [icon]="fieldTypeConfig.icon"
+            [showButtonBar]="true"
+            [showClear]="$isExpireDateField()"
+            [placeholder]="
+                $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
+            "
+            [attr.aria-label]="name"
+            [attr.aria-describedby]="field.hint ? 'hint-' + variable : null" />
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        <div class="flex justify-content-between align-items-center">
             <div class="flex-grow-1">
-                @if (field.hint) {
-                    <small
-                        id="hint-{{ variable }}"
-                        [attr.data-testId]="'hint-' + variable"
-                        data-testid="calendar-field-hint">
-                        {{ field.hint }}
-                    </small>
+                @if (hasError) {
+                    <div class="error-message">
+                        @if (isRequired) {
+                            <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                        }
+                    </div>
+                }
+
+                @if (!hasError && field.hint) {
+                    <div class="hint-message" data-testid="calendar-field-hints">
+                        <small
+                            [attr.data-testId]="'hint-' + field.variable"
+                            data-testid="calendar-field-hint">
+                            {{ field.hint }}
+                        </small>
+                    </div>
                 }
             </div>
-            @if (showTimezoneInfo) {
-                <div class="flex flex-column align-items-end" data-testid="calendar-field-timezone">
-                    @if (systemTimezone) {
-                        <small class="text-500" role="status" aria-live="polite">
-                            {{ systemTimezone.label }}
-                        </small>
-                    }
-                </div>
+            @if (showTimezoneInfo && systemTimezone) {
+                <small
+                    data-testid="calendar-field-timezone"
+                    class="text-gray-700"
+                    role="status"
+                    aria-live="polite">
+                    {{ systemTimezone.label }}
+                </small>
             }
         </div>
-    }
-</div>
+    </dot-card-field-footer>
+</dot-card-field>
