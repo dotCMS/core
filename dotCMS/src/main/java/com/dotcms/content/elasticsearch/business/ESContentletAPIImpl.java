@@ -7160,10 +7160,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException {
         Logger.debug(this.getClass(), String.format("Retrieving all versions for Identifier [ %s ], " +
-                        "bringOldVersions [ %b ], limit [ %d ], offset [ %d ]", searchCriteria.identifier(),
-                searchCriteria.bringOldVersions(), searchCriteria.limit(), searchCriteria.offset()));
-        final List<Contentlet> contentlets = this.contentFactory.findAllVersions(searchCriteria.identifier(),
-                searchCriteria.bringOldVersions(), searchCriteria.limit(), searchCriteria.offset(), searchCriteria.orderDirection());
+                        "Language ID [ %s ], bringOldVersions [ %b ], limit [ %d ], offset [ %d ]",
+                searchCriteria.identifier(), searchCriteria.languageId(), searchCriteria.bringOldVersions(),
+                searchCriteria.limit(), searchCriteria.offset()));
+        final List<Contentlet> contentlets = this.contentFactory.findAllVersions(
+                searchCriteria.identifier(), searchCriteria.languageId(), searchCriteria.bringOldVersions(),
+                searchCriteria.limit(), searchCriteria.offset(), searchCriteria.orderDirection());
         if (contentlets.isEmpty()) {
             return List.of();
         }
