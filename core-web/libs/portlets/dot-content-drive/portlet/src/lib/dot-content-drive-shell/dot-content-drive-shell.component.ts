@@ -140,10 +140,22 @@ export class DotContentDriveShellComponent {
         this.#store.resetDialog();
     }
 
+    /**
+     * Closes the message
+     *
+     * @protected
+     * @memberof DotContentDriveShellComponent
+     */
     protected onCloseMessage() {
         this.$showMessage.set(false);
     }
 
+    /**
+     * Opens the learn more dialog
+     *
+     * @protected
+     * @memberof DotContentDriveShellComponent
+     */
     protected onLearnMore() {
         this.#store.setDialog({
             type: DIALOG_TYPE.MESSAGE,
