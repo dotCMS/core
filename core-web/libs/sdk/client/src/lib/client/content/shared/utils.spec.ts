@@ -222,11 +222,11 @@ describe('Utils', () => {
                 expect(result).toBe(false);
             });
 
-            it('should be case sensitive for conhost', () => {
+            it('should be case insensitive for conhost', () => {
                 const query = '+CONHOST:site +Conhost:site';
                 const result = shouldAddSiteIdConstraint(query, 'mySite');
 
-                expect(result).toBe(true);
+                expect(result).toBe(false);
             });
 
             it('should handle complex queries with multiple conditions', () => {

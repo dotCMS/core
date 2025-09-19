@@ -64,7 +64,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:song +languageId:1 +live:true +song.conhost:test-site',
+                    query: '+contentType:song +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -122,7 +122,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ringsOfPower +languageId:13 +live:true +ringsOfPower.conhost:test-site',
+                    query: '+contentType:ringsOfPower +languageId:13 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -140,7 +140,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:boringContentType +languageId:1 +live:true +boringContentType.conhost:test-site',
+                    query: '+contentType:boringContentType +languageId:1 +live:true +conhost:test-site',
                     render: true,
                     limit: 10,
                     offset: 0,
@@ -171,7 +171,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:jedi +languageId:1 +live:true +jedi.conhost:test-site',
+                    query: '+contentType:jedi +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     sort: 'name asc,force desc,midichlorians desc',
                     limit: 10,
@@ -190,7 +190,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:droid +languageId:1 +live:true +droid.conhost:test-site',
+                    query: '+contentType:droid +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -208,7 +208,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ship +languageId:1 +live:true +ship.conhost:test-site',
+                    query: '+contentType:ship +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 20,
                     offset: 40,
@@ -232,7 +232,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +lightsaber.conhost:test-site +modDate:2024-05-28',
+                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +conhost:test-site +modDate:2024-05-28',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -314,7 +314,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:draftContent +languageId:1 +live:false +draftContent.conhost:test-site',
+                    query: '+contentType:draftContent +languageId:1 +live:false +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -332,7 +332,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true +adventure.conhost:test-site',
+                    query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -410,7 +410,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +forceSensitive.conhost:test-site +modDate:2024-05-28 +conhost:MyCoolSite',
+                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +conhost:test-site +modDate:2024-05-28 +conhost:MyCoolSite',
                     render: true,
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
@@ -445,7 +445,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:blog +languageId:1 +live:true +blog.conhost:my-default-site',
+                    query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -474,7 +474,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:blog +languageId:1 +live:true +blog.conhost:my-default-site +conhost:user-specified-site',
+                    query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site +conhost:user-specified-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -532,7 +532,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+blog.conhost:user-specified-site +contentType:blog +languageId:1 +live:true',
+                    query: '+conhost:user-specified-site +contentType:blog +languageId:1 +live:true',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -561,7 +561,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:blog +languageId:1 +live:true +blog.conhost:my-default-site -conhost:my-default-site',
+                    query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site -conhost:my-default-site',
                     render: false,
                     limit: 10,
                     offset: 0,

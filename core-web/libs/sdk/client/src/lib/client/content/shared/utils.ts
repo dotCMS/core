@@ -72,13 +72,13 @@ export function shouldAddSiteIdConstraint(
     }
 
     // Query already contains a positive site constraint
-    const hasExistingSiteConstraint = query.includes('+conhost');
+    const hasExistingSiteConstraint = /\+conhost/gi.test(query);
     if (hasExistingSiteConstraint) {
         return false;
     }
 
     // Query explicitly excludes this specific site ID
-    const hasThisSiteIdExclusion = query.includes(`-conhost:${siteId}`);
+    const hasThisSiteIdExclusion = new RegExp(`-conhost:${siteId}`, 'gi').test(query);
     if (hasThisSiteIdExclusion) {
         return false;
     }
