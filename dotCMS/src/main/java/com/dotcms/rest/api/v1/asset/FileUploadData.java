@@ -21,23 +21,9 @@ public class FileUploadData {
     private FormDataContentDisposition contentDisposition;
 
     @FormDataParam("assetPath")
-    @Schema(
-        description = "Full path where the asset should be stored including site and folder structure",
-        example = "//demo.dotcms.com/application/assets/my-file.pdf",
-        requiredMode = RequiredMode.REQUIRED
-    )
     private String assetPath;
 
     @FormDataParam("detail")
-    @Schema(
-        description = "JSON string containing file metadata and additional details",
-        example = "{\n"
-                + "   \"assetPath\":\"//default/newFolder/have-a-nice-day.jpeg\",\n"
-                + "   \"language\":\"en_us\",\n"
-                + "   \"live\":true\n"
-                + "}",
-        requiredMode = RequiredMode.REQUIRED
-    )
     private String jsonDetail;
 
     @FormDataParam("detail")
