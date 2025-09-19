@@ -3614,9 +3614,6 @@ paths:
               properties:
                 assetPath:
                   type: string
-                  description: Full path where the asset should be stored including
-                    site and folder structure
-                  example: //demo.dotcms.com/application/assets/my-file.pdf
                 detail:
                   $ref: "#/components/schemas/FileUploadDetail"
                 file:
