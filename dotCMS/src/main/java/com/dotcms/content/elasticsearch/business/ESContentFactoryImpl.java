@@ -1161,27 +1161,58 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier, final long languageId,
+                                            final boolean bringOldVersions, final int limit,
+                                            final int offset, final OrderDirection orderDirection) throws DotDataException {
+        return findAllVersions(identifier, languageId, bringOldVersions, limit, offset, "mod_date", orderDirection);
+    }
+
+    @Override
     public List<Contentlet> findAllVersions(final Identifier identifier,
                                             final boolean bringOldVersions, final int limit, final int offset, final String orderBy,
                                             final OrderDirection orderDirection) throws DotDataException {
-	    if (!InodeUtils.isSet(identifier.getId())) {
+        return findAllVersions(identifier, -1L, bringOldVersions, limit, offset, orderBy, orderDirection);
+    }
+
+    @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier, final long languageId,
+                                            final boolean bringOldVersions, final int limit, final int offset,
+                                            final String orderBy, final OrderDirection orderDirection) throws DotDataException {
+        if (!InodeUtils.isSet(identifier.getId())) {
             return List.of();
         }
         final DotConnect dc = new DotConnect();
         final StringBuilder query = new StringBuilder();
-        if(bringOldVersions) {
-            query.append("SELECT inode FROM contentlet WHERE identifier = ? ORDER BY ")
-                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
-                    .append(SQLUtil.sanitizeCondition(orderDirection.name()));
+        if (bringOldVersions) {
+            query.append("SELECT inode FROM contentlet WHERE identifier = ? ");
+            if (languageId > 0) {
+                query.append("AND language_id = ? ");
+            }
+            final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+            if (UtilMethods.isSet(sanitizedOrderBy)) {
+                query.append("ORDER BY ")
+                        .append(sanitizedOrderBy).append(" ")
+                        .append(SQLUtil.sanitizeCondition(orderDirection.name()));
+            }
         } else {
             query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi ")
                     .append("ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) ")
-                    .append("WHERE c.identifier = ? ORDER BY c.")
-                    .append(SQLUtil.sanitizeSortBy(orderBy)).append(" ")
-                    .append(SQLUtil.sanitizeCondition(orderDirection.name()));
+                    .append("WHERE c.identifier = ? ");
+            if (languageId > 0) {
+                query.append("AND language_id = ? ");
+            }
+            final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+            if (UtilMethods.isSet(sanitizedOrderBy)) {
+                query.append("ORDER BY c.")
+                        .append(sanitizedOrderBy).append(" ")
+                        .append(SQLUtil.sanitizeCondition(orderDirection.name()));
+            }
         }
         dc.setSQL(query.toString());
         dc.addObject(identifier.getId());
+        if (languageId > 0) {
+            dc.addParam(languageId);
+        }
         if (limit > 0) {
             dc.setMaxRows(limit);
         }
@@ -1193,8 +1224,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         row -> row.get("inode").toString())
                 .collect(Collectors.toList());
         return findContentlets(inodes);
-	}
-
+    }
 
     /**
      * Find all versions for  the given set of identifiers
