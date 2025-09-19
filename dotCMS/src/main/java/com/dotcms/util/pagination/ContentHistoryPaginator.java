@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 public class ContentHistoryPaginator implements PaginatorOrdered<Map<String, Object>> {
 
     public static final String IDENTIFIER = "identifier";
+    public static final String LANGUAGE_ID = "languageId";
     public static final String RESPECT_FRONTEND_ROLES = "respectFrontedRoles";
     public static final String GROUP_BY_LANG = "groupByLang";
     public static final String BRING_OLD_VERSIONS = "bringOldVersions";
@@ -57,6 +58,7 @@ public class ContentHistoryPaginator implements PaginatorOrdered<Map<String, Obj
                                                             final OrderDirection direction,
                                                             final Map<String, Object> extraParams) throws PaginationException {
         final Identifier identifier = Try.of(() -> (Identifier) extraParams.get(IDENTIFIER)).getOrElse(new Identifier());
+        final long languageId = Try.of(() -> (long) extraParams.get(LANGUAGE_ID)).getOrElse(-1L);
         final boolean respectFrontendRoles = Try.of(() -> (Boolean) extraParams.get(RESPECT_FRONTEND_ROLES)).getOrElse(false);
         final boolean groupByLang = Try.of(() -> (Boolean) extraParams.get(GROUP_BY_LANG)).getOrElse(false);
         final boolean bringOldVersions = Try.of(() -> (Boolean) extraParams.get(BRING_OLD_VERSIONS)).getOrElse(false);
@@ -64,6 +66,7 @@ public class ContentHistoryPaginator implements PaginatorOrdered<Map<String, Obj
         try {
             final SearchCriteria criteria = new SearchCriteria.Builder()
                     .withIdentifier(identifier)
+                    .withLanguageId(languageId)
                     .withUser(user)
                     .withBringOldVersions(bringOldVersions)
                     .withLimit(limit)
@@ -79,7 +82,7 @@ public class ContentHistoryPaginator implements PaginatorOrdered<Map<String, Obj
                 final List<Map<String, Object>> versions = this.mapHistory(contentletVersions);
                 result.addAll(versions);
             }
-            result.setTotalResults(this.getTotalRecords(identifier, bringOldVersions, user, respectFrontendRoles));
+            result.setTotalResults(this.getTotalRecords(identifier, languageId, bringOldVersions, user, respectFrontendRoles));
             return result;
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("Failed to return history for Content ID " +
@@ -90,12 +93,14 @@ public class ContentHistoryPaginator implements PaginatorOrdered<Map<String, Obj
     }
 
     /**
-     * Retrieves the total number of records that are handled by this paginator. If you DO NOT
-     * specify a limit for it, then all records will be returned. However, keep in mind that doing
-     * so may cause performance issues.
+     * Retrieves the total number of records that are handled by this paginator. This number will
+     * change in case a Language is specified, as the total will be the number of versions for that
+     * specific Language only. If you DO NOT specify a limit for the REST Endpoint, then all records
+     * will be returned. However, keep in mind that doing so may cause performance issues.
      *
      * @param identifier           The {@link Identifier} of the Contentlet whose versions will be
      *                             returned.
+     * @param languageId           The language ID to filter the versions by.
      * @param bringOldVersions     If true, then all versions will be returned, not only the latest
      *                             for every language.
      * @param user                 The {@link User} performing this action.
@@ -104,10 +109,17 @@ public class ContentHistoryPaginator implements PaginatorOrdered<Map<String, Obj
      *
      * @return The total number of records.
      */
-    private long getTotalRecords(final Identifier identifier, final boolean bringOldVersions, final User user,
+    private long getTotalRecords(final Identifier identifier, long languageId,
+                                 final boolean bringOldVersions, final User user,
                                  final boolean respectFrontendRoles) {
-        return Sneaky.sneak(() -> this.contentletAPI.findAllVersions(identifier, bringOldVersions, user,
-                respectFrontendRoles).size());
+        final SearchCriteria criteria = new SearchCriteria.Builder()
+                .withIdentifier(identifier)
+                .withLanguageId(languageId)
+                .withBringOldVersions(bringOldVersions)
+                .withUser(user)
+                .withRespectFrontendRoles(respectFrontendRoles)
+                .build();
+        return Sneaky.sneak(() -> this.contentletAPI.findAllVersions(criteria).size());
     }
 
     /**
