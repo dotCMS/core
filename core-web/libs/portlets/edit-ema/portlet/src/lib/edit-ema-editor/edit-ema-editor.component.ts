@@ -24,18 +24,18 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import {
-    DotMessageService,
+    DotAlertConfirmService,
+    DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
+    DotMessageService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
-    DotContentletService,
     DotTempFileUploadService,
-    DotWorkflowActionsFireService,
-    DotAlertConfirmService
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -53,8 +53,8 @@ import {
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
-import { isEqual, WINDOW } from '@dotcms/utils';
+import { DotCopyContentModalService, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { WINDOW, isEqual } from '@dotcms/utils';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -62,9 +62,9 @@ import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
-    EmaDragItem,
     ClientContentletArea,
     Container,
+    EmaDragItem,
     InlineEditingContentletDataset,
     UpdatedContentlet
 } from './components/ema-page-dropzone/types';
@@ -77,28 +77,28 @@ import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/cons
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
-    PositionPayload,
     ClientData,
-    SetUrlPayload,
-    VTLFile,
     DeletePayload,
-    InsertPayloadFromDelete,
     DialogAction,
+    InsertPayloadFromDelete,
+    PositionPayload,
     PostMessage,
-    ReorderMenuPayload
+    ReorderMenuPayload,
+    SetUrlPayload,
+    VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
-    createReorderMenuURL,
     compareUrlPaths,
+    convertClientParamsToPageParams,
+    createReorderMenuURL,
     deleteContentletFromContainer,
     getDragItemData,
-    insertContentletInContainer,
     getTargetUrl,
-    shouldNavigate,
-    convertClientParamsToPageParams
+    insertContentletInContainer,
+    shouldNavigate
 } from '../utils';
 
 @Component({
@@ -237,6 +237,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
 
         const url = new URL(href, location.origin);
+        // Get the query parameters from the URL
+        const urlQueryParams = Object.fromEntries(url.searchParams.entries());
 
         if (url.hostname !== location.hostname) {
             this.window.open(href, '_blank');
@@ -244,7 +246,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.uveStore.loadPageAsset({ url: url.pathname });
+        this.uveStore.loadPageAsset({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
     }
 
