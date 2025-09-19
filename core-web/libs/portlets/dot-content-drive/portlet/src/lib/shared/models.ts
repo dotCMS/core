@@ -1,5 +1,7 @@
 import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 
+import { DIALOG_TYPE } from './constants';
+
 /**
  * The status of the content drive.
  *
@@ -70,6 +72,11 @@ export interface DotContentDriveContextMenu {
     showAddToBundle: boolean;
 }
 
+export interface DotContentDriveDialog {
+    type: keyof typeof DIALOG_TYPE;
+    header: string;
+}
+
 /**
  * The state of the content drive.
  *
@@ -95,6 +102,7 @@ export type DotKnownContentDriveFilters = {
     baseType: string[];
     contentType: string[];
     title: string;
+    languageId: string[];
 };
 
 /**

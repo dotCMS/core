@@ -11,7 +11,7 @@ import { of } from 'rxjs';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TabView, TabViewModule } from 'primeng/tabview';
 
@@ -22,6 +22,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -71,8 +72,10 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(Router),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
+            mockProvider(ConfirmationService),
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
+            mockProvider(DotVersionableService),
             mockProvider(DialogService),
             {
                 provide: DotCurrentUserService,

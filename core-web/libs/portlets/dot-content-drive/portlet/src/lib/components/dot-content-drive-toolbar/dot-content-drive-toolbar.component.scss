@@ -4,26 +4,59 @@
     ::ng-deep {
         .p-toolbar {
             padding: $spacing-1 $spacing-3;
+            justify-content: normal;
+
+            dot-content-drive-tree-toggler {
+                display: flex;
+                visibility: visible;
+                width: 100%;
+
+                transition: all 0.3s ease-in-out;
+
+                &.sidebar-expanded {
+                    visibility: hidden;
+                    width: 0;
+                    min-width: 0;
+                }
+            }
         }
 
         .dot-content-drive-toolbar {
-            height: 100%;
             background-color: $color-palette-gray-100;
             border: none;
             border-bottom: 1px solid $color-palette-gray-300;
             gap: $spacing-1;
+            height: 100%;
         }
     }
 }
 
-.p-toolbar-group-start {
-    flex-grow: 1;
-    display: grid;
-    grid-template-columns: min-content repeat(3, minmax(4.5rem, 14rem));
-    align-items: center;
+.p-toolbar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
 }
 
-.p-toolbar-group-start,
+.p-toolbar-group-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+
+    .search-input {
+        max-width: 22rem;
+    }
+}
+
+.p-toolbar-group-bottom {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(4.5rem, 14rem));
+    width: 100%;
+    gap: 1rem;
+}
+
+.p-toolbar-group-top,
 .p-toolbar-group-end,
 .p-toolbar-group-center {
     gap: $spacing-1;

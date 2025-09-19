@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
+import com.dotmarketing.startup.runonce.Task250910AddAnalyticsDashboardPortletToMenuTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -47,4 +48,5 @@ import org.junit.runners.Suite;
 })
 
 public class MainSuite3a {
+
 }

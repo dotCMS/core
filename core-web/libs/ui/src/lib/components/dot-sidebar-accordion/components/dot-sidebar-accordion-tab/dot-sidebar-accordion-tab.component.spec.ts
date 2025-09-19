@@ -104,21 +104,33 @@ describe('DotSidebarAccordionTabComponent', () => {
             expect(spectator.component.tabContent).toBeTruthy();
         });
 
+        it('should have headerContent template reference available', () => {
+            spectator = createComponent();
+            spectator.setInput('id', 'test-tab');
+            spectator.setInput('label', 'Test Tab');
+
+            expect(spectator.component.headerContent).toBeDefined();
+            expect(spectator.component.headerContent).toBeTruthy();
+        });
+
         it('should maintain template reference through property changes', () => {
             spectator = createComponent();
             spectator.setInput('id', 'test-tab');
             spectator.setInput('label', 'Test Tab');
 
-            const initialTemplate = spectator.component.tabContent;
-            expect(initialTemplate).toBeDefined();
+            const initialTabTemplate = spectator.component.tabContent;
+            const initialHeaderTemplate = spectator.component.headerContent;
+            expect(initialTabTemplate).toBeDefined();
+            expect(initialHeaderTemplate).toBeDefined();
 
             // Change properties
             spectator.setInput('label', 'Updated Label');
             spectator.setInput('disabled', true);
             spectator.detectChanges();
 
-            // Template reference should remain the same
-            expect(spectator.component.tabContent).toBe(initialTemplate);
+            // Template references should remain the same
+            expect(spectator.component.tabContent).toBe(initialTabTemplate);
+            expect(spectator.component.headerContent).toBe(initialHeaderTemplate);
         });
     });
 
@@ -134,6 +146,7 @@ describe('DotSidebarAccordionTabComponent', () => {
             expect(spectator.component.$label()).toBeDefined();
             expect(spectator.component.$disabled()).toBeDefined();
             expect(spectator.component.tabContent).toBeDefined();
+            expect(spectator.component.headerContent).toBeDefined();
 
             // Properties should have correct values
             expect(spectator.component.$id()).toBe('integration-test');
