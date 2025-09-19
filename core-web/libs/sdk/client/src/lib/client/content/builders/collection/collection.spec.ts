@@ -1,5 +1,7 @@
 /// <reference types="jest" />
 
+import { DotCMSClientConfig } from '@dotcms/types';
+
 import { ClientOptions, CollectionBuilder } from './collection';
 
 import { CONTENT_API_URL } from '../../shared/const';
@@ -26,7 +28,11 @@ describe('CollectionBuilder', () => {
         cache: 'no-cache' // To simulate a valid request
     };
 
-    const serverUrl = 'http://localhost:8080';
+    const config: DotCMSClientConfig = {
+        dotcmsUrl: 'http://localhost:8080',
+        authToken: 'test-token',
+        siteId: 'test-site'
+    };
 
     const baseRequest = {
         method: 'POST',
@@ -36,7 +42,7 @@ describe('CollectionBuilder', () => {
         ...requestOptions
     };
 
-    const requestURL = `${serverUrl}${CONTENT_API_URL}`;
+    const requestURL = `${config.dotcmsUrl}${CONTENT_API_URL}`;
 
     beforeEach(() => {
         (fetch as jest.Mock).mockClear();
@@ -44,21 +50,21 @@ describe('CollectionBuilder', () => {
 
     it('should initialize with valid configuration', async () => {
         const contentType = 'my-content-type';
-        const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
         expect(collectionBuilder).toBeDefined();
     });
 
     describe('successful requests', () => {
         it('should build a query for a basic collection', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder;
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:song +languageId:1 +live:true',
+                    query: '+contentType:song +languageId:1 +live:true +song.conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -69,7 +75,7 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             const response = await collectionBuilder;
 
@@ -83,7 +89,7 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response with sort', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             const sortBy: SortBy[] = [
                 {
@@ -109,14 +115,14 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with a specific language', async () => {
             const contentType = 'ringsOfPower';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder.language(13);
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ringsOfPower +languageId:13 +live:true',
+                    query: '+contentType:ringsOfPower +languageId:13 +live:true +ringsOfPower.conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -127,14 +133,14 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with render on true', async () => {
             const contentType = 'boringContentType';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder.render();
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:boringContentType +languageId:1 +live:true',
+                    query: '+contentType:boringContentType +languageId:1 +live:true +boringContentType.conhost:test-site',
                     render: true,
                     limit: 10,
                     offset: 0,
@@ -145,7 +151,7 @@ describe('CollectionBuilder', () => {
 
         it("should build a query with multiply sortBy's", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder.sortBy([
                 {
@@ -165,7 +171,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:jedi +languageId:1 +live:true',
+                    query: '+contentType:jedi +languageId:1 +live:true +jedi.conhost:test-site',
                     render: false,
                     sort: 'name asc,force desc,midichlorians desc',
                     limit: 10,
@@ -177,14 +183,14 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with a specific depth', async () => {
             const contentType = 'droid';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder.depth(2);
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:droid +languageId:1 +live:true',
+                    query: '+contentType:droid +languageId:1 +live:true +droid.conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -195,14 +201,14 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with a specific limit and page', async () => {
             const contentType = 'ship';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder.limit(20).page(3);
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ship +languageId:1 +live:true',
+                    query: '+contentType:ship +languageId:1 +live:true +ship.conhost:test-site',
                     render: false,
                     limit: 20,
                     offset: 40,
@@ -213,7 +219,7 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with an specific query with main fields and custom fields of the content type', async () => {
             const contentType = 'lightsaber';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder
                 .query(
@@ -226,7 +232,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +modDate:2024-05-28',
+                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +lightsaber.conhost:test-site +modDate:2024-05-28',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -237,7 +243,7 @@ describe('CollectionBuilder', () => {
 
         it("should throw an error if the query doesn't end in an instance of Equals", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             try {
                 // Force the error
@@ -255,7 +261,7 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the parameter for query is not a function or string', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             try {
                 // Force the error
@@ -273,7 +279,7 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the depth is out of range (positive value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             try {
                 // Force the error
@@ -287,7 +293,7 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the depth is out of range (negative value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             try {
                 // Force the error
@@ -301,14 +307,14 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for draft content', async () => {
             const contentType = 'draftContent';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder.draft();
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:draftContent +languageId:1 +live:false',
+                    query: '+contentType:draftContent +languageId:1 +live:false +draftContent.conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -319,14 +325,14 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with a specific variant', async () => {
             const contentType = 'adventure';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             await collectionBuilder.variant('dimension-1334-adventure');
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true',
+                    query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true +adventure.conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -337,7 +343,7 @@ describe('CollectionBuilder', () => {
 
         it('should handle all the query methods on GetCollection', async () => {
             const contentType = 'forceSensitive';
-            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
 
             // be sure that this test is updated when new methods are added
             let methods = Object.getOwnPropertyNames(
@@ -404,7 +410,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +modDate:2024-05-28 +conhost:MyCoolSite',
+                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +forceSensitive.conhost:test-site +modDate:2024-05-28 +conhost:MyCoolSite',
                     render: true,
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
@@ -420,12 +426,157 @@ describe('CollectionBuilder', () => {
         });
     });
 
+    describe('host/site constraint handling', () => {
+        it('should add default host to query when siteId is configured', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                configWithSite,
+                contentType
+            );
+
+            await collectionBuilder;
+
+            expect(fetch).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true +blog.conhost:my-default-site',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0
+                })
+            });
+        });
+
+        it('should use user-set host in addition to default when user specifies conhost in raw query', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                configWithSite,
+                contentType
+            );
+
+            await collectionBuilder.query('+conhost:user-specified-site');
+
+            // The current implementation adds both the default site constraint and the user-specified one
+            // because the raw query is appended after the site constraint decision is made
+            expect(fetch).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true +blog.conhost:my-default-site +conhost:user-specified-site',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0
+                })
+            });
+        });
+
+        it('should not add any host constraint when no siteId is configured and user does not specify one', async () => {
+            const contentType = 'blog';
+            const configWithoutSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token'
+                // No siteId configured
+            };
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                configWithoutSite,
+                contentType
+            );
+
+            await collectionBuilder;
+
+            expect(fetch).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0
+                })
+            });
+        });
+
+        it('should not add default host when user specifies conhost via query builder', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                configWithSite,
+                contentType
+            );
+
+            await collectionBuilder.query((qb) =>
+                qb.field('conhost').equals('user-specified-site')
+            );
+
+            // When using the query builder, the conhost constraint is part of the base query
+            // so the shouldAddSiteIdConstraint function will detect it and not add the default
+            expect(fetch).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+blog.conhost:user-specified-site +contentType:blog +languageId:1 +live:true',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0
+                })
+            });
+        });
+
+        it('should still add default host even when it is explicitly excluded in raw query', async () => {
+            const contentType = 'blog';
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                configWithSite,
+                contentType
+            );
+
+            await collectionBuilder.query('-conhost:my-default-site');
+
+            // The current implementation still adds the default site constraint because
+            // the exclusion is in the raw query which is processed after the site constraint decision
+            expect(fetch).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:blog +languageId:1 +live:true +blog.conhost:my-default-site -conhost:my-default-site',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0
+                })
+            });
+        });
+    });
+
     describe('fetch is rejected', () => {
         it('should trigger onrejected callback', (done) => {
             const contentType = 'song';
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
-                serverUrl,
+                config,
                 contentType
             ).language(13);
 
@@ -447,7 +598,7 @@ describe('CollectionBuilder', () => {
             const contentType = 'song';
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
-                serverUrl,
+                config,
                 contentType
             ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
 
@@ -464,7 +615,7 @@ describe('CollectionBuilder', () => {
             const contentType = 'song';
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
-                serverUrl,
+                config,
                 contentType
             ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
 
@@ -484,7 +635,7 @@ describe('CollectionBuilder', () => {
             const contentType = 'song';
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
-                serverUrl,
+                config,
                 contentType
             ).limit(10);
 
