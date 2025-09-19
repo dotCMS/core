@@ -15,7 +15,10 @@ import {
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 
-import { DotHistoryTimelineItemAction } from '../../../../models/dot-edit-content.model';
+import {
+    DotHistoryTimelineItemAction,
+    DotHistoryTimelineItemActionType
+} from '../../../../models/dot-edit-content.model';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -43,6 +46,11 @@ export class DotEditContentSidebarHistoryComponent {
     private readonly dotMessagePipe = inject(DotMessagePipe);
 
     /**
+     * Expose DotHistoryTimelineItemActionType to template
+     */
+    readonly DotHistoryTimelineItemActionType = DotHistoryTimelineItemActionType;
+
+    /**
      * List of history items to display (accumulated items from store)
      * @readonly
      */
@@ -66,6 +74,12 @@ export class DotEditContentSidebarHistoryComponent {
      * @readonly
      */
     $pagination = input<DotPagination | null>(null, { alias: 'pagination' });
+
+    /**
+     * Current historical version inode being viewed
+     * @readonly
+     */
+    $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
 
     /**
      * Event emitted when page changes
@@ -94,13 +108,6 @@ export class DotEditContentSidebarHistoryComponent {
         const pagination = this.$pagination();
         return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
     });
-
-    /**
-     * Handle timeline item actions by emitting them to parent component
-     */
-    onTimelineItemAction(action: DotHistoryTimelineItemAction): void {
-        this.timelineItemAction.emit(action);
-    }
 
     /**
      * Handle infinite scroll when user scrolls near the end
