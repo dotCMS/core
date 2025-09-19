@@ -1,10 +1,10 @@
 @if ($showMessage()) {
-    <p-messages severity="info">
+    <p-messages severity="info" data-testid="message">
         <ng-template pTemplate="content">
             <div class="flex align-items-center justify-content-between gap-2 w-full">
                 <div class="flex align-items-center gap-2">
                     <i class="pi pi-info-circle"></i>
-                    <span>
+                    <span data-testid="message-content">
                         This feature is currently in
                         <b>development</b>
                     </span>
@@ -14,12 +14,14 @@
                         styleClass="p-button-text p-button-sm"
                         type="button"
                         [label]="'learn-more' | dm"
+                        data-testid="learn-more"
                         (click)="onLearnMore()"></p-button>
 
                     <p-button
                         styleClass="p-button-text p-button-rounded p-button-sm p-button-icon-only"
                         type="button"
                         icon="pi pi-times"
+                        data-testid="close-message"
                         (click)="onCloseMessage()"></p-button>
                 </div>
             </div>
