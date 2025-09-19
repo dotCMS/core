@@ -20,7 +20,7 @@
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
             "@directives/*": ["apps/dotcms-ui/src/app/view/directives/*"],
             "@dotcms/analytics": ["libs/sdk/analytics/src/index.ts"],
-            "@dotcms/angular": ["libs/sdk/angular/src/index.ts"],
+            "@dotcms/angular": ["libs/sdk/angular/src/public_api.ts"],
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
             "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
             "@dotcms/client": ["libs/sdk/client/src/index.ts"],

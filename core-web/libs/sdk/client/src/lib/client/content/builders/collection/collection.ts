@@ -1,18 +1,17 @@
+import { DotHttpClient, DotRequestOptions, DotHttpError } from '@dotcms/types';
+
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
     BuildQuery,
     SortBy,
     GetCollectionRawResponse,
-    GetCollectionError,
     OnFullfilled,
     OnRejected
 } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
-
-export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.
@@ -35,19 +34,27 @@ export class CollectionBuilder<T = unknown> {
     #draft = false;
 
     #serverUrl: string;
-    #requestOptions: ClientOptions;
+    #requestOptions: DotRequestOptions;
+    #httpClient: DotHttpClient;
 
     /**
      * Creates an instance of CollectionBuilder.
-     * @param {ClientOptions} requestOptions Options for the client request.
+     * @param {DotRequestOptions} requestOptions Options for the client request.
      * @param {string} serverUrl The server URL.
      * @param {string} contentType The content type to fetch.
+     * @param {DotHttpClient} httpClient HTTP client for making requests.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string) {
+    constructor(
+        requestOptions: DotRequestOptions,
+        serverUrl: string,
+        contentType: string,
+        httpClient: DotHttpClient
+    ) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
         this.#contentType = contentType;
+        this.#httpClient = httpClient;
 
         // Build the default query with the contentType field
         this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
@@ -322,30 +329,23 @@ export class CollectionBuilder<T = unknown> {
      *
      * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
      * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
-     * @return {Promise<GetCollectionResponse<T> | GetCollectionError>} A promise that resolves to the content or rejects with an error.
+     * @return {Promise<GetCollectionResponse<T> | DotHttpError | void>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | GetCollectionError> {
-        return this.fetch().then(async (response) => {
-            const data = await response.json();
-            if (response.ok) {
-                const formattedResponse = this.formatResponse<T>(data);
+    ): Promise<GetCollectionResponse<T> | DotHttpError | void> {
+        return this.fetch().then((data) => {
+            const formattedResponse = this.formatResponse<T>(data);
 
-                const finalResponse =
-                    typeof onfulfilled === 'function'
-                        ? onfulfilled(formattedResponse)
-                        : formattedResponse;
+            if (typeof onfulfilled === 'function') {
+                const result = onfulfilled(formattedResponse);
 
-                return finalResponse;
-            } else {
-                return {
-                    status: response.status,
-                    ...data
-                };
+                return result;
             }
+
+            return formattedResponse;
         }, onrejected);
     }
 
@@ -380,10 +380,10 @@ export class CollectionBuilder<T = unknown> {
      * Calls the content API to fetch the content.
      *
      * @private
-     * @return {Promise<Response>} The fetch response.
+     * @return {Promise<any>} The fetch response data.
      * @memberof CollectionBuilder
      */
-    private fetch(): Promise<Response> {
+    private fetch(): Promise<GetCollectionRawResponse<T>> {
         const finalQuery = this.currentQuery
             .field('languageId')
             .equals(this.#languageId.toString())
@@ -395,7 +395,7 @@ export class CollectionBuilder<T = unknown> {
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return fetch(this.url, {
+        return this.#httpClient.request<GetCollectionRawResponse<T>>(this.url, {
             ...this.#requestOptions,
             method: 'POST',
             headers: {
