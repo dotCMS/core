@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -23,7 +24,7 @@ public interface AbstractUpdateFolderDetail extends AbstractFolderDetail {
     @Schema(
         description = "New name for the folder. If provided, the folder will be renamed. The name is derived from the path if not specified",
         example = "my-renamed-folder",
-        required = false
+        requiredMode = RequiredMode.REQUIRED
     )
     String name();
 

@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.asset;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
@@ -14,31 +15,32 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 public class FileUploadData {
 
     @FormDataParam("file")
-    @Schema(description = "File input stream to upload", required = true)
     private InputStream fileInputStream;
 
     @FormDataParam("file")
-    @Schema(description = "File content disposition information", hidden = true)
     private FormDataContentDisposition contentDisposition;
 
     @FormDataParam("assetPath")
     @Schema(
         description = "Full path where the asset should be stored including site and folder structure",
         example = "//demo.dotcms.com/application/assets/my-file.pdf",
-        required = true
+        requiredMode = RequiredMode.REQUIRED
     )
     private String assetPath;
 
     @FormDataParam("detail")
     @Schema(
         description = "JSON string containing file metadata and additional details",
-        example = "{\"title\":\"My Document\",\"description\":\"Important document\",\"tags\":[\"document\",\"important\"]}",
-        required = false
+        example = "{\n"
+                + "   \"assetPath\":\"//default/newFolder/have-a-nice-day.jpeg\",\n"
+                + "   \"language\":\"en_us\",\n"
+                + "   \"live\":true\n"
+                + "}",
+        requiredMode = RequiredMode.REQUIRED
     )
     private String jsonDetail;
 
     @FormDataParam("detail")
-    @Schema(description = "Parsed file upload detail object", hidden = true)
     private FileUploadDetail detail;
 
     public InputStream getFileInputStream() {

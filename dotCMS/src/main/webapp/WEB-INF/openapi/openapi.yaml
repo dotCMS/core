@@ -3618,14 +3618,9 @@ paths:
                     site and folder structure
                   example: //demo.dotcms.com/application/assets/my-file.pdf
                 detail:
-                  type: string
-                  description: JSON string containing file metadata and additional
-                    details
-                  example: "{\"title\":\"My Document\",\"description\":\"Important\
-                    \ document\",\"tags\":[\"document\",\"important\"]}"
+                  $ref: "#/components/schemas/FileUploadDetail"
                 file:
-                  type: object
-                  description: File input stream to upload
+                  $ref: "#/components/schemas/FormDataContentDisposition"
       responses:
         "200":
           content:
@@ -20303,6 +20298,18 @@ components:
             type: string
           variable:
             type: string
+    FileUploadDetail:
+      type: object
+      properties:
+        assetPath:
+          type: string
+        language:
+          type: string
+        live:
+          type: boolean
+        status:
+          type: boolean
+          writeOnly: true
     FilterDescriptorForm:
       type: object
       properties:
@@ -26327,6 +26334,7 @@ components:
           description: Display title for the folder
           example: My Documents Folder
       required:
+      - name
       - title
     UpdateFolderForm:
       type: object
