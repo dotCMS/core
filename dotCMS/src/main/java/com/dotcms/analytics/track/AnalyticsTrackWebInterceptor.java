@@ -1,7 +1,10 @@
 package com.dotcms.analytics.track;
 
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
-import com.dotcms.analytics.track.matchers.*;
+import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
+import com.dotcms.analytics.track.matchers.RequestMatcher;
+import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.featureflag.FeatureFlagName;
@@ -15,7 +18,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 
@@ -45,8 +47,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private final Lazy<WebEventsCollectorServiceFactory> webEventsCollectorServiceFactory;
 
     private static final String AUTO_INJECT_LIB_WEB_PATH = "/ext/analytics/ca.min.js";
-    private static final String AUTO_INJECT_LIB_CLASS_PATH = "/ext/analytics/ca.min.js";
-    private final Lazy<String> caLib;
 
     public AnalyticsTrackWebInterceptor() {
 
@@ -83,8 +83,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
         this.whiteBlackList = whiteBlackList;
         this.isTurnedOn = isTurnedOn;
-        addRequestMatcher(requestMatchers);
-        this.caLib = Lazy.of(() -> FileUtil.toStringFromResourceAsStreamNoThrown(AUTO_INJECT_LIB_CLASS_PATH));
         this.analyticsWebAPI = analyticsWebAPI;
         this.webEventsCollectorServiceFactory = webEventsCollectorServiceFactory;
     }
@@ -117,9 +115,8 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
             if (isAllowed(request)) {
 
                 if (isAutoInjectAndFeatureFlagIsOn(request)) {
-
                     injectCALib(request, response);
-                    return Result.SKIP_NO_CHAIN;
+                    return Result.NEXT;
                 }
 
                 final Optional<RequestMatcher> matcherOpt = this.anyMatcher(request, response, RequestMatcher::runBeforeRequest);
@@ -137,9 +134,16 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         return Result.NEXT;
     }
 
-    private void injectCALib(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
-        Logger.debug(this, () -> "intercept, Matched: ca.min.js request: " + request.getRequestURI());
+    /**
+     * Adds the appropriate HTTP Headers to load the {@code ca.min.js} file when rendering
+     * traditional HTML Pages in dotCMS.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     */
+    private void injectCALib(HttpServletRequest request, HttpServletResponse response) {
+        Logger.debug(this, () -> "Interceptor matched " + AUTO_INJECT_LIB_WEB_PATH + " file request: "
+                + request.getRequestURI());
         response.addHeader(CONTENT_TYPE, "application/javascript; charset=utf-8");
         response.addHeader("access-control-allow-credentials", "true");
         response.addHeader("access-control-allow-headers",
@@ -147,7 +151,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         response.addHeader("access-control-allow-methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE, PATCH");
         response.addHeader("access-control-allow-origin", "*");
         response.addHeader("access-control-max-age", "86400");
-        response.getWriter().append(caLib.get());
     }
 
     private boolean isAutoInjectAndFeatureFlagIsOn(final HttpServletRequest request) {

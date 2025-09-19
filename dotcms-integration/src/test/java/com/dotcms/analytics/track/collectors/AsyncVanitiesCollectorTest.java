@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.mock;
  * @author Jose Castro
  * @since Oct 21st, 2024
  */
+@Ignore("Data Collectors have been disabled in favor of creating events via REST")
 public class AsyncVanitiesCollectorTest extends IntegrationTestBase {
 
     private static final String TEST_PAGE_NAME = "index";
