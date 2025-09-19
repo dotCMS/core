@@ -1,9 +1,10 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { LazyLoadEvent, Message, MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
+import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
@@ -29,7 +30,8 @@ import { encodeFilters } from '../utils/functions';
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
         ToastModule,
-        DialogModule
+        DialogModule,
+        MessagesModule
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -53,6 +55,12 @@ export class DotContentDriveShellComponent {
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
+    readonly $messages = signal<Message[]>([
+        {
+            severity: 'info',
+            summary: 'This feature is currently under <a href="https://dotcms.com">development</a>.'
+        }
+    ]);
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
