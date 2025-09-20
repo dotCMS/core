@@ -10,7 +10,7 @@
     "consola": "^3.4.2"
   },
   "devDependencies": {
-    "@dotcms/types": "latest"
+    "@dotcms/types": "file:.yalc/@dotcms/types"
   },
   "scripts": {
     "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
@@ -29,8 +29,12 @@
   },
   "typesVersions": {
     "*": {
-      ".": ["./src/index.d.ts"],
-      "internal": ["./src/internal.d.ts"]
+      ".": [
+        "./src/index.d.ts"
+      ],
+      "internal": [
+        "./src/internal.d.ts"
+      ]
     }
   },
   "author": "dotcms <dev@dotcms.com>",

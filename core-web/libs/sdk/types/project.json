@@ -41,6 +41,15 @@
             "options": {
                 "jestConfig": "libs/sdk/types/jest.config.ts"
             }
+        },
+        "dev": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "nx run {projectName}:build --watch",
+                    "nodemon --watch dist/libs/sdk/types --exec 'cd dist/libs/sdk/types && yalc publish && yalc push' --delay 1500ms"
+                ]
+            }
         }
     }
 }

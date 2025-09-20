@@ -33,7 +33,7 @@ function provideDotCMSClient(options: any): EnvironmentProviders {
                     httpClient: options.httpClient ? options.httpClient : httpClient
                 });
 
-                return new DotCMSClient(dotCMSClient);
+                return dotCMSClient;
             }
         }
     ]);

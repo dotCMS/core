@@ -29,10 +29,10 @@ export class AngularHttpClient extends BaseHttpClient {
    * @throws {NetworkError} - Throws if a network error occurs.
    */
   async request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T> {
-    console.log('My custom HTTP CLIENT')
     try {
       // Convert DotRequestOptions to Angular HttpClient options
       const httpOptions = this.convertToHttpOptions(options);
+
 
       // Create observable and convert to promise
       const observable = this.createRequestObservable<T>(url, httpOptions);

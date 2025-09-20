@@ -42,11 +42,12 @@
         "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test",
         "update": "nx migrate latest",
         "workspace-generator": "nx workspace-generator",
-        "help": "nx help"
+        "help": "nx help",
+        "setup:yalc": "node tools/scripts/setup-yalc.mjs",
+        "dev:sdks": "yarn setup:yalc && yarn nx run-many --target=dev --projects=sdk-types,sdk-client,sdk-uve,sdk-angular"
     },
     "private": false,
     "dependencies": {
-        "@angular/ssr": "19.2.9",
         "@angular-devkit/core": "19.2.9",
         "@angular/animations": "19.2.9",
         "@angular/cdk": "19.2.9",
@@ -58,6 +59,7 @@
         "@angular/platform-browser": "19.2.9",
         "@angular/platform-browser-dynamic": "19.2.9",
         "@angular/router": "19.2.9",
+        "@angular/ssr": "19.2.9",
         "@ctrl/tinycolor": "^3.1.7",
         "@date-fns/tz": "^1.4.0",
         "@jitsu/sdk-js": "^3.1.5",
@@ -259,6 +261,7 @@
         "mockdate": "^3.0.5",
         "monaco-editor": "^0.33.0",
         "ng-mocks": "^14.12.1",
+        "nodemon": "^3.1.10",
         "npm": "^6.14.16",
         "nx": "20.5.1",
         "postcss": "^8.4.18",
@@ -286,6 +289,7 @@
         "webpack-bundle-analyzer": "^4.5.0",
         "y-prosemirror": "1.2.5",
         "y-protocols": "1.0.1",
+        "yalc": "^1.0.0-pre.53",
         "yjs": "13.5.38"
     },
     "resolutions": {

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { from, Observable, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 
 import {
   DotCMSPageRequestParams,
@@ -33,6 +33,9 @@ export class PageService {
         ...params,
       }),
     ).pipe(
+      tap((response) => {
+        console.log('response', JSON.stringify(response.content, null, 2));
+      }),
       // To prevent the error from being swallowed by the pipe, we need to catch it
       catchError((error: DotCMSComposedPageResponse<T>) => {
         return of(error);
