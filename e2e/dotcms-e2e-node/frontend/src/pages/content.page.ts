@@ -5,7 +5,7 @@ import {
   fileAsset,
   pageAsset,
 } from "@locators/globalLocators";
-import { waitForVisibleAndCallback } from "@utils/utils";
+import { waitForVisibleAndCallback, waitForAngularReady } from "@utils/utils";
 import {
   contentProperties,
   fileAssetContent,
@@ -179,14 +179,16 @@ export class ContentPage {
     const structureINodeDivLocator = iframe
       .locator("#widget_structure_inode div")
       .first();
-    await waitForVisibleAndCallback(structureINodeDivLocator, () =>
+    await waitForAngularReady(structureINodeDivLocator, () =>
       structureINodeDivLocator.click(),
     );
 
-    await waitForVisibleAndCallback(iframe.getByLabel("structure_inode_popup"));
+    // Wait for popup to become visible and interactive (not just present)
+    const popupLocator = iframe.getByLabel("structure_inode_popup");
+    await waitForAngularReady(popupLocator, undefined, { timeout: 20000 });
 
     const typeLocatorByText = iframe.getByText(typeLocator);
-    await waitForVisibleAndCallback(typeLocatorByText, () =>
+    await waitForAngularReady(typeLocatorByText, () =>
       typeLocatorByText.click(),
     );
   }
@@ -345,7 +347,8 @@ export class ContentPage {
       });
     }
     const actionBtnLocator = iframe.getByRole("menuitem", { name: action });
-    await waitForVisibleAndCallback(actionBtnLocator, () =>
+    // Use enhanced Angular-aware waiting for menu items
+    await waitForAngularReady(actionBtnLocator, () =>
       actionBtnLocator.getByText(action).click(),
     );
     const executionConfirmation = iframe.getByText("Workflow executed");
