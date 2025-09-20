@@ -35,25 +35,70 @@ describe('Response Utils', () => {
             expect(result).toContain('"number": 42');
         });
 
-        it('should truncate long object data', () => {
+        it('should truncate long object data when environment variable is set', () => {
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '100';
+
             const largeData = {
                 longString: 'a'.repeat(1000),
                 moreData: 'b'.repeat(1000)
             };
-            const result = formatResponse('Message', largeData, { maxDataLength: 100 });
+            const result = formatResponse('Message', largeData);
 
             expect(result).toContain('Message');
             expect(result).toContain('[truncated]');
             expect(result.length).toBeLessThan(200); // Should be truncated
+
+            // Restore original env
+            if (originalEnv) {
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
+            } else {
+                delete process.env.RESPONSE_MAX_LENGTH;
+            }
         });
 
-        it('should not truncate short object data', () => {
-            const shortData = { key: 'value' };
-            const result = formatResponse('Message', shortData, { maxDataLength: 1000 });
+        it('should not truncate when environment variable is not set', () => {
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            delete process.env.RESPONSE_MAX_LENGTH;
+
+            const largeData = {
+                longString: 'a'.repeat(2000),
+                moreData: 'b'.repeat(2000)
+            };
+            const result = formatResponse('Message', largeData);
 
             expect(result).toContain('Message');
             expect(result).not.toContain('[truncated]');
-            expect(result).toContain('"key": "value"');
+            expect(result).toContain('"longString"');
+            expect(result).toContain('"moreData"');
+
+            // Restore original env
+            if (originalEnv) {
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
+            }
+        });
+
+        it('should not truncate when environment variable is set to 0', () => {
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '0';
+
+            const largeData = {
+                longString: 'a'.repeat(2000),
+                moreData: 'b'.repeat(2000)
+            };
+            const result = formatResponse('Message', largeData);
+
+            expect(result).toContain('Message');
+            expect(result).not.toContain('[truncated]');
+            expect(result).toContain('"longString"');
+            expect(result).toContain('"moreData"');
+
+            // Restore original env
+            if (originalEnv) {
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
+            } else {
+                delete process.env.RESPONSE_MAX_LENGTH;
+            }
         });
 
         it('should handle non-object, non-string data types', () => {
@@ -71,20 +116,65 @@ describe('Response Utils', () => {
             expect(result).toBe('Message');
         });
 
-        it('should use default options when not provided', () => {
-            const largeData = { data: 'x'.repeat(2000) };
-            const result = formatResponse('Message', largeData);
+        it('should truncate long string data when environment variable is set', () => {
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '50';
 
-            expect(result).toContain('[truncated]');
-        });
-
-        it('should respect includeRawData option', () => {
-            const data = { key: 'value' };
-            const result = formatResponse('Message', data, { includeRawData: true });
+            const longString = 'a'.repeat(100);
+            const result = formatResponse('Message', longString);
 
             expect(result).toContain('Message');
-            expect(result).toContain('Details:');
-            expect(result).toContain('"key": "value"');
+            expect(result).toContain('[truncated]');
+            expect(result.length).toBeLessThan(100);
+
+            // Restore original env
+            if (originalEnv) {
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
+            } else {
+                delete process.env.RESPONSE_MAX_LENGTH;
+            }
+        });
+
+        it('should not truncate short string data', () => {
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = '100';
+
+            const shortString = 'Short message';
+            const result = formatResponse('Message', shortString);
+
+            expect(result).toContain('Message');
+            expect(result).not.toContain('[truncated]');
+            expect(result).toContain('Short message');
+
+            // Restore original env
+            if (originalEnv) {
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
+            } else {
+                delete process.env.RESPONSE_MAX_LENGTH;
+            }
+        });
+
+        it('should not truncate when environment variable is set to invalid value', () => {
+            const originalEnv = process.env.RESPONSE_MAX_LENGTH;
+            process.env.RESPONSE_MAX_LENGTH = 'invalid';
+
+            const largeData = {
+                longString: 'a'.repeat(2000),
+                moreData: 'b'.repeat(2000)
+            };
+            const result = formatResponse('Message', largeData);
+
+            expect(result).toContain('Message');
+            expect(result).not.toContain('[truncated]');
+            expect(result).toContain('"longString"');
+            expect(result).toContain('"moreData"');
+
+            // Restore original env
+            if (originalEnv) {
+                process.env.RESPONSE_MAX_LENGTH = originalEnv;
+            } else {
+                delete process.env.RESPONSE_MAX_LENGTH;
+            }
         });
     });
 
