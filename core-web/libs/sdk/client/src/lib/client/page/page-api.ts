@@ -143,6 +143,7 @@ export class PageClient {
         } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
 
+
         const contentQuery = buildQuery(content);
         const completeQuery = buildPageQuery({
             page,
@@ -173,7 +174,6 @@ export class PageClient {
                 headers: requestHeaders,
                 httpClient: this.httpClient
             });
-
             // The GQL endpoint can return errors and data, we need to handle both
             if (response.errors) {
                 response.errors.forEach((error: { message: string }) => {
@@ -189,7 +189,7 @@ export class PageClient {
                 );
             }
 
-            const contentResponse = mapContentResponse(response.data.content, Object.keys(content));
+            const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
                 pageAsset: pageResponse,

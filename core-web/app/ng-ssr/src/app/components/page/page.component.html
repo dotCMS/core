@@ -1,1 +1,13 @@
+<p>Page title: {{ page()?.title }}</p>
+
+<p>Page URL: {{ page()?.url }}</p>
+
 <p>Current route: {{ currentRoute() }}</p>
+
+<ul>
+    @for (item of navigation(); track item.href) {
+        <li>
+            <a [href]="item.href">{{ item.title }}</a>
+        </li>
+    }
+</ul>
