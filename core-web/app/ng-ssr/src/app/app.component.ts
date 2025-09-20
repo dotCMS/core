@@ -1,13 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { NxWelcomeComponent } from './nx-welcome.component';
+
+import { DotCMSClient } from '@dotcms/angular';
 
 @Component({
-    imports: [NxWelcomeComponent, RouterModule],
+    imports: [RouterModule],
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss'
 })
 export class AppComponent {
-    title = 'ng-ssr';
+    private readonly client = inject(DotCMSClient);
+
+    ngOnInit() {
+        this.client.page.get('/').then(({ pageAsset }) => {
+            console.log(pageAsset);
+        });
+    }
 }
