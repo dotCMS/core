@@ -7,7 +7,8 @@ import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 
 
 import { delay } from 'rxjs/operators';
 
-import { DotFolder, DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotFolder } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotTreeFolderComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';

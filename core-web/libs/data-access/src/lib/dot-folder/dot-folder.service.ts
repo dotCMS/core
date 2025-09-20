@@ -5,12 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-export interface DotFolder {
-    id: string;
-    hostName: string;
-    path: string;
-    addChildrenAllowed: boolean;
-}
+import { DotFolder } from '@dotcms/dotcms-models';
 
 // TODO: Improve the Name por amor de Dios
 export interface DotFolderCreateBody {

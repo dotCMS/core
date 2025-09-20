@@ -12,7 +12,8 @@ import { inject, effect, EffectRef } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotFolderService, DotFolder } from '@dotcms/data-access';
+import { DotFolderService } from '@dotcms/data-access';
+import { DotFolder } from '@dotcms/dotcms-models';
 
 import { DotContentDriveState } from '../../../shared/models';
 import {
@@ -51,8 +52,6 @@ export function withSidebar() {
 
                 const urlFolderPath = store.path() || '';
                 const fullPath = `${currentSite.hostname}${urlFolderPath}`;
-
-                // patchState(store, { sidebarLoading: true });
 
                 getFolderHierarchyByPath(fullPath, dotFolderService).subscribe((folders) => {
                     const { rootNodes, selectedNode } = buildTreeFolderNodes(
