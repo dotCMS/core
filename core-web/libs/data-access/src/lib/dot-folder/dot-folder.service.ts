@@ -21,7 +21,7 @@ export interface DotFolderCreateBody {
         sortOrder?: number;
         fileMasks?: string[];
         defaultAssetType?: string;
-    }
+    };
 }
 
 @Injectable()
@@ -44,7 +44,7 @@ export class DotFolderService {
 
     /**
      * Creates a new folder in the assets system
-     * 
+     *
      * @param {DotFolderCreateBody} body - The folder data to create
      * @returns {Observable<any>} Observable that emits the created folder
      */

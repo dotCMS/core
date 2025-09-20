@@ -1,15 +1,85 @@
+@use "variables" as *;
+
 :host {
     display: block;
-    min-height: 36rem; //576px
-    min-width: 36rem; //768px
 
     ::ng-deep {
+        .p-dialog-content {
+            height: calc-size(auto);
+            transition: all 0.3s ease-in-out;
+        }
+
         .p-dropdown {
             display: flex;
+        }
+
+        // Alternative approach using max-height (if grid doesn't work well)
+        // Uncomment this block and comment out the grid approach above
+
+        .p-tabview-panels {
+            position: relative;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .p-tabview-panel {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .p-tabview-panel[aria-hidden="true"] {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            visibility: hidden;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        .p-tabview-panel[aria-hidden="false"] {
+            max-height: 1000px; // Set this higher than your tallest content
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+            animation: slideInFromTop 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .p-inputnumber {
+            width: 100%;
         }
     }
 }
 
+// Keyframe animations
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUnderline {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+.wrapper {
+    min-width: 36rem;
+    display: block;
+
+    // Allow natural height changes
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
 
 .folder-dialog-content {
     display: flex;
@@ -18,14 +88,22 @@
     margin-top: 1rem;
 }
 
+.folder-dialog-path {
+    background-color: $color-palette-gray-100;
+    height: $spacing-5;
+    border-radius: 0.375rem; //6px
+    padding: 0 $spacing-1;
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
 .folder-dialog-field {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     margin-bottom: 1rem;
 }
-
-
 
 .folder-dialog-footer {
     display: flex;

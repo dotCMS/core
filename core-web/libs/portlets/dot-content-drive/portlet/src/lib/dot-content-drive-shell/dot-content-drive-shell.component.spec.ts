@@ -19,10 +19,12 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
     DotRouterService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotFolderService
 } from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
@@ -36,6 +38,10 @@ import {
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+
+// We need to setup the ResizeObserver mock globally for testing
+// PrimeNG Tabs use this and fails if not setup
+setupResizeObserverMock();
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -62,6 +68,9 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(DotLanguagesService, {
                 get: jest.fn().mockReturnValue(of())
             }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
             provideHttpClient()
         ],
         componentProviders: [DotContentDriveStore],
@@ -75,7 +84,7 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
-                    currentSite: jest.fn(),
+                    currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: jest.fn().mockReturnValue(false),
                     removeFilter: jest.fn(),
@@ -99,7 +108,13 @@ describe('DotContentDriveShellComponent', () => {
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: jest.fn().mockReturnValue(undefined),
                     setDialog: jest.fn(),
-                    resetDialog: jest.fn()
+                    loadFolders: jest.fn(),
+                    loadChildFolders: jest.fn(),
+                    updateFolders: jest.fn(),
+                    folders: jest.fn(),
+                    selectedNode: jest.fn(),
+                    sidebarLoading: jest.fn(),
+                    closeDialog: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -339,13 +354,13 @@ describe('DotContentDriveShellComponent', () => {
     describe('onHideDialog', () => {
         it('should reset the dialog state', () => {
             store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.detectChanges();
+            spectator.detectComponentChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
             dialog.dispatchEvent(new Event('visibleChange'));
-            spectator.detectChanges();
+            spectator.detectComponentChanges();
 
-            expect(store.resetDialog).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
         });
     });
 });

@@ -1,85 +1,83 @@
-<p-tabView [formGroup]="folderForm">
-    <p-tabPanel header="General" class="folder-dialog-content">
-            <div class="folder-dialog-field">
-                <label for="title">Title</label>
-                <input
-                    pInputText
-                    id="title"
-                    aria-describedby="title-help"
-                    formControlName="title"
-                >
-
-            </div>
-
-            <div class="folder-dialog-field">
-                <label for="url">URL</label>
-                <input
-                    pInputText
-                    id="url"
-                    aria-describedby="url-help"
-                    formControlName="url"
-                >
-            </div>
+<p-tabView [formGroup]="folderForm" class="wrapper">
+    <p-tabPanel
+        [header]="'content-drive.dialog.folder.general.header' | dm"
+        class="folder-dialog-content">
+        <div class="folder-dialog-field">
+            <label for="title">Title</label>
+            <input pInputText id="title" aria-describedby="title-help" formControlName="title" />
+        </div>
     </p-tabPanel>
     <!-- TODO: Add translations on both tabs headers -->
-    <p-tabPanel header="Advanced Configuration" class="content">
+    <p-tabPanel [header]="'content-drive.dialog.folder.advanced.header' | dm" class="content">
         <div class="folder-dialog-field">
-            <label for="sortOrder">Sort Order</label>
-            <p-dropdown 
-                [options]="[]" 
-                [loading]="false"
-                id="sortOrder"
-                aria-describedby="sortOrder-help"
-                placeholder="Select a Sort Order"
-                formControlName="sortOrder"
-            />
+            <label for="sortOrder">{{ 'content-drive.dialog.folder.field.sort-order' | dm }}</label>
+            <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
         </div>
 
         <div class="folder-dialog-field">
-            <label for="allowedFileExtensions">Allowed File Extensions</label>
-            <input
-                pInputText
-                id="allowedFileExtensions"
-                aria-describedby="allowedFileExtensions-help"
+            <label for="allowedFileExtensions">
+                {{ 'content-drive.dialog.folder.field.allowed-file-extensions' | dm }}
+            </label>
+            <p-autoComplete
                 formControlName="allowedFileExtensions"
-            >
-            <small id="allowedFileExtensions-help">Add a comma separated list, e.g. "*.jpg, *gif, *.bmp, *.png"</small>
+                (completeMethod)="onCompleteMethod($event)"
+                [suggestions]="$filteredAllowedFileExtensions()"
+                [multiple]="true"
+                (keyup.enter)="onEnterKey($event)" />
+            <small id="allowedFileExtensions-help">
+                {{ 'content-drive.dialog.folder.field.allowed-file-extensions.help' | dm }}
+            </small>
         </div>
 
         <div class="folder-dialog-field">
-            <label for="defaultFileAssetType">Default File Asset Type</label>
-            <p-dropdown 
-                [options]="[]" 
+            <label for="defaultFileAssetType">
+                {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
+            </label>
+            <p-dropdown
+                [options]="DEFAULT_FILE_ASSET_TYPES"
+                optionLabel="name"
+                optionValue="id"
                 [loading]="false"
                 id="defaultFileAssetType"
                 aria-describedby="defaultFileAssetType-help"
-                placeholder="Select a Default File Asset Type" 
-                formControlName="defaultFileAssetType"
-            />
+                placeholder="Select a Default File Asset Type"
+                formControlName="defaultFileAssetType" />
         </div>
-
 
         <div class="folder-dialog-field">
-            <label for="showOnMenu">Show on Menu</label>
-            <p-inputSwitch 
-                id="showOnMenu"
-                aria-describedby="showOnMenu-help"  
-                formControlName="showOnMenu"
-            />
+            <label for="title">{{ 'content-drive.dialog.folder.field.url' | dm }}</label>
+            <input pInputText id="url" aria-describedby="url-help" formControlName="url" />
         </div>
 
+        <div class="folder-dialog-field">
+            <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
+            <p class="folder-dialog-path">{{ $finalPath() }}</p>
+        </div>
+
+        <div class="folder-dialog-field">
+            <label for="showOnMenu">
+                {{ 'content-drive.dialog.folder.field.show-on-menu' | dm }}
+            </label>
+            <p-inputSwitch
+                id="showOnMenu"
+                aria-describedby="showOnMenu-help"
+                formControlName="showOnMenu" />
+        </div>
     </p-tabPanel>
 </p-tabView>
 
 <div class="folder-dialog-footer">
-    <button pButton type="button" label="Cancel" class="p-button-outlined" ></button>
-    <button pButton type="button" label="Create" class="p-button-primary" (click)="createFolder()"></button>
+    <button
+        pButton
+        type="button"
+        class="p-button-outlined"
+        [label]="'content-drive.dialog.folder.cancel' | dm"
+        (click)="closeDialog()"></button>
+    <button
+        pButton
+        type="button"
+        class="p-button-primary"
+        [label]="'content-drive.dialog.folder.create' | dm"
+        [disabled]="folderForm.invalid"
+        (click)="createFolder()"></button>
 </div>
-
-<pre style="height: 200px; overflow-y: auto; position: absolute; bottom: 0; left: 0;"><code>
-    {{ folderForm.value | json }}
-    Path: {{ $currentPath() }}
-    Host: {{ $hostName() }}
-
-    Current site: {{ $currentSite() | json }}
-</code></pre>

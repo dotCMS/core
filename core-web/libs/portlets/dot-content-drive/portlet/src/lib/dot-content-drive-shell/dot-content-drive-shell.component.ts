@@ -24,14 +24,14 @@ import { encodeFilters } from '../utils/functions';
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [
-    DotFolderListViewComponent,
-    DotContentDriveToolbarComponent,
-    DotFolderListViewContextMenuComponent,
-    DotAddToBundleComponent,
-    DotContentDriveSidebarComponent,
-    ToastModule,
-    DialogModule,
-    DotContentDriveDialogFolderComponent
+        DotFolderListViewComponent,
+        DotContentDriveToolbarComponent,
+        DotFolderListViewContextMenuComponent,
+        DotAddToBundleComponent,
+        DotContentDriveSidebarComponent,
+        ToastModule,
+        DialogModule,
+        DotContentDriveDialogFolderComponent
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -132,6 +132,6 @@ export class DotContentDriveShellComponent {
      * Handles dialog hide event to reset the dialog state
      */
     protected onHideDialog() {
-        this.#store.resetDialog();
+        this.#store.closeDialog();
     }
 }
