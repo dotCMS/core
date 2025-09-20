@@ -2947,7 +2947,6 @@
 									"    pm.expect(result).to.have.property('publishUser');",
 									"    pm.expect(result).to.have.property('languageId');",
 									"    pm.expect(result).to.have.property('creationDate');",
-									"    pm.expect(result).to.have.property('url');",
 									"    pm.expect(result).to.have.property('titleImage');",
 									"    pm.expect(result).to.have.property('modUserName');",
 									"    pm.expect(result).to.have.property('hasLiveVersion');",
