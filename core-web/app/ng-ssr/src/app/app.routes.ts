@@ -1,6 +1,6 @@
 import { Route } from '@angular/router';
 
-import { PageComponent } from './components/page/page.component';
+import { PageComponent } from './dotcms/pages/page/page.component';
 
 export const appRoutes: Route[] = [{
     path: '**',

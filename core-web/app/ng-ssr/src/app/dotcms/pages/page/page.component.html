@@ -1,0 +1,17 @@
+<p>Page title: {{ pageAsset()?.page?.title }}</p>
+
+<p>Page URL: {{ pageAsset()?.page?.url }}</p>
+
+<p>Current route: {{ currentRoute() }}</p>
+
+<ul>
+    @for (item of navigation(); track item.href) {
+    <li>
+        <a [href]="item.href">{{ item.title }}</a>
+    </li>
+    }
+</ul>
+
+@if (pageAsset() !== null) {
+<dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
+}
