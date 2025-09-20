@@ -52,6 +52,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -671,7 +672,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	
 	@CloseDBIfOpened
 	public Folder findSystemFolder()  {
-		return Try.of(()->folderFactory.findSystemFolder()).getOrElseThrow(DotRuntimeException::new);
+		return Try.of(folderFactory::findSystemFolder).getOrElseThrow(DotRuntimeException::new);
 	}
 
 
@@ -682,22 +683,22 @@ public class FolderAPIImpl implements FolderAPI  {
 		if(!UtilMethods.isSet(host)){
 			throw new IllegalArgumentException("Host is not set");
 		}
-		StringTokenizer st = new StringTokenizer(path, "/"); // todo: shouldn't use multiplaform path separator
-		StringBuffer sb = new StringBuffer("/");
+		StringTokenizer st = new StringTokenizer(path, "/"); // todo: shouldn't use multiplatform path separator
+		var sb = new StringBuilder("/");
 
 		Folder parent = null;
 
 		
 		final String defaultFileAssetType=Try.of(
                         ()->
-                        APILocator.getContentTypeAPI(APILocator.systemUser()).find(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).id())
+                        APILocator.getContentTypeAPI(APILocator.systemUser()).find(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).id())
 		                .getOrElseThrow(e-> new DotRuntimeException("unable to find default fileAssetType"));
 		
 		
 		
 		while (st.hasMoreTokens()) {
 			final String name = st.nextToken();
-			sb.append(name + "/");
+			sb.append(name).append("/");
 			Folder folder = findFolderByPath(sb.toString(), host, user, respectFrontEndPermissions);
 			if (folder == null || !InodeUtils.isSet(folder.getInode())) {
 				folder= new Folder();
@@ -1326,8 +1327,10 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	}
-	String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
-	String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
+	String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder DROP CONSTRAINT IF EXISTS folder_identifier_fk; " +
+			"ALTER TABLE folder ADD CONSTRAINT folder_identifier_fk FOREIGN KEY (identifier) REFERENCES identifier(id) DEFERRABLE;";
+	String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder DROP CONSTRAINT IF EXISTS folder_identifier_fk; " +
+			"ALTER TABLE folder ADD CONSTRAINT folder_identifier_fk FOREIGN KEY (identifier) REFERENCES identifier(id) NOT DEFERRABLE;";
 	String DEFER_CONSTRAINT_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
 	String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder' or id='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
 	String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";

@@ -1,7 +1,6 @@
 import { createComponentFactory, Spectator, mockProvider, byTestId } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
-import { Pipe, PipeTransform } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -17,14 +16,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotHistoryTimelineItemComponent } from './dot-history-timeline-item.component';
 
 import { DotHistoryTimelineItemActionType } from '../../../../../../models/dot-edit-content.model';
-
-// Mock pipe for DotRelativeDatePipe
-@Pipe({ name: 'dotRelativeDate' })
-class MockDotRelativeDatePipe implements PipeTransform {
-    transform(_value: unknown): string {
-        return '1 day ago';
-    }
-}
 
 describe('DotHistoryTimelineItemComponent', () => {
     let spectator: Spectator<DotHistoryTimelineItemComponent>;
@@ -56,8 +47,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             MenuModule,
             TooltipModule,
             DotGravatarDirective,
-            DotMessagePipe,
-            MockDotRelativeDatePipe
+            DotMessagePipe
         ],
         providers: [
             DatePipe,
@@ -70,6 +60,7 @@ describe('DotHistoryTimelineItemComponent', () => {
                     'edit.content.sidebar.history.menu.restore': 'Restore',
                     'edit.content.sidebar.history.menu.compare': 'Compare',
                     'edit.content.sidebar.history.menu.delete': 'Delete',
+                    'edit.content.sidebar.history.menu.current': 'Current',
                     'edit.content.sidebar.history.published': 'Published',
                     'edit.content.sidebar.history.draft': 'Draft'
                 })
@@ -143,6 +134,45 @@ describe('DotHistoryTimelineItemComponent', () => {
         it('should hide variant chip when experimentVariant is false', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
+
+        it('should show "Current" text for current item (itemIndex = 0)', () => {
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).toBe('Current');
+        });
+
+        it('should show relative date for non-current items', () => {
+            // Set itemIndex to 1 to make it non-current
+            spectator.setInput('itemIndex', 1);
+            spectator.detectChanges(); // Trigger change detection
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+
+            expect(timeDisplay.textContent?.trim()).not.toBe('Current');
+        });
+
+        it('should disable delete action for live items', () => {
+            // Item is live by default
+            const menuItems = spectator.component.$menuItems();
+            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for live items
+        });
+
+        it('should disable delete action for working items', () => {
+            // Set item to working
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            expect(menuItems[0].disabled).toBe(true); // Delete should be disabled for working items
+        });
+
+        it('should enable delete action for archived items', () => {
+            // Set item to archived (neither live nor working)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+            expect(menuItems[0].disabled).toBe(false); // Delete should be enabled for archived items
+        });
     });
 
     describe('Computed Signals', () => {
@@ -163,25 +193,42 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.component.$timelineMarkerClass()).toBe('');
         });
 
-        it('should compute menu items with correct actions', () => {
+        it('should compute menu items with correct actions for live item', () => {
+            // Item is live by default
             const menuItems = spectator.component.$menuItems();
 
             expect(menuItems).toHaveLength(1);
-            expect(menuItems.every((item) => item.disabled)).toBe(true);
             expect(menuItems[0].label).toBe('Delete');
+            expect(menuItems[0].disabled).toBe(true); // Live item should have delete disabled
+        });
+
+        it('should compute menu items with correct actions for archived item', () => {
+            // Set item to archived (neither live nor working)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
+            const menuItems = spectator.component.$menuItems();
+
+            expect(menuItems).toHaveLength(1);
+            expect(menuItems[0].label).toBe('Delete');
+            expect(menuItems[0].disabled).toBe(false); // Archived item should have delete enabled
         });
     });
 
     describe('Event Emission', () => {
         it('should emit actionTriggered when menu actions are triggered', () => {
+            // Set item to archived to enable delete action
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+
             const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
             const menuItems = spectator.component.$menuItems();
 
-            // Test delete action (only available action)
+            // Test delete action (enabled for archived items)
             menuItems[0].command();
             expect(actionSpy).toHaveBeenCalledWith({
                 type: DotHistoryTimelineItemActionType.DELETE,
-                item: mockVersionItem
+                item: { ...mockVersionItem, live: false, working: false }
             });
         });
     });

@@ -17,6 +17,8 @@ public class SearchCriteria {
 
     private final Identifier identifier;
 
+    private final long languageId;
+
     private final User user;
 
     private final boolean bringOldVersions;
@@ -29,6 +31,7 @@ public class SearchCriteria {
 
     private SearchCriteria(final Builder builder) {
         this.identifier = builder.identifier;
+        this.languageId = builder.languageId;
         this.user = builder.user;
         this.bringOldVersions = builder.bringOldVersions;
         this.limit = builder.limit;
@@ -47,7 +50,16 @@ public class SearchCriteria {
     }
 
     /**
-     * Returns the user that is making the search.
+     * Returns the ID of the Language that will be used to filter the returned data.
+     *
+     * @return The Language ID.
+     */
+    public long languageId() {
+        return this.languageId;
+    }
+
+    /**
+     * Returns the user that is executing the content search.
      *
      * @return The {@link User}.
      */
@@ -108,6 +120,7 @@ public class SearchCriteria {
     public String toString() {
         return "SearchCriteria{" +
                 "identifier=" + identifier +
+                ", languageId=" + languageId +
                 ", user=" + user +
                 ", bringOldVersions=" + bringOldVersions +
                 ", limit=" + limit +
@@ -120,6 +133,8 @@ public class SearchCriteria {
     public static class Builder {
 
         private Identifier identifier;
+
+        private long languageId = -1;
 
         private User user;
 
@@ -143,6 +158,25 @@ public class SearchCriteria {
             return this;
         }
 
+        /**
+         * Specifies the Language ID used to filter the returned data.
+         *
+         * @param languageId The Language Id to filter by.
+         *
+         * @return The {@link Builder} instance.
+         */
+        public  Builder withLanguageId(final long languageId) {
+            this.languageId = languageId;
+            return this;
+        }
+
+        /**
+         * Specifies the {@link User} that is requesting the filtered data.
+         *
+         * @param user The {@link User} requesting the data.
+         *
+         * @return The {@link Builder} instance.
+         */
         public Builder withUser(final User user) {
             this.user = user;
             return this;

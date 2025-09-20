@@ -1,8 +1,11 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
-import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { RadioButton } from 'primeng/radiobutton';
+
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentRadioFieldComponent } from './dot-edit-content-radio-field.component';
 
@@ -10,37 +13,46 @@ import {
     RADIO_FIELD_BOOLEAN_MOCK,
     RADIO_FIELD_FLOAT_MOCK,
     RADIO_FIELD_INTEGER_MOCK,
-    RADIO_FIELD_TEXT_MOCK,
-    createFormGroupDirectiveMock
+    RADIO_FIELD_TEXT_MOCK
 } from '../../utils/mocks';
 
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
+
 describe('DotEditContentRadioFieldComponent', () => {
+    let spectator: SpectatorHost<DotEditContentRadioFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentRadioFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
     describe('test with value', () => {
-        let spectator: Spectator<DotEditContentRadioFieldComponent>;
-
-        const FAKE_FORM_GROUP = new FormGroup({
-            radio: new FormControl('one')
-        });
-
-        const createComponent = createComponentFactory({
-            component: DotEditContentRadioFieldComponent,
-            componentViewProviders: [
-                {
-                    provide: ControlContainer,
-                    useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP)
-                }
-            ],
-            providers: [FormGroupDirective],
-            detectChanges: false
-        });
-
-        beforeEach(() => {
-            spectator = createComponent();
-        });
-
         it('should render radio selected if the form have value', () => {
-            spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl('one')
+                        }),
+                        field: RADIO_FIELD_TEXT_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const inputChecked = spectator.queryAll(RadioButton).filter((radio) => radio.checked);
             expect(inputChecked.length).toBe(1);
@@ -48,25 +60,21 @@ describe('DotEditContentRadioFieldComponent', () => {
     });
 
     describe('test without value', () => {
-        let spectator: Spectator<DotEditContentRadioFieldComponent>;
-
-        const createComponent = createComponentFactory({
-            component: DotEditContentRadioFieldComponent,
-            componentViewProviders: [
-                { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
-            ],
-            providers: [FormGroupDirective],
-            detectChanges: false
-        });
-
-        beforeEach(() => {
-            spectator = createComponent({});
-        });
-
         it('should dont have any value if the form value or defaultValue is null', () => {
-            spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
-            spectator.detectComponentChanges();
-
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl()
+                        }),
+                        field: RADIO_FIELD_TEXT_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
             const inputChecked = spectator.queryAll(RadioButton).filter((radio) => radio.checked);
             expect(inputChecked.length).toBe(0);
         });
@@ -76,8 +84,21 @@ describe('DotEditContentRadioFieldComponent', () => {
                 ...RADIO_FIELD_TEXT_MOCK,
                 values: 'one\r\ntwo'
             };
-            spectator.setInput('field', RADIO_FIELD_TEXT_MOCK_WITHOUT_VALUE_AND_LABEL);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_TEXT_MOCK_WITHOUT_VALUE_AND_LABEL.variable]:
+                                new FormControl()
+                        }),
+                        field: RADIO_FIELD_TEXT_MOCK_WITHOUT_VALUE_AND_LABEL
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             expect(spectator.queryAll(RadioButton).map((radio) => radio.value)).toEqual([
                 'one',
@@ -85,14 +106,22 @@ describe('DotEditContentRadioFieldComponent', () => {
             ]);
         });
 
-        it('should render radio options', () => {
-            spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
-            spectator.detectComponentChanges();
-        });
-
         it('should have label with for attribute and text equal to radio options', () => {
-            spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl()
+                        }),
+                        field: RADIO_FIELD_TEXT_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
+
             spectator.queryAll(RadioButton).forEach((radio) => {
                 expect(spectator.query(`label[for="${radio.inputId}"]`)).toBeTruthy();
                 expect(spectator.query(`label[for="${radio.inputId}"]`).textContent).toEqual(
@@ -106,8 +135,21 @@ describe('DotEditContentRadioFieldComponent', () => {
                 ...RADIO_FIELD_FLOAT_MOCK,
                 values: '100.5'
             };
-            spectator.setInput('field', RADIO_FIELD_FLOAT_MOCK_WITHOUT_VALUE_AND_LABEL);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_FLOAT_MOCK_WITHOUT_VALUE_AND_LABEL.variable]:
+                                new FormControl()
+                        }),
+                        field: RADIO_FIELD_FLOAT_MOCK_WITHOUT_VALUE_AND_LABEL
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const expectedList = [
                 {
@@ -132,20 +174,6 @@ describe('DotEditContentRadioFieldComponent', () => {
     });
 
     describe('test DataType', () => {
-        let spectator: Spectator<DotEditContentRadioFieldComponent>;
-
-        const createComponent = createComponentFactory({
-            component: DotEditContentRadioFieldComponent,
-            componentViewProviders: [
-                { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
-            ],
-            providers: [FormGroupDirective],
-            detectChanges: false
-        });
-
-        beforeEach(() => {
-            spectator = createComponent({});
-        });
         it('should have a options array as radio with Text dataType', () => {
             const expectedList = [
                 {
@@ -157,8 +185,20 @@ describe('DotEditContentRadioFieldComponent', () => {
                     value: 'two'
                 }
             ];
-            spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl()
+                        }),
+                        field: RADIO_FIELD_TEXT_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             expect(
                 spectator
@@ -186,8 +226,20 @@ describe('DotEditContentRadioFieldComponent', () => {
                     value: true
                 }
             ];
-            spectator.setInput('field', RADIO_FIELD_BOOLEAN_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_BOOLEAN_MOCK.variable]: new FormControl()
+                        }),
+                        field: RADIO_FIELD_BOOLEAN_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             expect(
                 spectator
@@ -218,8 +270,20 @@ describe('DotEditContentRadioFieldComponent', () => {
                     value: 30
                 }
             ];
-            spectator.setInput('field', RADIO_FIELD_INTEGER_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_INTEGER_MOCK.variable]: new FormControl()
+                        }),
+                        field: RADIO_FIELD_INTEGER_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             expect(
                 spectator
@@ -247,8 +311,20 @@ describe('DotEditContentRadioFieldComponent', () => {
                     value: 9.3
                 }
             ];
-            spectator.setInput('field', RADIO_FIELD_FLOAT_MOCK);
-            spectator.detectComponentChanges();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-radio-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [RADIO_FIELD_FLOAT_MOCK.variable]: new FormControl()
+                        }),
+                        field: RADIO_FIELD_FLOAT_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             expect(
                 spectator

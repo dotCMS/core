@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
-import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { CalendarModule } from 'primeng/calendar';
 
@@ -23,6 +23,10 @@ import {
 import { CALENDAR_FIELD_TYPES_WITH_TIME } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FieldType } from '../../models/dot-edit-content-field.type';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 /**
  * DotEditContentCalendarFieldComponent
@@ -46,19 +50,19 @@ import { FieldType } from '../../models/dot-edit-content-field.type';
  */
 @Component({
     selector: 'dot-edit-content-calendar-field',
-    imports: [CalendarModule, FormsModule, DotMessagePipe],
+    imports: [
+        CalendarModule,
+        ReactiveFormsModule,
+        DotMessagePipe,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent
+    ],
     templateUrl: 'dot-edit-content-calendar-field.component.html',
     styleUrls: ['./dot-edit-content-calendar-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: DotEditContentCalendarFieldComponent,
-            multi: true
-        }
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentCalendarFieldComponent implements ControlValueAccessor {
+export class DotEditContentCalendarFieldComponent extends BaseFieldComponent implements OnInit {
     /**
      * The field configuration (required).
      * Determines the type of calendar field (date, time, datetime).
@@ -79,27 +83,16 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
      */
     $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
 
-    // Internal state for calendar display (always in server timezone)
-    $internalValue = signal<Date | null>(null);
-
-    // Internal state for disabled status
-    $isDisabled = signal<boolean>(false);
-
     // Store last value to reprocess when timezone becomes available
     private lastUtcValue: number | null = null;
 
-    // Pending default value to apply when onChange is ready
-    private pendingDefaultValue: Date | null = null;
-
-    // ControlValueAccessor callbacks
-    private onChange = (_value: Date | null) => {
-        // Callback will be set by Angular Forms via registerOnChange
-    };
-    private onTouched = () => {
-        // Callback will be set by Angular Forms via registerOnTouched
-    };
+    /**
+     * The internal form control for the calendar field.
+     */
+    internalFormControl = new FormControl<Date | null>(null);
 
     constructor() {
+        super();
         // Reprocess existing values when timezone becomes available
         effect(() => {
             const systemTimezone = this.$systemTimezone();
@@ -112,8 +105,14 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
                     fieldType as FieldType,
                     systemTimezone
                 );
-                this.$internalValue.set(displayValue);
+                this.internalFormControl.setValue(displayValue);
             }
+        });
+    }
+
+    ngOnInit() {
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
         });
     }
 
@@ -163,44 +162,21 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
                 this.$systemTimezone()
             );
 
-            this.$internalValue.set(displayValue);
+            this.internalFormControl.setValue(displayValue);
         } else {
             // Process default value for new/empty field (this is NOT a UTC value, it's literal)
             const defaultResult = processFieldDefaultValue(this.$field(), this.$systemTimezone());
 
             if (defaultResult) {
                 // Use displayValue directly - no conversion needed for default values
-                this.$internalValue.set(defaultResult.displayValue);
+                this.internalFormControl.setValue(defaultResult.displayValue);
 
                 // Store pending default value to apply when onChange is registered
-                this.pendingDefaultValue = defaultResult.formValue;
+                this.onChange(defaultResult.formValue.getTime());
             } else {
-                this.$internalValue.set(null);
+                this.internalFormControl.setValue(null);
             }
         }
-    }
-
-    registerOnChange(fn: (value: Date | null) => void): void {
-        this.onChange = fn;
-
-        // Apply pending default value if it exists
-        if (this.pendingDefaultValue !== null) {
-            const pendingValue = this.pendingDefaultValue;
-            setTimeout(() => {
-                // Ensure we send a simple Date object, not a TZDate with complex internal structure
-                const simpleDateForForm = new Date(pendingValue.getTime());
-                this.onChange(simpleDateForForm);
-                this.pendingDefaultValue = null;
-            }, 0);
-        }
-    }
-
-    registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
-    }
-
-    setDisabledState(isDisabled: boolean): void {
-        this.$isDisabled.set(isDisabled);
     }
 
     /**
@@ -217,8 +193,9 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
      */
     onCalendarChange(selectedDate: Date | null): void {
         if (!selectedDate) {
-            this.$internalValue.set(null);
+            this.internalFormControl.setValue(null);
             this.onChange(null);
+            this.onTouched();
             return;
         }
 
@@ -256,10 +233,18 @@ export class DotEditContentCalendarFieldComponent implements ControlValueAccesso
         }
 
         // Update internal display value (what user sees)
-        this.$internalValue.set(displayValue);
+        this.internalFormControl.setValue(displayValue);
 
         // Send the correct moment to form control
         this.onChange(formValue);
         this.onTouched();
+    }
+
+    setDisabledState(isDisabled: boolean): void {
+        if (isDisabled) {
+            this.internalFormControl.disable();
+        } else {
+            this.internalFormControl.enable();
+        }
     }
 }
