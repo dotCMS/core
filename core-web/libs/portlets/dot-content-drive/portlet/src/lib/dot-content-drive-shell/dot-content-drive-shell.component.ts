@@ -6,11 +6,12 @@ import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotFolderService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
@@ -29,9 +30,10 @@ import { encodeFilters } from '../utils/functions';
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
         ToastModule,
-        DialogModule
+        DialogModule,
+        DotContentDriveDialogFolderComponent
     ],
-    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
+    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -130,6 +132,6 @@ export class DotContentDriveShellComponent {
      * Handles dialog hide event to reset the dialog state
      */
     protected onHideDialog() {
-        this.#store.resetDialog();
+        this.#store.closeDialog();
     }
 }

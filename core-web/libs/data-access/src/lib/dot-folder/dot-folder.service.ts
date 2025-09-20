@@ -5,11 +5,18 @@ import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-export interface DotFolder {
-    id: string;
-    hostName: string;
-    path: string;
-    addChildrenAllowed: boolean;
+import { DotFolder } from '@dotcms/dotcms-models';
+
+// TODO: Improve the Name por amor de Dios
+export interface DotFolderCreateBody {
+    assetPath: string;
+    data: {
+        title: string;
+        showOnMenu?: boolean;
+        sortOrder?: number;
+        fileMasks?: string[];
+        defaultAssetType?: string;
+    };
 }
 
 @Injectable()
@@ -28,6 +35,16 @@ export class DotFolderService {
         return this.#http
             .post<{ entity: DotFolder[] }>(`/api/v1/folder/byPath`, { path: folderPath })
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Creates a new folder in the assets system
+     *
+     * @param {DotFolderCreateBody} body - The folder data to create
+     * @returns {Observable<any>} Observable that emits the created folder
+     */
+    createFolder(body: DotFolderCreateBody) {
+        return this.#http.post(`/api/v1/assets/folders`, body);
     }
 
     /**

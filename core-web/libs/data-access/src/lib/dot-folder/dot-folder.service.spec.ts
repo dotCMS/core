@@ -1,6 +1,9 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotFolder, DotFolderService } from './dot-folder.service';
+import { DotFolder } from '@dotcms/dotcms-models';
+import { createFakeFolder } from '@dotcms/utils-testing';
+
+import { DotFolderService } from './dot-folder.service';
 
 describe('DotFolderService', () => {
     let spectator: SpectatorHttp<DotFolderService>;
@@ -8,18 +11,18 @@ describe('DotFolderService', () => {
     const createHttp = createHttpFactory(DotFolderService);
 
     const mockFolders: DotFolder[] = [
-        {
+        createFakeFolder({
             id: '1',
             hostName: 'demo.dotcms.com',
             path: '//application/folder1',
             addChildrenAllowed: true
-        },
-        {
+        }),
+        createFakeFolder({
             id: '2',
             hostName: 'demo.dotcms.com',
             path: '//application/folder2',
             addChildrenAllowed: false
-        }
+        })
     ];
 
     beforeEach(() => {

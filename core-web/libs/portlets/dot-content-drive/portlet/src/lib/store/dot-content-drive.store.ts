@@ -19,6 +19,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
+import { withSidebar } from './features/sidebar/withSidebar';
 
 import {
     DEFAULT_PAGINATION,
@@ -207,5 +208,6 @@ export const DotContentDriveStore = signalStore(
         };
     }),
     withContextMenu(),
-    withDialog()
+    withDialog(),
+    withSidebar()
 );

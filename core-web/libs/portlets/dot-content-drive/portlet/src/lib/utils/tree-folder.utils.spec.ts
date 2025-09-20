@@ -1,4 +1,4 @@
-import { DotFolder } from '@dotcms/data-access';
+import { DotFolder } from '@dotcms/dotcms-models';
 
 import {
     ALL_FOLDER,

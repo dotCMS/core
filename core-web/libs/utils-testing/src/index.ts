@@ -51,3 +51,4 @@ export * from './lib/seo-mock';
 export * from './lib/site-service.mock';
 export * from './lib/split-button.mock';
 export * from './lib/test-setup-helpers';
+export * from './lib/dot-folder.mock';

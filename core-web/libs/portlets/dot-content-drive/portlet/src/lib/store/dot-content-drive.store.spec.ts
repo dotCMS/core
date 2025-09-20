@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentSearchService } from '@dotcms/data-access';
+import { DotContentSearchService, DotFolderService } from '@dotcms/data-access';
 import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
@@ -39,6 +39,9 @@ describe('DotContentDriveStore', () => {
                 siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
             }),
             mockProvider(DotContentSearchService),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
             provideHttpClient()
         ]
     });
@@ -316,6 +319,9 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(DotContentSearchService, {
                 get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
             provideHttpClient()
         ]
     });
@@ -355,6 +361,9 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             }),
             mockProvider(DotContentSearchService, {
                 get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
             }),
             provideHttpClient()
         ]

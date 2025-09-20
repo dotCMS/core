@@ -60,7 +60,7 @@ describe('withDialog', () => {
 
         it('should reset the dialog state', () => {
             store.setDialog(mockDialog);
-            store.resetDialog();
+            store.closeDialog();
             expect(store.dialog()).toEqual(undefined);
         });
     });
