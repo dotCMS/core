@@ -20,6 +20,7 @@
             </label>
             <p-autoComplete
                 formControlName="allowedFileExtensions"
+                data-testid="allowed-file-extensions-autocomplete"
                 (completeMethod)="onCompleteMethod($event)"
                 [suggestions]="$filteredAllowedFileExtensions()"
                 [multiple]="true"
@@ -71,12 +72,14 @@
         pButton
         type="button"
         class="p-button-outlined"
+        data-testid="content-drive-dialog-folder-cancel"
         [label]="'content-drive.dialog.folder.cancel' | dm"
         (click)="closeDialog()"></button>
     <button
         pButton
         type="button"
         class="p-button-primary"
+        data-testid="content-drive-dialog-folder-create"
         [label]="'content-drive.dialog.folder.create' | dm"
         [disabled]="folderForm.invalid"
         (click)="createFolder()"></button>
