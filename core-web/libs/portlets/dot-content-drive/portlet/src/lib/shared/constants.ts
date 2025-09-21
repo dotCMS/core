@@ -107,7 +107,16 @@ export const ALLOWED_FILE_EXTENSIONS = [
     '*.jpeg',
     '*.png',
     '*.gif',
-    '*.bmp',
-    '*.tiff',
-    '*.ico'
+    '*.png',
+    '*.csv',
+    '*.xls',
+    '*.xlsx',
+    '*.pdf',
+    '*.doc',
+    '*.docx',
+    '*.txt',
+    '*.zip',
+    '*.rar',
+    '*.tar',
+    '*.gz'
 ];

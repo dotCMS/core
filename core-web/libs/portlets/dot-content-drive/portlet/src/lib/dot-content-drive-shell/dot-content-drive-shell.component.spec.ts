@@ -269,6 +269,14 @@ describe('DotContentDriveShellComponent', () => {
             const dialog = spectator.query('[data-testid="dialog"]');
             expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
         });
+
+        it('should show dialog-folder component when folder dialog type is set', () => {
+            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            spectator.detectChanges();
+
+            const dialogFolder = spectator.query('[data-testId="dialog-folder"]');
+            expect(dialogFolder).toBeTruthy();
+        });
     });
 
     describe('onPaginate', () => {

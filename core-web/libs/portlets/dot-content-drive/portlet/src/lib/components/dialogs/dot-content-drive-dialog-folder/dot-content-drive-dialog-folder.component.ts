@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -84,7 +85,7 @@ export class DotContentDriveDialogFolderComponent {
         let finalPath = this.hostName;
 
         if (path) {
-            finalPath += `/${path.replace(/\//g, '')}`;
+            finalPath += `${path.replace(/\/$/, '')}`;
         }
 
         return `${finalPath}/${url}`;
@@ -155,15 +156,17 @@ export class DotContentDriveDialogFolderComponent {
                     'content-drive.dialog.folder.message.create-success'
                 )
             });
-        } catch (error) {
-            console.error(error);
+        } catch (err: unknown) {
+            const { error } = err as HttpErrorResponse;
+
+            console.error('Error creating folder:', err);
 
             this.#messageService.add({
                 severity: 'error',
-                summary: 'Error',
-                detail: this.#dotMessageService.get(
+                summary: this.#dotMessageService.get(
                     'content-drive.dialog.folder.message.create-error'
-                )
+                ),
+                detail: error.message
             });
         }
     }

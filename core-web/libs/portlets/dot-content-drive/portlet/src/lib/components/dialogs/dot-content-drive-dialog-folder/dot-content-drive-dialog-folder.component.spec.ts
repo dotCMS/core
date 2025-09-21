@@ -340,7 +340,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
         it('should show error message on creation failure', () => {
             folderService.createFolder.mockReturnValue(
-                throwError(() => new Error('Creation failed'))
+                throwError({ error: { message: 'Creation failed' } })
             );
 
             const createButton = spectator.query(
@@ -350,8 +350,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',
-                summary: 'Error',
-                detail: 'Error creating folder'
+                summary: 'Error creating folder',
+                detail: 'Creation failed'
             });
         });
     });
