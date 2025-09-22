@@ -12,6 +12,12 @@
     height: 100%;
 }
 
+::ng-deep {
+    .p-dialog-content {
+        width: 500px;
+    }
+}
+
 /* The styles below are just for the placeholders. */
 
 .center-content {

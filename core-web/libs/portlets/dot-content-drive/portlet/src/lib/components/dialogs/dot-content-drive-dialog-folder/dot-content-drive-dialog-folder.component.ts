@@ -11,6 +11,7 @@ import {
 
 import { MessageService } from 'primeng/api';
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -18,12 +19,12 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotFolderEntity, DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotFolderEntity } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ALLOWED_FILE_EXTENSIONS, DEFAULT_FILE_ASSET_TYPES } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
-
 interface FolderForm {
     title: FormControl<string>;
     path: FormControl<string>;
@@ -45,7 +46,8 @@ interface FolderForm {
         InputSwitchModule,
         ButtonModule,
         InputNumberModule,
-        AutoCompleteModule
+        AutoCompleteModule,
+        AutoFocusModule
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
     styleUrls: ['./dot-content-drive-dialog-folder.component.scss']
@@ -56,33 +58,51 @@ export class DotContentDriveDialogFolderComponent {
     #store = inject(DotContentDriveStore);
     #messageService = inject(MessageService);
     #dotMessageService = inject(DotMessageService);
+    #dotContentTypeService = inject(DotContentTypeService);
 
-    hostName = this.#store.currentSite().hostname;
+    #hostName = this.#store.currentSite().hostname;
 
-    readonly DEFAULT_FILE_ASSET_TYPES = DEFAULT_FILE_ASSET_TYPES;
+    readonly $fileAssetTypes = toSignal(
+        this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })
+    );
 
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
         path: this.#fb.control('', { nonNullable: true }),
         sortOrder: this.#fb.control<number | null>(1),
         allowedFileExtensions: this.#fb.control([], { nonNullable: true }),
-        defaultFileAssetType: this.#fb.control(DEFAULT_FILE_ASSET_TYPES[1].id, {
+        defaultFileAssetType: this.#fb.control(DEFAULT_FILE_ASSET_TYPES[0].id, {
             nonNullable: true
         }),
         showOnMenu: this.#fb.control(true, { nonNullable: true }),
         url: this.#fb.control('', { validators: [Validators.required], nonNullable: true })
     });
 
+    /** Signal containing the current site information from the store */
     $currentSite = this.#store.currentSite;
+
+    /** Signal tracking changes to the folder title form control */
     $title = toSignal(this.folderForm.get('title')?.valueChanges);
+
+    /** Signal tracking changes to the folder URL form control */
     $url = toSignal(this.folderForm.get('url')?.valueChanges);
+
+    /** Signal containing the filtered list of allowed file extensions for autocomplete */
     $filteredAllowedFileExtensions = signal<string[]>(ALLOWED_FILE_EXTENSIONS);
 
+    /** Signal tracking the loading state during folder creation */
+    $isLoading = signal(false);
+
+    /**
+     * Computed signal that generates the full folder path
+     * Combines hostname, current path, and URL to create the complete folder path
+     * Ensures proper path formatting by removing trailing slashes
+     */
     $finalPath = computed(() => {
         const path = this.#store.path();
         const url = this.$url();
 
-        let finalPath = this.hostName;
+        let finalPath = this.#hostName;
 
         if (path) {
             finalPath += `${path.replace(/\/$/, '')}`;
@@ -141,34 +161,45 @@ export class DotContentDriveDialogFolderComponent {
         this.folderForm.get('url')?.setValue(titleSlug);
     });
 
-    async createFolder() {
+    /**
+     * Creates a new folder using the form data
+     * Sets loading state, makes API call to create folder, and handles success/error cases
+     * On success: Reloads folders, closes dialog, shows success message
+     * On error: Shows error message, logs error, resets loading state
+     */
+    createFolder() {
+        this.$isLoading.set(true);
         const body: DotFolderEntity = this.#createFolderBody();
 
-        try {
-            await this.#dotFolderService.createFolder(body).toPromise();
-            this.#store.loadFolders();
-            this.#store.closeDialog();
+        this.#dotFolderService.createFolder(body).subscribe({
+            next: () => {
+                this.#store.loadFolders();
+                this.#store.closeDialog();
 
-            this.#messageService.add({
-                severity: 'success',
-                summary: 'Success',
-                detail: this.#dotMessageService.get(
-                    'content-drive.dialog.folder.message.create-success'
-                )
-            });
-        } catch (err: unknown) {
-            const { error } = err as HttpErrorResponse;
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: this.#dotMessageService.get(
+                        'content-drive.dialog.folder.message.create-success'
+                    )
+                });
+            },
+            error: (err) => {
+                const { error } = err as HttpErrorResponse;
 
-            console.error('Error creating folder:', err);
+                console.error('Error creating folder:', err);
 
-            this.#messageService.add({
-                severity: 'error',
-                summary: this.#dotMessageService.get(
-                    'content-drive.dialog.folder.message.create-error'
-                ),
-                detail: error.message
-            });
-        }
+                this.$isLoading.set(false);
+
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get(
+                        'content-drive.dialog.folder.message.create-error'
+                    ),
+                    detail: error.message
+                });
+            }
+        });
     }
 
     #createFolderBody() {

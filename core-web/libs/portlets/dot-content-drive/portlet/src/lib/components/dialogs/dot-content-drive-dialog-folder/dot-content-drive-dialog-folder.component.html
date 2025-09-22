@@ -1,14 +1,20 @@
-<p-tabView [formGroup]="folderForm" class="wrapper">
+<p-tabView [formGroup]="folderForm">
     <p-tabPanel
         [header]="'content-drive.dialog.folder.general.header' | dm"
-        class="folder-dialog-content">
+        class="folder-dialog-tab-content">
         <div class="folder-dialog-field">
-            <label for="title">Title</label>
-            <input pInputText id="title" aria-describedby="title-help" formControlName="title" />
+            <label for="title">{{ 'content-drive.dialog.folder.field.title' | dm }}</label>
+            <input
+                pInputText
+                id="title"
+                aria-describedby="title-help"
+                formControlName="title"
+                [autofocus]="true" />
         </div>
     </p-tabPanel>
-    <!-- TODO: Add translations on both tabs headers -->
-    <p-tabPanel [header]="'content-drive.dialog.folder.advanced.header' | dm" class="content">
+    <p-tabPanel
+        [header]="'content-drive.dialog.folder.advanced.header' | dm"
+        class="folder-dialog-tab-content">
         <div class="folder-dialog-field">
             <label for="sortOrder">{{ 'content-drive.dialog.folder.field.sort-order' | dm }}</label>
             <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
@@ -35,13 +41,15 @@
                 {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
             </label>
             <p-dropdown
-                [options]="DEFAULT_FILE_ASSET_TYPES"
+                [options]="$fileAssetTypes()"
                 optionLabel="name"
-                optionValue="id"
+                optionValue="variable"
                 [loading]="false"
                 id="defaultFileAssetType"
                 aria-describedby="defaultFileAssetType-help"
-                placeholder="Select a Default File Asset Type"
+                [placeholder]="
+                    'content-drive.dialog.folder.field.default-file-asset-type.help' | dm
+                "
                 formControlName="defaultFileAssetType" />
         </div>
 
@@ -82,5 +90,6 @@
         data-testid="content-drive-dialog-folder-create"
         [label]="'content-drive.dialog.folder.create' | dm"
         [disabled]="folderForm.invalid"
+        [loading]="$isLoading()"
         (click)="createFolder()"></button>
 </div>

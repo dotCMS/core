@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
-import { DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
 import {
     createFakeSite,
     MockDotMessageService,
@@ -24,6 +24,17 @@ const mockSite = createFakeSite({
 // We need to setup the ResizeObserver mock globally for testing
 // PrimeNG Tabs use this and fails if not setup
 setupResizeObserverMock();
+
+const mockFileAssetTypes = [
+    {
+        id: 'FileAsset',
+        variable: 'File'
+    },
+    {
+        id: 'Video',
+        variable: 'Video'
+    }
+];
 
 describe('DotContentDriveDialogFolderComponent', () => {
     let spectator: Spectator<DotContentDriveDialogFolderComponent>;
@@ -54,7 +65,11 @@ describe('DotContentDriveDialogFolderComponent', () => {
                         'Folder created successfully',
                     'content-drive.dialog.folder.message.create-error': 'Error creating folder'
                 })
-            }
+            },
+            mockProvider(DotContentTypeService, {
+                getAllContentTypes: jest.fn().mockReturnValue(of([])),
+                getContentTypes: jest.fn().mockReturnValue(of(mockFileAssetTypes))
+            })
         ]
     });
 
@@ -73,7 +88,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(component.folderForm.get('sortOrder')?.value).toBe(1);
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([]);
             expect(component.folderForm.get('defaultFileAssetType')?.value).toBe(
-                DEFAULT_FILE_ASSET_TYPES[1].id
+                DEFAULT_FILE_ASSET_TYPES[0].id
             );
             expect(component.folderForm.get('showOnMenu')?.value).toBe(true);
         });
@@ -243,7 +258,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: true,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[1].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
                 }
             });
         });
@@ -265,7 +280,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: true,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[1].id,
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
                     fileMasks: ['*.jpg', '*.png']
                 }
             });
@@ -288,7 +303,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: true,
                     sortOrder: 5,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[1].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
                 }
             });
         });
@@ -310,7 +325,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[1].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
                 }
             });
         });
@@ -376,10 +391,6 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             expect(component.$finalPath()).toContain('integration-test');
-        });
-
-        it('should have correct constants available', () => {
-            expect(component.DEFAULT_FILE_ASSET_TYPES).toEqual(DEFAULT_FILE_ASSET_TYPES);
         });
     });
 });

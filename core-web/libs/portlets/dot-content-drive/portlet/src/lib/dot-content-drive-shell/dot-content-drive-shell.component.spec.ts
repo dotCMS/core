@@ -63,7 +63,8 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                getContentTypes: jest.fn().mockImplementation(() => of([]))
             }),
             mockProvider(DotLanguagesService, {
                 get: jest.fn().mockReturnValue(of())
@@ -129,6 +130,7 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(DotContentTypeService, {
                     getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                     getContentTypesWithPagination: jest.fn().mockReturnValue(
                         of({
                             contentTypes: MOCK_BASE_TYPES,

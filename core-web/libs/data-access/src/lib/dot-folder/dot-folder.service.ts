@@ -5,19 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { DotFolder } from '@dotcms/dotcms-models';
-
-export interface DotFolderEntity {
-    assetPath: string;
-    data: {
-        title: string;
-        showOnMenu?: boolean;
-        sortOrder?: number;
-        fileMasks?: string[];
-        defaultAssetType?: string;
-    };
-}
-
+import { DotFolder, DotFolderEntity } from '@dotcms/dotcms-models';
 @Injectable()
 export class DotFolderService {
     readonly #http = inject(HttpClient);
