@@ -88,10 +88,14 @@
         .p-multiselect-filter-container {
             .p-multiselect-filter {
                 @extend #field-panel-filter;
+                padding-left: $spacing-6;
+                padding-right: $spacing-1;
             }
 
             .p-multiselect-filter-icon {
                 @extend #field-panel-filter-icon;
+                left: $spacing-2;
+                right: unset;
             }
         }
 
@@ -101,6 +105,7 @@
 
         .p-multiselect-close {
             @extend #field-panel-icon-close;
+            display: none;
         }
     }
 

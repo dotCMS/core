@@ -1,0 +1,30 @@
+@let field = $field();
+
+<dot-card-field [hasError]="hasError">
+    <ng-content />
+    <dot-card-field-content>
+        <dot-edit-content-binary-field
+            [formControl]="formControl"
+            [contentlet]="$contentlet()"
+            [field]="field"
+            (valueUpdated)="valueUpdated.emit($event)"
+            [attr.data-testId]="'field-' + field.variable" />
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
+        }
+
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

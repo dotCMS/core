@@ -1,0 +1,36 @@
+@let field = $field();
+
+<dot-card-field [hasError]="hasError">
+    <ng-content />
+    <dot-card-field-content>
+        <div class="flex flex-column gap-2">
+            @for (option of $options(); track $index) {
+                <p-checkbox
+                    [class.ng-invalid]="hasError"
+                    [class.ng-dirty]="hasError"
+                    [name]="field.variable"
+                    [formControl]="formControl"
+                    [value]="option.value"
+                    [label]="option.label || null"
+                    [inputId]="field.variable + '-' + option.value"
+                    data-testid="checkbox-option" />
+            }
+        </div>
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
+        }
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

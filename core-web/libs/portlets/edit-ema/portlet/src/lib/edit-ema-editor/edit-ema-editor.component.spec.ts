@@ -1,8 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
 import {
     SpectatorRouting,
-    createRoutingFactory,
     byTestId,
+    createRoutingFactory,
     mockProvider
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
@@ -57,27 +57,27 @@ import {
     DotcmsEventsService,
     LoginService
 } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
-    DotLanguagesServiceMock,
-    MockDotMessageService,
-    DotDevicesServiceMock,
-    mockDotDevices,
-    LoginServiceMock,
     DotCurrentUserServiceMock,
-    seoOGTagsResultMock,
-    URL_MAP_CONTENTLET,
-    getRunningExperimentMock,
-    getScheduleExperimentMock,
-    getDraftExperimentMock,
+    DotDevicesServiceMock,
+    DotLanguagesServiceMock,
+    DotPersonalizeServiceMock,
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
-    DotPersonalizeServiceMock,
-    MockDotHttpErrorManagerService
+    LoginServiceMock,
+    MockDotHttpErrorManagerService,
+    MockDotMessageService,
+    URL_MAP_CONTENTLET,
+    getDraftExperimentMock,
+    getRunningExperimentMock,
+    getScheduleExperimentMock,
+    mockDotDevices,
+    seoOGTagsResultMock
 } from '@dotcms/utils-testing';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
@@ -96,17 +96,17 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
-    QUERY_PARAMS_MOCK,
-    URL_CONTENT_MAP_MOCK,
     EDIT_ACTION_PAYLOAD_MOCK,
-    TREE_NODE_MOCK,
-    newContentlet,
-    PAYLOAD_MOCK,
-    UVE_PAGE_RESPONSE_MAP,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
-    dotPropertiesServiceMock,
     MOCK_RESPONSE_VTL,
-    PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK
+    PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK,
+    PAYLOAD_MOCK,
+    QUERY_PARAMS_MOCK,
+    TREE_NODE_MOCK,
+    URL_CONTENT_MAP_MOCK,
+    UVE_PAGE_RESPONSE_MAP,
+    dotPropertiesServiceMock,
+    newContentlet
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -3132,6 +3132,178 @@ describe('EditEmaEditorComponent', () => {
                         byTestId('editor-content')
                     ) as HTMLElement;
                     expect(editorContent.style.display).toBe('none');
+                });
+            });
+
+            describe('handleInternalNav', () => {
+                let loadPageAssetSpy: jest.SpyInstance;
+                let windowOpenSpy: jest.SpyInstance;
+
+                beforeEach(() => {
+                    loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    windowOpenSpy = jest.spyOn(window, 'open').mockImplementation();
+
+                    // Mock location.origin
+                    Object.defineProperty(window, 'location', {
+                        value: {
+                            origin: 'http://localhost:3000',
+                            hostname: 'localhost'
+                        },
+                        writable: true
+                    });
+                });
+
+                const createMockEvent = (href: string, isInlineEditing = false): MouseEvent => {
+                    const mockAnchor = {
+                        href,
+                        getAttribute: jest.fn().mockReturnValue(href),
+                        closest: jest.fn().mockReturnValue({ getAttribute: () => href })
+                    };
+
+                    const mockEvent = {
+                        target: mockAnchor,
+                        preventDefault: jest.fn()
+                    } as unknown as MouseEvent;
+
+                    // Mock the store state for inline editing
+                    jest.spyOn(store, 'state').mockReturnValue(
+                        isInlineEditing ? EDITOR_STATE.INLINE_EDITING : EDITOR_STATE.IDLE
+                    );
+
+                    return mockEvent;
+                };
+
+                it('should not do anything if href is empty', () => {
+                    const mockEvent = {
+                        target: { href: '', closest: () => null },
+                        preventDefault: jest.fn()
+                    } as unknown as MouseEvent;
+
+                    jest.spyOn(store, 'state').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                });
+
+                it('should not do anything if isInlineEditing is true', () => {
+                    const mockEvent = createMockEvent('/test-page', true);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                });
+
+                it('should open external URL in new tab', () => {
+                    const externalUrl = 'https://external-site.com/page';
+                    const mockEvent = createMockEvent(externalUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(windowOpenSpy).toHaveBeenCalledWith(externalUrl, '_blank');
+                    expect(loadPageAssetSpy).not.toHaveBeenCalled();
+                });
+
+                it('should load page asset with pathname only for internal URL without query params', () => {
+                    const internalUrl = 'http://localhost:3000/test-page';
+                    const mockEvent = createMockEvent(internalUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/test-page'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should extract and pass query parameters from URL', () => {
+                    const urlWithParams =
+                        'http://localhost:3000/test-page?param1=value1&param2=value2';
+                    const mockEvent = createMockEvent(urlWithParams);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/test-page',
+                        param1: 'value1',
+                        param2: 'value2'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should handle URL encoded query parameters', () => {
+                    const urlWithEncodedParams =
+                        'http://localhost:3000/test-page?path=%2Fhome%2Fuser&name=John%20Doe';
+                    const mockEvent = createMockEvent(urlWithEncodedParams);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/test-page',
+                        path: '/home/user',
+                        name: 'John Doe'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should handle complex query parameters', () => {
+                    const complexUrl =
+                        'http://localhost:3000/test-page?language_id=2&mode=EDIT&persona=test-persona&custom=value';
+                    const mockEvent = createMockEvent(complexUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/test-page',
+                        language_id: '2',
+                        mode: 'EDIT',
+                        persona: 'test-persona',
+                        custom: 'value'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should handle relative URLs correctly', () => {
+                    const relativeUrl = 'relative-page?param=value';
+                    const mockEvent = createMockEvent(relativeUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/relative-page',
+                        param: 'value'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should fallback to closest anchor href when target href is not available', () => {
+                    const mockEvent = {
+                        target: {
+                            href: null,
+                            closest: jest.fn().mockReturnValue({
+                                getAttribute: jest
+                                    .fn()
+                                    .mockReturnValue('http://localhost:3000/fallback-page?test=123')
+                            })
+                        },
+                        preventDefault: jest.fn()
+                    } as unknown as MouseEvent;
+
+                    jest.spyOn(store, 'state').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/fallback-page',
+                        test: '123'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                afterEach(() => {
+                    jest.clearAllMocks();
                 });
             });
         });
