@@ -133,10 +133,20 @@ export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent {
         }
     }
 
+    /**
+     * Get the control of the field.
+     *
+     * @returns {FormGroup} The control of the field.
+     */
     get control(): FormGroup {
         return this.controlContainer.control.get(this.$field().variable) as FormGroup;
     }
 
+    /**
+     * Get if the field has a required validator.
+     *
+     * @returns {boolean} True if the field has a required validator, false otherwise.
+     */
     get hasRequiredValidator(): boolean {
         const control = this.control;
         return control.hasValidator(Validators.required);
