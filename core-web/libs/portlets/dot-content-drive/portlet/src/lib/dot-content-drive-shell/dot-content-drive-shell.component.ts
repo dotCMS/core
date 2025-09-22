@@ -8,7 +8,11 @@ import { DialogModule } from 'primeng/dialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { DotMessageService,  DotFolderService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotFolderService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';

@@ -18,7 +18,7 @@
             max-height: 0;
             opacity: 0;
             display: none;
-            transition: max-height 0.3s ease;
+            transition: max-height $content-drive-animation-speed $content-drive-animation-ease;
         }
 
         .p-tabview-panel[aria-hidden="false"] {
