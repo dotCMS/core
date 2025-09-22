@@ -5975,6 +5975,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: The Language ID that the history will be filtered by
+        in: query
+        name: languageId
+        required: true
+        schema:
+          type: string
       - description: Specified whether the history must be grouped by language or
           not
         in: query
@@ -6019,7 +6025,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: The identifier path parameter was not specified.
+          description: "The identifier path parameter was not specified, or one of\
+            \ the specified parameters is invalid."
         "401":
           content:
             application/json: {}

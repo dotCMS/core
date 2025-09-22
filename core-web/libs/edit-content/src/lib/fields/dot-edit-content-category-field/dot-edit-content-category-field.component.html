@@ -1,21 +1,45 @@
-@if (store.selected().length) {
-    <dot-category-field-chips
-        data-testId="category-chip-list"
-        [categories]="store.selected()"
-        [disabled]="$isDisabled()"
-        (remove)="store.removeRootSelected($event)" />
-}
+@let field = $field();
 
-<div class="dot-category-field__select">
-    <button
-        type="button"
-        (click)="openCategoriesDialog()"
-        [disabled]="store.isDialogOpen() || $isDisabled()"
-        [label]="'edit.content.category-field.show-categories-dialog' | dm"
-        class="p-button-sm p-button-text p-button-secondary"
-        data-testId="show-dialog-btn"
-        pButton></button>
-</div>
+<dot-card-field [hasError]="hasError">
+    <ng-content />
+    <dot-card-field-content>
+        @if (store.selected().length) {
+            <dot-category-field-chips
+                data-testId="category-chip-list"
+                [categories]="store.selected()"
+                [disabled]="$isDisabled()"
+                (remove)="store.removeRootSelected($event)" />
+        }
+
+        <div class="dot-category-field__select">
+            <button
+                type="button"
+                (click)="openCategoriesDialog()"
+                [disabled]="store.isDialogOpen() || $isDisabled()"
+                [label]="'edit.content.category-field.show-categories-dialog' | dm"
+                class="p-button-sm p-button-text p-button-secondary"
+                data-testId="show-dialog-btn"
+                pButton></button>
+        </div>
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
+        }
+
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>
 
 @if (store.isDialogOpen()) {
     @defer (when store.isDialogOpen()) {

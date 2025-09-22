@@ -1,17 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { describe, expect } from '@jest/globals';
-import {
-    byTestId,
-    createComponentFactory,
-    mockProvider,
-    Spectator,
-    SpyObject
-} from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
@@ -26,52 +19,36 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { TAG_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentTagFieldComponent', () => {
-    let spectator: Spectator<DotEditContentTagFieldComponent>;
-    let service: SpyObject<DotEditContentService>;
-    let formGroup: FormGroup;
-    let formGroupDirective: FormGroupDirective;
+    let spectator: SpectatorHost<DotEditContentTagFieldComponent>;
+    let autocomplete: AutoComplete;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotEditContentTagFieldComponent,
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useExisting: FormGroupDirective
-            }
-        ],
-        providers: [FormGroupDirective, mockProvider(DotEditContentService)]
-    });
-
-    beforeEach(() => {
-        formGroup = new FormGroup({});
-        formGroup.addControl(TAG_FIELD_MOCK.variable, new FormControl([]));
-
-        formGroupDirective = new FormGroupDirective([], []);
-        formGroupDirective.form = formGroup;
-
-        spectator = createComponent({
-            detectChanges: false,
-            providers: [
-                {
-                    provide: FormGroupDirective,
-                    useValue: formGroupDirective
-                }
-            ]
-        });
-
-        spectator.setInput({
-            field: TAG_FIELD_MOCK
-        });
-
-        service = spectator.inject(DotEditContentService);
-        service.getTags.mockReturnValue(of(['tagExample']));
-
-        spectator.detectChanges();
+        imports: [ReactiveFormsModule],
+        detectChanges: false,
+        providers: [mockProvider(DotEditContentService)]
     });
 
     describe('Component Configuration', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-tag-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TAG_FIELD_MOCK.variable]: new FormControl([])
+                        }),
+                        field: TAG_FIELD_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
+            autocomplete = spectator.query(AutoComplete);
+        });
+
         it('should render autocomplete with correct attributes', () => {
-            const autocomplete = spectator.query(AutoComplete);
             const container = spectator.query(
                 byTestId(`tag-field-container-${TAG_FIELD_MOCK.variable}`)
             );
@@ -94,8 +71,27 @@ describe('DotEditContentTagFieldComponent', () => {
     });
 
     describe('User Interactions', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-tag-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TAG_FIELD_MOCK.variable]: new FormControl([])
+                        }),
+                        field: TAG_FIELD_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
+            autocomplete = spectator.query(AutoComplete);
+        });
+
         it('should show suggestions when user types valid search term', async () => {
             const expectedTags = ['angular', 'typescript'];
+            const service = spectator.inject(DotEditContentService) as any;
             service.getTags.mockReturnValue(of(expectedTags));
 
             // Simulate user typing
@@ -112,11 +108,9 @@ describe('DotEditContentTagFieldComponent', () => {
         });
 
         describe('Enter key behavior', () => {
-            let autocomplete: AutoComplete;
             let autocompleteInput: HTMLInputElement;
 
             beforeEach(() => {
-                autocomplete = spectator.query(AutoComplete);
                 autocompleteInput = spectator.query('input[role="combobox"]');
             });
 
@@ -183,8 +177,26 @@ describe('DotEditContentTagFieldComponent', () => {
     });
 
     describe('Form Integration', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-tag-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TAG_FIELD_MOCK.variable]: new FormControl([])
+                        }),
+                        field: TAG_FIELD_MOCK
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
         it('should update form value when user selects a tag', async () => {
             const selectedTag = 'angular';
+            const service = spectator.inject(DotEditContentService) as any;
             service.getTags.mockReturnValue(of([selectedTag]));
 
             // Simulate user selecting a tag
@@ -196,6 +208,7 @@ describe('DotEditContentTagFieldComponent', () => {
 
         it('should allow multiple tag selection', async () => {
             const tags = ['angular', 'typescript'];
+            const service = spectator.inject(DotEditContentService) as any;
             service.getTags.mockReturnValue(of(tags));
 
             // Simulate user selecting multiple tags

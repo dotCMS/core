@@ -1327,8 +1327,10 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	}
-	String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
-	String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
+	String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder DROP CONSTRAINT IF EXISTS folder_identifier_fk; " +
+			"ALTER TABLE folder ADD CONSTRAINT folder_identifier_fk FOREIGN KEY (identifier) REFERENCES identifier(id) DEFERRABLE;";
+	String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder DROP CONSTRAINT IF EXISTS folder_identifier_fk; " +
+			"ALTER TABLE folder ADD CONSTRAINT folder_identifier_fk FOREIGN KEY (identifier) REFERENCES identifier(id) NOT DEFERRABLE;";
 	String DEFER_CONSTRAINT_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
 	String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder' or id='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
 	String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";

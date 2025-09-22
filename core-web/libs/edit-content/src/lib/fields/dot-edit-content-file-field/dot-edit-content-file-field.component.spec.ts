@@ -1,18 +1,15 @@
-import {
-    Spectator,
-    SpyObject,
-    byTestId,
-    createComponentFactory,
-    mockProvider
-} from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { ControlContainer } from '@angular/forms';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotDropZoneComponent, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
@@ -23,41 +20,66 @@ import { FileFieldStore } from './store/file-field.store';
 
 import {
     BINARY_FIELD_MOCK,
-    createFormGroupDirectiveMock,
     FILE_FIELD_MOCK,
     IMAGE_FIELD_MOCK,
     NEW_FILE_MOCK
 } from '../../utils/mocks';
 
-describe('DotEditContentFileFieldComponent', () => {
-    let spectator: Spectator<DotEditContentFileFieldComponent>;
-    let store: InstanceType<typeof FileFieldStore>;
-    let uploadService: SpyObject<DotFileFieldUploadService>;
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
 
-    const createComponent = createComponentFactory({
+describe('DotEditContentFileFieldComponent', () => {
+    let spectator: SpectatorHost<DotEditContentFileFieldComponent, MockFormComponent>;
+    let store: InstanceType<typeof FileFieldStore>;
+    let uploadService: jest.Mocked<DotFileFieldUploadService>;
+
+    const createHost = createHostFactory({
         component: DotEditContentFileFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
         detectChanges: false,
+        componentMocks: [
+            DotFileFieldPreviewComponent,
+            DotFileFieldUiMessageComponent,
+            DotDropZoneComponent
+        ],
         componentProviders: [FileFieldStore, mockProvider(DotFileFieldUploadService)],
         providers: [
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DialogService),
-            mockProvider(DotMessageService),
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockReturnValue('Test Message')
+            }),
             mockProvider(DotAiService, {
                 checkPluginInstallation: jest.fn().mockReturnValue(of(true))
             })
-        ],
-        componentViewProviders: [
-            { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ]
     });
 
     describe('FileField', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    field: FILE_FIELD_MOCK
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-file-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [FILE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: FILE_FIELD_MOCK
+                    }
+                }
+            );
             store = spectator.inject(FileFieldStore, true);
             uploadService = spectator.inject(DotFileFieldUploadService, true);
         });
@@ -287,11 +309,10 @@ describe('DotEditContentFileFieldComponent', () => {
             });
 
             it('should prevent file selection when disabled', () => {
+                spectator.detectChanges();
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
                 spectator.component.setDisabledState(true);
-                spectator.detectChanges();
-
                 const mockFiles = {
                     length: 1,
                     0: new File(['test'], 'test.txt', { type: 'text/plain' })
@@ -303,10 +324,10 @@ describe('DotEditContentFileFieldComponent', () => {
             });
 
             it('should prevent file drop when disabled', () => {
+                spectator.detectChanges();
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
                 spectator.component.setDisabledState(true);
-                spectator.detectChanges();
 
                 const mockEvent: DropZoneFileEvent = {
                     file: new File(['test'], 'test.txt', { type: 'text/plain' }),
@@ -329,7 +350,6 @@ describe('DotEditContentFileFieldComponent', () => {
                 const spyDialogOpen = jest.spyOn(dialogService, 'open');
 
                 spectator.component.setDisabledState(true);
-                spectator.detectChanges();
 
                 // Test each dialog method
                 spectator.component.showImportUrlDialog();
@@ -381,14 +401,21 @@ describe('DotEditContentFileFieldComponent', () => {
     });
 
     describe('ImageField', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    props: {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-file-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [IMAGE_FIELD_MOCK.variable]: new FormControl()
+                        }),
                         field: IMAGE_FIELD_MOCK
-                    } as unknown
-                }))
-        );
+                    }
+                }
+            );
+        });
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();
@@ -411,14 +438,21 @@ describe('DotEditContentFileFieldComponent', () => {
     });
 
     describe('BinaryField', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    props: {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-file-field [field]="field" [formControlName]="field.variable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [BINARY_FIELD_MOCK.variable]: new FormControl()
+                        }),
                         field: BINARY_FIELD_MOCK
-                    } as unknown
-                }))
-        );
+                    }
+                }
+            );
+        });
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();

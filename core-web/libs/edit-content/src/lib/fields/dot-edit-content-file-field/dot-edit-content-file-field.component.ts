@@ -1,8 +1,8 @@
+import { signalMethod } from '@ngrx/signals';
+
 import {
     ChangeDetectionStrategy,
     Component,
-    effect,
-    forwardRef,
     inject,
     input,
     OnInit,
@@ -12,7 +12,6 @@ import {
     signal
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -41,6 +40,10 @@ import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
 
 import { INPUT_TYPE, INPUT_TYPES, UploadedFile } from '../../models/dot-edit-content-file.model';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 @Component({
     selector: 'dot-edit-content-file-field',
@@ -51,23 +54,21 @@ import { INPUT_TYPE, INPUT_TYPES, UploadedFile } from '../../models/dot-edit-con
         DotSpinnerModule,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        TooltipModule
+        TooltipModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
     ],
-    providers: [
-        DotFileFieldUploadService,
-        FileFieldStore,
-        DialogService,
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentFileFieldComponent)
-        }
-    ],
+    providers: [DotFileFieldUploadService, FileFieldStore, DialogService],
     templateUrl: './dot-edit-content-file-field.component.html',
     styleUrls: ['./dot-edit-content-file-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentFileFieldComponent implements ControlValueAccessor, OnInit, OnDestroy {
+export class DotEditContentFileFieldComponent
+    extends BaseFieldComponent
+    implements OnInit, OnDestroy
+{
     /**
      * A readonly instance of the FileFieldStore injected into the component.
      * This store is used to manage the state and actions related to the file field.
@@ -146,17 +147,9 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         return '';
     });
 
-    private onChange: ((value: string) => void) | null = null;
-    private onTouched: (() => void) | null = null;
-
     constructor() {
-        effect(() => {
-            if (this.onChange && this.onTouched) {
-                const value = this.store.value();
-                this.onChange(value);
-                this.onTouched();
-            }
-        });
+        super();
+        this.handleValueChange(this.store.value);
     }
 
     /**
@@ -173,6 +166,10 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             fieldVariable: field.variable,
             inputType: field.fieldType as INPUT_TYPE
         });
+
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
+        });
     }
 
     /**
@@ -188,25 +185,6 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
         }
 
         this.store.getAssetData(value);
-    }
-    /**
-     * Registers a callback function that is called when the control's value changes in the UI.
-     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
-     *
-     * @param fn The callback function to register.
-     */
-    registerOnChange(fn: (value: string) => void) {
-        this.onChange = fn;
-    }
-
-    /**
-     * Registers a callback function that is called when the control is marked as touched in the UI.
-     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
-     *
-     * @param fn The callback function to register.
-     */
-    registerOnTouched(fn: () => void) {
-        this.onTouched = fn;
     }
 
     /**
@@ -485,4 +463,13 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
     ngOnDestroy() {
         this.#dialogRef?.close();
     }
+
+    readonly handleValueChange = signalMethod<string>((value) => {
+        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
+            return;
+        }
+
+        this.onChange(value);
+        this.onTouched();
+    });
 }
