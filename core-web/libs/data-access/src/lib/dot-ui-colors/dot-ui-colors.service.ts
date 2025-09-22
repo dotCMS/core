@@ -100,11 +100,10 @@ export class DotUiColorsService {
     private setShades(el: HTMLElement, hex: string, type: ColorType) {
         const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
 
-        for (const shade in dictionary) {
-            // @ts-expect-error - dictionary is a valid object
-            const color = shades[dictionary[shade]];
+        Object.entries(dictionary).forEach(([shade, shadeKey]) => {
+            const color = shades[shadeKey as keyof typeof shades];
             el.style.setProperty(`--color-palette-${type}-${shade}`, color);
-        }
+        });
     }
 
     private setOpacities(el: HTMLElement, saturation: string, type: ColorType) {
