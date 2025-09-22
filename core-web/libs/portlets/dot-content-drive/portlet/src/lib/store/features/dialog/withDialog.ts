@@ -18,7 +18,7 @@ export function withDialog() {
             setDialog: (dialog: DotContentDriveDialog) => {
                 patchState(store, { dialog });
             },
-            resetDialog: () => {
+            closeDialog: () => {
                 patchState(store, { dialog: undefined });
             }
         }))

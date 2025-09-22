@@ -1,5 +1,12 @@
-import { SiteEntity } from '@dotcms/dotcms-models';
+import { forkJoin, Observable } from 'rxjs';
+
+import { map } from 'rxjs/operators';
+
+import { DotFolderService } from '@dotcms/data-access';
+import { DotFolder, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
+
+import { createTreeNode, generateAllParentPaths, TreeNodeItem } from './tree-folder.utils';
 
 import { BASE_QUERY, SYSTEM_HOST } from '../shared/constants';
 import {
@@ -221,4 +228,51 @@ export function buildContentDriveQuery({
         });
 
     return modifiedQuery.build();
+}
+
+/**
+ * Fetches all parent folders from a given path using parallel API calls
+ *
+ * Example: '/main/sub-folder/inner-folder/child-folder' will make calls to:
+ * - /main/sub-folder/inner-folder/child-folder
+ * - /main/sub-folder/inner-folder
+ * - /main/sub-folder
+ * - /main
+ * - /
+ *
+ * @param {string} path - The full path to generate parent paths from
+ * @param {DotFolderService} dotFolderService - The folder service
+ * @returns {Observable<DotFolder[][]>} Observable that emits an array of folder arrays (one for each path level)
+ */
+export function getFolderHierarchyByPath(
+    path: string,
+    dotFolderService: DotFolderService
+): Observable<DotFolder[][]> {
+    const paths = generateAllParentPaths(path);
+    const folderRequests = paths.map((path) => dotFolderService.getFolders(path));
+
+    return forkJoin(folderRequests);
+}
+
+/**
+ * Fetches folders and transforms them into tree nodes
+ *
+ * @param {string} path - The path to fetch folders from
+ * @param {DotFolderService} dotFolderService - The folder service
+ * @returns {Observable<{ parent: DotFolder; folders: TreeNodeItem[] }>}
+ */
+export function getFolderNodesByPath(
+    path: string,
+    dotFolderService: DotFolderService
+): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
+    return dotFolderService.getFolders(path).pipe(
+        map((folders) => {
+            const [parent, ...childFolders] = folders;
+
+            return {
+                parent,
+                folders: childFolders.map((folder) => createTreeNode(folder))
+            };
+        })
+    );
 }
