@@ -17,7 +17,6 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 
-
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { AppComponent } from './app.component';
 

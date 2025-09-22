@@ -42,7 +42,6 @@ import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dot
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
-
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
@@ -55,7 +54,7 @@ import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentl
     template: '',
     standalone: false
 })
-class MockDotDialogComponent { }
+class MockDotDialogComponent {}
 
 @Component({
     selector: 'dot-toolbar',
@@ -71,7 +70,7 @@ class MockDotToolbarComponent {
     template: '',
     standalone: false
 })
-class MockDotGenerateSecurePasswordComponent { }
+class MockDotGenerateSecurePasswordComponent {}
 
 @Component({
     selector: 'dot-main-nav',
@@ -87,21 +86,21 @@ class MockDotMainNavComponent {
     template: '',
     standalone: false
 })
-class MockDotMessageDisplayComponent { }
+class MockDotMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-large-message-display',
     template: '',
     standalone: false
 })
-class MockDotLargeMessageDisplayComponent { }
+class MockDotLargeMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-push-publish-dialog',
     template: '',
     standalone: false
 })
-class MockDotPushPublishDialogComponent { }
+class MockDotPushPublishDialogComponent {}
 
 describe('MainLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;

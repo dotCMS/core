@@ -20,7 +20,6 @@ import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
-
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({

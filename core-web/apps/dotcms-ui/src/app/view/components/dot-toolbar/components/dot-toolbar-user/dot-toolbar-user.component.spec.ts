@@ -47,7 +47,6 @@ import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
-
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
@@ -69,7 +68,7 @@ describe('DotToolbarUserComponent', () => {
                 {
                     provide: LOCATION_TOKEN,
                     useValue: {
-                        reload() { }
+                        reload() {}
                     }
                 },
                 { provide: LoginService, useClass: LoginServiceMock },

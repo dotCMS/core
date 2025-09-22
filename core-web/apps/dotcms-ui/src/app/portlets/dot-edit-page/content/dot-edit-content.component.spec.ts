@@ -139,14 +139,14 @@ const EXPERIMENT_MOCK = getExperimentMock(1);
     template: '',
     standalone: false
 })
-class MockGlobalMessageComponent { }
+class MockGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-test',
     template: '<dot-edit-content></dot-edit-content>',
     standalone: false
 })
-class HostTestComponent { }
+class HostTestComponent {}
 
 @Component({
     selector: 'dot-icon',

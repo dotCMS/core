@@ -39,7 +39,6 @@ import {
 
 import { DotAddContentletComponent } from './dot-add-contentlet.component';
 
-
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';

@@ -18,7 +18,6 @@ import {
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
 
-
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotOverlayMaskModule } from '../../dot-overlay-mask/dot-overlay-mask.module';
 import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
@@ -32,7 +31,7 @@ const fakeHtmlEl = {
     template: '',
     standalone: false
 })
-class MockDotLoadingIndicatorComponent { }
+class MockDotLoadingIndicatorComponent {}
 
 describe('IframeComponent', () => {
     let comp: IframeComponent;

@@ -59,13 +59,13 @@ describe('DotEmaDialogComponent', () => {
                 data?: unknown;
             };
         } = {
-                detail: {
-                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                    payload: {
-                        htmlPageReferer: '/my-awesome-page'
-                    }
+            detail: {
+                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                payload: {
+                    htmlPageReferer: '/my-awesome-page'
                 }
             }
+        }
     ) => {
         const dialogIframe = spectator.debugElement.query(By.css('[data-testId="dialog-iframe"]'));
 

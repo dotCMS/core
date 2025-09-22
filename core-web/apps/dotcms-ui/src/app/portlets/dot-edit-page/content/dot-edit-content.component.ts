@@ -270,10 +270,10 @@ browse from the page internal links
     reload(contentlet: DotCMSContentlet): void {
         contentlet
             ? this.dotRouterService.goToEditPage({
-                url: contentlet.url,
-                host_id: contentlet.host,
-                language_id: contentlet.languageId
-            })
+                  url: contentlet.url,
+                  host_id: contentlet.host,
+                  language_id: contentlet.languageId
+              })
             : this.dotPageStateService.reload();
     }
 

@@ -52,7 +52,6 @@ import {
 
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
-
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';

@@ -27,7 +27,6 @@ import {
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 
-
 import { DotAccountService } from './api/services/dot-account-service';
 import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
 import { DotMenuService } from './api/services/dot-menu.service';
