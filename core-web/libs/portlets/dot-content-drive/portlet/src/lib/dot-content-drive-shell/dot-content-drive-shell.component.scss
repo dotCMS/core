@@ -5,8 +5,9 @@
     grid-template-columns: min-content 1fr min-content;
 
     /* This is the height according to figma for the first row */
-    grid-template-rows: 7.125rem 1fr; //114px 1fr
+    grid-template-rows: min-content 7.125rem 1fr; //114px 1fr
     grid-template-areas:
+        "messages messages messages"
         "tree toolbar detail"
         "tree list    detail";
     height: 100%;
@@ -28,10 +29,14 @@ dot-content-drive-toolbar {
     grid-area: toolbar;
 }
 
+p-messages {
+    grid-area: messages;
+}
+
 .tree-selector {
     grid-area: tree;
     overflow: hidden;
-    transition: all 0.3s ease-in-out;
+    transition: all $content-drive-animation-speed $content-drive-animation-ease;
     visibility: hidden;
     width: 0;
     border-right: 1px solid $color-palette-gray-300;

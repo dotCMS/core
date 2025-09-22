@@ -348,4 +348,30 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.resetDialog).toHaveBeenCalled();
         });
     });
+
+    describe('message', () => {
+        it('should show the message', () => {
+            spectator.detectChanges();
+
+            const message = spectator.query('[data-testid="message"]');
+            expect(message).toBeTruthy();
+        });
+
+        it('should show the message content', () => {
+            spectator.detectChanges();
+
+            const messageContent = spectator.query('[data-testid="message-content"]');
+            expect(messageContent).toBeTruthy();
+        });
+
+        it('should set $showMessage to false when close button is clicked', () => {
+            spectator.detectChanges();
+
+            const closeButton = spectator.query('[data-testid="close-message"]');
+            closeButton.dispatchEvent(new Event('click'));
+            spectator.detectChanges();
+
+            expect(spectator.component.$showMessage()).toBe(false);
+        });
+    });
 });
