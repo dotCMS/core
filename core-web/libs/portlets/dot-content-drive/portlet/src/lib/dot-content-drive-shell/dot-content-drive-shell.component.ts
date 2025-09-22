@@ -149,17 +149,4 @@ export class DotContentDriveShellComponent {
     protected onCloseMessage() {
         this.$showMessage.set(false);
     }
-
-    /**
-     * Opens the learn more dialog
-     *
-     * @protected
-     * @memberof DotContentDriveShellComponent
-     */
-    protected onLearnMore() {
-        this.#store.setDialog({
-            type: DIALOG_TYPE.MESSAGE,
-            header: this.#dotMessageService.get('content-drive.dialog.learn-more.header')
-        });
-    }
 }

@@ -364,13 +364,6 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageContent).toBeTruthy();
         });
 
-        it('should show the learn more button', () => {
-            spectator.detectChanges();
-
-            const learnMoreButton = spectator.query('[data-testid="learn-more"]');
-            expect(learnMoreButton).toBeTruthy();
-        });
-
         it('should set $showMessage to false when close button is clicked', () => {
             spectator.detectChanges();
 
@@ -379,19 +372,6 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$showMessage()).toBe(false);
-        });
-
-        it('should call setDialog when learn more button is clicked', () => {
-            spectator.detectChanges();
-
-            const learnMoreButton = spectator.query('[data-testid="learn-more"]');
-            learnMoreButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(store.setDialog).toHaveBeenCalledWith({
-                type: DIALOG_TYPE.MESSAGE,
-                header: 'content-drive.dialog.learn-more.header'
-            });
         });
     });
 });

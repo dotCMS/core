@@ -11,13 +11,6 @@
                 </div>
                 <div class="flex align-items-center gap-2">
                     <p-button
-                        styleClass="p-button-text p-button-sm"
-                        type="button"
-                        [label]="'learn-more' | dm"
-                        data-testid="learn-more"
-                        (click)="onLearnMore()"></p-button>
-
-                    <p-button
                         styleClass="p-button-text p-button-rounded p-button-sm p-button-icon-only"
                         type="button"
                         icon="pi pi-times"
@@ -72,13 +65,6 @@
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <div>Folder dialog</div>
-        }
-        @case (DIALOG_TYPE.MESSAGE) {
-            <div class="dialog-development-message">
-                {{ 'content-drive.dialog.in-development-message-1' | dm }}
-                <br />
-                {{ 'content-drive.dialog.in-development-message-2' | dm }}
-            </div>
         }
         @default {
             <div>Default dialog</div>
