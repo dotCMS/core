@@ -20,7 +20,8 @@ import {
     DotMessageDisplayService,
     DotPageRenderService,
     DotRouterService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -49,7 +50,6 @@ import {
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
 
-import { DotUiColorsService } from '../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
