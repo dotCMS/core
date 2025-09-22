@@ -15,10 +15,7 @@ import {
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 
-import {
-    DotHistoryTimelineItemAction,
-    DotHistoryTimelineItemActionType
-} from '../../../../models/dot-edit-content.model';
+import { DotHistoryTimelineItemAction } from '../../../../models/dot-edit-content.model';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -44,11 +41,6 @@ import {
 })
 export class DotEditContentSidebarHistoryComponent {
     private readonly dotMessagePipe = inject(DotMessagePipe);
-
-    /**
-     * Expose DotHistoryTimelineItemActionType to template
-     */
-    readonly DotHistoryTimelineItemActionType = DotHistoryTimelineItemActionType;
 
     /**
      * List of history items to display (accumulated items from store)

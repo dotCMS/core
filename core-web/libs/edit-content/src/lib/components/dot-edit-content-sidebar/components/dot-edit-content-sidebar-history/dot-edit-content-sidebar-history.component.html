@@ -47,7 +47,7 @@
                                     [isActive]="historicalVersionInode === item.inode"
                                     (click)="
                                         timelineItemAction.emit({
-                                            type: DotHistoryTimelineItemActionType.VIEW,
+                                            type: 'view',
                                             item
                                         })
                                     "
