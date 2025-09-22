@@ -99,7 +99,7 @@ export const DIALOG_TYPE = {
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
 
-export const ALLOWED_FILE_EXTENSIONS = [
+export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
     '*.jpg',
     '*.jpeg',
     '*.png',

@@ -23,7 +23,10 @@ import { DotContentTypeService, DotFolderService, DotMessageService } from '@dot
 import { DotFolderEntity } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { ALLOWED_FILE_EXTENSIONS, DEFAULT_FILE_ASSET_TYPES } from '../../../shared/constants';
+import {
+    SUGGESTED_ALLOWED_FILE_EXTENSIONS,
+    DEFAULT_FILE_ASSET_TYPES
+} from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 interface FolderForm {
     title: FormControl<string>;
@@ -88,7 +91,7 @@ export class DotContentDriveDialogFolderComponent {
     $url = toSignal(this.folderForm.get('url')?.valueChanges);
 
     /** Signal containing the filtered list of allowed file extensions for autocomplete */
-    $filteredAllowedFileExtensions = signal<string[]>(ALLOWED_FILE_EXTENSIONS);
+    $filteredAllowedFileExtensions = signal<string[]>(SUGGESTED_ALLOWED_FILE_EXTENSIONS);
 
     /** Signal tracking the loading state during folder creation */
     $isLoading = signal(false);
@@ -140,7 +143,9 @@ export class DotContentDriveDialogFolderComponent {
      * @param {AutoCompleteCompleteEvent} param0 - The autocomplete event containing the query string
      */
     onCompleteMethod({ query }: AutoCompleteCompleteEvent) {
-        const extensions = ALLOWED_FILE_EXTENSIONS.filter((extension) => extension.includes(query));
+        const extensions = SUGGESTED_ALLOWED_FILE_EXTENSIONS.filter((extension) =>
+            extension.includes(query)
+        );
 
         this.$filteredAllowedFileExtensions.set(extensions);
     }
