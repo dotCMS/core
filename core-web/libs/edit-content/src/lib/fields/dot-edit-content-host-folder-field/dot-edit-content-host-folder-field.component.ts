@@ -8,7 +8,14 @@ import {
     viewChild,
     OnInit
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import {
+    FormControl,
+    ReactiveFormsModule,
+    FormsModule,
+    ControlContainer,
+    FormGroup,
+    Validators
+} from '@angular/forms';
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
@@ -47,12 +54,19 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     ],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [HostFolderFiledStore]
+    providers: [HostFolderFiledStore],
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
-export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent implements OnInit {
+export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     $treeSelect = viewChild<TreeSelect>(TreeSelect);
     readonly store = inject(HostFolderFiledStore);
+    readonly controlContainer = inject(ControlContainer);
 
     pathControl = new FormControl(null);
 
@@ -63,13 +77,6 @@ export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent i
         this.handlePathToSaveChange(this.store.pathToSave);
     }
 
-    ngOnInit(): void {
-        this.store.loadSites({
-            path: this.pathControl.value,
-            isRequired: this.isRequired
-        });
-    }
-
     /**
      * Set the value of the field.
      * If the value is empty, nothing happens.
@@ -78,13 +85,9 @@ export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent i
      * @param value the value to set
      */
     writeValue(currentPath: string): void {
-        if (!this.formControl) {
-            return;
-        }
-
         this.store.loadSites({
             path: currentPath,
-            isRequired: this.isRequired
+            isRequired: this.hasRequiredValidator
         });
     }
 
@@ -128,5 +131,14 @@ export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent i
         } else {
             this.pathControl.enable({ emitEvent: false });
         }
+    }
+
+    get control(): FormGroup {
+        return this.controlContainer.control.get(this.$field().variable) as FormGroup;
+    }
+
+    get hasRequiredValidator(): boolean {
+        const control = this.control;
+        return control.hasValidator(Validators.required);
     }
 }
