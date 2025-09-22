@@ -1,15 +1,17 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
-import { DotAddToBundleComponent } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
@@ -29,7 +31,10 @@ import { encodeFilters } from '../utils/functions';
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
         ToastModule,
-        DialogModule
+        DialogModule,
+        MessagesModule,
+        ButtonModule,
+        DotMessagePipe
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -42,6 +47,7 @@ export class DotContentDriveShellComponent {
     readonly #router = inject(Router);
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -53,6 +59,7 @@ export class DotContentDriveShellComponent {
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
+    readonly $showMessage = signal<boolean>(true);
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -131,5 +138,15 @@ export class DotContentDriveShellComponent {
      */
     protected onHideDialog() {
         this.#store.resetDialog();
+    }
+
+    /**
+     * Closes the message
+     *
+     * @protected
+     * @memberof DotContentDriveShellComponent
+     */
+    protected onCloseMessage() {
+        this.$showMessage.set(false);
     }
 }

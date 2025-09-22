@@ -1,9 +1,35 @@
 @let field = $field();
-<input
-    [id]="field.variable"
-    [formControlName]="field.variable"
-    [attr.data-testId]="field.variable"
-    [type]="inputTextOptions[field.dataType].type"
-    [attr.inputmode]="inputTextOptions[field.dataType].inputMode"
-    [attr.step]="inputTextOptions[field.dataType].step"
-    pInputText />
+
+<dot-card-field [hasError]="hasError">
+    <ng-content />
+    <dot-card-field-content>
+        <input
+            [id]="field.variable"
+            [name]="field.variable"
+            [formControl]="formControl"
+            [class.ng-invalid]="hasError"
+            [class.ng-dirty]="hasError"
+            [attr.data-testId]="field.variable"
+            [type]="inputTextOptions[field.dataType].type"
+            [attr.inputmode]="inputTextOptions[field.dataType].inputMode"
+            [attr.step]="inputTextOptions[field.dataType].step"
+            pInputText />
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
+        }
+
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

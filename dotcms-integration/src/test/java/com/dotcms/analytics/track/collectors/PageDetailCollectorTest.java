@@ -20,6 +20,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,6 +42,7 @@ import static org.mockito.Mockito.mock;
 
 @ApplicationScoped
 @RunWith(JUnit4WeldRunner.class)
+@Ignore("Data Collectors have been disabled in favor of creating events via REST")
 public class PageDetailCollectorTest extends IntegrationTestBase {
 
     private static final String PARENT_FOLDER_1_NAME = "news";
