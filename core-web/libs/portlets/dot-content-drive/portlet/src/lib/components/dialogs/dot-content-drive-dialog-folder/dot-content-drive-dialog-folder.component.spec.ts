@@ -6,11 +6,7 @@ import { MessageService } from 'primeng/api';
 import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
-import {
-    createFakeSite,
-    MockDotMessageService,
-    setupResizeObserverMock
-} from '@dotcms/utils-testing';
+import { createFakeSite, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog-folder.component';
 
@@ -20,10 +16,6 @@ import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 const mockSite = createFakeSite({
     hostname: 'demo.dotcms.com'
 });
-
-// We need to setup the ResizeObserver mock globally for testing
-// PrimeNG Tabs use this and fails if not setup
-setupResizeObserverMock();
 
 const mockFileAssetTypes = [
     {
