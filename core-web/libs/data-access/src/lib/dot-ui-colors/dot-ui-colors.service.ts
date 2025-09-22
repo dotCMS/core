@@ -24,7 +24,8 @@ type ColorType = 'primary' | 'secondary';
 
 export const DEFAULT_COLORS = {
     primary: '#426BF0',
-    secondary: '#7042F0'
+    secondary: '#7042F0',
+    background: '#FFFFFF'
 };
 
 function parseHSL(hslString: string): HslObject {
@@ -47,7 +48,7 @@ function parseHSL(hslString: string): HslObject {
 
 @Injectable()
 export class DotUiColorsService {
-    private currentColors: DotUiColors;
+    private currentColors: DotUiColors = DEFAULT_COLORS;
 
     /**
      * Set CSS variables colors
@@ -100,6 +101,7 @@ export class DotUiColorsService {
         const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
 
         for (const shade in dictionary) {
+            // @ts-ignore
             const color = shades[dictionary[shade]];
             el.style.setProperty(`--color-palette-${type}-${shade}`, color);
         }

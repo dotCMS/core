@@ -8,7 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService, DotUiColorsService } from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -17,8 +17,8 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 
+
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
-import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {

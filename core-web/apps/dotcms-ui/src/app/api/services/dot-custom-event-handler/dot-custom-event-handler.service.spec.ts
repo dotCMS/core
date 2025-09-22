@@ -23,6 +23,7 @@ import {
     DotMessageDisplayService,
     DotPropertiesService,
     DotRouterService,
+    DotUiColorsService,
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
@@ -56,7 +57,6 @@ import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../dot-menu.service';
-import { DotUiColorsService } from '../dot-ui-colors/dot-ui-colors.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;

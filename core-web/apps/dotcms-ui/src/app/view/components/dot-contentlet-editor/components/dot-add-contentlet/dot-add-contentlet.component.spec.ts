@@ -10,11 +10,12 @@ import { ConfirmationService } from 'primeng/api';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
     DotRouterService,
-    DotIframeService,
-    DotFormatDateService
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -38,8 +39,8 @@ import {
 
 import { DotAddContentletComponent } from './dot-add-contentlet.component';
 
+
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';

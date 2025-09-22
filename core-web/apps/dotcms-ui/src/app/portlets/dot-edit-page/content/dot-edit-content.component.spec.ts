@@ -40,6 +40,7 @@ import {
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
     DotSessionStorageService,
+    DotUiColorsService,
     DotWorkflowActionsFireService,
     DotWorkflowService
 } from '@dotcms/data-access';
@@ -100,7 +101,6 @@ import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-conte
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotOverlayMaskModule } from '../../../view/components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -139,14 +139,14 @@ const EXPERIMENT_MOCK = getExperimentMock(1);
     template: '',
     standalone: false
 })
-class MockGlobalMessageComponent {}
+class MockGlobalMessageComponent { }
 
 @Component({
     selector: 'dot-test',
     template: '<dot-edit-content></dot-edit-content>',
     standalone: false
 })
-class HostTestComponent {}
+class HostTestComponent { }
 
 @Component({
     selector: 'dot-icon',
