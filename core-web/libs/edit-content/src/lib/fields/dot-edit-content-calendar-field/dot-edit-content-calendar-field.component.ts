@@ -1,5 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    forwardRef,
+    inject,
+    input,
+    OnInit
+} from '@angular/core';
+import {
+    ControlContainer,
+    FormControl,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 
 import { CalendarModule } from 'primeng/calendar';
 
@@ -60,7 +74,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     ],
     templateUrl: 'dot-edit-content-calendar-field.component.html',
     styleUrls: ['./dot-edit-content-calendar-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentCalendarFieldComponent)
+        }
+    ]
 })
 export class DotEditContentCalendarFieldComponent extends BaseFieldComponent implements OnInit {
     /**

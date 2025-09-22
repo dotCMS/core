@@ -9,9 +9,11 @@ import {
     OnDestroy,
     DestroyRef,
     computed,
-    signal
+    signal,
+    forwardRef
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ControlContainer, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -60,7 +62,22 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotCardFieldFooterComponent,
         DotMessagePipe
     ],
-    providers: [DotFileFieldUploadService, FileFieldStore, DialogService],
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        DotFileFieldUploadService,
+        FileFieldStore,
+        DialogService,
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentFileFieldComponent)
+        }
+    ],
     templateUrl: './dot-edit-content-file-field.component.html',
     styleUrls: ['./dot-edit-content-file-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

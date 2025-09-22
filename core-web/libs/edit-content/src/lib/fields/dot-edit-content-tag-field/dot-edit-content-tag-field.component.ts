@@ -8,10 +8,16 @@ import {
     model,
     signal,
     viewChild,
-    OnInit
+    OnInit,
+    forwardRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    ControlContainer,
+    FormsModule,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
@@ -50,7 +56,20 @@ export const AUTO_COMPLETE_UNIQUE = true;
     ],
     templateUrl: './dot-edit-content-tag-field.component.html',
     styleUrl: './dot-edit-content-tag-field.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentTagFieldComponent)
+        }
+    ]
 })
 export class DotEditContentTagFieldComponent extends BaseFieldComponent implements OnInit {
     #editContentService = inject(DotEditContentService);

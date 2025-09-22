@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, forwardRef, inject, input } from '@angular/core';
+import { ControlContainer, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -21,7 +21,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         BlockEditorModule
     ],
     templateUrl: './dot-edit-content-block-editor.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentBlockEditorComponent)
+        }
+    ]
 })
 export class DotEditContentBlockEditorComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({

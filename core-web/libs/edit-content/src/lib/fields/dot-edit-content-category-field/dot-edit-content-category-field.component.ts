@@ -3,13 +3,14 @@ import {
     Component,
     computed,
     effect,
+    forwardRef,
     inject,
     Injector,
     input,
     OnInit,
     signal
 } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -55,7 +56,21 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         '[class.dot-category-field__container]': '!$hasSelectedCategories()',
         '[class.dot-category-field__container--disabled]': '$isDisabled()'
     },
-    providers: [CategoriesService, CategoryFieldStore]
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        CategoriesService,
+        CategoryFieldStore,
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentCategoryFieldComponent)
+        }
+    ]
 })
 export class DotEditContentCategoryFieldComponent extends BaseFieldComponent implements OnInit {
     readonly store = inject(CategoryFieldStore);

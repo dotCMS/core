@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    forwardRef,
+    inject,
+    input,
+    viewChild
+} from '@angular/core';
+import { ControlContainer, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent, DotMessagePipe } from '@dotcms/ui';
@@ -29,7 +36,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     ],
     templateUrl: './dot-edit-content-json-field.component.html',
     styleUrls: ['./dot-edit-content-json-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentJsonFieldComponent)
+        }
+    ]
 })
 export class DotEditContentJsonFieldComponent extends BaseFieldComponent {
     /**

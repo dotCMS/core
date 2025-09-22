@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    forwardRef,
+    inject,
+    input
+} from '@angular/core';
+import { ControlContainer, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
 
@@ -26,7 +33,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-radio-field.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentRadioFieldComponent)
+        }
+    ]
 })
 export class DotEditContentRadioFieldComponent extends BaseFieldComponent {
     /**

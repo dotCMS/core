@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    forwardRef,
+    inject,
+    input
+} from '@angular/core';
+import {
+    ControlContainer,
+    FormsModule,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
@@ -24,7 +36,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    templateUrl: './dot-edit-content-checkbox-field.component.html'
+    templateUrl: './dot-edit-content-checkbox-field.component.html',
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentCheckboxFieldComponent)
+        }
+    ]
 })
 export class DotEditContentCheckboxFieldComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });

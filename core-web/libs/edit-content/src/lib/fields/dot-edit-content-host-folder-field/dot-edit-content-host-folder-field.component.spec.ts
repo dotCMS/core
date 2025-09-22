@@ -35,7 +35,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     const createHost = createHostFactory({
         component: DotEditContentHostFolderFieldComponent,
         host: MockFormComponent,
-        imports: [ReactiveFormsModule],
+        imports: [ReactiveFormsModule, DotEditContentHostFolderFieldComponent],
         providers: [
             HostFolderFiledStore,
             mockProvider(DotEditContentService, {

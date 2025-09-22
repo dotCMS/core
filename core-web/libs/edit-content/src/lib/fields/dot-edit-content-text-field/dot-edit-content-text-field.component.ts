@@ -1,5 +1,10 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, forwardRef, inject, input } from '@angular/core';
+import {
+    ReactiveFormsModule,
+    FormsModule,
+    NG_VALUE_ACCESSOR,
+    ControlContainer
+} from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -26,7 +31,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentTextFieldComponent)
+        }
+    ]
 })
 export class DotEditContentTextFieldComponent extends BaseFieldComponent {
     /**

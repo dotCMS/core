@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    forwardRef,
+    inject,
+    input
+} from '@angular/core';
+import { ControlContainer, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
@@ -23,7 +30,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    templateUrl: './dot-edit-content-select-field.component.html'
+    templateUrl: './dot-edit-content-select-field.component.html',
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentSelectFieldComponent)
+        }
+    ]
 })
 export class DotEditContentSelectFieldComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });

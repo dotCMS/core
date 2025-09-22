@@ -6,9 +6,16 @@ import {
     inject,
     input,
     viewChild,
-    OnInit
+    OnInit,
+    forwardRef
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import {
+    FormControl,
+    ReactiveFormsModule,
+    FormsModule,
+    ControlContainer,
+    NG_VALUE_ACCESSOR
+} from '@angular/forms';
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
@@ -47,7 +54,20 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     ],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [HostFolderFiledStore]
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    providers: [
+        HostFolderFiledStore,
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentHostFolderFieldComponent)
+        }
+    ]
 })
 export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent implements OnInit {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });

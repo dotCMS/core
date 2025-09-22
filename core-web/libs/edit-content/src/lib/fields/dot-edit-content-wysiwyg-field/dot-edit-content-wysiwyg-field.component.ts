@@ -5,13 +5,19 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    forwardRef,
     inject,
     input,
     model,
     output,
     viewChild
 } from '@angular/core';
-import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    ControlContainer,
+    FormsModule,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -67,13 +73,16 @@ import {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
+    ],
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotEditContentWYSIWYGFieldComponent)
+        }
     ]
 })
 export class DotEditContentWYSIWYGFieldComponent extends BaseFieldComponent {
-    /**
-     * Control container for the form
-     */
-    private readonly controlContainer = inject(ControlContainer);
     /**
      * Signal to get the TinyMCE component.
      */
