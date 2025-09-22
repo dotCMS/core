@@ -1,6 +1,7 @@
 package com.dotcms.browser;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -31,6 +32,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
+import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -46,6 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Created by Oscar Arrieta on 6/8/17.
@@ -871,12 +874,244 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertFalse(contentletList.isEmpty());
         assertEquals(1, contentletList.size());
         assertEquals(contentletList.get(0).getInode(),dotAsset.getInode());
+    }
 
 
+    /**
+     * Test for BrowserAPI with multiple language IDs using List.
+     * Verifies that BrowserAPI filters content for multiple specified languages from a List.
+     */
+    @Test
+    public void test_BrowserAPI_withMultipleLanguageIds_List() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create additional languages
+        final Language lang1 = new LanguageDataGen().nextPersisted();
+        final Language lang2 = new LanguageDataGen().nextPersisted();
+        final Language lang3 = new LanguageDataGen().nextPersisted();
+
+        final long timeMillis = System.currentTimeMillis();
+        // Create content in different languages
+        final File tempFile1 = FileUtil.createTemporaryFile("test1"+timeMillis, ".txt", "test content 1");
+        final File tempFile2 = FileUtil.createTemporaryFile("test2"+timeMillis, ".txt", "test content 2");
+        final File tempFile3 = FileUtil.createTemporaryFile("test3"+timeMillis, ".txt", "test content 3");
+
+        // Content in each language
+        new FileAssetDataGen(tempFile1)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile2)
+                .languageId(lang2.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile3)
+                .languageId(lang3.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Query with multiple language IDs using List
+        final List<Long> languageIds = List.of(lang1.getId(), lang2.getId());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withLanguageIds(languageIds)
+                .showFiles(true)
+                .showWorking(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertTrue("Should find content in exactly 2 languages", (Integer) results.get("total") == 2);
+
+        // Verify that results contain content from specified languages only
+        final Set<Long> foundLanguages = contentList.stream()
+                .map(content -> ((Number) content.get("languageId")).longValue())
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain content from lang1", foundLanguages.contains(lang1.getId()));
+        assertTrue("Should contain content from lang2", foundLanguages.contains(lang2.getId()));
+        assertFalse("Should not contain content from lang3", foundLanguages.contains(lang3.getId()));
+    }
 
 
+    /**
+     * Test for BrowserAPI with multiple content type IDs using Set.
+     * Verifies that BrowserAPI filters content for multiple specified content types.
+     */
+    @Test
+    public void test_BrowserAPI_withMultipleContentTypes_Set() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
+        // Create different types of content
+        final File tempFile = FileUtil.createTemporaryFile("test", ".txt", "test content");
 
+        // Create a FileAsset
+        final Contentlet fileAsset = new FileAssetDataGen(tempFile)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Create a DotAsset
+        final File tempFile2 = FileUtil.createTemporaryFile("dotasset", ".txt", "dotasset content");
+        final Contentlet dotAsset = new DotAssetDataGen(host, folder, tempFile2)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Create a custom content type and content
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .nextPersisted();
+
+        final Contentlet customContent = new ContentletDataGen(customContentType)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        // Query with multiple content type IDs using Set - filter for FileAsset and DotAsset only
+        final Set<String> contentTypeIds = Set.of("fileAsset", "dotAsset")
+                .stream().map(s -> Try.of(() -> contentTypeAPI.find(s).id()).getOrNull())
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withContentTypes(contentTypeIds)
+                .showFiles(true)
+                .showContent(true)
+                .showDotAssets(true)
+                .showWorking(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertEquals("Should find exactly 2 pieces of content (FileAsset + DotAsset)", 2, results.get("total"));
+
+        // Verify that results contain content from specified content types only
+        final Set<String> foundContentTypes = contentList.stream()
+                .map(content -> (String) content.get("baseType"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain FileAsset content", foundContentTypes.contains("FILEASSET"));
+        assertTrue("Should contain DotAsset content", foundContentTypes.contains("DOTASSET"));
+
+        // Verify specific contentlets are found
+        final Set<String> foundINodes = contentList.stream()
+                .map(content -> (String) content.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain file asset", foundINodes.contains(fileAsset.getInode()));
+        assertTrue("Should contain dot asset", foundINodes.contains(dotAsset.getInode()));
+        assertFalse("Should not contain custom content", foundINodes.contains(customContent.getInode()));
+    }
+
+    /**
+     * Test for BrowserAPI combining multiple languages and multiple content types.
+     * Verifies that both filters work together correctly.
+     */
+    @Test
+    public void test_BrowserAPI_withMultipleLanguagesAndContentTypes() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create languages
+        final Language lang1 = new LanguageDataGen().nextPersisted();
+        final Language lang2 = new LanguageDataGen().nextPersisted();
+        final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+        // Create FileAssets in different languages
+        final File tempFile1 = FileUtil.createTemporaryFile("file1", ".txt", "file content 1");
+        final Contentlet fileAsset_defaultLang = new FileAssetDataGen(tempFile1)
+                .languageId(defaultLangId)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final File tempFile2 = FileUtil.createTemporaryFile("file2", ".txt", "file content 2");
+        final Contentlet fileAsset_lang1 = new FileAssetDataGen(tempFile2)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final File tempFile3 = FileUtil.createTemporaryFile("file3", ".txt", "file content 3");
+        final Contentlet fileAsset_lang2 = new FileAssetDataGen(tempFile3)
+                .languageId(lang2.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Create custom content type and content in different languages
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .nextPersisted();
+
+        new ContentletDataGen(customContentType)
+                .languageId(defaultLangId)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new ContentletDataGen(customContentType)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final String fileAssetTypeId = Try.of(() -> contentTypeAPI.find("fileAsset").id()).getOrNull();
+
+        // Query for FileAssets in lang1 only
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withLanguageIds(Set.of(lang1.getId()))
+                .withContentTypes(Set.of(fileAssetTypeId))
+                .showFiles(true)
+                .showContent(true)
+                .showWorking(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertEquals("Should find exactly 1 FileAsset in lang1", Integer.valueOf(1), results.get("total"));
+
+        // Verify that result is the correct contentlet
+        final Map<String, Object> foundContent = contentList.get(0);
+        assertEquals("Should be the FileAsset in lang1", fileAsset_lang1.getInode(), foundContent.get("inode"));
+        assertEquals("Should be lang1", lang1.getId(), ((Number) foundContent.get("languageId")).longValue());
+        assertEquals("Should be FileAsset base type", "FILEASSET", foundContent.get("baseType"));
+
+        // Verify other contentlets are not found
+        final Set<String> foundINodes = contentList.stream()
+                .map(content -> (String) content.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain file asset lang1", foundINodes.contains(fileAsset_lang1.getInode()));
+        assertFalse("Should not contain file asset default lang", foundINodes.contains(fileAsset_defaultLang.getInode()));
+        assertFalse("Should not contain file asset lang2", foundINodes.contains(fileAsset_lang2.getInode()));
     }
 
 }

@@ -26,8 +26,10 @@ import io.vavr.control.Try;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class abstracts all the different querying and filtering criteria used to return results to the
@@ -44,22 +46,52 @@ public class BrowserQuery {
     final String  filter, fileName, sortBy;
     final int offset, maxResults;
     final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties,showDefaultLangItems;
-    final long languageId;
+    final Set<Long> languageIds;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
+    final Set<String> contentTypeIds;
     final Host site;
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
     final List<String> extensions, mimeTypes;
 
+    /**
+     * Returns the primary language ID for backward compatibility.
+     * This returns the first language ID from the set, or 0 if no languages are set.
+     */
+    public long getLanguageId() {
+        return languageIds.isEmpty() ? 0 : languageIds.iterator().next();
+    }
+
+    /**
+     * Returns all language IDs as a Set.
+     */
+    public Set<Long> getLanguageIds() {
+        return languageIds;
+    }
+
+    /**
+     * Returns all content types as a Set.
+     */
+    public Set<String> getContentTypeIds() {
+        return contentTypeIds;
+    }
+
     @Override
     public String toString() {
-        return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:" + filter + ", sortBy:" + sortBy
-                + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:" + showWorking + ", showArchived:"
-                + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:" + showDefaultLangItems + ", sortByDesc:" + sortByDesc + ", showLinks:"
-                + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties + ", languageId:" + languageId + ", luceneQuery:" + luceneQuery
-                + ", baseTypes:" + baseTypes + "}";
+        return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:"
+                + filter + ", sortBy:" + sortBy
+                + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
+                + showWorking + ", showArchived:"
+                + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:"
+                + showDefaultLangItems + ", sortByDesc:" + sortByDesc + ", showLinks:"
+                + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties
+                + ", luceneQuery:" + luceneQuery
+                + ", languageIds:" + StringUtils.join(languageIds)
+                + ", baseTypes:" + StringUtils.join(baseTypes)
+                + ", contentTypes:" + StringUtils.join(contentTypeIds)
+                + "}";
     }
 
     private BrowserQuery(final Builder builder) {
@@ -70,7 +102,7 @@ public class BrowserQuery {
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
-        this.maxResults = builder.maxResults > MAX_FETCH_PER_REQUEST ? MAX_FETCH_PER_REQUEST : builder.maxResults;
+        this.maxResults = Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST);
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
@@ -78,14 +110,15 @@ public class BrowserQuery {
         this.showShorties = builder.showShorties;
         this.mimeTypes     = builder.mimeTypes;
         this.extensions    = builder.extensions;
-        this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) ? true : builder.sortByDesc;
+        this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) || builder.sortByDesc;
         this.showLinks = builder.showLinks;
         this.showDefaultLangItems = builder.showDefaultLangItems;
 
         this.baseTypes = builder.baseTypes.isEmpty()
                 ? ImmutableSet.of(BaseContentType.ANY)
                 : ImmutableSet.copyOf(builder.baseTypes);
-        this.languageId = builder.languageId;
+        this.languageIds = Set.copyOf(builder.languageIds);
+        this.contentTypeIds = Set.copyOf(builder.contentTypes);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder= siteAndFolder._2;
@@ -183,7 +216,8 @@ public class BrowserQuery {
         private boolean showLinks = false;
         private boolean showMenuItemsOnly = false;
         private boolean showDefaultLangItems = false;
-        private long languageId = 0;
+        private Set<Long> languageIds = new LinkedHashSet<>();
+        private Set<String> contentTypes = new LinkedHashSet<>();
         private final StringBuilder luceneQuery = new StringBuilder();
         private Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
@@ -211,7 +245,8 @@ public class BrowserQuery {
             this.showFolders = browserQuery.showFolders;
             this.sortByDesc = browserQuery.sortByDesc;
             this.showLinks = browserQuery.showLinks;
-            this.languageId = browserQuery.languageId;
+            this.languageIds = new LinkedHashSet<>(browserQuery.languageIds);
+            this.contentTypes = new LinkedHashSet<>(browserQuery.contentTypeIds);
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
@@ -352,7 +387,48 @@ public class BrowserQuery {
         }
 
         public Builder withLanguageId(@Nonnull long languageId) {
-            this.languageId = languageId;
+            this.languageIds.clear();
+            if (languageId > 0) {
+                this.languageIds.add(languageId);
+            }
+            return this;
+        }
+
+        public Builder withLanguageIds(@Nonnull Set<Long> languageIds) {
+            this.languageIds.clear();
+            this.languageIds.addAll(languageIds);
+            return this;
+        }
+
+        public Builder withLanguageIds(@Nonnull List<Long> languageIds) {
+            this.languageIds.clear();
+            this.languageIds.addAll(languageIds);
+            return this;
+        }
+
+        public Builder addLanguageId(@Nonnull long languageId) {
+            if (languageId > 0) {
+                this.languageIds.add(languageId);
+            }
+            return this;
+        }
+
+        public Builder withContentTypes(@Nonnull Set<String> contentTypes) {
+            this.contentTypes.clear();
+            this.contentTypes.addAll(contentTypes);
+            return this;
+        }
+
+        public Builder withContentTypes(@Nonnull List<String> contentTypes) {
+            this.contentTypes.clear();
+            this.contentTypes.addAll(contentTypes);
+            return this;
+        }
+
+        public Builder addContentType(@Nonnull String contentType) {
+            if (UtilMethods.isSet(contentType)) {
+                this.contentTypes.add(contentType);
+            }
             return this;
         }
 

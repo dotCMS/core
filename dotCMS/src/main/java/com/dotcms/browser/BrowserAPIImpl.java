@@ -41,7 +41,6 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Try;
@@ -300,8 +299,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final List<Object> parameters = new ArrayList<>();
 
-        if (browserQuery.languageId > 0) {
-            appendLanguageQuery(sqlQuery, browserQuery.languageId,
+        if (!browserQuery.getLanguageIds().isEmpty()) {
+            appendLanguageQuery(sqlQuery, browserQuery.getLanguageIds(),
                     browserQuery.showDefaultLangItems);
         }
         if (browserQuery.site != null) {
@@ -351,6 +350,13 @@ public class BrowserAPIImpl implements BrowserAPI {
                     append(String.join(" , ", baseTypes)).append(") ");
         }
 
+        if(!browserQuery.contentTypeIds.isEmpty()){
+          baseQuery.append(" and struc.inode in (").
+                  append(browserQuery.contentTypeIds.stream()
+                          .map(id -> "'" + id + "'")
+                          .collect(Collectors.joining(" , "))).append(") ");
+        }
+
         return baseQuery.toString();
     }
 
@@ -358,16 +364,27 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Appends the language query to the given SQL query to filter content by language.
      *
      * @param sqlQuery             The StringBuilder object representing the SQL query.
-     * @param languageId           The ID of the language to filter by.
+     * @param languageIds          The Set of language IDs to filter by.
      * @param showDefaultLangItems Whether to include default language items in the filter.
      */
-    private void appendLanguageQuery(StringBuilder sqlQuery, long languageId,
+    private void appendLanguageQuery(StringBuilder sqlQuery, Set<Long> languageIds,
             boolean showDefaultLangItems) {
 
-        sqlQuery.append(" and cvi.lang in (").append(languageId);
+        final Set<Long> filteredLanguageIds = languageIds.stream()
+                .filter(langId -> langId != null && langId > 0)
+                .collect(Collectors.toSet());
+
+        if (filteredLanguageIds.isEmpty()) {
+            return;
+        }
+
+        sqlQuery.append(" and cvi.lang in (");
+        sqlQuery.append(filteredLanguageIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(",")));
 
         final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        if (showDefaultLangItems && languageId != defaultLang) {
+        if (showDefaultLangItems && !filteredLanguageIds.contains(defaultLang)) {
             sqlQuery.append(",").append(defaultLang);
         }
         sqlQuery.append(")");
