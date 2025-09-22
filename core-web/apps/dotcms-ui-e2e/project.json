@@ -14,27 +14,15 @@
             "configurations": {
                 "ci": {
                     "headed": false,
-                    "ui": false,
-                    "env": {
-                        "CURRENT_ENV": "ci",
-                        "HEADLESS": "true"
-                    }
+                    "ui": false
                 },
                 "dev": {
                     "headed": false,
-                    "ui": false,
-                    "env": {
-                        "CURRENT_ENV": "dev",
-                        "HEADLESS": "false"
-                    }
+                    "ui": false
                 },
                 "local": {
                     "headed": false,
-                    "ui": false,
-                    "env": {
-                        "CURRENT_ENV": "local",
-                        "HEADLESS": "false"
-                    }
+                    "ui": false
                 },
                 "headless": {
                     "headed": false
@@ -70,6 +58,33 @@
                 "config": "apps/dotcms-ui-e2e/playwright.config.ts",
                 "headed": false,
                 "ui": false
+            }
+        },
+        "e2e:dev:full": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
+                    "cd .. && docker compose -f docker/docker-compose.e2e.yml up -d",
+                    "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
+                    "CURRENT_ENV=dev HEADLESS=false nx e2e dotcms-ui-e2e --configuration=dev --ui"
+                ],
+                "parallel": false,
+                "cwd": "{workspaceRoot}"
+            }
+        },
+        "e2e:ci:full": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
+                    "cd .. && docker compose -f docker/docker-compose.e2e.yml up -d",
+                    "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
+                    "CURRENT_ENV=ci HEADLESS=true nx e2e dotcms-ui-e2e --configuration=ci",
+                    "cd .. && docker compose -f docker/docker-compose.e2e.yml down -v"
+                ],
+                "parallel": false,
+                "cwd": "{workspaceRoot}"
             }
         }
     }
