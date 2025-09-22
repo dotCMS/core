@@ -68,27 +68,16 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
-    (visibleChange)="onHideDialog()"
-    #dialogRef>
+    (visibleChange)="onHideDialog()">
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <div>Folder dialog</div>
         }
         @case (DIALOG_TYPE.MESSAGE) {
-            <div class="flex flex-column gap-4">
-                <div class="dialog-development-message">
-                    {{ 'content-drive.dialog.in-development-message-1' | dm }}
-                    <br />
-                    {{ 'content-drive.dialog.in-development-message-2' | dm }}
-                </div>
-                <div class="flex justify-content-end">
-                    <p-button
-                        styleClass="p-button-sm"
-                        type="button"
-                        [label]="'close' | dm"
-                        data-testid="close-dialog"
-                        (click)="dialogRef.close($event)"></p-button>
-                </div>
+            <div class="dialog-development-message">
+                {{ 'content-drive.dialog.in-development-message-1' | dm }}
+                <br />
+                {{ 'content-drive.dialog.in-development-message-2' | dm }}
             </div>
         }
         @default {
