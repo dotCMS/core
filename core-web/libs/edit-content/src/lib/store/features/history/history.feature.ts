@@ -1,10 +1,10 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods, withHooks } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, effect, untracked } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -78,7 +78,8 @@ export function withHistory() {
                                     if (contentlet?.identifier) {
                                         return dotEditContentService.getVersions(
                                             contentlet.identifier,
-                                            { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE }
+                                            { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                                            contentlet.languageId
                                         );
                                     }
                                     // Return empty observable if no contentlet identifier
@@ -142,6 +143,7 @@ export function withHistory() {
                             switchMap(({ identifier, page }) => {
                                 const currentPagination = store.versionsPagination();
                                 const currentVersions = store.versions();
+                                const contentlet = store.contentlet();
                                 const limit =
                                     currentPagination?.perPage || DEFAULT_VERSIONS_PER_PAGE;
 
@@ -150,7 +152,11 @@ export function withHistory() {
                                     currentPagination === null || currentVersions.length === 0;
 
                                 return dotEditContentService
-                                    .getVersions(identifier, { offset: page, limit })
+                                    .getVersions(
+                                        identifier,
+                                        { offset: page, limit },
+                                        contentlet?.languageId
+                                    )
                                     .pipe(
                                         tapResponse({
                                             next: (response) => {
@@ -270,6 +276,31 @@ export function withHistory() {
                     }
                 };
             }
-        )
+        ),
+        withHooks({
+            onInit(store) {
+                /**
+                 * Effect that automatically loads versions when contentlet or currentLocale changes
+                 * This ensures versions are refreshed when switching between different content or locales
+                 */
+                effect(() => {
+                    const contentlet = store.contentlet();
+
+                    untracked(() => {
+                        // Only load versions if we have a contentlet with an identifier
+                        if (contentlet?.identifier) {
+                            // Clear existing versions to avoid showing stale data during locale switches
+                            store.clearVersions();
+
+                            // Load fresh versions for the current contentlet and locale
+                            store.loadVersions({
+                                identifier: contentlet.identifier,
+                                page: 1
+                            });
+                        }
+                    });
+                });
+            }
+        })
     );
 }
