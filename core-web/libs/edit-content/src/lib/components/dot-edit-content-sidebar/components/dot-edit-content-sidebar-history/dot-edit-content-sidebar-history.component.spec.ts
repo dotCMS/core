@@ -19,6 +19,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 import { DotEditContentSidebarHistoryComponent } from './dot-edit-content-sidebar-history.component';
 
+import { DotHistoryTimelineItemActionType } from '../../../../models/dot-edit-content.model';
+
 describe('DotEditContentSidebarHistoryComponent', () => {
     let spectator: Spectator<DotEditContentSidebarHistoryComponent>;
 
@@ -275,12 +277,12 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             // Since p-scroller doesn't render items in test environment,
             // we'll test the output emission directly by simulating what the template would do
             spectator.component.timelineItemAction.emit({
-                type: spectator.component.DotHistoryTimelineItemActionType.VIEW,
+                type: DotHistoryTimelineItemActionType.VIEW,
                 item: mockHistoryItems[0]
             });
 
             expect(actionSpy).toHaveBeenCalledWith({
-                type: spectator.component.DotHistoryTimelineItemActionType.VIEW,
+                type: DotHistoryTimelineItemActionType.VIEW,
                 item: mockHistoryItems[0]
             });
         });
@@ -289,7 +291,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             const actionSpy = jest.spyOn(spectator.component.timelineItemAction, 'emit');
 
             const testAction = {
-                type: spectator.component.DotHistoryTimelineItemActionType.RESTORE,
+                type: DotHistoryTimelineItemActionType.RESTORE,
                 item: mockHistoryItems[0]
             };
 
