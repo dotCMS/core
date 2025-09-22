@@ -5,8 +5,8 @@
                 <div class="flex align-items-center gap-2">
                     <i class="pi pi-info-circle"></i>
                     <span data-testid="message-content">
-                        This feature is currently in
-                        <b>development</b>
+                        {{ 'content-drive.feature.state' | dm }}
+                        <b>{{ 'development' | dm }}</b>
                     </span>
                 </div>
                 <div class="flex align-items-center gap-2">
@@ -68,15 +68,27 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
-    (visibleChange)="onHideDialog()">
+    (visibleChange)="onHideDialog()"
+    #dialogRef>
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <div>Folder dialog</div>
         }
         @case (DIALOG_TYPE.MESSAGE) {
-            <div class="flex flex-column gap-2">
-                <span>We are in development mode.</span>
-                <span>This feature is not available yet. Feedback is welcome.</span>
+            <div class="flex flex-column gap-4">
+                <div class="dialog-development-message">
+                    {{ 'content-drive.dialog.in-development-message-1' | dm }}
+                    <br />
+                    {{ 'content-drive.dialog.in-development-message-2' | dm }}
+                </div>
+                <div class="flex justify-content-end">
+                    <p-button
+                        styleClass="p-button-sm"
+                        type="button"
+                        [label]="'close' | dm"
+                        data-testid="close-dialog"
+                        (click)="dialogRef.close($event)"></p-button>
+                </div>
             </div>
         }
         @default {
