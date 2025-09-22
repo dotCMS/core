@@ -101,7 +101,7 @@ export class DotUiColorsService {
         const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
 
         for (const shade in dictionary) {
-            // @ts-ignore
+            // @ts-expect-error - dictionary is a valid object
             const color = shades[dictionary[shade]];
             el.style.setProperty(`--color-palette-${type}-${shade}`, color);
         }
