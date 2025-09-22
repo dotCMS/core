@@ -18,7 +18,7 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotFolderCreateBody, DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotFolderEntity, DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ALLOWED_FILE_EXTENSIONS, DEFAULT_FILE_ASSET_TYPES } from '../../../shared/constants';
@@ -142,7 +142,7 @@ export class DotContentDriveDialogFolderComponent {
     });
 
     async createFolder() {
-        const body: DotFolderCreateBody = this.#createFolderBody();
+        const body: DotFolderEntity = this.#createFolderBody();
 
         try {
             await this.#dotFolderService.createFolder(body).toPromise();
@@ -174,7 +174,7 @@ export class DotContentDriveDialogFolderComponent {
     #createFolderBody() {
         const formValue = this.folderForm.getRawValue();
 
-        const data: DotFolderCreateBody['data'] = {
+        const data: DotFolderEntity['data'] = {
             title: formValue.title // Always include title
         };
 

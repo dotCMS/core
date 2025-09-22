@@ -7,8 +7,7 @@ import { pluck } from 'rxjs/operators';
 
 import { DotFolder } from '@dotcms/dotcms-models';
 
-// TODO: Improve the Name por amor de Dios
-export interface DotFolderCreateBody {
+export interface DotFolderEntity {
     assetPath: string;
     data: {
         title: string;
@@ -40,10 +39,10 @@ export class DotFolderService {
     /**
      * Creates a new folder in the assets system
      *
-     * @param {DotFolderCreateBody} body - The folder data to create
+     * @param {DotFolderEntity} body - The folder data to create
      * @returns {Observable<any>} Observable that emits the created folder
      */
-    createFolder(body: DotFolderCreateBody) {
+    createFolder(body: DotFolderEntity) {
         return this.#http.post(`/api/v1/assets/folders`, body);
     }
 
