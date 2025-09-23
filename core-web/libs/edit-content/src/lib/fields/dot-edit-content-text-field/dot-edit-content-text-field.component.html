@@ -1,4 +1,6 @@
 @let field = $field();
+@let variableName = field.variable;
+@let dataType = field.dataType;
 
 <dot-card-field [hasError]="hasError">
     <div class="flex">
@@ -10,11 +12,17 @@
         </label>
     </div>
     <dot-card-field-content>
-        <dot-text-field
-            [formControlName]="field.variable"
-            [dataType]="field.dataType"
-            [variableName]="field.variable"
-            [hasError]="hasError" />
+        <input
+            [id]="variableName"
+            [name]="variableName"
+            [formControlName]="variableName"
+            [class.ng-invalid]="hasError"
+            [class.ng-dirty]="hasError"
+            [attr.data-testId]="variableName"
+            [type]="inputTextOptions[dataType].type"
+            [attr.inputmode]="inputTextOptions[dataType].inputMode"
+            [attr.step]="inputTextOptions[dataType].step"
+            pInputText />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (hasError) {

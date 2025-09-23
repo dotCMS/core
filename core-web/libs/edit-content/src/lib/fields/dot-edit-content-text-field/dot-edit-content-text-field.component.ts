@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, input, computed } from '@angular/core';
 import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/forms';
 
+import { InputTextModule } from 'primeng/inputtext';
+
 import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotTextFieldComponent } from './components/text-field/text-field.component';
+import { INPUT_TEXT_OPTIONS } from './utils';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
@@ -19,7 +21,7 @@ import { BaseWrapperFieldComponent } from '../shared/base-wrapper-field.componen
         ReactiveFormsModule,
         FormsModule,
         DotMessagePipe,
-        DotTextFieldComponent,
+        InputTextModule,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent
@@ -62,6 +64,9 @@ export class DotEditContentTextFieldComponent extends BaseWrapperFieldComponent 
             value.startsWith('/');
 
         return shouldRemoveLeadingSlash ? value.substring(1) : value;
-
     });
+    /**
+     * A readonly field that holds the input text options.
+     */
+    readonly inputTextOptions = INPUT_TEXT_OPTIONS;
 }

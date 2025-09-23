@@ -8,8 +8,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeTextField, createFakeContentlet } from '@dotcms/utils-testing';
 
-import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './components/text-field/utils';
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
+import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 
 @Component({
     standalone: false,
@@ -118,7 +118,7 @@ describe('DotEditContentTextFieldComponent', () => {
     });
 
     it('should remove the leading slash from the value if the contentlet is an HTML page and the field is the url', () => {
-        const fieldMock =  createFakeTextField({
+        const fieldMock = createFakeTextField({
             variable: 'url'
         });
         spectator = createHost(
@@ -143,7 +143,7 @@ describe('DotEditContentTextFieldComponent', () => {
     });
 
     it('should return the default value', () => {
-        const fieldMock =  createFakeTextField({
+        const fieldMock = createFakeTextField({
             variable: 'someValuev1',
             defaultValue: 'defaultValue'
         });
@@ -166,7 +166,7 @@ describe('DotEditContentTextFieldComponent', () => {
     });
 
     it('should return the value from the contentlet', () => {
-        const fieldMock =  createFakeTextField({
+        const fieldMock = createFakeTextField({
             variable: 'field'
         });
         spectator = createHost(
@@ -180,7 +180,7 @@ describe('DotEditContentTextFieldComponent', () => {
                     }),
                     field: fieldMock,
                     contentlet: createFakeContentlet({
-                        [fieldMock.variable]: 'myValue',
+                        [fieldMock.variable]: 'myValue'
                     })
                 }
             }
