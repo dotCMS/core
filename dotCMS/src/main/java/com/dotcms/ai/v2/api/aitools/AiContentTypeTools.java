@@ -2,9 +2,13 @@ package com.dotcms.ai.v2.api.aitools;
 
 import com.dotcms.ai.v2.api.dto.ContentTypeDTO;
 import com.dotcms.ai.v2.api.dto.FieldDefinitionDTO;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -112,6 +116,111 @@ public class AiContentTypeTools {
             return ToolResult.internal("temporary failure");
         }
     }
+
+    @Tool(
+            "Create a dotCMS Content Type from a dotCMS-native JSON spec. " +
+                    "Always produce a JSON string matching dotCMS ContentType schema accepted by JsonContentTypeTransformer. " +
+                    "You may send a single object or an array. " +
+                    "Examples include keys like: 'clazz', 'name', 'variable', 'host', 'folder', 'fields' (each field has its own 'clazz', 'dataType', 'variable', 'name', etc.), and optional 'workflow' array. " +
+                    "Do NOT invent non-dotCMS keys."
+    )
+    public ToolResult<String> createContentType(final String specJson) {
+        try {
+            if (specJson == null || specJson.trim().isEmpty()) {
+                return ToolResult.invalid("specJson is required");
+            }
+
+            final List<ContentType> typesToSave = new JsonContentTypeTransformer(specJson).asList();
+            if (typesToSave == null || typesToSave.isEmpty()) {
+                return ToolResult.invalid("No Content Types found in specJson");
+            }
+
+            final String validationError = this.validateDotCmsContentTypes(typesToSave);
+            if (validationError != null) {
+                return ToolResult.invalid(validationError);
+            }
+
+            final String createdSummary = this.saveDotCmsContentTypes(typesToSave);
+
+            return ToolResult.success(createdSummary);
+        } catch (DotDataException e) {
+            Logger.error(this, "Data error creating content type(s)", e);
+            return ToolResult.fail( "Persistence error: " + e.getMessage());
+        } catch (Exception e) {
+            Logger.error(this, "Unexpected error creating content type(s)", e);
+            return ToolResult.fail("Unexpected error: " + e.getMessage());
+        }
+    }
+
+
+    private String validateDotCmsContentTypes(final List<ContentType> types) throws DotDataException {
+
+        for (final ContentType contentType : types) {
+            final String variable = contentType.variable();
+            final String name     = contentType.name();
+
+            if (variable == null || variable.trim().isEmpty()) {
+                return "Each content type must include a non-empty 'variable'.";
+            }
+            if (name == null || name.trim().isEmpty()) {
+                return "Each content type must include a non-empty 'name'.";
+            }
+
+            // Campos
+            final List<Field> fields = contentType.fields();
+            if (fields == null || fields.isEmpty()) {
+                return "Content type '" + variable + "' must include at least one field.";
+            }
+            for (Field field : fields) {
+                if (field == null) {
+                    return "Null field found in content type '" + variable + "'.";
+                }
+                if (field.variable() == null || field.variable().trim().isEmpty()) {
+                    return "A field without 'variable' was found in content type '" + variable + "'.";
+                }
+                if (field.name() == null || field.name().trim().isEmpty()) {
+                    return "Field '" + field.variable() + "' in content type '" + variable + "' must have a 'name'.";
+                }
+            }
+        }
+        return null;
+    }
+
+    private String saveDotCmsContentTypes(final List<ContentType> typesToSave)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.systemUser();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+
+        final List<String> results = new ArrayList<>();
+
+        for (ContentType contentType : typesToSave) {
+            final String variable = contentType.variable();
+
+            if (existsByVariable(contentTypeAPI, variable)) {
+                results.add("Skipped (already exists): " + variable);
+                continue;
+            }
+
+            final List<Field> fields = contentType.fields() != null ? contentType.fields() : Collections.emptyList();
+
+            contentTypeAPI.save(contentType, fields);
+
+            results.add("Created: " + variable);
+        }
+
+        return String.join(" | ", results);
+    }
+
+    private boolean existsByVariable(final ContentTypeAPI api, final String variable) {
+        try {
+            final ContentType found = api.find(variable);
+            return found != null;
+        } catch (Exception ignore) {
+            return false;
+        }
+    }
+
 
     // --- DTO small listing ---
     public static class ContentTypeDescriptor {
