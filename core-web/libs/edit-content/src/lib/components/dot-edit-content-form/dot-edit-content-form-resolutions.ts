@@ -45,9 +45,14 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
 
-    // TODO: Remove this once we have a proper solution for the text field from Backend (URL case)
-    // Remove leading "/" if present
-    return typeof value === 'string' && value.startsWith('/') ? value.substring(1) : value;
+    // Remove leading "/" only for HTMLPAGE baseType with 'url' field variable
+    const shouldRemoveLeadingSlash =
+        contentlet?.baseType === 'HTMLPAGE' &&
+        field.variable === 'url' &&
+        typeof value === 'string' &&
+        value.startsWith('/');
+
+    return shouldRemoveLeadingSlash ? value.substring(1) : value;
 };
 
 /**
