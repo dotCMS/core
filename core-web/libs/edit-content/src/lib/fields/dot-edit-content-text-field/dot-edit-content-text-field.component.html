@@ -6,7 +6,7 @@
         <input
             [id]="field.variable"
             [name]="field.variable"
-            [formControl]="formControl"
+            [formControlName]="field.variable"
             [class.ng-invalid]="hasError"
             [class.ng-dirty]="hasError"
             [attr.data-testId]="field.variable"

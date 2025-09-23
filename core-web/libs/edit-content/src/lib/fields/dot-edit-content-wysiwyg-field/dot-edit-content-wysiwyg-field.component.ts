@@ -11,7 +11,7 @@ import {
     output,
     viewChild
 } from '@angular/core';
-import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, ControlContainer } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -71,9 +71,9 @@ import {
 })
 export class DotEditContentWYSIWYGFieldComponent extends BaseFieldComponent {
     /**
-     * Control container for the form
+     * Inject the ControlContainer
      */
-    private readonly controlContainer = inject(ControlContainer);
+    readonly controlContainer = inject(ControlContainer);
     /**
      * Signal to get the TinyMCE component.
      */
