@@ -77,7 +77,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     }
 
     readonly vm$ = this.select((state) => state);
-    readonly isContentType$ = this.select(
+    readonly isContentTypeView$ = this.select(
         (state) => state.currentPaletteType === PALETTE_TYPES.CONTENTTYPE
     );
 

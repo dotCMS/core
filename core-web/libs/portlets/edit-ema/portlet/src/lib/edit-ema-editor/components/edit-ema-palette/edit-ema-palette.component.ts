@@ -29,22 +29,22 @@ import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
     providers: [DotESContentService, DotPaletteStore]
 })
 export class EditEmaPaletteComponent implements OnInit, OnDestroy {
-    languageId = input.required<number>();
-    variantId = input.required<string>();
-    containers = input.required<DotCMSPageAssetContainers>();
+    $languageId = input.required<number>({ alias: 'languageId' });
+    $variantId = input.required<string>({ alias: 'variantId' });
+    $containers = input.required<DotCMSPageAssetContainers>({ alias: 'containers' });
 
     readonly #store = inject(DotPaletteStore);
     private destroy$ = new Subject<void>();
 
     protected readonly vm$ = this.#store.vm$;
-    protected readonly isContentType = toSignal(this.#store.isContentType$);
+    protected readonly $isContentTypeView = toSignal(this.#store.isContentTypeView$);
     protected readonly PALETTE_TYPES_ENUM = PALETTE_TYPES;
 
     readonly UPDATE_LANGUAGE_EFFECT = effect(() => {
-        const languageId = this.languageId();
-        const variantId = this.variantId();
+        const languageId = this.$languageId();
+        const variantId = this.$variantId();
 
-        if (this.isContentType()) {
+        if (this.$isContentTypeView()) {
             return;
         }
 
@@ -52,7 +52,7 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     });
 
     ngOnInit() {
-        this.#store.loadAllowedContentTypes({ containers: this.containers() });
+        this.#store.loadAllowedContentTypes({ containers: this.$containers() });
     }
 
     /**
@@ -63,9 +63,9 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     showContentletsFromContentType(contentTypeName: string) {
         this.#store.loadContentlets({
             filter: '',
-            languageId: this.languageId().toString(),
+            languageId: this.$languageId().toString(),
             contenttypeName: contentTypeName,
-            variantId: this.variantId()
+            variantId: this.$variantId()
         });
     }
 
@@ -85,10 +85,10 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     onPaginate({ contentTypeVarName, page }) {
         this.#store.loadContentlets({
             filter: '',
-            languageId: this.languageId().toString(),
+            languageId: this.$languageId().toString(),
             contenttypeName: contentTypeVarName,
             page: page,
-            variantId: this.variantId()
+            variantId: this.$variantId()
         });
     }
 
@@ -103,8 +103,8 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         this.#store.loadContentlets({
             filter,
             contenttypeName: currentContentType,
-            languageId: this.languageId().toString(),
-            variantId: this.variantId()
+            languageId: this.$languageId().toString(),
+            variantId: this.$variantId()
         });
     }
 
