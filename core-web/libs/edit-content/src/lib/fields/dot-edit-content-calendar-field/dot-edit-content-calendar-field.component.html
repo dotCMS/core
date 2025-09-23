@@ -65,13 +65,15 @@
                     </div>
                 }
                 @if (!hasError && hasTimezone && hasHint) {
-                    <small
-                        data-testid="calendar-field-timezone"
-                        class="text-gray-700"
-                        role="status"
-                        aria-live="polite">
-                        {{ systemTimezone.label }}
-                    </small>
+                    <div class="hint-message">
+                        <small
+                            data-testid="calendar-field-timezone"
+                            class="text-gray-700"
+                            role="status"
+                            aria-live="polite">
+                            {{ systemTimezone.label }}
+                        </small>
+                    </div>
                 }
             </div>
         </div>
