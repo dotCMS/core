@@ -9,6 +9,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
 import {
+    DotAnalyticsTrackerService,
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
@@ -17,8 +18,7 @@ import {
     DotPageRenderService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
-    DotWorkflowsActionsService,
-    DotAnalyticsTrackerService
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
