@@ -13,5 +13,7 @@
 </ul>
 
 @if (pageAsset() !== null) {
-<dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
+    <div class="container mx-auto">
+        <dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
+    </div>
 }

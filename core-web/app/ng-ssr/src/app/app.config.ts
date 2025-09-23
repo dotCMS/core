@@ -1,9 +1,9 @@
-import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, EnvironmentProviders, inject, makeEnvironmentProviders, provideZoneChangeDetection } from '@angular/core';
 import { provideClientHydration, withEventReplay, withHttpTransferCacheOptions } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 
-import { DotCMSClient } from '@dotcms/angular';
+import { DotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 import { createDotCMSClient } from '@dotcms/client';
 
 import { AngularHttpClient } from './angular-httpclient';
@@ -31,7 +31,8 @@ function provideDotCMSClient(options: any): EnvironmentProviders {
 
 export const appConfig: ApplicationConfig = {
     providers: [
-        provideHttpClient(),
+        provideDotCMSImageLoader('https://demo.dotcms.com'),
+        provideHttpClient(withFetch()),
         provideClientHydration(
             withEventReplay(),
             withHttpTransferCacheOptions({
