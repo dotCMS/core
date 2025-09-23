@@ -64,7 +64,7 @@
     (visibleChange)="onHideDialog()">
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
-            <div>Folder dialog</div>
+            <dot-content-drive-dialog-folder data-testId="dialog-folder" />
         }
         @default {
             <div>Default dialog</div>

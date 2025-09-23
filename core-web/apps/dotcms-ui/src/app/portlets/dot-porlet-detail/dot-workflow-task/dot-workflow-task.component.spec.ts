@@ -17,19 +17,20 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -54,7 +55,6 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotWorkflowTaskDetailModule } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';

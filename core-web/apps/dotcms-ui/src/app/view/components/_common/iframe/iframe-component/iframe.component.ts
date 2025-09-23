@@ -4,23 +4,22 @@ import {
     Component,
     ElementRef,
     EventEmitter,
+    inject,
     Input,
     NgZone,
     OnDestroy,
     OnInit,
     Output,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 
-import { DotRouterService, DotIframeService } from '@dotcms/data-access';
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({

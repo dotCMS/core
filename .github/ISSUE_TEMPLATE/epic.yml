@@ -31,6 +31,15 @@ body:
     validations:
       required: true
 
+  - type: textarea
+    id: desired-outcome
+    attributes:
+      label: Desired Outcome  
+      description: How will we would know that this featured is successful?  This will be used to determine if a feature "Landed" or not
+      placeholder: "Describe what data or behaviour would result in a successful landing of this feature."
+    validations:
+      required: true
+
   - type: checkboxes
     id: personas
     attributes:

@@ -96,3 +96,24 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER'
 } as const;
+
+export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
+
+export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
+    '*.jpg',
+    '*.jpeg',
+    '*.png',
+    '*.gif',
+    '*.png',
+    '*.csv',
+    '*.xls',
+    '*.xlsx',
+    '*.pdf',
+    '*.doc',
+    '*.docx',
+    '*.txt',
+    '*.zip',
+    '*.rar',
+    '*.tar',
+    '*.gz'
+];
