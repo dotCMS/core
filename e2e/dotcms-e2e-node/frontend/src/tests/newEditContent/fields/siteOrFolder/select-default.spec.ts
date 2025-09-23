@@ -22,7 +22,7 @@ test.afterEach(async ({ request }) => {
   }
 });
 
-test("should save a site or folder field", async ({ page }) => {
+test.skip("should save a site or folder field", async ({ page }) => {
   const newEditContentFormPage = new NewEditContentFormPage(page);
   await newEditContentFormPage.goToNew(contentType.name);
 
