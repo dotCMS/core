@@ -574,7 +574,9 @@ public class WorkflowHelper {
         final WorkflowSearcher workflowSearcher = new WorkflowSearcher();
 
         Optional.ofNullable(workflowSearcherForm.getKeywords()).ifPresent(workflowSearcher::setKeywords);
-        workflowSearcher.setAssignedTo(Optional.ofNullable(workflowSearcherForm.getAssignedTo()).orElseGet(()->user.getUserRole().getId()));
+            workflowSearcher.setAssignedTo(Optional.ofNullable(workflowSearcherForm.getAssignedTo()).orElseGet(() ->
+                    !workflowSearcherForm.isShow4all()? // if show all is set we have to set as a null when not assignedto set
+                            user.getUserRole().getId():null));
         workflowSearcher.setDaysOld(workflowSearcherForm.getDaysOld());
         Optional.ofNullable(workflowSearcherForm.getSchemeId()).ifPresent(workflowSearcher::setSchemeId);
         Optional.ofNullable(workflowSearcherForm.getStepId()).ifPresent(workflowSearcher::setStepId);
