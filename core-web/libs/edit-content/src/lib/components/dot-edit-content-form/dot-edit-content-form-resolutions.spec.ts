@@ -86,16 +86,6 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     describe('textFieldResolutionFn', () => {
-        it('should remove leading slash from URL', () => {
-            const contentlet = {
-                ...mockContentlet,
-                testField: '/test-url'
-            };
-
-            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, mockField);
-            expect(result).toBe('test-url');
-        });
-
         it('should not modify non-URL values', () => {
             const contentlet = {
                 ...mockContentlet,

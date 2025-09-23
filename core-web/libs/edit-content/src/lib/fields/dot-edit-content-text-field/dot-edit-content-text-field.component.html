@@ -1,19 +1,20 @@
 @let field = $field();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    <div class="flex">
+        <label
+            [attr.data-testid]="'label-' + field.variable"
+            [class.p-label-input-required]="isRequired"
+            [for]="field.variable">
+            {{ field.name }}
+        </label>
+    </div>
     <dot-card-field-content>
-        <input
-            [id]="field.variable"
-            [name]="field.variable"
-            [formControl]="formControl"
-            [class.ng-invalid]="hasError"
-            [class.ng-dirty]="hasError"
-            [attr.data-testId]="field.variable"
-            [type]="inputTextOptions[field.dataType].type"
-            [attr.inputmode]="inputTextOptions[field.dataType].inputMode"
-            [attr.step]="inputTextOptions[field.dataType].step"
-            pInputText />
+        <dot-text-field
+            [formControlName]="field.variable"
+            [dataType]="field.dataType"
+            [variableName]="field.variable"
+            [hasError]="hasError" />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (hasError) {
