@@ -3,11 +3,12 @@ import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { provideDotCMSClient } from '@dotcms/angular';
+import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
 import { AngularHttpClient } from './angular-httpclient';
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideDotCMSImageLoader('http://localhost:8080'),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(withFetch()),
