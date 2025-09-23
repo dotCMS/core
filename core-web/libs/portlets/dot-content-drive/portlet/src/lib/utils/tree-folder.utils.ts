@@ -1,6 +1,6 @@
 import { TreeNode } from 'primeng/api';
 
-import { DotFolder } from '@dotcms/data-access';
+import { DotFolder } from '@dotcms/dotcms-models';
 
 export type TreeNodeData = {
     type: 'site' | 'folder';

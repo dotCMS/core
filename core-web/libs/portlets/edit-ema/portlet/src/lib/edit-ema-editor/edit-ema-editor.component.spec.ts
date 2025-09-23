@@ -46,6 +46,7 @@ import {
     DotSeoMetaTagsUtilService,
     DotSessionStorageService,
     DotTempFileUploadService,
+    DotUiColorsService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     PushPublishService
@@ -152,6 +153,7 @@ const createRouting = () =>
             mockProvider(DotMessageDisplayService),
             mockProvider(DotRouterService),
             mockProvider(DotGlobalMessageService),
+            mockProvider(DotUiColorsService),
             {
                 provide: DotWorkflowsActionsService,
                 useValue: {

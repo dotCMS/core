@@ -68,6 +68,12 @@ export class DotEditContentSidebarHistoryComponent {
     $pagination = input<DotPagination | null>(null, { alias: 'pagination' });
 
     /**
+     * Current historical version inode being viewed
+     * @readonly
+     */
+    $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
+
+    /**
      * Event emitted when page changes
      */
     pageChange = output<number>();
@@ -94,13 +100,6 @@ export class DotEditContentSidebarHistoryComponent {
         const pagination = this.$pagination();
         return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
     });
-
-    /**
-     * Handle timeline item actions by emitting them to parent component
-     */
-    onTimelineItemAction(action: DotHistoryTimelineItemAction): void {
-        this.timelineItemAction.emit(action);
-    }
 
     /**
      * Handle infinite scroll when user scrolls near the end
