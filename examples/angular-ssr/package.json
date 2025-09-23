@@ -35,8 +35,11 @@
     "@dotcms/client": "file:../../core-web/dist/libs/sdk/client/dotcms-client-1.1.0.tgz",
     "@dotcms/types": "file:../../core-web/dist/libs/sdk/types/dotcms-types-1.1.0.tgz",
     "@dotcms/uve": "file:../../core-web/dist/libs/sdk/uve/dotcms-uve-1.0.1.tgz",
+    "@tailwindcss/postcss": "^4.1.13",
     "express": "^5.1.0",
+    "postcss": "^8.5.6",
     "rxjs": "~7.8.0",
+    "tailwindcss": "^4.1.13",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
