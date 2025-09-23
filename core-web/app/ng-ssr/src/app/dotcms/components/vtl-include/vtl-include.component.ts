@@ -20,15 +20,13 @@ import { VTLIncludeWithVariations } from '../../types/contentlet.model';
         />
       }
       @default {
-        <ng-container [dotCMSShowWhen]="UVE_MODE.EDIT">
-          <div class="bg-blue-100 p-4">
+          <div *dotCMSShowWhen="UVE_MODE.EDIT" class="bg-blue-100 p-4">
             <h4>
               No Component Type:
               {{ contentlet().componentType || 'generic' }} Found for VTL
               Include
             </h4>
           </div>
-        </ng-container>
       }
     }
   `,

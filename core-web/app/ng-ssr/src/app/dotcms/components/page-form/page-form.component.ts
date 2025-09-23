@@ -14,13 +14,11 @@ import { PageForm } from '../../types/contentlet.model';
     @if (formType() === 'contact-us') {
       <app-contact-us [description]="description()" />
     } @else {
-      <ng-container [dotCMSShowWhen]="UVE_MODE.EDIT">
-        <div>
+        <div *dotCMSShowWhen="UVE_MODE.EDIT">
           <h4>
             There is no form component for this form type: {{ formType() }}
           </h4>
         </div>
-      </ng-container>
     }
   `,
 })

@@ -15,14 +15,15 @@ import { Contentlet } from '../../dotcms/types/contentlet.model';
 @Component({
   selector: 'app-edit-contentlet-button',
   imports: [DotCMSShowWhenDirective],
-  template: `<ng-template [dotCMSShowWhen]="uveMode.EDIT">
+  template: `
     <button
+      *dotCMSShowWhen="uveMode.EDIT"
       (click)="editContentlet(contentlet())"
       class="bg-red-400 text-white text-sm rounded-md py-1 px-3 shadow-md hover:bg-red-500 cursor-pointer"
     >
       Edit
     </button>
-  </ng-template> `,
+  `,
 })
 export class EditContentletButtonComponent {
   contentlet = input.required<Contentlet>();

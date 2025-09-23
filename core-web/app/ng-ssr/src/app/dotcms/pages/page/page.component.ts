@@ -40,10 +40,10 @@ export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
     ),
     StoreProductList: import(
         '../../components/store-product-list/store-product-list.component'
-    ).then((c) => c.StoreProductListComponent)
-    // SimpleWidget: import('../../components/simple-widget/simple-widget.component').then(
-    //     (c) => c.SimpleWidgetComponent
-    // ),
+    ).then((c) => c.StoreProductListComponent),
+    SimpleWidget: import('../../components/simple-widget/simple-widget.component').then(
+        (c) => c.SimpleWidgetComponent
+    ),
     // PageForm: import('../../components/page-form/page-form.component').then(
     //     (c) => c.PageFormComponent
     // )
@@ -107,7 +107,9 @@ export class PageComponent implements OnInit {
             .pipe(filter(Boolean))
             .subscribe({
                 next: (
-                    response: DotCMSComposedPageResponse<PageResponse>
+                    response: DotCMSComposedPageResponse<{
+                        content: { navigation: DotCMSNavigationItem };
+                    }>
                 ) => {
                     this.navigation.set(response?.content?.navigation.children || []);
                     this.pageAsset.set(response?.pageAsset);
