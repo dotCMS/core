@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
-import { DotCMSClient } from '@dotcms/angular';
+import { AngularDotCMSClient } from '@dotcms/angular';
 import { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } from '@dotcms/types';
 import { filter, from, map, startWith, switchMap } from 'rxjs';
 
@@ -17,7 +17,7 @@ export class Page implements OnInit {
   router = inject(Router);
   currentRoute = signal(this.router.url);
 
-  client = inject(DotCMSClient);
+  client = inject(AngularDotCMSClient);
   pageAsset = signal<DotCMSPageAsset | null>(null);
   navigation = signal<DotCMSNavigationItem[]>([]);
 
