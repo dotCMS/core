@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { App } from './app';
+import { Page } from './dotcms/pages/page/page';
 
 export const routes: Routes = [{
   path: '**',
-  component: App,
+  component: Page,
 }];

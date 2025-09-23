@@ -1,0 +1,14 @@
+<p>Page title: {{ pageAsset()?.page?.title }}</p>
+
+<p>Page URL: {{ pageAsset()?.page?.url }}</p>
+
+<p>Current route: {{ currentRoute() }}</p>
+
+<ul>
+  @for (item of navigation(); track item.href) {
+  <li>
+      <a [routerLink]="item.href">{{ item.title }}</a>
+  </li>
+  }
+</ul>
+

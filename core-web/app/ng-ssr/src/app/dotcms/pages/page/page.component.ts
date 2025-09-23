@@ -1,11 +1,10 @@
-import { filter, from, switchMap, tap, Subscription } from 'rxjs';
+import { filter, from, switchMap } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     inject,
-    OnDestroy,
     OnInit,
     signal
 } from '@angular/core';
