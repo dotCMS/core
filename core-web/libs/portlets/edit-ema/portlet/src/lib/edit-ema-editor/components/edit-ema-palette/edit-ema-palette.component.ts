@@ -40,7 +40,7 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     protected readonly $isContentTypeView = toSignal(this.#store.isContentTypeView$);
     protected readonly PALETTE_TYPES_ENUM = PALETTE_TYPES;
 
-    readonly UPDATE_LANGUAGE_EFFECT = effect(() => {
+    readonly UPDATE_CONTENTLETS_EFFECT = effect(() => {
         const languageId = this.$languageId();
         const variantId = this.$variantId();
 
