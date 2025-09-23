@@ -1114,4 +1114,70 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertFalse("Should not contain file asset lang2", foundINodes.contains(fileAsset_lang2.getInode()));
     }
 
+    @Test
+    public void test_BrowserAPI_Filter_Folders() throws Exception {
+        final long timeMillis = System.currentTimeMillis();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().name("parentFolder"+timeMillis).site(host).nextPersisted();
+        final Folder subFolder = new FolderDataGen().name("subFolder_lol_"+timeMillis).parent(parentFolder).nextPersisted();
+
+
+        // Create additional languages
+        final Language lang1 = new LanguageDataGen().nextPersisted();
+        final Language lang2 = new LanguageDataGen().nextPersisted();
+        final Language lang3 = new LanguageDataGen().nextPersisted();
+
+        // Create content in different languages
+        final File tempFile1 = FileUtil.createTemporaryFile("test1"+timeMillis, ".txt", "test content 1");
+        final File tempFile2 = FileUtil.createTemporaryFile("test2"+timeMillis, ".txt", "test content 2");
+        final File tempFile3 = FileUtil.createTemporaryFile("test3"+timeMillis, ".txt", "test content 3");
+
+        // Content in each language
+        new FileAssetDataGen(tempFile1)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(parentFolder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile2)
+                .languageId(lang2.getId())
+                .host(host)
+                .folder(parentFolder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile3)
+                .languageId(lang3.getId())
+                .host(host)
+                .folder(parentFolder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Query with multiple language IDs using List
+        final List<Long> languageIds = List.of(lang1.getId(), lang2.getId());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .withLanguageIds(languageIds)
+                .withFilter("lol")
+                .showFiles(false)
+                .showFolders(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertTrue("Should find content in exactly 2 languages", (Integer) results.get("total") == 2);
+
+        // Verify that results contain content from specified languages only
+        final Set<Long> foundLanguages = contentList.stream()
+                .map(content -> ((Number) content.get("languageId")).longValue())
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain content from lang1", foundLanguages.contains(lang1.getId()));
+        assertTrue("Should contain content from lang2", foundLanguages.contains(lang2.getId()));
+        assertFalse("Should not contain content from lang3", foundLanguages.contains(lang3.getId()));
+    }
+
 }

@@ -181,12 +181,13 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         for (final Contentlet contentlet : contentlets) {
             Map<String, Object> contentMap;
-            if (contentlet.getBaseType().get() == BaseContentType.FILEASSET) {
+            final Optional<BaseContentType> baseType = contentlet.getBaseType();
+            if (baseType.isPresent() && baseType.get() == BaseContentType.FILEASSET) {
                 final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
                 contentMap = fileAssetMap(fileAsset);
-            } else if (contentlet.getBaseType().get() == BaseContentType.DOTASSET) {
+            } else if (baseType.isPresent() && baseType.get() == BaseContentType.DOTASSET) {
                 contentMap = dotAssetMap(contentlet);
-            } else if (contentlet.getBaseType().get() == BaseContentType.HTMLPAGE) {
+            } else if (baseType.isPresent() &&  baseType.get() == BaseContentType.HTMLPAGE) {
                 final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
                 contentMap = htmlPageMap(page);
             } else {
@@ -321,7 +322,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (!browserQuery.showArchived) {
             appendExcludeArchivedQuery(sqlQuery);
         }
-
+        Logger.debug(this, "Final SQL Query: " + sqlQuery);
         return new Tuple2<>(sqlQuery.toString(), parameters);
     }
 
@@ -613,11 +614,10 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final DotMapViewTransformer transformer = new DotFolderTransformerBuilder().withFolders(folders)
                     .withUserAndRoles(browserQuery.user, roles).build();
-            final List<Map<String, Object>> mapViews = transformer.toMaps();
-            return mapViews;
+            return transformer.toMaps();
 
         }
-        return ImmutableList.of();
+        return List.of();
     } // getFolders.
 
     private Map<String,Object> htmlPageMap(final HTMLPageAsset page) throws DotStateException {
