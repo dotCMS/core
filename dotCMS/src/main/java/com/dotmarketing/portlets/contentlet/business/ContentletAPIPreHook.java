@@ -1441,6 +1441,19 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+   /**
+    * Pre-hook for bounded content deletion within a specific date range.
+    * This method provides performance optimization by processing only content
+    * within the specified date range rather than cumulative scans.
+    * 
+    * @param deleteFrom The start date (inclusive) - content modified on or after this date will be considered.
+    * @param deleteTo The end date (exclusive) - content modified before this date will be considered.
+    * @return true to allow the operation to proceed, false to stop the transaction
+    */
+	public default boolean deleteOldContent(Date deleteFrom, Date deleteTo){
+      return true;
+    }
+
 
     /**
      *
