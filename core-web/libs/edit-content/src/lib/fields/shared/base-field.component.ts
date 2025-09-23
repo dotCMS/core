@@ -1,11 +1,11 @@
 import { ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-    NgControl,
     ControlValueAccessor,
     FormControl,
     Validators,
-    TouchedChangeEvent
+    TouchedChangeEvent,
+    NgControl
 } from '@angular/forms';
 
 import { filter } from 'rxjs/operators';

@@ -13,3 +13,22 @@
     border-left: 2px solid $color-palette-primary;
     padding-left: $spacing-1;
 }
+::ng-deep {
+    .p-tooltip .p-tooltip-text {
+        background: $foreground-active;
+        color: $white;
+    }
+
+    .p-tooltip.p-tooltip-right .p-tooltip-arrow {
+        border-right-color: $foreground-active;
+    }
+    .p-tooltip.p-tooltip-left .p-tooltip-arrow {
+        border-left-color: $color-palette-black-op-50;
+    }
+    .p-tooltip.p-tooltip-top .p-tooltip-arrow {
+        border-top-color: $color-palette-black-op-50;
+    }
+    .p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
+        border-bottom-color: $color-palette-black-op-50;
+    }
+}

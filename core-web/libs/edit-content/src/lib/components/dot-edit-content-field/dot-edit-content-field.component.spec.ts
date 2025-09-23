@@ -306,7 +306,12 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     });
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-        if (fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD) {
+        if (
+            fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.TIME
+        ) {
             it('should render the label', () => {
                 spectator.detectChanges();
                 const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
@@ -314,11 +319,17 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             });
         }
 
-        it('should render the hint if present', () => {
-            spectator.detectChanges();
-            const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
-            expect(hint?.textContent).toContain(fieldMock.hint);
-        });
+        if (
+            fieldMock.fieldType !== FIELD_TYPES.DATE &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.TIME
+        ) {
+            it('should render the hint if present', () => {
+                spectator.detectChanges();
+                const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
+                expect(hint?.textContent).toContain(fieldMock.hint);
+            });
+        }
 
         it('should render the correct field type', () => {
             spectator.detectChanges();

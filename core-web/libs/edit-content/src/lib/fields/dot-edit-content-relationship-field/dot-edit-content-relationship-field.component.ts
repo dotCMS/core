@@ -55,7 +55,6 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotCardFieldContentComponent,
         DotMessagePipe
     ],
-    providers: [RelationshipFieldStore],
     templateUrl: './dot-edit-content-relationship-field.component.html',
     styleUrls: ['./dot-edit-content-relationship-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

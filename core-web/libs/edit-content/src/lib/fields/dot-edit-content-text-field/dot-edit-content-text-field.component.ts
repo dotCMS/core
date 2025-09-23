@@ -62,6 +62,6 @@ export class DotEditContentTextFieldComponent extends BaseWrapperFieldComponent 
             value.startsWith('/');
 
         return shouldRemoveLeadingSlash ? value.substring(1) : value;
-
     });
+
 }
