@@ -19,7 +19,8 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
     DotRouterService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotFolderService
 } from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -57,10 +58,14 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                getContentTypes: jest.fn().mockImplementation(() => of([]))
             }),
             mockProvider(DotLanguagesService, {
                 get: jest.fn().mockReturnValue(of())
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
             }),
             provideHttpClient()
         ],
@@ -75,7 +80,7 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
-                    currentSite: jest.fn(),
+                    currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: jest.fn().mockReturnValue(false),
                     removeFilter: jest.fn(),
@@ -99,7 +104,13 @@ describe('DotContentDriveShellComponent', () => {
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: jest.fn().mockReturnValue(undefined),
                     setDialog: jest.fn(),
-                    resetDialog: jest.fn()
+                    loadFolders: jest.fn(),
+                    loadChildFolders: jest.fn(),
+                    updateFolders: jest.fn(),
+                    folders: jest.fn(),
+                    selectedNode: jest.fn(),
+                    sidebarLoading: jest.fn(),
+                    closeDialog: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -114,6 +125,7 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(DotContentTypeService, {
                     getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                     getContentTypesWithPagination: jest.fn().mockReturnValue(
                         of({
                             contentTypes: MOCK_BASE_TYPES,
@@ -254,6 +266,14 @@ describe('DotContentDriveShellComponent', () => {
             const dialog = spectator.query('[data-testid="dialog"]');
             expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
         });
+
+        it('should show dialog-folder component when folder dialog type is set', () => {
+            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            spectator.detectChanges();
+
+            const dialogFolder = spectator.query('[data-testId="dialog-folder"]');
+            expect(dialogFolder).toBeTruthy();
+        });
     });
 
     describe('onPaginate', () => {
@@ -339,13 +359,39 @@ describe('DotContentDriveShellComponent', () => {
     describe('onHideDialog', () => {
         it('should reset the dialog state', () => {
             store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.detectChanges();
+            spectator.detectComponentChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
             dialog.dispatchEvent(new Event('visibleChange'));
+            spectator.detectComponentChanges();
+
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
+    });
+
+    describe('message', () => {
+        it('should show the message', () => {
             spectator.detectChanges();
 
-            expect(store.resetDialog).toHaveBeenCalled();
+            const message = spectator.query('[data-testid="message"]');
+            expect(message).toBeTruthy();
+        });
+
+        it('should show the message content', () => {
+            spectator.detectChanges();
+
+            const messageContent = spectator.query('[data-testid="message-content"]');
+            expect(messageContent).toBeTruthy();
+        });
+
+        it('should set $showMessage to false when close button is clicked', () => {
+            spectator.detectChanges();
+
+            const closeButton = spectator.query('[data-testid="close-message"]');
+            closeButton.dispatchEvent(new Event('click'));
+            spectator.detectChanges();
+
+            expect(spectator.component.$showMessage()).toBe(false);
         });
     });
 });

@@ -17,21 +17,22 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPageStateService,
     DotRouterService,
     DotSessionStorageService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService,
-    DotPageStateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -58,7 +59,6 @@ import {
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotUiColorsService } from '../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../test/dot-test-bed';
 import { DotDownloadBundleDialogModule } from '../../../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';

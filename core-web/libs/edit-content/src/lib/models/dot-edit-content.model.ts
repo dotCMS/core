@@ -79,7 +79,8 @@ export const DotHistoryTimelineItemActionType = {
     PREVIEW: 'preview',
     RESTORE: 'restore',
     COMPARE: 'compare',
-    DELETE: 'delete'
+    DELETE: 'delete',
+    VIEW: 'view'
 } as const;
 
 /**

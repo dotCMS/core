@@ -113,6 +113,11 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string | null;
     };
+
+    // Historical version viewing state
+    isViewingHistoricalVersion: boolean;
+    historicalVersionInode: string | null;
+    originalContentlet: DotCMSContentlet | null;
 }
 
 export const initialRootState: EditContentState = {
@@ -188,7 +193,12 @@ export const initialRootState: EditContentState = {
     versionsStatus: {
         status: ComponentStatus.INIT,
         error: null
-    }
+    },
+
+    // Historical version viewing state
+    isViewingHistoricalVersion: false,
+    historicalVersionInode: null,
+    originalContentlet: null
 };
 
 /**

@@ -21,7 +21,8 @@ import {
     DotEventsService,
     DotFormatDateService,
     DotIframeService,
-    DotRouterService
+    DotRouterService,
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -47,7 +48,6 @@ import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { SearchableDropDownModule } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
