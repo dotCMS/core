@@ -77,7 +77,7 @@ export class DotContentDriveDialogFolderComponent {
         defaultFileAssetType: this.#fb.control(DEFAULT_FILE_ASSET_TYPES[0].id, {
             nonNullable: true
         }),
-        showOnMenu: this.#fb.control(true, { nonNullable: true }),
+        showOnMenu: this.#fb.control(false, { nonNullable: true }),
         url: this.#fb.control('', { validators: [Validators.required], nonNullable: true })
     });
 
