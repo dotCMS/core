@@ -86,29 +86,67 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     describe('textFieldResolutionFn', () => {
-        it('should remove leading slash from URL', () => {
+        it('should remove leading slash from URL field in HTMLPAGE content', () => {
             const contentlet = {
                 ...mockContentlet,
-                testField: '/test-url'
+                baseType: 'HTMLPAGE',
+                url: '/test-url'
             };
+            const urlField = { ...mockField, variable: 'url' };
 
-            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, mockField);
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, urlField);
             expect(result).toBe('test-url');
         });
 
-        it('should not modify non-URL values', () => {
+        it('should NOT remove leading slash from non-URL fields in HTMLPAGE content', () => {
             const contentlet = {
                 ...mockContentlet,
-                testField: 'test-value'
+                baseType: 'HTMLPAGE',
+                testField: '/test-value'
             };
 
             const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, mockField);
+            expect(result).toBe('/test-value');
+        });
+
+        it('should NOT remove leading slash from URL field in non-HTMLPAGE content', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: 'CONTENT',
+                url: '/content-url'
+            };
+            const urlField = { ...mockField, variable: 'url' };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, urlField);
+            expect(result).toBe('/content-url');
+        });
+
+        it('should not modify values without leading slash', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: 'HTMLPAGE',
+                url: 'test-value'
+            };
+            const urlField = { ...mockField, variable: 'url' };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, urlField);
             expect(result).toBe('test-value');
         });
 
         it('should handle null values', () => {
             const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField);
             expect(result).toBe('default value');
+        });
+
+        it('should handle non-string values', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: 'HTMLPAGE',
+                testField: 123
+            };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, mockField);
+            expect(result).toBe(123);
         });
     });
 
