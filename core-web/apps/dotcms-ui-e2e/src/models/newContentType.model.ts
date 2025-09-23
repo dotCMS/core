@@ -3,9 +3,9 @@
  * @enum {string}
  */
 export enum TYPES {
-    Text = "text",
-    SiteOrFolder = "siteOrFolder",
-    Relationship = "relationship",
+    Text = 'text',
+    SiteOrFolder = 'siteOrFolder',
+    Relationship = 'relationship'
 }
 
 /**
@@ -44,7 +44,7 @@ export interface SiteorHostField extends GenericField {
 export interface RelationshipField extends GenericField {
     fieldType: `${TYPES.Relationship}`;
     entityToRelate: string;
-    cardinality: "1-1" | "1-many" | "many-1" | "many-many";
+    cardinality: '1-1' | '1-many' | 'many-1' | 'many-many';
 }
 
 /**

@@ -1,7 +1,7 @@
-import { Page, expect } from "@playwright/test";
+import { Page, expect } from '@playwright/test';
 
 export class SideMenuComponent {
-    constructor(private page: Page) { }
+    constructor(private page: Page) {}
 
     async openMenu() {
         // Based on codegen - click on the right content pane area to activate navigation
@@ -22,10 +22,12 @@ export class SideMenuComponent {
         // Check if we need to expand the menu by looking for collapsed state
         const menu = this.page.locator("nav[role='navigation']");
         if (await menu.isVisible()) {
-            const classes = await menu.getAttribute("class");
-            if (classes && classes.includes("collapsed")) {
+            const classes = await menu.getAttribute('class');
+            if (classes && classes.includes('collapsed')) {
                 // Try to find and click expand button or hover over menu area
-                const expandArea = this.page.locator('.nav-toggle, .menu-toggle, [aria-label*="menu"]').first();
+                const expandArea = this.page
+                    .locator('.nav-toggle, .menu-toggle, [aria-label*="menu"]')
+                    .first();
                 if (await expandArea.isVisible()) {
                     await expandArea.click();
                 }
@@ -54,7 +56,7 @@ export class SideMenuComponent {
             }
 
             // Then click on the tool/link
-            const toolLink = this.page.getByRole("link", { name: tool });
+            const toolLink = this.page.getByRole('link', { name: tool });
             await expect(toolLink).toBeVisible();
             await toolLink.click();
         }

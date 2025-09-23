@@ -12,5 +12,5 @@ export default {
         ]
     },
     moduleFileExtensions: ['ts', 'js', 'html'],
-    coverageDirectory: '../../target/core-web-reports/',
+    coverageDirectory: '../../target/core-web-reports/'
 };

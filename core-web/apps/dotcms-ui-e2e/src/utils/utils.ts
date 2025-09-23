@@ -1,4 +1,4 @@
-import { Locator } from "@playwright/test";
+import { Locator } from '@playwright/test';
 
 /**
  * Wait for the locator to be in the provided state
@@ -7,7 +7,7 @@ import { Locator } from "@playwright/test";
  */
 export const waitFor = async (
     locator: Locator,
-    state: "attached" | "detached" | "visible" | "hidden",
+    state: 'attached' | 'detached' | 'visible' | 'hidden'
 ): Promise<void> => {
     await locator.waitFor({ state: state });
 };
@@ -20,8 +20,8 @@ export const waitFor = async (
  */
 export const waitForAndCallback = async (
     locator: Locator,
-    state: "attached" | "detached" | "visible" | "hidden",
-    callback?: () => Promise<void>,
+    state: 'attached' | 'detached' | 'visible' | 'hidden',
+    callback?: () => Promise<void>
 ): Promise<void> => {
     await waitFor(locator, state);
     if (callback) {
@@ -36,7 +36,7 @@ export const waitForAndCallback = async (
  */
 export const waitForVisibleAndCallback = async (
     locator: Locator,
-    callback?: () => Promise<void>,
+    callback?: () => Promise<void>
 ): Promise<void> => {
-    await waitForAndCallback(locator, "visible", callback);
+    await waitForAndCallback(locator, 'visible', callback);
 };

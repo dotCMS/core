@@ -1,13 +1,13 @@
-import { Page } from "@playwright/test";
+import { Page } from '@playwright/test';
 
 export class NavigationPage {
-    constructor(private page: Page) { }
+    constructor(private page: Page) {}
 
     /**
      * Navigate to Site Browser page
      */
     async navigateToSiteBrowser() {
-        await this.page.goto("/dotAdmin/#/c/site-browser");
+        await this.page.goto('/dotAdmin/#/c/site-browser');
         await this.page.waitForLoadState();
     }
 
@@ -15,7 +15,7 @@ export class NavigationPage {
      * Navigate to Pages page
      */
     async navigateToPages() {
-        await this.page.goto("/dotAdmin/#/pages");
+        await this.page.goto('/dotAdmin/#/pages');
         await this.page.waitForLoadState();
     }
 
@@ -23,7 +23,7 @@ export class NavigationPage {
      * Navigate to Containers page
      */
     async navigateToContainers() {
-        await this.page.goto("/dotAdmin/#/containers");
+        await this.page.goto('/dotAdmin/#/containers');
         await this.page.waitForLoadState();
     }
 
@@ -31,7 +31,7 @@ export class NavigationPage {
      * Navigate to Content Types page
      */
     async navigateToContentTypes() {
-        await this.page.goto("/dotAdmin/#/content-types-angular");
+        await this.page.goto('/dotAdmin/#/content-types-angular');
         await this.page.waitForLoadState();
     }
 
