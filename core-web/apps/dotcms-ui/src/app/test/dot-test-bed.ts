@@ -18,7 +18,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotRouterService,
-    DotSystemConfigService
+    DotSystemConfigService,
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -41,7 +42,6 @@ import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';
 import { DotContentletEditorService } from '../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
