@@ -1,13 +1,7 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
-import { Component, forwardRef, inject, input } from '@angular/core';
-import {
-    ControlContainer,
-    FormControl,
-    FormGroup,
-    NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { Component, input } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeTextField } from '@dotcms/utils-testing';
