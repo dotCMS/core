@@ -11,7 +11,7 @@ import {
 import { Router } from '@angular/router';
 
 import {
-    DotCMSClient,
+    AngularDotCMSClient,
     DotCMSEditablePageService,
     DotCMSLayoutBodyComponent,
     DynamicComponentEntity
@@ -63,7 +63,7 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem } };
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PageComponent implements OnInit {
-    private readonly client = inject(DotCMSClient);
+    private readonly client = inject(AngularDotCMSClient);
 
     private router = inject(Router);
 

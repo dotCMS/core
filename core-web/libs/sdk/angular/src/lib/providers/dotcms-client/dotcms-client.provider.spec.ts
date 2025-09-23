@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { createDotCMSClient } from '@dotcms/client';
 import { DotCMSClientConfig } from '@dotcms/types';
 
-import { provideDotCMSClient, DotCMSClient } from './dotcms-client.provider';
+import { provideDotCMSClient, AngularDotCMSClient } from './dotcms-client.provider';
 
 // Mock the createDotCMSClient function since it's not available in test environment
 jest.mock('@dotcms/client', () => ({
@@ -118,21 +118,21 @@ describe('provideDotCMSClient', () => {
         });
 
         it('should provide DotCMSClient instance through dependency injection', () => {
-            const client = TestBed.inject(DotCMSClient);
+            const client = TestBed.inject(AngularDotCMSClient);
 
             expect(client).toBeDefined();
             expect(client).toBe(mockClient);
         });
 
         it('should return same instance when injected multiple times', () => {
-            const client1 = TestBed.inject(DotCMSClient);
-            const client2 = TestBed.inject(DotCMSClient);
+            const client1 = TestBed.inject(AngularDotCMSClient);
+            const client2 = TestBed.inject(AngularDotCMSClient);
 
             expect(client1).toBe(client2);
         });
 
         it('should provide client with expected structure', () => {
-            const client = TestBed.inject(DotCMSClient);
+            const client = TestBed.inject(AngularDotCMSClient);
 
             // Verify the mock client structure is injected correctly
             expect(client).toHaveProperty('page');
