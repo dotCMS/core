@@ -4,14 +4,6 @@
 
 <p>Current route: {{ currentRoute() }}</p>
 
-<ul>
-    @for (item of navigation(); track item.href) {
-    <li>
-        <a [href]="item.href">{{ item.title }}</a>
-    </li>
-    }
-</ul>
-
 @if (pageAsset() !== null) {
     <app-header>
         <app-navigation [items]="navigation()"></app-navigation>
