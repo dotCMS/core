@@ -5568,10 +5568,9 @@ public class WorkflowResource {
     /**
      * Returns the workflow tasks based on the {@link WorkflowSearcherForm}
      *
-     *
      * @param request         The current instance of the {@link HttpServletRequest}.
      * @param response        The current instance of the {@link HttpServletResponse}.
-     * @param contentletIdentifier The inode of the Contentlet whose status will be checked.
+     * @param workflowSearcherForm body will all filter parameters
      *
      * @return The status information of the Contentlet in the Workflow it is assigned to.
      *
@@ -5588,16 +5587,14 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks history and comments of content",
-            description = "Retrieve the workflow tasks comments of a contentlet by its [id]" +
-                    "(https://www.dotcms.com/docs/latest/content-versions#IdentifiersInodes).\n\n" +
-                    "Returns an object containing the associated [workflow history or comments]" +
+    @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks based on the filter parameters on the request body",
+            description = "Retrieve the workflow tasks that matched" +
                     "https://www2.dotcms.com/docs/latest/workflow-tasks, [workflow task]",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityWorkflowHistoryCommentsView.class)
+                                    schema = @Schema(implementation = ResponseEntityWorkflowTasksView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request")
