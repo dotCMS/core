@@ -2872,7 +2872,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final Host site = new SiteDataGen().nextPersisted();
         final User systemUser = APILocator.systemUser();
         
-        // Create a container
+
         final Container container = new ContainerDataGen()
                 .site(site)
                 .nextPersisted();
@@ -2883,22 +2883,22 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .withContainer(container.getIdentifier(), ContainerUUID.UUID_LEGACY_VALUE)
                 .nextPersisted();
         
-        // Create page with the template
+
         final HTMLPageAsset page = new HTMLPageDataGen(site, template)
                 .nextPersisted();
         HTMLPageDataGen.publish(page);
         
-        // Mock request setup
+
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
         when(request.getRequestURI()).thenReturn(page.getURI());
         
-        // Render the page
+
         final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPI = new HTMLPageAssetRenderedAPIImpl();
         final PageView pageView = htmlPageAssetRenderedAPI.getPageRendered(
                 request, response, systemUser, page.getURI(), PageMode.ADMIN_MODE);
         
-        // Verify that legacy container UUIDs are transformed to "1" in the layout using streams
+        
         boolean foundLegacyTransformation = pageView.getLayout() != null 
                 && pageView.getLayout().getBody() != null
                 && pageView.getLayout().getBody().getRows().stream()
