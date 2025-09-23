@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
@@ -167,6 +168,9 @@ public class HTMLPageAssetRenderedBuilder {
         final Optional<Contentlet> urlContentletOpt = findUrlMapContentlet(request, mode);
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
+
+            transformLegacyContainerUUIDs(layout);
+
             final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
                     .page(this.htmlPageAsset).layout(layout).canCreateTemplate(canCreateTemplates)
                     .canEditTemplate(canEditTemplate).viewAs(
@@ -189,6 +193,8 @@ public class HTMLPageAssetRenderedBuilder {
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
             final String pageHTML = this.getPageHTML(mode);
+
+            transformLegacyContainerUUIDs(layout);
 
             final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);
             pageViewBuilder.site(site).template(template).containers(containers)
@@ -309,4 +315,39 @@ public class HTMLPageAssetRenderedBuilder {
     public void setRunningExperiment(Experiment experiment) {
         this.runningExperiment = experiment;
     }
+
+    /**
+     * Transforms legacy container UUIDs (LEGACY_RELATION_TYPE) to "1" throughout the template layout
+     * to ensure consistency between layout and rendered container fields in the API response.
+     * 
+     * @param layout The template layout to transform
+     */
+    private void transformLegacyContainerUUIDs(TemplateLayout layout) {
+        if (layout == null) {
+            return;
+        }
+
+
+        if (layout.getBody() != null && layout.getBody().getRows() != null) {
+            layout.getBody().getRows().forEach(row -> {
+                if (row.getColumns() != null) {
+                    row.getColumns().forEach(column -> {
+                        if (column.getContainers() != null) {
+                            column.getContainers().stream()
+                                    .filter(container -> ContainerUUID.UUID_LEGACY_VALUE.equals(container.getUUID()))
+                                    .forEach(container -> container.setUuid(ContainerUUID.UUID_START_VALUE));
+                        }
+                    });
+                }
+            });
+        }
+
+
+        if (layout.getSidebar() != null && layout.getSidebar().getContainers() != null) {
+            layout.getSidebar().getContainers().stream()
+                    .filter(container -> ContainerUUID.UUID_LEGACY_VALUE.equals(container.getUUID()))
+                    .forEach(container -> container.setUuid(ContainerUUID.UUID_START_VALUE));
+        }
+    }
+
 }
