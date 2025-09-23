@@ -3,14 +3,16 @@
 @let dataType = field.dataType;
 
 <dot-card-field [hasError]="hasError">
-    <div class="flex">
-        <label
-            [attr.data-testid]="'label-' + field.variable"
-            [class.p-label-input-required]="isRequired"
-            [for]="field.variable">
-            {{ field.name }}
-        </label>
-    </div>
+    @if ($showLabel()) {
+        <div class="flex">
+            <label
+                [attr.data-testid]="'label-' + field.variable"
+                [class.p-label-input-required]="isRequired"
+                [for]="field.variable">
+                {{ field.name }}
+            </label>
+        </div>
+    }
     <dot-card-field-content>
         <input
             [id]="variableName"
