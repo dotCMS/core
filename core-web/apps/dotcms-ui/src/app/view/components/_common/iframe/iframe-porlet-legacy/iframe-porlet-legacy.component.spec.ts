@@ -16,17 +16,18 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -53,7 +54,6 @@ import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogModule } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.module';
