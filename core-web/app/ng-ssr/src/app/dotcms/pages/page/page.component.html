@@ -13,6 +13,9 @@
 </ul>
 
 @if (pageAsset() !== null) {
+    <app-header>
+        <app-navigation [items]="navigation()"></app-navigation>
+    </app-header>
     <div class="container mx-auto">
         <dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
     </div>

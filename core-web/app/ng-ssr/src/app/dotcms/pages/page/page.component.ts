@@ -18,6 +18,10 @@ import {
 } from '@dotcms/angular';
 import { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } from '@dotcms/types';
 
+import { HeaderComponent } from '../../../components/header/header.component';
+import { NavigationComponent } from '../../../components/navigation/navigation.component';
+
+
 export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
     Activity: import('../../components/activity/activity.component').then(
         (c) => c.ActivityComponent
@@ -52,7 +56,7 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem } };
 
 @Component({
     selector: 'app-page',
-    imports: [CommonModule, DotCMSLayoutBodyComponent],
+    imports: [CommonModule, DotCMSLayoutBodyComponent, HeaderComponent, NavigationComponent],
     providers: [DotCMSEditablePageService],
     templateUrl: './page.component.html',
     styleUrl: './page.component.scss',
@@ -73,7 +77,7 @@ export class PageComponent implements OnInit {
     components = signal<{ [key: string]: DynamicComponentEntity }>(DYNAMIC_COMPONENTS);
 
     ngOnInit() {
-        const route = this.currentRoute().split('?')[0];
+        const route = this.currentRoute().split('?')[0] || '/';
 
         const pageParams = {
             graphql: {
