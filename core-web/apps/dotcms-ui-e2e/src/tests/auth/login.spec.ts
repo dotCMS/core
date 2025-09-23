@@ -1,7 +1,7 @@
-import { LoginPage } from "@pages";
-import { expect, test } from "@playwright/test";
+import { LoginPage } from '@pages';
+import { expect, test } from '@playwright/test';
 
-import { validCredentials, wrong1, wrong2 } from "./credentialsData";
+import { validCredentials, wrong1, wrong2 } from './credentialsData';
 
 /**
  * Test to verify redirect behavior from /dotAdmin/#/ to /public/login
@@ -36,8 +36,10 @@ test('Try Login with Admin User using LoginPage', async ({ page }) => {
 
     // Wait for URL to change or timeout
     try {
-        await page.waitForURL(url => !url.includes('/login/') && !url.includes('/public/login'), { timeout: 10000 });
-    } catch (error) {
+        await page.waitForURL((url) => !url.includes('/login/') && !url.includes('/public/login'), {
+            timeout: 10000
+        });
+    } catch {
         await page.waitForTimeout(5000);
     }
 
@@ -103,22 +105,20 @@ validCredentials.forEach(({ username, password }, index) => {
 
 const invalidCredentials = [
     { username: wrong1.username, password: wrong1.password }, // Valid username, invalid password
-    { username: wrong2.username, password: wrong2.password }, // Invalid username, valid password
+    { username: wrong2.username, password: wrong2.password } // Invalid username, valid password
 ];
 
 /**
  * Test to validate the login functionality with invalid credentials
  */
 invalidCredentials.forEach((credentials) => {
-    test(`Login with invalid Credentials: ${credentials.username}`, async ({
-        page,
-    }) => {
+    test(`Login with invalid Credentials: ${credentials.username}`, async ({ page }) => {
         const { username, password } = credentials;
 
         const loginPage = new LoginPage(page);
         await loginPage.login(username, password);
 
-        const errorMessageLocator = page.getByTestId("message");
+        const errorMessageLocator = page.getByTestId('message');
         await expect(errorMessageLocator).toBeVisible({ timeout: 30000 });
     });
 });

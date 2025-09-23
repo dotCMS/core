@@ -1,9 +1,9 @@
-import { Page } from "@playwright/test";
+import { Page } from '@playwright/test';
 
-import { SideMenuComponent } from "../components/sideMenu.component";
+import { SideMenuComponent } from '../components/sideMenu.component';
 
 export class LoginPage {
-    constructor(private page: Page) { }
+    constructor(private page: Page) {}
 
     /**
      *  Login to dotCMS
@@ -27,7 +27,6 @@ export class LoginPage {
      * Navigate to login page based on environment
      */
     async navigateToLogin() {
-
         const loginUrl = '/dotAdmin/#/public/login';
 
         await this.page.goto(loginUrl);
@@ -42,8 +41,9 @@ export class LoginPage {
         const baseUrl = currentEnv === 'ci' ? 'http://localhost:8080' : 'http://localhost:4200';
 
         await this.page.goto(`${baseUrl}/dotAdmin/#/`);
-        await this.page.waitForLoadState('networkidle');
-        await this.page.waitForTimeout(2000); // Wait for any JavaScript redirects
+        await this.page.waitForLoadState('domcontentloaded');
+        // Wait for potential redirects by checking URL stability
+        await this.page.waitForFunction(() => !document.location.href.includes('/loading'));
     }
 
     /**
@@ -57,7 +57,11 @@ export class LoginPage {
     /**
      * Verify login page structure and elements
      */
-    async verifyLoginPageStructure(): Promise<{ inputs: number; buttons: number; hasPasswordField: boolean }> {
+    async verifyLoginPageStructure(): Promise<{
+        inputs: number;
+        buttons: number;
+        hasPasswordField: boolean;
+    }> {
         // Count actual login form elements using real data-testid values
         const usernameField = await this.page.getByTestId('userNameInput').count();
         const passwordField = await this.page.getByTestId('password').count();
@@ -80,7 +84,11 @@ export class LoginPage {
     /**
      * Check if login form elements are present using data-testid
      */
-    async hasLoginFormElements(): Promise<{ hasUsernameField: boolean; hasPasswordField: boolean; hasSubmitButton: boolean }> {
+    async hasLoginFormElements(): Promise<{
+        hasUsernameField: boolean;
+        hasPasswordField: boolean;
+        hasSubmitButton: boolean;
+    }> {
         const hasUsernameField = await this.page.getByTestId('userNameInput').isVisible();
         const hasPasswordField = await this.page.getByTestId('password').isVisible();
         const hasSubmitButton = await this.page.getByTestId('submitButton').isVisible();
