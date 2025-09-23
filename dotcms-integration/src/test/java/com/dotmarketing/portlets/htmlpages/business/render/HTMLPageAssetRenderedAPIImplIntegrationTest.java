@@ -2858,7 +2858,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     /**
-     * Method to test: Legacy container UUID transformation in page rendering
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: A template has containers with LEGACY_RELATION_TYPE UUIDs
      * Should: Transform UUIDs to consistent values in both layout and rendered container fields
      * 
