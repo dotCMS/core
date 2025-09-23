@@ -2856,4 +2856,60 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 mockRequest, mockResponse);
         Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
+
+    /**
+     * Method to test: Legacy container UUID transformation in page rendering
+     * When: A template has containers with LEGACY_RELATION_TYPE UUIDs
+     * Should: Transform UUIDs to consistent values in both layout and rendered container fields
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void shouldTransformLegacyContainerUUIDs() throws DotDataException, DotSecurityException {
+        init();
+        
+        final Host site = new SiteDataGen().nextPersisted();
+        final User systemUser = APILocator.systemUser();
+        
+        // Create a container
+        final Container container = new ContainerDataGen()
+                .site(site)
+                .nextPersisted();
+        
+        // Create template with legacy container UUID
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .withContainer(container.getIdentifier(), ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        
+        // Create page with the template
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template)
+                .nextPersisted();
+        HTMLPageDataGen.publish(page);
+        
+        // Mock request setup
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(request.getRequestURI()).thenReturn(page.getURI());
+        
+        // Render the page
+        final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPI = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = htmlPageAssetRenderedAPI.getPageRendered(
+                request, response, systemUser, page.getURI(), PageMode.ADMIN_MODE);
+        
+        // Verify that legacy container UUIDs are transformed to "1" in the layout using streams
+        boolean foundLegacyTransformation = pageView.getLayout() != null 
+                && pageView.getLayout().getBody() != null
+                && pageView.getLayout().getBody().getRows().stream()
+                    .flatMap(row -> row.getColumns().stream())
+                    .flatMap(column -> column.getContainers().stream())
+                    .filter(containerUUID -> container.getIdentifier().equals(containerUUID.getIdentifier()))
+                    .peek(containerUUID -> assertEquals("Legacy container UUID should be transformed to '1'", 
+                            ContainerUUID.UUID_START_VALUE, containerUUID.getUUID()))
+                    .findAny()
+                    .isPresent();
+        
+        assertTrue("Should have found and transformed legacy container UUID", foundLegacyTransformation);
+    }
 }
