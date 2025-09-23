@@ -1,10 +1,5 @@
-import { ChangeDetectionStrategy, Component, forwardRef, inject, input } from '@angular/core';
-import {
-    ReactiveFormsModule,
-    FormsModule,
-    NG_VALUE_ACCESSOR,
-    ControlContainer
-} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, inject } from '@angular/core';
+import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -36,13 +31,6 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentTextFieldComponent)
         }
     ]
 })

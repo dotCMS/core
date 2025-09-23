@@ -3,7 +3,6 @@ import {
     Component,
     computed,
     ElementRef,
-    forwardRef,
     HostListener,
     inject,
     input,
@@ -12,12 +11,7 @@ import {
     signal,
     viewChild
 } from '@angular/core';
-import {
-    ControlContainer,
-    FormGroupDirective,
-    NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -57,21 +51,10 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
     providers: [
         {
             provide: WINDOW,
             useValue: window
-        },
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentCustomFieldComponent)
         }
     ],
     host: {

@@ -5,19 +5,13 @@ import {
     Component,
     computed,
     ElementRef,
-    forwardRef,
     inject,
     input,
     model,
     output,
     viewChild
 } from '@angular/core';
-import {
-    ControlContainer,
-    FormsModule,
-    NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
@@ -72,16 +66,13 @@ import {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ],
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentTextAreaComponent)
-        }
     ]
 })
 export class DotEditContentTextAreaComponent extends BaseFieldComponent {
+    /**
+     * Inject the ControlContainer
+     */
+    readonly controlContainer = inject(ControlContainer);
     /**
      * Reference to the textarea element
      */

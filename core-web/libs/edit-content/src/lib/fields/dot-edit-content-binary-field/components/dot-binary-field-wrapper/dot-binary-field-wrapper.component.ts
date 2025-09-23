@@ -1,13 +1,5 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    input,
-    output,
-    OnInit,
-    forwardRef,
-    inject
-} from '@angular/core';
-import { ControlContainer, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, output, OnInit } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -34,20 +26,7 @@ import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binar
         DotEditContentBinaryFieldComponent
     ],
     templateUrl: './dot-binary-field-wrapper.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotBinaryFieldWrapperComponent)
-        }
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldWrapperComponent extends BaseFieldComponent implements OnInit {
     $field = input.required<DotCMSContentTypeField>({

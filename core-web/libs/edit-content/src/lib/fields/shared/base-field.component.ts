@@ -1,16 +1,14 @@
-import { ChangeDetectorRef, DestroyRef, inject, InputSignal } from '@angular/core';
+import { ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     ControlValueAccessor,
     FormControl,
     Validators,
     TouchedChangeEvent,
-    ControlContainer
+    NgControl
 } from '@angular/forms';
 
 import { filter } from 'rxjs/operators';
-
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 /**
  * Base class for all field components that provides common functionality
@@ -19,10 +17,15 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
  * Note: Child components must define the $field input property.
  */
 export abstract class BaseFieldComponent implements ControlValueAccessor {
-    protected readonly controlContainer = inject(ControlContainer);
+    protected ngControl = inject(NgControl, { self: true });
     protected changeDetectorRef = inject(ChangeDetectorRef);
     protected destroyRef = inject(DestroyRef);
-    abstract $field: InputSignal<DotCMSContentTypeField>;
+
+    constructor() {
+        if (this.ngControl !== null) {
+            this.ngControl.valueAccessor = this;
+        }
+    }
 
     protected onChange: (value: unknown) => void = () => {
         /* no-op */
@@ -78,7 +81,7 @@ export abstract class BaseFieldComponent implements ControlValueAccessor {
     }
 
     get formControl(): FormControl {
-        return this.controlContainer.control?.get(this.$field().variable) as FormControl;
+        return this.ngControl.control as FormControl;
     }
 
     get statusChanges$() {

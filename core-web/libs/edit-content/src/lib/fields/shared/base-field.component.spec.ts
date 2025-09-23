@@ -20,20 +20,7 @@ const FIELD_MOCK = createFakeTextField({
 
 @Component({
     selector: 'dot-base-field-component',
-    template: '',
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true, optional: true })
-        }
-    ],
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => BaseFieldComponentMock)
-        }
-    ]
+    template: ''
 })
 export class BaseFieldComponentMock extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });

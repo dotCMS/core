@@ -9,11 +9,9 @@ import {
     inject,
     input,
     signal,
-    OnInit,
-    forwardRef
+    OnInit
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlContainer, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -60,21 +58,7 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     templateUrl: './dot-edit-content-relationship-field.component.html',
     styleUrls: ['./dot-edit-content-relationship-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true, optional: true })
-        }
-    ],
-    providers: [
-        RelationshipFieldStore,
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentRelationshipFieldComponent)
-        }
-    ]
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotEditContentRelationshipFieldComponent extends BaseFieldComponent implements OnInit {
     /**

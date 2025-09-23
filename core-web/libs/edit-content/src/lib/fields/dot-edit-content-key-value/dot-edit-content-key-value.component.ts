@@ -1,12 +1,4 @@
-import {
-    Component,
-    ChangeDetectionStrategy,
-    signal,
-    input,
-    forwardRef,
-    inject
-} from '@angular/core';
-import { ControlContainer, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, ChangeDetectionStrategy, signal, input } from '@angular/core';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotKeyValue, DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
@@ -27,20 +19,7 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     ],
     templateUrl: './dot-edit-content-key-value.component.html',
     styleUrl: './dot-edit-content-key-value.component.css',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentKeyValueComponent)
-        }
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentKeyValueComponent extends BaseFieldComponent {
     $initialValue = signal<DotKeyValue[]>([]);
