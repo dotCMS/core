@@ -56,19 +56,14 @@ export class DotEditContentTextFieldComponent extends BaseWrapperFieldComponent 
         const value = contentlet
             ? (contentlet[field.variable] ?? field.defaultValue)
             : field.defaultValue;
-        return value;
-    });
 
-    constructor() {
-        super();
-        this.handleContentLetChange(this.$initValue);
-    }
+        const shouldRemoveLeadingSlash =
+            contentlet?.baseType === 'HTMLPAGE' &&
+            field.variable === 'url' &&
+            typeof value === 'string' &&
+            value.startsWith('/');
 
-    /**
-     * A signal method that handles the contentlet change.
-     * It is used to set the value of the text field component.
-     */
-    readonly handleContentLetChange = signalMethod((value: string) => {
-        this.formControl.setValue(value);
+        return shouldRemoveLeadingSlash ? value.substring(1) : value;
+
     });
 }

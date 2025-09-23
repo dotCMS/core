@@ -44,8 +44,14 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
-    // TODO: https://github.com/dotCMS/core/issues/33104 please not clean / from the value
-    return value || '';
+
+    const shouldRemoveLeadingSlash =
+        contentlet?.baseType === 'HTMLPAGE' &&
+        field.variable === 'url' &&
+        typeof value === 'string' &&
+        value.startsWith('/');
+
+    return shouldRemoveLeadingSlash ? value.substring(1) : value;
 };
 
 /**

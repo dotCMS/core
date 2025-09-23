@@ -116,4 +116,76 @@ describe('DotEditContentTextFieldComponent', () => {
             expect(textInput.getAttribute('step')).toBe(options.step.toString());
         });
     });
+
+    it('should remove the leading slash from the value if the contentlet is an HTML page and the field is the url', () => {
+        const fieldMock =  createFakeTextField({
+            variable: 'url'
+        });
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [fieldMock.variable]: new FormControl('')
+                    }),
+                    field: fieldMock,
+                    contentlet: createFakeContentlet({
+                        baseType: 'HTMLPAGE',
+                        [fieldMock.variable]: '/one'
+                    })
+                }
+            }
+        );
+        spectator.detectChanges();
+        expect(spectator.component.$initValue()).toBe('one');
+    });
+
+    it('should return the default value', () => {
+        const fieldMock =  createFakeTextField({
+            variable: 'someValuev1',
+            defaultValue: 'defaultValue'
+        });
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [fieldMock.variable]: new FormControl('')
+                    }),
+                    field: fieldMock,
+                    contentlet: createFakeContentlet()
+                }
+            }
+        );
+        spectator.detectChanges();
+        expect(spectator.component.$initValue()).toBe('defaultValue');
+    });
+
+    it('should return the value from the contentlet', () => {
+        const fieldMock =  createFakeTextField({
+            variable: 'field'
+        });
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [fieldMock.variable]: new FormControl('')
+                    }),
+                    field: fieldMock,
+                    contentlet: createFakeContentlet({
+                        [fieldMock.variable]: 'myValue',
+                    })
+                }
+            }
+        );
+        spectator.detectChanges();
+        expect(spectator.component.$initValue()).toBe('myValue');
+    });
 });

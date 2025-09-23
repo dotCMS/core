@@ -100,6 +100,29 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField);
             expect(result).toBe('default value');
         });
+
+        it('should remove leading slash from URL field in HTMLPAGE content', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: 'HTMLPAGE',
+                url: '/test-url'
+            };
+            const urlField = { ...mockField, variable: 'url' };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, urlField);
+            expect(result).toBe('test-url');
+        });
+
+        it('should NOT remove leading slash from URL field in non-HTMLPAGE content', () => {
+            const contentlet = {
+                ...mockContentlet,
+                myVariable: '/content-url'
+            };
+            const urlField = { ...mockField, variable: 'myVariable' };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, urlField);
+            expect(result).toBe('/content-url');
+        });
     });
 
     describe('hostFolderResolutionFn', () => {
