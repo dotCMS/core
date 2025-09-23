@@ -8,6 +8,16 @@ import { catchError } from 'rxjs/operators';
 import { BaseHttpClient, DotRequestOptions } from '@dotcms/types';
 
 /**
+ * Interface for Angular HttpClient options with additional properties for method and body.
+ */
+interface AngularHttpOptions {
+  headers?: HttpHeaders;
+  method?: string;
+  body?: unknown;
+  [key: string]: unknown;
+}
+
+/**
  * HTTP client implementation using Angular's HttpClient.
  *
  * Extends BaseHttpClient to provide a standard interface for making HTTP requests.
@@ -54,8 +64,8 @@ export class AngularHttpClient extends BaseHttpClient {
   /**
    * Creates an observable for the HTTP request with proper error handling.
    */
-  private createRequestObservable<T>(url: string, options: Record<string, unknown>): Observable<T> {
-    const method = (options['method'] as string) || 'GET';
+  private createRequestObservable<T>(url: string, options: AngularHttpOptions): Observable<T> {
+    const method = options.method || 'GET';
     const { body, ...httpOptions } = options;
     const finalOptions = { ...httpOptions, observe: 'body' as const };
 
@@ -81,7 +91,7 @@ export class AngularHttpClient extends BaseHttpClient {
           catchError(this.handleError.bind(this))
         ) as Observable<T>;
       default:
-        return this.httpClient.request<T>(method, url, { body, ...finalOptions } as Record<string, unknown>).pipe(
+        return this.httpClient.request<T>(method, url, { body, ...finalOptions }).pipe(
           catchError(this.handleError.bind(this))
         ) as Observable<T>;
     }
@@ -90,40 +100,39 @@ export class AngularHttpClient extends BaseHttpClient {
   /**
    * Converts DotRequestOptions to Angular HttpClient options format.
    */
-  private convertToHttpOptions(options?: DotRequestOptions): Record<string, unknown> {
+  private convertToHttpOptions(options?: DotRequestOptions): AngularHttpOptions {
     if (!options) {
       return {};
     }
 
-    const httpOptions: Record<string, unknown> = {};
+    const httpOptions: AngularHttpOptions = {};
 
     // Handle headers
-    if (options['headers']) {
+    if (options.headers) {
       // Convert HeadersInit to the format expected by HttpHeaders
       const headerObj: { [key: string]: string } = {};
-      const headers = options['headers'] as HeadersInit;
-      if (Array.isArray(headers)) {
-        headers.forEach(([key, value]) => {
+      if (Array.isArray(options.headers)) {
+        options.headers.forEach(([key, value]) => {
           headerObj[key] = value;
         });
-      } else if (typeof headers === 'object') {
-        Object.assign(headerObj, headers);
+      } else if (typeof options.headers === 'object') {
+        Object.assign(headerObj, options.headers);
       }
-      httpOptions['headers'] = new HttpHeaders(headerObj);
+      httpOptions.headers = new HttpHeaders(headerObj);
     }
 
-    // Handle method
-    if (options['method']) {
-      httpOptions['method'] = options['method'];
+    // Handle method (store as custom property for createRequestObservable)
+    if (options.method) {
+      httpOptions.method = options.method;
     }
 
-    // Handle body
-    if (options['body']) {
-      httpOptions['body'] = options['body'];
+    // Handle body (store as custom property for createRequestObservable)
+    if (options.body) {
+      httpOptions.body = options.body;
     }
 
     // Handle other fetch options that Angular HttpClient supports
-    if (options['signal']) {
+    if (options.signal) {
       // Angular HttpClient doesn't support AbortSignal directly
       // You might need to implement this differently or use a different approach
       console.warn('AbortSignal is not directly supported by Angular HttpClient');
