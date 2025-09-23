@@ -1,6 +1,17 @@
 import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
-import { ApplicationConfig, EnvironmentProviders, inject, makeEnvironmentProviders, provideZoneChangeDetection } from '@angular/core';
-import { provideClientHydration, withEventReplay, withHttpTransferCacheOptions } from '@angular/platform-browser';
+import {
+    ApplicationConfig,
+    EnvironmentProviders,
+    inject,
+    makeEnvironmentProviders,
+    provideBrowserGlobalErrorListeners,
+    provideZoneChangeDetection
+} from '@angular/core';
+import {
+    provideClientHydration,
+    withEventReplay,
+    withHttpTransferCacheOptions
+} from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 
 import { DotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
@@ -33,6 +44,9 @@ export const appConfig: ApplicationConfig = {
     providers: [
         provideDotCMSImageLoader('https://demo.dotcms.com'),
         provideHttpClient(withFetch()),
+        provideBrowserGlobalErrorListeners(),
+        provideZoneChangeDetection({ eventCoalescing: true }),
+        provideRouter(appRoutes),
         provideClientHydration(
             withEventReplay(),
             withHttpTransferCacheOptions({
@@ -40,12 +54,10 @@ export const appConfig: ApplicationConfig = {
                 includeRequestsWithAuthHeaders: true
             })
         ),
-        provideZoneChangeDetection({ eventCoalescing: true }),
-        provideRouter(appRoutes),
         provideDotCMSClient({
-            dotcmsUrl: 'https://demo.dotcms.com',
+            dotcmsUrl: 'http://localhost:8080',
             authToken:
-                'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGliNGM2ODJkOS1hNzQ4LTRjM2EtOWE1ZS0zZmI3NTg5MDkzYWYiLCJ4bW9kIjoxNzU2MTYyMzQ2MDAwLCJuYmYiOjE3NTYxNjIzNDYsImlzcyI6IjU3ZjQ5OGFlMGYiLCJleHAiOjE3NTcwMjYzNDYsImlhdCI6MTc1NjE2MjM0NiwianRpIjoiNTMwOWQxMzktNjEyNC00NWE5LTliOTItNDYyMDBjZDMzZjA4In0.GUqyl8vIy8cKB6r7UwUfTNzXfpIswUcn4fg_KbX03I8',
+                'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk0NmRiNjExMi01YTQxLTRlYTQtODEzNC04ZDEzMDA4NTA0Y2QiLCJ4bW9kIjoxNzU4NjM5ODk5MDAwLCJuYmYiOjE3NTg2Mzk4OTksImlzcyI6ImQ2MWM5Y2I2OTAiLCJsYWJlbCI6InRva2VuIiwiZXhwIjoxODUzMzAxNjAwLCJpYXQiOjE3NTg2Mzk4OTksImp0aSI6IjJhYzE3MGQ5LWE5OTQtNGNjNC04YmY0LTkzNjRmN2UzYzRiZCJ9.IfYSpCEv0sAYWWjWSK96norKYSUvRvqwJWHyRosei9k',
             siteId: 'YOUR_SITE_ID'
         })
     ]
