@@ -65,8 +65,12 @@ export class DotEditContentTextFieldComponent extends BaseWrapperFieldComponent 
 
         return shouldRemoveLeadingSlash ? value.substring(1) : value;
     });
+<<<<<<< HEAD
     /**
      * A readonly field that holds the input text options.
      */
     readonly inputTextOptions = INPUT_TEXT_OPTIONS;
+=======
+
+>>>>>>> f8fe29b774d6027f8e81ca2ad5c97b0fcf5d05b6
 }

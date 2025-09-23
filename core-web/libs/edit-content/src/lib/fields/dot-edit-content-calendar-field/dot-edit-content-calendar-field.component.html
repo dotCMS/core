@@ -1,14 +1,26 @@
 @let field = $field();
 @let variable = field.variable;
 @let name = field.name;
-
+@let showLabel = $showLabel();
 @let fieldTypeConfig = $fieldTypeConfig();
 @let systemTimezone = $systemTimezone();
-
 @let showTimezoneInfo = $showTimezoneInfo();
+@let hasTimezone = showTimezoneInfo && systemTimezone;
+@let hasHint = field.hint;
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel && hasHint && hasTimezone) {
+        <div class="flex gap-1 align-items-center">
+            <label
+                [attr.data-testid]="'label-' + field.variable"
+                [checkIsRequiredControl]="field.variable"
+                [for]="field.variable"
+                dotFieldRequired>
+                {{ field.name }}
+            </label>
+            <i class="pi pi-info-circle text-xs" [pTooltip]="field.hint"></i>
+        </div>
+    }
     <dot-card-field-content>
         <p-calendar
             class="w-full"
@@ -43,7 +55,7 @@
                     </div>
                 }
 
-                @if (!hasError && field.hint) {
+                @if (!hasError && !hasTimezone && hasHint) {
                     <div class="hint-message" data-testid="calendar-field-hints">
                         <small
                             [attr.data-testId]="'hint-' + field.variable"
@@ -52,16 +64,18 @@
                         </small>
                     </div>
                 }
+                @if (!hasError && hasTimezone && hasHint) {
+                    <div class="hint-message">
+                        <small
+                            data-testid="calendar-field-timezone"
+                            class="text-gray-700"
+                            role="status"
+                            aria-live="polite">
+                            {{ systemTimezone.label }}
+                        </small>
+                    </div>
+                }
             </div>
-            @if (showTimezoneInfo && systemTimezone) {
-                <small
-                    data-testid="calendar-field-timezone"
-                    class="text-gray-700"
-                    role="status"
-                    aria-live="polite">
-                    {{ systemTimezone.label }}
-                </small>
-            }
         </div>
     </dot-card-field-footer>
 </dot-card-field>
