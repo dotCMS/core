@@ -8,9 +8,9 @@
     "@angular/router": ">=17.0.0"
   },
   "dependencies": {
-    "@dotcms/client": "file:.yalc/@dotcms/client",
-    "@dotcms/uve": "file:.yalc/@dotcms/uve",
-    "@tinymce/tinymce-angular": "9.0.0"
+    "@tinymce/tinymce-angular": "9.0.0",
+    "@dotcms/client": "latest",
+    "@dotcms/uve": "latest"
   },
   "devDependencies": {
     "@dotcms/types": "latest"

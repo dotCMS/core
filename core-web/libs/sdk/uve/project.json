@@ -62,15 +62,6 @@
                     }
                 }
             }
-        },
-        "dev": {
-            "executor": "nx:run-commands",
-            "options": {
-                "commands": [
-                    "nx run {projectName}:build --watch",
-                    "nodemon --watch dist/libs/sdk/uve --exec 'cd dist/libs/sdk/uve && yalc publish && yalc push' --delay 1500ms"
-                ]
-            }
         }
     }
 }

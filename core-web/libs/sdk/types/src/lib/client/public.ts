@@ -40,7 +40,7 @@ export class DotHttpError extends Error implements HttpErrorDetails {
  *
  * @example
  * ```typescript
- * // ✅ CORRECT - Throws HttpError
+ * // CORRECT - Throws HttpError
  * if (!response.ok) {
  *   throw new HttpError({
  *     status: response.status,
@@ -50,7 +50,7 @@ export class DotHttpError extends Error implements HttpErrorDetails {
  *   });
  * }
  *
- * // ❌ WRONG - Throws generic Error
+ * // WRONG - Throws generic Error
  * if (!response.ok) {
  *   throw new Error(`HTTP ${response.status}`);
  * }

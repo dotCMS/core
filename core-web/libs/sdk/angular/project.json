@@ -28,15 +28,6 @@
             "options": {
                 "jestConfig": "libs/sdk/angular/jest.config.ts"
             }
-        },
-        "dev": {
-            "executor": "nx:run-commands",
-            "options": {
-                "commands": [
-                    "nx run {projectName}:build --watch",
-                    "nodemon --watch dist/libs/sdk/angular --exec 'cd dist/libs/sdk/angular && yalc publish && yalc push' --delay 1500ms"
-                ]
-            }
         }
     }
 }
