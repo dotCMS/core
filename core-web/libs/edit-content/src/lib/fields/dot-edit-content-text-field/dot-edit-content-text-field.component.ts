@@ -1,5 +1,3 @@
-import { signalMethod } from '@ngrx/signals';
-
 import { ChangeDetectionStrategy, Component, inject, input, computed } from '@angular/core';
 import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/forms';
 
