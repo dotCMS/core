@@ -11,6 +11,7 @@ import {
     input,
     untracked
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotESContentService } from '@dotcms/data-access';
 import { DotCMSPageAssetContainers } from '@dotcms/types';
@@ -36,18 +37,18 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
 
     protected readonly vm$ = this.#store.vm$;
+    protected readonly isContentType = toSignal(this.#store.isContentType$);
     protected readonly PALETTE_TYPES_ENUM = PALETTE_TYPES;
 
     readonly UPDATE_LANGUAGE_EFFECT = effect(() => {
-        const { currentPaletteType } = untracked(() => this.#store.state()) || {};
-        const variantId = untracked(() => this.variantId());
         const languageId = this.languageId();
+        const variantId = this.variantId();
 
-        if (currentPaletteType === PALETTE_TYPES.CONTENTTYPE) {
+        if (this.isContentType()) {
             return;
         }
 
-        this.#store.reloadContentlets({ languageId, variantId });
+        untracked(() => this.#store.refreshContentlets({ languageId, variantId }));
     });
 
     ngOnInit() {

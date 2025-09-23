@@ -77,6 +77,9 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     }
 
     readonly vm$ = this.select((state) => state);
+    readonly isContentType$ = this.select(
+        (state) => state.currentPaletteType === PALETTE_TYPES.CONTENTTYPE
+    );
 
     readonly setStatus = this.updater((state, status: EditEmaPaletteStoreStatus) => ({
         ...state,
@@ -168,13 +171,14 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     );
 
     /**
-     * Reloads the contentlets when the language or variant changes.
+     * Refreshes the contentlets when the language or variant changes.
      * @param data$ - The observable that emits the language and variant.
      * @returns An Observable that emits the contentlets.
      */
-    readonly reloadContentlets = this.effect(
+    readonly refreshContentlets = this.effect(
         (data$: Observable<{ languageId: number; variantId: string }>) => {
             return data$.pipe(
+                tap(() => this.setStatus(EditEmaPaletteStoreStatus.LOADING)),
                 switchMap(({ languageId, variantId }) => {
                     const { query, contentTypeVarName } = this.state().contentlets.filter;
                     return this.fetchContentlets(
