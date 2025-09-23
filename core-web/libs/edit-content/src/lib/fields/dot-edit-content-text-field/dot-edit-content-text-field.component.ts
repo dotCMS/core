@@ -43,6 +43,6 @@ export class DotEditContentTextFieldComponent extends BaseFieldComponent {
     readonly inputTextOptions = INPUT_TEXT_OPTIONS;
 
     writeValue(_: unknown): void {
-        // Do nothing
+       // noop
     }
 }
