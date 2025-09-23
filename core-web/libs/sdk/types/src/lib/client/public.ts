@@ -60,13 +60,18 @@ export interface DotHttpClient {
     /**
      * Makes an HTTP request.
      *
+     * @template T - The expected response type
      * @param url - The URL to request
      * @param options - Request options (method, headers, body, etc.)
      * @returns A promise that resolves with the response data
      * @throws {DotHttpError} When the request fails (non-2xx status or network error)
      *
-     * @important This method MUST throw HttpError instances, not generic Error objects.
-     * Consumers expect HttpError with status, statusText, and data properties for proper error handling.
+     * @important IMPLEMENTATION REQUIREMENTS:
+     * - MUST throw DotHttpError instances for failed requests, never generic Error objects
+     * - Include response status, statusText, and message in DotHttpError
+     * - Attempt to parse error response body and include in DotHttpError.data
+     * - Handle network errors by wrapping them in DotHttpError
+     * - Consumers expect DotHttpError with status, statusText, and data properties for proper error handling
      */
     request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
 }
@@ -141,7 +146,24 @@ export interface DotHttpClient {
  * }
  * ```
  */
+
 export abstract class BaseHttpClient implements DotHttpClient {
+    /**
+     * Makes an HTTP request.
+     *
+     * @template T - The expected response type
+     * @param url - The URL to request
+     * @param options - Request options (method, headers, body, etc.)
+     * @returns A promise that resolves with the response data
+     * @throws {DotHttpError} When the request fails (non-2xx status or network error)
+     *
+     * @important IMPLEMENTATION REQUIREMENTS:
+     * - MUST throw DotHttpError instances for failed requests, never generic Error objects
+     * - Include response status, statusText, and message in DotHttpError
+     * - Attempt to parse error response body and include in DotHttpError.data
+     * - Handle network errors by wrapping them in DotHttpError using createNetworkError()
+     * - Use createHttpError() helper for HTTP response errors
+     */
     abstract request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
 
     /**

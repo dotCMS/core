@@ -16,11 +16,12 @@ import { provideRouter } from '@angular/router';
 
 import { DotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 import { createDotCMSClient } from '@dotcms/client';
+import { DotCMSClientConfig } from '@dotcms/types';
 
 import { AngularHttpClient } from './angular-httpclient';
 import { appRoutes } from './app.routes';
 
-function provideDotCMSClient(options: any): EnvironmentProviders {
+function provideDotCMSClient(options: DotCMSClientConfig): EnvironmentProviders {
     return makeEnvironmentProviders([
         {
             provide: DotCMSClient,
