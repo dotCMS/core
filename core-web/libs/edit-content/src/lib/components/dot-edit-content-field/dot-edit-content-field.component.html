@@ -90,9 +90,9 @@
     @case (fieldTypes.TAG) {
         @defer (on immediate) {
             <dot-edit-content-tag-field
-                [formControlName]="field.variable"
+                [contentlet]="contentlet"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-tag-field>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.JSON) {
