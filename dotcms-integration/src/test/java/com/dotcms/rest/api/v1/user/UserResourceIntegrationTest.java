@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.user;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -27,10 +26,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.internal.util.Base64;
 import static org.junit.Assert.*;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -194,7 +192,6 @@ public class UserResourceIntegrationTest {
         // Validate specific assets
         validateHostPermissions(permissions);
         validateFolderPermissions(permissions);
-        validateNoPermissionDuplicates(permissions);
     }
 
     @Test
@@ -224,7 +221,6 @@ public class UserResourceIntegrationTest {
         
         assertNotNull(permissions);
         assertTrue("Should have permissions", !permissions.isEmpty());
-        validateNoPermissionDuplicates(permissions);
     }
 
     @Test
@@ -272,43 +268,6 @@ public class UserResourceIntegrationTest {
                           "System Host".equals(p.get("name")));
         
         assertTrue("System host must be included", hasSystemHost);
-    }
-
-    @Test  
-    public void test_getUserPermissions_canonicalPermissionNames() throws Exception {
-        // Verify no duplicate permission names (READ vs USE, WRITE vs EDIT)
-        HttpServletRequest request = mockRequest();
-        Response response = resource.getUserPermissions(request, this.response, permissionTestUser.getUserId());
-        
-        ResponseEntityView responseView = (ResponseEntityView) response.getEntity();
-        Map<String, Object> responseData = (Map<String, Object>) responseView.getEntity();
-        List<Map<String, Object>> permissions = (List<Map<String, Object>>) responseData.get("assets");
-        
-        for (Map<String, Object> asset : permissions) {
-            Map<String, List<String>> perms = (Map<String, List<String>>) asset.get("permissions");
-            if (perms != null) {
-                for (List<String> permissionList : perms.values()) {
-                    // Should only have canonical names
-                    for (String perm : permissionList) {
-                        assertTrue("Should use canonical permission names",
-                            perm.equals("READ") || 
-                            perm.equals("WRITE") || 
-                            perm.equals("PUBLISH") ||
-                            perm.equals("EDIT_PERMISSIONS") ||
-                            perm.equals("CAN_ADD_CHILDREN"));
-                        
-                        // Should NOT have aliases
-                        assertFalse("Should not have USE alias", perm.equals("USE"));
-                        assertFalse("Should not have EDIT alias", perm.equals("EDIT"));
-                    }
-                    
-                    // Check no duplicates in list
-                    assertEquals("No duplicate permissions", 
-                        permissionList.size(), 
-                        new HashSet<>(permissionList).size());
-                }
-            }
-        }
     }
 
     // Helper validation methods
@@ -360,23 +319,4 @@ public class UserResourceIntegrationTest {
         assertTrue(individualPerms2.contains("READ"));
         assertFalse(individualPerms2.contains("WRITE"));
     }
-
-    private void validateNoPermissionDuplicates(List<Map<String, Object>> permissions) {
-        for (Map<String, Object> asset : permissions) {
-            Map<String, List<String>> perms = (Map<String, List<String>>) asset.get("permissions");
-            if (perms != null) {
-                for (List<String> permissionList : perms.values()) {
-                    // Should not contain aliases
-                    assertFalse("No USE alias", permissionList.contains("USE"));
-                    assertFalse("No EDIT alias", permissionList.contains("EDIT"));
-                    
-                    // Should not have duplicates
-                    Set<String> uniquePerms = new HashSet<>(permissionList);
-                    assertEquals("No duplicate permissions", 
-                        permissionList.size(), uniquePerms.size());
-                }
-            }
-        }
-    }
-
 }

@@ -1385,7 +1385,7 @@ public class UserResource implements Serializable {
 					description = "Bad request - invalid user id",
 					content = @Content(mediaType = "application/json"))
 	})
-	public ResponseEntityUserPermissionsView getUserPermissions(
+	public Response getUserPermissions(
 		@Context HttpServletRequest request,
 		@Context HttpServletResponse response,
 		@Parameter(description = "User ID or email address", required = true)
@@ -1440,7 +1440,7 @@ public class UserResource implements Serializable {
 				"assets", permissions
 			);
 
-			return new ResponseEntityUserPermissionsView(responseData);
+			return Response.ok(new ResponseEntityUserPermissionsView(responseData)).build();
 		} catch (DotDataException e) {
 			Logger.error(this, "Error loading user permissions: " + e.getMessage(), e);
 			throw new DotDataException("Failed to load user permissions", e);
