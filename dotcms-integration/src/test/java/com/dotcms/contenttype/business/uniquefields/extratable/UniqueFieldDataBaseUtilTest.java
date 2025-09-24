@@ -1189,8 +1189,10 @@ public class UniqueFieldDataBaseUtilTest {
     /**
      * <ul>
      *     <li><b>Method to test:</b> {@link UniqueFieldDataBaseUtil#handleDuplicateRecords()}</li>
-     *     <li><b>Given Scenario:</b> Manually insert two records in the {@code unique_fields} table
-     *     having the exact same hash but point to different Contentlet Identifiers.</li>
+     *     <li><b>Given Scenario:</b> Manually insert four records in the {@code unique_fields}
+     *     table having the exact same hash, but point to different Contentlet Identifiers. This
+     *     simulates the scenario in which different contents have the same unique value, which
+     *     should NEVER happen but was being allowed by race conditions with Elasticsearch.</li>
      *     <li><b>Expected Result:</b> The method to test will detect the duplicates and manually
      *     fixes the conflicts. It leaves only one of the duplicates, updates the unique value of
      *     the remaining ones, and re-generates their hashes so they can be inserted in the table
@@ -1211,6 +1213,8 @@ public class UniqueFieldDataBaseUtilTest {
         final String siteId = UUIDGenerator.generateUuid();
         final String testContentIdOne = UUIDGenerator.generateUuid();
         final String testContentIdTwo = UUIDGenerator.generateUuid();
+        final String testContentIdThree = UUIDGenerator.generateUuid();
+        final String testContentIdFour = UUIDGenerator.generateUuid();
         final long languageId = 1;
 
         // ╔════════════════════════╗
@@ -1255,15 +1259,21 @@ public class UniqueFieldDataBaseUtilTest {
             ));
             uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
 
-            // Generating the duplicate record for the second Contentlet
+            // Generating the duplicate unique value record for the second Contentlet
             supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdTwo));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+            // Generating the duplicate unique value record for the third Contentlet
+            supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdThree));
+            uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
+            // Generating the duplicate unique value record for the fourth Contentlet
+            supportingValues.put(CONTENTLET_IDS_ATTR, List.of(testContentIdFour));
             uniqueFieldDataBaseUtil.insert(uniqueKeyValue, supportingValues);
 
             // ╔══════════════╗
             // ║  Assertions  ║
             // ╚══════════════╝
             List<Map<String, Object>> recordCountWithSameHash = this.getUniqueFieldRecordsWithSameHash();
-            assertEquals("There must be exactly 2 duplicate records", 2,
+            assertEquals("There must be exactly 4 duplicate records", 4,
                     Integer.parseInt(recordCountWithSameHash.get(0).get("count").toString()));
 
             uniqueFieldDataBaseUtil.handleDuplicateRecords();
