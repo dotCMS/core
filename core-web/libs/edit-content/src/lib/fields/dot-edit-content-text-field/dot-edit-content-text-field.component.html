@@ -9,15 +9,15 @@
     }
     <dot-card-field-content>
         <input
-            [id]="field.variable"
-            [name]="field.variable"
-            [formControlName]="field.variable"
+            [id]="variableName"
+            [name]="variableName"
+            [formControlName]="variableName"
             [class.ng-invalid]="hasError"
             [class.ng-dirty]="hasError"
-            [attr.data-testId]="field.variable"
-            [type]="inputTextOptions[field.dataType].type"
-            [attr.inputmode]="inputTextOptions[field.dataType].inputMode"
-            [attr.step]="inputTextOptions[field.dataType].step"
+            [attr.data-testId]="variableName"
+            [type]="inputTextOptions[dataType].type"
+            [attr.inputmode]="inputTextOptions[dataType].inputMode"
+            [attr.step]="inputTextOptions[dataType].step"
             pInputText />
     </dot-card-field-content>
     <dot-card-field-footer>
