@@ -12,9 +12,6 @@ import { DotCMSNavigationItem } from '@dotcms/types';
                 <li>
                     <a [routerLink]="'/'">Home</a>
                 </li>
-                <li>
-                    <a [routerLink]="'/blog'">Blog</a>
-                </li>
                 @for (item of items(); track $index) {
                     <li>
                         <a [routerLink]="item.href">{{ item.title }}</a>

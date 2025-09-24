@@ -2,7 +2,8 @@ import { filter, from, map, startWith, switchMap } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 
 import {
@@ -68,6 +69,8 @@ export class PageComponent implements OnInit {
 
   private readonly editablePageService = inject(DotCMSEditablePageService);
 
+  private readonly destroyRef = inject(DestroyRef);
+
   navigation = signal<DotCMSNavigationItem[]>([]);
   pageAsset = signal<DotCMSPageAsset | null>(null);
 
@@ -105,13 +108,14 @@ export class PageComponent implements OnInit {
       )
       .pipe(switchMap((response) => this.editablePageService.listen<PageResponse>(response)))
       .pipe(filter(Boolean))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (
           response: DotCMSComposedPageResponse<{
             content: { navigation: DotCMSNavigationItem };
           }>
         ) => {
-          // this.navigation.set(response?.content?.navigation.children || []);
+          this.navigation.set(response?.content?.navigation.children || []);
           this.pageAsset.set(response?.pageAsset);
         },
         error: (error) => {

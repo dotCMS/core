@@ -5,7 +5,9 @@ import {
   effect,
   inject,
   signal,
+  DestroyRef,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import {
   AngularDotCMSClient,
@@ -82,6 +84,7 @@ export class BlogListingComponent {
   readonly navigation = signal<DotCMSNavigationItem[]>([]);
 
   private readonly editablePageService = inject(DotCMSEditablePageService);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
     effect(() => {
@@ -145,13 +148,14 @@ export class BlogListingComponent {
       )
       .pipe(switchMap((response) => this.editablePageService.listen<PageResponse>(response)))
       .pipe(filter(Boolean))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (
           response: DotCMSComposedPageResponse<{
             content: { navigation: DotCMSNavigationItem; blogs: Blog[] };
           }>
         ) => {
-          // this.navigation.set(response?.content?.navigation.children || []);
+          this.navigation.set(response?.content?.navigation.children || []);
           this.pageAsset.set(response?.pageAsset);
           this.filteredBlogs.set(response?.content?.blogs || []);
         },
