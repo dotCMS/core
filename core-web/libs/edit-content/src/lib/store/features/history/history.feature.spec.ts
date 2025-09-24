@@ -219,10 +219,14 @@ describe('HistoryFeature', () => {
             store.loadVersions({ identifier: 'test-identifier', page: 1 });
             tick();
 
-            expect(dotEditContentService.getVersions).toHaveBeenCalledWith('test-identifier', {
-                offset: 1,
-                limit: DEFAULT_VERSIONS_PER_PAGE
-            });
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                'test-identifier',
+                {
+                    offset: 1,
+                    limit: DEFAULT_VERSIONS_PER_PAGE
+                },
+                mockContentlet.languageId
+            );
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
             expect(store.versionsPagination()).toEqual(mockVersionsResponse.pagination);
             expect(store.versionsStatus()).toEqual({
@@ -308,10 +312,14 @@ describe('HistoryFeature', () => {
             store.loadVersions({ identifier: 'test-identifier', page: 1 });
             tick();
 
-            expect(dotEditContentService.getVersions).toHaveBeenCalledWith('test-identifier', {
-                offset: 1,
-                limit: 10
-            });
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                'test-identifier',
+                {
+                    offset: 1,
+                    limit: 10
+                },
+                mockContentlet.languageId
+            );
         }));
 
         it('should handle errors and update error state', fakeAsync(() => {
@@ -346,7 +354,8 @@ describe('HistoryFeature', () => {
             });
             expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
                 mockContentlet.identifier,
-                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE }
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                mockContentlet.languageId
             );
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
         }));
@@ -602,6 +611,90 @@ describe('HistoryFeature', () => {
             // Versions should remain from successful load
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
             expect(store.versionsStatus().status).toBe(ComponentStatus.ERROR);
+        }));
+    });
+
+    describe('Automatic Version Loading Effect', () => {
+        beforeEach(() => {
+            dotEditContentService.getVersions.mockReturnValue(of(mockVersionsResponse));
+        });
+
+        it('should automatically load versions when contentlet changes', fakeAsync(() => {
+            const newContentlet = {
+                ...mockContentlet,
+                identifier: 'new-identifier-123',
+                inode: 'new-inode-456',
+                languageId: 2
+            };
+
+            store.updateContentlet(newContentlet);
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                'new-identifier-123',
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                2 // The contentlet's languageId
+            );
+            expect(store.versions()).toEqual(mockVersionsResponse.entity);
+        }));
+
+        it('should automatically load versions when contentlet languageId changes', fakeAsync(() => {
+            const updatedContentlet = {
+                ...mockContentlet,
+                languageId: 2 // Changed from original languageId: 1
+            };
+
+            store.updateContentlet(updatedContentlet);
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                mockContentlet.identifier,
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                2 // The updated languageId
+            );
+            expect(store.versions()).toEqual(mockVersionsResponse.entity);
+        }));
+
+        it('should clear versions before loading new ones', fakeAsync(() => {
+            // Setup initial versions
+            store.updateVersions([mockContentletVersion]);
+            expect(store.versions()).toHaveLength(1);
+
+            const newContentlet = {
+                ...mockContentlet,
+                identifier: 'new-identifier-789',
+                languageId: 3
+            };
+
+            store.updateContentlet(newContentlet);
+            spectator.flushEffects();
+            tick();
+
+            // Versions should be cleared and then reloaded
+            expect(store.versions()).toEqual(mockVersionsResponse.entity);
+        }));
+
+        it('should not load versions if contentlet has no identifier', fakeAsync(() => {
+            const contentletWithoutIdentifier = {
+                ...mockContentlet,
+                identifier: null
+            };
+
+            store.updateContentlet(contentletWithoutIdentifier);
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+        }));
+
+        it('should not load versions if contentlet is null', fakeAsync(() => {
+            store.updateContentlet(null);
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
         }));
     });
 
