@@ -13523,6 +13523,36 @@ paths:
       summary: Deletes an existing user.
       tags:
       - Users
+  /v1/users/{userId}/permissions:
+    get:
+      description: "Retrieves permissions for a user's individual role, organized\
+        \ by asset type and permission scope"
+      operationId: getUserPermissions
+      parameters:
+      - description: User ID or email address
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
+          description: User permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid user id
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Get user permissions
+      tags:
+      - Users
   /v1/variants:
     post:
       description: Creates a new content variant with the specified name and description.
@@ -23622,6 +23652,85 @@ components:
           type: object
           additionalProperties:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityUserPermissionsView:
+      type: object
+      properties:
+        entity:
+          type: object
+          properties:
+            userId:
+              type: string
+              description: User identifier
+              example: "dotcms.org.1"
+            roleId:
+              type: string
+              description: User role identifier
+              example: "654b0931-1027-41f7-ad4d-173115ed8ec1"
+            assets:
+              type: array
+              description: List of assets (hosts/folders) with permissions
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Asset identifier (host identifier or folder inode)
+                    example: "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+                  name:
+                    type: string
+                    description: Asset name
+                    example: "demo.dotcms.com"
+                  type:
+                    type: string
+                    description: Asset type
+                    enum: ["HOST", "FOLDER"]
+                    example: "HOST"
+                  path:
+                    type: string
+                    description: Asset path
+                    example: "/demo.dotcms.com"
+                  hostId:
+                    type: string
+                    description: Host identifier for this asset
+                    example: "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+                  canEditPermissions:
+                    type: boolean
+                    description: Whether requesting user can edit permissions on this asset
+                    example: true
+                  inheritsPermissions:
+                    type: boolean
+                    description: Whether asset inherits permissions from parent
+                    example: false
+                  permissions:
+                    type: object
+                    description: Permissions grouped by type
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                        enum: ["READ", "WRITE", "PUBLISH", "EDIT_PERMISSIONS", "CAN_ADD_CHILDREN"]
+                    example:
+                      INDIVIDUAL: ["READ", "WRITE", "PUBLISH"]
+                      FOLDER: ["READ", "WRITE"]
+                      CONTENT: ["READ", "WRITE", "PUBLISH"]
         errors:
           type: array
           items:
