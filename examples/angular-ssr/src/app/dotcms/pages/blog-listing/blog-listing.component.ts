@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   effect,
   inject,
   signal,
@@ -10,17 +9,35 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DotCMSEditablePageService, DynamicComponentEntity } from '@dotcms/angular';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { Location } from '@angular/common';
+import { filter, map, startWith, switchMap } from 'rxjs/operators';
 
 import { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } from '@dotcms/types';
-
 import { SearchComponent } from './components/search/search.component';
 import { BlogCardComponent } from './components/blog-card/blog-card.component';
 import { Blog } from '../../types/contentlet.model';
-import { filter, map, startWith, switchMap } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
-import { Location } from '@angular/common';
 
-type PageResponse = { content: { navigation: DotCMSNavigationItem; blogs: Blog[] } };
+// Constants
+const BLOG_LIMIT = 10;
+const BLOG_CONTENT_TYPE = 'Blog';
+const BLOG_ROUTE = '/blog';
+
+// Types
+interface PageResponse {
+  content: {
+    navigation: DotCMSNavigationItem;
+    blogs: Blog[];
+  };
+}
+
+interface GraphQLQuery {
+  graphql: {
+    content: {
+      blogs: string;
+    };
+  };
+}
 
 @Component({
   selector: 'app-blog-listing',
@@ -30,30 +47,28 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem; blogs: Blog[]
   templateUrl: './blog-listing.component.html',
 })
 export class BlogListingComponent {
-  // Use proper client injection via token
+  // Injected services
   readonly #route = inject(ActivatedRoute);
   readonly #router = inject(Router);
-  // readonly #location = inject(Location);
-
+  readonly #location = inject(Location);
   private readonly http = inject(HttpClient);
+  private readonly editablePageService = inject(DotCMSEditablePageService);
+  private readonly destroyRef = inject(DestroyRef);
 
+  // Signals
   pageAsset = signal<DotCMSPageAsset | null>(null);
-
   searchQuery = signal(this.#route.snapshot.queryParamMap.get('search') || '');
   filteredBlogs = signal<Blog[]>([]);
 
+  // Dynamic components
   readonly components: { [key: string]: DynamicComponentEntity } = {
     SimpleWidget: import('../../components/simple-widget/simple-widget.component').then(
       (c) => c.SimpleWidgetComponent
     ),
   };
 
+  // Computed properties
   readonly year = new Date().getFullYear();
-
-  private readonly editablePageService = inject(DotCMSEditablePageService);
-  private readonly destroyRef = inject(DestroyRef);
-
-  readonly #location = inject(Location);
 
   constructor() {
     effect(() => {
@@ -61,40 +76,10 @@ export class BlogListingComponent {
     });
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     const route = this.#router.url.split('?')[0] || '/';
+    const pageParams = this.createPageParams();
 
-    const pageParams = {
-      graphql: {
-        content: {
-          blogs: `
-          search(query: "+contenttype:Blog +live:true", limit: 10) {
-            title
-            identifier
-            ... on Blog {
-              inode
-              image {
-                fileName
-                fileAsset {
-                  versionPath
-                }
-              }
-              urlMap
-              modDate
-              urlTitle
-              teaser
-              author {
-                firstName
-                lastName
-                inode
-              }
-            }
-          }`,
-        },
-      },
-    };
-
-    // Convert promise to observable and merge with editable page service
     this.#router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
@@ -111,11 +96,7 @@ export class BlogListingComponent {
       .pipe(filter(Boolean))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (
-          response: DotCMSComposedPageResponse<{
-            content: { navigation: DotCMSNavigationItem; blogs: Blog[] };
-          }>
-        ) => {
+        next: (response: DotCMSComposedPageResponse<PageResponse>) => {
           this.pageAsset.set(response?.pageAsset);
           this.filteredBlogs.set(response?.content?.blogs || []);
         },
@@ -129,71 +110,65 @@ export class BlogListingComponent {
     this.searchQuery.set(query);
   }
 
-  private updateFilteredBlogs(): void {
-    const query = this.searchQuery();
+  // Private helper methods
+  private createPageParams(searchQuery?: string): GraphQLQuery {
+    const queryString = searchQuery ? ` +(title:${searchQuery}*)` : '';
+    const graphqlQuery = this.buildBlogSearchQuery(queryString);
 
-    this.#location.go(!query.length ? `/blog` : `/blog?search=${query}`);
-    const queryString = !query.length ? '' : ` +(title:${query}*)`;
-
-    const pageParams = {
+    return {
       graphql: {
         content: {
-          blogs: `
-          search(query: "+contenttype:Blog${queryString} +live:true", limit: 10) {
-            title
-            identifier
-            ... on Blog {
-              inode
-              image {
-                fileName
-                fileAsset {
-                  versionPath
-                }
-              }
-              urlMap
-              modDate
-              urlTitle
-              teaser
-              author {
-                firstName
-                lastName
-                inode
-              }
-            }
-          }`,
+          blogs: graphqlQuery,
         },
       },
     };
+  }
+
+  private buildBlogSearchQuery(queryString: string): string {
+    return `
+      search(query: "+contenttype:${BLOG_CONTENT_TYPE}${queryString} +live:true", limit: ${BLOG_LIMIT}) {
+        title
+        identifier
+        ... on Blog {
+          inode
+          image {
+            fileName
+            fileAsset {
+              versionPath
+            }
+          }
+          urlMap
+          modDate
+          urlTitle
+          teaser
+          author {
+            firstName
+            lastName
+            inode
+          }
+        }
+      }`;
+  }
+
+  private updateFilteredBlogs(): void {
+    const query = this.searchQuery();
+    const url = !query.length ? BLOG_ROUTE : `${BLOG_ROUTE}?search=${query}`;
+    this.#location.go(url);
+
+    const pageParams = this.createPageParams(query);
 
     this.http
       .post<DotCMSComposedPageResponse<PageResponse>>('/api/page', {
-        url: '/blog',
+        url: BLOG_ROUTE,
         params: pageParams,
       })
-      .subscribe((response) => {
-        this.filteredBlogs.set(response?.content?.blogs || []);
+      .subscribe({
+        next: (response) => {
+          this.filteredBlogs.set(response?.content?.blogs || []);
+        },
+        error: (error) => {
+          console.error('Error fetching filtered blogs:', error);
+        },
       });
-    // this.#location.go(`/blog?search=${query}`);
-    // Use the properly injected DotCMS client to search
-    // this.#client.content
-    //   .getCollection('Blog')
-    //   .limit(LIMIT_BLOGS)
-    //   .query((qb) => qb.field('title').equals(`${query}*`))
-    //   .sortBy([
-    //     {
-    //       field: 'Blog.postingDate',
-    //       order: 'desc',
-    //     },
-    //   ])
-    //   .then((response: any) => {
-    //     this.filteredBlogs.set(response.contentlets);
-    //   })
-    //   .catch(() => {
-    //     // Fallback to client-side filtering if the API call fails
-    //     const filteredResults = blogs.filter((blog) =>
-    //       blog.title.toLowerCase().startsWith(query.toLowerCase()),
-    //     );
-    //     this.filteredBlogs.set(filteredResults);
-    //   });
   }
 }
