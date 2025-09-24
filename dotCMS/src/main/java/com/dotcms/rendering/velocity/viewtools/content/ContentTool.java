@@ -223,6 +223,53 @@ public class ContentTool implements ViewTool {
             throw new RuntimeException(ex);
         }
 	}
+
+    /**
+     * Hydrates a {@link ContentMap}
+     * @param cm
+     * @return
+     */
+    public ContentMap hydrate (final ContentMap cm) {
+
+        final Contentlet originalContentlet = cm.getContentObject();
+        final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+                .hydratedContentMapTransformer().content(originalContentlet).build();
+        final Contentlet hydratedContentlet = myTransformer.hydrate().get(0);
+        return new ContentMap(hydratedContentlet, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
+    }
+
+    /**
+     * Pulls the content associated to the query and arguments but hydrating the content maps returned
+     * @param query
+     * @param offset
+     * @param limit
+     * @param sort
+     * @return PaginatedArrayList of {@link ContentMap}
+     */
+    public PaginatedArrayList<ContentMap> pullHydrated(final String query, final int offset,
+                                                       final int limit, final String sort){
+        try {
+
+            final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<>();
+
+            final PaginatedArrayList<Contentlet> cons = ContentUtils.pull(
+                    ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req),
+                    offset, limit, sort, user, tmDate);
+            for(Contentlet cc : cons) {
+
+                ret.add(hydrate(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context)));
+            }
+
+            ret.setQuery(cons.getQuery());
+            ret.setTotalResults(cons.getTotalResults());
+            return ret;
+        } catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.pull. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
+    }
 	
 	/**
 	 * Will return a ContentMap object which can be used on dotCMS front end. 
