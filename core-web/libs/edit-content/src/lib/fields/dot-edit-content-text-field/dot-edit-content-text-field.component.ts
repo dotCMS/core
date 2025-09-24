@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, inject } from '@angular/core';
+import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -26,7 +26,13 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
 export class DotEditContentTextFieldComponent extends BaseFieldComponent {
     /**
@@ -37,6 +43,6 @@ export class DotEditContentTextFieldComponent extends BaseFieldComponent {
     readonly inputTextOptions = INPUT_TEXT_OPTIONS;
 
     writeValue(_: unknown): void {
-        // Do nothing
+        // noop
     }
 }

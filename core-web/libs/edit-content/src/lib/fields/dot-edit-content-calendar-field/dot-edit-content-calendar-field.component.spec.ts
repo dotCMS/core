@@ -4,6 +4,7 @@ import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@ngnea
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Calendar } from 'primeng/calendar';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotSystemTimezone } from '@dotcms/dotcms-models';
@@ -20,7 +21,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     const createHost = createHostFactory({
         component: DotEditContentCalendarFieldComponent,
-        imports: [ReactiveFormsModule],
+        imports: [ReactiveFormsModule, TooltipModule],
         detectChanges: false,
         providers: [
             mockProvider(DotMessageService, {
@@ -165,14 +166,10 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const hintsContainer = spectator.query(byTestId('calendar-field-hints'));
-            expect(hintsContainer).toExist();
-
             expect(fieldWithHint.hint).toBe('Test hint message');
 
-            const hintElement = spectator.query(byTestId(`hint-${fieldWithHint.variable}`));
+            const hintElement = spectator.query(Tooltip);
             expect(hintElement).toExist();
-            expect(hintElement).toContainText('Test hint message');
         });
 
         it('should NOT show hint when field has no hint property', () => {

@@ -82,7 +82,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(component.folderForm.get('defaultFileAssetType')?.value).toBe(
                 DEFAULT_FILE_ASSET_TYPES[0].id
             );
-            expect(component.folderForm.get('showOnMenu')?.value).toBe(true);
+            expect(component.folderForm.get('showOnMenu')?.value).toBe(false);
         });
 
         it('should have form invalid initially', () => {
@@ -248,7 +248,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 assetPath: 'demo.dotcms.com/documents/test-folder',
                 data: {
                     title: 'Test Folder',
-                    showOnMenu: true,
+                    showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
                 }
@@ -270,7 +270,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 assetPath: 'demo.dotcms.com/documents/test-folder',
                 data: {
                     title: 'Test Folder',
-                    showOnMenu: true,
+                    showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
                     fileMasks: ['*.jpg', '*.png']
@@ -293,7 +293,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 assetPath: 'demo.dotcms.com/documents/test-folder',
                 data: {
                     title: 'Test Folder',
-                    showOnMenu: true,
+                    showOnMenu: false,
                     sortOrder: 5,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
                 }

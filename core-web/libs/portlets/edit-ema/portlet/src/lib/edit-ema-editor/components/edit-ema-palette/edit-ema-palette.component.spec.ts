@@ -1,9 +1,11 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 
 import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
+import { DotCMSPageAssetContainers } from '@dotcms/types';
 
 import { EditEmaPaletteContentTypeComponent } from './components/edit-ema-palette-content-type/edit-ema-palette-content-type.component';
 import { EditEmaPaletteContentletsComponent } from './components/edit-ema-palette-contentlets/edit-ema-palette-contentlets.component';
@@ -162,10 +164,31 @@ export const INITIAL_STATE_PALETTE_CONTENTLET_MOCK: DotPaletteState = {
     allowedTypes: []
 };
 
-const createEditEmaPaletteComponent = () => {
-    return createComponentFactory({
+const HOST_COMPONENT_MOCK = `<dot-edit-ema-palette 
+    [languageId]="languageId" 
+    [variantId]="variantId" 
+    [containers]="containers">
+</dot-edit-ema-palette>`;
+
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockHostComponent {
+    // Host Props
+    languageId: number;
+    variantId: string;
+    containers: DotCMSPageAssetContainers;
+}
+
+const createEditEmaPaletteHost = () => {
+    return createHostFactory({
         component: EditEmaPaletteComponent,
+        host: MockHostComponent,
         imports: [HttpClientTestingModule],
+        detectChanges: false,
+        componentMocks: [EditEmaPaletteContentTypeComponent, EditEmaPaletteContentletsComponent],
         providers: [
             {
                 provide: DotContentTypeService,
@@ -190,14 +213,15 @@ const createEditEmaPaletteComponent = () => {
 
 describe('EditEmaPaletteComponent', () => {
     describe('ContentTypes', () => {
-        let spectator: Spectator<EditEmaPaletteComponent>;
+        let spectator: SpectatorHost<EditEmaPaletteComponent, MockHostComponent>;
         let store: DotPaletteStore;
-        const createComponent = createEditEmaPaletteComponent();
+        const createHost = createEditEmaPaletteHost();
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
+            spectator = createHost(HOST_COMPONENT_MOCK, {
+                hostProps: {
                     languageId: 1,
+                    variantId: 'DEFAULT',
                     containers: {}
                 },
                 providers: [
@@ -205,9 +229,11 @@ describe('EditEmaPaletteComponent', () => {
                         provide: DotPaletteStore,
                         useValue: {
                             vm$: of(INITIAL_STATE_PALETTE_CONTENTTYPE_MOCK),
+                            isContentTypeView$: of(true),
                             loadContentlets: () => of({}),
                             changeView: () => of({}),
                             resetContentlets: () => ({}),
+                            refreshContentlets: () => ({}),
                             loadAllowedContentTypes: () => ({})
                         }
                     }
@@ -221,10 +247,12 @@ describe('EditEmaPaletteComponent', () => {
         });
 
         it('should not render Contentlets', () => {
+            spectator.detectChanges();
             expect(spectator.query(EditEmaPaletteContentletsComponent)).toBeNull();
         });
 
         it('should show contentlets from content type', () => {
+            spectator.detectChanges();
             const storeSpy = jest.spyOn(store, 'loadContentlets');
             spectator.triggerEventHandler(
                 EditEmaPaletteContentTypeComponent,
@@ -234,12 +262,13 @@ describe('EditEmaPaletteComponent', () => {
             expect(storeSpy).toHaveBeenCalledWith({
                 filter: '',
                 languageId: '1',
-                contenttypeName: 'TestNameContentType'
+                contenttypeName: 'TestNameContentType',
+                variantId: 'DEFAULT'
             });
         });
 
         it('should show contentlets from content type when a variant is present', () => {
-            spectator.setInput('variantId', 'cool-variant');
+            spectator.setHostInput('variantId', 'cool-variant');
             spectator.detectChanges();
 
             const storeSpy = jest.spyOn(store, 'loadContentlets');
@@ -255,17 +284,24 @@ describe('EditEmaPaletteComponent', () => {
                 variantId: 'cool-variant'
             });
         });
+
+        it('should not refresh contentlets when in content type view', () => {
+            const storeSpy = jest.spyOn(store, 'refreshContentlets');
+            spectator.detectChanges();
+            expect(storeSpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('Contentlets', () => {
-        let spectator: Spectator<EditEmaPaletteComponent>;
+        let spectator: SpectatorHost<EditEmaPaletteComponent, MockHostComponent>;
         let store: DotPaletteStore;
-        const createComponent = createEditEmaPaletteComponent();
+        const createHost = createEditEmaPaletteHost();
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
+            spectator = createHost(HOST_COMPONENT_MOCK, {
+                hostProps: {
                     languageId: 1,
+                    variantId: 'DEFAULT',
                     containers: {}
                 },
                 providers: [
@@ -273,9 +309,11 @@ describe('EditEmaPaletteComponent', () => {
                         provide: DotPaletteStore,
                         useValue: {
                             vm$: of(INITIAL_STATE_PALETTE_CONTENTLET_MOCK),
+                            isContentTypeView$: of(false),
                             loadContentlets: () => of({}),
                             changeView: () => of({}),
                             resetContentlets: () => ({}),
+                            refreshContentlets: () => ({}),
                             loadAllowedContentTypes: () => ({})
                         }
                     }
@@ -285,20 +323,24 @@ describe('EditEmaPaletteComponent', () => {
         });
 
         it('should load allowed contentTypes on init', () => {
+            spectator.detectChanges();
             const storeSpy = jest.spyOn(store, 'loadAllowedContentTypes');
             spectator.component.ngOnInit();
             expect(storeSpy).toHaveBeenCalledWith({ containers: {} });
         });
 
         it('should render Contentlets', () => {
+            spectator.detectChanges();
             expect(spectator.query(EditEmaPaletteContentletsComponent)).toBeDefined();
         });
 
         it('should not render ContentTypes', () => {
+            spectator.detectChanges();
             expect(spectator.query(EditEmaPaletteContentTypeComponent)).toBeNull();
         });
 
         it('should load contentlets on paginate', () => {
+            spectator.detectChanges();
             const storeSpy = jest.spyOn(store, 'loadContentlets');
             spectator.triggerEventHandler(EditEmaPaletteContentletsComponent, 'paginate', {
                 contentTypeVarName: 'TestNameContentType',
@@ -309,12 +351,13 @@ describe('EditEmaPaletteComponent', () => {
                 filter: '',
                 languageId: '1',
                 contenttypeName: 'TestNameContentType',
-                page: 1
+                page: 1,
+                variantId: 'DEFAULT'
             });
         });
 
         it('should load contentlets on paginate when a variant is present', () => {
-            spectator.setInput('variantId', 'cool-variant');
+            spectator.setHostInput('variantId', 'cool-variant');
             spectator.detectChanges();
 
             const storeSpy = jest.spyOn(store, 'loadContentlets');
@@ -330,6 +373,16 @@ describe('EditEmaPaletteComponent', () => {
                 page: 1,
                 variantId: 'cool-variant'
             });
+        });
+
+        it('shoul refresh contentlets when in content type view', () => {
+            spectator.detectChanges();
+            const storeSpy = jest.spyOn(store, 'refreshContentlets');
+
+            spectator.setHostInput('languageId', 2);
+            spectator.setHostInput('variantId', 'test-variant');
+            spectator.detectChanges();
+            expect(storeSpy).toHaveBeenCalled();
         });
     });
 });
