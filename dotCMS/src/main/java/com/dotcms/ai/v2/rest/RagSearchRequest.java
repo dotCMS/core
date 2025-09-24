@@ -20,6 +20,7 @@ public final class RagSearchRequest {
     private final Integer limit;
     private final Integer offset;
     private final Double threshold;
+    // todo: we are missing here the module
     private final Map<String, Object> options;
 
     private RagSearchRequest(Builder builder) {

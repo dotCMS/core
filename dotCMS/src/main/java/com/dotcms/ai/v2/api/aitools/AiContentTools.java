@@ -1,17 +1,24 @@
 package com.dotcms.ai.v2.api.aitools;
 
+import com.dotcms.ai.Marshaller;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.v2.api.dto.ContentletDTO;
+import com.dotcms.ai.v2.api.dto.CreateContentletSpec;
 import com.dotcms.ai.v2.api.dto.MinimalContentletDTO;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import dev.langchain4j.agent.tool.Tool;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
@@ -111,7 +118,122 @@ public class AiContentTools {
         }
     }
 
+    @Tool(
+            "Create a new contentlet (checkin) in dotCMS from a JSON spec. " +
+                    "The JSON MUST include: 'contentType' (content type varName), 'host' (e.g. SYSTEM_HOST), " +
+                    "'languageId' (e.g. 1), optional 'folder' (e.g. SYSTEM_FOLDER) " +
+                    "and 'fields' (a map of fieldVarName -> value). " +
+                    "Example: {\"contentType\":\"pet_product\",\"host\":\"SYSTEM_HOST\",\"languageId\":1," +
+                    "\"folder\":\"SYSTEM_FOLDER\",\"publish\":true,\"fields\":{\"title\":\"Dog Toy\",\"price\":9.99,\"tags\":\"dog,toy\"}}"
+    )
+    public ToolResult<String> createContentlet(final String specJson) {
+
+        try {
+
+            if (specJson == null || specJson.trim().isEmpty()) {
+                return ToolResult.invalid("specJson is required");
+            }
+
+            final CreateContentletSpec spec = Marshaller.unmarshal(specJson, CreateContentletSpec.class);
+
+            final String validationError = this.validateContentlet(spec);
+            if (validationError != null) {
+                return ToolResult.invalid(validationError);
+            }
+
+            final Contentlet result = this.createContentlet(spec);
+            final String identifier = result.getIdentifier();
+            final String inode = result.getInode();
+
+            return ToolResult.success("Created contentlet: identifier=" + identifier + ", inode=" + inode + ", title=" + result.getTitle());
+        } catch (DotSecurityException e) {
+            Logger.error(this, "Security error creating contentlet", e);
+            return ToolResult.denied( e.getMessage());
+        } catch (DotDataException e) {
+            Logger.error(this, "Data error creating contentlet", e);
+            return ToolResult.fail("Persistence error: " + e.getMessage());
+        } catch (Exception e) {
+            Logger.error(this, "Unexpected error creating contentlet", e);
+            return ToolResult.fail("Unexpected error: " + e.getMessage());
+        }
+    }
+
+
     // -------- stubs de PoC --------
+
+    /**
+     * Creates a contentlet.
+     * NOTE: First slice supports non-binary fields only.
+     */
+    public Contentlet createContentlet(final CreateContentletSpec spec)
+            throws DotDataException, DotSecurityException {
+
+        final User user = APILocator.systemUser();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        final ContentTypeAPI contentTypeAPI =  APILocator.getContentTypeAPI(user);
+        final ContentType contentType = contentTypeAPI.find(spec.getContentType());
+        if (null == contentType) {
+            throw new IllegalArgumentException("Content type not found: " + spec.getContentType());
+        }
+        Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(contentType); // varName del type
+        contentlet.setHost(spec.getHost());               // "SYSTEM_HOST" o hostId/hostName resoluble
+        contentlet.setLanguageId(spec.getLanguageId());
+
+        // Opcional: folder is apply
+        if (!StringUtils.isBlank(spec.getFolder())) {
+            contentlet.setFolder(spec.getFolder()); // dotCMS resuelve SYSTEM_FOLDER, path o UUID
+        }
+
+        // Set fields
+        for (final Map.Entry<String, Object> fieldEntry : spec.getFields().entrySet()) {
+
+            final String fieldVar = fieldEntry.getKey();
+            final Object value = fieldEntry.getValue();
+            if (value == null) {
+                continue;
+            }
+
+            if (value instanceof Number || value instanceof Boolean) {
+                contentlet.setProperty(fieldVar, value);
+            } else {
+                contentlet.setStringProperty(fieldVar, String.valueOf(value));
+            }
+        }
+
+        contentlet = contentletAPI.checkin(contentlet, user, false);
+
+        if (spec.isPublish()) {
+            contentletAPI.publish(contentlet, user, false);
+        }
+
+        return contentlet;
+    }
+
+    /**
+     * Validates minimal required fields.
+     */
+    private String validateContentlet(final CreateContentletSpec spec) {
+        if (spec == null) {
+            return "Spec is null";
+        }
+        if (StringUtils.isBlank(spec.getContentType())) {
+            return "'contentType' (varName) is required";
+        }
+        if (StringUtils.isBlank(spec.getHost())) {
+            return "'host' is required (use SYSTEM_HOST if applicable)";
+        }
+        if (spec.getLanguageId() == null || spec.getLanguageId() <= 0) {
+            return "'languageId' must be > 0";
+        }
+        if (spec.getFields() == null || spec.getFields().isEmpty()) {
+            return "'fields' is required and must not be empty";
+        }
+
+        return null;
+    }
+
     private Contentlet fetchFromDotCMS(final String identifier, final String lang) {
 
         final boolean live = true;

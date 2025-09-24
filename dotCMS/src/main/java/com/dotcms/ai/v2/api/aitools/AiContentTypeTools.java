@@ -117,12 +117,61 @@ public class AiContentTypeTools {
         }
     }
 
+
     @Tool(
             "Create a dotCMS Content Type from a dotCMS-native JSON spec. " +
-                    "Always produce a JSON string matching dotCMS ContentType schema accepted by JsonContentTypeTransformer. " +
-                    "You may send a single object or an array. " +
-                    "Examples include keys like: 'clazz', 'name', 'variable', 'host', 'folder', 'fields' (each field has its own 'clazz', 'dataType', 'variable', 'name', etc.), and optional 'workflow' array. " +
-                    "Do NOT invent non-dotCMS keys."
+                    "ALWAYS include the top-level 'clazz' of the content type. " +
+                    "Allowed content type classes:\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutableSimpleContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutableDotAssetContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutableFormContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutableKeyValueContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutablePageContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutablePersonaContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType\n" +
+                    " - com.dotcms.contenttype.model.type.ImmutableWidgetContentType\n" +
+                    "\n" +
+                    "Required top-level keys: 'clazz', 'name', 'variable', 'host', 'folder', 'fields'.\n" +
+                    "Optional: 'description', 'defaultType', 'system', 'fixed', 'icon', 'sortOrder', 'workflow' (array of UUIDs), 'systemActionMappings'.\n" +
+                    "\n" +
+                    "Each entry in 'fields' MUST include its own 'clazz' and recommended keys:\n" +
+                    " - Field 'clazz' examples:\n" +
+                    "   com.dotcms.contenttype.model.field.TextField\n" +
+                    "   com.dotcms.contenttype.model.field.ImmutableTagField\n" +
+                    "   com.dotcms.contenttype.model.field.ImmutableStoryBlockField\n" +
+                    "   com.dotcms.contenttype.model.field.ImageField\n" +
+                    "   com.dotcms.contenttype.model.field.BinaryField\n" +
+                    "   com.dotcms.contenttype.model.field.WysiwygField\n" +
+                    "   com.dotcms.contenttype.model.field.DateField\n" +
+                    "   com.dotcms.contenttype.model.field.HostFolderField (or ImmutableHostFolderField)\n" +
+                    " - Common field keys: 'dataType', 'variable', 'name', 'required', 'indexed', 'listed', 'searchable', 'readOnly', 'unique', 'sortOrder', 'dbColumn', 'defaultValue', 'hint'.\n" +
+                    "\n" +
+                    "The input may be a SINGLE object or an ARRAY of objects. The JSON MUST be valid for JsonContentTypeTransformer.\n" +
+                    "Do NOT invent non-dotCMS keys. Prefer SYSTEM_HOST and SYSTEM_FOLDER when targeting the system site/folder.\n" +
+                    "\n" +
+                    "Minimal valid example:\n" +
+                    "{\n" +
+                    "  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+                    "  \"name\": \"Test Content\",\n" +
+                    "  \"variable\": \"test_content\",\n" +
+                    "  \"host\": \"SYSTEM_HOST\",\n" +
+                    "  \"folder\": \"SYSTEM_FOLDER\",\n" +
+                    "  \"fields\": [\n" +
+                    "    {\n" +
+                    "      \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n" +
+                    "      \"dataType\": \"TEXT\",\n" +
+                    "      \"variable\": \"title\",\n" +
+                    "      \"name\": \"Title\",\n" +
+                    "      \"required\": true,\n" +
+                    "      \"indexed\": true,\n" +
+                    "      \"listed\": true,\n" +
+                    "      \"searchable\": true,\n" +
+                    "      \"sortOrder\": 1\n" +
+                    "    }\n" +
+                    "  ],\n" +
+                    "  \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n" +
+                    "}\n"
     )
     public ToolResult<String> createContentType(final String specJson) {
         try {

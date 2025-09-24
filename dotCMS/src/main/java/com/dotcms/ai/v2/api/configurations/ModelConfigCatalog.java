@@ -4,6 +4,7 @@ import com.dotcms.ai.v2.api.provider.config.ModelConfig;
 
 import java.util.*;
 
+// todo: see if want to extract an interface to have an easier vision of the gets
 public final class ModelConfigCatalog {
 
     public static final class Keys {
@@ -25,7 +26,7 @@ public final class ModelConfigCatalog {
         return new ModelConfigCatalog(data.getVendors());
     }
 
-    // -------------------- API de lectura --------------------
+    // -------------------- read API --------------------
 
     public synchronized ModelConfig getChatConfig(final String vendor) {
 

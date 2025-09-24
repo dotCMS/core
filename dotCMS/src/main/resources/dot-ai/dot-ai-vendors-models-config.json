@@ -61,7 +61,7 @@
           "maxOutputTokens": 4096
         }
       }
-      /* Nota: Anthropic no ofrece embeddings nativos; usar proveedor externo */
+      /* Note: No embeddings 4 Anthropic*/
     },
 
     "azureopenai": {
