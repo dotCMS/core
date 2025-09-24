@@ -157,35 +157,33 @@
     @case (fieldTypes.CATEGORY) {
         @defer (on immediate) {
             <dot-edit-content-category-field
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable"
                 [contentlet]="contentlet"
-                [field]="field"></dot-edit-content-category-field>
+                [attr.data-testId]="'field-' + field.variable"
+                [field]="field" />
         }
     }
     @case (fieldTypes.FILE) {
         @defer (on immediate) {
             <dot-edit-content-file-field
-                [formControlName]="field.variable"
+                [contentlet]="contentlet"
                 [attr.data-testId]="'field-' + field.variable"
-                [field]="field"></dot-edit-content-file-field>
+                [field]="field" />
         }
     }
     @case (fieldTypes.IMAGE) {
         @defer (on immediate) {
             <dot-edit-content-file-field
-                [formControlName]="field.variable"
+                [contentlet]="contentlet"
                 [attr.data-testId]="'field-' + field.variable"
-                [field]="field"></dot-edit-content-file-field>
+                [field]="field" />
         }
     }
     @case (fieldTypes.RELATIONSHIP) {
         @defer (on immediate) {
             <dot-edit-content-relationship-field
-                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
                 [field]="field"
-                [contentlet]="contentlet"></dot-edit-content-relationship-field>
+                [contentlet]="contentlet" />
         }
     }
 }

@@ -1,4 +1,3 @@
-@let field = $field();
 @let hasError = $hasError();
 
 <div
@@ -10,5 +9,5 @@
         [options]="$monacoOptions()"
         #editorRef
         data-testId="code-editor"
-        [formControlName]="field.variable" />
+        [formControl]="formControl" />
 </div>

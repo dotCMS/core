@@ -17,7 +17,6 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
 @Component({
     selector: 'dot-edit-content-text-field',
     templateUrl: './dot-edit-content-text-field.component.html',
-    styleUrls: ['./dot-edit-content-text-field.component.scss'],
     imports: [
         ReactiveFormsModule,
         FormsModule,

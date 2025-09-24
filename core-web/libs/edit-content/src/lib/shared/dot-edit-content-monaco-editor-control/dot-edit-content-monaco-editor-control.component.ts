@@ -17,7 +17,7 @@ import {
     viewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
 
@@ -67,6 +67,7 @@ interface WindowWithMonaco extends Window {
 export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     #monacoLoaderService: MonacoEditorLoaderService = inject(MonacoEditorLoaderService);
     #ngZone: NgZone = inject(NgZone);
+    #controlContainer: ControlContainer = inject(ControlContainer);
 
     /**
      * Holds a reference to the MonacoEditorComponent.
@@ -291,4 +292,9 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
 
         this.registerVelocityLanguage();
     });
+
+    get formControl() {
+        const control = this.#controlContainer.control?.get(this.$field().variable) as FormControl;
+        return control;
+    }
 }
