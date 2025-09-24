@@ -111,7 +111,7 @@ export class BlogListingComponent {
   }
 
   // Private helper methods
-  private createPageParams(searchQuery: string): GraphQLQuery {
+  private createPageParams(searchQuery: string | null = null): GraphQLQuery {
     const graphqlQuery = this.buildBlogSearchQuery(searchQuery);
 
     return {
@@ -123,7 +123,7 @@ export class BlogListingComponent {
     };
   }
 
-  private buildBlogSearchQuery(searchQuery: string): string {
+  private buildBlogSearchQuery(searchQuery: string | null = null): string {
     const queryString = searchQuery ? ` +(title:${searchQuery}*)` : '';
 
     return `

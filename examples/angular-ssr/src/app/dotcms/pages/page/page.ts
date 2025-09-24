@@ -73,7 +73,6 @@ export class PageComponent implements OnInit {
   components = signal<{ [key: string]: DynamicComponentEntity }>(DYNAMIC_COMPONENTS);
 
   ngOnInit() {
-    console.log('PageComponent ngOnInit');
     const route = this.router.url.split('?')[0] || '/';
 
     // Convert promise to observable and merge with editable page service
