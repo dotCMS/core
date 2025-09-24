@@ -22,7 +22,7 @@ import { Blog } from '../../types/contentlet.model';
 import { HeaderComponent } from '../../../components/header/header.component';
 import { NavigationComponent } from '../../../components/navigation/navigation.component';
 import { filter, map, startWith, switchMap } from 'rxjs/operators';
-import { from } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 type PageResponse = { content: { navigation: DotCMSNavigationItem; blogs: Blog[] } };
 
@@ -35,10 +35,12 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem; blogs: Blog[]
 })
 export class BlogListingComponent {
   // Use proper client injection via token
-  readonly #client = inject(AngularDotCMSClient);
   readonly #route = inject(ActivatedRoute);
   readonly #router = inject(Router);
-  readonly #location = inject(Location);
+  // readonly #location = inject(Location);
+
+  private readonly http = inject(HttpClient);
+
 
   pageAsset = signal<DotCMSPageAsset | null>(null);
 
@@ -85,11 +87,10 @@ export class BlogListingComponent {
     effect(() => {
       this.updateFilteredBlogs();
     });
-
-
   }
 
   ngOnInit() {
+    console.log('BlogListingComponent ngOnInit');
     const route = this.#router.url.split('?')[0] || '/';
 
     const pageParams = {
@@ -138,7 +139,9 @@ export class BlogListingComponent {
         filter((event) => event instanceof NavigationEnd),
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
-        switchMap((url: string) => from(this.#client.page.get<PageResponse>(url, pageParams)))
+        switchMap((url: string) =>
+          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/api/page', { url, params: pageParams })
+        )
       )
       .pipe(switchMap((response) => this.editablePageService.listen<PageResponse>(response)))
       .pipe(filter(Boolean))
@@ -148,7 +151,7 @@ export class BlogListingComponent {
             content: { navigation: DotCMSNavigationItem; blogs: Blog[] };
           }>
         ) => {
-          this.navigation.set(response?.content?.navigation.children || []);
+          // this.navigation.set(response?.content?.navigation.children || []);
           this.pageAsset.set(response?.pageAsset);
           this.filteredBlogs.set(response?.content?.blogs || []);
         },

@@ -8,6 +8,7 @@ import express from 'express';
 import { join } from 'node:path';
 
 import { createDotCMSClient } from '@dotcms/client';
+import type { DotCMSPageRequestParams } from '@dotcms/types';
 
 const client = createDotCMSClient({
   dotcmsUrl: 'http://localhost:8080',
@@ -19,30 +20,23 @@ const client = createDotCMSClient({
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
+// Parse JSON bodies for API routes
+app.use(express.json());
 const angularApp = new AngularNodeAppEngine();
 
-app.get(/^\/api\/page\/?(.*)/, async (req: express.Request, res: express.Response) => {
-  const path = req.params[0] || '/';
+app.post('/api/page', async (req: express.Request, res: express.Response) => {
+  try {
+    const { url, params } = req.body as { url?: string; params?: DotCMSPageRequestParams };
 
-  const pageParams = {
-    graphql: {
-      content: {
-        navigation: `
-          DotNavigation(uri: "/", depth: 2) {
-            children {
-              folder
-              href
-              title
-            }
-          }
-        `,
-      },
-    },
-  };
+    if (!url) {
+      return res.status(400).json({ error: 'Missing "url" in request body' });
+    }
 
-  const response = await client.page.get(path, pageParams);
-
-  res.json(response);
+    const response = await client.page.get(url, params ?? {});
+    return res.json(response);
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
 });
 
 

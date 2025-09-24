@@ -1,6 +1,7 @@
 import { filter, from, map, startWith, switchMap } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 
@@ -47,7 +48,13 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem } };
 
 @Component({
   selector: 'app-page',
-  imports: [CommonModule, DotCMSLayoutBodyComponent, HeaderComponent, NavigationComponent],
+  imports: [
+    CommonModule,
+    HttpClientModule,
+    DotCMSLayoutBodyComponent,
+    HeaderComponent,
+    NavigationComponent,
+  ],
   providers: [DotCMSEditablePageService],
   templateUrl: './page.html',
   styleUrl: './page.css',
@@ -55,6 +62,7 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem } };
 })
 export class PageComponent implements OnInit {
   private readonly client = inject(AngularDotCMSClient);
+  private readonly http = inject(HttpClient);
 
   private router = inject(Router);
 
@@ -66,6 +74,7 @@ export class PageComponent implements OnInit {
   components = signal<{ [key: string]: DynamicComponentEntity }>(DYNAMIC_COMPONENTS);
 
   ngOnInit() {
+    console.log('PageComponent ngOnInit');
     const route = this.router.url.split('?')[0] || '/';
 
     const pageParams = {
@@ -90,7 +99,9 @@ export class PageComponent implements OnInit {
         filter((event) => event instanceof NavigationEnd),
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
-        switchMap((url: string) => this.client.page.get<PageResponse>(url, pageParams))
+        switchMap((url: string) =>
+          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/api/page', { url, params: pageParams })
+        )
       )
       .pipe(switchMap((response) => this.editablePageService.listen<PageResponse>(response)))
       .pipe(filter(Boolean))
@@ -100,7 +111,7 @@ export class PageComponent implements OnInit {
             content: { navigation: DotCMSNavigationItem };
           }>
         ) => {
-          this.navigation.set(response?.content?.navigation.children || []);
+          // this.navigation.set(response?.content?.navigation.children || []);
           this.pageAsset.set(response?.pageAsset);
         },
         error: (error) => {
