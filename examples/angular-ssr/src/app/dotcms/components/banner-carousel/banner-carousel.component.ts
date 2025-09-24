@@ -8,11 +8,12 @@ import {
 } from '@angular/core';
 
 import { BannerCarousel } from '../../types/contentlet.model';
+import { NgOptimizedImage } from '@angular/common';
 
 @Component({
   selector: 'app-banner-carousel',
   templateUrl: './banner-carousel.component.html',
-  imports: [],
+  imports: [NgOptimizedImage],
 })
 export class BannerCarouselComponent implements OnInit, OnDestroy {
   banners = computed(() => this.contentlet().widgetCodeJSON?.banners || []);

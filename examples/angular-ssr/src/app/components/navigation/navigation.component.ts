@@ -14,7 +14,7 @@ import { DotCMSNavigationItem } from '@dotcms/types';
                 </li>
                 @for (item of items(); track $index) {
                     <li>
-                        <a [routerLink]="item.href" target="{{ item.target }}">{{ item.title }}</a>
+                        <a [routerLink]="item.href">{{ item.title }}</a>
                     </li>
                 }
             </ul>

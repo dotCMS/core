@@ -7,10 +7,45 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 
+import { createDotCMSClient } from '@dotcms/client';
+
+const client = createDotCMSClient({
+  dotcmsUrl: 'http://localhost:8080',
+  authToken:
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk0NmRiNjExMi01YTQxLTRlYTQtODEzNC04ZDEzMDA4NTA0Y2QiLCJ4bW9kIjoxNzU4NjM5ODk5MDAwLCJuYmYiOjE3NTg2Mzk4OTksImlzcyI6ImQ2MWM5Y2I2OTAiLCJsYWJlbCI6InRva2VuIiwiZXhwIjoxODUzMzAxNjAwLCJpYXQiOjE3NTg2Mzk4OTksImp0aSI6IjJhYzE3MGQ5LWE5OTQtNGNjNC04YmY0LTkzNjRmN2UzYzRiZCJ9.IfYSpCEv0sAYWWjWSK96norKYSUvRvqwJWHyRosei9k',
+  siteId: 'YOUR_SITE_ID',
+});
+
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+app.get(/^\/api\/page\/?(.*)/, async (req: express.Request, res: express.Response) => {
+  const path = req.params[0] || '/';
+
+  const pageParams = {
+    graphql: {
+      content: {
+        navigation: `
+          DotNavigation(uri: "/", depth: 2) {
+            children {
+              folder
+              href
+              title
+            }
+          }
+        `,
+      },
+    },
+  };
+
+  const response = await client.page.get(path, pageParams);
+
+  res.json(response);
+});
+
+
 
 /**
  * Example Express Rest API endpoints can be defined here.
@@ -32,7 +67,7 @@ app.use(
     maxAge: '1y',
     index: false,
     redirect: false,
-  }),
+  })
 );
 
 /**
@@ -41,9 +76,7 @@ app.use(
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
     .catch(next);
 });
 
