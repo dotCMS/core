@@ -677,8 +677,13 @@ public class ContentTypeHelper implements Serializable {
         Locale locale = LocaleUtil.getLocale(request);
         Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
 
-        for(Map.Entry<String,String> baseType : baseContentTypeNames.entrySet()){
-            result.add(new BaseContentTypesView(baseType.getKey(),baseType.getValue(),null));
+        System.out.println("Hello from here mate");
+        for (Map.Entry<String, String> baseType : baseContentTypeNames.entrySet()) {
+            result.add(new BaseContentTypesView(
+                    baseType.getKey(),
+                    baseType.getValue(),
+                    null,
+                    this.getBaseTypeIndex(baseType.getKey())));
         }
 
         return result;
@@ -709,6 +714,25 @@ public class ContentTypeHelper implements Serializable {
         return contentTypesLabelsMap;
 
     } // getBaseContentTypeNames.
+
+    /**
+     * Gets the integer representation of the Base Type passed by param.
+     *
+     * @param BaseTypeKey {@link String}
+     * @return The existing base type index if found, otherwise 0.
+     */
+    public int getBaseTypeIndex(String BaseTypeKey) {
+        try {
+            return BaseContentType.valueOf(BaseTypeKey).getType();
+        } catch (IllegalArgumentException e) {
+            final var message = String.format(
+                    "No base type was found, returning [%s] base type index",
+                    BaseContentType.ANY.name()
+            );
+            Logger.warn(this, message);
+            return 0;
+        }
+    }
 
     @VisibleForTesting
     boolean isStandardOrEnterprise() {
