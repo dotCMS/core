@@ -1,7 +1,7 @@
 import { filter, from, map, startWith, switchMap } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
@@ -51,10 +51,7 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem } };
   selector: 'app-page',
   imports: [
     CommonModule,
-    HttpClientModule,
-    DotCMSLayoutBodyComponent,
-    HeaderComponent,
-    NavigationComponent,
+    DotCMSLayoutBodyComponent
   ],
   providers: [DotCMSEditablePageService],
   templateUrl: './page.html',
@@ -71,7 +68,6 @@ export class PageComponent implements OnInit {
 
   private readonly destroyRef = inject(DestroyRef);
 
-  navigation = signal<DotCMSNavigationItem[]>([]);
   pageAsset = signal<DotCMSPageAsset | null>(null);
 
   components = signal<{ [key: string]: DynamicComponentEntity }>(DYNAMIC_COMPONENTS);
@@ -80,22 +76,6 @@ export class PageComponent implements OnInit {
     console.log('PageComponent ngOnInit');
     const route = this.router.url.split('?')[0] || '/';
 
-    const pageParams = {
-      graphql: {
-        content: {
-          navigation: `
-              DotNavigation(uri: "/", depth: 2) {
-                  children {
-                      folder
-                      href
-                      title
-                  }
-              }
-          `,
-        },
-      },
-    };
-
     // Convert promise to observable and merge with editable page service
     this.router.events
       .pipe(
@@ -103,7 +83,7 @@ export class PageComponent implements OnInit {
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
         switchMap((url: string) =>
-          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/api/page', { url, params: pageParams })
+          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/api/page', { url })
         )
       )
       .pipe(switchMap((response) => this.editablePageService.listen<PageResponse>(response)))
@@ -115,7 +95,6 @@ export class PageComponent implements OnInit {
             content: { navigation: DotCMSNavigationItem };
           }>
         ) => {
-          this.navigation.set(response?.content?.navigation.children || []);
           this.pageAsset.set(response?.pageAsset);
         },
         error: (error) => {

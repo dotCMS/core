@@ -1,1 +1,7 @@
-<router-outlet />
+<app-header>
+  <app-navigation [items]="navigation()"></app-navigation>
+</app-header>
+
+<main class="container mx-auto my-8">
+  <router-outlet />
+</main>

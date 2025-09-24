@@ -21,8 +21,6 @@ import { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } fro
 import { SearchComponent } from './components/search/search.component';
 import { BlogCardComponent } from './components/blog-card/blog-card.component';
 import { Blog } from '../../types/contentlet.model';
-import { HeaderComponent } from '../../../components/header/header.component';
-import { NavigationComponent } from '../../../components/navigation/navigation.component';
 import { filter, map, startWith, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 
@@ -30,7 +28,7 @@ type PageResponse = { content: { navigation: DotCMSNavigationItem; blogs: Blog[]
 
 @Component({
   selector: 'app-blog-listing',
-  imports: [HeaderComponent, NavigationComponent, SearchComponent, BlogCardComponent],
+  imports: [SearchComponent, BlogCardComponent],
   providers: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './blog-listing.component.html',
@@ -81,7 +79,6 @@ export class BlogListingComponent {
 
   readonly year = new Date().getFullYear();
 
-  readonly navigation = signal<DotCMSNavigationItem[]>([]);
 
   private readonly editablePageService = inject(DotCMSEditablePageService);
   private readonly destroyRef = inject(DestroyRef);
@@ -93,7 +90,6 @@ export class BlogListingComponent {
   }
 
   ngOnInit() {
-    console.log('BlogListingComponent ngOnInit');
     const route = this.#router.url.split('?')[0] || '/';
 
     const pageParams = {
@@ -121,17 +117,7 @@ export class BlogListingComponent {
                 inode
               }
             }
-          }
-          `,
-          navigation: `
-            DotNavigation(uri: "/", depth: 2) {
-              children {
-                folder
-                href
-                title
-              }
-            }
-          `,
+          }`
         },
       },
     };
@@ -155,7 +141,6 @@ export class BlogListingComponent {
             content: { navigation: DotCMSNavigationItem; blogs: Blog[] };
           }>
         ) => {
-          this.navigation.set(response?.content?.navigation.children || []);
           this.pageAsset.set(response?.pageAsset);
           this.filteredBlogs.set(response?.content?.blogs || []);
         },
