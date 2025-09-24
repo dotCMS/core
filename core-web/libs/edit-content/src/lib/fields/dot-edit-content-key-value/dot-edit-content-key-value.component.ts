@@ -1,54 +1,40 @@
-import { Component, ChangeDetectionStrategy, signal, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotKeyValue, DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotKeyValueFieldComponent } from './components/key-value-field/key-value-field.component';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
-import { BaseFieldComponent } from '../shared/base-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 @Component({
     selector: 'dot-edit-content-key-value',
     imports: [
-        DotKeyValueComponent,
+        ReactiveFormsModule,
         DotCardFieldComponent,
+        DotKeyValueFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-key-value.component.html',
-    styleUrl: './dot-edit-content-key-value.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentKeyValueComponent extends BaseFieldComponent {
-    $initialValue = signal<DotKeyValue[]>([]);
+export class DotEditContentKeyValueComponent extends BaseWrapperField {
+    /**
+     * A signal that holds the field.
+     * It is used to display the field in the key value field component.
+     */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
-    updateField(value: DotKeyValue[]): void {
-        const keyValue = value.reduce((acc, item) => {
-            acc[item.key] = item.value;
-
-            return acc;
-        }, {});
-
-        this.onChange(keyValue);
-        this.onTouched();
-    }
-
-    writeValue(value: Record<string, string>): void {
-        const initialValue = this.parseToDotKeyValue(value);
-        this.$initialValue.set(initialValue);
-    }
-
-    private parseToDotKeyValue(data: Record<string, string>): DotKeyValue[] {
-        if (!data) {
-            return [];
-        }
-
-        return Object.keys(data).map((key: string) => ({
-            key,
-            value: data[key]
-        }));
-    }
+    /**
+     * A signal that holds the contentlet.
+     * It is used to display the contentlet in the key value field component.
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 }

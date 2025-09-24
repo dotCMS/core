@@ -5,6 +5,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
+    forwardRef,
     inject,
     input,
     model,
@@ -12,7 +13,7 @@ import {
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
@@ -36,7 +37,14 @@ export const AUTO_COMPLETE_UNIQUE = true;
     selector: 'dot-tag-field',
     imports: [AutoCompleteModule, FormsModule, ReactiveFormsModule],
     templateUrl: './tag-field.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotTagFieldComponent)
+        }
+    ]
 })
 export class DotTagFieldComponent extends BaseControlValueAccesor<string | string[]> {
     #editContentService = inject(DotEditContentService);

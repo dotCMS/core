@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
@@ -34,7 +34,13 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
     ],
     templateUrl: './dot-edit-content-tag-field.component.html',
     styleUrl: './dot-edit-content-tag-field.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true, optional: true })
+        }
+    ]
 })
 export class DotEditContentTagFieldComponent extends BaseWrapperField {
     /**

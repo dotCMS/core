@@ -106,56 +106,52 @@
     @case (fieldTypes.BINARY) {
         @defer (on immediate) {
             <dot-binary-field-wrapper
-                [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 [field]="field"
                 (valueUpdated)="onBinaryFieldValueUpdated($event)"
-                [attr.data-testId]="'field-' + field.variable"></dot-binary-field-wrapper>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.CUSTOM_FIELD) {
         @defer (on immediate) {
             <dot-edit-content-custom-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [inode]="contentlet?.inode"
+                [contentlet]="contentlet"
                 [contentType]="contentTypeVariable"
-                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-custom-field>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.BLOCK_EDITOR) {
         @defer (on immediate) {
             <dot-edit-content-block-editor
-                [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-block-editor>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.KEY_VALUE) {
         @defer (on immediate) {
             <dot-edit-content-key-value
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-key-value>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.WYSIWYG) {
         @defer (on immediate) {
             <dot-edit-content-wysiwyg-field
                 [field]="field"
-                [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
-                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-wysiwyg-field>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.HOST_FOLDER) {
         @defer (on immediate) {
             <dot-edit-content-host-folder-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-host-folder-field>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.CATEGORY) {
