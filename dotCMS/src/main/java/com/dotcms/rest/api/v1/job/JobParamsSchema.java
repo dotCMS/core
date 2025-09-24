@@ -19,11 +19,12 @@ public class JobParamsSchema {
     @Schema(
             description = "JSON string with job-specific parameters.",
             type = "string",
-            example = "{\n" +
-                    "  \"sourceUrl\": \"https://example.com/image.jpeg\",\n" +
-                    "  \"width\": 320,\n" +
-                    "  \"height\": 240,\n" +
-                    "}"
+            example = "{\n"
+                    + "  \"contentType\": \"CustomContentType\",\n"
+                    + "  \"workflowActionId\": \"Workflow-UUID\",\n"
+                    + "  \"language\": \"en-us\",\n"
+                    + "  \"stopOnError\": true\n"
+                    + "}"
     )
     private String params;
 

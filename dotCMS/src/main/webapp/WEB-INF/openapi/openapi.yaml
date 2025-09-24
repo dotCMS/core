@@ -21711,12 +21711,8 @@ components:
         params:
           type: string
           description: JSON string with job-specific parameters.
-          example: |-
-            {
-              "sourceUrl": "https://example.com/image.jpeg",
-              "width": 320,
-              "height": 240,
-            }
+          example: "{\"contentType\":\"CustomContentType\",\"workflowActionId\":\"\
+            Workflow-UUID\",\"language\":\"en-us\",\"stopOnError\":true}"
     JobResult:
       type: object
       properties:

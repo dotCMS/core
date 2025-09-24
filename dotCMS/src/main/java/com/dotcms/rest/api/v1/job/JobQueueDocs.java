@@ -11,9 +11,7 @@ public class JobQueueDocs {
                     "**Example `form` value:**\n\n" +
                     "```json\n" +
                     "{\n" +
-                    "  \"sourceUrl\": \"https://example.com/image.jpeg\",\n" +
-                    "  \"width\": 320,\n" +
-                    "  \"height\": 240,\n" +
+                    " \"contentType\":\"CustomContentType\", \"workflowActionId\":\"Workflow-UUID\", \"language\":\"en-us\", \"stopOnError\":true,\n" +
                     "}\n" +
                     "```";
 }

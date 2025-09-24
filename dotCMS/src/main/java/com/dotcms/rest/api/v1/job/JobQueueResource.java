@@ -162,9 +162,10 @@ public class JobQueueResource {
                             examples  = @ExampleObject(
                                     name  = "ThumbnailJob",
                                     value = "{\n"
-                                            + "  \"sourceUrl\": \"https://example.com/image.jpeg\",\n"
-                                            + "  \"width\"    : 320,\n"
-                                            + "  \"height\"   : 240\n"
+                                            + "  \"contentType\": \"CustomContentType\",\n"
+                                            + "  \"workflowActionId\": \"Workflow-UUID\",\n"
+                                            + "  \"language\": \"en-us\",\n"
+                                            + "  \"stopOnError\": true\n"
                                             + "}"
                             )
                     )
