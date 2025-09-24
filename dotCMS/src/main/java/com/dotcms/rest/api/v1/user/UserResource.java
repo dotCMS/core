@@ -7,6 +7,7 @@ import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -22,10 +23,13 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -36,7 +40,18 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -82,15 +97,20 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.util.stream.Collectors;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
@@ -1334,4 +1354,98 @@ public class UserResource implements Serializable {
 			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
 	} // delete.
+
+	/**
+	 * Retrieves permissions for a user's individual role, grouped by assets (hosts/folders).
+	 * This endpoint replicates the logic from RoleAjax.getRolePermissions() but for a specific user.
+	 * 
+	 * @param request The HTTP request
+	 * @param response The HTTP response
+	 * @param userId User ID or email address
+	 * @return Response containing user permissions grouped by assets
+	 */
+	@GET
+	@Path("/{userId}/permissions")
+	@NoCache
+	@Produces(MediaType.APPLICATION_JSON)
+	@Operation(
+		summary = "Get user permissions",
+		description = "Retrieves permissions for a user's individual role, organized by asset type and permission scope"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "User permissions retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityUserPermissionsView.class,
+									  				description = "Response contains userId, roleId, and assets array with permission details"))),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid user id",
+					content = @Content(mediaType = "application/json"))
+	})
+	public ResponseEntityUserPermissionsView getUserPermissions(
+		@Context HttpServletRequest request,
+		@Context HttpServletResponse response,
+		@Parameter(description = "User ID or email address", required = true)
+		@PathParam("userId") String userId
+	) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+			.requiredBackendUser(true)
+			.requestAndResponse(request, response)
+			.rejectWhenNoUser(true)
+			.init();
+
+		final User requestingUser = initData.getUser();
+
+		if (!UtilMethods.isSet(userId)) {
+			throw new BadRequestException("User ID is required");
+		}
+
+		// Load target user (supports both ID and email)
+		User targetUser;
+		try {
+			targetUser = userAPI.loadUserById(userId);
+		} catch (NoSuchUserException e) {
+			try {
+				targetUser = userAPI.loadByUserByEmail(userId, userAPI.getSystemUser(), false);
+			} catch (NoSuchUserException ex) {
+				throw new BadRequestException("User not found: " + userId);
+			}
+		}
+		final User finalTargetUser = targetUser;
+
+		// Security validation - user can view own permissions or admin can view any
+		if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(finalTargetUser.getUserId())) {
+			throw new ForbiddenException("Insufficient permissions to view user permissions");
+		}
+
+		Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s", 
+			finalTargetUser.getUserId(), requestingUser.getUserId()));
+
+		try {
+			final Role userRole = roleAPI.getUserRole(finalTargetUser);
+			if (userRole == null) {
+				throw new DotDataException("User role not found for: " + userId);
+			}
+
+			final List<Map<String, Object>> permissions = UserPermissionHelper.getInstance()
+				.buildUserPermissionResponse(userRole, requestingUser);
+
+			final Map<String, Object> responseData = Map.of(
+				"userId", finalTargetUser.getUserId(),
+				"roleId", userRole.getId(),
+				"assets", permissions
+			);
+
+			return new ResponseEntityUserPermissionsView(responseData);
+		} catch (DotDataException e) {
+			Logger.error(this, "Error loading user permissions: " + e.getMessage(), e);
+			throw new DotDataException("Failed to load user permissions", e);
+		}
+	}
+
+
 }
