@@ -232,6 +232,16 @@ public class ContentTool implements ViewTool {
     public ContentMap hydrate (final ContentMap cm) {
 
         final Contentlet originalContentlet = cm.getContentObject();
+        return hydrate(originalContentlet);
+    }
+
+    /**
+     * Hydrates a {@link ContentMap}
+     * @param cm
+     * @return
+     */
+    public ContentMap hydrate (final Contentlet originalContentlet) {
+
         final DotContentletTransformer myTransformer = new DotTransformerBuilder()
                 .hydratedContentMapTransformer().content(originalContentlet).build();
         final Contentlet hydratedContentlet = myTransformer.hydrate().get(0);
@@ -250,19 +260,19 @@ public class ContentTool implements ViewTool {
                                                        final int limit, final String sort){
         try {
 
-            final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<>();
+            final PaginatedArrayList<ContentMap> resultList = new PaginatedArrayList<>();
 
-            final PaginatedArrayList<Contentlet> cons = ContentUtils.pull(
+            final PaginatedArrayList<Contentlet> contentletsRetrieved = ContentUtils.pull(
                     ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req),
                     offset, limit, sort, user, tmDate);
-            for(Contentlet cc : cons) {
+            for(final Contentlet contentlet : contentletsRetrieved) {
 
-                ret.add(hydrate(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context)));
+                resultList.add(hydrate(contentlet));
             }
 
-            ret.setQuery(cons.getQuery());
-            ret.setTotalResults(cons.getTotalResults());
-            return ret;
+            resultList.setQuery(contentletsRetrieved.getQuery());
+            resultList.setTotalResults(contentletsRetrieved.getTotalResults());
+            return resultList;
         } catch(Throwable ex) {
             if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
                 Logger.error(this,"error in ContentTool.pull. URL: "+req.getRequestURL().toString(),ex);
