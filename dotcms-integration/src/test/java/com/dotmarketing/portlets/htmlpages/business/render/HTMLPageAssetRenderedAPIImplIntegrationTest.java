@@ -2866,27 +2866,49 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * @throws DotSecurityException
      */
     @Test
-    public void shouldTransformLegacyContainerUUIDs() throws DotDataException, DotSecurityException {
+    public void shouldTransformLegacyContainerUUIDs() throws DotDataException, DotSecurityException, WebAssetException {
         init();
         
         final Host site = new SiteDataGen().nextPersisted();
         final User systemUser = APILocator.systemUser();
         
 
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+                
+
         final Container container = new ContainerDataGen()
                 .site(site)
+                .withContentType(contentType, "$!{title}")
                 .nextPersisted();
+        ContainerDataGen.publish(container, systemUser);
         
-        // Create template with legacy container UUID
+
         final Template template = new TemplateDataGen()
                 .host(site)
                 .withContainer(container.getIdentifier(), ContainerUUID.UUID_LEGACY_VALUE)
+                .drawed(true)
                 .nextPersisted();
-        
+        TemplateDataGen.publish(template, systemUser);
 
         final HTMLPageAsset page = new HTMLPageDataGen(site, template)
                 .nextPersisted();
         HTMLPageDataGen.publish(page);
+        
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(site)
+                .setProperty("title", "Test Content")
+                .nextPersistedAndPublish();
+        
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
         
 
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
