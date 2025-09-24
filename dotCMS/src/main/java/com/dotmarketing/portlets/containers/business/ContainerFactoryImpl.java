@@ -526,7 +526,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				.append(Type.CONTAINERS.getTableName()).append(" asset, inode, identifier, ")
 				.append(Type.CONTAINERS.getVersionTableName()).append(" vinfo");
 
-		this.buildFindContainersQuery(searchParams, contentTypeAPI, query);
+		this.buildFindContainersQuery(searchParams, contentTypeAPI, query, paramValues);
 
 		orderBy = UtilMethods.isEmpty(orderBy) ? "mod_date desc" : orderBy;
 
@@ -848,16 +848,18 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	/**
 	 * Builds the main part of the SQL query that will be used to find Containers in the dotCMS repository.
+	 * Uses parameterized queries to prevent SQL injection attacks.
 	 *
 	 * @param searchParams   User-specified search criteria.
 	 * @param contentTypeAPI An instance of the {@link ContentTypeAPI}.
 	 * @param query          The SQL query being built.
+	 * @param paramValues    List to collect the query parameters for parameterized execution.
 	 *
-	 * @throws DotSecurityException The user cannot perform this action.
+	 * @throws DotSecurityException The user cannot perform this action or invalid input detected.
 	 * @throws DotDataException     An error occurred when interacting with the data source.
 	 */
 	private void buildFindContainersQuery(final ContainerAPI.SearchParams searchParams, final ContentTypeAPI contentTypeAPI,
-										  final StringBuilder query) throws DotSecurityException, DotDataException {
+										  final StringBuilder query, final List<Object> paramValues) throws DotSecurityException, DotDataException {
 
 		if(UtilMethods.isSet(searchParams.contentTypeIdOrVar())) {
 
@@ -865,19 +867,29 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			final ContentType foundContentType = contentTypeAPI.find(searchParams.contentTypeIdOrVar());
 
 			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
+				// Use parameterized query to prevent SQL injection
 				query.append(
 								" where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(
 								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
-						.append(" and cs.structure_id = '")
-						.append(foundContentType.inode())
-						.append("' ) ");
+						.append(" and cs.structure_id = ? ) ");
+				// Validate that inode contains only valid UUID characters
+				final String inode = foundContentType.inode();
+				if (!UtilMethods.isSet(inode) || !inode.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+					throw new DotSecurityException("Invalid inode format: " + inode);
+				}
+				paramValues.add(inode);
 			}else {
+				// Use parameterized query to prevent SQL injection
 				query.append(
 								" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
-						.append(" and tree.parent = '")
-						.append(searchParams.contentTypeIdOrVar())
-						.append("' and tree.child=asset.inode");
+						.append(" and tree.parent = ? and tree.child=asset.inode");
+				// Validate the contentTypeIdOrVar to prevent injection
+				final String contentTypeIdOrVar = searchParams.contentTypeIdOrVar();
+				if (!UtilMethods.isSet(contentTypeIdOrVar) || !contentTypeIdOrVar.matches("^[a-zA-Z0-9\\-_]{1,255}$")) {
+					throw new DotSecurityException("Invalid content type identifier: " + contentTypeIdOrVar);
+				}
+				paramValues.add(contentTypeIdOrVar);
 			}
 		} else {
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
@@ -891,19 +903,36 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		if(UtilMethods.isSet(searchParams.siteId())) {
-			query.append(" and identifier.host_inode = '");
-			query.append(searchParams.siteId()).append('\'');
+			// Use parameterized query to prevent SQL injection
+			query.append(" and identifier.host_inode = ?");
+			// Validate that siteId contains only valid UUID characters
+			final String siteId = searchParams.siteId();
+			if (!siteId.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+				throw new DotSecurityException("Invalid site ID format: " + siteId);
+			}
+			paramValues.add(siteId);
 		}
 
 		if(UtilMethods.isSet(searchParams.containerInode())) {
-			query.append(" and asset.inode = '");
-			query.append(searchParams.containerInode()).append('\'');
+			// Use parameterized query to prevent SQL injection
+			query.append(" and asset.inode = ?");
+			// Validate that containerInode contains only valid UUID characters
+			final String containerInode = searchParams.containerInode();
+			if (!containerInode.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+				throw new DotSecurityException("Invalid container inode format: " + containerInode);
+			}
+			paramValues.add(containerInode);
 		}
 
 		if(UtilMethods.isSet(searchParams.containerIdentifier())) {
-			query.append(" and asset.identifier = '");
-			query.append(searchParams.containerIdentifier());
-			query.append('\'');
+			// Use parameterized query to prevent SQL injection
+			query.append(" and asset.identifier = ?");
+			// Validate that containerIdentifier contains only valid UUID characters
+			final String containerIdentifier = searchParams.containerIdentifier();
+			if (!containerIdentifier.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+				throw new DotSecurityException("Invalid container identifier format: " + containerIdentifier);
+			}
+			paramValues.add(containerIdentifier);
 		}
 	}
 
@@ -971,9 +1000,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}
 				conditionQueryBuffer.append(" asset.");
 				conditionQueryBuffer.append(entry.getKey());
-				conditionQueryBuffer.append(" = '");
-				conditionQueryBuffer.append(entry.getValue());
-				conditionQueryBuffer.append('\'');
+				conditionQueryBuffer.append(" = ?");
+				// Validate identifier/inode format to prevent SQL injection
+				final String value = (String) entry.getValue();
+				if (!UtilMethods.isSet(value) || !value.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+					throw new DotSecurityException("Invalid " + entry.getKey() + " format: " + value);
+				}
+				paramValues.add(value);
 			} else {
 
 				if (prefix.isPresent()) {
