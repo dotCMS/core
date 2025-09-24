@@ -111,9 +111,8 @@ export class BlogListingComponent {
   }
 
   // Private helper methods
-  private createPageParams(searchQuery?: string): GraphQLQuery {
-    const queryString = searchQuery ? ` +(title:${searchQuery}*)` : '';
-    const graphqlQuery = this.buildBlogSearchQuery(queryString);
+  private createPageParams(searchQuery: string): GraphQLQuery {
+    const graphqlQuery = this.buildBlogSearchQuery(searchQuery);
 
     return {
       graphql: {
@@ -124,7 +123,9 @@ export class BlogListingComponent {
     };
   }
 
-  private buildBlogSearchQuery(queryString: string): string {
+  private buildBlogSearchQuery(searchQuery: string): string {
+    const queryString = searchQuery ? ` +(title:${searchQuery}*)` : '';
+
     return `
       search(query: "+contenttype:${BLOG_CONTENT_TYPE}${queryString} +live:true", limit: ${BLOG_LIMIT}) {
         title
