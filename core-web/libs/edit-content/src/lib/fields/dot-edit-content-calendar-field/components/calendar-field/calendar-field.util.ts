@@ -2,8 +2,8 @@ import { TZDate } from '@date-fns/tz';
 
 import { DotCMSContentTypeField, DotSystemTimezone } from '@dotcms/dotcms-models';
 
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { FieldType } from '../../models/dot-edit-content-field.type';
+import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
+import { FieldType } from '../../../../models/dot-edit-content-field.type';
 
 export interface DateOptions {
     showTime: boolean;

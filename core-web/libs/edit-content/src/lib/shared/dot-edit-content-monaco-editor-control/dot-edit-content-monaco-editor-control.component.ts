@@ -17,7 +17,7 @@ import {
     viewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
 
@@ -30,7 +30,6 @@ import {
     isMarkdown,
     isVelocity
 } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.utils';
-import { BaseFieldComponent } from '../../fields/shared/base-field.component';
 import {
     AvailableLanguageMonaco,
     DEFAULT_MONACO_CONFIG,
@@ -57,12 +56,15 @@ interface WindowWithMonaco extends Window {
     imports: [MonacoEditorModule, PaginatorModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-monaco-editor-control.component.html',
     styleUrl: './dot-edit-content-monaco-editor-control.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
-export class DotEditContentMonacoEditorControlComponent
-    extends BaseFieldComponent
-    implements OnDestroy
-{
+export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     #monacoLoaderService: MonacoEditorLoaderService = inject(MonacoEditorLoaderService);
     #ngZone: NgZone = inject(NgZone);
 
@@ -75,7 +77,11 @@ export class DotEditContentMonacoEditorControlComponent
      * Represents a required DotCMS content type field.
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
+    /**
+     * A signal that holds the error state of the Monaco editor.
+     * It is used to display the error state of the Monaco editor.
+     */
+    $hasError = input.required<boolean>({ alias: 'hasError' });
     /**
      * Input property to force a specific language for the Monaco editor.
      * If provided, this overrides the automatic language detection.
@@ -140,7 +146,6 @@ export class DotEditContentMonacoEditorControlComponent
     });
 
     constructor() {
-        super();
         this.handleMonacoLoaded(this.$isMonacoLoaded);
     }
 
@@ -272,10 +277,6 @@ export class DotEditContentMonacoEditorControlComponent
         )?.[0] as AvailableLanguageMonaco;
 
         this.setLanguage(detectedLanguage || AvailableLanguageMonaco.PlainText);
-    }
-
-    writeValue(_: unknown): void {
-        // noop
     }
 
     /**

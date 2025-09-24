@@ -1,20 +1,7 @@
 @let field = $field();
 @let contentlet = $contentlet();
 @let contentType = $contentType();
-@let showLabel = $showLabel();
 @let contentTypeVariable = contentType?.variable;
-
-<ng-template #labelTemplate>
-    @if (showLabel) {
-        <label
-            [attr.data-testid]="'label-' + field.variable"
-            [checkIsRequiredControl]="field.variable"
-            [for]="field.variable"
-            dotFieldRequired>
-            {{ field.name }}
-        </label>
-    }
-</ng-template>
 
 @switch (field.fieldType) {
     @case (fieldTypes.LINE_DIVIDER) {
@@ -25,98 +12,79 @@
         @defer (on immediate) {
             <dot-edit-content-select-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-select-field>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.RADIO) {
         @defer (on immediate) {
             <dot-edit-content-radio-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-radio-field>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.TEXT) {
         @defer (on immediate) {
             <dot-edit-content-text-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-text-field>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.TEXTAREA) {
         @defer (on immediate) {
             <dot-edit-content-text-area
                 [field]="field"
-                [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-text-area>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.CHECKBOX) {
         @defer (on immediate) {
             <dot-edit-content-checkbox-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-checkbox-field>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.MULTI_SELECT) {
         @defer (on immediate) {
             <dot-edit-content-multi-select-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-multi-select-field>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.DATE) {
         @defer (on immediate) {
             <dot-edit-content-calendar-field
-                [formControlName]="field.variable"
+                [contentlet]="contentlet"
                 [contentType]="contentType"
                 [utcTimezone]="$systemTimezone()"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-calendar-field>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.DATE_AND_TIME) {
         @defer (on immediate) {
             <dot-edit-content-calendar-field
-                [formControlName]="field.variable"
+                [contentlet]="contentlet"
                 [contentType]="contentType"
                 [utcTimezone]="$systemTimezone()"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-calendar-field>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.TIME) {
         @defer (on immediate) {
             <dot-edit-content-calendar-field
-                [formControlName]="field.variable"
+                [contentlet]="contentlet"
                 [contentType]="contentType"
                 [utcTimezone]="$systemTimezone()"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-calendar-field>
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.TAG) {
@@ -124,19 +92,15 @@
             <dot-edit-content-tag-field
                 [formControlName]="field.variable"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-tag-field>
+                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-tag-field>
         }
     }
     @case (fieldTypes.JSON) {
         @defer (on immediate) {
             <dot-edit-content-json-field
                 [field]="field"
-                [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-json-field>
+                [contentlet]="contentlet"
+                [attr.data-testId]="'field-' + field.variable" />
         }
     }
     @case (fieldTypes.BINARY) {
@@ -146,9 +110,7 @@
                 [contentlet]="contentlet"
                 [field]="field"
                 (valueUpdated)="onBinaryFieldValueUpdated($event)"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-binary-field-wrapper>
+                [attr.data-testId]="'field-' + field.variable"></dot-binary-field-wrapper>
         }
     }
     @case (fieldTypes.CUSTOM_FIELD) {
@@ -158,9 +120,7 @@
                 [formControlName]="field.variable"
                 [inode]="contentlet?.inode"
                 [contentType]="contentTypeVariable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-custom-field>
+                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-custom-field>
         }
     }
     @case (fieldTypes.BLOCK_EDITOR) {
@@ -169,9 +129,7 @@
                 [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 [field]="field"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-block-editor>
+                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-block-editor>
         }
     }
     @case (fieldTypes.KEY_VALUE) {
@@ -179,9 +137,7 @@
             <dot-edit-content-key-value
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-key-value>
+                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-key-value>
         }
     }
     @case (fieldTypes.WYSIWYG) {
@@ -191,9 +147,7 @@
                 [formControlName]="field.variable"
                 [contentlet]="contentlet"
                 (disabledWYSIWYGChange)="disabledWYSIWYGChange.emit($event)"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-wysiwyg-field>
+                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-wysiwyg-field>
         }
     }
     @case (fieldTypes.HOST_FOLDER) {
@@ -201,9 +155,7 @@
             <dot-edit-content-host-folder-field
                 [field]="field"
                 [formControlName]="field.variable"
-                [attr.data-testId]="'field-' + field.variable">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-host-folder-field>
+                [attr.data-testId]="'field-' + field.variable"></dot-edit-content-host-folder-field>
         }
     }
     @case (fieldTypes.CATEGORY) {
@@ -212,9 +164,7 @@
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
                 [contentlet]="contentlet"
-                [field]="field">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-category-field>
+                [field]="field"></dot-edit-content-category-field>
         }
     }
     @case (fieldTypes.FILE) {
@@ -222,9 +172,7 @@
             <dot-edit-content-file-field
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
-                [field]="field">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-file-field>
+                [field]="field"></dot-edit-content-file-field>
         }
     }
     @case (fieldTypes.IMAGE) {
@@ -232,9 +180,7 @@
             <dot-edit-content-file-field
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
-                [field]="field">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-file-field>
+                [field]="field"></dot-edit-content-file-field>
         }
     }
     @case (fieldTypes.RELATIONSHIP) {
@@ -243,9 +189,7 @@
                 [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
                 [field]="field"
-                [contentlet]="contentlet">
-                <ng-container [ngTemplateOutlet]="labelTemplate" />
-            </dot-edit-content-relationship-field>
+                [contentlet]="contentlet"></dot-edit-content-relationship-field>
         }
     }
 }

@@ -5,7 +5,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
 import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
@@ -21,6 +22,7 @@ export class MockFormComponent {
     // Host Props
     formGroup: FormGroup;
     field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
 }
 
 describe('DotEditContentTextFieldComponent', () => {
@@ -37,14 +39,17 @@ describe('DotEditContentTextFieldComponent', () => {
     it('should have the variable as id', () => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-text-field [field]="field" [formControlName]="field.variable" />
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
                     formGroup: new FormGroup({
                         [TEXT_FIELD_MOCK.variable]: new FormControl('one')
                     }),
-                    field: TEXT_FIELD_MOCK
+                    field: TEXT_FIELD_MOCK,
+                    contentlet: createFakeContentlet({
+                        [TEXT_FIELD_MOCK.variable]: 'one'
+                    })
                 }
             }
         );
@@ -69,7 +74,7 @@ describe('DotEditContentTextFieldComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -79,7 +84,10 @@ describe('DotEditContentTextFieldComponent', () => {
                         field: {
                             ...TEXT_FIELD_MOCK,
                             dataType
-                        }
+                        },
+                        contentlet: createFakeContentlet({
+                            [TEXT_FIELD_MOCK.variable]: null
+                        })
                     }
                 }
             );
