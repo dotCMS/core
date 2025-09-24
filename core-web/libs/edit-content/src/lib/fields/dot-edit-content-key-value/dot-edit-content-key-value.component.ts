@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { Component, ChangeDetectionStrategy, input, inject } from '@angular/core';
+import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -24,7 +24,13 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-key-value.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
 export class DotEditContentKeyValueComponent extends BaseWrapperField {
     /**

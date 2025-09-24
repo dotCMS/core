@@ -18,6 +18,7 @@ import { DotEditContentKeyValueComponent } from './dot-edit-content-key-value.co
 const KEY_VALUE_FIELD_MOCK = createFakeKeyValueField({
     variable: 'keyValueField'
 });
+
 @Component({
     standalone: false,
     selector: 'dot-custom-host',
@@ -132,10 +133,12 @@ describe('DotEditContentKeyValueComponent', () => {
             expect(control.touched).toBeTruthy();
         });
 
-        /*
-
         it('should call updateField method when DotKeyValueComponent emits updatedList', () => {
-            const updateFieldSpy = jest.spyOn(spectator.component, 'updateField');
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const updateFieldSpy = jest.spyOn(keyValueField, 'updateField');
+            spectator.triggerEventHandler(DotKeyValueComponent, 'updatedList', [
+                { key: 'testKey', hidden: false, value: 'testValue' }
+            ]);
 
             const dotKeyValue = spectator.query(DotKeyValueComponent);
             const testData = [{ key: 'testKey', hidden: false, value: 'testValue' }];
@@ -144,7 +147,6 @@ describe('DotEditContentKeyValueComponent', () => {
 
             expect(updateFieldSpy).toHaveBeenCalledWith(testData);
         });
-        */
     });
 
     describe('should handle writeValue correctly', () => {
@@ -193,6 +195,7 @@ describe('DotEditContentKeyValueComponent', () => {
             const testData = { key1: 'value1', key2: 'value2', key3: 'value3' };
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
             keyValueField.writeValue(testData);
+            spectator.detectChanges();
 
             expect(keyValueField.$initialValue()).toEqual([
                 { key: 'key1', value: 'value1' },
@@ -223,23 +226,22 @@ describe('DotEditContentKeyValueComponent', () => {
             spectator.detectChanges();
         });
 
-        /*
-
         it('should convert DotKeyValue array to object and call onChange', () => {
             // Mock the callbacks
             const mockOnChange = jest.fn();
             const mockOnTouched = jest.fn();
 
             // Register the mock callbacks
-            spectator.component.registerOnChange(mockOnChange);
-            spectator.component.registerOnTouched(mockOnTouched);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.registerOnChange(mockOnChange);
+            keyValueField.registerOnTouched(mockOnTouched);
 
             const testData = [
                 { key: 'key1', value: 'value1' },
                 { key: 'key2', value: 'value2' }
             ];
 
-            spectator.component.updateField(testData);
+            keyValueField.updateField(testData);
 
             expect(mockOnChange).toHaveBeenCalledWith({ key1: 'value1', key2: 'value2' });
             expect(mockOnTouched).toHaveBeenCalled();
@@ -251,15 +253,14 @@ describe('DotEditContentKeyValueComponent', () => {
             const mockOnTouched = jest.fn();
 
             // Register the mock callbacks
-            spectator.component.registerOnChange(mockOnChange);
-            spectator.component.registerOnTouched(mockOnTouched);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.registerOnChange(mockOnChange);
+            keyValueField.registerOnTouched(mockOnTouched);
 
-            spectator.component.updateField([]);
+            keyValueField.updateField([]);
 
             expect(mockOnChange).toHaveBeenCalledWith({});
             expect(mockOnTouched).toHaveBeenCalled();
         });
-
-        */
     });
 });

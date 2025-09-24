@@ -33,6 +33,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     let store: InstanceType<typeof HostFolderFiledStore>;
     let service: SpyObject<DotEditContentService>;
     let hostFormControl: FormControl;
+    let field: DotHostFolderFieldComponent;
 
     const createHost = createHostFactory({
         component: DotEditContentHostFolderFieldComponent,
@@ -66,7 +67,8 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                 }
             }
         );
-        store = spectator.inject(HostFolderFiledStore, true);
+        field = spectator.query(DotHostFolderFieldComponent);
+        store = field.store;
         service = spectator.inject(DotEditContentService);
         hostFormControl = spectator.hostComponent.formGroup.get(
             HOST_FOLDER_TEXT_MOCK.variable
@@ -84,8 +86,6 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         spectator.detectChanges();
 
         expect(store.tree()).toBe(TREE_SELECT_SITES_MOCK);
-
-        const field = spectator.query(DotHostFolderFieldComponent);
         expect(field.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
     });
 
@@ -103,8 +103,6 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
         expect(treeSelectHeight).toBe(treeVirtualScrollHeight);
     });
-
-    /**
 
     describe('The init value with the root path', () => {
         it('should show a root path', fakeAsync(() => {
@@ -160,6 +158,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
             // Disable the main form control
             hostFormControl.disable();
+            spectator.detectChanges();
             tick(50);
 
             // Path control should be disabled automatically
@@ -172,16 +171,17 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
             // Start with disabled controls
             hostFormControl.disable();
+            spectator.detectChanges();
             tick(50);
-            const field = spectator.query(DotHostFolderFieldComponent);
-            expect(field.pathControl.disabled).toBe(true);
+            expect(field.$isDisabled()).toBe(true);
 
             // Enable the main form control
             hostFormControl.enable();
+            spectator.detectChanges();
             tick(50);
 
             // Path control should be enabled automatically
-            expect(field.pathControl.disabled).toBe(false);
+            expect(field.$isDisabled()).toBe(false);
         }));
 
         it('should reflect disabled state in the TreeSelect through form control binding', fakeAsync(() => {
@@ -205,5 +205,4 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(field.pathControl.disabled).toBe(true);
         }));
     });
-    */
 });

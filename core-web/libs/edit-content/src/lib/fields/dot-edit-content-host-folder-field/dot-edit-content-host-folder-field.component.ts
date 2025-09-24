@@ -7,7 +7,6 @@ import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models'
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotHostFolderFieldComponent } from './components/host-folder-field/host-folder-field.component';
-import { HostFolderFiledStore } from './store/host-folder-field.store';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
@@ -41,8 +40,7 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ],
-    providers: [HostFolderFiledStore]
+    ]
 })
 export class DotEditContentHostFolderFieldComponent extends BaseWrapperField {
     /**

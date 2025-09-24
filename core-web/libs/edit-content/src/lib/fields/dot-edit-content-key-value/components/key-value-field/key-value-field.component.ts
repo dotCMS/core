@@ -1,6 +1,7 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { Component, ChangeDetectionStrategy, signal, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, input, forwardRef } from '@angular/core';
+import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
 
@@ -10,7 +11,14 @@ import { BaseControlValueAccesor } from '../../../shared/base-control-value-acce
     selector: 'dot-key-value-field',
     imports: [DotKeyValueComponent],
     templateUrl: './key-value-field.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotKeyValueFieldComponent)
+        }
+    ]
 })
 export class DotKeyValueFieldComponent extends BaseControlValueAccesor<Record<string, string>> {
     /**
