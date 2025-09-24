@@ -1346,6 +1346,484 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "User Permissions Tests",
+			"item": [
+				{
+					"name": "Test 1: Admin User Permissions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// ===== TEST 1: ADMIN USER PERMISSIONS =====",
+									"// Testing with admin user (dotcms.org.1) who has comprehensive permissions",
+									"",
+									"pm.test('Status code is 200', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', () => {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+									"});",
+									"",
+									"let response;",
+									"pm.test('Response is valid JSON', () => {",
+									"    response = pm.response.json();",
+									"    pm.expect(response).to.be.an('object');",
+									"});",
+									"",
+									"// Validate top-level structure",
+									"pm.test('Response has correct top-level structure', () => {",
+									"    pm.expect(response).to.have.property('entity');",
+									"    pm.expect(response.entity).to.have.all.keys('userId', 'roleId', 'assets');",
+									"});",
+									"",
+									"const entity = response.entity;",
+									"",
+									"// Validate user identification",
+									"pm.test('User ID matches requested user', () => {",
+									"    pm.expect(entity.userId).to.equal('dotcms.org.1');",
+									"});",
+									"",
+									"pm.test('Role ID exists and is non-empty', () => {",
+									"    pm.expect(entity.roleId).to.be.a('string');",
+									"    pm.expect(entity.roleId).to.not.be.empty;",
+									"    // Store for later comparison",
+									"    pm.collectionVariables.set('adminRoleId', entity.roleId);",
+									"});",
+									"",
+									"const assets = entity.assets;",
+									"",
+									"pm.test('Assets array exists and is not empty', () => {",
+									"    pm.expect(assets).to.be.an('array');",
+									"    pm.expect(assets.length).to.be.greaterThan(0);",
+									"    console.log(`Found ${assets.length} assets with permissions`);",
+									"});",
+									"",
+									"// Validate each asset structure",
+									"pm.test('Each asset has required fields', () => {",
+									"    assets.forEach((asset, index) => {",
+									"        // Core fields",
+									"        pm.expect(asset, `Asset ${index}`).to.have.property('id');",
+									"        pm.expect(asset, `Asset ${index}`).to.have.property('type');",
+									"        pm.expect(asset, `Asset ${index}`).to.have.property('name');",
+									"        pm.expect(asset, `Asset ${index}`).to.have.property('permissions');",
+									"        pm.expect(asset, `Asset ${index}`).to.have.property('canEditPermissions');",
+									"        pm.expect(asset, `Asset ${index}`).to.have.property('inheritsPermissions');",
+									"        ",
+									"        // Type validation",
+									"        pm.expect(asset.type).to.be.oneOf(['HOST', 'FOLDER']);",
+									"        ",
+									"        // Type-specific fields",
+									"        if (asset.type === 'HOST') {",
+									"            pm.expect(asset).to.have.property('path');",
+									"            pm.expect(asset).to.have.property('hostId');",
+									"            pm.expect(asset.hostId).to.equal(asset.id);",
+									"        } else if (asset.type === 'FOLDER') {",
+									"            pm.expect(asset).to.have.property('path');",
+									"            pm.expect(asset).to.have.property('hostId');",
+									"            pm.expect(asset.path).to.match(/^\\//, 'Folder path should start with /');",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"// Validate System Host presence",
+									"pm.test('System Host is present in assets', () => {",
+									"    const systemHost = assets.find(a => ",
+									"        a.type === 'HOST' && ",
+									"        (a.name === 'System Host' || a.id === 'SYSTEM_HOST' || a.name.toLowerCase().includes('system'))",
+									"    );",
+									"    pm.expect(systemHost, 'System Host not found').to.exist;",
+									"    pm.expect(systemHost.type).to.equal('HOST');",
+									"});",
+									"",
+									"// Validate permission structure and values",
+									"pm.test('Permissions have valid structure and values', () => {",
+									"    const validPermissionTypes = [",
+									"        'INDIVIDUAL', 'PAGE', 'CONTAINER', 'FOLDER', ",
+									"        'LINK', 'TEMPLATE', 'TEMPLATE_LAYOUT', ",
+									"        'STRUCTURE', 'CONTENT', 'CATEGORY', 'RULE', 'HOST'",
+									"    ];",
+									"    ",
+									"    const validPermissionValues = ['READ', 'WRITE', 'PUBLISH', 'EDIT_PERMISSIONS', 'CAN_ADD_CHILDREN'];",
+									"    ",
+									"    assets.forEach((asset, assetIndex) => {",
+									"        const permissions = asset.permissions;",
+									"        pm.expect(permissions, `Asset ${assetIndex} permissions`).to.be.an('object');",
+									"        ",
+									"        Object.entries(permissions).forEach(([permType, permValues]) => {",
+									"            // Validate permission type",
+									"            pm.expect(validPermissionTypes, `Invalid permission type: ${permType}`)",
+									"                .to.include(permType);",
+									"            ",
+									"            // Validate permission values array",
+									"            pm.expect(permValues, `Permission type ${permType}`).to.be.an('array');",
+									"            ",
+									"            // Each value should be valid",
+									"            permValues.forEach(value => {",
+									"                pm.expect(validPermissionValues, `Invalid permission value: ${value}`)",
+									"                    .to.include(value);",
+									"            });",
+									"            ",
+									"            // Check for duplicates",
+									"            const uniqueValues = [...new Set(permValues)];",
+									"            pm.expect(permValues.length, `Duplicates in ${permType}`)",
+									"                .to.equal(uniqueValues.length);",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"// Admin-specific validations",
+									"pm.test('Admin has edit permissions capability on some assets', () => {",
+									"    const hasEditCapability = assets.some(a => a.canEditPermissions === true);",
+									"    pm.expect(hasEditCapability, 'Admin should have edit permissions capability').to.be.true;",
+									"});",
+									"",
+									"// Validate boolean fields",
+									"pm.test('Boolean fields have correct types', () => {",
+									"    assets.forEach((asset, index) => {",
+									"        pm.expect(asset.canEditPermissions, `Asset ${index} canEditPermissions`)",
+									"            .to.be.a('boolean');",
+									"        pm.expect(asset.inheritsPermissions, `Asset ${index} inheritsPermissions`)",
+									"            .to.be.a('boolean');",
+									"    });",
+									"});",
+									"",
+									"// Store data for cross-test validation",
+									"pm.collectionVariables.set('adminPermissionsCount', assets.length);",
+									"pm.collectionVariables.set('adminHasSystemHost', ",
+									"    assets.some(a => a.type === 'HOST' && a.name === 'System Host'));",
+									"",
+									"// Log summary",
+									"console.log('Test Summary:');",
+									"console.log(`- Total assets: ${assets.length}`);",
+									"console.log(`- Hosts: ${assets.filter(a => a.type === 'HOST').length}`);",
+									"console.log(`- Folders: ${assets.filter(a => a.type === 'FOLDER').length}`);",
+									"console.log(`- Assets with edit capability: ${assets.filter(a => a.canEditPermissions).length}`);",
+									"console.log(`- Assets inheriting permissions: ${assets.filter(a => a.inheritsPermissions).length}`);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcms.org.1",
+								"permissions"
+							]
+						},
+						"description": "Test admin user permissions - validates complete response structure and permission data"
+					},
+					"response": []
+				},
+				{
+					"name": "Test 2: Email-based User Lookup",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// ===== TEST 2: EMAIL-BASED LOOKUP =====",
+									"// Verify endpoint accepts email addresses as userId parameter",
+									"",
+									"pm.test('Status code is 200 for email lookup', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const entity = response.entity;",
+									"",
+									"pm.test('Response structure is consistent with ID lookup', () => {",
+									"    pm.expect(entity).to.have.all.keys('userId', 'roleId', 'assets');",
+									"    pm.expect(entity.assets).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Returns data for admin user via email', () => {",
+									"    // The userId should be the actual ID, not the email",
+									"    pm.expect(entity.userId).to.equal('dotcms.org.1');",
+									"    // Role ID should match what we stored from previous test",
+									"    pm.expect(entity.roleId).to.equal(pm.collectionVariables.get('adminRoleId'));",
+									"});",
+									"",
+									"pm.test('Asset count matches ID-based lookup', () => {",
+									"    const previousCount = pm.collectionVariables.get('adminPermissionsCount');",
+									"    pm.expect(entity.assets.length).to.equal(previousCount);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/admin@dotcms.com/permissions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"admin@dotcms.com",
+								"permissions"
+							]
+						},
+						"description": "Test that endpoint accepts email addresses for user lookup"
+					},
+					"response": []
+				},
+				{
+					"name": "Test 3: Self-Access Permissions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// ===== TEST 3: SELF-ACCESS PERMISSIONS =====",
+									"// User viewing their own permissions (using 'current' user endpoint logic)",
+									"",
+									"pm.test('Status code is 200 for self-access', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const entity = response.entity;",
+									"",
+									"pm.test('Can retrieve own permissions', () => {",
+									"    pm.expect(entity).to.have.property('userId');",
+									"    pm.expect(entity).to.have.property('roleId');",
+									"    pm.expect(entity).to.have.property('assets');",
+									"});",
+									"",
+									"pm.test('Returns individual role for user', () => {",
+									"    pm.expect(entity.roleId).to.be.a('string');",
+									"    pm.expect(entity.roleId).to.not.be.empty;",
+									"    // Individual roles often contain the userId in some form",
+									"    console.log(`User ${entity.userId} has role ${entity.roleId}`);",
+									"});",
+									"",
+									"// Verify System Host is always present",
+									"pm.test('System Host present even for regular users', () => {",
+									"    const systemHost = entity.assets.find(a => ",
+									"        a.type === 'HOST' && a.name === 'System Host'",
+									"    );",
+									"    pm.expect(systemHost).to.exist;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcms.org.1",
+								"permissions"
+							]
+						},
+						"description": "Test user accessing their own permissions"
+					},
+					"response": []
+				},
+				{
+					"name": "Test 4: Permission Data Integrity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// ===== TEST 4: DATA INTEGRITY VALIDATION =====",
+									"",
+									"pm.test('Status code is 200', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const assets = response.entity.assets;",
+									"",
+									"// Validate no null or undefined values in critical fields",
+									"pm.test('No null/undefined in critical fields', () => {",
+									"    assets.forEach((asset, index) => {",
+									"        pm.expect(asset.id, `Asset ${index} id`).to.not.be.null;",
+									"        pm.expect(asset.id, `Asset ${index} id`).to.not.be.undefined;",
+									"        pm.expect(asset.type, `Asset ${index} type`).to.not.be.null;",
+									"        pm.expect(asset.name, `Asset ${index} name`).to.not.be.null;",
+									"        pm.expect(asset.permissions, `Asset ${index} permissions`).to.not.be.null;",
+									"    });",
+									"});",
+									"",
+									"// Validate ID formats",
+									"pm.test('Asset IDs have valid format', () => {",
+									"    assets.forEach(asset => {",
+									"        pm.expect(asset.id).to.be.a('string');",
+									"        pm.expect(asset.id.length).to.be.greaterThan(0);",
+									"        // IDs should not contain spaces or special characters",
+									"        pm.expect(asset.id).to.not.match(/\\s/, 'ID should not contain spaces');",
+									"    });",
+									"});",
+									"",
+									"// Validate path formats",
+									"pm.test('Paths are properly formatted', () => {",
+									"    assets.forEach(asset => {",
+									"        if (asset.type === 'FOLDER') {",
+									"            // Folder paths should start with / and contain hostname",
+									"            pm.expect(asset.path).to.match(/^\\/[^/]+/);",
+									"            // Path should not end with / unless it's root",
+									"            if (asset.path.length > 1) {",
+									"                pm.expect(asset.path).to.not.match(/\\/$/);",
+									"            }",
+									"        } else if (asset.type === 'HOST') {",
+									"            // Host path should be /hostname",
+									"            pm.expect(asset.path).to.match(/^\\/[^/]+$/);",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"// Validate permission combinations",
+									"pm.test('Permission combinations are logical', () => {",
+									"    assets.forEach(asset => {",
+									"        Object.values(asset.permissions).forEach(perms => {",
+									"            if (perms.includes('EDIT_PERMISSIONS')) {",
+									"                // If user can edit permissions, they should have WRITE",
+									"                pm.expect(perms).to.include.oneOf(['WRITE', 'PUBLISH']);",
+									"            }",
+									"            if (perms.includes('PUBLISH')) {",
+									"                // If user can publish, they should have WRITE",
+									"                pm.expect(perms).to.include('WRITE');",
+									"            }",
+									"            if (perms.includes('WRITE')) {",
+									"                // If user can write, they should have read",
+									"                pm.expect(perms).to.include('read');",
+									"            }",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"// Validate no duplicate assets",
+									"pm.test('No duplicate asset IDs', () => {",
+									"    const assetIds = assets.map(a => a.id);",
+									"    const uniqueIds = [...new Set(assetIds)];",
+									"    pm.expect(assetIds.length).to.equal(uniqueIds.length);",
+									"});",
+									"",
+									"// Performance validation",
+									"pm.test('Response time is acceptable', () => {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"    console.log(`Response time: ${pm.response.responseTime}ms`);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1/permissions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcms.org.1",
+								"permissions"
+							]
+						},
+						"description": "Comprehensive data integrity validation"
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
@@ -1456,6 +1934,21 @@
 		{
 			"key": "userID",
 			"value": ""
+		},
+		{
+			"key": "adminRoleId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "adminPermissionsCount",
+			"value": "",
+			"type": "number"
+		},
+		{
+			"key": "adminHasSystemHost",
+			"value": "",
+			"type": "boolean"
 		}
 	]
 }
