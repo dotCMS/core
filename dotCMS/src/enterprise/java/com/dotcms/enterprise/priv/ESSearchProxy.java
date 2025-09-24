@@ -53,7 +53,7 @@ public class ESSearchProxy extends ParentProxy implements ESSeachAPI {
     }
 
 	@Override
-	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
+	public <T> ESSearchResults <T> esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
 		return this.instance().esSearch(esQuery, live, user, respectFrontendRoles);
 	}

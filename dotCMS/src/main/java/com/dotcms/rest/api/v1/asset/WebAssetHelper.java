@@ -7,6 +7,7 @@ import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -37,6 +38,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -46,6 +48,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -123,7 +126,7 @@ public class WebAssetHelper {
      * @param path the path to the asset
      * @param user current user
      * @return the asset view
-     * @throws DotDataException any data related exception
+     * @throws DotDataException any data-related exception
      * @throws DotSecurityException any security violation exception
      */
     public WebAssetView getAssetInfo(final String path, final User user)
@@ -165,7 +168,7 @@ public class WebAssetHelper {
                 .sortByDesc(true)
         ;
 
-        //We're not really looking at system but / is mapped as system folder therefore
+        //We're not really looking at system but / is mapped as system folder, therefore,
         //whenever system folder pops up we need to find the folders straight under host
         if (folder.isSystemFolder()) {
             builder.withHostOrFolderId(host.getIdentifier());
@@ -175,7 +178,7 @@ public class WebAssetHelper {
 
         if (null != assetName) {
             Logger.debug(this, String.format("Asset name: [%s]" , assetName));
-            //We're requesting an asset specifically therefore we need to find it and  build the response
+            //We're requesting an asset specifically, therefore, we need to find it and  build the response
             builder.withFileName(assetName);
 
             final List<Contentlet> folderContent = sortByIdentifier(
@@ -198,7 +201,7 @@ public class WebAssetHelper {
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
-            //Once we get the folder contents we need to include all other versions per identifier
+            //Once we get the folder contents, we need to include all other versions per identifier
             final Set<String> identifiers = folderContent.stream().filter(Contentlet.class::isInstance)
                     .map(f -> (Contentlet) f).map(Contentlet::getIdentifier)
                     .collect(Collectors.toSet());
@@ -935,6 +938,133 @@ public class WebAssetHelper {
         }
         return Optional.empty();
     }
+
+    public List<WebAssetView> driveSearch(final ContentDriveSearchRequest requestForm, final User user)
+            throws DotDataException, DotSecurityException {
+
+
+        // Dynamic query building using form parameters
+        final List<Long> langIds = requestForm.language().stream().map(LanguageUtil::getLanguageId).collect(Collectors.toList());
+        List<BaseContentType> baseContentTypes = BaseContentType.allBaseTypes();
+        if(null != requestForm.baseTypes()) {
+                 baseContentTypes = requestForm.baseTypes().stream()
+                    .map(s -> BaseContentType.getBaseContentType(s.toUpperCase()))
+                    .collect(Collectors.toList());
+        }
+        final ContentTypeAPI myContentTypeAPI = APILocator.getContentTypeAPI(user);
+        List<String> contentTypeIds = List.of();
+        if(null != requestForm.contentTypes()){
+            contentTypeIds = requestForm.contentTypes().stream().map(s ->
+                Try.of(() -> myContentTypeAPI.find(s).id()).getOrNull()
+            ).filter(Objects::nonNull).collect(Collectors.toList());
+        }
+
+        final AssetPathResolver resolver = AssetPathResolver.newInstance();
+        final List<String> assetPath = requestForm.assetPath();
+        for (final String path : assetPath) {
+            final ResolvedAssetAndPath assetAndPath = resolver.resolve(path, user, false);
+            String hostOrFolder = assetAndPath.host();
+            if (null != assetAndPath.resolvedFolder()) {
+                final Folder folder = assetAndPath.resolvedFolder();
+                hostOrFolder = folder.getInode();
+                List<Folder> folders = folderAPI.findSubFoldersByParent(folder, APILocator.systemUser(),false).stream()
+                        .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
+
+            }
+
+            StringBuilder queryBuilder = new StringBuilder();
+
+            // Base query filters
+            queryBuilder.append("+systemType:false ");
+
+            // Deleted/archived filter
+            if (!requestForm.showArchived()) {
+                queryBuilder.append("+deleted:false ");
+            }
+
+            // Working/live content filter
+            if (requestForm.live()) {
+                queryBuilder.append("+live:true ");
+            }
+            if (requestForm.showWorking()) {
+                queryBuilder.append("+working:true ");
+            }
+
+            // Content type filters
+            if (UtilMethods.isSet(contentTypeIds) && !contentTypeIds.isEmpty()) {
+                queryBuilder.append("+(");
+                for (int i = 0; i < contentTypeIds.size(); i++) {
+                    if (i > 0) queryBuilder.append(" OR ");
+                    queryBuilder.append("contentType:").append(contentTypeIds.get(i));
+                }
+                queryBuilder.append(") ");
+            }
+
+            // Language filters
+            if (UtilMethods.isSet(langIds) && !langIds.isEmpty()) {
+                queryBuilder.append("+(");
+                for (int i = 0; i < langIds.size(); i++) {
+                    if (i > 0) queryBuilder.append(" OR ");
+                    queryBuilder.append("languageId:").append(langIds.get(i));
+                }
+                queryBuilder.append(") ");
+            }
+
+            // Host/folder filter with configurable SYSTEM_HOST inclusion
+            queryBuilder.append("+(conhost:").append(hostOrFolder);
+            if (requestForm.includeSystemHost()) {
+                queryBuilder.append(" OR conhost:SYSTEM_HOST");
+            }
+            queryBuilder.append(") ");
+
+            // Path filter
+            if (UtilMethods.isSet(path)) {
+                queryBuilder.append("+parentPath:").append(assetAndPath.path()).append("* ");
+            }
+
+            // Text search filter
+            if (UtilMethods.isSet(requestForm.filter())) {
+                queryBuilder.append("+(title:*").append(requestForm.filter()).append("* OR ");
+                queryBuilder.append("catchall:*").append(requestForm.filter()).append("*) ");
+            }
+
+            // Base content type filters from baseTypes parameter
+            if (UtilMethods.isSet(baseContentTypes) && !baseContentTypes.isEmpty()) {
+                queryBuilder.append("+(");
+                for (int i = 0; i < baseContentTypes.size(); i++) {
+                    if (i > 0) queryBuilder.append(" OR ");
+                    queryBuilder.append("baseType:").append(baseContentTypes.get(i).getType());
+                }
+                queryBuilder.append(") ");
+            }
+
+            // Configurable variant filter
+            if (UtilMethods.isSet(requestForm.variant())) {
+                queryBuilder.append("+variant:").append(requestForm.variant()).append(" ");
+            }
+
+            String esQuery = queryBuilder.toString().trim();
+
+            // Execute search with pagination and sorting
+            Logger.debug(this, "Executing Elasticsearch query: " + esQuery);
+
+            final ESSearchResults <Contentlet> esSearchResults = contentletAPI.esSearch(esQuery,
+                    requestForm.live(), user, true);
+
+
+            // Process and return results
+            if (esSearchResults != null && !esSearchResults.isEmpty()) {
+                Logger.info(this, String.format("Drive search returned %d results for path: %s",
+                    esSearchResults.size(), path));
+                return List.of();
+            }
+        }
+
+        Logger.debug(this, "No results found for drive search");
+        return List.of();
+    }
+
+
 
     /**
      * Creates a new instance of {@link WebAssetHelper}
