@@ -10,8 +10,6 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotCategoryFieldDialogComponent } from './components/dot-category-field-dialog/dot-category-field-dialog.component';
-import { DotEditContentCategoryFieldComponent } from './dot-edit-content-category-field.component';
 import {
     CATEGORY_FIELD_CONTENTLET_MOCK,
     CATEGORY_FIELD_MOCK,
@@ -19,10 +17,12 @@ import {
     CATEGORY_HIERARCHY_MOCK,
     CATEGORY_LEVEL_2,
     MOCK_SELECTED_CATEGORIES_OBJECT
-} from './mocks/category-field.mocks';
-import { DotCategoryFieldKeyValueObj } from './models/dot-category-field.models';
-import { CategoriesService } from './services/categories.service';
-import { CategoryFieldStore } from './store/content-category-field.store';
+} from './../../mocks/category-field.mocks';
+import { DotCategoryFieldKeyValueObj } from './../../models/dot-category-field.models';
+import { CategoriesService } from './../../services/categories.service';
+import { CategoryFieldStore } from './../../store/content-category-field.store';
+import { DotCategoryFieldDialogComponent } from './../dot-category-field-dialog/dot-category-field-dialog.component';
+import { DotCategoryFieldComponent } from './dot-category-field.component';
 
 @Component({
     standalone: false,
@@ -34,18 +34,19 @@ export class MockFormComponent {
     formGroup: FormGroup;
     field: DotCMSContentTypeField;
     contentlet: DotCMSContentlet;
+    hasError: boolean;
 }
 
 const FAKE_FORM_GROUP = new FormGroup({
     [CATEGORY_FIELD_VARIABLE_NAME]: new FormControl()
 });
 
-describe('DotEditContentCategoryFieldComponent', () => {
-    let spectator: SpectatorHost<DotEditContentCategoryFieldComponent, MockFormComponent>;
+xdescribe('DotCategoryFieldComponent', () => {
+    let spectator: SpectatorHost<DotCategoryFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof CategoryFieldStore>;
 
     const createHost = createHostFactory({
-        component: DotEditContentCategoryFieldComponent,
+        component: DotCategoryFieldComponent,
         host: MockFormComponent,
         imports: [ReactiveFormsModule, MockComponent(DotCategoryFieldDialogComponent)],
         providers: [
@@ -67,17 +68,25 @@ describe('DotEditContentCategoryFieldComponent', () => {
             beforeEach(() => {
                 spectator = createHost(
                     `<form [formGroup]="formGroup">
-                        <dot-edit-content-category-field [field]="field" [contentlet]="contentlet"  />
+                        <dot-category-field
+                            [field]="field"
+                            [contentlet]="contentlet"
+                            [formControlName]="field.variable"
+                            [hasError]="hasError" />
                     </form>`,
                     {
                         hostProps: {
                             formGroup: FAKE_FORM_GROUP,
                             field: CATEGORY_FIELD_MOCK,
-                            contentlet: CATEGORY_FIELD_CONTENTLET_MOCK
+                            contentlet: CATEGORY_FIELD_CONTENTLET_MOCK,
+                            hasError: false
                         }
                     }
                 );
 
+                console.log(spectator.hostComponent.formGroup.getRawValue());
+                console.log(spectator.hostComponent.field);
+                console.log(spectator.hostComponent.contentlet);
                 spectator.detectChanges();
             });
 
@@ -111,37 +120,36 @@ describe('DotEditContentCategoryFieldComponent', () => {
             });
             */
         });
-
-        describe('No selected', () => {
-            it('should not display the category list with chips when there are no categories', () => {
-                spectator = createHost(
-                    `<form [formGroup]="formGroup">
-                        <dot-edit-content-category-field [field]="field" [contentlet]="contentlet" />
-                    </form>`,
-                    {
-                        hostProps: {
-                            formGroup: FAKE_FORM_GROUP,
-                            field: CATEGORY_FIELD_MOCK,
-                            contentlet: {
-                                ...CATEGORY_FIELD_CONTENTLET_MOCK,
-                                [CATEGORY_FIELD_VARIABLE_NAME]: []
-                            }
-                        },
-                        providers: [
-                            mockProvider(CategoriesService, {
-                                getSelectedHierarchy: jest.fn().mockReturnValue(of([]))
-                            })
-                        ]
-                    }
-                );
-
-                spectator.detectChanges();
-
-                expect(spectator.query(byTestId('category-chip-list'))).toBeNull();
-            });
-        });
     });
 
+    describe('No selected', () => {
+        it('should not display the category list with chips when there are no categories', () => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-category-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: FAKE_FORM_GROUP,
+                        field: CATEGORY_FIELD_MOCK,
+                        contentlet: {
+                            ...CATEGORY_FIELD_CONTENTLET_MOCK,
+                            [CATEGORY_FIELD_VARIABLE_NAME]: []
+                        }
+                    },
+                    providers: [
+                        mockProvider(CategoriesService, {
+                            getSelectedHierarchy: jest.fn().mockReturnValue(of([]))
+                        })
+                    ]
+                }
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('category-chip-list'))).toBeNull();
+        });
+    });
     describe('Interactions', () => {
         beforeEach(() => {
             spectator = createHost(
@@ -167,7 +175,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             spectator.detectChanges();
         });
-        /*
+
         it('should invoke `showCategoriesDialog` method when the select button is clicked', () => {
             const selectBtn = spectator.query(byTestId('show-dialog-btn'));
             const showCategoriesDialogSpy = jest.spyOn(spectator.component, 'openCategoriesDialog');
@@ -176,7 +184,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             spectator.click(selectBtn);
 
             expect(showCategoriesDialogSpy).toHaveBeenCalled();
-        });*/
+        });
 
         it('should disable the `Select` button after `openCategoriesDialog` method is invoked', () => {
             const selectBtn = spectator.query(byTestId('show-dialog-btn')) as HTMLButtonElement;

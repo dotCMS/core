@@ -20,7 +20,7 @@ import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'pri
 import { catchError, skip, switchMap } from 'rxjs/operators';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { BaseControlValueAccesor } from '../../../shared/base-control-value-accesor';
+import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 export const AUTO_COMPLETE_MIN_LENGTH = 2;
 
@@ -46,7 +46,7 @@ export const AUTO_COMPLETE_UNIQUE = true;
         }
     ]
 })
-export class DotTagFieldComponent extends BaseControlValueAccesor<string | string[]> {
+export class DotTagFieldComponent extends BaseControlValueAccessor<string | string[]> {
     #editContentService = inject(DotEditContentService);
 
     /**

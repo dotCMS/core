@@ -17,7 +17,7 @@ import {
     TreeNodeSelectItem
 } from '../../../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../../../pipes/truncate-path.pipe';
-import { BaseControlValueAccesor } from '../../../shared/base-control-value-accesor';
+import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { HostFolderFiledStore } from '../../store/host-folder-field.store';
 
 /**
@@ -40,7 +40,7 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         }
     ]
 })
-export class DotHostFolderFieldComponent extends BaseControlValueAccesor<string> {
+export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string> {
     /**
      * A signal that holds the error state of the field.
      * It is used to display the error state of the field.

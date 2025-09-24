@@ -49,7 +49,7 @@ import {
     INPUT_TYPES,
     UploadedFile
 } from '../../../../models/dot-edit-content-file.model';
-import { BaseControlValueAccesor } from '../../../shared/base-control-value-accesor';
+import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 @Component({
     selector: 'dot-file-field',
@@ -78,7 +78,7 @@ import { BaseControlValueAccesor } from '../../../shared/base-control-value-acce
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFileFieldComponent
-    extends BaseControlValueAccesor<string>
+    extends BaseControlValueAccessor<string>
     implements OnInit, OnDestroy
 {
     /**

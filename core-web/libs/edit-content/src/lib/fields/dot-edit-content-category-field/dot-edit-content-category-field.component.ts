@@ -7,8 +7,6 @@ import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models'
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldComponent } from './components/dot-category-field/dot-category-field.component';
-import { CategoriesService } from './services/categories.service';
-import { CategoryFieldStore } from './store/content-category-field.store';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
@@ -39,7 +37,6 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [CategoriesService, CategoryFieldStore],
     viewProviders: [
         {
             provide: ControlContainer,

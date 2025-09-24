@@ -7,7 +7,7 @@ import { ControlValueAccessor } from '@angular/forms';
  *
  * Note: Child components must define the $value and $isDisabled signals.
  */
-export abstract class BaseControlValueAccesor<T> implements ControlValueAccessor {
+export abstract class BaseControlValueAccessor<T> implements ControlValueAccessor {
     $value = signal<T>(null);
     $isDisabled = signal<boolean>(false);
     abstract $hasError?: InputSignal<boolean>;

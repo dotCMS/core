@@ -21,8 +21,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotCategoryFieldChipsComponent } from './../dot-category-field-chips/dot-category-field-chips.component';
 import { DotCategoryFieldDialogComponent } from './../dot-category-field-dialog/dot-category-field-dialog.component';
 
-import { BaseControlValueAccesor } from '../../../shared/base-control-value-accesor';
-import { CategoriesService } from '../../services/categories.service';
+import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 
 /**
@@ -51,7 +50,6 @@ import { CategoryFieldStore } from '../../store/content-category-field.store';
         '[class.dot-category-field__container--disabled]': '$isDisabled()'
     },
     providers: [
-        CategoriesService,
         CategoryFieldStore,
         {
             multi: true,
@@ -60,7 +58,10 @@ import { CategoryFieldStore } from '../../store/content-category-field.store';
         }
     ]
 })
-export class DotCategoryFieldComponent extends BaseControlValueAccesor<string[]> implements OnInit {
+export class DotCategoryFieldComponent
+    extends BaseControlValueAccessor<string[]>
+    implements OnInit
+{
     readonly store = inject(CategoryFieldStore);
     readonly #injector = inject(Injector);
     /**

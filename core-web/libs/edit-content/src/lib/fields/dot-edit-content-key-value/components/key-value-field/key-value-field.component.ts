@@ -5,7 +5,7 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
 
-import { BaseControlValueAccesor } from '../../../shared/base-control-value-accesor';
+import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 @Component({
     selector: 'dot-key-value-field',
@@ -20,7 +20,7 @@ import { BaseControlValueAccesor } from '../../../shared/base-control-value-acce
         }
     ]
 })
-export class DotKeyValueFieldComponent extends BaseControlValueAccesor<Record<string, string>> {
+export class DotKeyValueFieldComponent extends BaseControlValueAccessor<Record<string, string>> {
     /**
      * A signal that holds the initial value of the component.
      * It is used to display the initial value in the component.

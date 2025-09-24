@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';

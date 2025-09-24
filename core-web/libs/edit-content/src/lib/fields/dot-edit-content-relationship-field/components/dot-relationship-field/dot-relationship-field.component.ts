@@ -37,7 +37,7 @@ import { DotEditContentDialogComponent } from '../../../../components/dot-create
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
-import { BaseControlValueAccesor } from '../../../shared/base-control-value-accesor';
+import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 @Component({
     selector: 'dot-relationship-field',
@@ -65,7 +65,7 @@ import { BaseControlValueAccesor } from '../../../shared/base-control-value-acce
     ]
 })
 export class DotRelationshipFieldComponent
-    extends BaseControlValueAccesor<string>
+    extends BaseControlValueAccessor<string>
     implements OnInit
 {
     /**

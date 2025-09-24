@@ -31,7 +31,7 @@ import {
 
 import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { FieldType } from '../../../../models/dot-edit-content-field.type';
-import { BaseControlValueAccesor } from '../../../shared/base-control-value-accesor';
+import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 /**
  * DotEditContentCalendarFieldComponent
@@ -67,7 +67,7 @@ import { BaseControlValueAccesor } from '../../../shared/base-control-value-acce
         }
     ]
 })
-export class DotCalendarFieldComponent extends BaseControlValueAccesor<number | null> {
+export class DotCalendarFieldComponent extends BaseControlValueAccessor<number | null> {
     /**
      * The field configuration (required).
      * Determines the type of calendar field (date, time, datetime).
