@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit } f
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { CalendarModule } from 'primeng/calendar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     CALENDAR_OPTIONS_PER_TYPE,
@@ -56,7 +57,9 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotMessagePipe,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
-        DotCardFieldFooterComponent
+        DotCardFieldFooterComponent,
+        DotFieldRequiredDirective,
+        TooltipModule
     ],
     templateUrl: 'dot-edit-content-calendar-field.component.html',
     styleUrls: ['./dot-edit-content-calendar-field.component.scss'],
@@ -75,6 +78,16 @@ export class DotEditContentCalendarFieldComponent extends BaseFieldComponent imp
      * Alias: utcTimezone
      */
     $systemTimezone = input<DotSystemTimezone | null>(null, { alias: 'utcTimezone' });
+
+    /**
+     * Whether to show the label.
+     */
+    $showLabel = computed(() => {
+        const field = this.$field();
+        if (!field) return true;
+
+        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
+    });
 
     /**
      * The content type (optional).
