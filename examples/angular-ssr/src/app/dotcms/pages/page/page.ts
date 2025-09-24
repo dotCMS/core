@@ -26,9 +26,9 @@ export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
   BannerCarousel: import('../../components/banner-carousel/banner-carousel.component').then(
     (c) => c.BannerCarouselComponent
   ),
-  // VtlInclude: import('../../components/vtl-include/vtl-include.component').then(
-  //     (c) => c.VtlIncludeComponent
-  // ),
+  VtlInclude: import('../../components/vtl-include/vtl-include.component').then(
+    (c) => c.VtlIncludeComponent
+  ),
   CategoryFilter: import('../../components/category-filter/category-filter.component').then(
     (c) => c.CategoryFilterComponent
   ),
@@ -38,9 +38,9 @@ export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
   SimpleWidget: import('../../components/simple-widget/simple-widget.component').then(
     (c) => c.SimpleWidgetComponent
   ),
-  // PageForm: import('../../components/page-form/page-form.component').then(
-  //     (c) => c.PageFormComponent
-  // )
+  PageForm: import('../../components/page-form/page-form.component').then(
+    (c) => c.PageFormComponent
+  ),
 };
 
 type PageResponse = { content: { navigation: DotCMSNavigationItem } };
