@@ -15,7 +15,7 @@ import { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } fro
 import { HeaderComponent } from '../../../components/header/header.component';
 import { NavigationComponent } from '../../../components/navigation/navigation.component';
 
-export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
+const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
   Activity: import('../../components/activity/activity.component').then((c) => c.ActivityComponent),
   Banner: import('../../components/banner/banner.component').then((c) => c.BannerComponent),
   Image: import('../../components/image/image.component').then((c) => c.ImageComponent),
@@ -90,10 +90,7 @@ export class PageComponent implements OnInit {
         filter((event) => event instanceof NavigationEnd),
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
-        switchMap((url) => {
-          console.log('url', url);
-          return from(this.client.page.get<PageResponse>(url, pageParams));
-        })
+        switchMap((url: string) => this.client.page.get<PageResponse>(url, pageParams))
       )
       .pipe(switchMap((response) => this.editablePageService.listen<PageResponse>(response)))
       .pipe(filter(Boolean))
