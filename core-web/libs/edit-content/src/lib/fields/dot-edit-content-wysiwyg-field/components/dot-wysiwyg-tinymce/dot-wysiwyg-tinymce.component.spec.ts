@@ -1,63 +1,77 @@
 import { jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator/jest';
 import { BehaviorSubject, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotUploadFileService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotWysiwygTinymceComponent } from './dot-wysiwyg-tinymce.component';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
-import { createFormGroupDirectiveMock } from '../../../../utils/mocks';
 import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 import { WYSIWYG_MOCK } from '../../mocks/dot-edit-content-wysiwyg-field.mock';
 
 const mockSystemWideConfig = { systemWideOption: 'value' };
 
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+}
+
 describe('DotWysiwygTinymceComponent', () => {
-    let spectator: Spectator<DotWysiwygTinymceComponent>;
+    let spectator: SpectatorHost<DotWysiwygTinymceComponent, MockFormComponent>;
     let dotWysiwygPluginService: DotWysiwygPluginService;
-    let dotWysiwygTinymceService: SpyObject<DotWysiwygTinymceService>;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotWysiwygTinymceComponent,
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
-            },
-            mockProvider(DotWysiwygTinymceService),
-
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false,
+        providers: [
+            mockProvider(DotUploadFileService),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
+        componentProviders: [
+            mockProvider(DotWysiwygPluginService),
             mockProvider(DotWysiwygTinymceService, {
                 getProps: jest.fn().mockReturnValue(of(mockSystemWideConfig))
             })
-        ],
-        providers: [
-            FormGroupDirective,
-            provideHttpClient(),
-            provideHttpClientTesting(),
-            mockProvider(DotUploadFileService)
         ]
     });
 
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: WYSIWYG_MOCK
-            } as unknown,
-            detectChanges: false
-        });
+    it('should initialize editor with correct configuration', () => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-wysiwyg-tinymce [formControl]="formGroup.get(field.variable)" [field]="field" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [WYSIWYG_MOCK.variable]: new FormControl()
+                    }),
+                    field: WYSIWYG_MOCK
+                }
+            }
+        );
 
         dotWysiwygPluginService = spectator.inject(DotWysiwygPluginService, true);
-        dotWysiwygTinymceService = spectator.inject(DotWysiwygTinymceService, true);
-    });
 
-    it('should initialize editor with correct configuration', fakeAsync(() => {
+        expect(spectator.component.$wideConfig()).toEqual(mockSystemWideConfig);
+
         const expectedConfiguration = {
             ...DEFAULT_TINYMCE_CONFIG,
             ...mockSystemWideConfig,
@@ -69,39 +83,6 @@ describe('DotWysiwygTinymceComponent', () => {
         expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify(expectedConfiguration)
         );
-    }));
-
-    it('should parse custom props from field variables', () => {
-        const fieldVariables = [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-                fieldId: '1',
-                id: '1',
-                key: 'tinymceprops',
-                value: '{ "toolbar1": "undo redo"}'
-            }
-        ];
-
-        spectator = createComponent({
-            props: {
-                field: {
-                    ...WYSIWYG_MOCK,
-                    fieldVariables
-                }
-            } as unknown,
-            detectChanges: false
-        });
-
-        spectator.detectChanges();
-
-        expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
-            JSON.stringify({
-                ...DEFAULT_TINYMCE_CONFIG,
-                ...mockSystemWideConfig,
-                ...{ toolbar1: 'undo redo' },
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
-            })
-        );
     });
 
     it('should set the system wide props', fakeAsync(() => {
@@ -109,14 +90,24 @@ describe('DotWysiwygTinymceComponent', () => {
 
         const propsSubject = new BehaviorSubject(mockSystemWideConfig);
 
-        dotWysiwygTinymceService.getProps.mockReturnValue(propsSubject);
-
-        spectator = createComponent({
-            props: {
-                field: WYSIWYG_MOCK
-            } as unknown,
-            detectChanges: false
-        });
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-wysiwyg-tinymce [formControl]="formGroup.get(field.variable)" [field]="field" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [WYSIWYG_MOCK.variable]: new FormControl()
+                    }),
+                    field: WYSIWYG_MOCK
+                },
+                providers: [
+                    mockProvider(DotWysiwygTinymceService, {
+                        getProps: jest.fn().mockReturnValue(propsSubject)
+                    })
+                ]
+            }
+        );
 
         spectator.detectChanges();
 
@@ -131,7 +122,7 @@ describe('DotWysiwygTinymceComponent', () => {
         );
 
         propsSubject.next(newSystemWideConfig);
-        tick(0);
+        tick(500);
         spectator.detectChanges();
 
         expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
@@ -142,4 +133,46 @@ describe('DotWysiwygTinymceComponent', () => {
             })
         );
     }));
+
+    it('should parse custom props from field variables', () => {
+        const fieldVariables = [
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                fieldId: '1',
+                id: '1',
+                key: 'tinymceprops',
+                value: '{ "toolbar1": "undo redo"}'
+            }
+        ];
+
+        const fieldWithVariables = {
+            ...WYSIWYG_MOCK,
+            fieldVariables
+        };
+
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-wysiwyg-tinymce [formControl]="formGroup.get(field.variable)" [field]="field" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [fieldWithVariables.variable]: new FormControl()
+                    }),
+                    field: fieldWithVariables
+                }
+            }
+        );
+
+        spectator.detectChanges();
+
+        expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
+            JSON.stringify({
+                ...DEFAULT_TINYMCE_CONFIG,
+                ...mockSystemWideConfig,
+                ...{ toolbar1: 'undo redo' },
+                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+            })
+        );
+    });
 });

@@ -1,6 +1,7 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
@@ -44,9 +45,13 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
 
-    // TODO: Remove this once we have a proper solution for the text field from Backend (URL case)
-    // Remove leading "/" if present
-    return typeof value === 'string' && value.startsWith('/') ? value.substring(1) : value;
+    const shouldRemoveLeadingSlash =
+        contentlet?.baseType === 'HTMLPAGE' &&
+        field.variable === 'url' &&
+        typeof value === 'string' &&
+        value.startsWith('/');
+
+    return shouldRemoveLeadingSlash ? value.substring(1) : value;
 };
 
 /**
@@ -167,6 +172,17 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
     return relationship.map((item) => item.identifier).join(',');
 };
 
+const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
+    const value = contentlet
+        ? (contentlet[field.variable] ?? field.defaultValue)
+        : field.defaultValue;
+    if (value === null || value === undefined || value === '') {
+        const options = getSingleSelectableFieldOptions(field?.values || '', field.dataType);
+        return options[0]?.value;
+    }
+    return value;
+};
+
 /**
  * The resolutionValue variable is a record that is responsible for mapping and transforming the
  * saved value in the contentlet to its corresponding form representation, based on the field type.
@@ -193,7 +209,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.KEY_VALUE]: defaultResolutionFn,
     [FIELD_TYPES.MULTI_SELECT]: defaultResolutionFn,
     [FIELD_TYPES.RADIO]: defaultResolutionFn,
-    [FIELD_TYPES.SELECT]: defaultResolutionFn,
+    [FIELD_TYPES.SELECT]: selectResolutionFn,
     [FIELD_TYPES.TAG]: defaultResolutionFn,
     [FIELD_TYPES.TEXT]: textFieldResolutionFn,
     [FIELD_TYPES.TEXTAREA]: defaultResolutionFn,

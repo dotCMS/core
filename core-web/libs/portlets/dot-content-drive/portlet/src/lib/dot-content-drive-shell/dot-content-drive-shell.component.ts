@@ -1,16 +1,23 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotFolderService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
-import { DotAddToBundleComponent } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
@@ -29,9 +36,13 @@ import { encodeFilters } from '../utils/functions';
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
         ToastModule,
-        DialogModule
+        DialogModule,
+        DotContentDriveDialogFolderComponent,
+        MessagesModule,
+        ButtonModule,
+        DotMessagePipe
     ],
-    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService],
+    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -42,6 +53,7 @@ export class DotContentDriveShellComponent {
     readonly #router = inject(Router);
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -53,6 +65,7 @@ export class DotContentDriveShellComponent {
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
+    readonly $showMessage = signal<boolean>(true);
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -130,6 +143,16 @@ export class DotContentDriveShellComponent {
      * Handles dialog hide event to reset the dialog state
      */
     protected onHideDialog() {
-        this.#store.resetDialog();
+        this.#store.closeDialog();
+    }
+
+    /**
+     * Closes the message
+     *
+     * @protected
+     * @memberof DotContentDriveShellComponent
+     */
+    protected onCloseMessage() {
+        this.$showMessage.set(false);
     }
 }

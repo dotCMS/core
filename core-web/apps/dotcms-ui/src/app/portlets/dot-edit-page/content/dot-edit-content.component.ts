@@ -1,6 +1,6 @@
 import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
-import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, inject, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
@@ -14,13 +14,14 @@ import {
     DotESContentService,
     DotEventsService,
     DotFavoritePageService,
+    DotGlobalMessageService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPropertiesService,
     DotRouterService,
     DotSessionStorageService,
-    DotGlobalMessageService,
-    DotPageStateService
+    DotUiColorsService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -50,7 +51,6 @@ import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 

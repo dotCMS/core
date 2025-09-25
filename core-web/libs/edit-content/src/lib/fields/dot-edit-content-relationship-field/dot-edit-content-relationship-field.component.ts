@@ -6,14 +6,12 @@ import {
     computed,
     CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
-    forwardRef,
     inject,
     input,
     signal,
     OnInit
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -38,6 +36,9 @@ import { DotEditContentDialogComponent } from '../../components/dot-create-conte
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../pipes/language.pipe';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
@@ -49,22 +50,17 @@ import { LanguagePipe } from '../../pipes/language.pipe';
         ChipModule,
         ContentletStatusPipe,
         LanguagePipe,
-        PaginationComponent
-    ],
-    providers: [
-        RelationshipFieldStore,
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentRelationshipFieldComponent)
-        }
+        PaginationComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotMessagePipe
     ],
     templateUrl: './dot-edit-content-relationship-field.component.html',
     styleUrls: ['./dot-edit-content-relationship-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class DotEditContentRelationshipFieldComponent implements ControlValueAccessor, OnInit {
+export class DotEditContentRelationshipFieldComponent extends BaseFieldComponent implements OnInit {
     /**
      * A readonly instance of the RelationshipFieldStore injected into the component.
      * This store is used to manage the state and actions related to the relationship field.
@@ -163,40 +159,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
 
     /**
-     * Updates the value of the field.
-     *
-     * @param value - The value to update.
-     */
-    readonly updateValueField = signalMethod<string>((value) => {
-        if (this.onChange && this.onTouched) {
-            this.onChange(value);
-            this.onTouched();
-        }
-    });
-
-    /**
-     * Initializes the store with the field and contentlet.
-     *
-     * @param field - The field to initialize the store with.
-     * @param contentlet - The contentlet to initialize the store with.
-     */
-    readonly initialize = signalMethod<{
-        field: DotCMSContentTypeField;
-        contentlet: DotCMSContentlet;
-    }>((params) => {
-        this.store.initialize({
-            field: params.field,
-            contentlet: params.contentlet
-        });
-    });
-
-    /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
      * It sets the value of the field to the formatted relationship.
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
     constructor() {
+        super();
         this.updateValueField(this.store.formattedRelationship);
     }
 
@@ -207,6 +176,9 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      */
     ngOnInit() {
         this.initialize(this.$inputs);
+        this.statusChanges$.subscribe(() => {
+            this.changeDetectorRef.detectChanges();
+        });
     }
 
     /**
@@ -221,36 +193,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             return;
         }
     }
-    /**
-     * Registers a callback function that is called when the control's value changes in the UI.
-     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
-     *
-     * @param fn The callback function to register.
-     */
-    registerOnChange(fn: (value: string) => void) {
-        this.onChange = fn;
-    }
-
-    /**
-     * Registers a callback function that is called when the control is marked as touched in the UI.
-     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
-     *
-     * @param fn The callback function to register.
-     */
-    registerOnTouched(fn: () => void) {
-        this.onTouched = fn;
-    }
-
-    /**
-     * A callback function that is called when the value of the field changes.
-     * It is used to update the value of the field in the parent component.
-     */
-    private onChange: ((value: string) => void) | null = null;
-
-    /**
-     * A callback function that is called when the field is touched.
-     */
-    private onTouched: (() => void) | null = null;
 
     /**
      * Sets the disabled state of the component.
@@ -375,4 +317,34 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             header: `Create ${contentType.name}`
         });
     }
+
+    /**
+     * Updates the value of the field.
+     *
+     * @param value - The value to update.
+     */
+    readonly updateValueField = signalMethod<string>((value) => {
+        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
+            return;
+        }
+
+        this.onChange(value);
+        this.onTouched();
+    });
+
+    /**
+     * Initializes the store with the field and contentlet.
+     *
+     * @param field - The field to initialize the store with.
+     * @param contentlet - The contentlet to initialize the store with.
+     */
+    readonly initialize = signalMethod<{
+        field: DotCMSContentTypeField;
+        contentlet: DotCMSContentlet;
+    }>((params) => {
+        this.store.initialize({
+            field: params.field,
+            contentlet: params.contentlet
+        });
+    });
 }

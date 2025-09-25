@@ -1,26 +1,19 @@
 import { signalMethod } from '@ngrx/signals';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    inject,
-    input,
-    viewChild,
-    forwardRef
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, viewChild } from '@angular/core';
 import {
     FormControl,
-    NG_VALUE_ACCESSOR,
     ReactiveFormsModule,
-    Validators,
-    ControlValueAccessor,
     FormsModule,
-    ControlContainer
+    ControlContainer,
+    FormGroup,
+    Validators
 } from '@angular/forms';
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
@@ -29,6 +22,10 @@ import {
     TreeNodeSelectItem
 } from '../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 /**
  * Component for editing content site or folder field.
@@ -38,7 +35,16 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
  */
 @Component({
     selector: 'dot-edit-content-host-folder-field',
-    imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe, FormsModule],
+    imports: [
+        TreeSelectModule,
+        ReactiveFormsModule,
+        TruncatePathPipe,
+        FormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -47,27 +53,18 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    providers: [
-        HostFolderFiledStore,
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentHostFolderFieldComponent)
-        }
-    ]
+    providers: [HostFolderFiledStore]
 })
-export class DotEditContentHostFolderFieldComponent implements ControlValueAccessor {
+export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent {
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     $treeSelect = viewChild<TreeSelect>(TreeSelect);
     readonly store = inject(HostFolderFiledStore);
-    readonly #controlContainer = inject(ControlContainer);
+    readonly controlContainer = inject(ControlContainer);
 
     pathControl = new FormControl(null);
 
-    onChange: ((value: string) => void) | null = null;
-    onTouched: (() => void) | null = null;
-
     constructor() {
+        super();
         this.handleNodeExpanedChange(this.store.nodeExpaned);
         this.handleNodeSelectedChange(this.store.nodeSelected);
         this.handlePathToSaveChange(this.store.pathToSave);
@@ -81,50 +78,19 @@ export class DotEditContentHostFolderFieldComponent implements ControlValueAcces
      * @param value the value to set
      */
     writeValue(currentPath: string): void {
-        const isRequired = this.formControl.hasValidator(Validators.required);
         this.store.loadSites({
             path: currentPath,
-            isRequired
+            isRequired: this.hasRequiredValidator
         });
-    }
-    /**
-     * Registers a callback function that is called when the control's value changes in the UI.
-     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
-     *
-     * @param fn The callback function to register.
-     */
-    registerOnChange(fn: (value: string) => void) {
-        this.onChange = fn;
-    }
-
-    /**
-     * Registers a callback function that is called when the control is marked as touched in the UI.
-     * This function is passed to the {@link NG_VALUE_ACCESSOR} token.
-     *
-     * @param fn The callback function to register.
-     */
-    registerOnTouched(fn: () => void) {
-        this.onTouched = fn;
-    }
-
-    /**
-     * Sets the disabled state of the control.
-     *
-     * @param isDisabled The disabled state to set.
-     */
-    setDisabledState(isDisabled: boolean): void {
-        if (isDisabled) {
-            this.pathControl.disable({ emitEvent: false });
-        } else {
-            this.pathControl.enable({ emitEvent: false });
-        }
     }
 
     readonly handlePathToSaveChange = signalMethod<string>((pathToSave) => {
-        if (this.onChange) {
-            this.onChange(pathToSave);
-            this.onTouched();
+        if (pathToSave === null || pathToSave === undefined || !this.onChange || !this.onTouched) {
+            return;
         }
+
+        this.onChange(pathToSave);
+        this.onTouched();
     });
 
     readonly handleNodeSelectedChange = signalMethod<TreeNodeItem>((nodeSelected) => {
@@ -147,9 +113,35 @@ export class DotEditContentHostFolderFieldComponent implements ControlValueAcces
         }
     });
 
-    get formControl(): FormControl {
-        const field = this.$field();
+    /**
+     * Sets the disabled state of the control.
+     *
+     * @param isDisabled The disabled state to set.
+     */
+    setDisabledState(isDisabled: boolean): void {
+        if (isDisabled) {
+            this.pathControl.disable({ emitEvent: false });
+        } else {
+            this.pathControl.enable({ emitEvent: false });
+        }
+    }
 
-        return this.#controlContainer.control.get(field.variable) as FormControl<string>;
+    /**
+     * Get the control of the field.
+     *
+     * @returns {FormGroup} The control of the field.
+     */
+    get control(): FormGroup {
+        return this.controlContainer.control.get(this.$field().variable) as FormGroup;
+    }
+
+    /**
+     * Get if the field has a required validator.
+     *
+     * @returns {boolean} True if the field has a required validator, false otherwise.
+     */
+    get hasRequiredValidator(): boolean {
+        const control = this.control;
+        return control.hasValidator(Validators.required);
     }
 }

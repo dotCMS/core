@@ -1,10 +1,11 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods, withHooks } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, effect, untracked } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -13,7 +14,8 @@ import { switchMap, tap } from 'rxjs/operators';
 import {
     DotHttpErrorManagerService,
     DotVersionableService,
-    DotMessageService
+    DotMessageService,
+    DotContentletService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 
@@ -44,13 +46,15 @@ export function withHistory() {
                 confirmationService = inject(ConfirmationService),
                 dotVersionableService = inject(DotVersionableService),
                 messageService = inject(MessageService),
-                dotMessageService = inject(DotMessageService)
+                dotMessageService = inject(DotMessageService),
+                dotContentletService = inject(DotContentletService),
+                router = inject(Router)
             ) => {
                 /**
                  * Deletes a version by inode and reloads the versions list reactively
                  * @param inode - The inode of the version to delete
                  */
-                const deleteVersionMethod = rxMethod<string>(
+                const deleteVersion = rxMethod<string>(
                     pipe(
                         switchMap((inode) =>
                             dotVersionableService.deleteVersion(inode).pipe(
@@ -78,7 +82,8 @@ export function withHistory() {
                                     if (contentlet?.identifier) {
                                         return dotEditContentService.getVersions(
                                             contentlet.identifier,
-                                            { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE }
+                                            { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                                            contentlet.languageId
                                         );
                                     }
                                     // Return empty observable if no contentlet identifier
@@ -112,6 +117,118 @@ export function withHistory() {
                     )
                 );
 
+                const restoreVersion = rxMethod<string>(
+                    pipe(
+                        switchMap((inode) => {
+                            const currentContentlet = store.originalContentlet();
+
+                            return dotVersionableService.bringBack(inode).pipe(
+                                tapResponse({
+                                    next: (restoredVersion) => {
+                                        // Navigate to the restored version if the inode has changed and not in dialog mode
+                                        const isDialogMode = store.isDialogMode();
+                                        if (
+                                            !isDialogMode &&
+                                            restoredVersion.inode !== currentContentlet?.inode
+                                        ) {
+                                            router.navigate(['/content', restoredVersion.inode], {
+                                                replaceUrl: true,
+                                                queryParamsHandling: 'preserve'
+                                            });
+                                        }
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        // Handle restoration errors
+                                        errorManager.handle(error);
+                                    }
+                                })
+                            );
+                        })
+                    )
+                );
+
+                /**
+                 * Shows restore confirmation dialog and executes restore if confirmed
+                 * @param inode - The inode of the version to restore
+                 */
+                const confirmAndRestoreVersion = (inode: string) => {
+                    confirmationService.confirm({
+                        message: dotMessageService.get(
+                            'edit.content.sidebar.history.restore.confirm.message'
+                        ),
+                        header: dotMessageService.get(
+                            'edit.content.sidebar.history.restore.confirm.header'
+                        ),
+                        icon: 'pi pi-exclamation-triangle text-warning-yellow',
+                        acceptLabel: dotMessageService.get(
+                            'edit.content.sidebar.history.restore.confirm.accept'
+                        ),
+                        rejectLabel: dotMessageService.get(
+                            'edit.content.sidebar.history.restore.confirm.reject'
+                        ),
+                        acceptIcon: 'hidden',
+                        rejectIcon: 'hidden',
+                        rejectButtonStyleClass: 'p-button-outlined',
+                        accept: () => {
+                            restoreVersion(inode);
+                        }
+                    });
+                };
+
+                /**
+                 * Loads content for a specific version by inode for historical viewing
+                 * @param inode - The inode of the version to load
+                 */
+                const loadVersionContent = rxMethod<string>(
+                    pipe(
+                        switchMap((inode) =>
+                            dotContentletService.getContentletByInode(inode).pipe(
+                                tapResponse({
+                                    next: (versionContent) => {
+                                        const currentContentlet = store.contentlet();
+                                        patchState(store, {
+                                            // Store original contentlet if not already stored
+                                            originalContentlet: store.isViewingHistoricalVersion()
+                                                ? store.originalContentlet()
+                                                : currentContentlet,
+                                            // Set the historical version as current
+                                            contentlet: versionContent,
+                                            isViewingHistoricalVersion: true,
+                                            historicalVersionInode: inode
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        // Handle load errors - show error toast and maintain current version
+                                        errorManager.handle(error);
+                                        messageService.add({
+                                            severity: 'error',
+                                            summary: dotMessageService.get('Error'),
+                                            detail: dotMessageService.get(
+                                                'edit.content.sidebar.history.load.error'
+                                            )
+                                        });
+                                    }
+                                })
+                            )
+                        )
+                    )
+                );
+
+                /**
+                 * Exits historical version view and returns to original content
+                 */
+                const exitHistoricalView = () => {
+                    const originalContentlet = store.originalContentlet();
+                    if (originalContentlet) {
+                        patchState(store, {
+                            contentlet: originalContentlet,
+                            isViewingHistoricalVersion: false,
+                            historicalVersionInode: null,
+                            originalContentlet: null
+                        });
+                    }
+                };
+
                 return {
                     /**
                      * Loads content versions with intelligent pagination and accumulation
@@ -142,6 +259,7 @@ export function withHistory() {
                             switchMap(({ identifier, page }) => {
                                 const currentPagination = store.versionsPagination();
                                 const currentVersions = store.versions();
+                                const contentlet = store.contentlet();
                                 const limit =
                                     currentPagination?.perPage || DEFAULT_VERSIONS_PER_PAGE;
 
@@ -150,7 +268,11 @@ export function withHistory() {
                                     currentPagination === null || currentVersions.length === 0;
 
                                 return dotEditContentService
-                                    .getVersions(identifier, { offset: page, limit })
+                                    .getVersions(
+                                        identifier,
+                                        { offset: page, limit },
+                                        contentlet?.languageId
+                                    )
                                     .pipe(
                                         tapResponse({
                                             next: (response) => {
@@ -221,7 +343,12 @@ export function withHistory() {
                     /**
                      * Exposes the delete version method for external use
                      */
-                    deleteVersion: deleteVersionMethod,
+                    deleteVersion: deleteVersion,
+
+                    /**
+                     * Exposes the restore version method for external use
+                     */
+                    restoreVersion: restoreVersion,
 
                     /**
                      * Handles history timeline item actions
@@ -231,13 +358,22 @@ export function withHistory() {
                      */
                     handleHistoryAction: (action: DotHistoryTimelineItemAction) => {
                         switch (action.type) {
+                            case DotHistoryTimelineItemActionType.VIEW:
+                                // Determine action based on item type and current store state
+                                if (action.item.working) {
+                                    // If clicking on working version, exit historical view
+                                    exitHistoricalView();
+                                } else {
+                                    // If clicking on historical version, load it
+                                    loadVersionContent(action.item.inode);
+                                }
+                                break;
                             case DotHistoryTimelineItemActionType.PREVIEW:
                                 // TODO: Implement preview functionality
 
                                 break;
                             case DotHistoryTimelineItemActionType.RESTORE:
-                                // TODO: Implement restore functionality
-
+                                confirmAndRestoreVersion(action.item.inode);
                                 break;
                             case DotHistoryTimelineItemActionType.COMPARE:
                                 // TODO: Implement compare functionality
@@ -262,14 +398,64 @@ export function withHistory() {
                                     rejectIcon: 'hidden',
                                     rejectButtonStyleClass: 'p-button-outlined',
                                     accept: () => {
-                                        deleteVersionMethod(action.item.inode);
+                                        deleteVersion(action.item.inode);
                                     }
                                 });
                                 break;
                         }
-                    }
+                    },
+
+                    /**
+                     * Loads content for a specific version by inode
+                     */
+                    loadVersionContent: loadVersionContent,
+
+                    /**
+                     * Exits historical version view and returns to original content
+                     */
+                    exitHistoricalView: exitHistoricalView,
+
+                    /**
+                     * Restores the currently viewed historical version with confirmation
+                     */
+                    restoreCurrentHistoricalVersion: () => {
+                        const historicalInode = store.historicalVersionInode();
+                        if (historicalInode) {
+                            confirmAndRestoreVersion(historicalInode);
+                        }
+                    },
+
+                    /**
+                     * Shows restore confirmation dialog and executes restore if confirmed
+                     */
+                    confirmAndRestoreVersion: confirmAndRestoreVersion
                 };
             }
-        )
+        ),
+        withHooks({
+            onInit(store) {
+                /**
+                 * Effect that automatically loads versions when contentlet or currentLocale changes
+                 * This ensures versions are refreshed when switching between different content or locales
+                 */
+                effect(() => {
+                    const contentlet = store.contentlet();
+
+                    untracked(() => {
+                        // Only load versions if we have a contentlet with an identifier
+                        if (contentlet?.identifier) {
+                            // Clear existing versions to avoid showing stale data during locale switches
+                            store.clearVersions();
+
+                            // Load fresh versions for the current contentlet and locale
+                            store.loadVersions({
+                                identifier: contentlet.identifier,
+                                page: 1
+                            });
+                        }
+                    });
+                });
+            }
+        })
     );
 }

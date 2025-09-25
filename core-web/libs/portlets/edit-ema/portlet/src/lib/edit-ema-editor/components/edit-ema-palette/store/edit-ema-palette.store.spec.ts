@@ -255,5 +255,69 @@ describe('EditEmaPaletteStore', () => {
                 done();
             });
         });
+
+        it('should refresh contentlets', (done) => {
+            // First set up the store state with existing filter data
+            spectator.service.patchState({
+                contentlets: {
+                    filter: {
+                        query: 'test query',
+                        contentTypeVarName: 'TestContentType1'
+                    },
+                    items: [],
+                    totalRecords: 0,
+                    itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
+                }
+            });
+
+            const contentServiceSpy = jest.spyOn(spectator.inject(DotESContentService), 'get');
+            const setStatusSpy = jest.spyOn(spectator.service, 'setStatus');
+
+            // Clear previous calls
+            contentServiceSpy.mockClear();
+            setStatusSpy.mockClear();
+
+            spectator.service.refreshContentlets({
+                languageId: 2,
+                variantId: 'test-variant'
+            });
+
+            spectator.service.vm$.subscribe((state) => {
+                expect(setStatusSpy).toHaveBeenCalledWith(EditEmaPaletteStoreStatus.LOADING);
+                expect(contentServiceSpy).toHaveBeenCalledWith({
+                    itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE,
+                    lang: '2',
+                    filter: 'test query',
+                    offset: '0',
+                    query: '+contentType:TestContentType1 +deleted:false +variant:(DEFAULT OR test-variant)'
+                });
+                expect(state.status).toEqual(EditEmaPaletteStoreStatus.LOADED);
+                done();
+            });
+        });
+    });
+
+    describe('selectors', () => {
+        it('should return true for isContentTypeView$ when currentPaletteType is CONTENTTYPE', (done) => {
+            spectator.service.patchState({
+                currentPaletteType: PALETTE_TYPES.CONTENTTYPE
+            });
+
+            spectator.service.isContentTypeView$.subscribe((isContentTypeView) => {
+                expect(isContentTypeView).toBe(true);
+                done();
+            });
+        });
+
+        it('should return false for isContentTypeView$ when currentPaletteType is not CONTENTTYPE', (done) => {
+            spectator.service.patchState({
+                currentPaletteType: PALETTE_TYPES.CONTENTLET
+            });
+
+            spectator.service.isContentTypeView$.subscribe((isContentTypeView) => {
+                expect(isContentTypeView).toBe(false);
+                done();
+            });
+        });
     });
 });

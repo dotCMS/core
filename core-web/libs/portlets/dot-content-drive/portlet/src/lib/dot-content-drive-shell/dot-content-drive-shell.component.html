@@ -1,3 +1,27 @@
+@if ($showMessage()) {
+    <p-messages severity="info" data-testid="message">
+        <ng-template pTemplate="content">
+            <div class="flex align-items-center justify-content-between gap-2 w-full">
+                <div class="flex align-items-center gap-2">
+                    <i class="pi pi-info-circle"></i>
+                    <span data-testid="message-content">
+                        {{ 'content-drive.feature.state' | dm }}
+                        <b>{{ 'development' | dm }}</b>
+                    </span>
+                </div>
+                <div class="flex align-items-center gap-2">
+                    <p-button
+                        styleClass="p-button-text p-button-rounded p-button-sm p-button-icon-only"
+                        type="button"
+                        icon="pi pi-times"
+                        data-testid="close-message"
+                        (click)="onCloseMessage()"></p-button>
+                </div>
+            </div>
+        </ng-template>
+    </p-messages>
+}
+
 <dot-content-drive-toolbar data-testid="toolbar" />
 
 <div
@@ -40,7 +64,7 @@
     (visibleChange)="onHideDialog()">
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
-            <div>Folder dialog</div>
+            <dot-content-drive-dialog-folder data-testId="dialog-folder" />
         }
         @default {
             <div>Default dialog</div>

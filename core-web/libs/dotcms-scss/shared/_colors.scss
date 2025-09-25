@@ -207,6 +207,7 @@ $error: $color-accessible-text-red;
 $new-content-color: #ddffdd;
 $orange: #f3762a;
 $success: $color-accessible-text-green;
+$foreground-active: #848484;
 
 @mixin root-colors {
     --color-primary-h: 225deg;

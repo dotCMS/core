@@ -111,7 +111,6 @@ export class DotEditContentSidebarComponent {
             if (identifier) {
                 this.$store.getReferencePages(identifier);
                 this.$store.loadActivities(identifier);
-                this.$store.loadVersions({ identifier, page: 1 });
             }
         });
     });
