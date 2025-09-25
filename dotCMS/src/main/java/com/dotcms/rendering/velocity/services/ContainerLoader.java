@@ -164,7 +164,7 @@ public class ContainerLoader implements DotLoader {
                                       final PageMode mode,
                                       final String filePath) throws DotDataException, DotSecurityException {
 
-        // Transform legacy UUID to consistent value (same logic as PageRenderUtil.getUniqueUUIDForRender)
+        
         final String transformedUUID = ContainerUUID.UUID_LEGACY_VALUE.equals(uuid) ? ContainerUUID.UUID_START_VALUE : uuid;
 
         final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
