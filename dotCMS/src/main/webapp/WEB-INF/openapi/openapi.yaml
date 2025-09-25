@@ -3802,37 +3802,6 @@ paths:
       summary: Update existing folder
       tags:
       - Web Assets
-  /v1/assets/folders:
-    post:
-      operationId: createFolder
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: "#/components/schemas/NewFolderForm"
-      responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
-      tags:
-      - Web Assets
-    put:
-      operationId: updateFolder
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: "#/components/schemas/UpdateFolderForm"
-      responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
-      tags:
-      - Web Assets
   /v1/assets/folders/_delete:
     post:
       description: Permanently delete a folder and all its contents from the system
