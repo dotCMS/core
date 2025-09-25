@@ -884,9 +884,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				query.append(
 								" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(" and tree.parent = ? and tree.child=asset.inode");
-				// Validate the contentTypeIdOrVar to prevent injection
+				// Validate the contentTypeIdOrVar to prevent injection (can be UUID or variable name)
 				final String contentTypeIdOrVar = searchParams.contentTypeIdOrVar();
-				if (!UtilMethods.isSet(contentTypeIdOrVar) || !contentTypeIdOrVar.matches("^[a-zA-Z0-9\\-_]{1,255}$")) {
+				if (!UtilMethods.isSet(contentTypeIdOrVar) ||
+					(!UUIDUtil.isUUID(contentTypeIdOrVar) && !isValidVariableName(contentTypeIdOrVar))) {
 					throw new DotSecurityException("Invalid content type identifier: " + contentTypeIdOrVar);
 				}
 				paramValues.add(contentTypeIdOrVar);
@@ -1214,6 +1215,23 @@ public class ContainerFactoryImpl implements ContainerFactory {
             Logger.error(ContainerFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
+	}
+
+	/**
+	 * Validates if a string is a valid velocity variable name for content types.
+	 * Variable names should start with a letter, contain only alphanumeric characters,
+	 * underscores, or hyphens, and have a reasonable length limit.
+	 *
+	 * @param variableName the variable name to validate
+	 * @return true if the variable name is valid, false otherwise
+	 */
+	private boolean isValidVariableName(final String variableName) {
+		if (!UtilMethods.isSet(variableName)) {
+			return false;
+		}
+		// Variable names should start with letter, contain alphanumeric, underscore, hyphen
+		// and be between 1-255 characters for reasonable limits
+		return variableName.matches("^[a-zA-Z][a-zA-Z0-9\\-_]{0,254}$");
 	}
 
 }
