@@ -1366,6 +1366,7 @@ public class ContentTypeResource implements Serializable {
 													value = "{\n" +
 															"  \"entity\": [\n" +
 															"    {\n" +
+															"      \"index\": \"int\",\n" +
 															"      \"label\": \"string\",\n" +
 															"      \"name\": \"string\",\n" +
 															"      \"types\": null\n" +

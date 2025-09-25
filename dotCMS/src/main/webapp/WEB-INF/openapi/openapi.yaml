@@ -6602,7 +6602,8 @@ paths:
             application/json:
               example:
                 entity:
-                - label: string
+                - index: int
+                  label: string
                   name: string
                   types: null
                 errors: []

@@ -671,7 +671,7 @@ public class ContentTypeHelper implements Serializable {
      * @throws LanguageException
      */
     public List<BaseContentTypesView> getTypes(HttpServletRequest request)
-            throws LanguageException {
+            throws LanguageException, IllegalArgumentException{
         List<BaseContentTypesView> result = list();
 
         Locale locale = LocaleUtil.getLocale(request);
@@ -715,21 +715,25 @@ public class ContentTypeHelper implements Serializable {
     } // getBaseContentTypeNames.
 
     /**
-     * Gets the integer representation of the Base Type passed by param.
+     * Retrieves the index for a given base content type name.
+     * <p>
+     * This method searches for a match in the predefined {@BaseContentType} enum
+     * and returns its corresponding index.
      *
-     * @param baseTypeName {@link String}
-     * @return The existing base type index if found, otherwise 0.
+     * @param baseTypeName The name of the base content type to find. (e.g., "CONTENT", "WIDGET").
+     * @return The integer corresponding to the base type, otherwise 0.
+     * @see BaseContentType
      */
-    public int getBaseTypeIndex(String baseTypeName) {
+    public int getBaseTypeIndex(String baseTypeName) throws IllegalArgumentException {
         try {
             return BaseContentType.valueOf(baseTypeName).getType();
         } catch (IllegalArgumentException e) {
             final var message = String.format(
-                    "No base type was found, returning [%s] base type index",
-                    BaseContentType.ANY.name()
+                    "No enum BaseContentType with name [%s] was found",
+                    baseTypeName
             );
             Logger.warn(this, message);
-            return 0;
+            throw new IllegalArgumentException(message);
         }
     }
 
