@@ -50,19 +50,15 @@ describe('DotCMSClient', () => {
         };
 
         expect(PageClient).toHaveBeenCalledWith(
-            expect.objectContaining({
-                dotcmsUrl: 'https://demo.dotcms.com',
-                authToken: 'test-token',
-                siteId: 'test-site'
-            }),
+            expect.objectContaining(validConfig),
             expectedRequestOptions,
-            expect.any(FetchHttpClient) // httpClient
+            expect.any(FetchHttpClient)
         );
 
         expect(Content).toHaveBeenCalledWith(
+            validConfig,
             expectedRequestOptions,
-            'https://demo.dotcms.com',
-            expect.any(Object)
+            expect.any(FetchHttpClient)
         );
 
         expect(NavigationClient).toHaveBeenCalledWith(
@@ -155,12 +151,7 @@ describe('DotCMSClient', () => {
 
             createDotCMSClient(configWithPath);
 
-            expect(Content).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    dotcmsUrl: 'https://demo.dotcms.com'
-                }),
-                expect.anything()
-            );
+            expect(Content).toHaveBeenCalledWith(validConfig, expect.anything(), expect.any(FetchHttpClient));
         });
     });
 });

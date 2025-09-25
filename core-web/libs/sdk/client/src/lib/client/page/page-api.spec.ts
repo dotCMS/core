@@ -151,10 +151,14 @@ describe('PageClient', () => {
                     site: undefined,
                     template: undefined,
                     runningExperimentId: undefined,
-                    urlContentMap: undefined,
+                    urlContentMap: {},
                     vanityUrl: undefined
                 },
-                content: {},
+                content: {
+                    content: {
+                        items: [{ title: 'Content Item' }]
+                    }
+                },
                 graphql: {
                     query: expect.any(String),
                     variables: {
@@ -162,7 +166,10 @@ describe('PageClient', () => {
                         mode: 'LIVE',
                         languageId: '1',
                         fireRules: false,
-                        siteId: 'test-site'
+                        siteId: 'test-site',
+                        personaId: undefined,
+                        publishDate: undefined,
+                        variantName: undefined
                     }
                 }
             });

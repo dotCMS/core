@@ -1,9 +1,14 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { createDotCMSClient } from '@dotcms/client';
-import { DotCMSClientConfig } from '@dotcms/types';
 
-import { provideDotCMSClient, AngularDotCMSClient } from './dotcms-client.provider';
+import {
+    provideDotCMSClient,
+    AngularDotCMSClient,
+    DotCMSAngularProviderConfig
+} from './dotcms-client.provider';
 
 // Mock the createDotCMSClient function since it's not available in test environment
 jest.mock('@dotcms/client', () => ({
@@ -17,7 +22,7 @@ describe('provideDotCMSClient', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockClient: any;
 
-    const validConfig: DotCMSClientConfig = {
+    const validConfig: DotCMSAngularProviderConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
         authToken: 'test-auth-token-123',
         siteId: 'test-site-id',
@@ -28,7 +33,7 @@ describe('provideDotCMSClient', () => {
         }
     };
 
-    const minimalConfig: DotCMSClientConfig = {
+    const minimalConfig: DotCMSAngularProviderConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
         authToken: 'test-auth-token'
     };
@@ -64,22 +69,45 @@ describe('provideDotCMSClient', () => {
             expect(providers).toBeInstanceOf(Object);
         });
 
-        it('should call createDotCMSClient with provided config', () => {
-            provideDotCMSClient(validConfig);
+        it('should call createDotCMSClient with provided config when factory is executed', () => {
+            TestBed.configureTestingModule({
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+            });
+
+            TestBed.inject(AngularDotCMSClient);
 
             expect(mockedCreateDotCMSClient).toHaveBeenCalledTimes(1);
-            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(validConfig);
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
+                dotcmsUrl: validConfig.dotcmsUrl,
+                authToken: validConfig.authToken,
+                siteId: validConfig.siteId,
+                httpClient: undefined
+            });
         });
 
         it('should create providers with minimal config', () => {
             const providers = provideDotCMSClient(minimalConfig);
 
             expect(providers).toBeDefined();
-            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(minimalConfig);
+        });
+
+        it('should call createDotCMSClient with minimal config when factory is executed', () => {
+            TestBed.configureTestingModule({
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(minimalConfig)]
+            });
+
+            TestBed.inject(AngularDotCMSClient);
+
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
+                dotcmsUrl: minimalConfig.dotcmsUrl,
+                authToken: minimalConfig.authToken,
+                siteId: undefined,
+                httpClient: undefined
+            });
         });
 
         it('should handle config with only required fields', () => {
-            const basicConfig: DotCMSClientConfig = {
+            const basicConfig: DotCMSAngularProviderConfig = {
                 dotcmsUrl: 'https://test.dotcms.com',
                 authToken: 'basic-token'
             };
@@ -87,11 +115,30 @@ describe('provideDotCMSClient', () => {
             const providers = provideDotCMSClient(basicConfig);
 
             expect(providers).toBeDefined();
-            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(basicConfig);
+        });
+
+        it('should call createDotCMSClient with basic config when factory is executed', () => {
+            const basicConfig: DotCMSAngularProviderConfig = {
+                dotcmsUrl: 'https://test.dotcms.com',
+                authToken: 'basic-token'
+            };
+
+            TestBed.configureTestingModule({
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(basicConfig)]
+            });
+
+            TestBed.inject(AngularDotCMSClient);
+
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
+                dotcmsUrl: basicConfig.dotcmsUrl,
+                authToken: basicConfig.authToken,
+                siteId: undefined,
+                httpClient: undefined
+            });
         });
 
         it('should handle config with custom request options', () => {
-            const configWithCustomOptions: DotCMSClientConfig = {
+            const configWithCustomOptions: DotCMSAngularProviderConfig = {
                 dotcmsUrl: 'https://demo.dotcms.com',
                 authToken: 'test-token',
                 requestOptions: {
@@ -106,14 +153,40 @@ describe('provideDotCMSClient', () => {
             const providers = provideDotCMSClient(configWithCustomOptions);
 
             expect(providers).toBeDefined();
-            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(configWithCustomOptions);
+        });
+
+        it('should call createDotCMSClient with custom request options when factory is executed', () => {
+            const configWithCustomOptions: DotCMSAngularProviderConfig = {
+                dotcmsUrl: 'https://demo.dotcms.com',
+                authToken: 'test-token',
+                requestOptions: {
+                    headers: {
+                        'X-Custom-Header': 'custom-value',
+                        Accept: 'application/json'
+                    },
+                    cache: 'no-cache'
+                }
+            };
+
+            TestBed.configureTestingModule({
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(configWithCustomOptions)]
+            });
+
+            TestBed.inject(AngularDotCMSClient);
+
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
+                dotcmsUrl: configWithCustomOptions.dotcmsUrl,
+                authToken: configWithCustomOptions.authToken,
+                siteId: undefined,
+                httpClient: undefined
+            });
         });
     });
 
     describe('Provider Integration', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
-                providers: [provideDotCMSClient(validConfig)]
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
             });
         });
 
@@ -148,8 +221,12 @@ describe('provideDotCMSClient', () => {
                 throw new Error(errorMessage);
             });
 
+            TestBed.configureTestingModule({
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+            });
+
             expect(() => {
-                provideDotCMSClient(validConfig);
+                TestBed.inject(AngularDotCMSClient);
             }).toThrow(errorMessage);
         });
 
@@ -159,11 +236,22 @@ describe('provideDotCMSClient', () => {
                 throw typeError;
             });
 
+            TestBed.configureTestingModule({
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+            });
+
             expect(() => {
-                provideDotCMSClient(validConfig);
+                TestBed.inject(AngularDotCMSClient);
             }).toThrow(TypeError);
+
+            // Reset TestBed for second test
+            TestBed.resetTestingModule();
+            TestBed.configureTestingModule({
+                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+            });
+
             expect(() => {
-                provideDotCMSClient(validConfig);
+                TestBed.inject(AngularDotCMSClient);
             }).toThrow('Invalid URL format');
         });
     });

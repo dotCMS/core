@@ -264,7 +264,7 @@ describe('GraphQL Parser', () => {
         };
 
         const pageEntity = graphqlToPageEntity(
-            graphqlResponse as unknown as DotCMSGraphQLPageResponse
+            graphqlResponse.page as unknown as DotCMSGraphQLPage
         );
 
         expect(pageEntity?.urlContentMap).toEqual({

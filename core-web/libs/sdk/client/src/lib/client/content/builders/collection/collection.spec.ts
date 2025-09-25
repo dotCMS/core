@@ -537,7 +537,7 @@ describe('CollectionBuilder', () => {
 
             await collectionBuilder;
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site',
@@ -567,7 +567,7 @@ describe('CollectionBuilder', () => {
 
             // The current implementation adds both the default site constraint and the user-specified one
             // because the raw query is appended after the site constraint decision is made
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site +conhost:user-specified-site',
@@ -595,7 +595,7 @@ describe('CollectionBuilder', () => {
 
             await collectionBuilder;
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true',
@@ -627,7 +627,7 @@ describe('CollectionBuilder', () => {
 
             // When using the query builder, the conhost constraint is part of the base query
             // so the shouldAddSiteIdConstraint function will detect it and not add the default
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+conhost:user-specified-site +contentType:blog +languageId:1 +live:true',
@@ -657,7 +657,7 @@ describe('CollectionBuilder', () => {
 
             // The current implementation still adds the default site constraint because
             // the exclusion is in the raw query which is processed after the site constraint decision
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site -conhost:my-default-site',
