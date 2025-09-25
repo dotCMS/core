@@ -1,11 +1,7 @@
 import { consola } from 'consola';
 
-import {
-    DotHttpClient,
-    DotCMSGraphQLError,
-    DotGraphQLApiResponse,
-    DotHttpError
-} from '@dotcms/types';
+import { DotHttpClient, DotGraphQLApiResponse, DotHttpError } from '@dotcms/types';
+
 import { ErrorMessages } from '../models';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
