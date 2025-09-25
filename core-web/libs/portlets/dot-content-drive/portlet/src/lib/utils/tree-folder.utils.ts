@@ -13,7 +13,7 @@ export type TreeNodeItem = TreeNode<TreeNodeData>;
 
 export const ALL_FOLDER: TreeNodeItem = {
     key: 'ALL_FOLDER',
-    label: 'Root',
+    label: 'content-drive.sidebar.root.folder.label',
     loading: false,
     data: {
         type: 'folder',
