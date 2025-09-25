@@ -721,7 +721,7 @@ public class ContentTypeHelper implements Serializable {
      * and returns its corresponding index.
      *
      * @param baseTypeName The name of the base content type to find. (e.g., "CONTENT", "WIDGET").
-     * @return The integer corresponding to the base type, otherwise 0.
+     * @return The integer corresponding to the base type, otherwise throws an IllegalArgumentException.
      * @see BaseContentType
      */
     public int getBaseTypeIndex(String baseTypeName) throws IllegalArgumentException {
