@@ -152,7 +152,7 @@ describe('DotContentDriveShellComponent', () => {
                 }),
                 mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
                 mockProvider(DotLocalstorageService, {
-                    getItem: jest.fn().mockReturnValue(false),
+                    getItem: jest.fn().mockReturnValue(undefined),
                     setItem: jest.fn()
                 })
             ]
@@ -381,6 +381,10 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     describe('message', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
         it('should show the message', () => {
             spectator.detectChanges();
 
@@ -413,8 +417,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should return false if the hide message banner key is set', () => {
-            localStorageService.getItem.mockReturnValue(true);
-            spectator.detectChanges();
+            localStorageService.getItem.mockReturnValue('true');
+            spectator.detectComponentChanges();
 
             expect(spectator.component.$showMessage()).toBe(false);
         });

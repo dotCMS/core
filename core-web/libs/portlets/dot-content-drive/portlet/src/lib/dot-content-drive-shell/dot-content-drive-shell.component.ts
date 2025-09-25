@@ -66,9 +66,9 @@ export class DotContentDriveShellComponent {
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
-    readonly $showMessage = signal<boolean>(
-        !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY) // The existence of the key means the message banner has been hidden
-    );
+
+    // Default to false to avoid showing the message banner on init
+    readonly $showMessage = signal<boolean>(false);
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -92,6 +92,12 @@ export class DotContentDriveShellComponent {
         const urlTree = this.#router.createUrlTree([], { queryParams });
         this.#location.go(urlTree.toString());
     });
+
+    ngOnInit() {
+        this.$showMessage.set(
+            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY) // The existence of the key means the message banner has been hidden
+        );
+    }
 
     protected onPaginate(event: LazyLoadEvent) {
         // Explicit check because it can potentially be 0
