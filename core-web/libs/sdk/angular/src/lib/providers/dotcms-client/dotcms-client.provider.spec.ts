@@ -197,6 +197,39 @@ describe('provideDotCMSClient', () => {
                 httpClient: undefined
             });
         });
+
+        it('should call createDotCMSClient with custom httpClient when provided', () => {
+            const mockHttpClient = {
+                get: jest.fn(),
+                post: jest.fn(),
+                put: jest.fn(),
+                delete: jest.fn(),
+                request: jest.fn()
+            };
+
+            const configWithHttpClient: DotCMSAngularProviderConfig = {
+                dotcmsUrl: 'https://demo.dotcms.com',
+                authToken: 'test-token',
+                httpClient: () => mockHttpClient
+            };
+
+            TestBed.configureTestingModule({
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(configWithHttpClient)
+                ]
+            });
+
+            TestBed.inject(AngularDotCMSClient);
+
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
+                dotcmsUrl: configWithHttpClient.dotcmsUrl,
+                authToken: configWithHttpClient.authToken,
+                siteId: undefined,
+                httpClient: mockHttpClient
+            });
+        });
     });
 
     describe('Provider Integration', () => {
