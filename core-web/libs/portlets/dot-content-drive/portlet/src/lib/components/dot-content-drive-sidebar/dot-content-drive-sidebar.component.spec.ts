@@ -401,12 +401,4 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(currentSiteHostname.innerHTML).toContain(mockSiteDetails.hostname);
         });
     });
-
-    describe('Current site hostname', () => {
-        it('should render the current site hostname', () => {
-            const currentSiteHostname = spectator.query('[data-testid="current-site-hostname"]');
-
-            expect(currentSiteHostname.innerHTML).toContain(mockSiteDetails.hostname);
-        });
-    });
 });

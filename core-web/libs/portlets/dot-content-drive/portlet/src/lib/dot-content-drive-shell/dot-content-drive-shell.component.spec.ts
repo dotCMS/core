@@ -67,9 +67,6 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
-            mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of())
-            }),
             provideHttpClient()
         ],
         componentProviders: [DotContentDriveStore],
