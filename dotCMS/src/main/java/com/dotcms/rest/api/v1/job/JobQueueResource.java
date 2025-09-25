@@ -65,7 +65,7 @@ public class JobQueueResource {
      * payload of options.
      */
     @POST
-    @Path("/{queueName}")
+    @Path("/{queueName}/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(

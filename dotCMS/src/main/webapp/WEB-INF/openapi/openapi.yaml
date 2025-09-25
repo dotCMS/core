@@ -9266,6 +9266,71 @@ paths:
       summary: Retrieves active jobs in a queue
       tags:
       - Job Queue
+  /v1/jobs/{queueName}/upload:
+    post:
+      description: Creates and queues a new background job with multipart form data
+        parameters. Returns the job ID and initial status information.
+      operationId: createJobWithFormData
+      parameters:
+      - description: Name of the job queue to submit to
+        in: path
+        name: queueName
+        required: true
+        schema:
+          type: string
+          example: image-processing
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/JobParamsSchema"
+        description: |-
+          This endpoint accepts a `multipart/form-data` request with two fields:
+
+          | **Field** | **Type** | **Required** | **Description** |
+          |-----------|----------|--------------|-----------------|
+          | `file`    | File     | ❌ No        | The file to be processed by the queue.|
+          | `form`    | String   | ❌ No        | A JSON string containing job-specific parameters.|
+
+          **Example `form` value:**
+
+          ```json
+          {
+           "contentType":"CustomContentType", "workflowActionId":"Workflow-UUID", "language":"en-us", "stopOnError":true,
+          }
+          ```
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                  jobId: e6d9bae8-657b-4e2f-8524-c0222db66355
+                  statusUrl: http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job created successfully
+        "400":
+          description: "Bad Request: Invalid parameters, malformed multipart payload,\
+            \ or file issues."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User lacks permission to enqueue jobs in the specified\
+            \ queue."
+        "404":
+          description: "Not Found: Queue with the specified name does not exist."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ creating the job."
+      summary: Creates a new job with form data
+      tags:
+      - Job Queue
   /v1/jvm:
     get:
       operationId: getJvmInfo
