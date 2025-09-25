@@ -5,11 +5,10 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { Tree, TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { FolderNamePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTreeFolderComponent, SYSTEM_HOST_ID } from './dot-tree-folder.component';
-
-import { FolderNamePipe } from '../pipes/dot-folder-name/dot-folder-name.pipe';
 
 describe('DotTreeFolderComponent', () => {
     let spectator: Spectator<DotTreeFolderComponent>;
