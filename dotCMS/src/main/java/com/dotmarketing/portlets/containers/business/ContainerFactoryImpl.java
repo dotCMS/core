@@ -873,9 +873,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 						.append(
 								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
 						.append(" and cs.structure_id = ? ) ");
-				// Validate that inode contains only valid UUID characters
+				// Validate that inode is a valid UUID
 				final String inode = foundContentType.inode();
-				if (!UtilMethods.isSet(inode) || !inode.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+				if (!UtilMethods.isSet(inode) || !UUIDUtil.isUUID(inode)) {
 					throw new DotSecurityException("Invalid inode format: " + inode);
 				}
 				paramValues.add(inode);
@@ -905,9 +905,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if(UtilMethods.isSet(searchParams.siteId())) {
 			// Use parameterized query to prevent SQL injection
 			query.append(" and identifier.host_inode = ?");
-			// Validate that siteId contains only valid UUID characters
+			// Validate that siteId is a valid UUID
 			final String siteId = searchParams.siteId();
-			if (!siteId.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+			if (!UUIDUtil.isUUID(siteId)) {
 				throw new DotSecurityException("Invalid site ID format: " + siteId);
 			}
 			paramValues.add(siteId);
@@ -916,9 +916,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if(UtilMethods.isSet(searchParams.containerInode())) {
 			// Use parameterized query to prevent SQL injection
 			query.append(" and asset.inode = ?");
-			// Validate that containerInode contains only valid UUID characters
+			// Validate that containerInode is a valid UUID
 			final String containerInode = searchParams.containerInode();
-			if (!containerInode.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+			if (!UUIDUtil.isUUID(containerInode)) {
 				throw new DotSecurityException("Invalid container inode format: " + containerInode);
 			}
 			paramValues.add(containerInode);
@@ -927,9 +927,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if(UtilMethods.isSet(searchParams.containerIdentifier())) {
 			// Use parameterized query to prevent SQL injection
 			query.append(" and asset.identifier = ?");
-			// Validate that containerIdentifier contains only valid UUID characters
+			// Validate that containerIdentifier is a valid UUID
 			final String containerIdentifier = searchParams.containerIdentifier();
-			if (!containerIdentifier.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+			if (!UUIDUtil.isUUID(containerIdentifier)) {
 				throw new DotSecurityException("Invalid container identifier format: " + containerIdentifier);
 			}
 			paramValues.add(containerIdentifier);
@@ -1003,7 +1003,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				conditionQueryBuffer.append(" = ?");
 				// Validate identifier/inode format to prevent SQL injection
 				final String value = (String) entry.getValue();
-				if (!UtilMethods.isSet(value) || !value.matches("^[a-fA-F0-9\\-]{32,36}$")) {
+				if (!UtilMethods.isSet(value) || !UUIDUtil.isUUID(value)) {
 					throw new DotSecurityException("Invalid " + entry.getKey() + " format: " + value);
 				}
 				paramValues.add(value);
