@@ -12,10 +12,11 @@
         "tree list    detail";
     height: 100%;
 }
-
 ::ng-deep {
-    .p-dialog-content {
-        width: 43.75rem; //700px
+    .p-dialog.content-drive-dialog {
+        .p-dialog-content {
+            width: 43.75rem; //700px
+        }
     }
 }
 
