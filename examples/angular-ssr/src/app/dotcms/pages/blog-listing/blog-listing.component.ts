@@ -17,6 +17,7 @@ import { DotCMSComposedPageResponse, DotCMSPageAsset } from '@dotcms/types';
 import { SearchComponent } from './components/search/search.component';
 import { BlogCardComponent } from './components/blog-card/blog-card.component';
 import { Blog } from '../../types/contentlet.model';
+import { LoadingComponent } from '../../../components/loading/loading.component';
 
 // Constants
 const BLOG_LIMIT = 10;
@@ -41,7 +42,7 @@ interface GraphQLQuery {
 
 @Component({
   selector: 'app-blog-listing',
-  imports: [SearchComponent, BlogCardComponent],
+  imports: [SearchComponent, BlogCardComponent, LoadingComponent],
   providers: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './blog-listing.component.html',

@@ -19,6 +19,7 @@ import {
   DynamicComponentEntity,
 } from '@dotcms/angular';
 import { DotCMSComposedPageResponse, DotCMSPageAsset } from '@dotcms/types';
+import { LoadingComponent } from '../../../components/loading/loading.component';
 
 const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
   Activity: import('../../components/activity/activity.component').then((c) => c.ActivityComponent),
@@ -52,7 +53,7 @@ type PageResponse = { pageAsset: DotCMSPageAsset };
 
 @Component({
   selector: 'app-page',
-  imports: [CommonModule, DotCMSLayoutBodyComponent],
+  imports: [CommonModule, DotCMSLayoutBodyComponent, LoadingComponent],
   providers: [DotCMSEditablePageService],
   templateUrl: './page.html',
   styleUrl: './page.css',

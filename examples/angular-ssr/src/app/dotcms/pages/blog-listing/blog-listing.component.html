@@ -10,18 +10,22 @@
 <!-- Search Component -->
 <app-search [query]="searchQuery()" (searchQueryChange)="onSearchQueryChange($event)" />
 
-<!-- Blog Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  @for (blog of filteredBlogs(); track blog.identifier) {
-  <app-blog-card [blog]="blog" />
-  }
-</div>
-
-<!-- No results message -->
 @if (filteredBlogs().length === 0) {
-<div class="text-center py-8">
-  <p class="text-gray-500">
-    No blogs found matching your search criteria.
-  </p>
-</div>
+  <app-loading />
+} @else {
+  <!-- Blog Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    @for (blog of filteredBlogs(); track blog.identifier) {
+    <app-blog-card [blog]="blog" />
+    }
+  </div>
+
+  <!-- No results message -->
+  @if (filteredBlogs().length === 0) {
+  <div class="text-center py-8">
+    <p class="text-gray-500">
+      No blogs found matching your search criteria.
+    </p>
+  </div>
+  }
 }
