@@ -13,7 +13,7 @@ describe('Sidebar Utils', () => {
         it('should have correct structure', () => {
             expect(ALL_FOLDER).toEqual({
                 key: 'ALL_FOLDER',
-                label: 'Root',
+                label: 'content-drive.sidebar.root.folder.label"',
                 loading: false,
                 data: {
                     type: 'folder',
