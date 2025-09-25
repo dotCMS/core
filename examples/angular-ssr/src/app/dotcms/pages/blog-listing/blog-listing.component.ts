@@ -56,7 +56,6 @@ export class BlogListingComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   // Signals
-  pageAsset = signal<DotCMSPageAsset | null>(null);
   searchQuery = signal(this.#route.snapshot.queryParamMap.get('search') || '');
   filteredBlogs = signal<Blog[]>([]);
 
@@ -97,7 +96,6 @@ export class BlogListingComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response: DotCMSComposedPageResponse<PageResponse>) => {
-          this.pageAsset.set(response?.pageAsset);
           this.filteredBlogs.set(response?.content?.blogs || []);
         },
         error: (error) => {
