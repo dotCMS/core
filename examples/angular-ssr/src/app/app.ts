@@ -76,7 +76,7 @@ export class App {
           logoImage: `
             FileAssetCollection(query: "+title:logo.png") {
               fileAsset {
-                  versionPath
+                versionPath
               }
             }
           `,

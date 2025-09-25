@@ -4,7 +4,6 @@ import { BlogPostComponent } from './blog-post/blog-post.component';
 import {
   BlockEditorContent,
   DotCMSComposedPageResponse,
-  DotCMSNavigationItem,
   DotCMSPageAsset,
   DotCMSURLContentMap,
 } from '@dotcms/types';
