@@ -25,21 +25,19 @@ app.use(express.json());
 const angularApp = new AngularNodeAppEngine();
 
 app.post('/api/page', async (req: express.Request, res: express.Response) => {
+  const { url, params } = req.body as { url?: string; params?: DotCMSPageRequestParams };
+
+  if (!url) {
+    return res.status(400).json({ error: 'Missing "url" in request body' });
+  }
+
   try {
-    const { url, params } = req.body as { url?: string; params?: DotCMSPageRequestParams };
-
-    if (!url) {
-      return res.status(400).json({ error: 'Missing "url" in request body' });
-    }
-
     const response = await client.page.get(url, params ?? {});
     return res.json(response);
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });
   }
 });
-
-
 
 /**
  * Example Express Rest API endpoints can be defined here.

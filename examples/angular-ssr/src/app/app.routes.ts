@@ -14,7 +14,7 @@ export const routes: Routes = [
   },
   {
     path: 'blog/index',
-    redirectTo: 'blog',
+    redirectTo: '/blog',
   },
   {
     path: '**',
