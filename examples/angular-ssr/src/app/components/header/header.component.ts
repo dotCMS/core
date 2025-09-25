@@ -12,7 +12,7 @@ import { ReorderButtonComponent } from '../reorder-button/reorder-button.compone
         <h2 class="text-3xl font-bold text-white">
           <a routerLink="/">TravelLux with NG</a>
         </h2>
-        <div>
+        <div class="flex items-center gap-4">
           <app-reorder-button />
           <ng-content />
         </div>
