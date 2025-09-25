@@ -12,7 +12,7 @@ import {
     DotContentDriveSortOrder,
     DotContentDriveState,
     DotContentDriveStatus
-} from '../../shared/models';
+} from '../../../shared/models';
 
 const initialState: DotContentDriveState = {
     currentSite: null,

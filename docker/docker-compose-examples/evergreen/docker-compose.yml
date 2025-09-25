@@ -1,0 +1,123 @@
+services:
+
+
+  # Caddy is a reverse proxy with LetsEncrypt that will route traffic to dotCMS
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    ports:
+      - 80:80
+      - 443:443/tcp
+      - 443:443/udp
+    environment:
+      - CADDY_INGRESS_NETWORKS=caddy
+    networks:
+      - caddy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+    restart: unless-stopped
+
+  db:
+    image: pgvector/pgvector:pg16
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+      POSTGRES_USER: 'dotcmsdbuser'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - db_net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms -h localhost -p 5432" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:1
+    environment:
+      cluster.name: "elastic-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - opensearch-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
+  dotcms:
+    image: dotcms/dotcms:latest
+    environment:
+      CMS_JAVA_OPTS: '-Xmx1g '
+      LANG: 'C.UTF-8'
+      TZ: 'UTC'
+      DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+      DB_USERNAME: 'dotcmsdbuser'
+      DB_PASSWORD: 'password'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+      DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+      DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+      DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
+      GLOWROOT_ENABLED: 'true'
+      GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
+      #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
+      #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
+      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
+    depends_on:
+      - db
+      - opensearch
+    volumes:
+      - cms-shared:/data/shared
+      #- ${HOME}/.dotcms/certs:/certs  # Can create cert with mkcert tool
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net
+      - opensearch-net
+      - caddy
+    ports:
+      - "8082:8082"
+      - "8443:8443"
+      - "4000:4000" # Glowroot web ui if enabled
+    labels:
+      caddy: local.dotcms.site    #      <--- Set this to your domain name and caddy will generate an valid cert for you
+      caddy.reverse_proxy: "dotcms:8082"
+
+  # Watchtower will automatically update the dotCMS container when a new version is available
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --schedule "0 0 4 * * *"
+
+
+
+
+
+networks:
+  db_net:
+  opensearch-net:
+  caddy:
+
+volumes:
+  cms-shared:
+  dbdata:
+  opensearch-data:
+  caddy_data:
+  letsencrypt:
