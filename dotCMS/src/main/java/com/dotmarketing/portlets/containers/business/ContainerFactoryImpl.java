@@ -948,7 +948,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 *
 	 * @return The values for each specific search parameter.
 	 */
-	private List<Object> getConditionParametersAndBuildConditionQuery(final Map<String, Object> params, final StringBuffer conditionQueryBuffer) {
+	private List<Object> getConditionParametersAndBuildConditionQuery(final Map<String, Object> params, final StringBuffer conditionQueryBuffer) throws DotSecurityException {
 
 		List<Object> paramValues = null;
 
@@ -990,7 +990,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	private void buildConditionParameterAndBuildConditionQuery (final Map.Entry<String, Object> entry,
 																final List<Object> paramValues,
 																final StringBuffer conditionQueryBuffer,
-																final Optional<String> prefix) {
+																final Optional<String> prefix) throws DotSecurityException {
 
 		if(entry.getValue() instanceof String){
 			if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
