@@ -83,6 +83,54 @@ export function provideDotCMSClient(options: DotCMSAngularProviderConfig): Envir
     ]);
 }
 
+/**
+ * Configuration interface for the DotCMS Angular provider.
+ *
+ * Extends the base `DotCMSClientConfig` but replaces the `httpClient` property
+ * with an Angular-specific factory function that receives Angular's `HttpClient`
+ * and returns a `DotHttpClient` implementation.
+ *
+ * This interface is designed to work seamlessly with Angular's dependency injection
+ * system, allowing you to leverage Angular's built-in HTTP client while maintaining
+ * compatibility with the DotCMS client's expected interface.
+ *
+ * @example
+ * ```typescript
+ * const config: DotCMSAngularProviderConfig = {
+ *   dotcmsUrl: 'https://demo.dotcms.com',
+ *   authToken: 'your-auth-token',
+ *   siteId: 'your-site-id',
+ *   httpClient: (http: HttpClient) => new AngularHttpClient(http)
+ * };
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Using with provideDotCMSClient
+ * provideDotCMSClient({
+ *   dotcmsUrl: 'https://demo.dotcms.com',
+ *   authToken: 'your-auth-token',
+ *   httpClient: (http) => new AngularHttpClient(http)
+ * })
+ * ```
+ */
 export interface DotCMSAngularProviderConfig extends Omit<DotCMSClientConfig, 'httpClient'> {
+    /**
+     * Optional factory function that creates a custom HTTP client implementation.
+     *
+     * This function receives Angular's `HttpClient` instance and should return
+     * a `DotHttpClient` implementation. If not provided, the DotCMS client will
+     * use its default HTTP client implementation.
+     *
+     * @param http - Angular's HttpClient instance from dependency injection
+     * @returns A DotHttpClient implementation
+     *
+     * @example
+     * ```typescript
+     * httpClient: (http: HttpClient) => {
+     *   return new AngularHttpClient(http);
+     * }
+     * ```
+     */
     httpClient?: (http: HttpClient) => DotHttpClient;
 }

@@ -395,14 +395,6 @@ export class CollectionBuilder<T = unknown> {
      * @return {Promise<any>} The fetch response data.
      * @memberof CollectionBuilder
      */
-    // private fetch(): Promise<GetCollectionRawResponse<T>> {
-    //     const finalQuery = this.currentQuery
-    //         .field('languageId')
-    //         .equals(this.#languageId.toString())
-    //         .field('live')
-    //         .equals((!this.#draft).toString())
-    //         .build();
-
     private fetch(): Promise<GetCollectionRawResponse<T>> {
         const finalQuery = this.getFinalQuery();
         const sanitizedQuery = sanitizeQueryForContentType(finalQuery, this.#contentType);

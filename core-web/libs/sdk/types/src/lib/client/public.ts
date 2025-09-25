@@ -308,7 +308,29 @@ export interface DotCMSPageRequestParams {
 }
 
 /**
- * Options for configuring fetch requests, excluding body and method properties.
+ * Options for configuring HTTP requests in the DotCMS client.
+ *
+ * Extends the native `RequestInit` interface from the Fetch API, providing all standard
+ * fetch options including headers, credentials, cache settings, and more. This type is
+ * used throughout the DotCMS client for configuring HTTP requests consistently.
+ *
+ * @example
+ * ```typescript
+ * const options: DotRequestOptions = {
+ *   method: 'POST',
+ *   headers: {
+ *     'Content-Type': 'application/json',
+ *     'Authorization': 'Bearer your-token'
+ *   },
+ *   body: JSON.stringify({ name: 'John' }),
+ *   credentials: 'include',
+ *   cache: 'no-cache'
+ * };
+ *
+ * const result = await httpClient.request('/api/content', options);
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Request/Request#options RequestInit} - MDN documentation for RequestInit
  */
 export type DotRequestOptions = RequestInit;
 
