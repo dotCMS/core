@@ -13,7 +13,7 @@ import { HttpClient } from '@angular/common/http';
 import { Location } from '@angular/common';
 import { filter, map, startWith, switchMap } from 'rxjs/operators';
 
-import { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSComposedPageResponse, DotCMSPageAsset } from '@dotcms/types';
 import { SearchComponent } from './components/search/search.component';
 import { BlogCardComponent } from './components/blog-card/blog-card.component';
 import { Blog } from '../../types/contentlet.model';
