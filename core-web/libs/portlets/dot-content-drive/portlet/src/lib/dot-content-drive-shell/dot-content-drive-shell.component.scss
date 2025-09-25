@@ -16,6 +16,10 @@
     .p-dialog.content-drive-dialog {
         .p-dialog-content {
             width: 43.75rem; //700px
+
+            // Let the content to set the desired padding to not mess with overlaps and overflows
+            padding: $spacing-4 0;
+            padding-top: 0;
         }
     }
 }
