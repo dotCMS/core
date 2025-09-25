@@ -25,8 +25,8 @@ const BLOG_ROUTE = '/blog';
 
 // Types
 interface PageResponse {
+  pageAsset: DotCMSPageAsset;
   content: {
-    navigation: DotCMSNavigationItem;
     blogs: Blog[];
   };
 }

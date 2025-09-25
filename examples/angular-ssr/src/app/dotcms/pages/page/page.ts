@@ -1,21 +1,24 @@
-import { filter, from, map, startWith, switchMap } from 'rxjs';
+import { filter, map, startWith, switchMap } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 
 import {
-  AngularDotCMSClient,
   DotCMSEditablePageService,
   DotCMSLayoutBodyComponent,
   DynamicComponentEntity,
 } from '@dotcms/angular';
-import { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } from '@dotcms/types';
-
-import { HeaderComponent } from '../../../components/header/header.component';
-import { NavigationComponent } from '../../../components/navigation/navigation.component';
+import { DotCMSComposedPageResponse, DotCMSPageAsset } from '@dotcms/types';
 
 const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
   Activity: import('../../components/activity/activity.component').then((c) => c.ActivityComponent),
@@ -45,21 +48,17 @@ const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
   ),
 };
 
-type PageResponse = { content: { navigation: DotCMSNavigationItem } };
+type PageResponse = { pageAsset: DotCMSPageAsset };
 
 @Component({
   selector: 'app-page',
-  imports: [
-    CommonModule,
-    DotCMSLayoutBodyComponent
-  ],
+  imports: [CommonModule, DotCMSLayoutBodyComponent],
   providers: [DotCMSEditablePageService],
   templateUrl: './page.html',
   styleUrl: './page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageComponent implements OnInit {
-  private readonly client = inject(AngularDotCMSClient);
   private readonly http = inject(HttpClient);
 
   private router = inject(Router);
@@ -89,11 +88,7 @@ export class PageComponent implements OnInit {
       .pipe(filter(Boolean))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (
-          response: DotCMSComposedPageResponse<{
-            content: { navigation: DotCMSNavigationItem };
-          }>
-        ) => {
+        next: (response: DotCMSComposedPageResponse<PageResponse>) => {
           this.pageAsset.set(response?.pageAsset);
         },
         error: (error) => {

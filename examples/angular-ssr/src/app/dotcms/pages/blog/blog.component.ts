@@ -7,7 +7,7 @@ import {
   DotCMSPageAsset,
   DotCMSURLContentMap,
 } from '@dotcms/types';
-import { ContentletImage, ExtraContent } from '../../types/contentlet.model';
+import { ContentletImage } from '../../types/contentlet.model';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map, startWith, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -25,7 +25,6 @@ export interface BlogPageAsset extends DotCMSPageAsset {
 
 type BlogPage = {
   pageAsset: BlogPageAsset;
-  content: ExtraContent;
 };
 
 @Component({
@@ -49,10 +48,9 @@ export class BlogComponent {
         filter((event) => event instanceof NavigationEnd),
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
-        switchMap((url: string) => {
-          console.log('url', url);
-          return this.http.post<DotCMSComposedPageResponse<BlogPage>>('/api/page', { url });
-        })
+        switchMap((url: string) =>
+          this.http.post<DotCMSComposedPageResponse<BlogPage>>('/api/page', { url })
+        )
       )
       .pipe(switchMap((response) => this.editablePageService.listen<BlogPage>(response)))
       .pipe(filter(Boolean))
