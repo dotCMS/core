@@ -13,10 +13,7 @@ public class BaseContentTypesView {
     private final int index;
 
     BaseContentTypesView(String name, String label, List<ContentTypeView> types) {
-        this.name = name;
-        this.types = types;
-        this.label = label;
-        this.index = -1;
+        this(name , label, types, -1);
     }
 
     BaseContentTypesView(String name, String label, List<ContentTypeView> types, int index) {

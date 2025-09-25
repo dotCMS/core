@@ -33,7 +33,7 @@ public class ContentTypeHelperTest {
     /**
      * Method to test:  {@link ContentTypeHelper#getBaseTypeIndex(String)}
      * <p>
-     * When: The Base Type name is passed by param does not exist.
+     * When: The Base Type name passed by param does not exist.
      * <p>
      * Should: throw an IllegalArgumentException exception.
      */

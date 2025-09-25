@@ -726,7 +726,7 @@ public class ContentTypeHelper implements Serializable {
      */
     public int getBaseTypeIndex(String baseTypeName) throws IllegalArgumentException {
         try {
-            return BaseContentType.valueOf(baseTypeName).getType();
+            return BaseContentType.getBaseContentType(baseTypeName).getType();
         } catch (IllegalArgumentException e) {
             final var message = String.format(
                     "No enum BaseContentType with name [%s] was found",
