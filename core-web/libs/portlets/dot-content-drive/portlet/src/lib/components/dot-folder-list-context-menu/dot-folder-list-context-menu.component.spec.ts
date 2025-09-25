@@ -9,6 +9,7 @@ import { MenuItemCommandEvent, MessageService } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
 
 import {
+    DotFolderService,
     DotMessageService,
     DotRenderMode,
     DotSystemConfigService,
@@ -70,6 +71,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
             mockProvider(DotSystemConfigService),
             mockProvider(DotWizardService, {
                 open: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
             }),
             provideHttpClient()
         ]

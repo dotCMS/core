@@ -334,13 +334,19 @@ export class DotEditContentService {
      *
      * @param {string} identifier - The unique identifier of the content item
      * @param {PaginationParams} [paginationParams] - Optional pagination parameters (offset-based)
+     * @param {number} [languageId] - Optional language ID to filter versions for a specific language
      * @returns {Observable<DotCMSResponse<DotCMSContentletVersion[]>>} Observable that emits DotCMS response with contentlet version history
      */
     getVersions(
         identifier: string,
-        paginationParams?: PaginationParams
+        paginationParams?: PaginationParams,
+        languageId?: number
     ): Observable<DotCMSResponse<DotCMSContentletVersion[]>> {
-        const httpParams = this.buildPaginationParams(paginationParams);
+        let httpParams = this.buildPaginationParams(paginationParams);
+
+        if (languageId) {
+            httpParams = httpParams.set('languageId', languageId.toString());
+        }
 
         return this.#http.get<DotCMSResponse<DotCMSContentletVersion[]>>(
             `/api/v1/content/versions/id/${identifier}/history`,

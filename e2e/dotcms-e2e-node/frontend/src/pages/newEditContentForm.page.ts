@@ -8,10 +8,12 @@ export class NewEditContentFormPage {
     await textFieldLocator.fill(text);
   }
 
+  get siteOrFolderFieldLocator() {
+    return this.page.getByTestId("field-siteOrFolderField");
+  }
+
   async selectSiteOrFolderField() {
-    const siteOrFolderFieldLocator = this.page.getByTestId(
-      "field-siteOrFolderField",
-    );
+    const siteOrFolderFieldLocator = this.siteOrFolderFieldLocator;
     await siteOrFolderFieldLocator.click();
 
     const treeNodeLocator = this.page.locator(".p-treenode");
@@ -41,5 +43,9 @@ export class NewEditContentFormPage {
 
   async goToContent(id: string) {
     await this.page.goto(`/dotAdmin/#/content/${id}`);
+  }
+
+  async goToNew(contentType: string) {
+    await this.page.goto(`/dotAdmin/#c/content/new/${contentType}`);
   }
 }

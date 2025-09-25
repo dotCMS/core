@@ -69,7 +69,10 @@ import {
     ]
 })
 export class DotEditContentTextAreaComponent extends BaseFieldComponent {
-    protected readonly controlContainer = inject(ControlContainer);
+    /**
+     * Inject the ControlContainer
+     */
+    readonly controlContainer = inject(ControlContainer);
     /**
      * Reference to the textarea element
      */

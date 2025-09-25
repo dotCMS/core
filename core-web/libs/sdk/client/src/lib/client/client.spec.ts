@@ -156,9 +156,10 @@ describe('DotCMSClient', () => {
             createDotCMSClient(configWithPath);
 
             expect(Content).toHaveBeenCalledWith(
-                expect.anything(),
-                'https://demo.dotcms.com',
-                expect.any(Object)
+                expect.objectContaining({
+                    dotcmsUrl: 'https://demo.dotcms.com'
+                }),
+                expect.anything()
             );
         });
     });

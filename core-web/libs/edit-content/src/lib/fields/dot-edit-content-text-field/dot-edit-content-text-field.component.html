@@ -1,18 +1,29 @@
 @let field = $field();
+@let variableName = field.variable;
+@let dataType = field.dataType;
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if ($showLabel()) {
+        <div class="flex">
+            <label
+                [attr.data-testid]="'label-' + field.variable"
+                [class.p-label-input-required]="isRequired"
+                [for]="field.variable">
+                {{ field.name }}
+            </label>
+        </div>
+    }
     <dot-card-field-content>
         <input
-            [id]="field.variable"
-            [name]="field.variable"
-            [formControl]="formControl"
+            [id]="variableName"
+            [name]="variableName"
+            [formControlName]="variableName"
             [class.ng-invalid]="hasError"
             [class.ng-dirty]="hasError"
-            [attr.data-testId]="field.variable"
-            [type]="inputTextOptions[field.dataType].type"
-            [attr.inputmode]="inputTextOptions[field.dataType].inputMode"
-            [attr.step]="inputTextOptions[field.dataType].step"
+            [attr.data-testId]="variableName"
+            [type]="inputTextOptions[dataType].type"
+            [attr.inputmode]="inputTextOptions[dataType].inputMode"
+            [attr.step]="inputTextOptions[dataType].step"
             pInputText />
     </dot-card-field-content>
     <dot-card-field-footer>

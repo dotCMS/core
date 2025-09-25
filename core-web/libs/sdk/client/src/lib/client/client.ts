@@ -70,7 +70,7 @@ class DotCMSClient {
         // Initialize clients with httpClient
         this.page = new PageClient(this.config, this.requestOptions, this.httpClient);
         this.nav = new NavigationClient(this.config, this.requestOptions, this.httpClient);
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl, this.httpClient);
+        this.content = new Content(this.config, this.requestOptions, this.httpClient);
     }
 
     /**
