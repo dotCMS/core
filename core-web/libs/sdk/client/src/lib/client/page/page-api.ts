@@ -143,7 +143,6 @@ export class PageClient {
         } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
 
-
         const contentQuery = buildQuery(content);
         const completeQuery = buildPageQuery({
             page,

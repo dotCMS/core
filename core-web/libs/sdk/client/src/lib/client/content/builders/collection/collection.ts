@@ -45,7 +45,12 @@ export class CollectionBuilder<T = unknown> {
      * @param {DotHttpClient} httpClient HTTP client for making requests.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: DotRequestOptions, config: DotCMSClientConfig, contentType: string, httpClient: DotHttpClient) {
+    constructor(
+        requestOptions: DotRequestOptions,
+        config: DotCMSClientConfig,
+        contentType: string,
+        httpClient: DotHttpClient
+    ) {
         this.#requestOptions = requestOptions;
         this.#config = config;
         this.#contentType = contentType;

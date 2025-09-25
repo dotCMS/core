@@ -71,7 +71,11 @@ describe('provideDotCMSClient', () => {
 
         it('should call createDotCMSClient with provided config when factory is executed', () => {
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(validConfig)
+                ]
             });
 
             TestBed.inject(AngularDotCMSClient);
@@ -93,7 +97,11 @@ describe('provideDotCMSClient', () => {
 
         it('should call createDotCMSClient with minimal config when factory is executed', () => {
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(minimalConfig)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(minimalConfig)
+                ]
             });
 
             TestBed.inject(AngularDotCMSClient);
@@ -124,7 +132,11 @@ describe('provideDotCMSClient', () => {
             };
 
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(basicConfig)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(basicConfig)
+                ]
             });
 
             TestBed.inject(AngularDotCMSClient);
@@ -169,7 +181,11 @@ describe('provideDotCMSClient', () => {
             };
 
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(configWithCustomOptions)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(configWithCustomOptions)
+                ]
             });
 
             TestBed.inject(AngularDotCMSClient);
@@ -186,7 +202,11 @@ describe('provideDotCMSClient', () => {
     describe('Provider Integration', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(validConfig)
+                ]
             });
         });
 
@@ -222,7 +242,11 @@ describe('provideDotCMSClient', () => {
             });
 
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(validConfig)
+                ]
             });
 
             expect(() => {
@@ -237,7 +261,11 @@ describe('provideDotCMSClient', () => {
             });
 
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(validConfig)
+                ]
             });
 
             expect(() => {
@@ -247,7 +275,11 @@ describe('provideDotCMSClient', () => {
             // Reset TestBed for second test
             TestBed.resetTestingModule();
             TestBed.configureTestingModule({
-                providers: [provideHttpClient(), provideHttpClientTesting(), provideDotCMSClient(validConfig)]
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    provideDotCMSClient(validConfig)
+                ]
             });
 
             expect(() => {

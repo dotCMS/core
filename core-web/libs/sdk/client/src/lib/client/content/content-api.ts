@@ -63,7 +63,11 @@ export class Content {
      * @param {DotHttpClient} httpClient - HTTP client for making requests.
      */
 
-    constructor(config: DotCMSClientConfig, requestOptions: DotRequestOptions, httpClient: DotHttpClient) {
+    constructor(
+        config: DotCMSClientConfig,
+        requestOptions: DotRequestOptions,
+        httpClient: DotHttpClient
+    ) {
         this.#requestOptions = requestOptions;
         this.#config = config;
         this.#httpClient = httpClient;

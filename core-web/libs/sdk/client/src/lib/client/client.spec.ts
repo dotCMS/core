@@ -151,7 +151,11 @@ describe('DotCMSClient', () => {
 
             createDotCMSClient(configWithPath);
 
-            expect(Content).toHaveBeenCalledWith(validConfig, expect.anything(), expect.any(FetchHttpClient));
+            expect(Content).toHaveBeenCalledWith(
+                validConfig,
+                expect.anything(),
+                expect.any(FetchHttpClient)
+            );
         });
     });
 });

@@ -85,6 +85,4 @@ export function provideDotCMSClient(options: DotCMSAngularProviderConfig): Envir
 
 export interface DotCMSAngularProviderConfig extends Omit<DotCMSClientConfig, 'httpClient'> {
     httpClient?: (http: HttpClient) => DotHttpClient;
-};
-
-
+}
