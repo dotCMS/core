@@ -84,9 +84,6 @@ xdescribe('DotCategoryFieldComponent', () => {
                     }
                 );
 
-                console.log(spectator.hostComponent.formGroup.getRawValue());
-                console.log(spectator.hostComponent.field);
-                console.log(spectator.hostComponent.contentlet);
                 spectator.detectChanges();
             });
 
