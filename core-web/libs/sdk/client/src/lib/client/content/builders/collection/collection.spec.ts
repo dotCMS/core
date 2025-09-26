@@ -1,12 +1,12 @@
 /// <reference types="jest" />
 
-import { DotRequestOptions, DotHttpError, DotCMSClientConfig } from '@dotcms/types';
+import { DotRequestOptions, DotCMSClientConfig, DotHttpError } from '@dotcms/types';
 
 import { CollectionBuilder } from './collection';
 
 import { FetchHttpClient } from '../../../adapters/fetch-http-client';
 import { CONTENT_API_URL } from '../../shared/const';
-import { SortBy } from '../../shared/types';
+import { SortBy, DotCMSContentError } from '../../shared/types';
 import { Equals } from '../query/lucene-syntax';
 
 // Mock the FetchHttpClient
@@ -689,7 +689,15 @@ describe('CollectionBuilder', () => {
                     return response;
                 },
                 (error) => {
-                    expect(error).toEqual(new Error('URL is invalid'));
+                    expect(error).toBeInstanceOf(DotCMSContentError);
+                    if (error instanceof DotCMSContentError) {
+                        expect(error.contentType).toBe('song');
+                        expect(error.operation).toBe('fetch');
+                        expect(error.message).toBe(
+                            "Content API failed for 'song' (fetch): URL is invalid"
+                        );
+                        expect(error.query).toBeDefined();
+                    }
                     done();
                     return error;
                 }
@@ -709,7 +717,15 @@ describe('CollectionBuilder', () => {
             mockRequest.mockRejectedValue(new Error('DNS are not resolving'));
 
             collectionBuilder.then().catch((error) => {
-                expect(error).toEqual(new Error('DNS are not resolving'));
+                expect(error).toBeInstanceOf(DotCMSContentError);
+                if (error instanceof DotCMSContentError) {
+                    expect(error.contentType).toBe('song');
+                    expect(error.operation).toBe('fetch');
+                    expect(error.message).toBe(
+                        "Content API failed for 'song' (fetch): DNS are not resolving"
+                    );
+                    expect(error.query).toBeDefined();
+                }
                 done();
             });
         });
@@ -729,7 +745,13 @@ describe('CollectionBuilder', () => {
             try {
                 await collectionBuilder;
             } catch (e) {
-                expect(e).toEqual(new Error('Network error'));
+                expect(e).toBeInstanceOf(DotCMSContentError);
+                if (e instanceof DotCMSContentError) {
+                    expect(e.contentType).toBe('song');
+                    expect(e.operation).toBe('fetch');
+                    expect(e.message).toBe("Content API failed for 'song' (fetch): Network error");
+                    expect(e.query).toBeDefined();
+                }
             }
         });
 
@@ -754,16 +776,18 @@ describe('CollectionBuilder', () => {
 
             try {
                 await collectionBuilder;
-                fail('Expected HttpError to be thrown');
+                fail('Expected DotCMSContentError to be thrown');
             } catch (error) {
-                expect(error).toBeInstanceOf(DotHttpError);
-                expect(error).toEqual(httpError);
-                expect((error as DotHttpError).status).toBe(404);
-                expect((error as DotHttpError).statusText).toBe('Not Found');
-                expect((error as DotHttpError).message).toBe('Content not found');
-                expect((error as DotHttpError).data).toEqual({
-                    error: 'Content type does not exist'
-                });
+                expect(error).toBeInstanceOf(DotCMSContentError);
+                if (error instanceof DotCMSContentError) {
+                    expect(error.contentType).toBe('song');
+                    expect(error.operation).toBe('fetch');
+                    expect(error.httpError).toBe(httpError);
+                    expect(error.message).toBe(
+                        "Content API failed for 'song' (fetch): Content not found"
+                    );
+                    expect(error.query).toBeDefined();
+                }
             }
         });
 
@@ -792,10 +816,16 @@ describe('CollectionBuilder', () => {
                     return response;
                 },
                 (error) => {
-                    expect(error).toBeInstanceOf(DotHttpError);
-                    expect(error).toEqual(httpError);
-                    expect((error as DotHttpError).status).toBe(500);
-                    expect((error as DotHttpError).statusText).toBe('Internal Server Error');
+                    expect(error).toBeInstanceOf(DotCMSContentError);
+                    if (error instanceof DotCMSContentError) {
+                        expect(error.contentType).toBe('song');
+                        expect(error.operation).toBe('fetch');
+                        expect(error.httpError).toBe(httpError);
+                        expect(error.message).toBe(
+                            "Content API failed for 'song' (fetch): Server error occurred"
+                        );
+                        expect(error.query).toBeDefined();
+                    }
                     done();
                     return error;
                 }

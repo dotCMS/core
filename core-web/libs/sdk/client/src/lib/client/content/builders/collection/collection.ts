@@ -7,7 +7,8 @@ import {
     SortBy,
     GetCollectionRawResponse,
     OnFullfilled,
-    OnRejected
+    OnRejected,
+    DotCMSContentError
 } from '../../shared/types';
 import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
@@ -341,39 +342,58 @@ export class CollectionBuilder<T = unknown> {
      *
      * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
      * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
-     * @return {Promise<GetCollectionResponse<T> | DotHttpError>} A promise that resolves to the content or rejects with an error.
+     * @return {Promise<GetCollectionResponse<T> | DotCMSContentError>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | DotHttpError> {
-        return this.fetch().then((data) => {
-            const formattedResponse = this.formatResponse<T>(data);
+    ): Promise<GetCollectionResponse<T> | DotCMSContentError> {
+        return this.fetch().then(
+            (data) => {
+                const formattedResponse = this.formatResponse<T>(data);
 
-            if (typeof onfulfilled === 'function') {
-                const result = onfulfilled(formattedResponse);
-                // Ensure we always return a value, fallback to formattedResponse if callback returns undefined
-                return result ?? formattedResponse;
+                if (typeof onfulfilled === 'function') {
+                    const result = onfulfilled(formattedResponse);
+                    // Ensure we always return a value, fallback to formattedResponse if callback returns undefined
+                    return result ?? formattedResponse;
+                }
+
+                return formattedResponse;
+            },
+            (error: unknown) => {
+                // Wrap error in DotCMSContentError
+                let contentError: DotCMSContentError;
+
+                if (error instanceof DotHttpError) {
+                    contentError = new DotCMSContentError(
+                        `Content API failed for '${this.#contentType}' (fetch): ${error.message}`,
+                        this.#contentType,
+                        'fetch',
+                        error,
+                        this.getFinalQuery()
+                    );
+                } else {
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    contentError = new DotCMSContentError(
+                        `Content API failed for '${this.#contentType}' (fetch): ${errorMessage}`,
+                        this.#contentType,
+                        'fetch',
+                        undefined,
+                        this.getFinalQuery()
+                    );
+                }
+
+                if (typeof onrejected === 'function') {
+                    const result = onrejected(contentError);
+                    // Ensure we always return a value, fallback to original error if callback returns undefined
+                    return result ?? contentError;
+                }
+
+                // Throw the wrapped error to trigger .catch()
+                throw contentError;
             }
-
-            return formattedResponse;
-        }, (error: unknown) => {
-            if (typeof onrejected === 'function') {
-                // Ensure error is a DotHttpError before passing to callback
-                const httpError = error instanceof DotHttpError ? error : new DotHttpError({
-                    status: 0,
-                    statusText: 'Unknown Error',
-                    message: error instanceof Error ? error.message : 'An unknown error occurred',
-                    data: error
-                });
-
-                const result = onrejected(httpError);
-                // Ensure we always return a value, fallback to original error if callback returns undefined
-                return result ?? httpError;
-            }
-            throw error;
-        });
+        );
     }
 
     /**

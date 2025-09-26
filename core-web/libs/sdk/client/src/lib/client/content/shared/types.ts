@@ -4,6 +4,44 @@ import { Equals } from '../builders/query/lucene-syntax';
 import { QueryBuilder } from '../builders/query/query';
 
 /**
+ * Content API specific error class
+ * Wraps HTTP errors and adds content-specific context including query information
+ */
+export class DotCMSContentError extends Error {
+    public readonly httpError?: DotHttpError;
+    public readonly contentType: string;
+    public readonly operation: string;
+    public readonly query?: string;
+
+    constructor(message: string, contentType: string, operation: string, httpError?: DotHttpError, query?: string) {
+        super(message);
+        this.name = 'DotCMSContentError';
+        this.contentType = contentType;
+        this.operation = operation;
+        this.httpError = httpError;
+        this.query = query;
+
+        // Ensure proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, DotCMSContentError.prototype);
+    }
+
+    /**
+     * Serializes the error to a plain object for logging or transmission
+     */
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            contentType: this.contentType,
+            operation: this.operation,
+            httpError: this.httpError?.toJSON(),
+            query: this.query,
+            stack: this.stack
+        };
+    }
+}
+
+/**
  * Model to sort by fields.
  */
 export type SortBy = {
@@ -45,11 +83,11 @@ export type OnFullfilled<T> =
  * Callback for a rejected promise.
  *
  * @callback OnRejected
- * @param {DotHttpError} error - The HTTP error object.
- * @returns {DotHttpError | PromiseLike<DotHttpError>} The processed error or a promise.
+ * @param {DotCMSContentError} error - The content error object.
+ * @returns {DotCMSContentError | PromiseLike<DotCMSContentError>} The processed error or a promise.
  */
 export type OnRejected =
-    | ((error: DotHttpError) => DotHttpError | PromiseLike<DotHttpError>)
+    | ((error: DotCMSContentError) => DotCMSContentError | PromiseLike<DotCMSContentError>)
     | undefined
     | null;
 
