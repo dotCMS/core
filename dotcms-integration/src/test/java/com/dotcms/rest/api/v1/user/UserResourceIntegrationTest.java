@@ -3,6 +3,12 @@ package com.dotcms.rest.api.v1.user;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.DotRestInstanceProvider;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.UserPaginator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -16,7 +22,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotcms.rest.ResponseEntityView;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -52,8 +57,18 @@ public class UserResourceIntegrationTest {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
-
-        resource = new UserResource();
+        
+        UserPermissionHelper userPermissionHelper = new UserPermissionHelper();
+        
+        // Create resource with 5-parameter constructor demonstrating constructor chaining
+        resource = new UserResource(new WebResource(new ApiProvider()), UserResourceHelper.getInstance(),
+                new PaginationUtil(new UserPaginator()), new DotRestInstanceProvider()
+                        .setUserAPI(APILocator.getUserAPI())
+                        .setHostAPI(APILocator.getHostAPI())
+                        .setRoleAPI(APILocator.getRoleAPI())
+                        .setErrorHelper(ErrorResponseHelper.INSTANCE),
+                userPermissionHelper);
+                
         adminUser = TestUserUtils.getAdminUser();
         host = new SiteDataGen().nextPersisted();
         user = TestUserUtils.getChrisPublisherUser(host);
@@ -174,15 +189,12 @@ public class UserResourceIntegrationTest {
     public void test_getUserPermissions_adminAccessingOtherUser_success() throws Exception {
         // Admin can view any user's permissions
         HttpServletRequest request = mockRequest(); // Already authenticated as admin
-        Response response = resource.getUserPermissions(request, this.response, permissionTestUser.getUserId());
+        ResponseEntityUserPermissionsView responseEntity = resource.getUserPermissions(request, this.response, permissionTestUser.getUserId());
         
-        assertNotNull(response);
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        assertNotNull(response.getEntity());
-        assertTrue(response.getEntity() instanceof ResponseEntityView);
+        assertNotNull(responseEntity);
+        assertNotNull(responseEntity.getEntity());
         
-        ResponseEntityView responseView = (ResponseEntityView) response.getEntity();
-        Map<String, Object> responseData = (Map<String, Object>) responseView.getEntity();
+        Map<String, Object> responseData = (Map<String, Object>) responseEntity.getEntity();
         List<Map<String, Object>> permissions = (List<Map<String, Object>>) responseData.get("assets");
         
         // Validate structure
@@ -210,13 +222,12 @@ public class UserResourceIntegrationTest {
         request.setHeader("Authorization", "Basic " + new String(Base64.encode(auth.getBytes())));
         request.getSession().setAttribute(WebKeys.USER_ID, permissionTestUser.getUserId());
         
-        Response response = resource.getUserPermissions(request, this.response, permissionTestUser.getUserId());
+        ResponseEntityUserPermissionsView responseEntity = resource.getUserPermissions(request, this.response, permissionTestUser.getUserId());
         
-        assertNotNull(response);
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertNotNull(responseEntity);
+        assertNotNull(responseEntity.getEntity());
         
-        ResponseEntityView responseView = (ResponseEntityView) response.getEntity();
-        Map<String, Object> responseData = (Map<String, Object>) responseView.getEntity();
+        Map<String, Object> responseData = (Map<String, Object>) responseEntity.getEntity();
         List<Map<String, Object>> permissions = (List<Map<String, Object>>) responseData.get("assets");
         
         assertNotNull(permissions);
@@ -254,13 +265,12 @@ public class UserResourceIntegrationTest {
     public void test_getUserPermissions_systemHostAlwaysIncluded() throws Exception {
         // System host should always be in response
         HttpServletRequest request = mockRequest();
-        Response response = resource.getUserPermissions(request, this.response, limitedUser.getUserId());
+        ResponseEntityUserPermissionsView responseEntity = resource.getUserPermissions(request, this.response, limitedUser.getUserId());
         
-        assertNotNull(response);
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertNotNull(responseEntity);
+        assertNotNull(responseEntity.getEntity());
         
-        ResponseEntityView responseView = (ResponseEntityView) response.getEntity();
-        Map<String, Object> responseData = (Map<String, Object>) responseView.getEntity();
+        Map<String, Object> responseData = (Map<String, Object>) responseEntity.getEntity();
         List<Map<String, Object>> permissions = (List<Map<String, Object>>) responseData.get("assets");
         
         boolean hasSystemHost = permissions.stream()
