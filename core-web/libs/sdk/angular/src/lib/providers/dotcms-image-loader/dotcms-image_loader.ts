@@ -73,7 +73,7 @@ export function provideDotCMSImageLoader(path?: string): Provider[] {
  * @internal
  */
 function createDotCMSURL(config: ImageLoaderConfig, path?: string): string {
-    const { loaderParams, src, width } = config;
+    const { loaderParams, src, width, quality = 50 } = config;
     const params = loaderParams as DotCMSImageLoaderParams;
 
     if (params?.isOutsideSRC) {
@@ -86,8 +86,8 @@ function createDotCMSURL(config: ImageLoaderConfig, path?: string): string {
     const languageId = params?.languageId ?? '1';
 
     if (width) {
-        return `${dotcmsHost}${imageSRC}/${width}w?language_id=${languageId}`;
+        return `${dotcmsHost}${imageSRC}/${width}w/${quality}q?language_id=${languageId}`;
     }
 
-    return `${dotcmsHost}${imageSRC}?language_id=${languageId}`;
+    return `${dotcmsHost}${imageSRC}/${quality}q?language_id=${languageId}`;
 }

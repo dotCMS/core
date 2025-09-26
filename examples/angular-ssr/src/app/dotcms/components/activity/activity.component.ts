@@ -17,7 +17,8 @@ import { Activity } from '../../types/contentlet.model';
         <img
           class="object-cover w-full h-full"
           [ngSrc]="inode"
-          fill
+          width="400"
+          height="300"
           alt="Activity Image"
         />
       </div>

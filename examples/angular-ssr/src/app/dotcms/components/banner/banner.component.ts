@@ -1,3 +1,4 @@
+
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -17,7 +18,8 @@ import { Banner } from '../../types/contentlet.model';
         class="object-cover w-full"
         [ngSrc]="imageIdentifier"
         [alt]="contentlet().title"
-        fill
+        width="1400"
+        height="400"
         priority
       />
     }
