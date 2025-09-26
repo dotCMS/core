@@ -8,7 +8,9 @@ import { DotMessageService } from '@dotcms/data-access';
 import { FolderNamePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotTreeFolderComponent, SYSTEM_HOST_ID } from './dot-tree-folder.component';
+import { DotTreeFolderComponent } from './dot-tree-folder.component';
+
+import { SYSTEM_HOST_ID } from '../shared/constants';
 
 describe('DotTreeFolderComponent', () => {
     let spectator: Spectator<DotTreeFolderComponent>;
