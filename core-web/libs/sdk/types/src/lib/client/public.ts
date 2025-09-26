@@ -20,10 +20,27 @@ export class DotHttpError extends Error implements HttpErrorDetails {
 
     constructor(details: HttpErrorDetails) {
         super(details.message);
-        this.name = 'HttpError';
+        this.name = 'DotHttpError';
         this.status = details.status;
         this.statusText = details.statusText;
         this.data = details.data;
+
+        // Ensure proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, DotHttpError.prototype);
+    }
+
+    /**
+     * Serializes the error to a plain object for logging or transmission
+     */
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            status: this.status,
+            statusText: this.statusText,
+            data: this.data,
+            stack: this.stack
+        };
     }
 }
 
