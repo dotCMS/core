@@ -8,12 +8,47 @@ import {
     DotCMSComposedPageResponse,
     DotHttpClient,
     DotRequestOptions,
-    DotHttpError
+    DotHttpError,
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
+
+/**
+ * Page API specific error class
+ * Wraps HTTP errors and adds page-specific context including GraphQL information
+ */
+export class DotCMSPageError extends Error {
+    public readonly httpError?: DotHttpError;
+    public readonly graphql?: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+
+    constructor(message: string, httpError?: DotHttpError, graphql?: { query: string; variables: Record<string, unknown> }) {
+        super(message);
+        this.name = 'DotCMSPageError';
+        this.httpError = httpError;
+        this.graphql = graphql;
+
+        // Ensure proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, DotCMSPageError.prototype);
+    }
+
+    /**
+     * Serializes the error to a plain object for logging or transmission
+     */
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            httpError: this.httpError?.toJSON(),
+            graphql: this.graphql,
+            stack: this.stack
+        };
+    }
+}
 
 /**
  * Client for interacting with the DotCMS Page API.
@@ -85,6 +120,7 @@ export class PageClient {
      * @param {DotCMSPageRequestParams} [options] - Options for the request
      * @template T - The type of the page and content, defaults to DotCMSBasicPage and Record<string, unknown> | unknown
      * @returns {Promise<DotCMSComposedPageResponse<T>>} A Promise that resolves to the page data
+     * @throws {DotCMSPageError} - Throws a page-specific error if the request fails or page is not found
      *
      * @example Using GraphQL
      * ```typescript
@@ -184,8 +220,13 @@ export class PageClient {
             const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {
-                throw new Error(
-                    'Page not found. Check the page URL and permissions.'
+                throw new DotCMSPageError(
+                    `Page ${url} not found. Check the page URL and permissions.`,
+                    undefined,
+                    {
+                        query: completeQuery,
+                        variables: requestVariables
+                    }
                 );
             }
 
@@ -202,30 +243,25 @@ export class PageClient {
         } catch (error) {
             // Handle DotHttpError instances from httpClient.request
             if (error instanceof DotHttpError) {
-                const httpError = {
-                    status: error.status,
-                    statusText: error.statusText,
-                    message: error.message,
-                    data: error.data,
-                    graphql: {
+                throw new DotCMSPageError(
+                    `Page request failed for URL '${url}': ${error.message}`,
+                    error,
+                    {
                         query: completeQuery,
                         variables: requestVariables
                     }
-                };
-                throw httpError;
+                );
             }
 
             // Handle other errors (GraphQL errors, validation errors, etc.)
-            const errorMessage = {
-                error,
-                message: 'Failed to retrieve page data',
-                graphql: {
+            throw new DotCMSPageError(
+                `Page request failed for URL '${url}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                undefined,
+                {
                     query: completeQuery,
                     variables: requestVariables
                 }
-            };
-
-            throw errorMessage;
+            );
         }
     }
 }

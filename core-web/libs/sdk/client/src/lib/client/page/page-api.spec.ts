@@ -7,10 +7,10 @@ import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
     DotRequestOptions,
-    DotCMSPageResponse
+    DotHttpError,
 } from '@dotcms/types';
 
-import { PageClient } from './page-api';
+import { PageClient, DotCMSPageError } from './page-api';
 
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
@@ -222,12 +222,13 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/graphql-page', graphQLOptions);
-            } catch (response: unknown) {
-                const responseData = response as DotCMSPageResponse;
-
-                expect(responseData.error?.message).toBe(
-                    'No page data found. Please check the page URL and the GraphQL query.'
-                );
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotCMSPageError);
+                if (error instanceof DotCMSPageError) {
+                    expect(error.message).toBe('Page request failed for URL \'/graphql-page\': Page /graphql-page not found. Check the page URL and permissions.');
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toContain('containers');
+                }
             }
         });
 
@@ -271,31 +272,6 @@ describe('PageClient', () => {
             });
         });
 
-        it('should handle GraphQL errors', async () => {
-            mockRequest.mockRejectedValue(new Error('GraphQL error'));
-
-            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
-            const graphQLOptions = {
-                graphql: {
-                    page: `containers {
-      containerContentlets {
-        contentlets {
-         ... on Banner {
-            title
-          }
-        }
-      }
-    }`,
-                    content: { content: 'query Content { items { title } }' }
-                }
-            };
-            try {
-                await pageClient.get('/page', graphQLOptions);
-            } catch (error: any) {
-                expect(error.message).toBe('Failed to retrieve page data');
-            }
-        });
-
         it('should throw errors from GraphQL', async () => {
             mockRequest.mockResolvedValue({
                 errors: [{ message: 'GraphQL error' }]
@@ -316,8 +292,41 @@ describe('PageClient', () => {
             };
             try {
                 await pageClient.get('/page', graphQLOptions);
-            } catch (error: any) {
-                expect(error.message).toBe('Failed to retrieve page data');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotCMSPageError);
+                if (error instanceof DotCMSPageError) {
+                    expect(error.message).toBe('Page request failed for URL \'/page\': Cannot read properties of undefined (reading \'page\')');
+                    expect(error.graphql).toBeDefined();
+                }
+            }
+        });
+
+        it('should handle HTTP errors', async () => {
+            const httpError = new DotHttpError({
+                status: 404,
+                statusText: 'Not Found',
+                message: 'Page not found',
+                data: { error: 'Page not found' }
+            });
+            mockRequest.mockRejectedValue(httpError);
+
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            try {
+                await pageClient.get('/page', graphQLOptions);
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotCMSPageError);
+                if (error instanceof DotCMSPageError) {
+                    expect(error.message).toBe('Page request failed for URL \'/page\': Page not found');
+                    expect(error.httpError).toBe(httpError);
+                    expect(error.graphql).toBeDefined();
+                }
             }
         });
 
