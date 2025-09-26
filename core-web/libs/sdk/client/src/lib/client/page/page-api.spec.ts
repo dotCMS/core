@@ -10,7 +10,7 @@ import {
     DotHttpError,
 } from '@dotcms/types';
 
-import { PageClient, DotCMSPageError } from './page-api';
+import { PageClient, DotErrorPage } from './page-api';
 
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
@@ -223,8 +223,8 @@ describe('PageClient', () => {
             try {
                 await pageClient.get('/graphql-page', graphQLOptions);
             } catch (error: unknown) {
-                expect(error).toBeInstanceOf(DotCMSPageError);
-                if (error instanceof DotCMSPageError) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
                     expect(error.message).toBe('Page request failed for URL \'/graphql-page\': Page /graphql-page not found. Check the page URL and permissions.');
                     expect(error.graphql).toBeDefined();
                     expect(error.graphql?.query).toContain('containers');
@@ -293,8 +293,8 @@ describe('PageClient', () => {
             try {
                 await pageClient.get('/page', graphQLOptions);
             } catch (error: unknown) {
-                expect(error).toBeInstanceOf(DotCMSPageError);
-                if (error instanceof DotCMSPageError) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
                     expect(error.message).toBe('Page request failed for URL \'/page\': Cannot read properties of undefined (reading \'page\')');
                     expect(error.graphql).toBeDefined();
                 }
@@ -321,8 +321,8 @@ describe('PageClient', () => {
             try {
                 await pageClient.get('/page', graphQLOptions);
             } catch (error: unknown) {
-                expect(error).toBeInstanceOf(DotCMSPageError);
-                if (error instanceof DotCMSPageError) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
                     expect(error.message).toBe('Page request failed for URL \'/page\': Page not found');
                     expect(error.httpError).toBe(httpError);
                     expect(error.graphql).toBeDefined();
