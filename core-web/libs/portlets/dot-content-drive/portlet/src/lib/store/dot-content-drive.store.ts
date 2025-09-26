@@ -34,7 +34,8 @@ import {
     DotContentDrivePagination,
     DotContentDriveSort,
     DotContentDriveState,
-    DotContentDriveStatus
+    DotContentDriveStatus,
+    DotContentDriveTriggerType
 } from '../shared/models';
 import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
 
@@ -47,7 +48,8 @@ const initialState: DotContentDriveState = {
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
-    isTreeExpanded: DEFAULT_TREE_EXPANDED
+    isTreeExpanded: DEFAULT_TREE_EXPANDED,
+    lastPathChangeTrigger: null
 };
 
 export const DotContentDriveStore = signalStore(
@@ -163,9 +165,13 @@ export const DotContentDriveStore = signalStore(
             reloadContentDrive() {
                 this.loadItems();
             },
-            setPath(path: string) {
-                patchState(store, { path });
-            }
+            setPath(path: string, triggerType: DotContentDriveTriggerType = 'selection') {
+                patchState(store, {
+                    path,
+                    lastPathChangeTrigger: triggerType
+                });
+            },
+
         };
     }),
     withHooks((store) => {

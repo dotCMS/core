@@ -36,7 +36,7 @@ export class DotContentDriveSidebarComponent {
     });
 
     /**
-     * Handles node selection events
+     * Handles node selection events - Only changes the selected folder content, not tree expansion
      *
      * @param {TreeNodeSelectEvent} event - The tree node select event
      */
@@ -44,7 +44,9 @@ export class DotContentDriveSidebarComponent {
         const { node } = event;
         const { path } = node.data;
 
-        this.#store.setPath(path);
+        // Just change the path to load the folder content, don't trigger tree reloading
+        // The tree expansion should only happen through onNodeExpand or URL navigation
+        this.#store.setPath(path, 'selection');
     }
 
     /**
@@ -57,17 +59,26 @@ export class DotContentDriveSidebarComponent {
         const { hostname, path } = node.data;
         const fullPath = `${hostname}${path}`;
 
+        // Update expanded state in store
+        if (node.key) {
+            this.#store.updateExpandedState(node.key, true);
+        }
+
+        // If node already has children or is a leaf, just expand it
         if (node.children?.length > 0 || node.leaf) {
             node.expanded = true;
             return;
         }
 
+        // Load children if not already loaded
         node.loading = true;
         this.#store.loadChildFolders(fullPath).subscribe(({ folders }) => {
             node.loading = false;
             node.expanded = true;
             node.leaf = folders.length === 0;
             node.children = [...folders];
+
+            // Update folders without triggering any effects
             this.#store.updateFolders([...this.$folders()]);
         });
     }
@@ -84,6 +95,11 @@ export class DotContentDriveSidebarComponent {
         if (node.key === 'ALL_FOLDER') {
             node.expanded = true;
             return;
+        }
+
+        // Update expanded state in store
+        if (node.key) {
+            this.#store.updateExpandedState(node.key, false);
         }
     }
 }

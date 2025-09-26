@@ -192,7 +192,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
 
-                expect(contentDriveStore.setPath).toHaveBeenCalledWith('/documents/');
+                expect(contentDriveStore.setPath).toHaveBeenCalledWith('/documents/', 'selection');
             });
 
             it('should extract path from node data correctly', () => {
@@ -215,7 +215,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
 
-                expect(contentDriveStore.setPath).toHaveBeenCalledWith('/custom/path/');
+                expect(contentDriveStore.setPath).toHaveBeenCalledWith('/custom/path/', 'selection');
             });
         });
 
@@ -380,7 +380,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 node: testNode
             };
             spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', selectEvent);
-            expect(contentDriveStore.setPath).toHaveBeenCalledWith('/test/');
+            expect(contentDriveStore.setPath).toHaveBeenCalledWith('/test/', 'selection');
 
             // Then expand the node
             const expandEvent: TreeNodeExpandEvent = {
