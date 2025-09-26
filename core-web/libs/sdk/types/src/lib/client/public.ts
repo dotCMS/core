@@ -45,6 +45,38 @@ export class DotHttpError extends Error implements HttpErrorDetails {
 }
 
 /**
+ * Navigation API specific error class
+ * Wraps HTTP errors and adds navigation-specific context
+ */
+export class DotNavigationError extends Error {
+    public readonly httpError?: DotHttpError;
+    public readonly path: string;
+
+    constructor(message: string, path: string, httpError?: DotHttpError) {
+        super(message);
+        this.name = 'DotNavigationError';
+        this.path = path;
+        this.httpError = httpError;
+
+        // Ensure proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, DotNavigationError.prototype);
+    }
+
+    /**
+     * Serializes the error to a plain object for logging or transmission
+     */
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            path: this.path,
+            httpError: this.httpError?.toJSON(),
+            stack: this.stack
+        };
+    }
+}
+
+/**
  * Interface for HTTP client implementations.
  * Allows the SDK to work with different HTTP libraries.
  *

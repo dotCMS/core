@@ -5,39 +5,8 @@ import {
     DotCMSNavigationItem,
     DotHttpClient,
     DotHttpError,
+    DotNavigationError,
 } from '@dotcms/types';
-
-/**
- * Navigation API specific error class
- * Wraps HTTP errors and adds navigation-specific context
- */
-export class DotCMSNavigationError extends Error {
-    public readonly httpError?: DotHttpError;
-    public readonly path: string;
-
-    constructor(message: string, path: string, httpError?: DotHttpError) {
-        super(message);
-        this.name = 'DotCMSNavigationError';
-        this.path = path;
-        this.httpError = httpError;
-
-        // Ensure proper prototype chain for instanceof checks
-        Object.setPrototypeOf(this, DotCMSNavigationError.prototype);
-    }
-
-    /**
-     * Serializes the error to a plain object for logging or transmission
-     */
-    toJSON() {
-        return {
-            name: this.name,
-            message: this.message,
-            path: this.path,
-            httpError: this.httpError?.toJSON(),
-            stack: this.stack
-        };
-    }
-}
 
 export class NavigationClient {
     private requestOptions: DotRequestOptions;
@@ -59,14 +28,14 @@ export class NavigationClient {
      * @param {string} path - The path to retrieve navigation for.
      * @param {DotCMSNavigationRequestParams} params - The options for the Navigation API call.
      * @returns {Promise<DotCMSNavigationItem[]>} - A Promise that resolves to the response from the DotCMS API.
-     * @throws {DotCMSNavigationError} - Throws a navigation-specific error if the request fails.
+     * @throws {DotNavigationError} - Throws a navigation-specific error if the request fails.
      */
     async get(
         path: string,
         params?: DotCMSNavigationRequestParams
     ): Promise<DotCMSNavigationItem[]> {
         if (!path) {
-            throw new DotCMSNavigationError(
+            throw new DotNavigationError(
                 "The 'path' parameter is required for the Navigation API",
                 path
             );
@@ -88,7 +57,7 @@ export class NavigationClient {
         } catch (error) {
             // Handle DotHttpError instances from httpClient.request
             if (error instanceof DotHttpError) {
-                throw new DotCMSNavigationError(
+                throw new DotNavigationError(
                     `Navigation API failed for path '${parsedPath}': ${error.message}`,
                     parsedPath,
                     error
@@ -96,7 +65,7 @@ export class NavigationClient {
             }
 
             // Handle other errors (validation, network, etc.)
-            throw new DotCMSNavigationError(
+            throw new DotNavigationError(
                 `Navigation API failed for path '${parsedPath}': ${error instanceof Error ? error.message : 'Unknown error'}`,
                 parsedPath
             );

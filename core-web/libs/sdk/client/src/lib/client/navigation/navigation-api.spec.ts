@@ -1,6 +1,11 @@
-import { DotCMSClientConfig, DotRequestOptions, DotHttpError } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotRequestOptions,
+    DotHttpError,
+    DotNavigationError
+} from '@dotcms/types';
 
-import { NavigationClient, DotCMSNavigationError } from './navigation-api';
+import { NavigationClient } from './navigation-api';
 
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
@@ -109,8 +114,10 @@ describe('NavigationClient', () => {
 
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('/')).rejects.toThrow(DotCMSNavigationError);
-        await expect(navClient.get('/')).rejects.toThrow('Navigation API failed for path \'/\': Network error');
+        await expect(navClient.get('/')).rejects.toThrow(DotNavigationError);
+        await expect(navClient.get('/')).rejects.toThrow(
+            "Navigation API failed for path '/': Network error"
+        );
     });
 
     it('should handle HTTP errors', async () => {
@@ -124,8 +131,10 @@ describe('NavigationClient', () => {
 
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('/')).rejects.toThrow(DotCMSNavigationError);
-        await expect(navClient.get('/')).rejects.toThrow('Navigation API failed for path \'/\': Navigation not found');
+        await expect(navClient.get('/')).rejects.toThrow(DotNavigationError);
+        await expect(navClient.get('/')).rejects.toThrow(
+            "Navigation API failed for path '/': Navigation not found"
+        );
     });
 
     it('should include HTTP error details in navigation error', async () => {
@@ -142,8 +151,8 @@ describe('NavigationClient', () => {
         try {
             await navClient.get('/');
         } catch (error) {
-            expect(error).toBeInstanceOf(DotCMSNavigationError);
-            if (error instanceof DotCMSNavigationError) {
+            expect(error).toBeInstanceOf(DotNavigationError);
+            if (error instanceof DotNavigationError) {
                 expect(error.path).toBe('/');
                 expect(error.httpError).toBe(httpError);
                 expect(error.httpError?.status).toBe(500);
@@ -154,8 +163,10 @@ describe('NavigationClient', () => {
     it('should throw navigation error for missing path parameter', async () => {
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('')).rejects.toThrow(DotCMSNavigationError);
-        await expect(navClient.get('')).rejects.toThrow("The 'path' parameter is required for the Navigation API");
+        await expect(navClient.get('')).rejects.toThrow(DotNavigationError);
+        await expect(navClient.get('')).rejects.toThrow(
+            "The 'path' parameter is required for the Navigation API"
+        );
     });
 
     it('should include authorization headers in request', async () => {
