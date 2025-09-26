@@ -18,6 +18,7 @@ import com.liferay.portal.model.User;
  */
 public class UserHelper {
 
+
     private static class SingletonHolder {
         private static final UserHelper INSTANCE = new UserHelper();
     }
@@ -42,6 +43,18 @@ public class UserHelper {
     public UserHelper(final RoleAPI roleAPI) {
         this.roleAPI = roleAPI;
     }
+
+
+    /**
+     * Remove the roles associated to the user
+     * @param user User
+     */
+    public void removeRoles(User user) throws DotDataException {
+
+        Logger.debug(this, ()-> "removing the roles for the user:" + user.getUserId());
+        this.roleAPI.removeAllRolesFromUser(user);
+    }
+
 
     /**
      * Adds a new role to the user.
