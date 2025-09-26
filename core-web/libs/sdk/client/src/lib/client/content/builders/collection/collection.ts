@@ -1,4 +1,4 @@
-import { DotHttpClient, DotRequestOptions, DotHttpError, DotCMSClientConfig } from '@dotcms/types';
+import { DotHttpClient, DotRequestOptions, DotHttpError, DotCMSClientConfig, DotErrorContent } from '@dotcms/types';
 
 import { CONTENT_API_URL } from '../../shared/const';
 import {
@@ -8,7 +8,6 @@ import {
     GetCollectionRawResponse,
     OnFullfilled,
     OnRejected,
-    DotErrorContent
 } from '../../shared/types';
 import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';

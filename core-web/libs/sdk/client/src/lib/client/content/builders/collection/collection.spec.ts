@@ -1,12 +1,12 @@
 /// <reference types="jest" />
 
-import { DotRequestOptions, DotCMSClientConfig, DotHttpError } from '@dotcms/types';
+import { DotRequestOptions, DotCMSClientConfig, DotHttpError, DotErrorContent } from '@dotcms/types';
 
 import { CollectionBuilder } from './collection';
 
 import { FetchHttpClient } from '../../../adapters/fetch-http-client';
 import { CONTENT_API_URL } from '../../shared/const';
-import { SortBy, DotErrorContent } from '../../shared/types';
+import { SortBy } from '../../shared/types';
 import { Equals } from '../query/lucene-syntax';
 
 // Mock the FetchHttpClient
