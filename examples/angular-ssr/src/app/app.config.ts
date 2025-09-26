@@ -11,12 +11,11 @@ import {
   withEventReplay,
   withHttpTransferCacheOptions,
 } from '@angular/platform-browser';
-import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
-import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
-import { AngularHttpClient } from './angular-httpclient';
+import { provideDotCMSImageLoader } from '@dotcms/angular';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideDotCMSImageLoader('http://localhost:8080'),
+    provideDotCMSImageLoader('https://demo.dotcms.com'),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(withFetch()),
@@ -27,13 +26,6 @@ export const appConfig: ApplicationConfig = {
         includePostRequests: true,
         includeRequestsWithAuthHeaders: true,
       })
-    ),
-    provideDotCMSClient({
-      dotcmsUrl: 'http://localhost:8080',
-      authToken:
-        'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk0NmRiNjExMi01YTQxLTRlYTQtODEzNC04ZDEzMDA4NTA0Y2QiLCJ4bW9kIjoxNzU4NjM5ODk5MDAwLCJuYmYiOjE3NTg2Mzk4OTksImlzcyI6ImQ2MWM5Y2I2OTAiLCJsYWJlbCI6InRva2VuIiwiZXhwIjoxODUzMzAxNjAwLCJpYXQiOjE3NTg2Mzk4OTksImp0aSI6IjJhYzE3MGQ5LWE5OTQtNGNjNC04YmY0LTkzNjRmN2UzYzRiZCJ9.IfYSpCEv0sAYWWjWSK96norKYSUvRvqwJWHyRosei9k',
-      siteId: 'YOUR_SITE_ID',
-      httpClient: (http: HttpClient) => new AngularHttpClient(http),
-    }),
+    )
   ],
 };

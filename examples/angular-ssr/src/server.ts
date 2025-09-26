@@ -8,12 +8,12 @@ import express from 'express';
 import { join } from 'node:path';
 
 import { createDotCMSClient } from '@dotcms/client';
-import type { DotCMSPageRequestParams } from '@dotcms/types';
+import { DotCMSPageRequestParams, DotErrorPage } from '@dotcms/types';
 
 const client = createDotCMSClient({
-  dotcmsUrl: 'http://localhost:8080',
+  dotcmsUrl: 'https://demo.dotcms.com',
   authToken:
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk0NmRiNjExMi01YTQxLTRlYTQtODEzNC04ZDEzMDA4NTA0Y2QiLCJ4bW9kIjoxNzU4NjM5ODk5MDAwLCJuYmYiOjE3NTg2Mzk4OTksImlzcyI6ImQ2MWM5Y2I2OTAiLCJsYWJlbCI6InRva2VuIiwiZXhwIjoxODUzMzAxNjAwLCJpYXQiOjE3NTg2Mzk4OTksImp0aSI6IjJhYzE3MGQ5LWE5OTQtNGNjNC04YmY0LTkzNjRmN2UzYzRiZCJ9.IfYSpCEv0sAYWWjWSK96norKYSUvRvqwJWHyRosei9k',
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlhMTIwNzMwMC1hYmJlLTRjNjAtYWViOC04OWJiYzVkZmVmZDkiLCJ4bW9kIjoxNzU4OTA1NjQzMDAwLCJuYmYiOjE3NTg5MDU2NDMsImlzcyI6ImEwOTA0MDZmYzUiLCJsYWJlbCI6InRlc3QiLCJleHAiOjE4NTM1MzIwMDEsImlhdCI6MTc1ODkwNTY0MywianRpIjoiMThhNzVjNWQtNWUyMy00NzYxLWIyMTktNzc4ZWNhNGIyYjZhIn0.4Q4AxABHYHpPhZlJzvBxZOXX9PdoJHgAcDmYO3fQPwI',
   siteId: 'YOUR_SITE_ID',
 });
 
@@ -35,6 +35,9 @@ app.post('/api/page', async (req: express.Request, res: express.Response) => {
     const response = await client.page.get(url, params ?? {});
     return res.json(response);
   } catch (error) {
+    if (error instanceof DotErrorPage) {
+      return res.status(error.httpError?.status ?? 500).json(error.toJSON());
+    }
     return res.status(500).json({ error: (error as Error).message });
   }
 });
