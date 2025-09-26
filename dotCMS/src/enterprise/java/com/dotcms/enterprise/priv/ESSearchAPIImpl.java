@@ -55,7 +55,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 public class ESSearchAPIImpl implements ESSeachAPI {
 
 	@Override
-	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
+	public <T> ESSearchResults <T> esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
 		esQuery = (esQuery != null) ? StringUtils.lowercaseStringExceptMatchingTokens(esQuery,ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX) : esQuery;
 		StringBuilder rewrittenESQuery = new StringBuilder(esQuery);

@@ -436,4 +436,28 @@ public class WebAssetResource {
         return Response.ok(new ResponseEntityView<>(folder)).build();
     }
 
+
+    @Path("/drive")
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response drive(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            ContentDriveSearchRequest form
+    ) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+        Logger.debug(this,
+                String.format("User [%s] is requesting assets info for path [%s]",
+                        user.getUserId(), form.assetPath()));
+        return Response.ok(helper.driveSearch(form, user)).build();
+    }
+
 }
