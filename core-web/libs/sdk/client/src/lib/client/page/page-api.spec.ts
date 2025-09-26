@@ -8,9 +8,10 @@ import {
     DotCMSPageRequestParams,
     DotRequestOptions,
     DotHttpError,
+    DotErrorPage,
 } from '@dotcms/types';
 
-import { PageClient, DotErrorPage } from './page-api';
+import { PageClient } from './page-api';
 
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 

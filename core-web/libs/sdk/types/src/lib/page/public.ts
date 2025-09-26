@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { DotHttpError } from "../client/public";
+
 /**
  * Represents a map of container identifiers to their container objects
  *
@@ -1243,3 +1245,38 @@ export type DotCMSComposedPageResponse<T extends DotCMSExtendedPageResponse> = O
 export type DotCMSClientPageGetResponse<T extends DotCMSExtendedPageResponse> = Promise<
     DotCMSComposedPageResponse<T>
 >;
+
+/**
+ * Page API specific error class
+ * Wraps HTTP errors and adds page-specific context including GraphQL information
+ */
+export class DotErrorPage extends Error {
+    public readonly httpError?: DotHttpError;
+    public readonly graphql?: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+
+    constructor(message: string, httpError?: DotHttpError, graphql?: { query: string; variables: Record<string, unknown> }) {
+        super(message);
+        this.name = 'DotCMSPageError';
+        this.httpError = httpError;
+        this.graphql = graphql;
+
+        // Ensure proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, DotErrorPage.prototype);
+    }
+
+    /**
+     * Serializes the error to a plain object for logging or transmission
+     */
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            httpError: this.httpError?.toJSON(),
+            graphql: this.graphql,
+            stack: this.stack
+        };
+    }
+}

@@ -9,46 +9,12 @@ import {
     DotHttpClient,
     DotRequestOptions,
     DotHttpError,
+    DotErrorPage,
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
-
-/**
- * Page API specific error class
- * Wraps HTTP errors and adds page-specific context including GraphQL information
- */
-export class DotErrorPage extends Error {
-    public readonly httpError?: DotHttpError;
-    public readonly graphql?: {
-        query: string;
-        variables: Record<string, unknown>;
-    };
-
-    constructor(message: string, httpError?: DotHttpError, graphql?: { query: string; variables: Record<string, unknown> }) {
-        super(message);
-        this.name = 'DotCMSPageError';
-        this.httpError = httpError;
-        this.graphql = graphql;
-
-        // Ensure proper prototype chain for instanceof checks
-        Object.setPrototypeOf(this, DotErrorPage.prototype);
-    }
-
-    /**
-     * Serializes the error to a plain object for logging or transmission
-     */
-    toJSON() {
-        return {
-            name: this.name,
-            message: this.message,
-            httpError: this.httpError?.toJSON(),
-            graphql: this.graphql,
-            stack: this.stack
-        };
-    }
-}
 
 /**
  * Client for interacting with the DotCMS Page API.
