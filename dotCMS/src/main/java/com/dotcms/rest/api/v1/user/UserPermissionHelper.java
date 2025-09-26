@@ -34,30 +34,44 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Helper for building user permission responses for REST endpoints.
  * Provides modern REST-compliant permission data transformation.
  */
+@ApplicationScoped
 public class UserPermissionHelper {
-
-    private static class SingletonHolder {
-        private static final UserPermissionHelper INSTANCE = new UserPermissionHelper();
-    }
-
-    public static UserPermissionHelper getInstance() {
-        return SingletonHolder.INSTANCE;
-    }
 
     private final PermissionAPI permissionAPI;
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
     private final UserAPI userAPI;
 
-    private UserPermissionHelper() {
-        this.permissionAPI = APILocator.getPermissionAPI();
-        this.hostAPI = APILocator.getHostAPI();
-        this.folderAPI = APILocator.getFolderAPI();
-        this.userAPI = APILocator.getUserAPI();
+    /**
+     * Default constructor for CDI.
+     */
+    public UserPermissionHelper() {
+        this(APILocator.getPermissionAPI(),
+             APILocator.getHostAPI(),
+             APILocator.getFolderAPI(),
+             APILocator.getUserAPI());
+    }
+
+    /**
+     * Constructor with dependency injection.
+     */
+    @Inject
+    public UserPermissionHelper(final PermissionAPI permissionAPI,
+                               @Named("HostAPI") final HostAPI hostAPI,
+                               final FolderAPI folderAPI,
+                               final UserAPI userAPI) {
+        this.permissionAPI = permissionAPI;
+        this.hostAPI = hostAPI;
+        this.folderAPI = folderAPI;
+        this.userAPI = userAPI;
     }
 
     /**
@@ -67,7 +81,7 @@ public class UserPermissionHelper {
             throws DotDataException, DotSecurityException {
 
         final User systemUser = userAPI.getSystemUser();
-        final Host systemHost = hostAPI.findSystemHost(systemUser, false);
+        final Host systemHost = APILocator.systemHost();
         final boolean respectFrontendRoles = false;
 
         final Set<Permissionable> permAssets = new HashSet<>();
