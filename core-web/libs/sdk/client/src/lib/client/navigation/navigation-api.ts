@@ -3,8 +3,41 @@ import {
     DotCMSNavigationRequestParams,
     DotRequestOptions,
     DotCMSNavigationItem,
-    DotHttpClient
+    DotHttpClient,
+    DotHttpError,
 } from '@dotcms/types';
+
+/**
+ * Navigation API specific error class
+ * Wraps HTTP errors and adds navigation-specific context
+ */
+export class DotCMSNavigationError extends Error {
+    public readonly httpError?: DotHttpError;
+    public readonly path: string;
+
+    constructor(message: string, path: string, httpError?: DotHttpError) {
+        super(message);
+        this.name = 'DotCMSNavigationError';
+        this.path = path;
+        this.httpError = httpError;
+
+        // Ensure proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, DotCMSNavigationError.prototype);
+    }
+
+    /**
+     * Serializes the error to a plain object for logging or transmission
+     */
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            path: this.path,
+            httpError: this.httpError?.toJSON(),
+            stack: this.stack
+        };
+    }
+}
 
 export class NavigationClient {
     private requestOptions: DotRequestOptions;
@@ -23,16 +56,20 @@ export class NavigationClient {
 
     /**
      * Retrieves information about the dotCMS file and folder tree.
-     * @param {NavigationApiOptions} options - The options for the Navigation API call. Defaults to `{ depth: 0, path: '/', languageId: 1 }`.
+     * @param {string} path - The path to retrieve navigation for.
+     * @param {DotCMSNavigationRequestParams} params - The options for the Navigation API call.
      * @returns {Promise<DotCMSNavigationItem[]>} - A Promise that resolves to the response from the DotCMS API.
-     * @throws {Error} - Throws an error if the options are not valid.
+     * @throws {DotCMSNavigationError} - Throws a navigation-specific error if the request fails.
      */
     async get(
         path: string,
         params?: DotCMSNavigationRequestParams
     ): Promise<DotCMSNavigationItem[]> {
         if (!path) {
-            throw new Error("The 'path' parameter is required for the Navigation API");
+            throw new DotCMSNavigationError(
+                "The 'path' parameter is required for the Navigation API",
+                path
+            );
         }
 
         const navParams = params ? this.mapToBackendParams(params) : {};
@@ -41,12 +78,29 @@ export class NavigationClient {
         const parsedPath = path.replace(/^\/+/, '/').replace(/\/+$/, '/');
         const url = `${this.BASE_URL}${parsedPath}${urlParams ? `?${urlParams}` : ''}`;
 
-        const response = await this.httpClient.request<{ entity: DotCMSNavigationItem[] }>(
-            url,
-            this.requestOptions
-        );
+        try {
+            const response = await this.httpClient.request<{ entity: DotCMSNavigationItem[] }>(
+                url,
+                this.requestOptions
+            );
 
-        return response.entity;
+            return response.entity;
+        } catch (error) {
+            // Handle DotHttpError instances from httpClient.request
+            if (error instanceof DotHttpError) {
+                throw new DotCMSNavigationError(
+                    `Navigation API failed for path '${parsedPath}': ${error.message}`,
+                    parsedPath,
+                    error
+                );
+            }
+
+            // Handle other errors (validation, network, etc.)
+            throw new DotCMSNavigationError(
+                `Navigation API failed for path '${parsedPath}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                parsedPath
+            );
+        }
     }
 
     private mapToBackendParams(params: DotCMSNavigationRequestParams): Record<string, string> {

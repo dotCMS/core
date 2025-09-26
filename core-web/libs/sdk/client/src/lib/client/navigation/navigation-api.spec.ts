@@ -1,6 +1,6 @@
-import { DotCMSClientConfig, DotRequestOptions } from '@dotcms/types';
+import { DotCMSClientConfig, DotRequestOptions, DotHttpError } from '@dotcms/types';
 
-import { NavigationClient } from './navigation-api';
+import { NavigationClient, DotCMSNavigationError } from './navigation-api';
 
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
@@ -109,18 +109,53 @@ describe('NavigationClient', () => {
 
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('/')).rejects.toThrow('Network error');
+        await expect(navClient.get('/')).rejects.toThrow(DotCMSNavigationError);
+        await expect(navClient.get('/')).rejects.toThrow('Navigation API failed for path \'/\': Network error');
     });
 
-    it('should handle non-OK responses', async () => {
-        const httpError = new Error('Failed to fetch navigation data: Not Found - 404');
+    it('should handle HTTP errors', async () => {
+        const httpError = new DotHttpError({
+            status: 404,
+            statusText: 'Not Found',
+            message: 'Navigation not found',
+            data: { error: 'Path not found' }
+        });
         mockRequest.mockRejectedValue(httpError);
 
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('/')).rejects.toThrow(
-            `Failed to fetch navigation data: Not Found - 404`
-        );
+        await expect(navClient.get('/')).rejects.toThrow(DotCMSNavigationError);
+        await expect(navClient.get('/')).rejects.toThrow('Navigation API failed for path \'/\': Navigation not found');
+    });
+
+    it('should include HTTP error details in navigation error', async () => {
+        const httpError = new DotHttpError({
+            status: 500,
+            statusText: 'Internal Server Error',
+            message: 'Server error',
+            data: { error: 'Internal error' }
+        });
+        mockRequest.mockRejectedValue(httpError);
+
+        const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
+
+        try {
+            await navClient.get('/');
+        } catch (error) {
+            expect(error).toBeInstanceOf(DotCMSNavigationError);
+            if (error instanceof DotCMSNavigationError) {
+                expect(error.path).toBe('/');
+                expect(error.httpError).toBe(httpError);
+                expect(error.httpError?.status).toBe(500);
+            }
+        }
+    });
+
+    it('should throw navigation error for missing path parameter', async () => {
+        const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
+
+        await expect(navClient.get('')).rejects.toThrow(DotCMSNavigationError);
+        await expect(navClient.get('')).rejects.toThrow("The 'path' parameter is required for the Navigation API");
     });
 
     it('should include authorization headers in request', async () => {
