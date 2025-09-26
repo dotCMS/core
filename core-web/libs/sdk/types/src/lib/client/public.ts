@@ -48,7 +48,7 @@ export class DotHttpError extends Error implements HttpErrorDetails {
  * Navigation API specific error class
  * Wraps HTTP errors and adds navigation-specific context
  */
-export class DotNavigationError extends Error {
+export class DotErrorNavigation extends Error {
     public readonly httpError?: DotHttpError;
     public readonly path: string;
 
@@ -59,7 +59,7 @@ export class DotNavigationError extends Error {
         this.httpError = httpError;
 
         // Ensure proper prototype chain for instanceof checks
-        Object.setPrototypeOf(this, DotNavigationError.prototype);
+        Object.setPrototypeOf(this, DotErrorNavigation.prototype);
     }
 
     /**

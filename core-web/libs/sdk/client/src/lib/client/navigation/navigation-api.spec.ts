@@ -2,7 +2,7 @@ import {
     DotCMSClientConfig,
     DotRequestOptions,
     DotHttpError,
-    DotNavigationError
+    DotErrorNavigation
 } from '@dotcms/types';
 
 import { NavigationClient } from './navigation-api';
@@ -114,7 +114,7 @@ describe('NavigationClient', () => {
 
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('/')).rejects.toThrow(DotNavigationError);
+        await expect(navClient.get('/')).rejects.toThrow(DotErrorNavigation);
         await expect(navClient.get('/')).rejects.toThrow(
             "Navigation API failed for path '/': Network error"
         );
@@ -131,7 +131,7 @@ describe('NavigationClient', () => {
 
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('/')).rejects.toThrow(DotNavigationError);
+        await expect(navClient.get('/')).rejects.toThrow(DotErrorNavigation);
         await expect(navClient.get('/')).rejects.toThrow(
             "Navigation API failed for path '/': Navigation not found"
         );
@@ -151,8 +151,8 @@ describe('NavigationClient', () => {
         try {
             await navClient.get('/');
         } catch (error) {
-            expect(error).toBeInstanceOf(DotNavigationError);
-            if (error instanceof DotNavigationError) {
+            expect(error).toBeInstanceOf(DotErrorNavigation);
+            if (error instanceof DotErrorNavigation) {
                 expect(error.path).toBe('/');
                 expect(error.httpError).toBe(httpError);
                 expect(error.httpError?.status).toBe(500);
@@ -163,7 +163,7 @@ describe('NavigationClient', () => {
     it('should throw navigation error for missing path parameter', async () => {
         const navClient = new NavigationClient(validConfig, requestOptions, new FetchHttpClient());
 
-        await expect(navClient.get('')).rejects.toThrow(DotNavigationError);
+        await expect(navClient.get('')).rejects.toThrow(DotErrorNavigation);
         await expect(navClient.get('')).rejects.toThrow(
             "The 'path' parameter is required for the Navigation API"
         );
