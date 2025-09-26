@@ -3,20 +3,20 @@ import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/for
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { INPUT_TEXT_OPTIONS } from './utils';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
-import { BaseWrapperFieldComponent } from '../shared/base-wrapper-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 @Component({
     selector: 'dot-edit-content-text-field',
     templateUrl: './dot-edit-content-text-field.component.html',
-    styleUrls: ['./dot-edit-content-text-field.component.scss'],
     imports: [
         ReactiveFormsModule,
         FormsModule,
@@ -24,7 +24,8 @@ import { BaseWrapperFieldComponent } from '../shared/base-wrapper-field.componen
         InputTextModule,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
-        DotCardFieldFooterComponent
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -34,7 +35,7 @@ import { BaseWrapperFieldComponent } from '../shared/base-wrapper-field.componen
         }
     ]
 })
-export class DotEditContentTextFieldComponent extends BaseWrapperFieldComponent {
+export class DotEditContentTextFieldComponent extends BaseWrapperField {
     /**
      * A signal that holds the field.
      * It is used to display the field in the text field component.
@@ -52,7 +53,6 @@ export class DotEditContentTextFieldComponent extends BaseWrapperFieldComponent 
     $initValue = computed(() => {
         const contentlet = this.$contentlet();
         const field = this.$field();
-
         const value = contentlet
             ? (contentlet[field.variable] ?? field.defaultValue)
             : field.defaultValue;

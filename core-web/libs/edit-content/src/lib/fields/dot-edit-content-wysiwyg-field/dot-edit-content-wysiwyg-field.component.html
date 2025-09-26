@@ -1,7 +1,12 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <div class="dot-wysiwyg__wrapper">
             <div class="dot-wysiwyg__controls">
@@ -19,11 +24,9 @@
 
             <div class="dot-wysiwyg__editor">
                 @if ($displayedEditor() === editorTypes.TinyMCE) {
-                    <dot-wysiwyg-tinymce [formControl]="formControl" [field]="field" />
+                    <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
                 } @else {
-                    <dot-edit-content-monaco-editor-control
-                        [formControl]="formControl"
-                        [field]="field" />
+                    <dot-edit-content-monaco-editor-control [field]="field" [hasError]="hasError" />
                 }
             </div>
         </div>

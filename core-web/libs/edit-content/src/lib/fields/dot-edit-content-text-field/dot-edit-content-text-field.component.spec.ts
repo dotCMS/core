@@ -88,7 +88,7 @@ describe('DotEditContentTextFieldComponent', () => {
                             dataType
                         },
                         contentlet: createFakeContentlet({
-                            [TEXT_FIELD_MOCK.variable]: ''
+                            [TEXT_FIELD_MOCK.variable]: null
                         })
                     }
                 }

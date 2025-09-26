@@ -1,7 +1,12 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <div
             class="dot-json-field__container flex flex-column gap-2 h-full w-full"
@@ -18,8 +23,8 @@
                 <dot-edit-content-monaco-editor-control
                     #monaco
                     data-testid="json-field-monaco-editor"
-                    [field]="$field()"
-                    [formControl]="formControl"
+                    [field]="field"
+                    [hasError]="hasError"
                     [forceLanguage]="languages.Json" />
             </div>
         </div>

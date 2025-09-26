@@ -1,0 +1,24 @@
+@let field = $field();
+@let hasError = $hasError();
+@let fieldTypeConfig = $fieldTypeConfig();
+
+<p-calendar
+    class="w-full"
+    [class.ng-invalid]="hasError"
+    [class.ng-dirty]="hasError"
+    [formControl]="internalFormControl"
+    [defaultDate]="$defaultDate()"
+    [timeOnly]="fieldTypeConfig.timeOnly"
+    [showTime]="fieldTypeConfig.showTime"
+    (onSelect)="onCalendarChange($event)"
+    [id]="'calendar-id-' + field.variable"
+    [inputId]="field.variable"
+    [attr.data-testid]="'calendar-input-' + field.variable"
+    [showIcon]="true"
+    [icon]="fieldTypeConfig.icon"
+    [showButtonBar]="true"
+    [showClear]="$isExpireDateField()"
+    [placeholder]="
+        $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
+    "
+    [attr.aria-label]="field.name" />

@@ -1,48 +1,26 @@
 @let field = $field();
-@let variable = field.variable;
-@let name = field.name;
 @let showLabel = $showLabel();
-@let fieldTypeConfig = $fieldTypeConfig();
 @let systemTimezone = $systemTimezone();
 @let showTimezoneInfo = $showTimezoneInfo();
 @let hasTimezone = showTimezoneInfo && systemTimezone;
 @let hasHint = field.hint;
 
 <dot-card-field [hasError]="hasError">
-    @if (showLabel && hasHint && hasTimezone) {
-        <div class="flex gap-1 align-items-center">
-            <label
-                [attr.data-testid]="'label-' + field.variable"
-                [checkIsRequiredControl]="field.variable"
-                [for]="field.variable"
-                dotFieldRequired>
-                {{ field.name }}
-            </label>
-            <i class="pi pi-info-circle text-xs" [pTooltip]="field.hint"></i>
-        </div>
+    @if (showLabel) {
+        <dot-card-field-label
+            [variableName]="field.variable"
+            [isRequired]="isRequired"
+            [hint]="hasTimezone ? field.hint : null">
+            {{ field.name }}
+        </dot-card-field-label>
     }
     <dot-card-field-content>
-        <p-calendar
-            class="w-full"
-            [class.ng-invalid]="hasError"
-            [class.ng-dirty]="hasError"
-            [formControl]="internalFormControl"
-            [defaultDate]="$defaultDate()"
-            [timeOnly]="fieldTypeConfig.timeOnly"
-            [showTime]="fieldTypeConfig.showTime"
-            (onSelect)="onCalendarChange($event)"
-            [id]="'calendar-id-' + variable"
-            [inputId]="variable"
-            [attr.data-testid]="'calendar-input-' + variable"
-            [showIcon]="true"
-            [icon]="fieldTypeConfig.icon"
-            [showButtonBar]="true"
-            [showClear]="$isExpireDateField()"
-            [placeholder]="
-                $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
-            "
-            [attr.aria-label]="name"
-            [attr.aria-describedby]="field.hint ? 'hint-' + variable : null" />
+        <dot-calendar-field
+            [field]="field"
+            [hasError]="hasError"
+            [formControlName]="field.variable"
+            [utcTimezone]="systemTimezone"
+            [contentType]="$contentType()" />
     </dot-card-field-content>
     <dot-card-field-footer>
         <div class="flex justify-content-between align-items-center">

@@ -222,12 +222,14 @@ export class DotEditContentFormComponent implements OnInit {
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
-            const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
+            // const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
             const contentlet = this.$store.contentlet();
 
             // Only apply state changes if form exists
             if (this.form && contentlet) {
-                if (isLoading || isViewingHistoricalVersion) {
+                // TODO: put back isViewingHistoricalVersion in the
+                // condition after all fields have disabled state
+                if (isLoading) {
                     this.form.disable();
                 } else {
                     this.form.enable();

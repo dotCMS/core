@@ -52,8 +52,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-custom-field
                         [field]="field"
-                        [formControlName]="field.variable"
-                        [inode]="contentlet?.inode"
+                        [contentlet]="contentlet"
                         [contentType]="contentTypeVariable" />
                 </form>`,
                 {
@@ -95,8 +94,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-custom-field
                         [field]="field"
-                        [formControlName]="field.variable"
-                        [inode]="contentlet?.inode"
+                        [contentlet]="contentlet"
                         [contentType]="contentTypeVariable" />
                 </form>`,
                 {
@@ -155,8 +153,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-custom-field
                         [field]="field"
-                        [formControlName]="field.variable"
-                        [inode]="contentlet?.inode"
+                        [contentlet]="contentlet"
                         [contentType]="contentTypeVariable" />
                 </form>`,
                 {
@@ -190,8 +187,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-custom-field
                         [field]="field"
-                        [formControlName]="field.variable"
-                        [inode]="contentlet?.inode"
+                        [contentlet]="contentlet"
                         [contentType]="contentTypeVariable" />
                 </form>`,
                 {
@@ -241,8 +237,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-custom-field
                         [field]="field"
-                        [formControlName]="field.variable"
-                        [inode]="contentlet?.inode"
+                        [contentlet]="contentlet"
                         [contentType]="contentTypeVariable" />
                 </form>`,
                 {
@@ -301,8 +296,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-custom-field
                         [field]="field"
-                        [formControlName]="field.variable"
-                        [inode]="contentlet?.inode"
+                        [contentlet]="contentlet"
                         [contentType]="contentTypeVariable" />
                 </form>`,
                 {

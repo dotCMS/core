@@ -19,9 +19,9 @@ import {
     parseFieldDefaultValue,
     processExistingValue,
     processFieldDefaultValue
-} from './dot-edit-content-calendar-field.util';
+} from './calendar-field.util';
 
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 
 // Mock de timezone del servidor - formato real que viene del backend
 const SERVER_TIMEZONE_MOCKS = {

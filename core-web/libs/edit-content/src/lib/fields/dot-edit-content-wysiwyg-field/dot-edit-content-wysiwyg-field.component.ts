@@ -32,8 +32,9 @@ import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
-import { BaseFieldComponent } from '../shared/base-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 import {
     getCurrentEditorFromDisabled,
     updateDisabledWYSIWYGOnEditorSwitch
@@ -57,6 +58,7 @@ import {
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
@@ -69,11 +71,7 @@ import {
         }
     ]
 })
-export class DotEditContentWYSIWYGFieldComponent extends BaseFieldComponent {
-    /**
-     * Inject the ControlContainer
-     */
-    readonly controlContainer = inject(ControlContainer);
+export class DotEditContentWYSIWYGFieldComponent extends BaseWrapperField {
     /**
      * Signal to get the TinyMCE component.
      */
@@ -84,14 +82,20 @@ export class DotEditContentWYSIWYGFieldComponent extends BaseFieldComponent {
      */
     $monacoComponent = viewChild(DotEditContentMonacoEditorControlComponent);
 
+    /**
+     * Inject the ConfirmationService
+     */
     #confirmationService = inject(ConfirmationService);
+
+    /**
+     * Inject the DotMessageService
+     */
     #dotMessageService = inject(DotMessageService);
 
     /**
      * This variable represents a required content type field in DotCMS.
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
     /**
      * A required input representing a DotCMS contentlet.
      */
@@ -255,9 +259,5 @@ export class DotEditContentWYSIWYGFieldComponent extends BaseFieldComponent {
      */
     get disabledWYSIWYGField() {
         return this.controlContainer.control?.get(DISABLED_WYSIWYG_FIELD);
-    }
-
-    writeValue(_: unknown): void {
-        // noop
     }
 }

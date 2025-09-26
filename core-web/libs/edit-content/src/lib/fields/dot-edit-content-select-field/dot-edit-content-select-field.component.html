@@ -1,10 +1,15 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <p-dropdown
-            [formControl]="formControl"
+            [formControlName]="field.variable"
             [name]="field.variable"
             [options]="$options()"
             [class.ng-invalid]="hasError"

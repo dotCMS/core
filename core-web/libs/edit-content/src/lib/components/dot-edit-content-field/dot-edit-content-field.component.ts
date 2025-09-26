@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -20,7 +19,6 @@ import {
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
 import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
@@ -74,9 +72,7 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentFileFieldComponent,
         DotEditContentRelationshipFieldComponent,
-        DividerModule,
-        DotFieldRequiredDirective,
-        NgTemplateOutlet
+        DividerModule
     ]
 })
 export class DotEditContentFieldComponent {
@@ -117,16 +113,6 @@ export class DotEditContentFieldComponent {
      * The field types.
      */
     readonly fieldTypes = FIELD_TYPES;
-
-    /**
-     * Whether to show the label.
-     */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
-    });
 
     /**
      * Event emitted when the binary field value is updated.

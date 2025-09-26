@@ -1,26 +1,18 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
-        @if (store.selected().length) {
-            <dot-category-field-chips
-                data-testId="category-chip-list"
-                [categories]="store.selected()"
-                [disabled]="$isDisabled()"
-                (remove)="store.removeRootSelected($event)" />
-        }
-
-        <div class="dot-category-field__select">
-            <button
-                type="button"
-                (click)="openCategoriesDialog()"
-                [disabled]="store.isDialogOpen() || $isDisabled()"
-                [label]="'edit.content.category-field.show-categories-dialog' | dm"
-                class="p-button-sm p-button-text p-button-secondary"
-                data-testId="show-dialog-btn"
-                pButton></button>
-        </div>
+        <dot-category-field
+            [field]="field"
+            [contentlet]="$contentlet()"
+            [formControlName]="field.variable"
+            [hasError]="hasError" />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (hasError) {
@@ -40,12 +32,3 @@
         }
     </dot-card-field-footer>
 </dot-card-field>
-
-@if (store.isDialogOpen()) {
-    @defer (when store.isDialogOpen()) {
-        <dot-category-field-dialog
-            [isVisible]="store.isDialogOpen()"
-            (closedDialog)="store.closeDialog()"
-            data-testId="dialog-placeholder" />
-    }
-}

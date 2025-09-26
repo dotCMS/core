@@ -17,7 +17,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -27,9 +27,10 @@ import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../models/dot-edit-content-field
 import { createCustomFieldConfig } from '../../utils/functions.util';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
-import { BaseFieldComponent } from '../shared/base-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
  * This component is used to render a custom field in the DotCMS content editor.
@@ -46,7 +47,8 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         ReactiveFormsModule,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
-        DotCardFieldFooterComponent
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent
     ],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
@@ -61,7 +63,7 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         '[class.no-label]': '!$showLabel()'
     }
 })
-export class DotEditContentCustomFieldComponent extends BaseFieldComponent implements OnDestroy {
+export class DotEditContentCustomFieldComponent extends BaseWrapperField implements OnDestroy {
     /**
      * The field to render.
      */
@@ -71,23 +73,17 @@ export class DotEditContentCustomFieldComponent extends BaseFieldComponent imple
      */
     $contentType = input<string>(null, { alias: 'contentType' });
     /**
-     * The inode of the content to render the field for.
-     */
-    $inode = input<string>(null, { alias: 'inode' });
-    /**
      * The iframe element to render the custom field in.
      */
     $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
     /**
-     * Whether to show the label.
+     * The contentlet to render the field for.
      */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
-    });
-
+    $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
+    /**
+     * The inode of the content to render the field for.
+     */
+    $inode = computed(() => this.$contentlet()?.inode);
     /**
      * The window object.
      */
@@ -358,9 +354,5 @@ export class DotEditContentCustomFieldComponent extends BaseFieldComponent imple
         if (this.#formBridge) {
             this.#formBridge.destroy();
         }
-    }
-
-    writeValue(_: unknown): void {
-        // noop
     }
 }
