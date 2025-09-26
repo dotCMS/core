@@ -8,3 +8,5 @@ export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
     { field: 'modDate', header: 'Last-Edited', sortable: true, width: '15%', order: 5 },
     { field: 'actions', header: '', width: '5%', order: 6 }
 ].sort((a, b) => a.order - b.order); // Sort the columns by order, so the columns are in the correct order in the UI
+
+export const SYSTEM_HOST_ID = 'SYSTEM_HOST';

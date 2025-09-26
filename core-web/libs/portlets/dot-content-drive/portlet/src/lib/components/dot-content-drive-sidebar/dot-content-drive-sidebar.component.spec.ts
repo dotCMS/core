@@ -9,8 +9,8 @@ import { delay } from 'rxjs/operators';
 
 import { DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
+import { DotTreeFolderComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotTreeFolderComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';

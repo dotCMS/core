@@ -3,7 +3,9 @@
         [header]="'content-drive.dialog.folder.general.header' | dm"
         class="folder-dialog-tab-content">
         <div class="folder-dialog-field">
-            <label for="title">{{ 'content-drive.dialog.folder.field.title' | dm }}</label>
+            <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
+                {{ 'content-drive.dialog.folder.field.title' | dm }}
+            </label>
             <input
                 pInputText
                 id="title"
@@ -16,12 +18,17 @@
         [header]="'content-drive.dialog.folder.advanced.header' | dm"
         class="folder-dialog-tab-content">
         <div class="folder-dialog-field">
-            <label for="sortOrder">{{ 'content-drive.dialog.folder.field.sort-order' | dm }}</label>
+            <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
+                {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
+            </label>
             <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
         </div>
 
         <div class="folder-dialog-field">
-            <label for="allowedFileExtensions">
+            <label
+                [checkIsRequiredControl]="'allowedFileExtensions'"
+                for="allowedFileExtensions"
+                dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.allowed-file-extensions' | dm }}
             </label>
             <p-autoComplete
@@ -37,7 +44,10 @@
         </div>
 
         <div class="folder-dialog-field">
-            <label for="defaultFileAssetType">
+            <label
+                [checkIsRequiredControl]="'defaultFileAssetType'"
+                for="defaultFileAssetType"
+                dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
             </label>
             <p-dropdown
@@ -54,7 +64,9 @@
         </div>
 
         <div class="folder-dialog-field">
-            <label for="title">{{ 'content-drive.dialog.folder.field.url' | dm }}</label>
+            <label [checkIsRequiredControl]="'url'" for="url" dotFieldRequired>
+                {{ 'content-drive.dialog.folder.field.url' | dm }}
+            </label>
             <input pInputText id="url" aria-describedby="url-help" formControlName="url" />
         </div>
 
@@ -64,7 +76,7 @@
         </div>
 
         <div class="folder-dialog-field">
-            <label for="showOnMenu">
+            <label [checkIsRequiredControl]="'showOnMenu'" for="showOnMenu" dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.show-on-menu' | dm }}
             </label>
             <p-inputSwitch

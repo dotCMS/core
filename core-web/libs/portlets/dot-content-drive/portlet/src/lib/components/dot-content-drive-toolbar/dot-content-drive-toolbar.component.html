@@ -1,7 +1,8 @@
 <p-toolbar styleClass="dot-content-drive-toolbar">
-    <dot-content-drive-tree-toggler data-testid="tree-toggler" [class.hidden]="$treeExpanded()" />
-
     <div class="p-toolbar-group">
+        <dot-content-drive-tree-toggler
+            data-testid="tree-toggler"
+            [class.sidebar-expanded]="$treeExpanded()" />
         <div class="p-toolbar-group-top">
             <dot-content-drive-search-input data-testid="search-input" class="search-input" />
             <p-button
