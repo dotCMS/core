@@ -434,6 +434,83 @@ public class UserResource implements Serializable {
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
 	}
 
+    /**
+     * Returns a single user
+     * Only admin user can retrieve someone else user
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     * @param response         The current instance of the {@link HttpServletResponse}.
+     * @param filter           Allows you to filter Users by their full name or parts of it.
+     * @param page             The results page or offset, for pagination purposes.
+     * @param perPage          The size of the results page, for pagination purposes.
+     * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
+     *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
+     * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
+     * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
+     * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
+     * @param assetInode       The Inode of a specific asset, if you're querying Users that have a specific permission
+     *                         on it.
+     * @param permission       The permission type that Users may have on the previous asset.
+     *
+     * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
+     */
+    @Operation(
+            operationId = "findUser",
+            summary = "Find an user",
+            description = "Returns an user"
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "User retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseUserMapEntityView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @JSONP
+    @Path("/{userId}")
+    @NoCache
+    @Produces({ MediaType.APPLICATION_JSON })
+    public ResponseUserMapEntityView findUserById(@Context final HttpServletRequest request,
+                           @Context final HttpServletResponse response,
+                           @PathParam("userId") @Parameter(
+                                   required = true,
+                                   description = "Identifier of user to retrieve",
+                                   schema = @Schema(type = "string")
+                           ) final String userId
+        ) throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User modUser = initData.getUser();
+
+        Logger.debug(this, ()-> "Finding the user by id: " + userId);
+        final boolean isRoleAdministrator = modUser.isAdmin() ||
+                (
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+                );
+
+        if (isRoleAdministrator) {
+
+            final User user = this.userAPI.loadUserById(userId);
+            return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
+                    "user", user.toMap())); // 200
+        }
+
+        final String message = USER_MSG + modUser.getUserId() + " does not have permissions to retrieve users";
+        Logger.error(this, message);
+        throw new ForbiddenException(message);
+    }
+
 	@Operation(
 	    operationId = "loginAsUser",
 	    summary = "Login as user",
@@ -1197,6 +1274,11 @@ public class UserResource implements Serializable {
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
+
+            if (null == updateUserForm.getRoles()) {
+
+                UserHelper.getInstance().removeRoles (userToSave);
+            }
 
 			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
 					updateUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);

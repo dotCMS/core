@@ -13524,6 +13524,34 @@ paths:
       summary: Deletes an existing user.
       tags:
       - Users
+    get:
+      description: Returns an user
+      operationId: findUser
+      parameters:
+      - description: Identifier of user to retrieve
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseUserMapEntityView"
+          description: User retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Find an user
+      tags:
+      - Users
   /v1/variants:
     post:
       description: Creates a new content variant with the specified name and description.

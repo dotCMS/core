@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "cb26d522-79ac-4555-ad8c-9f0122729670",
+		"_postman_id": "573b4633-456b-4b04-88ed-0affe4c27dfa",
 		"name": "User Resource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1340,6 +1340,118 @@
 								"api",
 								"v1",
 								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "findUserById",
+			"item": [
+				{
+					"name": "Find By Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"",
+									"const entity = responseJson.entity;",
+									"const user = entity ? entity.user : null;",
+									"",
+									"",
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an object with required top-level properties\", function () {",
+									"    pm.expect(responseJson).to.be.an('object');",
+									"    pm.expect(responseJson).to.have.property('entity').that.is.an('object');",
+									"    pm.expect(responseJson).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"    pm.expect(responseJson).to.have.property('messages').that.is.an('array');",
+									"});",
+									"",
+									"// ===========================================",
+									"// PRUEBAS DE LA ENTIDAD (entity) Y USERID",
+									"// ===========================================",
+									"",
+									"pm.test(\"Entity contains userID and user object\", function () {",
+									"    pm.expect(entity).to.have.property('userID').that.is.a('string');",
+									"    pm.expect(entity.userID).to.equal('dotcms.org.1');",
+									"    pm.expect(user).to.be.an('object');",
+									"});",
+									"",
+									"",
+									"// ===========================================",
+									"// PRUEBAS DE PROPIEDADES DEL OBJETO USER",
+									"// ===========================================",
+									"",
+									"// --- Propiedades Clave ---",
+									"pm.test(\"User has expected identifier and email\", function () {",
+									"    pm.expect(user).to.have.property('id').that.is.a('string').and.to.equal('dotcms.org.1');",
+									"    pm.expect(user).to.have.property('userId').that.is.a('string').and.to.equal('dotcms.org.1');",
+									"    pm.expect(user).to.have.property('emailAddress').that.is.a('string').and.to.equal('admin@dotcms.com');",
+									"});",
+									"",
+									"// --- Propiedades de Nombres y Roles ---",
+									"pm.test(\"User name and role flags are correct\", function () {",
+									"    pm.expect(user).to.have.property('firstName').that.is.a('string').and.to.equal('Admin');",
+									"    pm.expect(user).to.have.property('lastName').that.is.a('string').and.to.equal('User');",
+									"    pm.expect(user).to.have.property('fullName').that.is.a('string').and.to.equal('Admin User');",
+									"    pm.expect(user).to.have.property('admin').that.is.a('boolean').and.to.be.true;",
+									"    pm.expect(user).to.have.property('backendUser').that.is.a('boolean').and.to.be.true;",
+									"    pm.expect(user).to.have.property('frontendUser').that.is.a('boolean').and.to.be.false;",
+									"});",
+									"",
+									"// --- Propiedades de Estado y Fechas ---",
+									"pm.test(\"User status and dates fields exist\", function () {",
+									"    pm.expect(user).to.have.property('active').that.is.a('boolean').and.to.be.true;",
+									"    pm.expect(user).to.have.property('failedLoginAttempts').that.is.a('number').and.to.equal(0);",
+									"    pm.expect(user).to.have.property('createDate').that.is.a('number');",
+									"    pm.expect(user.createDate).to.be.above(0); // Verifica que sea un timestamp válido",
+									"    pm.expect(user).to.have.property('lastLoginDate').that.is.a('number');",
+									"});",
+									"",
+									"// --- Propiedades de la Compañía y Localización ---",
+									"pm.test(\"Company and Localization fields are correct\", function () {",
+									"    pm.expect(user).to.have.property('companyId').that.is.a('string').and.to.equal('dotcms.org');",
+									"    pm.expect(user).to.have.property('actualCompanyId').that.is.a('string').and.to.equal('dotcms.org');",
+									"    pm.expect(user).to.have.property('languageId').that.is.a('string').and.to.equal('en_US');",
+									"    pm.expect(user).to.have.property('timeZoneId').that.is.a('string').and.to.equal('US/Eastern');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcms.org.1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcms.org.1"
 							]
 						}
 					},
