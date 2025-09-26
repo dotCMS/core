@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${POSTGRESQL_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRESQL_PASS:-postgres}
     ports:
-      - ${POSTGRESQL_HOST_PORT:-5432}:5432
+      - ${POSTGRESQL_HOST_PORT:-54321}:5432
     networks:
       - analytics-net
     volumes:
