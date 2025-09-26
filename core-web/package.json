@@ -31,6 +31,8 @@
         "affected:lint": "nx affected:lint",
         "affected:dep-graph": "nx affected:dep-graph",
         "affected": "nx affected",
+        "e2e:dev": "nx run dotcms-ui-e2e:e2e:dev:full",
+        "e2e:ci": "nx run dotcms-ui-e2e:e2e:ci:full",
         "format": "nx format:write",
         "format:write": "nx format:write",
         "format:check": "nx format:check",
@@ -39,10 +41,7 @@
         "test:dotcms-ui": "nx run dotcms-ui:test",
         "test:dotcms": "nx affected -t test --exclude='tag:skip:test'",
         "lint:dotcms": "nx run-many -t lint --exclude='tag:skip:lint' --fix",
-        "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test",
-        "update": "nx migrate latest",
-        "workspace-generator": "nx workspace-generator",
-        "help": "nx help"
+        "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test"
     },
     "private": false,
     "dependencies": {
@@ -279,6 +278,7 @@
         "vite": "6.3.5",
         "vite-plugin-dts": "4.5.4",
         "vitest": "^1.3.1",
+        "wait-on": "^9.0.0",
         "webpack": "^5.64.0",
         "webpack-bundle-analyzer": "^4.5.0",
         "y-prosemirror": "1.2.5",

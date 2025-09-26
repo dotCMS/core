@@ -1,0 +1,18 @@
+<testsuites id="" name="" tests="7" failures="0" skipped="0" errors="0" time="6.516632">
+<testsuite name="tests/login/login.spec.ts" timestamp="2025-09-12T21:54:10.348Z" hostname="chromium" tests="7" failures="0" skipped="0" time="28.061" errors="0">
+<testcase name="Verify Login Redirect" classname="tests/login/login.spec.ts" time="3.282">
+</testcase>
+<testcase name="Try Login with Admin User using LoginPage" classname="tests/login/login.spec.ts" time="5.884">
+</testcase>
+<testcase name="Inspect Login Page" classname="tests/login/login.spec.ts" time="3.633">
+</testcase>
+<testcase name="Login with Valid Credentials 1: admin@dotcms.com" classname="tests/login/login.spec.ts" time="3.805">
+</testcase>
+<testcase name="Login with Valid Credentials 2: chris@dotcms.com" classname="tests/login/login.spec.ts" time="3.965">
+</testcase>
+<testcase name="Login with invalid Credentials: admin@dotcms.com" classname="tests/login/login.spec.ts" time="3.691">
+</testcase>
+<testcase name="Login with invalid Credentials: chris2@dotcms.com" classname="tests/login/login.spec.ts" time="3.801">
+</testcase>
+</testsuite>
+</testsuites>
