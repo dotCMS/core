@@ -1,4 +1,4 @@
-import { DotHttpError } from "../client/public";
+import { DotHttpError } from '../client/public';
 
 /**
  * Content API specific error class
@@ -10,7 +10,13 @@ export class DotErrorContent extends Error {
     public readonly operation: string;
     public readonly query?: string;
 
-    constructor(message: string, contentType: string, operation: string, httpError?: DotHttpError, query?: string) {
+    constructor(
+        message: string,
+        contentType: string,
+        operation: string,
+        httpError?: DotHttpError,
+        query?: string
+    ) {
         super(message);
         this.name = 'DotCMSContentError';
         this.contentType = contentType;

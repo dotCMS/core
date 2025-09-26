@@ -5,7 +5,7 @@ import {
     DotCMSNavigationItem,
     DotHttpClient,
     DotHttpError,
-    DotErrorNavigation,
+    DotErrorNavigation
 } from '@dotcms/types';
 
 export class NavigationClient {

@@ -1,6 +1,11 @@
 /// <reference types="jest" />
 
-import { DotRequestOptions, DotCMSClientConfig, DotHttpError, DotErrorContent } from '@dotcms/types';
+import {
+    DotRequestOptions,
+    DotCMSClientConfig,
+    DotHttpError,
+    DotErrorContent
+} from '@dotcms/types';
 
 import { CollectionBuilder } from './collection';
 

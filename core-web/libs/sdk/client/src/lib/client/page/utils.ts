@@ -2,7 +2,6 @@ import { consola } from 'consola';
 
 import { DotHttpClient, DotGraphQLApiResponse } from '@dotcms/types';
 
-
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
           inode

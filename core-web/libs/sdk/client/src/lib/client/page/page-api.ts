@@ -9,7 +9,7 @@ import {
     DotHttpClient,
     DotRequestOptions,
     DotHttpError,
-    DotErrorPage,
+    DotErrorPage
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';

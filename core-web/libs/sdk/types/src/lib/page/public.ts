@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotHttpError } from "../client/public";
+import { DotHttpError } from '../client/public';
 
 /**
  * Represents a map of container identifiers to their container objects
@@ -1257,7 +1257,11 @@ export class DotErrorPage extends Error {
         variables: Record<string, unknown>;
     };
 
-    constructor(message: string, httpError?: DotHttpError, graphql?: { query: string; variables: Record<string, unknown> }) {
+    constructor(
+        message: string,
+        httpError?: DotHttpError,
+        graphql?: { query: string; variables: Record<string, unknown> }
+    ) {
         super(message);
         this.name = 'DotCMSPageError';
         this.httpError = httpError;
