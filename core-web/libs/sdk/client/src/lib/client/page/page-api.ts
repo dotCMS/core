@@ -7,7 +7,8 @@ import {
     DotCMSExtendedPageResponse,
     DotCMSComposedPageResponse,
     DotHttpClient,
-    DotRequestOptions
+    DotRequestOptions,
+    DotHttpError
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
@@ -184,7 +185,7 @@ export class PageClient {
 
             if (!pageResponse) {
                 throw new Error(
-                    'No page data found. Please check the page URL and the GraphQL query.'
+                    'Page not found. Check the page URL and permissions.'
                 );
             }
 
@@ -199,6 +200,22 @@ export class PageClient {
                 }
             };
         } catch (error) {
+            // Handle DotHttpError instances from httpClient.request
+            if (error instanceof DotHttpError) {
+                const httpError = {
+                    status: error.status,
+                    statusText: error.statusText,
+                    message: error.message,
+                    data: error.data,
+                    graphql: {
+                        query: completeQuery,
+                        variables: requestVariables
+                    }
+                };
+                throw httpError;
+            }
+
+            // Handle other errors (GraphQL errors, validation errors, etc.)
             const errorMessage = {
                 error,
                 message: 'Failed to retrieve page data',

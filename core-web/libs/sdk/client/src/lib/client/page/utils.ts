@@ -1,8 +1,7 @@
 import { consola } from 'consola';
 
-import { DotHttpClient, DotGraphQLApiResponse, DotHttpError } from '@dotcms/types';
+import { DotHttpClient, DotGraphQLApiResponse } from '@dotcms/types';
 
-import { ErrorMessages } from '../models';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -265,7 +264,7 @@ export function mapContentResponse(
  * @param {Record<string, string>} options.headers - HTTP headers for the request
  * @param {DotHttpClient} options.httpClient - HTTP client for making requests
  * @returns {Promise<DotGraphQLApiResponse>} Parsed JSON response from the GraphQL API
- * @throws {Error} If the HTTP response is not successful or GraphQL errors are present
+ * @throws {DotHttpError} If the HTTP request fails (non-2xx status or network error)
  */
 export async function fetchGraphQL({
     baseURL,
@@ -281,50 +280,10 @@ export async function fetchGraphQL({
     const url = new URL(baseURL);
     url.pathname = '/api/v1/graphql';
 
-    const response = await httpClient.request<DotGraphQLApiResponse>(url.toString(), {
+    // httpClient.request throws DotHttpError on failure, so we just return the response directly
+    return await httpClient.request<DotGraphQLApiResponse>(url.toString(), {
         method: 'POST',
         body,
         headers
     } as RequestInit);
-
-    if (response instanceof DotHttpError) {
-        const error = {
-            status: response.status,
-            message: ErrorMessages[response.status] || response.statusText
-        };
-
-        throw error;
-    }
-
-    return response;
 }
-
-// export async function fetchGraphQL({
-//     baseURL,
-//     body,
-//     headers
-// }: {
-//     baseURL: string;
-//     body: string;
-//     headers: Record<string, string>;
-// }) {
-//     const url = new URL(baseURL);
-//     url.pathname = '/api/v1/graphql';
-
-//     const response = await fetch(url.toString(), {
-//         method: 'POST',
-//         body,
-//         headers
-//     });
-
-//     if (!response.ok) {
-//         const error = {
-//             status: response.status,
-//             message: ErrorMessages[response.status] || response.statusText
-//         };
-
-//         throw error;
-//     }
-
-//     return await response.json();
-// }
