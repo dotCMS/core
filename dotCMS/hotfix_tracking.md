@@ -151,6 +151,7 @@ This maintenance release includes the following code fixes:
 145. https://github.com/dotCMS/core/issues/32929 : Core: Create user not set user role #32929
 146. https://github.com/dotCMS/core/issues/33093 : Update image reference breaking out build #33093
 147. https://github.com/dotCMS/core/issues/33031 : Reset Approvals sub-action not working as expected #33031
+148. https://github.com/dotCMS/core/issues/33138 : Add Step Id to GET /api/v1/workflow/tasks/history/comments/{contentletIdentifier} endpoint #33138
 
 
 
