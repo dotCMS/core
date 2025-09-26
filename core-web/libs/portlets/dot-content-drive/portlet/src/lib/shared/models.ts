@@ -78,6 +78,14 @@ export interface DotContentDriveDialog {
 }
 
 /**
+ * The trigger type for path changes in content drive.
+ * - 'navigation': User navigated to a folder (requires tree reload/expansion)
+ * - 'selection': User clicked on a folder to view contents (no tree reload needed)
+ * - 'crud': CRUD operations that affect folder structure (requires tree reload)
+ */
+export type DotContentDriveTriggerType = 'navigation' | 'selection' | 'crud' | null;
+
+/**
  * The state of the content drive.
  *
  * @export
@@ -90,6 +98,8 @@ export interface DotContentDriveState extends DotContentDriveInit {
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
+    lastPathChangeTrigger?: DotContentDriveTriggerType;
+    expandedFolderKeys?: string[];
 }
 
 /**
