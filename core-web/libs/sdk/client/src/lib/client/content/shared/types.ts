@@ -7,7 +7,7 @@ import { QueryBuilder } from '../builders/query/query';
  * Content API specific error class
  * Wraps HTTP errors and adds content-specific context including query information
  */
-export class DotCMSContentError extends Error {
+export class DotErrorContent extends Error {
     public readonly httpError?: DotHttpError;
     public readonly contentType: string;
     public readonly operation: string;
@@ -22,7 +22,7 @@ export class DotCMSContentError extends Error {
         this.query = query;
 
         // Ensure proper prototype chain for instanceof checks
-        Object.setPrototypeOf(this, DotCMSContentError.prototype);
+        Object.setPrototypeOf(this, DotErrorContent.prototype);
     }
 
     /**
@@ -83,11 +83,11 @@ export type OnFullfilled<T> =
  * Callback for a rejected promise.
  *
  * @callback OnRejected
- * @param {DotCMSContentError} error - The content error object.
- * @returns {DotCMSContentError | PromiseLike<DotCMSContentError>} The processed error or a promise.
+ * @param {DotErrorContent} error - The content error object.
+ * @returns {DotErrorContent | PromiseLike<DotErrorContent>} The processed error or a promise.
  */
 export type OnRejected =
-    | ((error: DotCMSContentError) => DotCMSContentError | PromiseLike<DotCMSContentError>)
+    | ((error: DotErrorContent) => DotErrorContent | PromiseLike<DotErrorContent>)
     | undefined
     | null;
 

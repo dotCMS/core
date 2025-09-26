@@ -6,7 +6,7 @@ import { CollectionBuilder } from './collection';
 
 import { FetchHttpClient } from '../../../adapters/fetch-http-client';
 import { CONTENT_API_URL } from '../../shared/const';
-import { SortBy, DotCMSContentError } from '../../shared/types';
+import { SortBy, DotErrorContent } from '../../shared/types';
 import { Equals } from '../query/lucene-syntax';
 
 // Mock the FetchHttpClient
@@ -689,8 +689,8 @@ describe('CollectionBuilder', () => {
                     return response;
                 },
                 (error) => {
-                    expect(error).toBeInstanceOf(DotCMSContentError);
-                    if (error instanceof DotCMSContentError) {
+                    expect(error).toBeInstanceOf(DotErrorContent);
+                    if (error instanceof DotErrorContent) {
                         expect(error.contentType).toBe('song');
                         expect(error.operation).toBe('fetch');
                         expect(error.message).toBe(
@@ -717,8 +717,8 @@ describe('CollectionBuilder', () => {
             mockRequest.mockRejectedValue(new Error('DNS are not resolving'));
 
             collectionBuilder.then().catch((error) => {
-                expect(error).toBeInstanceOf(DotCMSContentError);
-                if (error instanceof DotCMSContentError) {
+                expect(error).toBeInstanceOf(DotErrorContent);
+                if (error instanceof DotErrorContent) {
                     expect(error.contentType).toBe('song');
                     expect(error.operation).toBe('fetch');
                     expect(error.message).toBe(
@@ -745,8 +745,8 @@ describe('CollectionBuilder', () => {
             try {
                 await collectionBuilder;
             } catch (e) {
-                expect(e).toBeInstanceOf(DotCMSContentError);
-                if (e instanceof DotCMSContentError) {
+                expect(e).toBeInstanceOf(DotErrorContent);
+                if (e instanceof DotErrorContent) {
                     expect(e.contentType).toBe('song');
                     expect(e.operation).toBe('fetch');
                     expect(e.message).toBe("Content API failed for 'song' (fetch): Network error");
@@ -778,8 +778,8 @@ describe('CollectionBuilder', () => {
                 await collectionBuilder;
                 fail('Expected DotCMSContentError to be thrown');
             } catch (error) {
-                expect(error).toBeInstanceOf(DotCMSContentError);
-                if (error instanceof DotCMSContentError) {
+                expect(error).toBeInstanceOf(DotErrorContent);
+                if (error instanceof DotErrorContent) {
                     expect(error.contentType).toBe('song');
                     expect(error.operation).toBe('fetch');
                     expect(error.httpError).toBe(httpError);
@@ -816,8 +816,8 @@ describe('CollectionBuilder', () => {
                     return response;
                 },
                 (error) => {
-                    expect(error).toBeInstanceOf(DotCMSContentError);
-                    if (error instanceof DotCMSContentError) {
+                    expect(error).toBeInstanceOf(DotErrorContent);
+                    if (error instanceof DotErrorContent) {
                         expect(error.contentType).toBe('song');
                         expect(error.operation).toBe('fetch');
                         expect(error.httpError).toBe(httpError);

@@ -8,7 +8,7 @@ import {
     GetCollectionRawResponse,
     OnFullfilled,
     OnRejected,
-    DotCMSContentError
+    DotErrorContent
 } from '../../shared/types';
 import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
@@ -342,13 +342,13 @@ export class CollectionBuilder<T = unknown> {
      *
      * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
      * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
-     * @return {Promise<GetCollectionResponse<T> | DotCMSContentError>} A promise that resolves to the content or rejects with an error.
+     * @return {Promise<GetCollectionResponse<T> | DotErrorContent>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | DotCMSContentError> {
+    ): Promise<GetCollectionResponse<T> | DotErrorContent> {
         return this.fetch().then(
             (data) => {
                 const formattedResponse = this.formatResponse<T>(data);
@@ -363,10 +363,10 @@ export class CollectionBuilder<T = unknown> {
             },
             (error: unknown) => {
                 // Wrap error in DotCMSContentError
-                let contentError: DotCMSContentError;
+                let contentError: DotErrorContent;
 
                 if (error instanceof DotHttpError) {
-                    contentError = new DotCMSContentError(
+                    contentError = new DotErrorContent(
                         `Content API failed for '${this.#contentType}' (fetch): ${error.message}`,
                         this.#contentType,
                         'fetch',
@@ -375,7 +375,7 @@ export class CollectionBuilder<T = unknown> {
                     );
                 } else {
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    contentError = new DotCMSContentError(
+                    contentError = new DotErrorContent(
                         `Content API failed for '${this.#contentType}' (fetch): ${errorMessage}`,
                         this.#contentType,
                         'fetch',
