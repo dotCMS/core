@@ -172,7 +172,7 @@ $select-border-size: 2px;
 }
 
 #field-chip {
-    height: 1.5rem;
+    height: $spacing-4;
     padding: $spacing-1;
     background: $color-palette-primary-op-10;
     border-radius: $border-radius-sm;
@@ -187,7 +187,7 @@ $select-border-size: 2px;
 }
 
 #field-chip-sm {
-    height: 1rem;
+    height: $spacing-3;
     padding: $spacing-0;
     font-size: $font-size-xs;
 }
