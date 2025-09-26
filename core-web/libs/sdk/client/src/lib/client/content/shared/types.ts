@@ -32,12 +32,12 @@ export type BuildQuery = (qb: QueryBuilder) => Equals;
  * @template T - The type of the response.
  * @callback OnFullfilled
  * @param {GetCollectionResponse<T>} value - The response value.
- * @returns {GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void} The processed response or a promise.
+ * @returns {GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>>} The processed response or a promise.
  */
 export type OnFullfilled<T> =
     | ((
           value: GetCollectionResponse<T>
-      ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void)
+      ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>>)
     | undefined
     | null;
 
@@ -46,10 +46,10 @@ export type OnFullfilled<T> =
  *
  * @callback OnRejected
  * @param {DotHttpError} error - The HTTP error object.
- * @returns {DotHttpError | PromiseLike<DotHttpError> | void} The processed error or a promise.
+ * @returns {DotHttpError | PromiseLike<DotHttpError>} The processed error or a promise.
  */
 export type OnRejected =
-    | ((error: DotHttpError) => DotHttpError | PromiseLike<DotHttpError> | void)
+    | ((error: DotHttpError) => DotHttpError | PromiseLike<DotHttpError>)
     | undefined
     | null;
 

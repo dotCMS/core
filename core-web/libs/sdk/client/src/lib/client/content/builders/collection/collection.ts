@@ -341,24 +341,39 @@ export class CollectionBuilder<T = unknown> {
      *
      * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
      * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
-     * @return {Promise<GetCollectionResponse<T> | DotHttpError | void>} A promise that resolves to the content or rejects with an error.
+     * @return {Promise<GetCollectionResponse<T> | DotHttpError>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | DotHttpError | void> {
+    ): Promise<GetCollectionResponse<T> | DotHttpError> {
         return this.fetch().then((data) => {
             const formattedResponse = this.formatResponse<T>(data);
 
             if (typeof onfulfilled === 'function') {
                 const result = onfulfilled(formattedResponse);
-
-                return result;
+                // Ensure we always return a value, fallback to formattedResponse if callback returns undefined
+                return result ?? formattedResponse;
             }
 
             return formattedResponse;
-        }, onrejected);
+        }, (error: unknown) => {
+            if (typeof onrejected === 'function') {
+                // Ensure error is a DotHttpError before passing to callback
+                const httpError = error instanceof DotHttpError ? error : new DotHttpError({
+                    status: 0,
+                    statusText: 'Unknown Error',
+                    message: error instanceof Error ? error.message : 'An unknown error occurred',
+                    data: error
+                });
+
+                const result = onrejected(httpError);
+                // Ensure we always return a value, fallback to original error if callback returns undefined
+                return result ?? httpError;
+            }
+            throw error;
+        });
     }
 
     /**
@@ -392,7 +407,8 @@ export class CollectionBuilder<T = unknown> {
      * Calls the content API to fetch the content.
      *
      * @private
-     * @return {Promise<any>} The fetch response data.
+     * @return {Promise<GetCollectionRawResponse<T>>} The fetch response data.
+     * @throws {DotHttpError} When the HTTP request fails.
      * @memberof CollectionBuilder
      */
     private fetch(): Promise<GetCollectionRawResponse<T>> {

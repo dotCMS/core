@@ -684,12 +684,14 @@ describe('CollectionBuilder', () => {
             mockRequest.mockRejectedValue(new Error('URL is invalid'));
 
             collectionBuilder.then(
-                () => {
+                (response) => {
                     /* */
+                    return response;
                 },
                 (error) => {
                     expect(error).toEqual(new Error('URL is invalid'));
                     done();
+                    return error;
                 }
             );
         });
@@ -785,8 +787,9 @@ describe('CollectionBuilder', () => {
             mockRequest.mockRejectedValue(httpError);
 
             collectionBuilder.then(
-                () => {
+                (response) => {
                     fail('Expected onrejected callback to be called');
+                    return response;
                 },
                 (error) => {
                     expect(error).toBeInstanceOf(DotHttpError);
@@ -794,6 +797,7 @@ describe('CollectionBuilder', () => {
                     expect((error as DotHttpError).status).toBe(500);
                     expect((error as DotHttpError).statusText).toBe('Internal Server Error');
                     done();
+                    return error;
                 }
             );
         });
