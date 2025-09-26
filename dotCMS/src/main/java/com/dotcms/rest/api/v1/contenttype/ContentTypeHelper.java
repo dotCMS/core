@@ -719,7 +719,7 @@ public class ContentTypeHelper implements Serializable {
      * <p>
      * This method searches for a match in the predefined {@BaseContentType} enum
      * and returns its corresponding index.
-     *
+     * <p>
      * @param baseTypeName The name of the base content type to find. (e.g., "CONTENT", "WIDGET").
      * @return The integer corresponding to the base type, otherwise throws an IllegalArgumentException.
      * @see BaseContentType
