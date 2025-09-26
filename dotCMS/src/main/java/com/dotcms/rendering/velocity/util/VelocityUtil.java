@@ -478,9 +478,7 @@ public class VelocityUtil {
      */
     public static boolean shouldPageCache(final HttpServletRequest request, final IHTMLPage page)
             throws DotDataException, DotSecurityException {
-        if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
-            return false;
-        }
+
         if (page == null || page.getCacheTTL() < 1) {
             return false;
         }
@@ -490,7 +488,8 @@ public class VelocityUtil {
         }
         // nocache passed either as a session var, as a request var or as a
         // request attribute
-        if (NO.equals(request.getParameter(DOTCACHE)) || REFRESH.equals(request.getParameter(DOTCACHE))
+        if (NO.equals(request.getParameter(DOTCACHE))
+                || REFRESH.equals(request.getParameter(DOTCACHE))
                 || NO.equals(request.getAttribute(DOTCACHE))
                 || (request.getSession(false) != null && NO.equals(request.getSession(true).getAttribute(DOTCACHE)))
 				|| (request.getSession(false) != null && REFRESH.equals(request.getSession(true).getAttribute(DOTCACHE))) ) {

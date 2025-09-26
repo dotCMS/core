@@ -8,6 +8,7 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Function0;
 import io.vavr.Lazy;
+import java.time.Duration;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import java.io.Serializable;
@@ -83,7 +84,7 @@ public class DotCacheTool implements ViewTool {
         }
         final Serializable correctedValue = value instanceof Serializable ? (Serializable) value : value.toString();
         final Map<String, Serializable> map = Map.of(key, correctedValue);
-        cache.get().add(DOT_CACHE_PREFIX + key, map, ttl);
+        cache.get().add(DOT_CACHE_PREFIX + key, map, Duration.ofSeconds(ttl));
     }
     
     /**
