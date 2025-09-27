@@ -2,15 +2,18 @@ package com.dotcms.publisher.assets.business;
 
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.rest.api.v1.content.PushedAssetHistory;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	private PushedAssetsCache cache=CacheLocator.getPushedAssetsCache();
@@ -116,27 +119,46 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	@Override
 	public List<PushedAsset> getPushedAssets(String assetId)
 			throws DotDataException {
-		List<PushedAsset> assets = new ArrayList<>();
-
-		if(!UtilMethods.isSet(assetId)) {
-			return assets;
-		}
-
-		DotConnect dc = new DotConnect();
-		dc.setSQL(SELECT_ASSETS_BY_ASSET_ID);
-		dc.addParam(assetId);
-
-		List<Map<String, Object>> res = dc.loadObjectResults();
-
-		for(Map<String, Object> row : res){
-			PushedAsset asset = PublisherUtil.getPushedAssetByMap(row);
-			assets.add(asset);
-		}
-
-		return assets;
+        return getPushedAssetsInner(assetId, 0, -1, PublisherUtil::getPushedAssetByMap);
 	}
 
-	@Override
+    @Override
+    public List<PushedAssetHistory> getPushedAssets(String assetId, int offset, int limit) throws DotDataException {
+        return getPushedAssetsInner(assetId, offset, limit, PushedAssetHistory::new);
+    }
+
+    private <T> List<T> getPushedAssetsInner(String assetId, int offset, int limit,
+                                                   Function<Map<String, Object>, T> transform) throws DotDataException {
+        List<T> assets = new ArrayList<>();
+
+        if(!UtilMethods.isSet(assetId)) {
+            return assets;
+        }
+
+        final String query = limit >= 1 ? String.format(SELECT_ASSETS_BY_ASSET_ID, " LIMIT " + limit) :
+                String.format(SELECT_ASSETS_BY_ASSET_ID, StringPool.BLANK);
+
+        DotConnect dc = new DotConnect();
+        dc.setSQL(query);
+        dc.addParam(assetId);
+
+        if (offset > 0) {
+            dc.addParam(offset);
+        } else {
+            dc.addParam(0);
+        }
+
+        List<Map<String, Object>> res = dc.loadObjectResults();
+
+        for(Map<String, Object> row : res){
+            T asset = transform.apply(row);
+            assets.add(asset);
+        }
+
+        return assets;
+    }
+
+    @Override
 	public List<PushedAsset> getPushedAssetsByEnvironment(String environmentId)
 			throws DotDataException {
 		List<PushedAsset> assets = new ArrayList<>();
@@ -187,5 +209,16 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		
 		return asset;
 	}
+
+    @Override
+    public long getTotalPushedAssets(String assetId) throws DotDataException {
+        final List<Map<String, Object>> result = new DotConnect()
+                .setSQL(SELECT__TOTAL_ASSETS_BY_ASSET_ID)
+                .addParam(assetId)
+                .loadObjectResults();
+
+        return Long.parseLong(result.get(0).get("total").toString());
+
+    }
 
 }

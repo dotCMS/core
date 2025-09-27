@@ -1,6 +1,7 @@
 package com.dotcms.publisher.assets.business;
 
 import com.dotcms.publisher.assets.bean.PushedAsset;
+import com.dotcms.rest.api.v1.content.PushedAssetHistory;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.List;
@@ -103,6 +104,23 @@ public interface PushedAssetsAPI {
 
 	public List<PushedAsset> getPushedAssetsByBundleIdAndEnvironmentId(final String bundleId, final String environmentId)  throws DotDataException;
 
+    /**
+     * Retrieves a paginated list of pushed asset history entries for a given asset.
+     *
+     * @param assetId the identifier of the asset whose push history is requested
+     * @param offset  zero-based index of the first record to return
+     * @param limit   maximum number of records to return
+     * @return a list of {@link PushedAssetHistory} entries ordered by push date
+     * @throws DotDataException if an error occurs while accessing the data source
+     */
+    List<PushedAssetHistory> getPushedAssets(String assetId, int offset, int limit) throws DotDataException;
 
-
+    /**
+     * Returns the total number of push history entries for the specified asset.
+     *
+     * @param assetId the identifier of the asset
+     * @return total number of push history records for the asset
+     * @throws DotDataException if an error occurs while accessing the data source
+     */
+    long getTotalPushedAssets(String assetId) throws DotDataException;
 }
