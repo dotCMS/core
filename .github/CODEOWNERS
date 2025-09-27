@@ -5,5 +5,5 @@
 /.github/ @dotCMS/core-workflow-developers
 
 # Democratize the PR and Issue templates 
-/.github/PULL_REQUEST_TEMPLATE @dotCMS/dotDevelopers @dotCMS/dotProduct
-/.github/ISSUE_TEMPLATE @dotCMS/dotDevelopers @dotCMS/dotProduct
+/.github/PULL_REQUEST_TEMPLATE/ @dotCMS/dotDevelopers @dotCMS/dotProduct
+/.github/ISSUE_TEMPLATE/ @dotCMS/dotDevelopers @dotCMS/dotProduct
