@@ -117,7 +117,6 @@ The `server.ts` file implements a secure API architecture:
 3. **Site Components**: Add to `components/` folder for site-wide usage
 4. **dotCMS Components**: Add to `dotcms/components/` for content rendering
 
-
 ## Additional Resources
 
 - [Angular CLI Documentation](https://angular.dev/tools/cli)
