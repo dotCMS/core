@@ -1,5 +1,10 @@
 # Require workflow changes to be approved by developers who understand the codebase
 # and security implications of changes
 
+# Democratize the PR and Issue templates
+/.github/PULL_REQUEST_TEMPLATE @dotCMS/dotDevelopers @dotCMS/dotProduct
+/.github/ISSUE_TEMPLATE @dotCMS/dotDevelopers @dotCMS/dotProduct
+
+# Everything else could be CI/CD or actions
 /.github/ @dotCMS/core-workflow-developers
 
