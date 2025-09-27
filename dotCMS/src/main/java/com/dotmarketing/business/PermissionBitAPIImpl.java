@@ -6,10 +6,18 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionableProxy;
+import com.dotmarketing.beans.UserProxy;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,9 +44,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import javax.validation.constraints.NotNull;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,6 +58,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * PermissionAPI is an API intended to be a helper class for class to get Permissions.  Classes within the dotCMS
@@ -420,15 +427,85 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return false;
 		}
 
+        if (isContentlet && !hasCategoryPermission(((Contentlet) permissionable), expecterPermissionType, user,
+                respectFrontendRoles)) {
+            return false;
+        }
+
 		final Set<String> userRoleIds = filterUserRoles(user, respectFrontendRoles).stream().map(Role::getId).collect(Collectors.toSet());
 
 		return doRolesHavePermission(userRoleIds, getPermissions(permissionable, true), expecterPermissionType);
 
-
-
-
-
 	}
+
+
+    /**
+     * Checks if the specified user has permissions to the categories used on the content. The algo is this: To access a
+     * piece of content, the user has to have permissions to at least one category that is set on EVERY category field
+     * on the content (or the category field is empty). If the user does not have access to ANY of the categories set on
+     * any category field of the content then the user is not allowed to access the content.
+     *
+     * @param contentlet           the contentlet for which category permissions are being checked. This parameter must
+     *                             not be null.
+     * @param permissionType       the type of permission being checked (e.g., read, write, etc.).
+     * @param user                 the user whose permissions are being verified. This parameter must not be null.
+     * @param respectFrontendRoles a flag indicating whether to respect frontend roles during permission checks.
+     * @return true if the user has the specified permission type for all categories associated with the contentlet;
+     * false otherwise.
+     * @throws DotDataException if an error occurs during the permission check process.
+     */
+
+    boolean hasCategoryPermission(@NotNull final Contentlet contentlet, final int permissionType,
+            @NotNull final User user, boolean respectFrontendRoles)
+            throws DotDataException {
+
+        if (!Config.getBooleanProperty("PERMISSION_CONTENT_RESPECT_CATEGORY_PERMISSION", true)) {
+            return true;
+        }
+
+        // List of fields which have secondaryPermissionCheck=true
+        List<Field> permissionedCategories = contentlet.getContentType()
+                .fields(CategoryField.class)
+                .stream()
+                .filter(f -> f.fieldVariables()
+                        .stream()
+                        .anyMatch(
+                                fv -> "secondaryPermissionCheck".equalsIgnoreCase(fv.key()) && "true".equalsIgnoreCase(
+                                        fv.value())))
+                .collect(Collectors.toList());
+
+        if (permissionedCategories.isEmpty()) {
+            return true;
+        }
+
+        for (Field field : permissionedCategories) {
+
+            // categories selected
+            List<Category> allCats = Try.of(() -> (List<Category>) APILocator.getContentletAPI()
+                            .getFieldValue(contentlet, field, APILocator.systemUser(), false))
+                    .getOrElse(List.of());
+
+            // nothing selected, allow access
+            if (allCats.isEmpty()) {
+                continue;
+            }
+
+            //categories I have access to
+            List<Category> myCats = Try.of(
+                            () -> (List<Category>) APILocator.getContentletAPI().getFieldValue(contentlet, field, user, false))
+                    .getOrElse(List.of());
+
+            // if I have no access, kaput!
+            if (myCats.isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+
+
+    }
+
 
 	/**
 	 * Given an expected permissionType to be satisfied, a resolved "Anyone who can..." style permission, a {@link User}
