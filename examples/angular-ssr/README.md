@@ -2,9 +2,34 @@
 
 This Angular project demonstrates how to implement editable dotCMS pages using Angular Server Side Rendering (SSR). It showcases best practices for integrating dotCMS content management with Angular's hybrid rendering capabilities.
 
+### Content Management Features
+- **Dynamic Page Rendering**: Automatic page generation from dotCMS routing
+- **Content Type Components**: 10+ pre-built components for common content types
+- **Block Editor Integration**: Rich text content with dotCMS Block Editor
+- **Image Management**: Optimized image handling with dotCMS image API
+- **GraphQL Queries**: Advanced content filtering and search capabilities
+
+### Visual Editing (UVE)
+- **Live Content Editing**: Edit content directly in the browser
+- **Visual Page Builder**: In-context editing experience
+- **Contentlet Editing**: Direct editing of individual content pieces
+
+### Technical Integration
+- **Server-Side Rendering**: Full SSR with hydration support
+- **Type Safety**: Complete TypeScript interfaces for all content types
+- **Performance Optimization**: HTTP transfer cache and image optimization
+
 For the official Angular SSR guide, visit: [Angular SSR Documentation](https://angular.dev/guide/ssr)
 
 ## Getting Started
+
+### Setup
+
+```bash
+git clone <repository-url>
+cd angular-ssr
+npm install
+```
 
 ### Development Server
 
@@ -85,15 +110,6 @@ The `server.ts` file implements a secure API architecture:
 - **Client Navigation**: RouterLink navigation exposes API calls in browser
 - **Solution**: Proxy endpoint masks dotCMS requests from client inspection
 
-## Content Type Components
-
-Components in `dotcms/components/` automatically receive full content objects:
-- `BannerComponent` - Renders banner content
-- `ProductComponent` - Displays product information  
-- `ActivityComponent` - Shows activity details
-- `ImageComponent` - Handles image rendering
-- `WebPageContentComponent` - General content blocks
-
 ## Development Workflow
 
 1. **New Content Types**: Add component mapping to `DYNAMIC_COMPONENTS` in `page.ts`
@@ -101,8 +117,11 @@ Components in `dotcms/components/` automatically receive full content objects:
 3. **Site Components**: Add to `components/` folder for site-wide usage
 4. **dotCMS Components**: Add to `dotcms/components/` for content rendering
 
+
 ## Additional Resources
 
 - [Angular CLI Documentation](https://angular.dev/tools/cli)
 - [dotCMS Angular Library](https://www.dotcms.com/docs/latest/angular-integration)
 - [Angular SSR Best Practices](https://angular.dev/guide/ssr)
+- [dotCMS GraphQL API](https://www.dotcms.com/docs/latest/graphql-api)
+- [dotCMS Universal Visual Editor](https://www.dotcms.com/docs/latest/universal-visual-editor)
