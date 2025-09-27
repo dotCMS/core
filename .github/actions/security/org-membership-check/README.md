@@ -37,7 +37,20 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
 
 ## Implementation Details
 
-The action uses the GitHub CLI (`gh`) with the repository's `GITHUB_TOKEN` to check organization membership. It first attempts to check public membership, and if that fails, it attempts to check private membership (which requires appropriate permissions in organization repositories).
+The action uses the GitHub CLI (`gh`) with the repository's `GITHUB_TOKEN` to check organization membership via the GitHub API endpoint `GET /orgs/dotCMS/members/{username}`.
+
+**Key Design Decision: Status Code vs Response Body**
+
+The action relies on HTTP status codes rather than parsing response content because:
+
+- **HTTP 200 (Success)**: User is a member of the organization
+  - Public members: API returns user object with populated fields
+  - Private members: API returns empty response body (but still 200 OK)
+
+- **HTTP 404 (Not Found)**: User is not a member of the organization
+  - Returns error object with "Not Found" message
+
+This approach correctly authorizes all organization members (including owners with private membership) without needing to handle different response formats or visibility settings.
 
 ## Security Considerations
 
