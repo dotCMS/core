@@ -39,12 +39,7 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
 
 ## Implementation Details
 
-The action uses the GitHub CLI (`gh`) with a fine-grained GitHub token to check organization membership via the GitHub API endpoint `GET /orgs/dotCMS/members/{username}`.
-
-**Token Requirements:**
-- Fine-grained token with organization membership read permissions
-- Should be from a machine/service account for security
-- Stored as repository secret: `MACHINE_USER_CORE_ORG_MEMBERSHIP_CHECK`
+The action uses the GitHub CLI (`gh`) with the repository's `GITHUB_TOKEN` to check organization membership via the GitHub API endpoint `GET /orgs/dotCMS/members/{username}`.
 
 **Key Design Decision: Status Code vs Response Body**
 
