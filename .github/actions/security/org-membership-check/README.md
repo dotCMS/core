@@ -5,8 +5,8 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
 ## Security Features
 
 - **Hardcoded Organization**: The organization name "dotCMS" is hardcoded and cannot be overridden
-- **Public Membership Only**: Only detects public organization members for security
-- **Clear Instructions**: Provides guidance for private members to make membership public
+- **All Organization Members**: Detects both public and private organization members
+- **Simple Token Usage**: Uses default GITHUB_TOKEN without additional secrets
 - **Graceful Error Handling**: Returns clear status without exposing internal API details
 
 ## Inputs
@@ -40,27 +40,19 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
 
 The action uses the GitHub CLI (`gh`) with the repository's `GITHUB_TOKEN` to check organization membership via the GitHub API endpoint `GET /orgs/dotCMS/members/{username}`.
 
-**Important Limitation: Public Membership Only**
+**API Behavior**
 
-This approach only detects users with **public** organization membership:
+The GitHub organization membership API works for both public and private members:
 
-- **HTTP 200 + user object**: User is a PUBLIC member → **AUTHORIZED**
-- **HTTP 404**: User has private membership OR is not a member → **BLOCKED**
+- **HTTP 204 No Content**: User is a member (public or private) → **AUTHORIZED**
+- **HTTP 404 Not Found**: User is not a member → **BLOCKED**
 
-**For dotCMS Team Members with Private Membership:**
-
-If you are a dotCMS organization member but have private membership visibility, you must make your membership public to access Claude workflows:
-
-1. Visit: https://github.com/orgs/dotCMS/people
-2. Find your username in the list
-3. Click "Make public" next to your name
-
-This ensures the security gate can detect your organization membership without requiring additional API tokens.
+This approach successfully detects all dotCMS organization members regardless of their membership visibility setting, using only the default GITHUB_TOKEN without requiring additional secrets or configuration.
 
 ## Security Considerations
 
 - Only checks membership in the dotCMS organization (hardcoded)
-- Only authorizes users with public organization membership
+- Authorizes all organization members (both public and private)
 - Logs authorization results without sensitive details
 - Uses default GITHUB_TOKEN (no additional secrets required)
-- Provides clear instructions for private members to become public
+- No configuration or setup required for team members
