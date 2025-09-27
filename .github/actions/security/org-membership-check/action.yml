@@ -28,33 +28,31 @@ runs:
 
         set +e  # Don't exit on error, we want to handle it gracefully
 
-        # Check PUBLIC organization membership using GitHub API
-        #
-        # IMPORTANT: This approach only detects PUBLIC organization members.
-        # Private members will appear as non-members and be blocked.
+        # Check organization membership using GitHub API
         #
         # API Behavior:
-        # - HTTP 200 + user object = Public member (AUTHORIZED)
-        # - HTTP 404 = Private member OR non-member (BLOCKED)
+        # - HTTP 204 No Content (exit code 0) = User is a member (public or private)
+        # - HTTP 404 Not Found (exit code 1) = User is not a member
         #
-        # Team members with private membership must make their membership public
-        # to access Claude workflows: github.com/orgs/dotCMS/people
+        # Note: The API returns the same response for both public and private members,
+        # so this actually works for both visibility settings.
 
-        echo "Checking PUBLIC organization membership for ${{ inputs.username }} in dotCMS..."
+        echo "Checking organization membership for ${{ inputs.username }} in dotCMS..."
 
         response=$(gh api orgs/dotCMS/members/${{ inputs.username }} 2>/dev/null)
         api_exit_code=$?
 
-        if [ $api_exit_code -eq 0 ] && [ -n "$response" ]; then
-          # HTTP 200 with content: User is a PUBLIC member
-          echo "✅ User ${{ inputs.username }} is a PUBLIC member of dotCMS"
+        if [ $api_exit_code -eq 0 ]; then
+          # HTTP 200/204: User is a member (public or private, but API accessible)
+          # For public members: HTTP 204 No Content (empty response but success)
+          # For private members: HTTP 204 No Content (empty response but success)
+          # The key is that we get a successful HTTP response (not 404)
+          echo "✅ User ${{ inputs.username }} is a member of dotCMS"
           echo "is_member=true" >> $GITHUB_OUTPUT
           echo "membership_status=member" >> $GITHUB_OUTPUT
         else
-          # HTTP 404 or empty response: Private member or non-member
-          echo "❌ User ${{ inputs.username }} is not a PUBLIC member of dotCMS"
-          echo "⚠️  If you are a dotCMS team member with private membership, please make it public:"
-          echo "   Visit: https://github.com/orgs/dotCMS/people"
+          # HTTP 404: Not a member
+          echo "❌ User ${{ inputs.username }} is not a member of dotCMS"
           echo "is_member=false" >> $GITHUB_OUTPUT
           echo "membership_status=non-member" >> $GITHUB_OUTPUT
         fi
