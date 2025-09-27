@@ -5,9 +5,6 @@ inputs:
   username:
     description: 'GitHub username to check'
     required: true
-  github_token:
-    description: 'Fine-grained GitHub token with organization membership read permissions'
-    required: true
 
 outputs:
   is_member:
@@ -26,44 +23,38 @@ runs:
       run: |
         echo "Checking organization membership for user: ${{ inputs.username }} in dotCMS organization"
 
-        # Use GitHub CLI to check organization membership
-        # This uses a fine-grained token with organization membership read permissions
+        # Use GitHub CLI to check PUBLIC organization membership
+        # This uses the default GITHUB_TOKEN and only detects public members
 
         set +e  # Don't exit on error, we want to handle it gracefully
 
-        # Check organization membership using GitHub API
+        # Check PUBLIC organization membership using GitHub API
         #
-        # IMPORTANT: We check the HTTP status code (via exit code) rather than parsing
-        # the response body because GitHub's membership API has specific behavior:
+        # IMPORTANT: This approach only detects PUBLIC organization members.
+        # Private members will appear as non-members and be blocked.
         #
-        # HTTP 200 (exit code 0) = User IS a member (regardless of response content)
-        #   - Public member: Returns user object with populated fields
-        #   - Private member: Returns empty response body (but still 200 OK)
+        # API Behavior:
+        # - HTTP 200 + user object = Public member (AUTHORIZED)
+        # - HTTP 404 = Private member OR non-member (BLOCKED)
         #
-        # HTTP 404 (exit code 1) = User is NOT a member
-        #   - Returns {"message":"Not Found",...} error response
-        #
-        # This approach correctly handles both public and private organization members
-        # without needing to distinguish between their visibility settings.
+        # Team members with private membership must make their membership public
+        # to access Claude workflows: github.com/orgs/dotCMS/people
 
-        response=$(gh api orgs/dotCMS/members/${{ inputs.username }} \
-          --header "Authorization: token ${{ inputs.github_token }}" 2>/dev/null)
+        echo "Checking PUBLIC organization membership for ${{ inputs.username }} in dotCMS..."
+
+        response=$(gh api orgs/dotCMS/members/${{ inputs.username }} 2>/dev/null)
         api_exit_code=$?
 
-        if [ $api_exit_code -eq 0 ]; then
-          # HTTP 200: User is a member (public or private)
-          # We check response content only for logging clarity, not authorization logic
-          if [ -n "$response" ]; then
-            echo "✅ User ${{ inputs.username }} is a member of dotCMS (public membership)"
-          else
-            echo "✅ User ${{ inputs.username }} is a member of dotCMS (private membership)"
-          fi
+        if [ $api_exit_code -eq 0 ] && [ -n "$response" ]; then
+          # HTTP 200 with content: User is a PUBLIC member
+          echo "✅ User ${{ inputs.username }} is a PUBLIC member of dotCMS"
           echo "is_member=true" >> $GITHUB_OUTPUT
           echo "membership_status=member" >> $GITHUB_OUTPUT
         else
-          # HTTP 404 or other error: User is not a member
-
-          echo "❌ User ${{ inputs.username }} is not a member of dotCMS (API exit code: $api_exit_code)"
+          # HTTP 404 or empty response: Private member or non-member
+          echo "❌ User ${{ inputs.username }} is not a PUBLIC member of dotCMS"
+          echo "⚠️  If you are a dotCMS team member with private membership, please make it public:"
+          echo "   Visit: https://github.com/orgs/dotCMS/people"
           echo "is_member=false" >> $GITHUB_OUTPUT
           echo "membership_status=non-member" >> $GITHUB_OUTPUT
         fi

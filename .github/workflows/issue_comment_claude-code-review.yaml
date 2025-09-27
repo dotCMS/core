@@ -37,14 +37,15 @@ jobs:
         uses: ./.github/actions/security/org-membership-check
         with:
           username: ${{ github.event.comment.user.login || github.actor }}
-          github_token: ${{ secrets.MACHINE_USER_CORE_ORG_MEMBERSHIP_CHECK }}
 
       - name: Log security decision
         run: |
           if [ "${{ steps.membership-check.outputs.is_member }}" = "true" ]; then
-            echo "✅ Access granted: User is a dotCMS organization member"
+            echo "✅ Access granted: User is a PUBLIC dotCMS organization member"
           else
-            echo "❌ Access denied: User is not a dotCMS organization member"
+            echo "❌ Access denied: User is not a PUBLIC dotCMS organization member"
+            echo "⚠️  If you are a dotCMS team member, please make your membership public:"
+            echo "   Visit: https://github.com/orgs/dotCMS/people"
             echo "::warning::Unauthorized user attempted to trigger Claude workflow: ${{ github.event.comment.user.login || github.actor }}"
           fi
 

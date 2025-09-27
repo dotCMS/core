@@ -5,7 +5,8 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
 ## Security Features
 
 - **Hardcoded Organization**: The organization name "dotCMS" is hardcoded and cannot be overridden
-- **No Information Leakage**: Does not distinguish between public/private membership in outputs
+- **Public Membership Only**: Only detects public organization members for security
+- **Clear Instructions**: Provides guidance for private members to make membership public
 - **Graceful Error Handling**: Returns clear status without exposing internal API details
 
 ## Inputs
@@ -13,7 +14,6 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `username` | GitHub username to check | Yes | N/A |
-| `github_token` | Fine-grained GitHub token with organization membership read permissions | Yes | N/A |
 
 ## Outputs
 
@@ -30,7 +30,6 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
   uses: ./.github/actions/security/org-membership-check
   with:
     username: ${{ github.actor }}
-    github_token: ${{ secrets.MACHINE_USER_CORE_ORG_MEMBERSHIP_CHECK }}
 
 - name: Conditional step based on membership
   if: steps.membership-check.outputs.is_member == 'true'
@@ -41,23 +40,27 @@ This composite action checks if a GitHub user is a member of the dotCMS organiza
 
 The action uses the GitHub CLI (`gh`) with the repository's `GITHUB_TOKEN` to check organization membership via the GitHub API endpoint `GET /orgs/dotCMS/members/{username}`.
 
-**Key Design Decision: Status Code vs Response Body**
+**Important Limitation: Public Membership Only**
 
-The action relies on HTTP status codes rather than parsing response content because:
+This approach only detects users with **public** organization membership:
 
-- **HTTP 200 (Success)**: User is a member of the organization
-  - Public members: API returns user object with populated fields
-  - Private members: API returns empty response body (but still 200 OK)
+- **HTTP 200 + user object**: User is a PUBLIC member → **AUTHORIZED**
+- **HTTP 404**: User has private membership OR is not a member → **BLOCKED**
 
-- **HTTP 404 (Not Found)**: User is not a member of the organization
-  - Returns error object with "Not Found" message
+**For dotCMS Team Members with Private Membership:**
 
-This approach correctly authorizes all organization members (including owners with private membership) without needing to handle different response formats or visibility settings.
+If you are a dotCMS organization member but have private membership visibility, you must make your membership public to access Claude workflows:
+
+1. Visit: https://github.com/orgs/dotCMS/people
+2. Find your username in the list
+3. Click "Make public" next to your name
+
+This ensures the security gate can detect your organization membership without requiring additional API tokens.
 
 ## Security Considerations
 
 - Only checks membership in the dotCMS organization (hardcoded)
-- Does not expose whether membership is public or private
+- Only authorizes users with public organization membership
 - Logs authorization results without sensitive details
-- Uses fine-grained token with minimal required permissions (organization membership read)
-- Token should be regularly rotated and monitored for usage
+- Uses default GITHUB_TOKEN (no additional secrets required)
+- Provides clear instructions for private members to become public
