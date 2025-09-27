@@ -12,6 +12,7 @@ import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
 import { buildExtraQuery } from '../../shared/queries';
 import { ExtraContent } from '../../shared/contentlet.model';
+import { JsonPipe } from '@angular/common';
 
 type DotCMSPage = {
   pageAsset: DotCMSPageAsset;
@@ -21,6 +22,7 @@ type DotCMSPage = {
 @Component({
   selector: 'app-dotcms-page',
   imports: [
+    JsonPipe,
     DotCMSLayoutBodyComponent,
     HeaderComponent,
     NavigationComponent,

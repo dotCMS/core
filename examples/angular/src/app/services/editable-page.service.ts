@@ -67,7 +67,11 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
           const url = path || '/';
 
           // Fetch the page asset
-          return this.#pageService.getPageAsset<T>(url, extraParams);
+          return this.#pageService.getPageAsset<T>(url, extraParams).pipe(
+            tap((response) => {
+              console.log('what', JSON.stringify(response, null, 2));
+            }),
+          );
         }),
       )
       .subscribe((response) => {
@@ -129,6 +133,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
     }));
   }
 
+
   /**
    * Set the error state
    * @param error
@@ -137,7 +142,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
     this.#context.update((state) => ({
       ...state,
       error: error,
-      status: 'error',
+      status: 'error'
     }));
   }
 }

@@ -7,7 +7,7 @@ import { catchError, map, pluck } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
+import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPageAssetParams, SavePagePayload } from '../shared/models';
@@ -166,17 +166,21 @@ export class DotPageApiService {
             dotcachettl: '0'
         };
 
-        return this.http.post<{ data }>('/api/v1/graphql', { query, variables }, { headers }).pipe(
-            pluck('data'),
-            map(({ page, ...content }) => {
-                const pageEntity = graphqlToPageEntity({ page } as DotCMSGraphQLPageResponse);
+        return this.http
+            .post<{
+                data: { page: DotCMSGraphQLPage };
+            }>('/api/v1/graphql', { query, variables }, { headers })
+            .pipe(
+                pluck('data'),
+                map(({ page, ...content }) => {
+                    const pageEntity = graphqlToPageEntity(page);
 
-                return {
-                    pageAsset: pageEntity,
-                    content
-                };
-            })
-        );
+                    return {
+                        pageAsset: pageEntity,
+                        content
+                    };
+                })
+            );
     }
 
     private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {

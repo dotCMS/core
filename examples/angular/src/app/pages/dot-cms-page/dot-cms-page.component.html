@@ -1,5 +1,9 @@
 @let pageState = $pageState();
 
+<pre class="whitespace-pre-wrap bg-gray-100 p-4 rounded text-xs">
+  {{ pageState.pageResponse?.content | json }}
+</pre>
+
 @if (pageState.status !== "idle") {
   <div class="flex flex-col gap-6 min-h-screen bg-neutral-50">
     @if (pageState.pageResponse?.pageAsset?.layout?.header) {

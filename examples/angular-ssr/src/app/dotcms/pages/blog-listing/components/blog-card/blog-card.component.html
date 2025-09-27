@@ -1,0 +1,49 @@
+<div
+  class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative flex flex-col h-full"
+>
+  <ng-template [dotCMSShowWhen]="UVE_MODE.EDIT">
+    <button
+      (click)="editContentlet(blog())"
+      class="absolute top-2 right-2 z-10 bg-red-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-red-600"
+    >
+      Edit
+    </button>
+  </ng-template>
+
+  <div class="relative h-48 w-full">
+    @if (blog().image) {
+      <img
+        [ngSrc]="blog().inode"
+        [alt]="blog().urlTitle || blog().title"
+        fill
+        class="absolute inset-0 w-full h-full object-cover"
+      />
+    } @else {
+      <div
+        class="absolute inset-0 bg-gray-200 flex items-center justify-center"
+      >
+        <span class="text-gray-400">No image</span>
+      </div>
+    }
+  </div>
+
+  <div class="p-4 flex flex-col grow">
+    <h3 class="text-lg font-bold mb-2 hover:text-red-500">
+      <a [routerLink]="blog().urlMap">{{ blog().title }}</a>
+    </h3>
+
+    @if (blog().teaser) {
+      <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+        {{ blog().teaser }}
+      </p>
+    }
+
+    <div
+      class="flex justify-between items-center mt-auto pt-3 border-t border-gray-100"
+    >
+      <time class="text-sm text-gray-500">
+        {{ getFormattedDate(blog().modDate) }}
+      </time>
+    </div>
+  </div>
+</div>

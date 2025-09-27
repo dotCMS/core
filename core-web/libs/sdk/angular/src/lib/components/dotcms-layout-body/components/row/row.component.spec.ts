@@ -61,5 +61,6 @@ describe('RowComponent', () => {
         const rowElement = spectator.query(byTestId('dotcms-row'));
 
         expect(rowElement?.classList.contains('custom-class')).toBe(true);
+        expect(rowElement?.classList.contains('dot-row')).toBe(true);
     });
 });
