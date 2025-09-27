@@ -3,6 +3,7 @@ package com.dotcms.publisher.assets.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.assets.bean.PushedAsset;
+import com.dotcms.rest.api.v1.content.PushedAssetHistory;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -137,5 +138,15 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 			final String environmentId) throws DotDataException {
 		return pushedAssetsFactory.getPushedAssets(bundleId,environmentId);
 	}
+
+    @Override
+    public List<PushedAssetHistory> getPushedAssets(String assetId, int offset, int limit) throws DotDataException {
+        return pushedAssetsFactory.getPushedAssets(assetId, offset, limit);
+    }
+
+    @Override
+    public long getTotalPushedAssets(String assetId) throws DotDataException {
+        return pushedAssetsFactory.getTotalPushedAssets(assetId);
+    }
 
 }

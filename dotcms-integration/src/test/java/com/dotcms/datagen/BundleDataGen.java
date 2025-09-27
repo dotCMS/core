@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 public class BundleDataGen extends AbstractDataGen<Bundle> {
     public static AssignableFromMap<BundleDataGen.MetaData> howAddInBundle;
 
+    protected  User owner;
+
     private String name;
     private PushPublisherConfig config;
     private Set<AssetsItem> assets = new HashSet<>();
@@ -214,7 +216,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
                     .collect(Collectors.toList());
 
             final List<String> ids = FunctionUtils.map(assetWithoutWorkflow, asset -> asset.inode);
-            PublisherAPI.getInstance().saveBundleAssets(ids, bundle.getId(), user);
+            PublisherAPI.getInstance().saveBundleAssets(ids, bundle.getId(), owner != null ? owner : user);
         } catch (DotPublisherException e) {
             throw new DotRuntimeException(e);
         }
@@ -265,6 +267,11 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
 
     public BundleDataGen downloading(boolean downloading) {
         this.downloading = downloading;
+        return this;
+    }
+
+    public BundleDataGen owner(User user){
+        this.owner = user;
         return this;
     }
 
