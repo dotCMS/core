@@ -24,9 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read           # Allow repository checkout
-      metadata: read          # Allow reading repository metadata
-      # Note: Organization membership checking uses the actor's permissions
-      # not the GITHUB_TOKEN, so no additional permissions needed for that API
+      # Note: Organization membership checking uses fine-grained token
+      # so no additional GITHUB_TOKEN permissions needed for that API
     outputs:
       authorized: ${{ steps.membership-check.outputs.is_member }}
     steps:
