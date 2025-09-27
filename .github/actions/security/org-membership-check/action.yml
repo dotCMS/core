@@ -1,0 +1,80 @@
+name: 'Organization Membership Check'
+description: 'Checks if a user is a member of the dotCMS organization'
+
+inputs:
+  username:
+    description: 'GitHub username to check'
+    required: true
+
+outputs:
+  is_member:
+    description: 'true if user is a member, false otherwise'
+    value: ${{ steps.check-membership.outputs.is_member }}
+  membership_status:
+    description: 'Membership status (member, non-member, error)'
+    value: ${{ steps.check-membership.outputs.membership_status }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Organization Membership
+      id: check-membership
+      shell: bash
+      run: |
+        echo "Checking organization membership for user: ${{ inputs.username }} in dotCMS organization"
+
+        # Use GitHub CLI to check PUBLIC organization membership
+        # This uses the default GITHUB_TOKEN and only detects public members
+
+        set +e  # Don't exit on error, we want to handle it gracefully
+
+        # Check organization membership using GitHub API
+        #
+        # API Behavior:
+        # - HTTP 204 No Content (exit code 0) = User is a member (public or private)
+        # - HTTP 404 Not Found (exit code 1) = User is not a member
+        #
+        # Note: The API returns the same response for both public and private members,
+        # so this actually works for both visibility settings.
+
+        echo "Checking organization membership for ${{ inputs.username }} in dotCMS..."
+
+        response=$(gh api orgs/dotCMS/members/${{ inputs.username }} 2>/dev/null)
+        api_exit_code=$?
+
+        if [ $api_exit_code -eq 0 ]; then
+          # HTTP 204: User is a member (public or private)
+          echo "✅ User ${{ inputs.username }} is a member of dotCMS"
+          echo "is_member=true" >> $GITHUB_OUTPUT
+          echo "membership_status=member" >> $GITHUB_OUTPUT
+        else
+          # HTTP 404: Not a member OR private membership not visible to GITHUB_TOKEN
+          echo "❌ User ${{ inputs.username }} is not authorized to trigger Claude workflows"
+          echo ""
+          echo "🔍 TROUBLESHOOTING STEPS:"
+          echo "1. Verify you are a member of the dotCMS organization:"
+          echo "   → Visit: https://github.com/orgs/dotCMS/people"
+          echo "   → You should see your username in the list"
+          echo ""
+          echo "2. If you are a member but have PRIVATE visibility:"
+          echo "   → Click 'Make public' next to your name"
+          echo "   → This allows the workflow to detect your membership"
+          echo ""
+          echo "3. If you are not a member:"
+          echo "   → Contact a dotCMS organization owner to be added"
+          echo "   → Only dotCMS organization members can trigger Claude workflows"
+          echo ""
+          echo "is_member=false" >> $GITHUB_OUTPUT
+          echo "membership_status=non-member" >> $GITHUB_OUTPUT
+        fi
+
+        # Log the result for debugging (without leaking membership details)
+        membership_result=$(if [ "$(cat $GITHUB_OUTPUT | grep 'is_member=true')" ]; then echo "AUTHORIZED"; else echo "UNAUTHORIZED"; fi)
+
+        if [ "$membership_result" = "UNAUTHORIZED" ]; then
+          echo "::notice::❌ BLOCKED: ${{ inputs.username }} failed organization membership check. If you're a dotCMS team member, visit https://github.com/orgs/dotCMS/people and ensure your membership is PUBLIC."
+        else
+          echo "::notice::✅ AUTHORIZED: ${{ inputs.username }} is a dotCMS organization member"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
