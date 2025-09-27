@@ -20,6 +20,13 @@ on:
 
 jobs:
   # Security gate: Check if user is dotCMS organization member
+  #
+  # REQUIREMENTS FOR CLAUDE ACCESS:
+  # 1. Must be a member of the dotCMS organization
+  # 2. Membership must be set to PUBLIC visibility
+  #
+  # TROUBLESHOOTING: If blocked, visit https://github.com/orgs/dotCMS/people
+  # and ensure your membership is public (click "Make public" if needed)
   security-check:
     runs-on: ubuntu-latest
     permissions:
@@ -43,7 +50,13 @@ jobs:
           if [ "${{ steps.membership-check.outputs.is_member }}" = "true" ]; then
             echo "✅ Access granted: User is a dotCMS organization member"
           else
-            echo "❌ Access denied: User is not a dotCMS organization member"
+            echo "❌ Access denied: User failed dotCMS organization membership check"
+            echo ""
+            echo "📋 TROUBLESHOOTING: If you are a dotCMS team member:"
+            echo "   1. Visit https://github.com/orgs/dotCMS/people"
+            echo "   2. Ensure your membership is set to 'Public'"
+            echo "   3. If you're not listed, contact an organization owner"
+            echo ""
             echo "::warning::Unauthorized user attempted to trigger Claude workflow: ${{ github.event.comment.user.login || github.actor }}"
           fi
 

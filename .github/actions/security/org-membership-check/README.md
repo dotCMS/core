@@ -49,10 +49,35 @@ The GitHub organization membership API works for both public and private members
 
 This approach successfully detects all dotCMS organization members regardless of their membership visibility setting, using only the default GITHUB_TOKEN without requiring additional secrets or configuration.
 
+## Troubleshooting
+
+If you're a dotCMS team member but getting blocked by the security gate:
+
+### Step 1: Verify Organization Membership
+1. Visit: https://github.com/orgs/dotCMS/people
+2. Look for your username in the member list
+3. If you're not listed, you need to be added to the organization
+
+### Step 2: Check Membership Visibility
+If you are listed but still blocked:
+1. Look for a "Make public" button next to your name
+2. Click it to make your membership public
+3. This allows the workflow to detect your membership
+
+### Step 3: Contact Organization Owners
+If you're not a member:
+- Contact a dotCMS organization owner to be added
+- Only organization members can trigger Claude workflows
+
+### Common Issues
+- **Private membership**: Most common cause - make membership public
+- **Not a member**: Contact org owners to be added
+- **Recent changes**: GitHub API may take a few minutes to reflect visibility changes
+
 ## Security Considerations
 
 - Only checks membership in the dotCMS organization (hardcoded)
-- Authorizes all organization members (both public and private)
+- Authorizes organization members (requires public membership visibility)
 - Logs authorization results without sensitive details
 - Uses default GITHUB_TOKEN (no additional secrets required)
-- No configuration or setup required for team members
+- Provides clear troubleshooting guidance for blocked users
