@@ -112,6 +112,33 @@ public class UserResourceHelper implements Serializable {
 	}
 
 	/**
+	 * Loads user by ID or email, trying ID first.
+	 * 
+	 * @param userIdOrEmail The user ID or email address to search for
+	 * @param systemUser The system user for email lookup authentication
+	 * @param requestingUser The user making the request (for logging purposes)
+	 * @return The found user
+	 * @throws DotDataException if the user is not found by either ID or email
+	 * @throws DotSecurityException if there's a security error during lookup
+	 */
+	public User loadUserByIdOrEmail(final String userIdOrEmail, 
+	                               final User systemUser, 
+	                               final User requestingUser) 
+	        throws DotDataException, DotSecurityException {
+	    try {
+	        return this.userAPI.loadUserById(userIdOrEmail);
+	    } catch (NoSuchUserException e) {
+	        try {
+	            return this.userAPI.loadByUserByEmail(userIdOrEmail, systemUser, false);
+	        } catch (NoSuchUserException ex) {
+	            Logger.warn(this, String.format("User not found: %s (requested by %s)", 
+	                userIdOrEmail, requestingUser.getUserId()));
+	            throw new DotDataException("User not found: " + userIdOrEmail);
+	        }
+	    }
+	}
+
+	/**
 	 * 
 	 * @param action
 	 * @param message

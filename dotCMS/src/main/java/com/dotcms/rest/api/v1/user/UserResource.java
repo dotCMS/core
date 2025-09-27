@@ -1375,25 +1375,6 @@ public class UserResource implements Serializable {
 		}
 	} // delete.
 
-	/**
-	 * Loads user by ID or email, trying ID first.
-	 */
-	private User loadUserByIdOrEmail(final String userIdOrEmail, final User systemUser, final User requestingUser) 
-			throws DotDataException, DotSecurityException {
-		User user;
-		try {
-			user = userAPI.loadUserById(userIdOrEmail);
-		} catch (NoSuchUserException e) {
-			try {
-				user = userAPI.loadByUserByEmail(userIdOrEmail, systemUser, false);
-			} catch (NoSuchUserException ex) {
-				Logger.warn(this, String.format("User not found: %s (requested by %s)", 
-					userIdOrEmail, requestingUser.getUserId()));
-				throw new BadRequestException("User not found: " + userIdOrEmail);
-			}
-		}
-		return user;
-	}
 
 	/**
 	 * Retrieves permissions for a user's individual role, grouped by assets.
@@ -1440,7 +1421,7 @@ public class UserResource implements Serializable {
 			throw new BadRequestException("User ID is required");
 		}
 
-		final User finalTargetUser = loadUserByIdOrEmail(userId, userAPI.getSystemUser(), requestingUser);
+		final User finalTargetUser = helper.loadUserByIdOrEmail(userId, userAPI.getSystemUser(), requestingUser);
 
 		// Security validation - user can view own permissions or admin can view any
 		if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(finalTargetUser.getUserId())) {
