@@ -22,6 +22,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -60,6 +61,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
@@ -191,61 +193,38 @@ public class ContentHelper {
      * @param contentlet {@link Contentlet}
      * @return String the url, null if can not get
      */
-    public String getUrl (final Contentlet contentlet) {
+    public Optional<String> getUrl (@NotNull final Contentlet contentlet) {
 
-        if(hasUrlField(contentlet)){
-            if(IsNeitherPageOrFileAsset(contentlet)){
-                return contentlet.getStringProperty(URL_FIELD);
-            }
-        }
-        return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
+      if(contentlet.isHTMLPage() || contentlet.isFileAsset()){
+        //use identifier api to get the url
+        return Optional.ofNullable(this.getWebAssetUrl(contentlet));
+      }
+      return Optional.ofNullable(contentlet.getStringProperty(URL_FIELD));
+
+
     } // getUrl.
 
-    /**
-     * Determines if a contentlet is a regular content (neither a file asset nor an HTML page).
-     * This method is used to check the type of a contentlet when processing URLs.
-     *
-     * @param contentlet The contentlet to check
-     * @return boolean True if the contentlet is regular content (neither a file asset nor an HTML page), false otherwise
-     */
-    private static boolean IsNeitherPageOrFileAsset(Contentlet contentlet) {
-        return !contentlet.isFileAsset() && !contentlet.isHTMLPage();
+
+  /**
+   * Gets if possible the url associated to this asset identifier
+   *
+   * @param contentlet {@link Object}
+   * @return String the url, null if can not get
+   */
+  private String getWebAssetUrl(final Contentlet contentlet) {
+    try {
+
+      final Identifier identifier = this.identifierAPI.find(contentlet.getIdentifier());
+      return UtilMethods.isSet(()->identifier.getId())
+          ? identifier.getURI()
+          : null;
+    } catch (Exception e) {
+      throw new DotRuntimeException(
+          "The identifierStr parameter is not valid ['" + contentlet.getIdentifier() + "'], unable to get the url", e);
+
     }
 
-    /**
-     * Checks if a contentlet has a URL field in its content type and if that URL field has a non-null value.
-     * This method is used to determine if a contentlet has a valid URL property that can be accessed.
-     *
-     * @param contentlet The contentlet to check
-     * @return boolean True if the contentlet has a URL field with a non-null value, false otherwise
-     */
-    private static boolean hasUrlField(Contentlet contentlet) {
-        return contentlet.getContentType().fieldMap((key) -> URL_FIELD) != null &&
-                contentlet.getStringProperty(URL_FIELD) != null;
-    }
-
-
-    /**
-     * Gets if possible the url associated to this asset identifier
-     * @param identifierObj {@link Object}
-     * @return String the url, null if can not get
-     */
-    public String getUrl ( final Object identifierObj) {
-
-        String url = null;
-        if ( identifierObj != null ) {
-            try {
-
-                final Identifier identifier = this.identifierAPI.find(  (String) identifierObj );
-                url = ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) )?
-                        identifier.getURI():null;
-            } catch ( DotDataException e ) {
-                Logger.error( this.getClass(), "Unable to get Identifier with id [" + identifierObj + "]. Could not get the url", e );
-            }
-        }
-
-        return url;
-    } // getUrl.
+  } // getUrl.
 
     /**
      *
@@ -476,9 +455,12 @@ public class ContentHelper {
             jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
         }
 
-        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
-            jsonObject.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(contentlet));
+        Optional<String> url = ContentHelper.getInstance().getUrl(contentlet);
+        if(url.isPresent()){
+          jsonObject.put(HTMLPageAssetAPI.URL_FIELD, url);
         }
+
+
 
         jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
         jsonObject.put("contentTypeIcon", type.icon());

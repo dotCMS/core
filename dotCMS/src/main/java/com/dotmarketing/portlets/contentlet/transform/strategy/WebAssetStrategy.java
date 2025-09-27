@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -50,11 +51,12 @@ public abstract class WebAssetStrategy <T extends Contentlet>  extends
         if (!Boolean.TRUE.equals(contentlet.isHTMLPage()) && contentlet.getMap().get(URL_FIELD) != null) {
             return;
         }
-        final String url = toolBox.contentHelper.getUrl(contentlet);
-        if (null != url) {
-            map.put(URL_FIELD, url);
-        }
-        map.put(URL_FIELD, url);
+
+      final Optional<String> url = toolBox.contentHelper.getUrl(contentlet);
+      if (url.isPresent()) {
+        map.put(URL_FIELD, url.get());
+      }
+
 
     }
 
