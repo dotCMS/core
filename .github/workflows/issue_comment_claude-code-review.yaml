@@ -22,6 +22,11 @@ jobs:
   # Security gate: Check if user is dotCMS organization member
   security-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read           # Allow repository checkout
+      metadata: read          # Allow reading repository metadata
+      # Note: Organization membership checking uses the actor's permissions
+      # not the GITHUB_TOKEN, so no additional permissions needed for that API
     outputs:
       authorized: ${{ steps.membership-check.outputs.is_member }}
     steps:
@@ -33,6 +38,7 @@ jobs:
         uses: ./.github/actions/security/org-membership-check
         with:
           username: ${{ github.event.comment.user.login || github.actor }}
+          github_token: ${{ secrets.MACHINE_USER_CORE_ORG_MEMBERSHIP_CHECK }}
 
       - name: Log security decision
         run: |
