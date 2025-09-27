@@ -1376,14 +1376,7 @@ public class UserResource implements Serializable {
 	} // delete.
 
 	/**
-	 * Loads a user by ID or email address.
-	 * First attempts to load by ID, then falls back to loading by email.
-	 * 
-	 * @param userIdOrEmail The user ID or email address
-	 * @param systemUser The system user for authentication
-	 * @param requestingUser The user making the request (for logging)
-	 * @return The loaded user
-	 * @throws BadRequestException if the user is not found
+	 * Loads user by ID or email, trying ID first.
 	 */
 	private User loadUserByIdOrEmail(final String userIdOrEmail, final User systemUser, final User requestingUser) 
 			throws DotDataException, DotSecurityException {
@@ -1403,13 +1396,8 @@ public class UserResource implements Serializable {
 	}
 
 	/**
-	 * Retrieves permissions for a user's individual role, grouped by assets (hosts/folders).
-	 * This endpoint replicates the logic from RoleAjax.getRolePermissions() but for a specific user.
-	 * 
-	 * @param request The HTTP request
-	 * @param response The HTTP response
-	 * @param userId User ID or email address
-	 * @return Response containing user permissions grouped by assets
+	 * Retrieves permissions for a user's individual role, grouped by assets.
+	 * Replicates RoleAjax.getRolePermissions() logic for a specific user.
 	 */
 	@GET
 	@Path("/{userId}/permissions")
@@ -1423,8 +1411,7 @@ public class UserResource implements Serializable {
 		@ApiResponse(responseCode = "200", 
 					description = "User permissions retrieved successfully",
 					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntityUserPermissionsView.class,
-									  				description = "Response contains userId, roleId, and assets array with permission details"))),
+									  schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
 		@ApiResponse(responseCode = "403", 
 					description = "Forbidden - insufficient permissions",
 					content = @Content(mediaType = "application/json")),
@@ -1453,7 +1440,6 @@ public class UserResource implements Serializable {
 			throw new BadRequestException("User ID is required");
 		}
 
-		// Load target user (supports both ID and email)
 		final User finalTargetUser = loadUserByIdOrEmail(userId, userAPI.getSystemUser(), requestingUser);
 
 		// Security validation - user can view own permissions or admin can view any

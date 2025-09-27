@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,8 +40,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * Helper for building user permission responses for REST endpoints.
- * Provides modern REST-compliant permission data transformation.
+ * Helper for transforming user permissions to REST responses.
  */
 @ApplicationScoped
 public class UserPermissionHelper {
@@ -50,9 +50,6 @@ public class UserPermissionHelper {
     private final FolderAPI folderAPI;
     private final UserAPI userAPI;
 
-    /**
-     * Default constructor for CDI.
-     */
     public UserPermissionHelper() {
         this(APILocator.getPermissionAPI(),
              APILocator.getHostAPI(),
@@ -60,9 +57,6 @@ public class UserPermissionHelper {
              APILocator.getUserAPI());
     }
 
-    /**
-     * Constructor with dependency injection.
-     */
     @Inject
     public UserPermissionHelper(final PermissionAPI permissionAPI,
                                @Named("HostAPI") final HostAPI hostAPI,
@@ -75,76 +69,88 @@ public class UserPermissionHelper {
     }
 
     /**
-     * Builds modern REST response for user permissions
+     * Builds permission response data for the given role, grouped by asset.
      */
-    public List<Map<String, Object>> buildUserPermissionResponse(Role role, User requestingUser) 
+    public List<Map<String, Object>> buildUserPermissionResponse(final Role role, final User requestingUser) 
             throws DotDataException, DotSecurityException {
 
         final User systemUser = userAPI.getSystemUser();
         final Host systemHost = APILocator.systemHost();
         final boolean respectFrontendRoles = false;
 
-        final Set<Permissionable> permAssets = new HashSet<>();
-        final Map<String, List<Permission>> permByInode = new HashMap<>();
+        final Set<Permissionable> permissionAssets = new HashSet<>();
+        final Map<String, List<Permission>> permissionsByInode = new HashMap<>();
 
-        final List<Permission> perms = permissionAPI.getPermissionsByRole(role, true, true);
+        final List<Permission> permissions = permissionAPI.getPermissionsByRole(role, true, true);
 
-        // Group permissions and collect assets
-        for (Permission p : perms) {
-            permByInode.computeIfAbsent(p.getInode(), k -> new ArrayList<>()).add(p);
-
-            final Folder folder = folderAPI.find(p.getInode(), systemUser, respectFrontendRoles);
-
-            if (folder != null && UtilMethods.isSet(folder.getIdentifier())) {
-                permAssets.add(folder);
-            } else {
-                final Host host = hostAPI.find(p.getInode(), systemUser, respectFrontendRoles);
-                if (host != null) {
-                    permAssets.add(host);
-                }
-            }
-        }
+        collectPermissionAssets(permissions, systemUser, respectFrontendRoles, 
+                               permissionAssets, permissionsByInode);
 
         final List<Map<String, Object>> result = new ArrayList<>();
         boolean systemHostInList = false;
 
-        // Process assets and build REST response
-        for (Permissionable asset : permAssets) {
+        for (Permissionable asset : permissionAssets) {
             if (asset instanceof Host && ((Host)asset).isSystemHost()) {
                 systemHostInList = true;
             }
 
             final String assetId = getAssetId(asset);
-            final List<Permission> permissions = permByInode.get(assetId);
-            result.add(buildAssetResponse(asset, permissions, requestingUser));
+            final List<Permission> assetPermissions = permissionsByInode.get(assetId);
+            result.add(buildAssetResponse(asset, assetPermissions, requestingUser, systemUser));
         }
 
         // Always include system host
         if (!systemHostInList) {
-            result.add(buildAssetResponse(systemHost, new ArrayList<>(), requestingUser));
+            result.add(buildAssetResponse(systemHost, new ArrayList<>(), requestingUser, systemUser));
         }
 
         return result;
     }
 
     /**
-     * Gets the asset ID for permission lookup
+     * Collects assets from permissions and groups by asset ID.
+     * Mutates the provided collections.
      */
-    private String getAssetId(Permissionable asset) {
+    private void collectPermissionAssets(
+            final List<Permission> permissions,
+            final User systemUser,
+            final boolean respectFrontendRoles,
+            final Set<Permissionable> permissionAssets,
+            final Map<String, List<Permission>> permissionsByInode) 
+            throws DotDataException, DotSecurityException {
+        
+        for (final Permission permission : permissions) {
+            permissionsByInode.computeIfAbsent(permission.getInode(), k -> new ArrayList<>()).add(permission);
+
+            final Folder folder = folderAPI.find(permission.getInode(), systemUser, respectFrontendRoles);
+
+            if (UtilMethods.isSet(() -> folder.getIdentifier())) {
+                permissionAssets.add(folder);
+            } else {
+                final Host host = hostAPI.find(permission.getInode(), systemUser, respectFrontendRoles);
+                if (host != null) {
+                    permissionAssets.add(host);
+                }
+            }
+        }
+    }
+
+    private String getAssetId(final Permissionable asset) {
         if (asset instanceof Host) {
             return ((Host) asset).getIdentifier();
         } else if (asset instanceof Folder) {
             return ((Folder) asset).getInode();
         }
-        return "";
+        return StringPool.BLANK;
     }
 
     /**
-     * Builds modern REST response for a single asset
+     * Builds response data for a single permissionable asset.
      */
-    private Map<String, Object> buildAssetResponse(Permissionable asset, 
-                                                   List<Permission> permissions,
-                                                   User requestingUser) 
+    private Map<String, Object> buildAssetResponse(final Permissionable asset, 
+                                                   final List<Permission> permissions,
+                                                   final User requestingUser,
+                                                   final User systemUser) 
             throws DotDataException, DotSecurityException {
 
         final Map<String, Object> response = new HashMap<>();
@@ -159,7 +165,7 @@ public class UserPermissionHelper {
         } else if (asset instanceof Folder) {
             final Folder folder = (Folder) asset;
             final Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-            final Host host = hostAPI.find(folder.getHostId(), userAPI.getSystemUser(), false);
+            final Host host = hostAPI.find(folder.getHostId(), systemUser, false);
             
             response.put("id", folder.getInode());
             response.put("type", "FOLDER");
@@ -181,9 +187,9 @@ public class UserPermissionHelper {
     }
 
     /**
-     * Builds modern permission map with REST-standard format
+     * Groups permissions by type with permission names.
      */
-    public Map<String, List<String>> buildPermissionMap(List<Permission> permissions) {
+    public Map<String, List<String>> buildPermissionMap(final List<Permission> permissions) {
         if (permissions == null || permissions.isEmpty()) {
             return new HashMap<>();
         }
@@ -195,66 +201,46 @@ public class UserPermissionHelper {
                     p -> convertBitsToPermissionNames(p.getPermission()),
                     Collectors.flatMapping(List::stream, 
                         Collectors.collectingAndThen(
-                            Collectors.toSet(),  // Collect as Set first (no duplicates)
-                            ArrayList::new        // Convert to List for JSON
+                            Collectors.toSet(),
+                            ArrayList::new
                         ))
                 )
             ));
     }
 
     /**
-     * Maps permission type to modern REST enum-style names
+     * Maps permission type class names to API type constants.
      */
-    private String getModernPermissionType(String permissionType) {
-        if (PermissionAPI.INDIVIDUAL_PERMISSION_TYPE.equals(permissionType)) {
-            return "INDIVIDUAL";
-        }
-        if (IHTMLPage.class.getCanonicalName().equals(permissionType)) {
-            return "PAGE";
-        }
-        if (Container.class.getCanonicalName().equals(permissionType)) {
-            return "CONTAINER";
-        }
-        if (Folder.class.getCanonicalName().equals(permissionType)) {
-            return "FOLDER";
-        }
-        if (Link.class.getCanonicalName().equals(permissionType)) {
-            return "LINK";
-        }
-        if (Template.class.getCanonicalName().equals(permissionType)) {
-            return "TEMPLATE";
-        }
-        if (TemplateLayout.class.getCanonicalName().equals(permissionType)) {
-            return "TEMPLATE_LAYOUT";
-        }
-        if (Structure.class.getCanonicalName().equals(permissionType)) {
-            return "STRUCTURE";
-        }
-        if (Contentlet.class.getCanonicalName().equals(permissionType)) {
-            return "CONTENT";
-        }
-        if (Category.class.getCanonicalName().equals(permissionType)) {
-            return "CATEGORY";
-        }
-        if (Rule.class.getCanonicalName().equals(permissionType)) {
-            return "RULE";
-        }
-        if (Host.class.getCanonicalName().equals(permissionType)) {
-            return "HOST";
-        }
+    private static final Map<String, String> PERMISSION_TYPE_MAPPINGS = Map.ofEntries(
+        Map.entry(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE.toUpperCase(), "INDIVIDUAL"),
+        Map.entry(IHTMLPage.class.getCanonicalName().toUpperCase(), "PAGE"),
+        Map.entry(Container.class.getCanonicalName().toUpperCase(), "CONTAINER"),
+        Map.entry(Folder.class.getCanonicalName().toUpperCase(), "FOLDER"),
+        Map.entry(Link.class.getCanonicalName().toUpperCase(), "LINK"),
+        Map.entry(Template.class.getCanonicalName().toUpperCase(), "TEMPLATE"),
+        Map.entry(TemplateLayout.class.getCanonicalName().toUpperCase(), "TEMPLATE_LAYOUT"),
+        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "STRUCTURE"),
+        Map.entry(Contentlet.class.getCanonicalName().toUpperCase(), "CONTENT"),
+        Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
+        Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),
+        Map.entry(Host.class.getCanonicalName().toUpperCase(), "HOST")
+    );
 
+    private String getModernPermissionType(final String permissionType) {
+        final String mappedType = PERMISSION_TYPE_MAPPINGS.get(permissionType.toUpperCase());
+        if (mappedType != null) {
+            return mappedType;
+        }
         Logger.debug(this, "Unknown permission type: " + permissionType);
         return permissionType.toUpperCase();
     }
 
     /**
-     * Converts permission bits to canonical permission names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS)
-     * Avoids duplicate aliases like USE/READ or EDIT/WRITE
+     * Avoids duplicate aliases like USE/read or EDIT/WRITE
      */
-    private List<String> convertBitsToPermissionNames(int permissionBits) {
+    private List<String> convertBitsToPermissionNames(final int permissionBits) {
         final List<String> permissions = new ArrayList<>();
 
-        // Check each permission bit using canonical names only
         if ((permissionBits & PermissionAPI.PERMISSION_READ) > 0) {
             permissions.add("READ");
         }
