@@ -19,8 +19,34 @@ on:
     types: [created]
 
 jobs:
+  # Security gate: Check if user is dotCMS organization member
+  security-check:
+    runs-on: ubuntu-latest
+    outputs:
+      authorized: ${{ steps.membership-check.outputs.is_member }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check organization membership
+        id: membership-check
+        uses: ./.github/actions/security/org-membership-check
+        with:
+          username: ${{ github.event.comment.user.login || github.actor }}
+
+      - name: Log security decision
+        run: |
+          if [ "${{ steps.membership-check.outputs.is_member }}" = "true" ]; then
+            echo "✅ Access granted: User is a dotCMS organization member"
+          else
+            echo "❌ Access denied: User is not a dotCMS organization member"
+            echo "::warning::Unauthorized user attempted to trigger Claude workflow: ${{ github.event.comment.user.login || github.actor }}"
+          fi
+
   # Interactive Claude mentions (simplified using centralized logic)
   claude-interactive:
+    needs: security-check
+    if: needs.security-check.outputs.authorized == 'true'
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
     with:
       trigger_mode: interactive

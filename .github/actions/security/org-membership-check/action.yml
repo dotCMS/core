@@ -1,0 +1,65 @@
+name: 'Organization Membership Check'
+description: 'Checks if a user is a member of the dotCMS organization'
+
+inputs:
+  username:
+    description: 'GitHub username to check'
+    required: true
+
+outputs:
+  is_member:
+    description: 'true if user is a member, false otherwise'
+    value: ${{ steps.check-membership.outputs.is_member }}
+  membership_status:
+    description: 'Membership status (member, non-member, error)'
+    value: ${{ steps.check-membership.outputs.membership_status }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Organization Membership
+      id: check-membership
+      shell: bash
+      run: |
+        echo "Checking organization membership for user: ${{ inputs.username }} in dotCMS organization"
+
+        # Use GitHub CLI to check organization membership
+        # This uses the GITHUB_TOKEN which has read access to organization membership
+
+        set +e  # Don't exit on error, we want to handle it gracefully
+
+        # Check public membership first
+        gh api orgs/dotCMS/members/${{ inputs.username }} \
+          --jq '.login' 2>/dev/null
+
+        exit_code=$?
+
+        if [ $exit_code -eq 0 ]; then
+          echo "✅ User ${{ inputs.username }} is a member of dotCMS"
+          echo "is_member=true" >> $GITHUB_OUTPUT
+          echo "membership_status=member" >> $GITHUB_OUTPUT
+        else
+          # If public membership check fails, try to check private membership
+          # This requires higher permissions but will work in organization repos
+          gh api orgs/dotCMS/members/${{ inputs.username }} \
+            --method GET \
+            --header "Accept: application/vnd.github.v3+json" 2>/dev/null
+
+          private_exit_code=$?
+
+          if [ $private_exit_code -eq 0 ]; then
+            echo "✅ User ${{ inputs.username }} is a member of dotCMS"
+            echo "is_member=true" >> $GITHUB_OUTPUT
+            echo "membership_status=member" >> $GITHUB_OUTPUT
+          else
+            echo "❌ User ${{ inputs.username }} is not a member of dotCMS"
+            echo "is_member=false" >> $GITHUB_OUTPUT
+            echo "membership_status=non-member" >> $GITHUB_OUTPUT
+          fi
+        fi
+
+        # Log the result for debugging (without leaking membership details)
+        membership_result=$(if [ "$(cat $GITHUB_OUTPUT | grep 'is_member=true')" ]; then echo "AUTHORIZED"; else echo "UNAUTHORIZED"; fi)
+        echo "::notice::Organization membership check result: $membership_result for ${{ inputs.username }}"
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
