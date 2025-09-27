@@ -320,6 +320,42 @@ public class TagAPITest extends IntegrationTestBase {
 	}
 
 	/**
+	 * Test the deleteTags (bulk delete) method from the tagAPI
+	 * @throws Exception
+	 */
+	@Test
+	public void deleteTags() throws Exception {
+		String timestamp = UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+		
+		// Create multiple tags for bulk delete testing
+		String tagName1 = "testbulk1_" + timestamp;
+		String tagName2 = "testbulk2_" + timestamp;
+		String tagName3 = "testbulk3_" + timestamp;
+		
+		Tag tag1 = tagAPI.saveTag(tagName1, testUser.getUserId(), defaultHostId, false);
+		Tag tag2 = tagAPI.saveTag(tagName2, testUser.getUserId(), defaultHostId, false);
+		Tag tag3 = tagAPI.saveTag(tagName3, testUser.getUserId(), defaultHostId, false);
+		
+		// Verify tags exist before deletion
+		assertNotNull(tagAPI.getTagByTagId(tag1.getTagId()));
+		assertNotNull(tagAPI.getTagByTagId(tag2.getTagId()));
+		assertNotNull(tagAPI.getTagByTagId(tag3.getTagId()));
+		
+		// Test bulk delete with multiple tag IDs
+		tagAPI.deleteTags(tag1.getTagId(), tag2.getTagId(), tag3.getTagId());
+		
+		// Verify all tags are deleted
+		assertNull(tagAPI.getTagByTagId(tag1.getTagId()));
+		assertNull(tagAPI.getTagByTagId(tag2.getTagId()));
+		assertNull(tagAPI.getTagByTagId(tag3.getTagId()));
+		
+		// Test edge cases - should not throw exceptions
+		tagAPI.deleteTags(); // Empty array
+		tagAPI.deleteTags((String[]) null); // Null array
+		tagAPI.deleteTags("non-existent-tag-id"); // Non-existent tag ID
+	}
+
+	/**
 	 * Test the editTag method of the tagAPI
 	 * @throws Exception
 	 */
