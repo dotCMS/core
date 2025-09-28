@@ -17,6 +17,7 @@ import { Banner } from '../../types/contentlet.model';
       <img
         class="object-cover w-full"
         [ngSrc]="imageIdentifier"
+        [loaderParams]="{ quality: 45 }"
         [alt]="contentlet().title"
         width="1400"
         height="400"

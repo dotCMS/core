@@ -277,11 +277,60 @@ export class MyDotCMSImageComponent {
 }
 ```
 
+#### Custom Quality Control
+
+You can control the image quality using the `loaderParams` attribute. This is particularly useful for optimizing performance or achieving specific visual requirements:
+
+```ts
+// src/components/optimized-image.component.ts
+@Component({
+  selector: 'optimized-image',
+  template: `
+    <!-- High quality for hero images -->
+    <img 
+      [ngSrc]="heroImagePath" 
+      alt="Hero image" 
+      width="1200" 
+      height="600"
+      [loaderParams]="{ quality: 85 }" />
+    
+    <!-- Lower quality for thumbnails -->
+    <img 
+      [ngSrc]="thumbnailPath" 
+      alt="Thumbnail" 
+      width="200" 
+      height="150"
+      [loaderParams]="{ quality: 30 }" />
+    
+    <!-- Custom language and quality -->
+    <img 
+      [ngSrc]="imagePath" 
+      alt="Localized image" 
+      width="400" 
+      height="300"
+      [loaderParams]="{ quality: 60, languageId: '2' }" />
+  `,
+  standalone: true
+})
+export class OptimizedImageComponent {
+  @Input() heroImagePath!: string;
+  @Input() thumbnailPath!: string;
+  @Input() imagePath!: string;
+}
+```
+
+**Quality Parameter Details:**
+- **Range**: 1-100 (where 100 is highest quality)
+- **Default**: 50 (balanced performance and quality)
+- **Usage**: Pass via `loaderParams` object: `{ quality: 75 }`
+- **Performance**: Lower values = smaller file sizes = faster loading
+
 The image loader automatically handles:
 - **Automatic resizing** based on the `width` and `height` attributes
 - **Quality optimization** with a default quality of 50 for better performance
 - **Language-specific images** using the current language context
 - **Responsive images** that adapt to different screen sizes
+- **Custom quality control** via the `loaderParams` attribute
 
 > 📚 Learn more about [`NgOptimizedImage`](https://angular.dev/guide/image-optimization)
 

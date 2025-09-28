@@ -81,6 +81,28 @@ describe('Image Loader', () => {
             expect(result).toBe('https://demo.dotcms.com/dA/12345/50q?language_id=1');
         });
 
+        it('should use custom quality when provided', () => {
+            const result = imageLoader({
+                src: '12345',
+                loaderParams: { quality: 75 }
+            });
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/75q?language_id=1');
+        });
+
+        it('should use custom quality with width when provided', () => {
+            const result = imageLoader({
+                src: '12345',
+                width: 300,
+                loaderParams: { quality: 80 }
+            });
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/300w/80q?language_id=1');
+        });
+
+        it('should use default quality when not provided', () => {
+            const result = imageLoader({ src: '12345' });
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/50q?language_id=1');
+        });
+
         it('should use empty host when no path is provided', () => {
             TestBed.resetTestingModule();
             TestBed.configureTestingModule({
@@ -166,6 +188,22 @@ describe('Image Loader', () => {
 
                 const img = spectator.query<HTMLImageElement>('img');
                 expect(img?.src).toBe(externalImage);
+            });
+
+            it('should respect custom quality parameter', () => {
+                const imageMock = '12345';
+                spectator = createDirective(`
+          <img
+            ngSrc="${imageMock}"
+            width="300"
+            height="300"
+            [loaderParams]="{quality: 75}"
+          />
+        `);
+                spectator.detectChanges();
+
+                const img = spectator.query<HTMLImageElement>('img');
+                expect(img?.src).toContain(`75q`);
             });
         });
     });
