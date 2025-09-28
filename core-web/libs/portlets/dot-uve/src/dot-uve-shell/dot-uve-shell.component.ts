@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { DotUVENavigationBarComponent } from './components/dot-uve-navigation-bar/dot-uve-navigation-bar.component';
+
+import { UVEStore } from '../store/dot-uve.store';
 
 @Component({
     selector: 'dot-uve-shell',
@@ -10,4 +12,6 @@ import { DotUVENavigationBarComponent } from './components/dot-uve-navigation-ba
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [RouterOutlet, DotUVENavigationBarComponent]
 })
-export class DotUVEShellComponent {}
+export class DotUVEShellComponent {
+    readonly uveStore = inject(UVEStore);
+}
