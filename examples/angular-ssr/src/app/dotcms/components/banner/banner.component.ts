@@ -31,7 +31,7 @@ import { Banner } from '../../types/contentlet.model';
       </h2>
       <p class="mb-4 text-xl text-shadow">{{ contentlet().caption }}</p>
       <a
-        class="p-4 text-xl bg-red-400 rounded-sm transition duration-300 hover:bg-red-500"
+        class="p-4 text-xl bg-teal-400 rounded-sm transition duration-300 hover:bg-teal-500"
         [routerLink]="contentlet().link"
       >
         {{ contentlet().buttonText }}

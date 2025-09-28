@@ -4,7 +4,7 @@
   <ng-template [dotCMSShowWhen]="UVE_MODE.EDIT">
     <button
       (click)="editContentlet(blog())"
-      class="absolute top-2 right-2 z-10 bg-red-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-red-600"
+      class="absolute top-2 right-2 z-10 bg-teal-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-teal-600"
     >
       Edit
     </button>
@@ -28,7 +28,7 @@
   </div>
 
   <div class="p-4 flex flex-col grow">
-    <h3 class="text-lg font-bold mb-2 hover:text-red-500">
+    <h3 class="text-lg font-bold mb-2 hover:text-teal-500">
       <a [routerLink]="blog().urlMap">{{ blog().title }}</a>
     </h3>
 

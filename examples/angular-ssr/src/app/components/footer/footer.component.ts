@@ -8,7 +8,7 @@ import { FooterContent } from '../../dotcms/types/contentlet.model';
 @Component({
   selector: 'app-footer',
   imports: [BlogsComponent, DestinationsComponent, NgOptimizedImage],
-  template: `<footer class="p-4 text-white bg-red-100 py-12">
+  template: `<footer class="p-4 text-white bg-teal-100 py-12">
     <div
       class="container grid md:grid-cols-3 sm:grid-cols-1 md:grid-rows-1 sm:grid-rows-3 gap-8 mx-auto"
     >

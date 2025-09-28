@@ -16,7 +16,7 @@ import { CategoryFilter } from '../../types/contentlet.model';
               <div class="flex items-center justify-between">
                 <a
                   [routerLink]="category.url"
-                  class="text-red-500 hover:text-red-600 transition-colors duration-200 py-1 block"
+                  class="text-teal-500 hover:text-teal-600 transition-colors duration-200 py-1 block"
                 >
                   {{ category.title }}
                 </a>

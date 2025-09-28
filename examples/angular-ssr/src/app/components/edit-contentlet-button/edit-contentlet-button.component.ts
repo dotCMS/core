@@ -19,7 +19,7 @@ import { Contentlet } from '../../dotcms/types/contentlet.model';
     <button
       *dotCMSShowWhen="uveMode.EDIT"
       (click)="editContentlet(contentlet())"
-      class="bg-red-400 text-white text-sm rounded-md py-1 px-3 shadow-md hover:bg-red-500 cursor-pointer"
+      class="bg-teal-400 text-white text-sm rounded-md py-1 px-3 shadow-md hover:bg-teal-500 cursor-pointer"
     >
       Edit
     </button>

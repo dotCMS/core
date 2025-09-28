@@ -30,7 +30,7 @@ import { Activity } from '../../types/contentlet.model';
     <div class="px-6 pt-4 pb-2">
       <a
         [routerLink]="'/activities/' + contentlet().urlTitle || '#'"
-        class="inline-block px-4 py-2 font-bold text-white bg-red-400 rounded-full hover:bg-red-500"
+        class="inline-block px-4 py-2 font-bold text-white bg-teal-400 rounded-full hover:bg-teal-500"
       >
         Link to detail →
       </a>

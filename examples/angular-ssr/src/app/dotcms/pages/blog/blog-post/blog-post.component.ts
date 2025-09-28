@@ -27,10 +27,10 @@ export class BlogPostComponent implements OnChanges {
   ngOnChanges(): void {
     if (this.isEditMode) {
       this.blockEditorClasses.set(
-        'prose prose-a:text-red-500 border-2 border-solid border-red-400 cursor-pointer',
+        'prose prose-a:text-teal-500 border-2 border-solid border-teal-400 cursor-pointer',
       );
     } else {
-      this.blockEditorClasses.set('prose prose-sm prose-a:text-red-500');
+      this.blockEditorClasses.set('prose prose-sm prose-a:text-teal-500');
     }
   }
 

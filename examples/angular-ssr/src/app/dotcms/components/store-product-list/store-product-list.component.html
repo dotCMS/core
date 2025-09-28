@@ -20,7 +20,7 @@
 
             <div class="p-4 flex flex-col flex-grow">
               <h3
-                class="text-gray-900 font-medium text-sm mb-2 line-clamp-2 group-hover:text-red-500 transition-colors"
+                class="text-gray-900 font-medium text-sm mb-2 line-clamp-2 group-hover:text-teal-500 transition-colors"
               >
                 {{ product.title }}
               </h3>
@@ -28,7 +28,7 @@
               <div class="mt-auto pt-2 flex items-center justify-between">
                 @if (product?.hasDiscount) {
                   <div>
-                    <span class="text-red-600 font-semibold mr-2">
+                    <span class="text-teal-600 font-semibold mr-2">
                       ${{ product.salePrice }}
                     </span>
                     <span class="text-gray-500 text-sm line-through">
@@ -42,7 +42,7 @@
                 }
                 @if (product?.hasDiscount) {
                   <span
-                    class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full"
+                    class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full"
                   >
                     {{ product.discountPercentage }}% OFF
                   </span>
