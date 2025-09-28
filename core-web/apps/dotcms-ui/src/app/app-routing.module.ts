@@ -1,15 +1,9 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 
-import { inject, NgModule } from '@angular/core';
-import {
-    ActivatedRouteSnapshot,
-    Route,
-    RouteReuseStrategy,
-    RouterModule,
-    Routes
-} from '@angular/router';
+import { NgModule } from '@angular/core';
+import { Route, RouteReuseStrategy, RouterModule, Routes } from '@angular/router';
 
-import { DotExperimentsService, EmaAppConfigurationService } from '@dotcms/data-access';
+import { DotExperimentsService } from '@dotcms/data-access';
 import { DotEnterpriseLicenseResolver } from '@dotcms/ui';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
@@ -132,15 +126,12 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'edit-page',
-        data: {
-            reuseRoute: false
-        },
-        resolve: {
-            uveConfig: (route: ActivatedRouteSnapshot) => {
-                return inject(EmaAppConfigurationService).get(route.queryParams.url);
-            }
-        },
-        loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.DotEmaRoutes)
+        // resolve: {
+        //     uveConfig: (route: ActivatedRouteSnapshot) => {
+        //         return inject(EmaAppConfigurationService).get(route.queryParams.url);
+        //     }
+        // },
+        loadChildren: () => import('@dotcms/portlets/dot-uve').then((m) => m.dotUVERoutes)
     },
     {
         canActivate: [editContentGuard],
