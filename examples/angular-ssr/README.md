@@ -26,9 +26,10 @@ For the official Angular SSR guide, visit: [Angular SSR Documentation](https://a
 ### Setup
 
 ```bash
-git clone <repository-url>
-cd angular-ssr
-npm install
+git clone -n --depth=1 --filter=tree:0 https://github.com/dotCMS/core
+cd core
+git sparse-checkout set --no-cone examples/angular-ssr
+git checkout
 ```
 
 ### Development Server
