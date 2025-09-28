@@ -27,7 +27,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
 -   [dotCMS Support](#dotcms-support)
 -   [How To Contribute](#how-to-contribute)
 -   [Changelog](#changelog)
-    -   [v1.1.0](#110)
+    -   [v1.1.1](#111)
 -   [Licensing Information](#licensing-information)
 
 ## Prerequisites & Setup
@@ -753,7 +753,7 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Changelog
 
-### [1.1.0] - 2024-XX-XX
+### [1.1.1]
 
 #### ✨ Added - Enhanced Client Architecture
 

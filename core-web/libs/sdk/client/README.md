@@ -19,7 +19,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 > **📋 Migration Guides:**
 > - **From Alpha Version?** If you're upgrading from the alpha version of `@dotcms/client`, please see our [Migration Guide](./MIGRATION.md) for step-by-step instructions.
-> - **From v1.0.x to v1.1.0?** See the [Changelog](#v110) section below for new features and improvements.
+> - **From v1.0.x to v1.1.1?** See the [Changelog](#v111) section below for new features and improvements.
 
 ## Table of Contents
 
@@ -50,7 +50,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
     -   [How To Contribute](#how-to-contribute)
     -   [Licensing Information](#licensing-information)
 -   [Changelog](#changelog)
-    -   [v1.1.0](#v110)
+    -   [v1.1.1](#v111)
 
 ## Getting Started
 
@@ -640,9 +640,9 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Changelog
 
-### v1.1.0
+### v1.1.1
 
-Version 1.1.0 introduces significant improvements to error handling and HTTP client architecture. Most applications will continue to work without changes.
+Version 1.1.1 introduces significant improvements to error handling and HTTP client architecture. Most applications will continue to work without changes.
 
 #### ✨ Added - Enhanced Error Handling
 
@@ -677,7 +677,7 @@ client.content.getCollection('Blog').then(
 );
 ```
 
-**After (v1.1.0):**
+**After (v1.1.1):**
 ```typescript
 try {
     const { pageAsset } = await client.page.get('/about');

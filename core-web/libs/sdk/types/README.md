@@ -197,7 +197,7 @@ This package is maintained as part of the [dotCMS core repository](https://githu
 
 ## Changelog
 
-### [1.1.0] - 2024-XX-XX
+### [1.1.1]
 
 #### Added
 - `DotHttpClient` interface for custom HTTP client implementations
