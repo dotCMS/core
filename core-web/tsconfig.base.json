@@ -49,6 +49,7 @@
             "@dotcms/portlets/content-drive/ui": [
                 "libs/portlets/dot-content-drive/ui/src/index.ts"
             ],
+            "@dotcms/portlets/dot-UVE": ["libs/portlets/dot-uve/src/index.ts"],
             "@dotcms/portlets/dot-analytics/data-access": [
                 "libs/portlets/dot-analytics/data-access/src/index.ts"
             ],
