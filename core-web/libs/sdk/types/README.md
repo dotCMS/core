@@ -49,7 +49,7 @@ import {
 
 ### dotCMS Content & Pages
 
-**Page Types:**
+**Page:**
 
 | Type | Description |
 |------|-------------|
@@ -58,7 +58,7 @@ import {
 | [DotCMSPageResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1175) | API response for page requests |
 | [DotGraphQLApiResponse](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1186) | GraphQL API response structure |
 
-**Content Types:**
+**Content:**
 
 | Type | Description |
 |------|-------------|
@@ -73,10 +73,11 @@ import {
 | [DotCMSLayout](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L622) | Page layout structure |
 | [DotCMSPageAssetContainer](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L138) | Container definitions |
 
-**Navigation & URLs:**
+**Navigation:**
 
 | Type | Description |
 |------|-------------|
+| [DotCMSNavigationItem](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L73) | Navigation structure item with hierarchy support |
 | [DotCMSVanityUrl](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L80) | URL rewrites and vanity URLs |
 | [DotCMSURLContentMap](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L41) | URL to content mapping |
 
@@ -123,7 +124,7 @@ import {
 | [DotHttpClient](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L108) | HTTP client interface for custom implementations |
 | [BaseHttpClient](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L196) | Abstract base class with error handling utilities |
 
-**Request Configuration:**
+**Client Configuration:**
 
 | Type | Description |
 |------|-------------|
@@ -131,7 +132,7 @@ import {
 | [DotRequestOptions](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L383) | HTTP request options |
 | [DotCMSPageRequestParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L378) | Page request parameters |
 | [DotCMSGraphQLParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L280) | GraphQL query parameters |
-| [DotCMSNavigationRequestParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L436) | Navigation request options |
+| [DotCMSNavigationRequestParams](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L39) | Navigation request options |
 
 ### Error Handling
 
@@ -148,7 +149,7 @@ import {
 |------|-------------|
 | [DotErrorPage](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/page/public.ts#L1253) | Page API errors with GraphQL context |
 | [DotErrorContent](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/content/public.ts#L7) | Content API specific error handling |
-| [DotErrorNavigation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/client/public.ts#L50) | Navigation API error handling |
+| [DotErrorNavigation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/types/src/lib/nav/public.ts#L7) | Navigation API error handling |
 
 ## Type Usage
 

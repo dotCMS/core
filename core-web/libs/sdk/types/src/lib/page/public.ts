@@ -382,36 +382,6 @@ export interface DotCMSBasicContentlet {
 }
 
 /**
- * Represents a navigation item in the DotCMS navigation structure
- *
- * @interface DotCMSNavigationItem
- * @property {string} [code] - Optional unique code identifier for the navigation item
- * @property {string} folder - The folder path where this navigation item is located
- * @property {DotCMSNavigationItem[]} [children] - Optional array of child navigation items
- * @property {string} host - The host/site this navigation item belongs to
- * @property {number} languageId - The language ID for this navigation item
- * @property {string} href - The URL/link that this navigation item points to
- * @property {string} title - The display title of the navigation item
- * @property {string} type - The type of navigation item
- * @property {number} hash - Hash value for the navigation item
- * @property {string} target - The target attribute for the link (e.g. "_blank", "_self")
- * @property {number} order - The sort order position of this item in the navigation
- */
-export interface DotCMSNavigationItem {
-    code?: string;
-    folder: string;
-    children?: DotCMSNavigationItem[];
-    host: string;
-    languageId: number;
-    href: string;
-    title: string;
-    type: string;
-    hash: number;
-    target: string;
-    order: number;
-}
-
-/**
  * Represents a template in DotCMS that defines the layout and structure of pages
  *
  * @interface DotCMSTemplate
