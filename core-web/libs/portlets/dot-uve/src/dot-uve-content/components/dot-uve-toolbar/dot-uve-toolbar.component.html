@@ -1,0 +1,32 @@
+<p-toolbar styleClass="uve-toolbar">
+    <div class="p-toolbar-group-start gap-2" [ngClass]="{ 'p-0': true }">
+        <p-button
+            icon="pi pi-angle-down"
+            iconPos="right"
+            label="Draft"
+            styleClass="p-button-outlined p-2 p-button-sm mode-selector" />
+        <p-button
+            icon="pi pi-star"
+            tooltipPosition="bottom"
+            styleClass="p-button-text p-button-sm p-button-rounded" />
+        <p-button
+            icon="pi pi-copy"
+            tooltipPosition="bottom"
+            styleClass="p-button-text p-button-sm p-button-rounded" />
+        <a
+            title="Page API URL"
+            [pTooltip]="'uve.toolbar.page.api.url' | dm"
+            tooltipPosition="bottom"
+            pButton
+            label="API"
+            class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
+            target="_blank"
+            data-testId="uve-toolbar-api-link"></a>
+    </div>
+
+    <div class="p-toolbar-group-end gap-4">
+        <p-button styleClass="p-button-text p-button-sm" label="English - US" icon="pi pi-globe" />
+        <p-button styleClass="p-button-text p-button-sm" label="Default View" icon="pi pi-user" />
+        <p-button styleClass="p-button-sm" label="Publish" [loading]="false" [disabled]="false" />
+    </div>
+</p-toolbar>
