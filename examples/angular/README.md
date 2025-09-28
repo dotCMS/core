@@ -1,52 +1,57 @@
-# dotCMS Angular Example
+# Angular Client-Side Rendering with dotCMS Integration
 
-This example project demonstrates how to build manageable dotCMS pages headlessly using the Angular framework. It showcases the integration between dotCMS and Angular, providing a practical implementation of content-driven web applications.
+This Angular project demonstrates how to implement editable dotCMS pages using Angular Client-Side Rendering (CSR). It showcases best practices for integrating dotCMS content management with Angular's client-side rendering capabilities.
+
+### Content Management Features
+- **Dynamic Page Rendering**: Automatic page generation from dotCMS routing
+- **Content Type Components**: 10+ pre-built components for common content types
+- **Block Editor Integration**: Rich text content with dotCMS Block Editor
+- **Image Management**: Optimized image handling with dotCMS image API
+- **GraphQL Queries**: Advanced content filtering and search capabilities
+
+### Visual Editing (UVE)
+- **Live Content Editing**: Edit content directly in the browser
+- **Visual Page Builder**: In-context editing experience
+- **Contentlet Editing**: Direct editing of individual content pieces
+
+### Technical Integration
+- **Client-Side Rendering**: Full CSR with Angular standalone components
+- **Type Safety**: Complete TypeScript interfaces for all content types
+- **Modern Angular**: Using Angular signals, control flow, and latest patterns
+
+For the official Angular documentation, visit: [Angular Documentation](https://angular.dev)
 
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
-  - [Obtaining the Example Code](#obtaining-the-example-code)
+  - [Setup](#setup)
   - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
-- [Project Structure](#project-structure)
-- [Key Features](#key-features)
-  - [Handling Vanity URLs](#handling-vanity-urls)
-  - [Universal Visual Editor](#universal-visual-editor)
+- [Architecture Overview](#architecture-overview)
+  - [Routing Strategy](#routing-strategy)
+  - [Page Rendering](#page-rendering)
+  - [Folder Structure](#folder-structure)
+- [Development Workflow](#development-workflow)
+- [Universal Visual Editor](#universal-visual-editor)
 - [Troubleshooting](#troubleshooting)
-- [Further Resources](#further-resources)
+- [Additional Resources](#additional-resources)
 
 ## Prerequisites
 
-Before you begin, ensure you have the following:
-
-1. Access to a dotCMS instance (you can use https://demo.dotcms.com if you don't have your own)
-2. A valid AUTH token for the target dotCMS instance ([How to create an API token](https://auth.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui))
-3. Node.js (version 18 or higher) and npm installed
-4. A terminal application
-5. A code editor of your choice
+- Node.js (version 18 or higher) and npm installed
+- Access to a dotCMS instance (you can use https://demo.dotcms.com if you don't have your own)
+- A valid AUTH token for the target dotCMS instance ([How to create an API token](https://auth.dotcms.com/docs/latest/rest-api-authentication#creating-an-api-token-in-the-ui))
 
 ## Getting Started
 
-### Obtaining the Example Code
+### Setup
 
-You can get the code in two ways:
-
-1. Direct download:
-
-   ```
-   https://github.com/dotCMS/core/tree/main/examples/angular
-   ```
-
-2. Using Git sparse checkout:
-   ```bash
-   git clone -n --depth=1 --filter=tree:0 https://github.com/dotCMS/core
-   cd core
-   git sparse-checkout set --no-cone examples/angular
-   git checkout
-   ```
-
-The example files will be in the `examples/angular` folder.
+```bash
+git clone <repository-url>
+cd angular
+npm install
+```
 
 ### Configuration
 
@@ -70,63 +75,79 @@ To configure the Angular app to use your dotCMS instance:
 
 ## Running the Application
 
-Once configured, follow these steps to run the app:
+### Development Server
 
-1. Open a terminal in the project root directory
-2. Install dependencies: `npm install`
-3. Start the development server: `ng serve`
-4. Open your browser and navigate to `http://localhost:4200`
-
-🎉 Congratulations! Your dotCMS Angular example is now running.
-
-Note: When accessing `localhost:4200/about`, ensure that the `/about` page exists in your dotCMS instance.
-
-## Project Structure
-
-```
-.
-└── src/
-    └── app/
-        ├── content-types/
-        │   ├── activity
-        │   ├── banner
-        │   ├── product
-        │   └── ...other-content-types
-        ├── pages/
-        │   ├── components
-        │   └── services
-        └── shared/
-            └── contentlets-wrapper/
-                └── contentlet/
+```bash
+ng serve
 ```
 
-- `content-types/`: Components for rendering specific dotCMS content types
-- `pages/`: Main application component for rendering pages based on their path and pageAsset
-- `shared/`: Reusable components
-  - `contentlets-wrapper/`: Component for displaying lists of Contentlets
-    - `contentlet/`: Component for rendering individual Contentlets
+Navigate to `http://localhost:4200/`. The application will automatically reload when source files are modified.
 
-## Key Features
+### Building for Production
 
-### How dotCMS Routes Pages
+```bash
+ng build
+```
 
-dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Angular application needs to handle these variations.
+Build artifacts are stored in the `dist/` directory with performance optimizations.
 
-To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Angular.
+### Running Tests
 
-How to Implement in Angular:
+```bash
+ng test
+ng e2e
+```
 
-Configure a wildcard route `(**)` as the last route in your Angular application's routing configuration. This route will capture any undefined paths, allowing you to fetch content from dotCMS based on the full URL.
+## Architecture Overview
 
-You can learn more about Angular routing strategies [here](https://angular.dev/guide/routing/common-router-tasks)
+### Routing Strategy
 
-### Handling Vanity URLs
+The application uses a strategic combination of catch-all and specific routing in `app.routes.ts`:
 
-This example demonstrates how to integrate dotCMS Vanity URLs with Angular routing. Vanity URLs in dotCMS provide alternative paths to internal or external URLs, enhancing site maintenance and SEO.
+- **Specific routes**: Custom pages like `/blog/post/:slug`, `/activities/:slug`
+- **Catch-all route (`**`)**: Handles all dotCMS-generated pages through a single `PageComponent`
 
-For implementation details, refer to the [`DotCMSPagesComponent`](./src/app/pages/components/dotcms-pages/dotcms-pages.component.ts) in the example code, which handles routing and Vanity URL redirection.
+This approach eliminates the need to duplicate dotCMS folder/page structure in Angular routing, preventing developer intervention for every new route.
 
-### Universal Visual Editor
+### Page Rendering
+
+Pages are rendered using the `<dotcms-layout-body>` component from `@dotcms/angular` library. This component:
+- Renders all page rows, columns, and content
+- Accepts a component map via the `components` input
+- Maps content type variable names to Angular components
+- Automatically passes full content objects to components
+
+Example component mapping:
+```typescript
+const DYNAMIC_COMPONENTS = {
+  Banner: BannerComponent,
+  Product: ProductComponent,
+  Activity: ActivityComponent
+};
+```
+
+### Folder Structure
+
+```
+src/app/
+├── components/           # Standard site-wide components
+│   ├── header/
+│   ├── footer/
+│   └── navigation/
+└── dotcms/              # dotCMS-specific components
+    ├── pages/           # Page components (see app.routes.ts)
+    ├── components/      # Content type components
+    └── types/           # TypeScript interfaces
+```
+
+## Development Workflow
+
+1. **New Content Types**: Add component mapping to `DYNAMIC_COMPONENTS` in `page.ts`
+2. **Custom Pages**: Create specific routes in `app.routes.ts`
+3. **Site Components**: Add to `components/` folder for site-wide usage
+4. **dotCMS Components**: Add to `dotcms/components/` for content rendering
+
+## Universal Visual Editor
 
 To enable the Universal Visual Editor in dotCMS, follow these steps:
 
@@ -259,10 +280,10 @@ If the Universal Visual Editor is not functioning as expected:
 
 If you continue to experience issues after trying these solutions, please check the [dotCMS documentation](https://dotcms.com/docs/) or reach out to the dotCMS community for further assistance.
 
-## Further Resources
+## Additional Resources
 
-- [Angular CLI Documentation](https://angular.io/cli)
-- [dotCMS Documentation](https://dotcms.com/docs/)
-- [dotCMS REST API Authentication](https://auth.dotcms.com/docs/latest/rest-api-authentication)
-
-For more assistance with Angular, use `ng help` or visit the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+- [Angular CLI Documentation](https://angular.dev/tools/cli)
+- [dotCMS Angular Library](https://www.dotcms.com/docs/latest/angular-integration)
+- [Angular Best Practices](https://angular.dev/best-practices)
+- [dotCMS GraphQL API](https://www.dotcms.com/docs/latest/graphql-api)
+- [dotCMS Universal Visual Editor](https://www.dotcms.com/docs/latest/universal-visual-editor)
