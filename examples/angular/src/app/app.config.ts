@@ -1,61 +1,38 @@
-import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
-import {
-    ApplicationConfig,
-    provideZoneChangeDetection,
-    makeEnvironmentProviders,
-    EnvironmentProviders,
-    inject
-} from '@angular/core';
-import {
-    provideClientHydration,
-    withEventReplay,
-    withHttpTransferCacheOptions
-} from '@angular/platform-browser';
+import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
-import { DotCMSClient } from '@dotcms/angular';
-import { createDotCMSClient } from '@dotcms/client';
-
-import { AngularHttpClient } from './angular-httpclient';
 import { routes } from './app.routes';
-
-function provideDotCMSClient(options: any): EnvironmentProviders {
-    return makeEnvironmentProviders([
-        {
-            provide: DotCMSClient,
-            useFactory: () => {
-                const http = inject(HttpClient);
-                const httpClient = new AngularHttpClient(http);
-                const dotCMSClient = createDotCMSClient({
-                    dotcmsUrl: options.dotcmsUrl,
-                    authToken: options.authToken,
-                    siteId: options.siteId,
-                    httpClient: options.httpClient ? options.httpClient : httpClient
-                });
-
-                return dotCMSClient;
-            }
-        }
-    ]);
-}
+import { environment } from '../environments/environment';
+import {
+  DotCMSEditablePageService,
+  provideDotCMSClient,
+  provideDotCMSImageLoader,
+} from '@dotcms/angular';
 
 export const appConfig: ApplicationConfig = {
-    providers: [
-        provideZoneChangeDetection({ eventCoalescing: true }),
-        provideRouter(routes),
-        provideHttpClient(),
-        provideClientHydration(
-            withEventReplay(),
-            withHttpTransferCacheOptions({
-                includePostRequests: true,
-                includeRequestsWithAuthHeaders: true
-            })
-        ),
-        provideDotCMSClient({
-            dotcmsUrl: 'https://demo.dotcms.com',
-            authToken:
-                'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGliNGM2ODJkOS1hNzQ4LTRjM2EtOWE1ZS0zZmI3NTg5MDkzYWYiLCJ4bW9kIjoxNzU2MTYyMzQ2MDAwLCJuYmYiOjE3NTYxNjIzNDYsImlzcyI6IjU3ZjQ5OGFlMGYiLCJleHAiOjE3NTcwMjYzNDYsImlhdCI6MTc1NjE2MjM0NiwianRpIjoiNTMwOWQxMzktNjEyNC00NWE5LTliOTItNDYyMDBjZDMzZjA4In0.GUqyl8vIy8cKB6r7UwUfTNzXfpIswUcn4fg_KbX03I8',
-            siteId: 'YOUR_SITE_ID'
-        })
-    ]
+  providers: [
+    provideRouter(routes),
+    /**
+     * We provide the DotCMSClient instance, enabling
+     * its injection throughout the application. This approach ensures a single DotCMSClient
+     * instance is used, promoting consistency and centralized management of client configuration.
+     */
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId,
+    }),
+    /**
+     * This custom image loader, designed for the NgOptimizedImage component, appends the dotCMS URL
+     * to the image source if it’s not an external URL.
+     *
+     * Additionally, it appends the ⁠language_id query parameter if the ⁠loaderParams object contains
+     * a ⁠languageId key. To use an image from an external URL, set the ⁠isOutsideSRC key to ⁠true in
+     * the ⁠loaderParams object.
+     * <img [ngSrc]="https://my-url.com/some.jpg" [loaderParams]="{isOutsideSRC: true}" />
+     * For further customization, you can provide your own image loader implementation.
+     */
+    provideDotCMSImageLoader(environment.dotcmsUrl),
+    DotCMSEditablePageService,
+  ],
 };

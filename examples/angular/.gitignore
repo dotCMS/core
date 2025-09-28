@@ -36,8 +36,6 @@ yarn-error.log
 /libpeerconnection.log
 testem.log
 /typings
-.yalc
-yalc.lock
 
 # System files
 .DS_Store
