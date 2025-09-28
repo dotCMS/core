@@ -23,10 +23,10 @@ type ClientType = ReturnType<typeof createDotCMSClient>;
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging, @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
-export interface AngularDotCMSClient extends ClientType {}
+export interface DotCMSClient extends ClientType {}
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class AngularDotCMSClient {
+export class DotCMSClient {
     constructor(client: ClientType) {
         return client;
     }
@@ -36,7 +36,7 @@ export class AngularDotCMSClient {
  * Provides Angular environment providers for the DotCMS client.
  *
  * Registers a singleton DotCMS client instance in the Angular dependency injection system,
- * configured with the given options. This allows you to inject `AngularDotCMSClient` anywhere
+ * configured with the given options. This allows you to inject `DotCMSClient` anywhere
  * in your app using Angular's `inject()` function.
  *
  * Should be added to the application's providers (e.g., in `main.ts` or `app.config.ts`).
@@ -66,7 +66,7 @@ export class AngularDotCMSClient {
 export function provideDotCMSClient(options: DotCMSAngularProviderConfig): EnvironmentProviders {
     return makeEnvironmentProviders([
         {
-            provide: AngularDotCMSClient,
+            provide: DotCMSClient,
             useFactory: () => {
                 const http = inject(HttpClient);
                 const httpClient = options.httpClient ? options.httpClient(http) : undefined;

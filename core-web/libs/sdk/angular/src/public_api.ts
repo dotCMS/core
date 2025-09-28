@@ -4,7 +4,7 @@ export { provideDotCMSImageLoader } from './lib/providers/dotcms-image-loader/do
 
 export {
     provideDotCMSClient,
-    AngularDotCMSClient
+    DotCMSClient
 } from './lib/providers/dotcms-client/dotcms-client.provider';
 
 export { DotCMSEditableTextComponent } from './lib/components/dotcms-editable-text/dotcms-editable-text.component';
