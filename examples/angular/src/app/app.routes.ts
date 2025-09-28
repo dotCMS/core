@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
-import { DotCMSPageComponent } from './pages/dot-cms-page/dot-cms-page.component';
-import { BlogComponent } from './pages/blog/blog.component';
-import { BlogListingComponent } from './pages/blog-listing/blog-listing.component';
+import { PageComponent } from './dotcms/pages/page/page';
+import { BlogListingComponent } from './dotcms/pages/blog-listing/blog-listing.component';
+import { BlogComponent } from './dotcms/pages/blog/blog.component';
+import { ActivityComponent } from './dotcms/pages/activity/activity.component';
+
 export const routes: Routes = [
   {
     path: 'blog/post/:slug',
@@ -13,10 +15,14 @@ export const routes: Routes = [
   },
   {
     path: 'blog/index',
-    redirectTo: 'blog',
+    redirectTo: '/blog',
+  },
+  {
+    path: 'activities/:slug',
+    component: ActivityComponent,
   },
   {
     path: '**',
-    component: DotCMSPageComponent,
+    component: PageComponent,
   },
 ];
