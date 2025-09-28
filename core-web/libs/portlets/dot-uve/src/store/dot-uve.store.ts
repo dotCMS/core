@@ -6,15 +6,21 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
+import { forkJoin, of } from 'rxjs';
 
-import { DestroyRef, inject } from '@angular/core';
+import { computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
+import { switchMap } from 'rxjs/operators';
+
+import { DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY, UVE_STATUS, UVEConfiguration, UVEState } from './model';
 
+import { DotPageService } from '../service/dot-page.service';
 import { getConfiguration } from '../utils';
 
 const initialConfiguration: UVEConfiguration = {
@@ -27,7 +33,8 @@ const initialConfiguration: UVEConfiguration = {
 };
 
 const initialState: UVEState = {
-    languages: [],
+    pageLanguages: [],
+    pageAssetData: null,
     isEnterprise: false,
     editorStatus: UVE_STATUS.LOADING,
     configuration: initialConfiguration
@@ -41,7 +48,19 @@ export const UVEStore = signalStore(
         providedIn: 'root'
     },
     withState<UVEState>(initialState),
-    withComputed(() => ({})),
+    withComputed((store) => {
+        return {
+            $currentLanguage: computed<DotLanguage | null>(() => {
+                const pageAssetData = store.pageAssetData();
+
+                if (!pageAssetData) {
+                    return null;
+                }
+
+                return pageAssetData.viewAs?.language as DotLanguage;
+            })
+        };
+    }),
     withMethods((store) => {
         return {
             setUveStatus(editorStatus: UVE_STATUS) {
@@ -52,6 +71,9 @@ export const UVEStore = signalStore(
     withHooks((store) => {
         const activatedRoute = inject(ActivatedRoute);
         const destroyRef = inject(DestroyRef);
+        const dotLanguagesService = inject(DotLanguagesService);
+        const dotPageService = inject(DotPageService);
+        const dotLicenseService = inject(DotLicenseService);
 
         return {
             onInit: () => {
@@ -60,6 +82,23 @@ export const UVEStore = signalStore(
                     .subscribe((queryParams) => {
                         const configuration = getConfiguration(queryParams);
                         patchState(store, { configuration });
+                    });
+
+                dotPageService
+                    .get('/', '1')
+                    .pipe(
+                        switchMap((pageAssetData) => {
+                            return forkJoin({
+                                pageAssetData: of(pageAssetData),
+                                pageLanguages: dotLanguagesService.getLanguagesUsedPage(
+                                    pageAssetData.page.identifier
+                                ),
+                                isEnterprise: dotLicenseService.isEnterprise()
+                            });
+                        })
+                    )
+                    .subscribe(({ pageAssetData, pageLanguages, isEnterprise }) => {
+                        patchState(store, { pageAssetData, pageLanguages, isEnterprise });
                     });
             }
         };

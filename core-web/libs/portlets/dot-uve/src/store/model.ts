@@ -3,10 +3,10 @@ import { DotCMSWorkflowAction, DotExperiment, DotLanguage } from '@dotcms/dotcms
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 export interface UVEState {
-    languages: DotLanguage[];
+    pageLanguages: DotLanguage[];
     isEnterprise: boolean;
     editorStatus: UVE_STATUS;
-    pageAssetData?: DotCMSPageAsset;
+    pageAssetData: DotCMSPageAsset | null;
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     workflowActions?: DotCMSWorkflowAction[];

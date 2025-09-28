@@ -1,0 +1,19 @@
+@let currentLanguage = $currentLanguage();
+
+<p-button
+    (click)="op.toggle($event)"
+    [loading]="!currentLanguage"
+    [disabled]="!currentLanguage"
+    [label]="getLanguageLabel(currentLanguage)"
+    styleClass="p-button-text p-button-sm"
+    icon="pi pi-globe"
+    data-testId="language-button" />
+<p-overlayPanel #op data-testId="language-op">
+    <p-listbox
+        #listbox
+        [options]="$listOptions()"
+        (onChange)="onSelect($event.value); op.toggle($event)"
+        optionLabel="label"
+        dataKey="id"
+        data-testId="language-listbox" />
+</p-overlayPanel>
