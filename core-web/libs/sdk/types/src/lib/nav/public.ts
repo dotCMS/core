@@ -1,4 +1,4 @@
-import { DotHttpError } from "../client/public";
+import { DotHttpError } from '../client/public';
 
 /**
  * Navigation API specific error class

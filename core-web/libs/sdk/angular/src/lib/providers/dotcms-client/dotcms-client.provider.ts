@@ -68,7 +68,9 @@ export function provideDotCMSClient(options: DotCMSAngularProviderConfig): Envir
         {
             provide: DotCMSClient,
             useFactory: () => {
-                const httpClient = options.httpClient ? options.httpClient(inject(HttpClient)) : undefined;
+                const httpClient = options.httpClient
+                    ? options.httpClient(inject(HttpClient))
+                    : undefined;
                 const dotCMSClient = createDotCMSClient({
                     dotcmsUrl: options.dotcmsUrl,
                     authToken: options.authToken,
