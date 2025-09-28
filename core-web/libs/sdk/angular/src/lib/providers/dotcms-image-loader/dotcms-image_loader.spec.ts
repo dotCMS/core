@@ -55,17 +55,17 @@ describe('Image Loader', () => {
 
         it('should add /dA/ prefix when src does not include it', () => {
             const result = imageLoader({ src: '12345' });
-            expect(result).toBe('https://demo.dotcms.com/dA/12345?language_id=1');
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/50q?language_id=1');
         });
 
         it('should not add /dA/ prefix when src already includes it', () => {
             const result = imageLoader({ src: '/dA/12345' });
-            expect(result).toBe('https://demo.dotcms.com/dA/12345?language_id=1');
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/50q?language_id=1');
         });
 
         it('should add width parameter when width is provided', () => {
             const result = imageLoader({ src: '12345', width: 300 });
-            expect(result).toBe('https://demo.dotcms.com/dA/12345/300w?language_id=1');
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/300w/50q?language_id=1');
         });
 
         it('should use custom languageId when provided', () => {
@@ -73,12 +73,12 @@ describe('Image Loader', () => {
                 src: '12345',
                 loaderParams: { languageId: '2' }
             });
-            expect(result).toBe('https://demo.dotcms.com/dA/12345?language_id=2');
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/50q?language_id=2');
         });
 
         it('should use default languageId when not provided', () => {
             const result = imageLoader({ src: '12345' });
-            expect(result).toBe('https://demo.dotcms.com/dA/12345?language_id=1');
+            expect(result).toBe('https://demo.dotcms.com/dA/12345/50q?language_id=1');
         });
 
         it('should use empty host when no path is provided', () => {
@@ -89,7 +89,7 @@ describe('Image Loader', () => {
             imageLoader = TestBed.inject(IMAGE_LOADER);
 
             const result = imageLoader({ src: '12345' });
-            expect(result).toBe('/dA/12345?language_id=1');
+            expect(result).toBe('/dA/12345/50q?language_id=1');
         });
     });
 
@@ -107,7 +107,7 @@ describe('Image Loader', () => {
                 spectator.detectChanges();
 
                 const img = spectator.query<HTMLImageElement>('img');
-                expect(img?.src).toContain(`/dA/${imageMock}?language_id=1`);
+                expect(img?.src).toContain(`/dA/${imageMock}/50q?language_id=1`);
             });
 
             it('should add width parameter when width is provided', () => {
@@ -116,7 +116,7 @@ describe('Image Loader', () => {
                 spectator.detectChanges();
 
                 const img = spectator.query<HTMLImageElement>('img');
-                expect(img?.src).toContain(`/dA/${imageMock}?language_id=1`);
+                expect(img?.src).toContain(`/dA/${imageMock}/50q?language_id=1`);
             });
         });
 

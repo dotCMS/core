@@ -6,7 +6,7 @@ import { createDotCMSClient } from '@dotcms/client';
 
 import {
     provideDotCMSClient,
-    AngularDotCMSClient,
+    DotCMSClient,
     DotCMSAngularProviderConfig
 } from './dotcms-client.provider';
 
@@ -78,7 +78,7 @@ describe('provideDotCMSClient', () => {
                 ]
             });
 
-            TestBed.inject(AngularDotCMSClient);
+            TestBed.inject(DotCMSClient);
 
             expect(mockedCreateDotCMSClient).toHaveBeenCalledTimes(1);
             expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
@@ -104,7 +104,7 @@ describe('provideDotCMSClient', () => {
                 ]
             });
 
-            TestBed.inject(AngularDotCMSClient);
+            TestBed.inject(DotCMSClient);
 
             expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
                 dotcmsUrl: minimalConfig.dotcmsUrl,
@@ -139,7 +139,7 @@ describe('provideDotCMSClient', () => {
                 ]
             });
 
-            TestBed.inject(AngularDotCMSClient);
+            TestBed.inject(DotCMSClient);
 
             expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
                 dotcmsUrl: basicConfig.dotcmsUrl,
@@ -188,7 +188,7 @@ describe('provideDotCMSClient', () => {
                 ]
             });
 
-            TestBed.inject(AngularDotCMSClient);
+            TestBed.inject(DotCMSClient);
 
             expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
                 dotcmsUrl: configWithCustomOptions.dotcmsUrl,
@@ -221,7 +221,7 @@ describe('provideDotCMSClient', () => {
                 ]
             });
 
-            TestBed.inject(AngularDotCMSClient);
+            TestBed.inject(DotCMSClient);
 
             expect(mockedCreateDotCMSClient).toHaveBeenCalledWith({
                 dotcmsUrl: configWithHttpClient.dotcmsUrl,
@@ -244,21 +244,21 @@ describe('provideDotCMSClient', () => {
         });
 
         it('should provide DotCMSClient instance through dependency injection', () => {
-            const client = TestBed.inject(AngularDotCMSClient);
+            const client = TestBed.inject(DotCMSClient);
 
             expect(client).toBeDefined();
             expect(client).toBe(mockClient);
         });
 
         it('should return same instance when injected multiple times', () => {
-            const client1 = TestBed.inject(AngularDotCMSClient);
-            const client2 = TestBed.inject(AngularDotCMSClient);
+            const client1 = TestBed.inject(DotCMSClient);
+            const client2 = TestBed.inject(DotCMSClient);
 
             expect(client1).toBe(client2);
         });
 
         it('should provide client with expected structure', () => {
-            const client = TestBed.inject(AngularDotCMSClient);
+            const client = TestBed.inject(DotCMSClient);
 
             // Verify the mock client structure is injected correctly
             expect(client).toHaveProperty('page');
@@ -283,7 +283,7 @@ describe('provideDotCMSClient', () => {
             });
 
             expect(() => {
-                TestBed.inject(AngularDotCMSClient);
+                TestBed.inject(DotCMSClient);
             }).toThrow(errorMessage);
         });
 
@@ -302,7 +302,7 @@ describe('provideDotCMSClient', () => {
             });
 
             expect(() => {
-                TestBed.inject(AngularDotCMSClient);
+                TestBed.inject(DotCMSClient);
             }).toThrow(TypeError);
 
             // Reset TestBed for second test
@@ -316,7 +316,7 @@ describe('provideDotCMSClient', () => {
             });
 
             expect(() => {
-                TestBed.inject(AngularDotCMSClient);
+                TestBed.inject(DotCMSClient);
             }).toThrow('Invalid URL format');
         });
     });
