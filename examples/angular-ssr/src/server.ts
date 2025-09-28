@@ -6,15 +6,18 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { config } from 'dotenv';
 
 import { createDotCMSClient } from '@dotcms/client';
 import { DotCMSPageRequestParams, DotErrorPage } from '@dotcms/types';
 
+// Load environment variables from .env file
+config();
+
 const client = createDotCMSClient({
-  dotcmsUrl: 'https://demo.dotcms.com',
-  authToken:
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGlhMTIwNzMwMC1hYmJlLTRjNjAtYWViOC04OWJiYzVkZmVmZDkiLCJ4bW9kIjoxNzU4OTA1NjQzMDAwLCJuYmYiOjE3NTg5MDU2NDMsImlzcyI6ImEwOTA0MDZmYzUiLCJsYWJlbCI6InRlc3QiLCJleHAiOjE4NTM1MzIwMDEsImlhdCI6MTc1ODkwNTY0MywianRpIjoiMThhNzVjNWQtNWUyMy00NzYxLWIyMTktNzc4ZWNhNGIyYjZhIn0.4Q4AxABHYHpPhZlJzvBxZOXX9PdoJHgAcDmYO3fQPwI',
-  siteId: 'YOUR_SITE_ID',
+  dotcmsUrl: process.env['DOTCMS_URL'] || 'https://demo.dotcms.com',
+  authToken: process.env['DOTCMS_AUTH_TOKEN'] || '',
+  siteId: process.env['DOTCMS_SITE_ID'] || 'YOUR_SITE_ID',
 });
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
