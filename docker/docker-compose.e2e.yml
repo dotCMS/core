@@ -1,0 +1,118 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: dotcms
+      POSTGRES_USER: dotcms
+      POSTGRES_PASSWORD: dotcms
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcms"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G"
+      - xpack.security.enabled=false
+      - xpack.monitoring.collection.enabled=false
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # WireMock for AI services mock
+  wiremock:
+    image: wiremock/wiremock:3.9.1
+    ports:
+      - "50505:8080"
+    volumes:
+      - ./docker/e2e/wiremock/mappings:/home/wiremock/mappings
+      - ./docker/e2e/wiremock/__files:/home/wiremock/__files
+    command: --global-response-templating --verbose
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:8080/__admin/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # dotCMS Application (uses Maven-built image)
+  # This is the SAME image that Maven builds with fabric8 plugin
+  dotcms:
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    ports:
+      - "8080:8080"
+    environment:
+      # Java/Catalina config
+      - CMS_JAVA_OPTS=-Xmx1g
+      - CATALINA_TMPDIR=/tmp
+      # Database connection
+      - DB_BASE_URL=jdbc:postgresql://postgres:5432/dotcms
+      - DB_USERNAME=dotcms
+      - DB_PASSWORD=dotcms
+      # ElasticSearch connection
+      - DOT_ES_ENDPOINTS=http://elasticsearch:9200
+      - DOT_ES_AUTH_BASIC_PASSWORD=admin
+      - DOT_ES_CACHE_SEARCH_QUERIES=false
+      # dotCMS config
+      - DOT_INITIAL_ADMIN_PASSWORD=admin
+      - DOT_DOTCMS_DEV_MODE=true
+      - DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true
+      - DOT_ENABLE_SCRIPTING=true
+      - DOT_CONTENT_APIS_ALLOW_ANONYMOUS=WRITE
+      # E2E specific config
+      - DB_MAX_TOTAL=15
+      - DOT_INDEX_POLICY_SINGLE_CONTENT=FORCE
+      - DOT_ASYNC_REINDEX_COMMIT_LISTENERS=false
+      - DOT_ASYNC_COMMIT_LISTENERS=false
+      - DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS=600
+      - JVM_ENDPOINT_TEST_PASS=obfuscate_me
+      # AI Mock URLs pointing to WireMock
+      - DOT_AI_API_URL=http://wiremock:8080/c
+      - DOT_AI_IMAGE_API_URL=http://wiremock:8080/i
+      - DOT_AI_EMBEDDINGS_API_URL=http://wiremock:8080/e
+      - DOT_AI_MODELS_API_URL=http://wiremock:8080/m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      wiremock:
+        condition: service_healthy
+    volumes:
+      - dotcms_data:/data/shared
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/dotAdmin || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  postgres_data:
+  es_data:
+  dotcms_data:
