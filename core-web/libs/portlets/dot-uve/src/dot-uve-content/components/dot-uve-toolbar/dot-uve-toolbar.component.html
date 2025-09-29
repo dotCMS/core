@@ -10,18 +10,22 @@
             tooltipPosition="bottom"
             styleClass="p-button-text p-button-sm p-button-rounded" />
         <p-button
+            [pTooltip]="'editpage.header.copy' | dm"
+            tooltipPosition="bottom"
             icon="pi pi-copy"
-            tooltipPosition="bottom"
-            styleClass="p-button-text p-button-sm p-button-rounded" />
+            styleClass="p-button-text p-button-sm p-button-rounded"
+            (cdkCopyToClipboardCopied)="copyURLToast()"
+            [cdkCopyToClipboard]="$copyUrl()"
+            data-testId="uve-toolbar-copy-url" />
+
         <a
-            title="Page API URL"
-            [pTooltip]="'uve.toolbar.page.api.url' | dm"
-            tooltipPosition="bottom"
             pButton
             label="API"
+            [href]="$apiURL()"
+            [pTooltip]="'uve.toolbar.page.api.url' | dm"
+            tooltipPosition="bottom"
             class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
-            target="_blank"
-            data-testId="uve-toolbar-api-link"></a>
+            target="_blank"></a>
     </div>
 
     <div class="p-toolbar-group-end gap-2">

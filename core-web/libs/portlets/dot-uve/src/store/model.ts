@@ -1,20 +1,19 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotCMSWorkflowAction, DotExperiment, DotLanguage } from '@dotcms/dotcms-models';
+import { DotExperiment, DotLanguage } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 export interface UVEState {
+    url: string;
     pageLanguages: DotLanguage[];
     isEnterprise: boolean;
     editorStatus: UVE_STATUS;
     pageAssetData: DotCMSPageAsset | null;
     currentUser: CurrentUser | null;
     experiment?: DotExperiment;
-    workflowActions?: DotCMSWorkflowAction[];
     configuration: UVEConfiguration;
 }
 
 export interface UVEConfiguration {
-    url: string;
     mode: UVE_MODE;
     language_id: string;
     publishDate: string;

@@ -28,10 +28,9 @@ import {
 } from './model';
 
 import { DotPageService } from '../service/dot-page.service';
-import { DEFAULT_PERSONA, getConfiguration } from '../utils';
+import { DEFAULT_PERSONA, getConfiguration, sanitizeURL } from '../utils';
 
 const initialConfiguration: UVEConfiguration = {
-    url: '',
     device: '',
     publishDate: '',
     language_id: '1',
@@ -40,6 +39,7 @@ const initialConfiguration: UVEConfiguration = {
 };
 
 const initialState: UVEState = {
+    url: '/',
     pageLanguages: [],
     pageAssetData: null,
     isEnterprise: false,
@@ -103,8 +103,9 @@ export const UVEStore = signalStore(
                 activatedRoute.queryParams
                     .pipe(takeUntilDestroyed(destroyRef))
                     .subscribe((queryParams) => {
+                        const url = sanitizeURL(queryParams['url'] ?? '/');
                         const configuration = getConfiguration(queryParams);
-                        patchState(store, { configuration });
+                        patchState(store, { configuration, url });
                     });
 
                 dotPageService
