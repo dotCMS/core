@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { ContentTypeSchema } from './contentype';
 
 describe('ContentType Types', () => {
