@@ -8,6 +8,7 @@ import {
     ContentTypeField,
     ContentTypeSchema,
     FieldClazz,
+    KnownFieldClazz,
     Layout
 } from '../types/contentype';
 import { Logger } from '../utils/logger';
@@ -61,9 +62,9 @@ const FieldTypeEnum = z.enum([
 
 type FieldType = z.infer<typeof FieldTypeEnum>;
 
-// Mapping function to get clazz from fieldType using the existing enum
-const getClazzFromFieldType = (fieldType: FieldType): FieldClazz => {
-    const fieldTypeToClazzMap: Record<FieldType, FieldClazz> = {
+// Mapping function to get clazz from fieldType using the known field types
+const getClazzFromFieldType = (fieldType: FieldType): KnownFieldClazz => {
+    const fieldTypeToClazzMap: Record<FieldType, KnownFieldClazz> = {
         Binary: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
         'Story-Block': 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
         'Block Editor': 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',

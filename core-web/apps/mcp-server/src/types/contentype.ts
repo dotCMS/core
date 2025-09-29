@@ -61,7 +61,8 @@ const TabDividerClazzEnum = z.enum(['com.dotcms.contenttype.model.field.Immutabl
 const LineDividerClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
 ]);
-const FieldClazzEnum = z.enum([
+// Known field types enum for reference and validation of new fields
+const KnownFieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableBinaryField',
     'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     'com.dotcms.contenttype.model.field.ImmutableCategoryField',
@@ -86,6 +87,14 @@ const FieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableTimeField',
     'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
+]);
+
+// More permissive field clazz validation that accepts both known types and any string
+// This handles deprecated field types like ImmutableRelationshipsTabField without breaking validation
+const FieldClazzEnum = z.union([
+    KnownFieldClazzEnum,
+    z.string().regex(/^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/, 
+        'Field clazz must be a valid dotCMS field class')
 ]);
 
 const DividerSchema = z.object({
@@ -212,3 +221,5 @@ export type Layout = z.infer<typeof LayoutSchema>;
 export type ContentType = z.infer<typeof ContentTypeSchema>;
 
 export type FieldClazz = z.infer<typeof FieldClazzEnum>;
+
+export type KnownFieldClazz = z.infer<typeof KnownFieldClazzEnum>;
