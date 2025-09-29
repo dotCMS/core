@@ -381,10 +381,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				: permissionType;
 
 
-		if (APILocator.getRoleAPI().doesUserHaveRole(user, adminRole.get())) {
-			return true;
-		}
-
 		final List<Permission> perms = getPermissions(permissionable, true)
 				.stream()
 				.filter(p-> p.matchesPermission(expecterPermissionType))
@@ -427,7 +423,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return false;
 		}
 
-        if (isContentlet && !hasCategoryPermission(((Contentlet) permissionable), expecterPermissionType, user,
+        // disallow access if user has no permissions to any categories used on the content
+        if (isContentlet && !checkCategoryPermissionsSecond(((Contentlet) permissionable), expecterPermissionType, user,
                 respectFrontendRoles)) {
             return false;
         }
@@ -443,7 +440,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
      * Checks if the specified user has permissions to the categories used on the content. The algo is this: To access a
      * piece of content, the user has to have permissions to at least one category that is set on EVERY category field
      * on the content (or the category field is empty). If the user does not have access to ANY of the categories set on
-     * any category field of the content then the user is not allowed to access the content.
+     * any category field of the content, then the user is not allowed to access the content.
      *
      * @param contentlet           the contentlet for which category permissions are being checked. This parameter must
      *                             not be null.
@@ -455,16 +452,17 @@ public class PermissionBitAPIImpl implements PermissionAPI {
      * @throws DotDataException if an error occurs during the permission check process.
      */
 
-    boolean hasCategoryPermission(@NotNull final Contentlet contentlet, final int permissionType,
+    boolean checkCategoryPermissionsSecond(@NotNull final Contentlet contentlet, final int permissionType,
             @NotNull final User user, boolean respectFrontendRoles)
             throws DotDataException {
 
-        if (!Config.getBooleanProperty("PERMISSION_CONTENT_RESPECT_CATEGORY_PERMISSION", true)) {
+        if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
             return true;
         }
 
         // List of fields which have secondaryPermissionCheck=true
-        List<Field> permissionedCategories = contentlet.getContentType()
+        List<Field> permissionedCategories = contentlet
+                .getContentType()
                 .fields(CategoryField.class)
                 .stream()
                 .filter(f -> f.fieldVariables()
@@ -480,7 +478,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
         for (Field field : permissionedCategories) {
 
-            // categories selected
+            // get all categories selected
             List<Category> allCats = Try.of(() -> (List<Category>) APILocator.getContentletAPI()
                             .getFieldValue(contentlet, field, APILocator.systemUser(), false))
                     .getOrElse(List.of());
@@ -490,12 +488,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
                 continue;
             }
 
-            //categories I have access to
+            //categories that user has access to
             List<Category> myCats = Try.of(
                             () -> (List<Category>) APILocator.getContentletAPI().getFieldValue(contentlet, field, user, false))
                     .getOrElse(List.of());
 
-            // if I have no access, kaput!
+            // if user has no permissions to any categories, kaput!
             if (myCats.isEmpty()) {
                 return false;
             }
