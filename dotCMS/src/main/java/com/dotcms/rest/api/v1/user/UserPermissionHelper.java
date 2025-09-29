@@ -236,9 +236,32 @@ public class UserPermissionHelper {
     }
 
     /**
-     * Avoids duplicate aliases like USE/read or EDIT/WRITE
+     * Returns all available permission scopes that can be assigned.
+     * These represent the different asset types that support permissions.
+     * 
+     * @return Set of permission scope names (e.g., "INDIVIDUAL", "HOST", "FOLDER")
      */
-    private List<String> convertBitsToPermissionNames(final int permissionBits) {
+    public Set<String> getAvailablePermissionScopes() {
+        return new HashSet<>(PERMISSION_TYPE_MAPPINGS.values());
+    }
+
+    /**
+     * Returns all available permission levels that can be assigned.
+     * These represent the different types of access (READ, WRITE, etc.).
+     * 
+     * @return List of permission level names
+     */
+    public List<String> getAvailablePermissionLevels() {
+        return convertBitsToPermissionNames(
+            PermissionAPI.PERMISSION_READ | 
+            PermissionAPI.PERMISSION_WRITE |
+            PermissionAPI.PERMISSION_PUBLISH |
+            PermissionAPI.PERMISSION_EDIT_PERMISSIONS |
+            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
+        );
+    }
+
+    public List<String> convertBitsToPermissionNames(final int permissionBits) {
         final List<String> permissions = new ArrayList<>();
 
         if ((permissionBits & PermissionAPI.PERMISSION_READ) > 0) {
