@@ -15,10 +15,17 @@ import { ActivatedRoute } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
 
 import { DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
-import { PERSONA_KEY, UVE_STATUS, UVEConfiguration, UVEState } from './model';
+import {
+    isLockedByAnotherUser,
+    PERSONA_KEY,
+    UVE_STATUS,
+    UVEConfiguration,
+    UVEState
+} from './model';
 
 import { DotPageService } from '../service/dot-page.service';
 import { getConfiguration } from '../utils';
@@ -37,7 +44,8 @@ const initialState: UVEState = {
     pageAssetData: null,
     isEnterprise: false,
     editorStatus: UVE_STATUS.LOADING,
-    configuration: initialConfiguration
+    configuration: initialConfiguration,
+    currentUser: null
 };
 
 /**
@@ -58,6 +66,16 @@ export const UVEStore = signalStore(
                 }
 
                 return pageAssetData.viewAs?.language as DotLanguage;
+            }),
+            $canEdit: computed<boolean>(() => {
+                const hasEditPermission = store.pageAssetData()?.page.canEdit ?? false;
+                const isLocked = isLockedByAnotherUser(
+                    store.pageAssetData()?.page,
+                    store.currentUser()?.userId
+                );
+                const isBlockedByExperiment = false; // TODO: Add experiment check
+
+                return hasEditPermission && !isLocked && !isBlockedByExperiment;
             })
         };
     }),
@@ -74,6 +92,7 @@ export const UVEStore = signalStore(
         const dotLanguagesService = inject(DotLanguagesService);
         const dotPageService = inject(DotPageService);
         const dotLicenseService = inject(DotLicenseService);
+        const loginService = inject(LoginService);
 
         return {
             onInit: () => {
@@ -93,12 +112,18 @@ export const UVEStore = signalStore(
                                 pageLanguages: dotLanguagesService.getLanguagesUsedPage(
                                     pageAssetData.page.identifier
                                 ),
-                                isEnterprise: dotLicenseService.isEnterprise()
+                                isEnterprise: dotLicenseService.isEnterprise(),
+                                currentUser: loginService.getCurrentUser()
                             });
                         })
                     )
-                    .subscribe(({ pageAssetData, pageLanguages, isEnterprise }) => {
-                        patchState(store, { pageAssetData, pageLanguages, isEnterprise });
+                    .subscribe(({ pageAssetData, pageLanguages, isEnterprise, currentUser }) => {
+                        patchState(store, {
+                            pageAssetData,
+                            pageLanguages,
+                            isEnterprise,
+                            currentUser
+                        });
                     });
             }
         };
