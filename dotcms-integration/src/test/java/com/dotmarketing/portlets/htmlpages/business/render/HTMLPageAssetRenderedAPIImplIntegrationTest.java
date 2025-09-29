@@ -2856,4 +2856,82 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 mockRequest, mockResponse);
         Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A template has containers with LEGACY_RELATION_TYPE UUIDs
+     * Should: Transform UUIDs to consistent values in both layout and rendered container fields
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void shouldTransformLegacyContainerUUIDs() throws DotDataException, DotSecurityException, WebAssetException {
+        init();
+        
+        final Host site = new SiteDataGen().nextPersisted();
+        final User systemUser = APILocator.systemUser();
+        
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+                
+
+        final Container container = new ContainerDataGen()
+                .site(site)
+                .withContentType(contentType, "$!{title}")
+                .nextPersisted();
+        ContainerDataGen.publish(container, systemUser);
+        
+
+        final Template template = new TemplateDataGen()
+                .host(site)
+                .withContainer(container.getIdentifier(), ContainerUUID.UUID_LEGACY_VALUE)
+                .drawed(true)
+                .nextPersisted();
+        TemplateDataGen.publish(template, systemUser);
+
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template)
+                .nextPersisted();
+        HTMLPageDataGen.publish(page);
+        
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(site)
+                .setProperty("title", "Test Content")
+                .nextPersistedAndPublish();
+        
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(request.getRequestURI()).thenReturn(page.getURI());
+        
+
+        final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPI = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = htmlPageAssetRenderedAPI.getPageRendered(
+                request, response, systemUser, page.getURI(), PageMode.ADMIN_MODE);
+        
+        
+        boolean foundLegacyTransformation = pageView.getLayout() != null 
+                && pageView.getLayout().getBody() != null
+                && pageView.getLayout().getBody().getRows().stream()
+                    .flatMap(row -> row.getColumns().stream())
+                    .flatMap(column -> column.getContainers().stream())
+                    .filter(containerUUID -> container.getIdentifier().equals(containerUUID.getIdentifier()))
+                    .peek(containerUUID -> assertEquals("Legacy container UUID should be transformed to '1'", 
+                            ContainerUUID.UUID_START_VALUE, containerUUID.getUUID()))
+                    .findAny()
+                    .isPresent();
+        
+        assertTrue("Should have found and transformed legacy container UUID", foundLegacyTransformation);
+    }
 }

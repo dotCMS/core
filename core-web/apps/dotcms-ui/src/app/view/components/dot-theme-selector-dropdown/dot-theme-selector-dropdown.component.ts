@@ -85,17 +85,8 @@ export class DotThemeSelectorDropdownComponent
             }
         }, 0);
 
-        // Here we set the initial value of the dropdown as System Theme
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.paginationPerPage = 5;
-        this.paginatorService.setExtraParams('hostId', 'SYSTEM_HOST');
-        this.paginatorService
-            .get()
-            .pipe(take(1))
-            .subscribe((themes: DotTheme[]) => {
-                this.value = themes[0];
-                this.propagateChange(themes[0].identifier);
-            });
     }
 
     ngAfterViewInit(): void {
@@ -174,6 +165,18 @@ export class DotThemeSelectorDropdownComponent
                         .subscribe((site) => {
                             this.siteSelector?.updateCurrentSite(site);
                         });
+                });
+        } else {
+            // No identifier provided, load default system theme
+            this.paginatorService.setExtraParams('hostId', 'SYSTEM_HOST');
+            this.paginatorService
+                .get()
+                .pipe(take(1))
+                .subscribe((themes: DotTheme[]) => {
+                    if (themes.length > 0) {
+                        this.value = themes[0];
+                        this.propagateChange(themes[0].identifier);
+                    }
                 });
         }
     }
