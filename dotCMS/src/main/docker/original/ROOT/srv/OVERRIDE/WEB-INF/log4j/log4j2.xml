@@ -11,12 +11,9 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2} - %msg%n" />
         </Console>
-       <Async name="generic">
-            <AppenderRef ref="GENERIC-FILE"/>
-        </Async>
 
         <!--  Generic Logging File -->
-        <RollingFile name="GENERIC-FILE"
+        <RollingFile name="Generic-File"
                      fileName="${DOTCMS_LOG_FILE}"
                      filePattern="${DOTCMS_FILENAME_PATTERN}"
                      immediateFlush="false">
@@ -31,7 +28,7 @@
     <Loggers>
         <Root level="info">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="generic"/>
+            <AppenderRef ref="Generic-File"/>
         </Root>
     </Loggers>
 </Configuration> 
