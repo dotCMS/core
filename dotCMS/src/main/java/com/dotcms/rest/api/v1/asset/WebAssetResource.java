@@ -444,7 +444,7 @@ public class WebAssetResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response drive(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            DriveLookupRequestForm form
+            DriveRequestForm form
     ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()

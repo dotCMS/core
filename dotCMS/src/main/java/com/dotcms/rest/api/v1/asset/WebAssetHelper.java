@@ -938,7 +938,7 @@ public class WebAssetHelper {
         return Optional.empty();
     }
 
-    public Object driveSearch(final DriveLookupRequestForm requestForm, final User user)
+    public Object driveSearch(final DriveRequestForm requestForm, final User user)
             throws DotDataException, DotSecurityException {
         final List<Long> langIds = requestForm.language().stream().map(LanguageUtil::getLanguageId).collect(Collectors.toList());
         List<BaseContentType> baseContentTypes = BaseContentType.allBaseTypes();
@@ -959,14 +959,11 @@ public class WebAssetHelper {
         final List<String> assetPath = requestForm.assetPath();
         for (final String path : assetPath) {
             final ResolvedAssetAndPath assetAndPath = resolver.resolve(path, user, false);
-            String hostOrFolder = assetAndPath.host();
-            if (null != assetAndPath.resolvedFolder()) {
-                hostOrFolder = assetAndPath.resolvedFolder().getInode();
-            }
+            final Host host = assetAndPath.resolvedHost();
+            final Folder folder = assetAndPath.resolvedFolder();
 
             final Builder builder = BrowserQuery.builder();
             builder.withUser(user)
-                    .withHostOrFolderId(hostOrFolder)
                     .withContentTypes(contentTypeIds)
                     .withBaseTypes(baseContentTypes)
                     .showDotAssets(requestForm.showDotAssets())
@@ -976,16 +973,29 @@ public class WebAssetHelper {
                     .showWorking(requestForm.showWorking())
                     .showLinks(requestForm.showLinks())
                     .withLanguageIds(langIds)
-                    .showImages(true)
-                    .showContent(true)
-                    .sortByDesc(true)
-                    .sortBy(SORT_BY);
+                    .showImages(requestForm.showImages())
+                    .showContent(requestForm.showContent())
+                    .sortBy(requestForm.sortBy());
+
+            //We're requesting an asset specifically therefore we need to find it and  build the response
+            if (folder.isSystemFolder()) {
+                builder.withHostOrFolderId(host.getIdentifier());
+            } else {
+                builder.withHostOrFolderId(folder.getInode());
+            }
+
+            if(null != requestForm.filter()) {
+                builder.withUseElasticsearchFiltering(true) //We rely on ES here when filter
+                .withFilter(requestForm.filter());
+            }
 
             final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            /*
             final List<Contentlet> assets = folderContent.stream()
                     .filter(Contentlet.class::isInstance).map(
                             Contentlet.class::cast).collect(Collectors.toList());
-            System.out.println(assets);
+             */
+            return folderContent;
         }
         return null;
     }

@@ -3738,7 +3738,7 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: "#/components/schemas/DriveLookupRequestForm"
+              $ref: "#/components/schemas/DriveRequestForm"
       responses:
         default:
           content:
@@ -19820,7 +19820,7 @@ components:
             type: string
           versionable:
             type: boolean
-    DriveLookupRequestForm:
+    DriveRequestForm:
       type: object
       properties:
         assetPath:
@@ -19879,11 +19879,15 @@ components:
           format: int32
         showArchived:
           type: boolean
+        showContent:
+          type: boolean
         showDotAssets:
           type: boolean
         showFiles:
           type: boolean
         showFolders:
+          type: boolean
+        showImages:
           type: boolean
         showLinks:
           type: boolean

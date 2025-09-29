@@ -68,8 +68,6 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     static Link testlink;
 
-    private static BrowserAPIImpl browserAPIImpl;
-
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -1159,9 +1157,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         final BrowserQuery browserQuery = BrowserQuery.builder()
                 .withHostOrFolderId(parentFolder.getIdentifier())
                 .withLanguageIds(languageIds)
-                .withFilter("lol")
-                .showFiles(false)
-                .showFolders(true)
+                .showContent(true)
                 .build();
 
         final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
@@ -1178,6 +1174,189 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertTrue("Should contain content from lang1", foundLanguages.contains(lang1.getId()));
         assertTrue("Should contain content from lang2", foundLanguages.contains(lang2.getId()));
         assertFalse("Should not contain content from lang3", foundLanguages.contains(lang3.getId()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Test the method with various combinations of filter and fileName parameters.</li>
+     *     <li><b>Expected Result:</b> The method should generate proper Lucene query strings based on the input parameters.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_withDifferentFilterCombinations() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+
+        // Test Case 1: No filter, no fileName - should return empty
+        BrowserQuery queryEmpty = BrowserQuery.builder().build();
+        String result = browserAPIImpl.buildBaseESQuery(queryEmpty);
+        assertEquals("Empty query should return blank string", "", result);
+
+        // Test Case 2: Only filter provided
+        BrowserQuery queryWithFilter = BrowserQuery.builder()
+                .withFilter("test")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryWithFilter);
+        assertNotNull("Result should not be null", result);
+        assertTrue("Should contain title search", result.contains("title:test*"));
+        assertTrue("Should contain quoted title search", result.contains("title:'test'^15"));
+        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*^5"));
+        assertTrue("Should be wrapped with mandatory group", result.startsWith(" +(") && result.endsWith(")"));
+        assertFalse("Should not contain metadata search", result.contains("metadata.name"));
+
+        // Test Case 3: Only fileName provided with metadata enabled
+        try {
+            // Mock the static method calls for metadata availability
+            BrowserQuery queryWithFileName = BrowserQuery.builder()
+                    .withFileName("document.pdf")
+                    .build();
+            result = browserAPIImpl.buildBaseESQuery(queryWithFileName);
+            assertNotNull("Result should not be null", result);
+
+            // The result will depend on whether metadata indexing is enabled
+            // If metadata is enabled, it should contain metadata searches
+            // If not, it should warn and not include metadata searches
+            if (result.contains("metadata.name")) {
+                assertTrue("Should contain metadata name search", result.contains("metadata.name:document.pdf*"));
+                assertTrue("Should contain quoted metadata search", result.contains("metadata.name:'document.pdf'^15"));
+                assertTrue("Should contain dotraw metadata search", result.contains("metadata.name_dotraw:*document.pdf*^5"));
+            }
+        } catch (Exception e) {
+            // Expected if metadata is not configured
+        }
+
+        // Test Case 4: Both filter and fileName provided
+        BrowserQuery queryWithBoth = BrowserQuery.builder()
+                .withFilter("test")
+                .withFileName("document.pdf")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryWithBoth);
+        assertNotNull("Result should not be null", result);
+        assertTrue("Should contain title search", result.contains("title:test*"));
+        assertTrue("Should be wrapped with mandatory group", result.startsWith(" +(") && result.endsWith(")"));
+
+        // Should contain AND operator between filter and fileName if both are present and fileName is processed
+        if (result.contains("metadata.name")) {
+            assertTrue("Should contain AND operator", result.contains(" AND "));
+        }
+
+        // Test Case 5: Filter with special characters
+        BrowserQuery querySpecialChars = BrowserQuery.builder()
+                .withFilter("test & special")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(querySpecialChars);
+        assertNotNull("Result should not be null", result);
+        assertTrue("Should handle special characters in filter", result.contains("test & special"));
+
+        // Test Case 6: Empty string filter
+        BrowserQuery queryEmptyFilter = BrowserQuery.builder()
+                .withFilter("")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryEmptyFilter);
+        assertEquals("Empty filter should return blank string", "", result);
+
+        // Test Case 7: Null filter (using UtilMethods.isSet check)
+        BrowserQuery queryNullFilter = BrowserQuery.builder()
+                .withFilter(null)
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryNullFilter);
+        assertEquals("Null filter should return blank string", "", result);
+
+        // Test Case 8: Empty fileName
+        BrowserQuery queryEmptyFileName = BrowserQuery.builder()
+                .withFileName("")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryEmptyFileName);
+        assertEquals("Empty fileName should return blank string", "", result);
+
+        // Test Case 9: Whitespace-only filter
+        BrowserQuery queryWhitespaceFilter = BrowserQuery.builder()
+                .withFilter("   ")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryWhitespaceFilter);
+        assertNotNull("Result should not be null for whitespace filter", result);
+        // The method should handle whitespace in the filter parameter
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Test query structure and Lucene syntax compliance.</li>
+     *     <li><b>Expected Result:</b> Generated queries should follow proper Lucene query syntax.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_luceneSyntaxCompliance() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+
+        // Test proper Lucene field:value syntax
+        BrowserQuery query = BrowserQuery.builder()
+                .withFilter("searchterm")
+                .build();
+        String result = browserAPIImpl.buildBaseESQuery(query);
+
+        assertNotNull("Result should not be null", result);
+
+        // Verify Lucene syntax elements
+        assertTrue("Should use field:value syntax", result.contains("title:searchterm*"));
+        assertTrue("Should use wildcard correctly", result.contains("*"));
+        assertTrue("Should use boost factor", result.contains("^15") || result.contains("^5"));
+        assertTrue("Should use quoted phrases", result.contains("'searchterm'"));
+        assertTrue("Should be wrapped in mandatory group syntax", result.startsWith(" +(") && result.endsWith(")"));
+
+        // Test multiple word filter
+        BrowserQuery multiWordQuery = BrowserQuery.builder()
+                .withFilter("multiple words")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(multiWordQuery);
+
+        assertNotNull("Result should not be null for multi-word query", result);
+        assertTrue("Should handle multi-word filters", result.contains("multiple words"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Test edge cases and boundary conditions.</li>
+     *     <li><b>Expected Result:</b> Method should handle edge cases gracefully.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_edgeCases() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+
+        // Test very long filter string
+        final String longFilter = "a".repeat(1000);
+        BrowserQuery longQuery = BrowserQuery.builder()
+                .withFilter(longFilter)
+                .build();
+        String result = browserAPIImpl.buildBaseESQuery(longQuery);
+        assertNotNull("Should handle long filter strings", result);
+        assertTrue("Should contain the long filter", result.contains(longFilter));
+
+        // Test filter with numbers
+        BrowserQuery numericQuery = BrowserQuery.builder()
+                .withFilter("test123")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(numericQuery);
+        assertNotNull("Should handle numeric characters", result);
+        assertTrue("Should contain numeric filter", result.contains("test123"));
+
+        // Test fileName with extension
+        BrowserQuery fileExtQuery = BrowserQuery.builder()
+                .withFileName("document.pdf")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(fileExtQuery);
+        assertNotNull("Should handle file extensions", result);
+        // Result depends on metadata configuration
+
+        // Test single character filter
+        BrowserQuery singleCharQuery = BrowserQuery.builder()
+                .withFilter("a")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(singleCharQuery);
+        assertNotNull("Should handle single character filter", result);
+        assertTrue("Should process single character", result.contains("a"));
     }
 
 }

@@ -80,12 +80,12 @@ public class ESSearchProxyTest extends IntegrationTestBase {
 
     private List<ESSearchResults> getEsSearchResults(final String query)
             throws DotSecurityException, DotDataException {
-        return (List<ESSearchResults>) getEsSearchResults(query,true);
+        return getEsSearchResults(query,true);
     }
 
     private List<ESSearchResults> getEsSearchResults(final String query, final boolean live)
             throws DotSecurityException, DotDataException {
         final ESSearchProxy esSearchProxy = new ESSearchProxy();
-        return (List<ESSearchResults>) esSearchProxy.esSearch(query,live, user,false);
+        return esSearchProxy.esSearch(query,live, user,false);
     }
 }

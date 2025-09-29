@@ -45,7 +45,7 @@ public class BrowserQuery {
     final User user;
     final String  filter, fileName, sortBy;
     final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties,showDefaultLangItems;
+    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties, showDefaultLangItems, useElasticsearchFiltering;
     final Set<Long> languageIds;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
@@ -98,6 +98,7 @@ public class BrowserQuery {
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
+        this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
         this.fileName = builder.fileName;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
@@ -202,6 +203,7 @@ public class BrowserQuery {
     public static final class Builder {
 
         private User user;
+        private boolean useElasticsearchFiltering = false;
         private String filter = null;
         private String fileName = null;
         private String sortBy = "moddate";
@@ -262,6 +264,16 @@ public class BrowserQuery {
 
         public Builder withHostOrFolderId(@Nonnull String hostFolderId) {
             this.hostFolderId = hostFolderId;
+            return this;
+        }
+
+        /**
+         * This activates seatch text using ElasticSearch
+         * @param useElasticsearchFiltering
+         * @return
+         */
+        public Builder withUseElasticsearchFiltering(boolean useElasticsearchFiltering) {
+            this.useElasticsearchFiltering = useElasticsearchFiltering;
             return this;
         }
 

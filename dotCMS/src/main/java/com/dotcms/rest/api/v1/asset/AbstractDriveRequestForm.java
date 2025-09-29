@@ -1,30 +1,43 @@
 package com.dotcms.rest.api.v1.asset;
 
+import static com.dotcms.rest.api.v1.asset.WebAssetHelper.SORT_BY;
+
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-@JsonSerialize(as = DriveLookupRequestForm.class)
-@JsonDeserialize(as = DriveLookupRequestForm.class)
-public interface AbstractDriveLookupRequestForm {
+@JsonSerialize(as = DriveRequestForm.class)
+@JsonDeserialize(as = DriveRequestForm.class)
+public interface AbstractDriveRequestForm {
 
     @JsonProperty("assetPath")
     List<String> assetPath();
 
     @JsonProperty("language")
     @Value.Default
-    default List<String> language() { return List.of(APILocator.getLanguageAPI().getDefaultLanguage().toString());  };
+    default List<String> language() { return List.of(APILocator.getLanguageAPI().getDefaultLanguage().toString());  }
 
+    @Nullable
     @JsonProperty("contentTypes")
     List<String> contentTypes();
 
+    @Nullable
     @JsonProperty("baseTypes")
     List<String> baseTypes();
+
+    @JsonProperty("showContent")
+    @Value.Default
+    default boolean showContent(){return true;}
+
+    @JsonProperty("showImages")
+    @Value.Default
+    default boolean showImages(){return true;}
 
     @JsonProperty("showFiles")
     @Value.Default
@@ -34,6 +47,7 @@ public interface AbstractDriveLookupRequestForm {
     @Value.Default
     default boolean showFolders(){ return false; }
 
+    @Nullable
     @JsonProperty("filter")
     String filter();
 
@@ -55,14 +69,14 @@ public interface AbstractDriveLookupRequestForm {
 
     @JsonProperty("offset")
     @Value.Default
-    default int offset(){ return 0; };
+    default int offset(){ return 0; }
 
     @JsonProperty("maxResults")
     @Value.Default
     default int maxResults() { return 500; }
 
     @JsonProperty("sortBy")
-    String sortBy();
+    default String sortBy() { return SORT_BY; }
 
     @JsonProperty("live")
     @Value.Default

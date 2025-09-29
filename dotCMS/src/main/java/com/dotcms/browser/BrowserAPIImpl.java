@@ -1,11 +1,19 @@
 package com.dotcms.browser;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.getDotRawMetadataFields;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.isWriteMetadataOnReindex;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -37,21 +45,22 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +89,16 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
 
+    private static final String ES_QUERY_TEMPLATE =
+            "{\n" +
+                    "    \"query\": {\n" +
+                    "        \"query_string\": {\n" +
+                    "            \"query\": \"%s\"\n" +
+                    "        }\n" +
+                    "    }\n" +
+            "}";
+
+
     /**
      * Returns a collection of contentlets based on specific filtering criteria specified via the
      * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
@@ -92,15 +111,22 @@ public class BrowserAPIImpl implements BrowserAPI {
     @Override
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
-        final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
-        final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
-        sqlQuery._2.forEach(dc::addParam);
-        try {
-            final List<Map<String,String>> inodesMapList =  dc.loadResults();
-            final Set<String> inodes =
-                    inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
 
+        final QueryAndParams sqlQuery = this.selectQuery(browserQuery);
+        final DotConnect dc = new DotConnect().setSQL(sqlQuery.query);
+        sqlQuery.params.forEach(dc::addParam);
+        try {
+            @SuppressWarnings("unchecked")
+            final List<Map<String,String>> inodesMapList =  dc.loadResults();
+            Set<String> inodes =
+                    inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
+            if(isUseElasticSearchForTextFiltering(browserQuery) && !inodes.isEmpty()){
+              //After having applied the text filters these are the good inodes we need to return
+              inodes = new HashSet<>(inodesByTextFromES(browserQuery, inodes));
+            }
+            //Now this should load the good contentlets
             final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(inodes));
+
             return permissionAPI.filterCollection(contentlets,
                     PermissionAPI.PERMISSION_READ, true, browserQuery.user);
         } catch (final Exception e) {
@@ -111,6 +137,151 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.warnAndDebug(this.getClass(), errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
+    }
+
+    /**
+     * Filters the provided set of inodes by performing text-based searches in Elasticsearch.
+     * This method partitions the inodes and executes parallel searches to improve performance.
+     *
+     * @param browserQuery The {@link BrowserQuery} containing search criteria (filter, fileName)
+     * @param inodes       The set of inodes to filter through Elasticsearch text search
+     * @return A filtered set of inodes that match the text search criteria
+     */
+    private Set<String> inodesByTextFromES(BrowserQuery browserQuery, Set<String> inodes) {
+        final Set<String> collectedInodes = new HashSet<>();
+        //Collect the results returned by the futures and extract the matching inodes
+        getFutures(browserQuery, inodes).forEach(future -> {
+            try {
+                collectedInodes.addAll(future.get());
+            } catch (Exception e) {
+                Logger.error(this, "Error while getting content from lucene", e);
+                Thread.currentThread().interrupt();
+            }
+        });
+        return collectedInodes;
+    }
+
+    /**
+     * Creates asynchronous tasks for parallel Elasticsearch searches across partitioned inode sets.
+     * This method optimizes performance by building the base query once and reusing it across all partitions,
+     * avoiding redundant query reconstruction for each parallel search operation.
+     *
+     * @param browserQuery The {@link BrowserQuery} containing search criteria for ES query construction
+     * @param inodes       The complete set of inodes to be partitioned and searched
+     * @return A list of {@link Future} objects, each representing an async ES search for a partition of inodes
+     */
+    private List<Future<List<String>>> getFutures(final BrowserQuery browserQuery,
+            final Set<String> inodes) {
+        final List<Future<List<String>>> futures = new ArrayList<>();
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
+        Logger.info(BrowserAPIImpl.class,"inodes returned from the db : "+inodes);
+        final List<List<String>> partitions = Lists.partition(new ArrayList<>(inodes), 10);
+
+        // Build the base query once outside the loop - this is the key optimization
+        final String baseQuery = buildBaseESQuery(browserQuery);
+
+        //Take the seed inodes returned from the DB and partition them into smaller sets
+        //Execute parallel queries sending the subset of nodes and the text params we're searching for
+        //this next line crete futures that will bring the matching inodes returned by ES
+        partitions.forEach(partition -> futures.add(
+                      submitter.submit(() -> performSearchES(baseQuery, partition, browserQuery))
+                )
+        );
+        return futures;
+    }
+
+    /**
+     * Builds the base Elasticsearch query with filter and fileName criteria,
+     * excluding the inode list which will be added later.
+     *
+     * @param browserQuery The {@link BrowserQuery} containing search criteria
+     * @return The base Elasticsearch query string without inode filtering
+     */
+    String buildBaseESQuery(final BrowserQuery browserQuery) {
+        final StringBuilder baseQuery = new StringBuilder();
+
+        if (UtilMethods.isSet(browserQuery.filter)) {
+            final String titleFilters = String.format(
+                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5",
+                    browserQuery.filter,
+                    browserQuery.filter,
+                    browserQuery.filter);
+            baseQuery.append(titleFilters);
+        }
+
+        if (UtilMethods.isSet(browserQuery.fileName)) {
+            if (isWriteMetadataOnReindex() && getDotRawMetadataFields().contains("name")) {
+                final String metadataFilters = String.format(
+                        "metadata.name:%s* OR metadata.name:'%s'^15 OR metadata.name_dotraw:*%s*^5",
+                        browserQuery.fileName,
+                        browserQuery.fileName,
+                        browserQuery.fileName);
+                if (baseQuery.length() > 0) {
+                    baseQuery.append(" AND ");
+                }
+                baseQuery.append(metadataFilters);
+            } else {
+                Logger.warn(BrowserAPIImpl.class,
+                        String.format(
+                                "Unable to search fileAssets by fileName in Elasticsearch: " +
+                                        "metadata indexing is disabled by property '%s'. " +
+                                        "Additionally, ensure that property (if overwritten) '%s' contains the 'name' field. " +
+                                        "Current metadata fields: %s",
+                                WRITE_METADATA_ON_REINDEX,
+                                INCLUDE_DOTRAW_METADATA_FIELDS,
+                                getDotRawMetadataFields()));
+            }
+        }
+
+        // Early return if no query was built
+        if (baseQuery.length() == 0) {
+            return BLANK;
+        }
+
+        // Wrap in mandatory group for ES query_string syntax
+        return " +(" + baseQuery.toString() + ')';
+    }
+
+    /**
+     * Performs an Elasticsearch search by combining a pre-built base query with a specific partition of inodes.
+     * This method represents the optimized approach where the base query (containing filter and fileName criteria)
+     * is constructed once and reused, with only the inode filter being dynamically added for each partition.
+     *
+     * @param baseQuery    The pre-constructed Lucene query containing search filters (title, metadata, etc.)
+     * @param partition    A subset of inodes to search within this specific Elasticsearch query
+     * @param browserQuery The original {@link BrowserQuery} containing user context and display preferences
+     * @return A list of inode strings that match both the base query criteria and the partition constraint
+     */
+    List<String> performSearchES(String baseQuery, List<String> partition, BrowserQuery browserQuery) {
+        final boolean live = !browserQuery.showWorking;
+        final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
+        List<String> collectedInodes = List.of();
+        // Build the complete query by combining the precompiled base query with the inode filter
+        final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", partition));
+        final String luceneQuery = inodeFilter + baseQuery;
+        Logger.info(BrowserAPIImpl.class," Content-Drive Request Lucene Query: "+luceneQuery);
+        final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
+        try {
+            collectedInodes = esSearchAPI.<Contentlet>esSearch(esQuery,
+                            live,
+                            browserQuery.user, false).stream().map(Contentlet::getInode)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            Logger.error(this, String.format("Error while getting content from lucene with query: %s",luceneQuery), e);
+        }
+        return collectedInodes;
+    }
+
+    /**
+     * Determines whether Elasticsearch should be used for text-based filtering instead of SQL ILIKE queries.
+     * This optimization is triggered when Elasticsearch filtering is enabled AND there are text search criteria.
+     *
+     * @param browserQuery The {@link BrowserQuery} containing filtering preferences and search criteria
+     * @return {@code true} if ES should be used for text filtering, {@code false} to use SQL filtering
+     */
+    boolean isUseElasticSearchForTextFiltering(final BrowserQuery browserQuery) {
+        return  browserQuery.useElasticsearchFiltering &&
+                UtilMethods.isSet(browserQuery.filter) || UtilMethods.isSet(browserQuery.fileName);
     }
 
     /**
@@ -142,6 +313,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 : Collections.emptyList();
         final List<Treeable> returnList = new ArrayList<>(contentlets);
 
+        //TODO: filter folders by text if a filter is provided
         if (browserQuery.showFolders) {
             List<Folder> folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(), false);
             if (browserQuery.showMenuItemsOnly) {
@@ -239,13 +411,13 @@ public class BrowserAPIImpl implements BrowserAPI {
         for (final Map<String, Object> asset : returnList) {
 
             String name = (String) asset.get("name");
-            name = name == null ? StringPool.BLANK : name;
+            name = name == null ? BLANK : name;
 
             String description = (String) asset.get("description");
-            description = description == null ? StringPool.BLANK : description;
+            description = description == null ? BLANK : description;
 
             String mimeType = (String) asset.get("mimeType");
-            mimeType = mimeType == null ? StringPool.BLANK : mimeType;
+            mimeType = mimeType == null ? BLANK : mimeType;
 
             if (browserQuery.mimeTypes != null && browserQuery.mimeTypes.size() > 0) {
 
@@ -289,7 +461,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The {@link Tuple3} object containing (1) the SQL query, and (2) the parameters that
      * must be provided for the queries.
      */
-    private Tuple2<String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
+    private QueryAndParams selectQuery(final BrowserQuery browserQuery) {
 
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
@@ -310,11 +482,14 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.folder != null) {
             appendFolderQuery(sqlQuery, browserQuery.folder.getPath(), parameters);
         }
-        if (UtilMethods.isSet(browserQuery.filter)) {
-            appendFilterQuery(sqlQuery, browserQuery.filter, parameters);
-        }
-        if (UtilMethods.isSet(browserQuery.fileName)) {
-            appendFileNameQuery(sqlQuery, browserQuery.fileName, parameters);
+        //We only build the filtering bits of the SQL Query if we're not using ES
+        if (!browserQuery.useElasticsearchFiltering) {
+            if (UtilMethods.isSet(browserQuery.filter)) {
+                appendFilterQuery(sqlQuery, browserQuery.filter, parameters);
+            }
+            if (UtilMethods.isSet(browserQuery.fileName)) {
+                appendFileNameQuery(sqlQuery, browserQuery.fileName, parameters);
+            }
         }
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(sqlQuery);
@@ -323,7 +498,17 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(sqlQuery);
         }
         Logger.debug(this, "Final SQL Query: " + sqlQuery);
-        return new Tuple2<>(sqlQuery.toString(), parameters);
+        return new QueryAndParams(sqlQuery.toString(), parameters);
+    }
+
+
+    static class QueryAndParams {
+        final String query;
+        final List<Object> params;
+        QueryAndParams(String query, List<Object> params) {
+            this.query = query;
+            this.params = params;
+        }
     }
 
     /**
@@ -438,7 +623,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         sqlQuery.append(" and (");
         for (int indx = 0; indx < splitter.length; indx++) {
             final String token = splitter[indx];
-            if (token.equals(StringPool.BLANK)) {
+            if (token.equals(BLANK)) {
                 continue;
             }
 

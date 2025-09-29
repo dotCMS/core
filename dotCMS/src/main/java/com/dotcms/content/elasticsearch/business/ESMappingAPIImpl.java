@@ -127,10 +127,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final String WRITE_METADATA_ON_REINDEX = "write.metadata.on.reindex";
 
 	//If you want to skip indexing metadata dotraw fields set this prop to false
-	static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
+	public static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
 
 	//If you want to override and specify a set of particular fields to be included in the dotRaw generation it can be accomplished through this prop.
-	static final String INCLUDE_DOTRAW_METADATA_FIELDS = "include.dotraw.metadata.fields";
+	public static final String INCLUDE_DOTRAW_METADATA_FIELDS = "include.dotraw.metadata.fields";
 
     //These are the fields included by default to be used as  metadata.fieldname_dotraw
 	static final String[] defaultIncludedDotRawMetadataFields = {
@@ -518,7 +518,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	private void writeMetadata(final Contentlet contentlet, final StringWriter stringWriter,
 			final Map<String, Object> mapLowered) throws IOException, DotDataException {
-		if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
+		if (isWriteMetadataOnReindex()) {
 
 			final ContentletMetadata metadata = fileMetadataAPI
 					.generateContentletMetadata(contentlet);
@@ -529,13 +529,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			fullMetadataMap.forEach((field, metadataValues) -> {
 				if (null != metadataValues) {
 
-					final Set<String> dotRawInclude =
-							Arrays.stream(Config.getStringArrayProperty(
-									INCLUDE_DOTRAW_METADATA_FIELDS,
-									defaultIncludedDotRawMetadataFields)).map(String::toLowerCase)
-									.collect(Collectors.toSet());
+                    final Set<String> dotRawInclude = getDotRawMetadataFields();
 
-					metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
+                    metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
 
 						final String contentData =
 								metadataValue != null ? metadataValue.toString() : BLANK;
@@ -561,7 +557,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	/**
+    /**
+     * System flag that tells if metadata must be written to the index
+     * @return Bool flag
+     */
+    public static boolean isWriteMetadataOnReindex() {
+        return Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+    }
+
+    /**
+     * Return a set with the properties that will be included on the index
+     * @return Set of fields
+     */
+    public static Set<String> getDotRawMetadataFields() {
+        return Arrays.stream(Config.getStringArrayProperty(
+                INCLUDE_DOTRAW_METADATA_FIELDS,
+                defaultIncludedDotRawMetadataFields)).map(String::toLowerCase)
+                .collect(Collectors.toSet());
+    }
+
+    /**
 	 * This method takes care of populating any KeyValue Field named metadata that might exist on the ContentType definition
 	 * it must be called only once the metadata has been written @see {@link ESMappingAPIImpl#writeMetadata(Contentlet, StringWriter, Map)}
 	 * @param contentlet
