@@ -231,9 +231,9 @@ export function buildQuery(queryData: Record<string, string>): string {
 /**
  * Filters response data to include only specified keys.
  *
- * @param {Record<string, string>} responseData - Original response data object
+ * @param {Record<string, unknown> | undefined} responseData - Original response data object
  * @param {string[]} keys - Array of keys to extract from the response data
- * @returns {Record<string, string>} New object containing only the specified keys
+ * @returns {Record<string, unknown> | undefined} New object containing only the specified keys
  */
 export function mapContentResponse(
     responseData: Record<string, unknown> | undefined,
@@ -248,7 +248,6 @@ export function mapContentResponse(
             if (responseData[key] !== undefined) {
                 accumulator[key] = responseData[key];
             }
-
             return accumulator;
         },
         {} as Record<string, unknown>
