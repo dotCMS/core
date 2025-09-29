@@ -1216,12 +1216,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
         }
 	}
 
-	/**
-	 * Regex pattern for valid velocity variable names.
-	 * Based on WorkflowFactoryImpl pattern - starts with letter/underscore,
-	 * followed by letters, numbers, underscores, or hyphens.
-	 */
-	private static final String VALID_VARIABLE_NAME_REGEX = "^[a-zA-Z_][a-zA-Z0-9_-]{0,254}$";
 
 	/**
 	 * Validates if a string is a valid dotCMS identifier.
@@ -1235,10 +1229,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if (!UtilMethods.isSet(identifier)) {
 			return false;
 		}
-		// Allow UUIDs, known system identifiers, or safe alphanumeric patterns
+		// Allow UUIDs, known system identifiers, or valid variable names
 		return UUIDUtil.isUUID(identifier) ||
 			   isSystemIdentifier(identifier) ||
-			   identifier.matches("^[a-zA-Z_][a-zA-Z0-9_-]{0,254}$"); // Includes variable name pattern
+			   identifier.matches(com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl.VALID_VARIABLE_NAME_REGEX);
 	}
 
 	/**
@@ -1255,7 +1249,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	/**
 	 * Validates if a string is a valid velocity variable name for content types.
-	 * Uses consistent regex pattern following dotCMS conventions.
+	 * Uses the established VALID_VARIABLE_NAME_REGEX from WorkflowFactoryImpl.
 	 *
 	 * @param variableName the variable name to validate
 	 * @return true if the variable name is valid, false otherwise
@@ -1264,7 +1258,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if (!UtilMethods.isSet(variableName)) {
 			return false;
 		}
-		return variableName.matches(VALID_VARIABLE_NAME_REGEX);
+		return variableName.matches(com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl.VALID_VARIABLE_NAME_REGEX);
 	}
 
 }
