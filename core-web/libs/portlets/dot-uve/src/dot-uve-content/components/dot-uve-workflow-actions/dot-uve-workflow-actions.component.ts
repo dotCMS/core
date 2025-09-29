@@ -1,9 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { of } from 'rxjs';
+
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    inject,
+    signal,
+    untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, take } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -17,6 +28,12 @@ import { DotCMSContentlet, DotCMSWorkflowAction, DotWorkflowPayload } from '@dot
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { UVEStore } from '../../../store/dot-uve.store';
+
+const MESSAGE_LIFETIMES = {
+    SUCCESS: 2000,
+    ERROR: 2000,
+    EXECUTING: 1000
+};
 
 @Component({
     selector: 'dot-uve-workflow-actions',
@@ -34,6 +51,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUVEWorkflowActionsComponent {
+    readonly #destroyRef = inject(DestroyRef);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #httpErrorManagerService = inject(DotHttpErrorManagerService);
@@ -49,28 +67,55 @@ export class DotUVEWorkflowActionsComponent {
     $workflowLoading = signal(true);
 
     private readonly successMessage = {
-        severity: 'info',
+        severity: 'info' as const,
         summary: this.#dotMessageService.get('Workflow-Action'),
         detail: this.#dotMessageService.get('edit.content.fire.action.success'),
-        life: 2000
+        life: MESSAGE_LIFETIMES.SUCCESS
     };
 
     private readonly errorMessage = {
-        severity: 'error',
+        severity: 'error' as const,
         summary: this.#dotMessageService.get('Workflow-Action'),
         detail: this.#dotMessageService.get('edit.ema.page.error.executing.workflow.action'),
-        life: 2000
+        life: MESSAGE_LIFETIMES.ERROR
     };
 
     constructor() {
-        // This can probable come from the UVE Toolbar as input
-        toObservable(this.$inode)
+        // Load workflow actions when inode changes - with automatic cleanup
+        effect(() => {
+            const inode = this.$inode();
+            if (inode) {
+                untracked(() => this.#loadWorkflowActions(inode));
+            }
+        });
+    }
+
+    /**
+     * Load workflow actions for a given inode
+     *
+     * @param {string} inode
+     * @private
+     */
+    #loadWorkflowActions(inode: string): void {
+        this.$workflowLoading.set(true);
+        this.#dotWorkflowsActionsService
+            .getByInode(inode)
             .pipe(
-                filter((inode) => !!inode),
-                tap(() => this.$workflowLoading.set(true)),
-                switchMap((inode) => this.#dotWorkflowsActionsService.getByInode(inode as string))
+                catchError((error) => {
+                    console.error('Error loading workflow actions:', error);
+                    this.#messageService.add({
+                        severity: 'warn',
+                        summary: this.#dotMessageService.get('Workflow-Action'),
+                        detail: this.#dotMessageService.get(
+                            'edit.ema.page.error.loading.workflow.actions'
+                        ),
+                        life: MESSAGE_LIFETIMES.ERROR
+                    });
+                    return of([]);
+                }),
+                takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((workflowActions) => {
+            .subscribe((workflowActions: DotCMSWorkflowAction[]) => {
                 this.$workflowActions.set(workflowActions);
                 this.$workflowLoading.set(false);
             });
@@ -103,7 +148,8 @@ export class DotUVEWorkflowActionsComponent {
             .checkPublishEnvironments()
             .pipe(
                 take(1),
-                filter((hasEnviroments: boolean) => hasEnviroments)
+                filter((hasEnviroments: boolean) => hasEnviroments),
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(() => this.#openWizard(workflow));
     }
@@ -124,7 +170,7 @@ export class DotUVEWorkflowActionsComponent {
 
         this.#dotWizardService
             .open<DotWorkflowPayload>(wizardInput)
-            .pipe(take(1))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((data: DotWorkflowPayload) => {
                 this.#fireWorkflowAction(
                     workflow,
@@ -147,11 +193,10 @@ export class DotUVEWorkflowActionsComponent {
         workflow: DotCMSWorkflowAction,
         data?: T
     ): void {
-        // this.#uveStore.setWorkflowActionLoading(true);
         this.#messageService.add({
             ...this.successMessage,
             detail: this.#dotMessageService.get('edit.ema.page.executing.workflow.action'),
-            life: 1000
+            life: MESSAGE_LIFETIMES.EXECUTING
         });
 
         this.#dotWorkflowActionsFireService
@@ -162,13 +207,18 @@ export class DotUVEWorkflowActionsComponent {
             })
             .pipe(
                 catchError((error) => {
-                    this.#messageService.add(this.errorMessage);
+                    console.error('Error executing workflow action:', error, workflow);
+                    this.#messageService.add({
+                        ...this.errorMessage,
+                        detail: `${this.errorMessage.detail}: ${workflow.name}`
+                    });
 
                     return this.#httpErrorManagerService.handle(error).pipe(
                         take(1),
                         map(() => null)
                     );
-                })
+                }),
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((contentlet: DotCMSContentlet | null) => {
                 if (!contentlet) {
@@ -182,25 +232,15 @@ export class DotUVEWorkflowActionsComponent {
 
     /**
      * Handle a new page event. This event is triggered when the page changes for a Workflow Action
-     * Update the query params if the url or the language id changed
+     * Currently handles contentlet updates after workflow execution.
      *
-     * @param {DotCMSContentlet} _pageAsset
-     * @memberof EditEmaToolbarComponent
+     * @param {DotCMSContentlet} pageAsset - The updated page contentlet
+     * @memberof DotUVEWorkflowActionsComponent
      */
     protected handleNewContent(_pageAsset: DotCMSContentlet): void {
-        // TODO: Check this case using the MOVE Workflow Action
-        // const currentParams = this.#uveStore.configuration();
-        // const url = getPageURI(pageAsset);
-        // const language_id = pageAsset.languageId?.toString();
-        // const urlChanged = !compareUrlPaths(url, currentParams.url);
-        // const languageChanged = language_id !== currentParams.language_id;
-        // if (urlChanged || languageChanged) {
-        //     this.#uveStore.loadPageAsset({
-        //         url,
-        //         language_id
-        //     });
-        //     return;
-        // }
-        // this.#uveStore.reloadCurrentPage();
+        // TODO: Implement page reload logic for workflow actions that change page structure
+        // Test manually this case with the MOVE workflow action that might change URL or language
+        // For now, we'll let the UVE store handle content updates
+        // Future implementation should check if URL or language changed and reload accordingly
     }
 }
