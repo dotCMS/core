@@ -1,4 +1,9 @@
-import { DotCMSClazzes, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSClazzes,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeSelectField } from '@dotcms/utils-testing';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
@@ -134,7 +139,7 @@ describe('DotEditContentFormResolutions', () => {
         it('should handle file assets by removing filename from path', () => {
             const contentlet = {
                 ...mockContentlet,
-                type: 'file_asset',
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET,
                 hostName: 'https://example.com',
                 url: '/path/to/file.jpg'
             };
@@ -146,7 +151,7 @@ describe('DotEditContentFormResolutions', () => {
         it('should handle file assets with single segment path', () => {
             const contentlet = {
                 ...mockContentlet,
-                type: 'file_asset',
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET,
                 hostName: 'https://example.com',
                 url: '/file.jpg'
             };
@@ -233,7 +238,7 @@ describe('DotEditContentFormResolutions', () => {
                 ...mockContentlet,
                 hostName: 'https://example.com',
                 url: '/path/to/file.jpg',
-                type: 'file_asset'
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET
             };
 
             // Mock split to throw an error
@@ -243,7 +248,10 @@ describe('DotEditContentFormResolutions', () => {
 
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
             expect(result).toBe('default value');
-            expect(consoleSpy).toHaveBeenCalledWith('Error processing host folder path:', expect.any(Error));
+            expect(consoleSpy).toHaveBeenCalledWith(
+                'Error processing host folder path:',
+                expect.any(Error)
+            );
 
             consoleSpy.mockRestore();
         });

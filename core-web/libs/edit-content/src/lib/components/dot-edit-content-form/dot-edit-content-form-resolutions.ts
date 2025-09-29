@@ -1,4 +1,8 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
@@ -70,7 +74,7 @@ const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
         return field?.defaultValue || '';
     }
 
-    const { hostName, url, type } = contentlet;
+    const { hostName, url, baseType } = contentlet;
 
     // Ensure hostName and url are strings
     if (typeof hostName !== 'string' || typeof url !== 'string') {
@@ -80,7 +84,7 @@ const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
     const fullPath = `${hostName}${url}`;
 
     try {
-        if (type === 'file_asset') {
+        if (baseType === DotCMSBaseTypesContentTypes.FILEASSET) {
             // For file assets, remove the filename to get the directory path
             const pathSegments = fullPath.split('/');
             if (pathSegments.length > 1) {
