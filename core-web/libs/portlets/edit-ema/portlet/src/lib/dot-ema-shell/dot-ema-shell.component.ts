@@ -32,7 +32,7 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import {PERSONA_KEY, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -209,7 +209,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
-        const params = getAllowedPageParams(queryParams);
+        const params = { ...queryParams };
         const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
 
         if (!validHost) {
@@ -228,7 +228,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             params.publishDate = new Date().toISOString();
         }
 
-        return params;
+        if (queryParams['personaId']) {
+            params[PERSONA_KEY] = queryParams['personaId'];
+            delete params['personaId'];
+        }
+
+        return params as DotPageAssetParams;
     }
 
     /**

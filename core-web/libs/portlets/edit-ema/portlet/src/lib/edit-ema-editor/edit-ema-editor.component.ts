@@ -254,15 +254,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             const url = new URL(href, window.location.origin);
 
+            // Get the query parameters from the URL
+            const urlQueryParams = Object.fromEntries(url.searchParams.entries());
+
             if (url.hostname !== window.location.hostname) {
                 this.window.open(href, '_blank');
 
                 return;
             }
 
-            this.uveStore.loadPageAsset({
-                url: url.pathname
-            });
+            this.uveStore.loadPageAsset({ url: url.pathname, ...urlQueryParams });
         }
     }
 

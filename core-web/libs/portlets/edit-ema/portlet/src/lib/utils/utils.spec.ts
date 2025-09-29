@@ -18,11 +18,10 @@ import {
     compareUrlPaths,
     createFullURL,
     getDragItemData,
-    createReorderMenuURL,
-    getAllowedPageParams
+    createReorderMenuURL
 } from '.';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
+
 import { PAGE_MODE } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
@@ -746,50 +745,4 @@ describe('utils functions', () => {
         });
     });
 
-    describe('getAllowedPageParams', () => {
-        it('should filter and return only allowed page params', () => {
-            const expected = {
-                url: 'some-url',
-                mode: 'edit',
-                depth: '2',
-                clientHost: 'localhost',
-                variantName: 'variant',
-                language_id: '1',
-                experimentId: 'exp123',
-                'com.dotmarketing.persona.id': 'persona123'
-            } as DotPageApiParams;
-
-            const params: Params = {
-                ...expected,
-                invalidParam: 'invalid'
-            };
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if no allowed params are present', () => {
-            const params: Params = {
-                invalidParam1: 'invalid1',
-                invalidParam2: 'invalid2'
-            };
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if params is empty', () => {
-            const params: Params = {};
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-    });
 });

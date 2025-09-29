@@ -7,6 +7,8 @@ import { CommonErrorsInfo } from './models';
 
 export const LAYOUT_URL = '/c/portal/layout';
 
+export const PERSONA_KEY = 'com.dotmarketing.persona.id';
+
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
 export const HOST = 'http://localhost:3000';

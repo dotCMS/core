@@ -13,7 +13,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
@@ -639,24 +639,6 @@ export const checkClientHostAccess = (
     return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
 };
 
-/**
- * Retrieve the page params from the router query params
- *
- * @export
- * @param {Params} params
- * @return {*}  {DotPageApiParams}
- */
-export function getAllowedPageParams(params: Params): DotPageAssetParams {
-    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
-
-    return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
-        .reduce((obj, key) => {
-            obj[key] = params[key];
-
-            return obj;
-        }, {}) as DotPageAssetParams;
-}
 
 /**
  * Determines the target URL for navigation.

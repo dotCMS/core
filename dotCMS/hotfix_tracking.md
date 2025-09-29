@@ -73,4 +73,5 @@ This maintenance release includes the following code fixes:
 67. https://github.com/dotCMS/core/issues/33031 : Reset Approvals sub-action not working as expected #33031
 68. https://github.com/dotCMS/core/issues/33138 : Add Step Id to GET /api/v1/workflow/tasks/history/comments/{contentletIdentifier} endpoint #33138
 69. https://github.com/dotCMS/core/issues/32860 : dotcms.log file stops receiving log data #32860
+70. https://github.com/dotCMS/core/issues/32224 : UVE Query Parameters Are Being Filtered Breaking Widget Logic #32224
 
