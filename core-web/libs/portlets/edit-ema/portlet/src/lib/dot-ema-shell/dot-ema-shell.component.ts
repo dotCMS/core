@@ -38,7 +38,6 @@ import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import {
     checkClientHostAccess,
-    getAllowedPageParams,
     getTargetUrl,
     shouldNavigate
 } from '../utils';
