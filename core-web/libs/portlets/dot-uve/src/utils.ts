@@ -1,8 +1,37 @@
 import { Params } from '@angular/router';
 
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY, UVEConfiguration } from './store/model';
+
+export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
+    inode: '',
+    host: 'SYSTEM_HOST',
+    locked: false,
+    stInode: 'c938b15f-bcb6-49ef-8651-14d455a97045',
+    contentType: 'persona',
+    identifier: 'modes.persona.no.persona',
+    folder: 'SYSTEM_FOLDER',
+    hasTitleImage: false,
+    owner: 'SYSTEM_USER',
+    url: 'demo.dotcms.com',
+    sortOrder: 0,
+    name: 'Default Visitor',
+    hostName: 'System Host',
+    modDate: '0',
+    title: 'Default Visitor',
+    personalized: false,
+    baseType: 'PERSONA',
+    archived: false,
+    working: false,
+    live: false,
+    keyTag: 'dot:persona',
+    languageId: 1,
+    titleImage: 'TITLE_IMAGE_NOT_FOUND',
+    modUserName: 'system user system user',
+    hasLiveVersion: false,
+    modUser: 'system'
+};
 
 /**
  * Sanitize the URL

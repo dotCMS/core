@@ -8,6 +8,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUVELanguageSelectorComponent } from '../dot-uve-language-selector/dot-uve-language-selector.component';
+import { DotUvePersonaSelectorComponent } from '../dot-uve-persona-selector/dot-uve-persona-selector.component';
 import { DotUVEWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
 @Component({
@@ -19,7 +20,8 @@ import { DotUVEWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-
         TooltipModule,
         DotMessagePipe,
         DotUVELanguageSelectorComponent,
-        DotUVEWorkflowActionsComponent
+        DotUVEWorkflowActionsComponent,
+        DotUvePersonaSelectorComponent
     ],
     templateUrl: './dot-uve-toolbar.component.html',
     styleUrl: './dot-uve-toolbar.component.scss',

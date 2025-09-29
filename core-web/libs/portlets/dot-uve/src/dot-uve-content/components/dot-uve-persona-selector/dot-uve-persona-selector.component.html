@@ -1,0 +1,52 @@
+@let isDefaultPersona = $persona().identifier === 'modes.persona.no.persona';
+
+<button
+    pButton
+    (click)="op.toggle($event)"
+    [label]="$persona().name"
+    [ngClass]="{ selected: !isDefaultPersona }"
+    class="p-button-text p-button-sm">
+    <p-avatar
+        dotAvatar
+        styleClass="ema-persona__avatar-selected"
+        [text]="$persona().name | dm"
+        [image]="$photo()" />
+</button>
+<p-overlayPanel #op styleClass="edit-ema-selector">
+    <p-listbox
+        (onChange)="onSelect($event); op.toggle($event)"
+        [options]="$personas().items"
+        #listbox
+        optionLabel="label"
+        dataKey="identifier">
+        <ng-template let-persona pTemplate="item">
+            <div class="flex w-full gap-4 align-items-center justify-content-between">
+                <div class="flex gap-2 align-items-center">
+                    <p-avatar
+                        dotAvatar
+                        styleClass="ema-persona__avatar"
+                        [text]="persona.name | dm"
+                        [image]="persona.photo" />
+                    <span>{{ persona.name | dm }}</span>
+                </div>
+                @if (persona.personalized) {
+                    <p-chip styleClass="p-chip-sm" data-testId="persona-chip">
+                        <i
+                            (click)="onRemove($event, persona); op.toggle($event)"
+                            class="pi pi-times-circle p-chip-icon"></i>
+                        <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
+                    </p-chip>
+                }
+            </div>
+        </ng-template>
+    </p-listbox>
+    @if ($showPaginator()) {
+        <p-paginator
+            class="p-paginator-sm"
+            [rows]="$personas().itemsPerPage"
+            [totalRecords]="$personas().totalRecords"
+            (onPageChange)="onPaginate($event)"
+            [showFirstLastIcon]="false"
+            [pageLinkSize]="0" />
+    }
+</p-overlayPanel>

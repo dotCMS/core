@@ -17,7 +17,7 @@ import { switchMap } from 'rxjs/operators';
 import { DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLanguage } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 
 import {
     isLockedByAnotherUser,
@@ -28,7 +28,7 @@ import {
 } from './model';
 
 import { DotPageService } from '../service/dot-page.service';
-import { getConfiguration } from '../utils';
+import { DEFAULT_PERSONA, getConfiguration } from '../utils';
 
 const initialConfiguration: UVEConfiguration = {
     url: '',
@@ -76,7 +76,11 @@ export const UVEStore = signalStore(
                 const isBlockedByExperiment = false; // TODO: Add experiment check
 
                 return hasEditPermission && !isLocked && !isBlockedByExperiment;
-            })
+            }),
+            $pageIdentifier: computed<string>(() => store.pageAssetData()?.page.identifier || ''),
+            $viewAsPersona: computed<DotCMSViewAsPersona>(
+                () => store.pageAssetData()?.viewAs?.persona || DEFAULT_PERSONA
+            )
         };
     }),
     withMethods((store) => {
