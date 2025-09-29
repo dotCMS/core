@@ -64,8 +64,14 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
 const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
     if (contentlet?.hostName && contentlet?.url) {
         const path = `${contentlet?.hostName}${contentlet?.url}`;
-        const finalPath = path.slice(0, path.indexOf('/content'));
 
+        let finalPath = '';
+
+        if (contentlet?.type === 'file_asset') {
+            finalPath = path.split('/').slice(0, -1).join('/');
+        } else {
+            finalPath = path.slice(0, path.indexOf('/content'));
+        }
         return `${finalPath}`;
     }
 

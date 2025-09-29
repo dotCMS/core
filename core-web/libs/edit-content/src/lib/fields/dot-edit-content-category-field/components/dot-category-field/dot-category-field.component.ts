@@ -22,6 +22,7 @@ import { DotCategoryFieldChipsComponent } from './../dot-category-field-chips/do
 import { DotCategoryFieldDialogComponent } from './../dot-category-field-dialog/dot-category-field-dialog.component';
 
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
+import { CategoriesService } from '../../services/categories.service';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 
 /**
@@ -50,6 +51,7 @@ import { CategoryFieldStore } from '../../store/content-category-field.store';
         '[class.dot-category-field__container--disabled]': '$isDisabled()'
     },
     providers: [
+        CategoriesService,
         CategoryFieldStore,
         {
             multi: true,
