@@ -352,19 +352,19 @@ public class UserResourceHelper implements Serializable {
 	/**
 	 * Update a user
 	 *
-	 * @param updateUserForm data to update the user, the {@link UpdateUserForm#getUserId()} is the if of the user to update,
-	 *                       {@link UpdateUserForm#getCurrentPassword()} is the current password
-	 * @param modUser User who is updating the user, if modUser.getUserId() is equals to {@link UpdateUserForm#getUserId()},
+	 * @param updateUserForm data to update the user, the {@link UpdateCurrentUserForm#getUserId()} is the if of the user to update,
+	 *                       {@link UpdateCurrentUserForm#getCurrentPassword()} is the current password
+	 * @param modUser User who is updating the user, if modUser.getUserId() is equals to {@link UpdateCurrentUserForm#getUserId()},
 	 *                then the current password is need
 	 * @param request
 	 * @param locale
 	 * @return User updated
 	 * @throws DotSecurityException if modUser doesn't has permission to update the user
 	 * @throws DotDataException
-	 * @throws IncorrectPasswordException if modUser is equals to {@link UpdateUserForm#getUserId()} and
-	 * 									  {@link UpdateUserForm#getCurrentPassword()} is incorrect
+	 * @throws IncorrectPasswordException if modUser is equals to {@link UpdateCurrentUserForm#getUserId()} and
+	 * 									  {@link UpdateCurrentUserForm#getCurrentPassword()} is incorrect
      */
-	public User updateUser(final UpdateUserForm updateUserForm, final User modUser,
+	public User updateUser(final UpdateCurrentUserForm updateUserForm, final User modUser,
 						   final HttpServletRequest request, Locale locale)
 			throws DotSecurityException, DotDataException, IncorrectPasswordException {
 

@@ -102,8 +102,8 @@ public class UserResourceTest extends UnitTestBase {
 
             try {
 
-                UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
-                userResource.update(request, response, updateUserForm);
+                UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
+                userResource.updateCurent(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -111,8 +111,8 @@ public class UserResourceTest extends UnitTestBase {
 
             try {
 
-                UpdateUserForm updateUserForm = new UpdateUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
-                userResource.update(request, response, updateUserForm);
+                UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
+                userResource.updateCurent(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -120,8 +120,8 @@ public class UserResourceTest extends UnitTestBase {
 
             try {
 
-                UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
-                userResource.update(request, response, updateUserForm);
+                UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
+                userResource.updateCurent(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -203,7 +203,7 @@ public class UserResourceTest extends UnitTestBase {
             UserResource userResource =
                     new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+            UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()
                     .userId("dotcms.org.1")
                     .givenName("Admin")
                     .surname("User Admin")
@@ -211,7 +211,7 @@ public class UserResourceTest extends UnitTestBase {
                     .currentPassword("password")
                     .build();
 
-            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            Response response = userResource.updateCurent(request, httpServletResponse, updateUserForm);
             RestUtilTest.verifySuccessResponse(response);
 
             Map userMap = Map.class.cast(
@@ -293,7 +293,7 @@ public class UserResourceTest extends UnitTestBase {
             UserResource userResource =
                     new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+            UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()
                     .userId("dotcms.org.1")
                     .givenName("Admin")
                     .surname("User Admin")
@@ -302,7 +302,7 @@ public class UserResourceTest extends UnitTestBase {
                     .newPassword("new password")
                     .build();
 
-            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            Response response = userResource.updateCurent(request, httpServletResponse, updateUserForm);
             RestUtilTest.verifySuccessResponse(response);
 
             Map userMap = Map.class.cast(
@@ -392,7 +392,7 @@ public class UserResourceTest extends UnitTestBase {
             UserResource userResource =
                     new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+            UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()
                     .userId("dotcms.org.1")
                     .givenName("Admin")
                     .surname("User Admin")
@@ -401,7 +401,7 @@ public class UserResourceTest extends UnitTestBase {
                     .newPassword("new password")
                     .build();
 
-            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            Response response = userResource.updateCurent(request, httpServletResponse, updateUserForm);
             assertEquals(response.getStatus(), 400);
         } finally {
             RestUtilTest.cleanupContext();

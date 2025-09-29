@@ -10,8 +10,8 @@ import com.dotcms.rest.api.Validated;
  * Encapsulates the minimal information for the RestUser
  * @author Geoff M. Granum
  */
-@JsonDeserialize(builder = UpdateUserForm.Builder.class)
-public final class UpdateUserForm extends Validated  {
+@JsonDeserialize(builder = UpdateCurrentUserForm.Builder.class)
+public final class UpdateCurrentUserForm extends Validated  {
 
     @NotNull
     @NotBlank
@@ -28,7 +28,7 @@ public final class UpdateUserForm extends Validated  {
     private final String currentPassword;
     private final String newPassword;
 
-    private UpdateUserForm(UpdateUserForm.Builder builder) {
+    private UpdateCurrentUserForm(UpdateCurrentUserForm.Builder builder) {
         userId    = builder.userId;
         givenName = builder.givenName;
         surname   = builder.surname;
@@ -74,38 +74,38 @@ public final class UpdateUserForm extends Validated  {
         public Builder() {
         }
 
-        public UpdateUserForm.Builder userId(String userId) {
+        public UpdateCurrentUserForm.Builder userId(String userId) {
             this.userId = userId;
             return this;
         }
 
-        public UpdateUserForm.Builder givenName(String givenName) {
+        public UpdateCurrentUserForm.Builder givenName(String givenName) {
             this.givenName = givenName;
             return this;
         }
 
-        public UpdateUserForm.Builder surname(String surname) {
+        public UpdateCurrentUserForm.Builder surname(String surname) {
             this.surname = surname;
             return this;
         }
 
-        public UpdateUserForm.Builder currentPassword(String password) {
+        public UpdateCurrentUserForm.Builder currentPassword(String password) {
             this.currentPassword = password;
             return this;
         }
 
-        public UpdateUserForm.Builder newPassword(String newPassword) {
+        public UpdateCurrentUserForm.Builder newPassword(String newPassword) {
             this.newPassword = newPassword;
             return this;
         }
 
-        public UpdateUserForm.Builder email(String email) {
+        public UpdateCurrentUserForm.Builder email(String email) {
             this.email = email;
             return this;
         }
 
-        public UpdateUserForm build() {
-            return new UpdateUserForm(this);
+        public UpdateCurrentUserForm build() {
+            return new UpdateCurrentUserForm(this);
         }
     }
 }
