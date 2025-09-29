@@ -93,10 +93,12 @@ const KnownFieldClazzEnum = z.enum([
 // This handles deprecated field types like ImmutableRelationshipsTabField without breaking validation
 const FieldClazzEnum = z.union([
     KnownFieldClazzEnum,
-    z.string().regex(
-        /^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/,
-        'Field clazz must be a valid dotCMS field class'
-    )
+    z
+        .string()
+        .regex(
+            /^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/,
+            'Field clazz must be a valid dotCMS field class'
+        )
 ]);
 
 const DividerSchema = z.object({

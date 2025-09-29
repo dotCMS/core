@@ -196,7 +196,9 @@ describe('ContentType Types', () => {
             expect(result.success).toBe(true);
             if (result.success) {
                 const firstField = result.data.layout[0]?.columns[0]?.fields[0];
-                expect(firstField?.clazz).toBe('com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField');
+                expect(firstField?.clazz).toBe(
+                    'com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField'
+                );
             }
         });
 
@@ -296,9 +298,11 @@ describe('ContentType Types', () => {
             const result = ContentTypeSchema.safeParse(mockContentType);
             expect(result.success).toBe(false);
             if (!result.success) {
-                expect(result.error.issues.some(issue => 
-                    issue.message.includes('Field clazz must be a valid dotCMS field class')
-                )).toBe(true);
+                expect(
+                    result.error.issues.some((issue) =>
+                        issue.message.includes('Field clazz must be a valid dotCMS field class')
+                    )
+                ).toBe(true);
             }
         });
 
@@ -309,7 +313,7 @@ describe('ContentType Types', () => {
                 'com.dotcms.contenttype.model.field.ImmutableAnotherLegacyField'
             ];
 
-            deprecatedFieldTypes.forEach(clazz => {
+            deprecatedFieldTypes.forEach((clazz) => {
                 const mockContentType = {
                     id: '1',
                     name: 'Test Content Type',

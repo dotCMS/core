@@ -243,28 +243,34 @@ describe('Context Initialization with Deprecated Fields', () => {
         expect(result).toHaveLength(2);
 
         // Verify the content type with deprecated field was processed successfully
-        const legacyContentType = result.find(ct => ct.variable === 'customerLegacyContentType');
+        const legacyContentType = result.find((ct) => ct.variable === 'customerLegacyContentType');
         expect(legacyContentType).toBeDefined();
         expect(legacyContentType!.name).toBe('Customer Legacy Content Type');
         expect(legacyContentType!.fields).toHaveLength(2);
 
         // Verify the deprecated field is present and has the correct clazz
-        const deprecatedField = legacyContentType!.fields.find(f => f.variable === 'relationships');
+        const deprecatedField = legacyContentType!.fields.find(
+            (f) => f.variable === 'relationships'
+        );
         expect(deprecatedField).toBeDefined();
-        expect(deprecatedField!.clazz).toBe('com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField');
+        expect(deprecatedField!.clazz).toBe(
+            'com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField'
+        );
         expect(deprecatedField!.name).toBe('Relationships');
 
         // Verify the standard field in the same content type still works
-        const titleField = legacyContentType!.fields.find(f => f.variable === 'title');
+        const titleField = legacyContentType!.fields.find((f) => f.variable === 'title');
         expect(titleField).toBeDefined();
         expect(titleField!.clazz).toBe('com.dotcms.contenttype.model.field.ImmutableTextField');
         expect(titleField!.name).toBe('Title');
 
         // Verify the standard content type still works
-        const standardContentType = result.find(ct => ct.variable === 'standardContentType');
+        const standardContentType = result.find((ct) => ct.variable === 'standardContentType');
         expect(standardContentType).toBeDefined();
         expect(standardContentType!.name).toBe('Standard Content Type');
         expect(standardContentType!.fields).toHaveLength(1);
-        expect(standardContentType!.fields[0].clazz).toBe('com.dotcms.contenttype.model.field.ImmutableTextField');
+        expect(standardContentType!.fields[0].clazz).toBe(
+            'com.dotcms.contenttype.model.field.ImmutableTextField'
+        );
     });
 });
