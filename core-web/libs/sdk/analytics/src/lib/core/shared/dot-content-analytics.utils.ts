@@ -1,6 +1,7 @@
 import { PageData } from 'analytics';
 
 import {
+    ANALYTICS_JS_DEFAULT_PROPERTIES,
     ANALYTICS_MINIFIED_SCRIPT_NAME,
     DEFAULT_SESSION_TIMEOUT_MINUTES,
     EXPECTED_UTM_KEYS,
@@ -444,19 +445,26 @@ export const enrichWithUtmData = (payload: DotCMSAnalyticsPayload) => {
 
 /**
  * Optimized payload enrichment using existing analytics.js data
- * Reuses payload.properties data instead of recalculating from DOM when available
- * Maintains the same output structure as the original function
+ * Filters out Analytics.js default properties and only keeps user-provided properties in custom
  */
 export const enrichPagePayloadOptimized = (
     payload: DotCMSAnalyticsPayload,
     location: Location = typeof window !== 'undefined' ? window.location : ({} as Location)
-) => {
+): DotCMSAnalyticsPayload => {
     const local_time = getLocalTime();
     const staticData = getStaticBrowserData();
 
     // Extract data from analytics.js payload
     const { properties } = payload;
     const { utm } = properties as Record<string, unknown>;
+
+    // Filter out Analytics.js default properties to get only user-provided properties
+    const userProvidedProperties: Record<string, unknown> = {};
+    Object.keys(properties).forEach((key) => {
+        if (!ANALYTICS_JS_DEFAULT_PROPERTIES.includes(key as any)) {
+            userProvidedProperties[key] = properties[key];
+        }
+    });
 
     const pageData: DotCMSPageData = {
         url: (properties.url as string) ?? location.href,
@@ -493,6 +501,8 @@ export const enrichPagePayloadOptimized = (
         page: pageData,
         device: deviceData,
         ...(Object.keys(utmData).length > 0 && { utm: utmData }),
+        // Only include custom if there are user-provided properties
+        ...(Object.keys(userProvidedProperties).length > 0 && { custom: userProvidedProperties }),
         local_time
     };
 };

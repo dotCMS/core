@@ -8,13 +8,29 @@ export const ANALYTICS_SOURCE_TYPE = ANALYTICS_WINDOWS_KEY;
 export const ANALYTICS_ENDPOINT = '/api/v1/analytics/content/event';
 
 /**
- * Event Types
- * Only two event types are supported in DotCMS Analytics
+ * Structured event types - events with predefined data shapes
+ * These events have specific data structures and validation
  */
-export const EVENT_TYPES = {
-    PAGEVIEW: 'pageview',
-    TRACK: 'track'
+export const DotCMSPredefinedEventType = {
+    PAGEVIEW: 'pageview'
 } as const;
+
+/**
+ * Type for structured events
+ */
+export type DotCMSPredefinedEventType =
+    (typeof DotCMSPredefinedEventType)[keyof typeof DotCMSPredefinedEventType];
+
+/**
+ * Custom event type - any string except predefined event types
+ * These events have flexible data structures defined by the user
+ */
+export type CustomEventType = Exclude<string, DotCMSPredefinedEventType>;
+
+/**
+ * Union type for all possible event types
+ */
+export type DotCMSEventType = DotCMSPredefinedEventType | CustomEventType;
 
 /**
  * Expected UTM parameter keys for campaign tracking
@@ -56,3 +72,17 @@ export const ACTIVITY_EVENTS = ['click'] as const;
  * The name of the analytics minified script.
  */
 export const ANALYTICS_MINIFIED_SCRIPT_NAME = 'ca.min.js';
+
+/**
+ * Default properties that Analytics.js adds automatically
+ * These should be filtered out to only keep user-provided properties
+ */
+export const ANALYTICS_JS_DEFAULT_PROPERTIES = [
+    'title',
+    'url',
+    'path',
+    'hash',
+    'search',
+    'width',
+    'height'
+] as const;

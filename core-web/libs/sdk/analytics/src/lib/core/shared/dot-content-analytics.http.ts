@@ -1,5 +1,9 @@
 import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
-import { DotCMSAnalyticsConfig, DotCMSAnalyticsRequestBody } from './dot-content-analytics.model';
+import {
+    DotCMSAnalyticsConfig,
+    DotCMSEvent,
+    DotCMSRequestBody
+} from './dot-content-analytics.model';
 
 /**
  * Send an analytics event to the server
@@ -8,10 +12,14 @@ import { DotCMSAnalyticsConfig, DotCMSAnalyticsRequestBody } from './dot-content
  * @returns A promise that resolves when the request is complete
  */
 export const sendAnalyticsEventToServer = async (
-    payload: DotCMSAnalyticsRequestBody,
+    payload: DotCMSRequestBody<DotCMSEvent>,
     config: DotCMSAnalyticsConfig
 ): Promise<void> => {
     try {
+        if (config.debug) {
+            console.warn('DotAnalytics: HTTP Body to send:', JSON.stringify(payload, null, 2));
+        }
+
         const response = await fetch(`${config.server}${ANALYTICS_ENDPOINT}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

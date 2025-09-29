@@ -1,4 +1,8 @@
-import { EVENT_TYPES } from './dot-content-analytics.constants';
+import {
+    CustomEventType,
+    DotCMSEventType,
+    DotCMSPredefinedEventType
+} from './dot-content-analytics.constants';
 
 // Extend Window interface to include our custom properties
 declare global {
@@ -6,6 +10,8 @@ declare global {
         __dotAnalyticsCleanup?: () => void;
     }
 }
+
+type DotAnalyticsInternalEventType = 'pageview' | 'track';
 
 /**
  * Configuration interface for DotCMS Analytics SDK.
@@ -34,12 +40,6 @@ export interface DotCMSAnalyticsConfig {
 }
 
 /**
- * Supported event types in DotCMS Analytics.
- * Only two event types are supported: pageview and track.
- */
-export type DotCMSEventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
-
-/**
  * Base structure for all analytics events.
  * All events share this common structure.
  */
@@ -55,7 +55,7 @@ export interface DotCMSEventBase {
  * Contains data specific to page view tracking.
  */
 export interface DotCMSPageViewEvent extends DotCMSEventBase {
-    event_type: 'pageview';
+    event_type: typeof DotCMSPredefinedEventType.PAGEVIEW;
     /** Pageview-specific event data with structured format */
     data: {
         /** Page data associated with the event */
@@ -64,50 +64,51 @@ export interface DotCMSPageViewEvent extends DotCMSEventBase {
         device: DotCMSDeviceData;
         /** UTM parameters for campaign tracking (optional) */
         utm?: DotCMSUtmData;
+        /** Custom data associated with the event */
+        custom?: Record<string, unknown>;
     };
 }
 
-/**
- * Track-specific analytics event structure.
- * Contains data specific to custom event tracking.
- */
-export interface DotCMSTrackEvent extends DotCMSEventBase {
-    event_type: 'track';
-    /** Track-specific event data with flexible structure */
-    data: Record<string, unknown>;
+export interface DotCMSCustomEvent extends DotCMSEventBase {
+    /** The type of event being tracked (any string except structured events) */
+    event_type: CustomEventType;
+    /** Custom event data with structured format */
+    data: {
+        /** Custom data associated with the event */
+        custom: Record<string, unknown>;
+    };
 }
 
 /**
  * Union type for all possible analytics events.
  */
-export type DotCMSEvent = DotCMSPageViewEvent | DotCMSTrackEvent;
+export type DotCMSEvent = DotCMSPageViewEvent | DotCMSCustomEvent;
 
 /**
  * Analytics request body for page view events in DotCMS.
  * Structure sent to the DotCMS analytics server for page tracking.
  */
-export interface DotCMSPageViewRequestBody {
+export interface DotCMSRequestBody<T extends DotCMSEvent> {
     /** Context information shared across all events */
     context: DotCMSAnalyticsContext;
     /** Array of pageview analytics events to be tracked */
-    events: DotCMSPageViewEvent[];
+    events: T[];
 }
 
 /**
- * Analytics request body for track events in DotCMS.
- * Structure sent to the DotCMS analytics server for custom event tracking.
+ * Specific request body type for PageView events
  */
-export interface DotCMSTrackRequestBody {
-    /** Context information shared across all events */
-    context: DotCMSAnalyticsContext;
-    /** Array of track analytics events to be tracked */
-    events: DotCMSTrackEvent[];
-}
+export type DotCMSPageViewRequestBody = DotCMSRequestBody<DotCMSPageViewEvent>;
 
 /**
- * Union type for all possible request bodies.
+ * Specific request body type for Custom events
  */
-export type DotCMSAnalyticsRequestBody = DotCMSPageViewRequestBody | DotCMSTrackRequestBody;
+export type DotCMSCustomEventRequestBody = DotCMSRequestBody<DotCMSCustomEvent>;
+
+/**
+ * Union type for all possible request bodies
+ */
+export type DotCMSAnalyticsRequestBody = DotCMSPageViewRequestBody | DotCMSCustomEventRequestBody;
 
 /**
  * Enriched payload structure returned by the enricher plugin.
@@ -175,7 +176,7 @@ export interface DotCMSAnalyticsPayload {
 
     // Properties added by plugins during processing
     /** Analytics context shared across events */
-    context?: DotCMSAnalyticsContext;
+    context: DotCMSAnalyticsContext;
     /** Page data for the current page */
     page?: DotCMSPageData;
     /** Device and browser information */
@@ -184,17 +185,34 @@ export interface DotCMSAnalyticsPayload {
     utm?: DotCMSUtmData;
     /** Local timestamp when the event occurred */
     local_time: string;
+
+    /** Internal event type */
+    type: DotAnalyticsInternalEventType;
+
+    /** Custom data associated with the event */
+    custom?: Record<string, unknown>;
 }
 
 /**
- * Parameters passed to DotCMS Analytics plugin methods.
- * Contains the configuration and payload data needed for processing analytics events.
+ * Parameters passed to DotCMS Analytics plugin methods (before enrichment).
+ * Contains the configuration and raw payload data to be enriched.
  */
 export interface DotCMSAnalyticsParams {
     /** Configuration for the analytics client */
     config: DotCMSAnalyticsConfig;
-    /** The event payload to be processed */
+    /** The event payload to be processed (before enrichment) */
     payload: DotCMSAnalyticsPayload;
+}
+
+/**
+ * Parameters passed to DotCMS Analytics plugin methods (after enrichment).
+ * The payload is the complete request body ready to send to the server.
+ */
+export interface DotCMSAnalyticsEnrichedParams {
+    /** Configuration for the analytics client */
+    config: DotCMSAnalyticsConfig;
+    /** The complete request body (enriched and ready to send) */
+    payload: DotCMSAnalyticsRequestBody;
 }
 
 /**
@@ -205,14 +223,14 @@ export interface DotCMSAnalytics {
     /**
      * Track a page view event.
      */
-    pageView: () => void;
+    pageView: (payload?: Record<string, unknown>) => void;
 
     /**
      * Track a custom event.
      * @param eventName - The name/type of the event to track
      * @param payload - Optional additional data to include with the event
      */
-    track: (eventName: string, payload?: Record<string, unknown>) => void;
+    track: (eventName: string, payload: Record<string, unknown>) => void;
 }
 
 /**
