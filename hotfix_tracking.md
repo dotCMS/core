@@ -12,3 +12,4 @@ Release-25.07.10 LTS
 6. https://github.com/dotCMS/core/issues/32929 : Core: Create user not set user role #32929
 7. https://github.com/dotCMS/core/issues/33093 : Update image reference breaking out build #33093
 8. https://github.com/dotCMS/core/issues/33031 : Reset Approvals sub-action not working as expected #33031
+9. https://github.com/dotCMS/core/issues/32224 : UVE Query Parameters Are Being Filtered Breaking Widget Logic #32224
