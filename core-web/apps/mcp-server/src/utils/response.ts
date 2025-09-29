@@ -29,10 +29,7 @@ export type McpResponse = McpSuccessResponse | McpErrorResponse;
 /**
  * Formats response data for LLM consumption
  */
-export function formatResponse(
-    message: string,
-    data?: unknown
-): string {
+export function formatResponse(message: string, data?: unknown): string {
     if (!data) {
         return message;
     }
@@ -44,9 +41,10 @@ export function formatResponse(
     // Handle different data types appropriately
     if (typeof data === 'string') {
         // Only truncate if maxDataLength is set and greater than 0
-        const truncated = maxDataLength && maxDataLength > 0 && data.length > maxDataLength
-            ? data.substring(0, maxDataLength) + '...[truncated]'
-            : data;
+        const truncated =
+            maxDataLength && maxDataLength > 0 && data.length > maxDataLength
+                ? data.substring(0, maxDataLength) + '...[truncated]'
+                : data;
 
         return `${message}\n\n${truncated}`;
     }
@@ -56,9 +54,10 @@ export function formatResponse(
         const jsonStr = JSON.stringify(data, null, 2);
 
         // Only truncate if maxDataLength is set and greater than 0
-        const truncated = maxDataLength && maxDataLength > 0 && jsonStr.length > maxDataLength
-            ? jsonStr.substring(0, maxDataLength) + '...[truncated]'
-            : jsonStr;
+        const truncated =
+            maxDataLength && maxDataLength > 0 && jsonStr.length > maxDataLength
+                ? jsonStr.substring(0, maxDataLength) + '...[truncated]'
+                : jsonStr;
 
         return `${message}\n\nDetails:\n${truncated}`;
     }
