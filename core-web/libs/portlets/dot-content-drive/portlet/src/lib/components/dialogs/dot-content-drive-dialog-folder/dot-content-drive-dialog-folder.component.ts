@@ -178,7 +178,8 @@ export class DotContentDriveDialogFolderComponent {
 
         this.#dotFolderService.createFolder(body).subscribe({
             next: () => {
-                this.#store.loadFolders();
+                const currentPath = this.#store.path();
+                this.#store.setPath(currentPath, 'crud');
                 this.#store.closeDialog();
 
                 this.#messageService.add({
