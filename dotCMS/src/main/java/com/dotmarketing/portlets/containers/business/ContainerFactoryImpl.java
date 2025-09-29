@@ -515,7 +515,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public List<Container> findContainers(final User user, final ContainerAPI.SearchParams searchParams) throws DotSecurityException, DotDataException {
 		final ContentTypeAPI contentTypeAPI        = APILocator.getContentTypeAPI(user);
 		final StringBuffer conditionBuffer         = new StringBuffer();
-		final List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(searchParams.filteringCriteria(), conditionBuffer);
+		List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(searchParams.filteringCriteria(), conditionBuffer);
+		if (paramValues == null) {
+			paramValues = new ArrayList<>();
+		}
 		final PaginatedArrayList<Container> assets = new PaginatedArrayList<>();
 		final List<Permissionable> toReturn        = new ArrayList<>();
 		int     internalLimit                      = 500;
