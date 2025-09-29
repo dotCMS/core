@@ -61,10 +61,11 @@ public class PermissionResource {
     private final UserPermissionHelper userPermissionHelper;
 
     @Inject
-    public PermissionResource(final PermissionHelper permissionHelper,
-                             final UserAPI userAPI,
-                             final UserPermissionHelper userPermissionHelper) {
-        this(new WebResource(), permissionHelper, userAPI, userPermissionHelper);
+    public PermissionResource(final UserPermissionHelper userPermissionHelper) {
+        this(new WebResource(), 
+             PermissionHelper.getInstance(), 
+             APILocator.getUserAPI(),
+             userPermissionHelper);
     }
     @VisibleForTesting
     public PermissionResource(final WebResource      webResource,
