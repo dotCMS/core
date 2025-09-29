@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@
 
 import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
-import { DotTreeFolderComponent } from '@dotcms/ui';
+import { DotTreeFolderComponent } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
