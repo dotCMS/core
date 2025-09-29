@@ -17,6 +17,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.dotcms.rest.api.v1.user.UserPermissionHelper;
+import javax.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -56,19 +58,24 @@ public class PermissionResource {
     private final WebResource      webResource;
     private final PermissionHelper permissionHelper;
     private final UserAPI          userAPI;
+    private final UserPermissionHelper userPermissionHelper;
 
-    public PermissionResource() {
-
-        this(new WebResource(), PermissionHelper.getInstance(), APILocator.getUserAPI());
+    @Inject
+    public PermissionResource(final PermissionHelper permissionHelper,
+                             final UserAPI userAPI,
+                             final UserPermissionHelper userPermissionHelper) {
+        this(new WebResource(), permissionHelper, userAPI, userPermissionHelper);
     }
     @VisibleForTesting
     public PermissionResource(final WebResource      webResource,
                               final PermissionHelper permissionHelper,
-                              final UserAPI          userAPI) {
+                              final UserAPI          userAPI,
+                              final UserPermissionHelper userPermissionHelper) {
 
         this.webResource      = webResource;
         this.permissionHelper = permissionHelper;
         this.userAPI          = userAPI;
+        this.userPermissionHelper = userPermissionHelper;
     }
 
     /**
@@ -266,6 +273,46 @@ public class PermissionResource {
         }
 
         return Response.ok(new ResponseEntityPermissionGroupByTypeView(permissionsRoleGroupByTypeMap)).build();
+    }
+
+    @Operation(
+        summary = "Get permission metadata",
+        description = "Returns available permission levels and scopes that can be assigned to users and roles"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Permission metadata retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = ResponseEntityPermissionMetadataView.class))),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/metadata")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getPermissionMetadata(@Parameter(hidden = true) @Context HttpServletRequest request,
+                                         @Parameter(hidden = true) @Context HttpServletResponse response) {
+        
+        Logger.debug(this, () -> "Retrieving permission metadata");
+        
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        
+        final Map<String, Object> permissionMetadata = Map.of(
+            "levels", userPermissionHelper.getAvailablePermissionLevels(),
+            "scopes", userPermissionHelper.getAvailablePermissionScopes()
+        );
+        
+        Logger.info(this, "Permission metadata retrieved successfully");
+        
+        return Response.ok(new ResponseEntityPermissionMetadataView(permissionMetadata)).build();
     }
 
     private boolean filter(final PermissionAPI.Type permissionType, final Permission permission) {
