@@ -55,21 +55,50 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
 };
 
 /**
- * A function that provides a default resolution value for a contentlet field.
+ * Resolves the host folder path for a contentlet based on its type and URL structure.
  *
- * @param {Object} contentlet - The contentlet object.
- * @param {Object} field - The field object.
- * @returns {*} The resolved value for the field.
+ * For file assets, it extracts the directory path by removing the filename.
+ * For other content types, it extracts the path up to the '/content' segment.
+ *
+ * @param contentlet - The contentlet object containing hostName, url, and type
+ * @param field - The field object containing the default value
+ * @returns The resolved host folder path or the field's default value
  */
 const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
-    if (contentlet?.hostName && contentlet?.url) {
-        const path = `${contentlet?.hostName}${contentlet?.url}`;
-        const finalPath = path.slice(0, path.indexOf('/content'));
-
-        return `${finalPath}`;
+    // Early return if contentlet is invalid or missing required properties
+    if (!contentlet?.hostName || !contentlet?.url) {
+        return field?.defaultValue || '';
     }
 
-    return field.defaultValue || '';
+    const { hostName, url, type } = contentlet;
+
+    // Ensure hostName and url are strings
+    if (typeof hostName !== 'string' || typeof url !== 'string') {
+        return field?.defaultValue || '';
+    }
+
+    const fullPath = `${hostName}${url}`;
+
+    try {
+        if (type === 'file_asset') {
+            // For file assets, remove the filename to get the directory path
+            const pathSegments = fullPath.split('/');
+            if (pathSegments.length > 1) {
+                return pathSegments.slice(0, -1).join('/');
+            }
+            return fullPath;
+        } else {
+            // For other content types, extract path up to '/content'
+            const contentIndex = fullPath.indexOf('/content');
+            if (contentIndex !== -1) {
+                return fullPath.slice(0, contentIndex);
+            }
+            return fullPath;
+        }
+    } catch (error) {
+        console.warn('Error processing host folder path:', error);
+        return field?.defaultValue || '';
+    }
 };
 
 /**
