@@ -13,8 +13,9 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PERSONA_KEY } from '../../../store/model';
 import { buildUVEQueryParams, getUserParams } from '../../../utils';
+import { DotUVEBookmarkComponent } from '../dot-uve-bookmark/dot-uve-bookmark.component';
 import { DotUVELanguageSelectorComponent } from '../dot-uve-language-selector/dot-uve-language-selector.component';
-import { DotUvePersonaSelectorComponent } from '../dot-uve-persona-selector/dot-uve-persona-selector.component';
+import { DotUVEPersonaSelectorComponent } from '../dot-uve-persona-selector/dot-uve-persona-selector.component';
 import { DotUVEWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
 @Component({
@@ -28,7 +29,8 @@ import { DotUVEWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-
         DotMessagePipe,
         DotUVELanguageSelectorComponent,
         DotUVEWorkflowActionsComponent,
-        DotUvePersonaSelectorComponent
+        DotUVEPersonaSelectorComponent,
+        DotUVEBookmarkComponent
     ],
     providers: [MessageService],
     templateUrl: './dot-uve-toolbar.component.html',

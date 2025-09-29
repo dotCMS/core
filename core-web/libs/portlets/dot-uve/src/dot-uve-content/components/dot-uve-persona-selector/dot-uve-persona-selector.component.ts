@@ -69,7 +69,7 @@ const DEFAULT_PERSONAS: PersonaSelector = {
     styleUrl: './dot-uve-persona-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUvePersonaSelectorComponent {
+export class DotUVEPersonaSelectorComponent {
     readonly #destroyRef = inject(DestroyRef);
     readonly #pageService = inject(DotPageService);
     readonly #store = inject(UVEStore);

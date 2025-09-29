@@ -39,7 +39,7 @@ const initialConfiguration: UVEConfiguration = {
 };
 
 const initialState: UVEState = {
-    url: '/',
+    url: '',
     pageLanguages: [],
     pageAssetData: null,
     isEnterprise: false,
