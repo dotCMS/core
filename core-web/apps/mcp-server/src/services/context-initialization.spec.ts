@@ -269,7 +269,7 @@ describe('Context Initialization with Deprecated Fields', () => {
         expect(standardContentType).toBeDefined();
         expect(standardContentType!.name).toBe('Standard Content Type');
         expect(standardContentType!.fields).toHaveLength(1);
-        expect(standardContentType!.fields[0].clazz).toBe(
+        expect(standardContentType!.fields?.[0]?.clazz).toBe(
             'com.dotcms.contenttype.model.field.ImmutableTextField'
         );
     });

@@ -268,12 +268,12 @@ describe('ContentTypeService', () => {
                 { method: 'GET' }
             );
             expect(result).toHaveLength(1);
-            expect(result[0].name).toBe('Legacy Content Type');
-            expect(result[0].fields).toHaveLength(1);
-            expect(result[0].fields[0].clazz).toBe(
+            expect(result[0]?.name).toBe('Legacy Content Type');
+            expect(result[0]?.fields).toHaveLength(1);
+            expect(result[0]?.fields?.[0]?.clazz).toBe(
                 'com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField'
             );
-            expect(result[0].fields[0].name).toBe('Relationships');
+            expect(result[0]?.fields?.[0]?.name).toBe('Relationships');
         });
     });
 });

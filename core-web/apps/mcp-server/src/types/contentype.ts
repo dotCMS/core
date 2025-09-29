@@ -15,52 +15,13 @@ export const ContentTypeBaseTypeEnum = z.enum([
 
 export type ContentTypeBaseType = z.infer<typeof ContentTypeBaseTypeEnum>;
 
-export const ContentTypeFieldSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    variable: z.string(),
-    required: z.boolean(),
-    indexed: z.boolean(),
-    listed: z.boolean(),
-    unique: z.boolean(),
-    searchable: z.boolean(),
-    sortOrder: z.number(),
-    values: z.string().optional(),
-    defaultValue: z.string().optional(),
-    hint: z.string().optional(),
-    regexCheck: z.string().optional(),
-    modDate: z.number().optional(),
-    iDate: z.number().optional(),
-    fieldType: z.string().optional(),
-    fieldTypeLabel: z.string().optional(),
-    contentTypeId: z.string().optional(),
-    fixed: z.boolean().optional(),
-    readOnly: z.boolean().optional(),
-    system: z.boolean().optional(),
-    dataType: z.string().optional(),
-    fieldVariables: z.array(z.record(z.any())).optional()
-});
-
-export const WorkflowSchema = z.object({
-    archived: z.boolean(),
-    creationDate: z.number(),
-    defaultScheme: z.boolean(),
-    description: z.string(),
-    entryActionId: z.string().nullable(),
-    id: z.string(),
-    mandatory: z.boolean(),
-    modDate: z.number(),
-    name: z.string(),
-    system: z.boolean(),
-    variableName: z.string()
-});
-
 const RowClazzEnum = z.enum(['com.dotcms.contenttype.model.field.ImmutableRowField']);
 const ColumnClazzEnum = z.enum(['com.dotcms.contenttype.model.field.ImmutableColumnField']);
 const TabDividerClazzEnum = z.enum(['com.dotcms.contenttype.model.field.ImmutableTabDividerField']);
 const LineDividerClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
 ]);
+
 // Known field types enum for reference and validation of new fields
 const KnownFieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableBinaryField',
@@ -100,6 +61,47 @@ const FieldClazzEnum = z.union([
             'Field clazz must be a valid dotCMS field class'
         )
 ]);
+
+export const ContentTypeFieldSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    variable: z.string(),
+    required: z.boolean(),
+    indexed: z.boolean(),
+    listed: z.boolean(),
+    unique: z.boolean(),
+    searchable: z.boolean(),
+    sortOrder: z.number(),
+    values: z.string().optional(),
+    defaultValue: z.string().optional(),
+    hint: z.string().optional(),
+    regexCheck: z.string().optional(),
+    modDate: z.number().optional(),
+    iDate: z.number().optional(),
+    fieldType: z.string().optional(),
+    fieldTypeLabel: z.string().optional(),
+    contentTypeId: z.string().optional(),
+    fixed: z.boolean().optional(),
+    readOnly: z.boolean().optional(),
+    system: z.boolean().optional(),
+    dataType: z.string().optional(),
+    fieldVariables: z.array(z.record(z.any())).optional(),
+    clazz: FieldClazzEnum.optional()
+});
+
+export const WorkflowSchema = z.object({
+    archived: z.boolean(),
+    creationDate: z.number(),
+    defaultScheme: z.boolean(),
+    description: z.string(),
+    entryActionId: z.string().nullable(),
+    id: z.string(),
+    mandatory: z.boolean(),
+    modDate: z.number(),
+    name: z.string(),
+    system: z.boolean(),
+    variableName: z.string()
+});
 
 const DividerSchema = z.object({
     clazz: RowClazzEnum.or(TabDividerClazzEnum).or(LineDividerClazzEnum),
