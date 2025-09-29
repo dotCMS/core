@@ -884,10 +884,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				query.append(
 								" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(" and tree.parent = ? and tree.child=asset.inode");
-				// Validate the contentTypeIdOrVar to prevent injection (can be UUID or variable name)
+				// Validate the contentTypeIdOrVar to prevent injection (UUID, variable name, or identifier)
 				final String contentTypeIdOrVar = searchParams.contentTypeIdOrVar();
-				if (!UtilMethods.isSet(contentTypeIdOrVar) ||
-					(!UUIDUtil.isUUID(contentTypeIdOrVar) && !isValidVariableName(contentTypeIdOrVar))) {
+				if (!UtilMethods.isSet(contentTypeIdOrVar) || !isValidIdentifier(contentTypeIdOrVar)) {
 					throw new DotSecurityException("Invalid content type identifier: " + contentTypeIdOrVar);
 				}
 				paramValues.add(contentTypeIdOrVar);
@@ -906,9 +905,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if(UtilMethods.isSet(searchParams.siteId())) {
 			// Use parameterized query to prevent SQL injection
 			query.append(" and identifier.host_inode = ?");
-			// Validate that siteId is a valid UUID
+			// Validate siteId format (UUID or special identifiers like SYSTEM_HOST)
 			final String siteId = searchParams.siteId();
-			if (!UUIDUtil.isUUID(siteId)) {
+			if (!isValidIdentifier(siteId)) {
 				throw new DotSecurityException("Invalid site ID format: " + siteId);
 			}
 			paramValues.add(siteId);
@@ -917,9 +916,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if(UtilMethods.isSet(searchParams.containerInode())) {
 			// Use parameterized query to prevent SQL injection
 			query.append(" and asset.inode = ?");
-			// Validate that containerInode is a valid UUID
+			// Validate containerInode format (UUID or system identifier)
 			final String containerInode = searchParams.containerInode();
-			if (!UUIDUtil.isUUID(containerInode)) {
+			if (!isValidIdentifier(containerInode)) {
 				throw new DotSecurityException("Invalid container inode format: " + containerInode);
 			}
 			paramValues.add(containerInode);
@@ -928,9 +927,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if(UtilMethods.isSet(searchParams.containerIdentifier())) {
 			// Use parameterized query to prevent SQL injection
 			query.append(" and asset.identifier = ?");
-			// Validate that containerIdentifier is a valid UUID
+			// Validate containerIdentifier format (UUID or special identifier)
 			final String containerIdentifier = searchParams.containerIdentifier();
-			if (!UUIDUtil.isUUID(containerIdentifier)) {
+			if (!isValidIdentifier(containerIdentifier)) {
 				throw new DotSecurityException("Invalid container identifier format: " + containerIdentifier);
 			}
 			paramValues.add(containerIdentifier);
@@ -1004,7 +1003,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				conditionQueryBuffer.append(" = ?");
 				// Validate identifier/inode format to prevent SQL injection
 				final String value = (String) entry.getValue();
-				if (!UtilMethods.isSet(value) || !UUIDUtil.isUUID(value)) {
+				if (!UtilMethods.isSet(value) || !isValidIdentifier(value)) {
 					throw new DotSecurityException("Invalid " + entry.getKey() + " format: " + value);
 				}
 				paramValues.add(value);
@@ -1218,9 +1217,45 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 
 	/**
+	 * Regex pattern for valid velocity variable names.
+	 * Based on WorkflowFactoryImpl pattern - starts with letter/underscore,
+	 * followed by letters, numbers, underscores, or hyphens.
+	 */
+	private static final String VALID_VARIABLE_NAME_REGEX = "^[a-zA-Z_][a-zA-Z0-9_-]{0,254}$";
+
+	/**
+	 * Validates if a string is a valid dotCMS identifier.
+	 * Accepts UUIDs, system identifiers (SYSTEM_HOST, SYSTEM_FOLDER), and variable names.
+	 * More flexible validation to avoid being too restrictive.
+	 *
+	 * @param identifier the identifier to validate
+	 * @return true if the identifier is valid, false otherwise
+	 */
+	private boolean isValidIdentifier(final String identifier) {
+		if (!UtilMethods.isSet(identifier)) {
+			return false;
+		}
+		// Allow UUIDs, known system identifiers, or safe alphanumeric patterns
+		return UUIDUtil.isUUID(identifier) ||
+			   isSystemIdentifier(identifier) ||
+			   identifier.matches("^[a-zA-Z_][a-zA-Z0-9_-]{0,254}$"); // Includes variable name pattern
+	}
+
+	/**
+	 * Checks if the identifier is a known system identifier.
+	 * Based on fabrizzio's suggestion to handle system identifiers like SYSTEM_HOST, SYSTEM_FOLDER.
+	 *
+	 * @param identifier the identifier to check
+	 * @return true if it's a known system identifier
+	 */
+	private boolean isSystemIdentifier(final String identifier) {
+		return "SYSTEM_HOST".equals(identifier) ||
+			   "SYSTEM_FOLDER".equals(identifier);
+	}
+
+	/**
 	 * Validates if a string is a valid velocity variable name for content types.
-	 * Variable names should start with a letter, contain only alphanumeric characters,
-	 * underscores, or hyphens, and have a reasonable length limit.
+	 * Uses consistent regex pattern following dotCMS conventions.
 	 *
 	 * @param variableName the variable name to validate
 	 * @return true if the variable name is valid, false otherwise
@@ -1229,9 +1264,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if (!UtilMethods.isSet(variableName)) {
 			return false;
 		}
-		// Variable names should start with letter, contain alphanumeric, underscore, hyphen
-		// and be between 1-255 characters for reasonable limits
-		return variableName.matches("^[a-zA-Z][a-zA-Z0-9\\-_]{0,254}$");
+		return variableName.matches(VALID_VARIABLE_NAME_REGEX);
 	}
 
 }
