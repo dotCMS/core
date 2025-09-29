@@ -75,6 +75,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
@@ -5655,9 +5656,30 @@ public class WorkflowResource {
 
     private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
 
+        final WorkflowStep step = wfTimeLine instanceof WorkflowHistory && UtilMethods.isSet(wfTimeLine.stepId())?
+                Try.of(()->this.workflowHelper.findStepById(wfTimeLine.stepId())).getOrNull():null;
+        final WorkflowAction action = wfTimeLine instanceof WorkflowHistory &&  UtilMethods.isSet(wfTimeLine.actionId())?
+                Try.of(()->this.workflowHelper.findAction(wfTimeLine.actionId(), APILocator.systemUser())).getOrNull():null;
+
+        final Map<String, String> minimalStepViewMap = new HashMap<>();
+        if (Objects.nonNull(step)) {
+
+            minimalStepViewMap.put("id",step.getId());
+            minimalStepViewMap.put("name",step.getName());
+            minimalStepViewMap.put("schemeId",step.getSchemeId());
+        }
+
+        final Map<String, String> minimalActionViewMap = new HashMap<>();
+        if (Objects.nonNull(action)) {
+
+            minimalActionViewMap.put("id",action.getId());
+            minimalActionViewMap.put("name",action.getName());
+            minimalActionViewMap.put("schemeId",action.getSchemeId());
+        }
+
         final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
         return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
-                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
+                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type(), minimalStepViewMap, minimalActionViewMap);
     }
 
     /**
