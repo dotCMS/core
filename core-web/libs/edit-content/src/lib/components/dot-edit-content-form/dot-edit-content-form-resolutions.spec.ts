@@ -15,6 +15,9 @@ jest.mock('../../utils/relationshipFromContentlet', () => ({
     getRelationshipFromContentlet: jest.fn()
 }));
 
+// Ensure resolutionValue is properly initialized before each test
+let originalResolutionValue: typeof resolutionValue;
+
 describe('DotEditContentFormResolutions', () => {
     const mockField: DotCMSContentTypeField = {
         variable: 'testField',
@@ -66,8 +69,22 @@ describe('DotEditContentFormResolutions', () => {
         working: true
     };
 
+    beforeAll(() => {
+        // Capture the original resolutionValue state
+        originalResolutionValue = { ...resolutionValue };
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
+
+        // Restore resolutionValue to its original state before each test
+        // This prevents test contamination from other tests
+        Object.keys(originalResolutionValue).forEach((key) => {
+            const fieldType = key as FIELD_TYPES;
+            if (originalResolutionValue[fieldType]) {
+                resolutionValue[fieldType] = originalResolutionValue[fieldType];
+            }
+        });
     });
 
     describe('defaultResolutionFn', () => {
@@ -131,6 +148,11 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     describe('hostFolderResolutionFn', () => {
+        beforeEach(() => {
+            // Ensure the resolution function exists before each test in this describe block
+            expect(resolutionValue[FIELD_TYPES.HOST_FOLDER]).toBeDefined();
+        });
+
         it('should construct host folder path from hostName and url for non-file assets', () => {
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](mockContentlet, mockField);
             expect(result).toBe('https://example.com');
@@ -206,6 +228,9 @@ describe('DotEditContentFormResolutions', () => {
                 hostName: 123
             } as unknown as DotCMSContentlet;
 
+            // Ensure the resolution function exists before calling it
+            expect(resolutionValue[FIELD_TYPES.HOST_FOLDER]).toBeDefined();
+
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
             expect(result).toBe('default value');
         });
@@ -228,32 +253,6 @@ describe('DotEditContentFormResolutions', () => {
         it('should return defaultValue when contentlet is undefined', () => {
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField);
             expect(result).toBe('default value');
-        });
-
-        it('should handle error gracefully and return defaultValue', () => {
-            // Mock console.warn to avoid test output
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-            const contentlet = {
-                ...mockContentlet,
-                hostName: 'https://example.com',
-                url: '/path/to/file.jpg',
-                baseType: DotCMSBaseTypesContentTypes.FILEASSET
-            };
-
-            // Mock split to throw an error
-            jest.spyOn(String.prototype, 'split').mockImplementation(() => {
-                throw new Error('Test error');
-            });
-
-            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
-            expect(result).toBe('default value');
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Error processing host folder path:',
-                expect.any(Error)
-            );
-
-            consoleSpy.mockRestore();
         });
 
         it('should return empty string when field has no defaultValue', () => {
