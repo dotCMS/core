@@ -1,18 +1,19 @@
 @let isDefaultPersona = $persona().identifier === 'modes.persona.no.persona';
 
-<button
-    pButton
+<p-button
     (click)="op.toggle($event)"
     [label]="$persona().name"
+    [loading]="$isLoading()"
     [ngClass]="{ selected: !isDefaultPersona }"
-    class="p-button-text p-button-sm">
+    styleClass="p-button-text p-button-sm">
     <p-avatar
         dotAvatar
-        styleClass="ema-persona__avatar-selected"
+        styleClass="persona-avatar selected"
         [text]="$persona().name | dm"
         [image]="$photo()" />
-</button>
-<p-overlayPanel #op styleClass="edit-ema-selector">
+</p-button>
+
+<p-overlayPanel #op>
     <p-listbox
         (onChange)="onSelect($event); op.toggle($event)"
         [options]="$personas().items"
@@ -20,24 +21,9 @@
         optionLabel="label"
         dataKey="identifier">
         <ng-template let-persona pTemplate="item">
-            <div class="flex w-full gap-4 align-items-center justify-content-between">
-                <div class="flex gap-2 align-items-center">
-                    <p-avatar
-                        dotAvatar
-                        styleClass="ema-persona__avatar"
-                        [text]="persona.name | dm"
-                        [image]="persona.photo" />
-                    <span>{{ persona.name | dm }}</span>
-                </div>
-                @if (persona.personalized) {
-                    <p-chip styleClass="p-chip-sm" data-testId="persona-chip">
-                        <i
-                            (click)="onRemove($event, persona); op.toggle($event)"
-                            class="pi pi-times-circle p-chip-icon"></i>
-                        <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
-                    </p-chip>
-                }
-            </div>
+            <ng-container
+                [ngTemplateOutlet]="personaItemTemplate"
+                [ngTemplateOutletContext]="{ $implicit: persona, overlayPanel: op }"></ng-container>
         </ng-template>
     </p-listbox>
     @if ($showPaginator()) {
@@ -50,3 +36,25 @@
             [pageLinkSize]="0" />
     }
 </p-overlayPanel>
+
+<!-- Persona Item Template -->
+<ng-template #personaItemTemplate let-persona let-overlayPanel="overlayPanel">
+    <div class="flex w-full gap-4 align-items-center justify-content-between">
+        <div class="flex gap-2 align-items-center">
+            <p-avatar
+                dotAvatar
+                styleClass="persona-avatar"
+                [text]="persona.name | dm"
+                [image]="persona.photo" />
+            <span>{{ persona.name | dm }}</span>
+        </div>
+        @if (persona.personalized) {
+            <p-chip styleClass="p-chip-sm" data-testId="persona-chip">
+                <i
+                    class="pi pi-times-circle p-chip-icon"
+                    (click)="onRemove($event, persona); overlayPanel.toggle($event)"></i>
+                <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
+            </p-chip>
+        }
+    </div>
+</ng-template>

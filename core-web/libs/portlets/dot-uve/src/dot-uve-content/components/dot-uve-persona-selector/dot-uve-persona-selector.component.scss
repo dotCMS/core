@@ -1,0 +1,31 @@
+@use "variables" as *;
+
+::ng-deep {
+    .persona-avatar,
+    .persona-avatar.selected {
+        flex-shrink: 0;
+
+        .p-avatar-text {
+            font-size: $font-size-md;
+        }
+    }
+
+    .persona-avatar {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    .persona-avatar.selected {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+}
+
+.p-button-text.selected:enabled {
+    background-color: $color-palette-primary-200;
+    color: $color-palette-primary-800;
+}
+.pi-tag {
+    color: $color-palette-primary-500;
+    font-size: $font-size-sm;
+}

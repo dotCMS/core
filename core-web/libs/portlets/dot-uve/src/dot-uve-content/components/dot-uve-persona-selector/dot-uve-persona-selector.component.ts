@@ -1,10 +1,11 @@
 import { of } from 'rxjs';
 
-import { NgClass } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
     inject,
     output,
@@ -12,6 +13,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -37,7 +39,11 @@ interface PersonaSelector {
     itemsPerPage: number;
 }
 
-const DEFAULT_PERSONAS = {
+const ITEMS_PER_PAGE = 5000;
+const PAGINATOR_THRESHOLD = 10;
+const DEFAULT_PAGE = 0;
+
+const DEFAULT_PERSONAS: PersonaSelector = {
     items: [],
     totalRecords: 0,
     itemsPerPage: 0
@@ -47,6 +53,7 @@ const DEFAULT_PERSONAS = {
     selector: 'dot-uve-persona-selector',
     imports: [
         NgClass,
+        NgTemplateOutlet,
         ButtonModule,
         AvatarModule,
         OverlayPanelModule,
@@ -63,40 +70,44 @@ const DEFAULT_PERSONAS = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePersonaSelectorComponent {
+    readonly #destroyRef = inject(DestroyRef);
     readonly #pageService = inject(DotPageService);
     readonly #store = inject(UVEStore);
 
     readonly listbox = viewChild<Listbox>('listbox');
     readonly $personas = signal<PersonaSelector>(DEFAULT_PERSONAS);
+    readonly $isLoading = signal(true);
 
     readonly $pageId = this.#store.$pageIdentifier;
     readonly $persona = this.#store.$viewAsPersona;
 
     readonly $photo = computed(() => this.$persona()?.photo?.versionPath || '');
-    readonly $showPaginator = computed(() => this.$personas().totalRecords > 10);
+    readonly $showPaginator = computed(() => this.$personas().totalRecords > PAGINATOR_THRESHOLD);
+    readonly $hasPersonas = computed(() => this.$personas().items.length > 0);
 
     selected = output<DotCMSViewAsPersona & { pageId: string }>();
     despersonalize = output<DotCMSViewAsPersona & { pageId: string; selected: boolean }>();
 
     constructor() {
         effect(() => {
-            if (this.$pageId()) {
+            const pageId = this.$pageId();
+            if (pageId) {
                 untracked(() => {
-                    this.fetchPersonas();
-                    this.setListboxValue();
+                    this.#loadPersonas();
+                    this.#setListboxValue();
                 });
             }
         });
     }
 
     /**
-     * Handle the change of the persona
+     * Handle the selection of a persona
      *
-     * @param {{ value: DotCMSViewAsPersona }} { value }
-     * @memberof EditEmaPersonaSelectorComponent
+     * @param {{ value: DotCMSViewAsPersona }} { value } - The selected persona
+     * @memberof DotUvePersonaSelectorComponent
      */
-    protected onSelect({ value }: { value: DotCMSViewAsPersona }) {
-        if (value.identifier === this.$persona().identifier) {
+    protected onSelect({ value }: { value: DotCMSViewAsPersona }): void {
+        if (value.identifier === this.$persona()?.identifier) {
             return;
         }
 
@@ -104,23 +115,14 @@ export class DotUvePersonaSelectorComponent {
     }
 
     /**
-     * Reset the value of the listbox
+     * Handle the removal of a persona
      *
-     * @memberof EditEmaPersonaSelectorComponent
+     * @param {MouseEvent} event - The click event
+     * @param {DotCMSViewAsPersona} persona - The persona to remove
+     * @memberof DotUvePersonaSelectorComponent
      */
-    protected setListboxValue(): void {
-        this.listbox()?.writeValue(this.$persona());
-    }
-
-    /**
-     * Handle the remove of the persona
-     *
-     * @param {MouseEvent} event
-     * @param {DotCMSViewAsPersona} persona
-     * @memberof EditEmaPersonaSelectorComponent
-     */
-    protected onRemove(event: MouseEvent, persona: DotCMSViewAsPersona) {
-        const selected = persona.identifier === this.$persona().identifier;
+    protected onRemove(event: MouseEvent, persona: DotCMSViewAsPersona): void {
+        const selected = persona.identifier === this.$persona()?.identifier;
         event.stopPropagation();
 
         this.despersonalize.emit({
@@ -131,45 +133,60 @@ export class DotUvePersonaSelectorComponent {
     }
 
     /**
-     * Fetch personas from the API
+     * Handle pagination changes
      *
-     * @memberof EditEmaPersonaSelectorComponent
+     * @param {PaginatorState} event - The pagination event
+     * @memberof DotUvePersonaSelectorComponent
      */
-    protected fetchPersonas(page = 0) {
+    protected onPaginate(event: PaginatorState): void {
+        const page = (event.page || DEFAULT_PAGE) + 1;
+        this.#loadPersonas(page);
+    }
+
+    /**
+     * Reset the value of the listbox to match current persona
+     *
+     * @private
+     * @memberof DotUvePersonaSelectorComponent
+     */
+    #setListboxValue(): void {
+        this.listbox()?.writeValue(this.$persona());
+    }
+
+    /**
+     * Load personas from the API with proper error handling and cleanup
+     *
+     * @param {number} page - The page number to load (1-based)
+     * @private
+     * @memberof DotUvePersonaSelectorComponent
+     */
+    #loadPersonas(page = 1): void {
+        this.$isLoading.set(true);
         this.#pageService
             .getPagePersonas(this.$pageId(), {
-                perPage: 5000,
+                perPage: ITEMS_PER_PAGE,
                 page
             })
             .pipe(
-                catchError(() =>
-                    of({
+                catchError(() => {
+                    return of({
                         personas: [],
                         pagination: {
-                            currentPage: 0,
+                            currentPage: DEFAULT_PAGE,
                             perPage: 0,
                             totalEntries: 0
                         }
-                    })
-                )
+                    });
+                }),
+                takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe(({ personas, pagination }) =>
+            .subscribe(({ personas, pagination }) => {
                 this.$personas.set({
                     items: personas,
                     totalRecords: pagination.totalEntries,
                     itemsPerPage: pagination.perPage
-                })
-            );
-    }
-
-    /**
-     * Handle the paginate of the personas
-     *
-     * @param {PaginatorState} event
-     * @memberof DotUvePersonaSelectorComponent
-     */
-    protected onPaginate(event: PaginatorState) {
-        const page = event.page || 0;
-        this.fetchPersonas(page + 1);
+                });
+                this.$isLoading.set(false);
+            });
     }
 }
