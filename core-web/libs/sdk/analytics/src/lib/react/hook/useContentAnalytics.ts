@@ -2,10 +2,7 @@ import { useCallback, useRef } from 'react';
 
 import { getUVEState } from '@dotcms/uve';
 
-import {
-    DotCMSAnalytics,
-    DotCMSAnalyticsConfig
-} from '../../core/shared/dot-content-analytics.model';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../core/shared/models';
 import { initializeAnalytics } from '../internal';
 
 /**

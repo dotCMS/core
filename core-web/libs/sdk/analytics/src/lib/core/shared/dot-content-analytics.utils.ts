@@ -7,7 +7,7 @@ import {
     EXPECTED_UTM_KEYS,
     SESSION_STORAGE_KEY,
     USER_ID_KEY
-} from './dot-content-analytics.constants';
+} from './constants';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsContext,
@@ -16,7 +16,7 @@ import {
     DotCMSDeviceData,
     DotCMSPageData,
     DotCMSUtmData
-} from './dot-content-analytics.model';
+} from './models';
 
 // Export activity tracking functions from separate module
 export {

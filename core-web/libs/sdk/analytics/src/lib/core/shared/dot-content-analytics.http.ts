@@ -1,9 +1,5 @@
-import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
-import {
-    DotCMSAnalyticsConfig,
-    DotCMSEvent,
-    DotCMSRequestBody
-} from './dot-content-analytics.model';
+import { ANALYTICS_ENDPOINT } from './constants';
+import { DotCMSAnalyticsConfig, DotCMSEvent, DotCMSRequestBody } from './models';
 
 /**
  * Send an analytics event to the server

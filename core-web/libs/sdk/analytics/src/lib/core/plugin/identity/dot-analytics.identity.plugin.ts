@@ -1,12 +1,10 @@
 import {
-    DotCMSAnalyticsConfig,
-    DotCMSAnalyticsHookParams
-} from '../../shared/dot-content-analytics.model';
-import {
     cleanupActivityTracking,
     getAnalyticsContext,
-    initializeActivityTracking
+    initializeActivityTracking,
+    updateSessionActivity
 } from '../../shared/dot-content-analytics.utils';
+import { DotCMSAnalyticsBaseParams, DotCMSAnalyticsConfig } from '../../shared/models';
 
 /**
  * Identity Plugin for DotAnalytics
@@ -38,8 +36,10 @@ export const dotAnalyticsIdentityPlugin = (config: DotCMSAnalyticsConfig) => {
         /**
          * Inject identity context into page events
          * This runs BEFORE the enricher plugin
+         * Also updates session activity for session management
          */
-        pageStart: ({ payload }: DotCMSAnalyticsHookParams) => {
+        pageStart: ({ payload }: DotCMSAnalyticsBaseParams) => {
+            updateSessionActivity();
             const context = getAnalyticsContext(config);
 
             return {
@@ -51,8 +51,10 @@ export const dotAnalyticsIdentityPlugin = (config: DotCMSAnalyticsConfig) => {
         /**
          * Inject identity context into track events
          * This runs BEFORE the enricher plugin
+         * Also updates session activity for session management
          */
-        trackStart: ({ payload }: DotCMSAnalyticsHookParams) => {
+        trackStart: ({ payload }: DotCMSAnalyticsBaseParams) => {
+            updateSessionActivity();
             const context = getAnalyticsContext(config);
 
             return {

@@ -2,7 +2,7 @@ import {
     DEFAULT_SESSION_TIMEOUT_MINUTES,
     EXPECTED_UTM_KEYS,
     SESSION_UTM_KEY
-} from '../../shared/dot-content-analytics.constants';
+} from '../../shared/constants';
 import { safeSessionStorage } from '../../shared/dot-content-analytics.utils';
 
 // Activity tracking state

@@ -1,8 +1,5 @@
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
-import {
-    DotCMSAnalyticsConfig,
-    DotCMSAnalyticsEnrichedParams
-} from '../shared/dot-content-analytics.model';
+import { DotCMSAnalyticsConfig, DotCMSAnalyticsEnrichedParams } from '../shared/models';
 
 /**
  * Analytics plugin for tracking page views and custom events in DotCMS applications.

@@ -1,8 +1,5 @@
 import { initializeContentAnalytics } from '../../core/dot-content-analytics';
-import {
-    DotCMSAnalytics,
-    DotCMSAnalyticsConfig
-} from '../../core/shared/dot-content-analytics.model';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../core/shared/models';
 
 /**
  * Internal utilities for initializing and accessing the analytics singleton in React apps.

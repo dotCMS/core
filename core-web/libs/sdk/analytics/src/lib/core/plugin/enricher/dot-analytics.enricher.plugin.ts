@@ -1,9 +1,9 @@
+import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 import {
     DotCMSAnalyticsPayload,
     DotCMSCustomEventRequestBody,
     DotCMSPageViewRequestBody
-} from '../../shared/dot-content-analytics.model';
-import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
+} from '../../shared/models';
 
 /**
  * Plugin that enriches the analytics payload data based on the event type.

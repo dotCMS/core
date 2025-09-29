@@ -3,11 +3,8 @@ import { Analytics } from 'analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig } from './shared/dot-content-analytics.model';
-import {
-    cleanupActivityTracking,
-    updateSessionActivity
-} from './shared/dot-content-analytics.utils';
+import { cleanupActivityTracking } from './shared/dot-content-analytics.utils';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig } from './shared/models';
 
 /**
  * Creates an analytics instance for content analytics tracking.
@@ -35,7 +32,7 @@ export const initializeContentAnalytics = (
         debug: config.debug,
         plugins: [
             dotAnalyticsIdentityPlugin(config), // Inject identity context (user_id, session_id, local_tz)
-            dotAnalyticsEnricherPlugin(), // Enrich with page, device, utm data
+            dotAnalyticsEnricherPlugin(), // Enrich and clean payload with page, device, utm data and custom data
             dotAnalytics(config) // Send events to server
         ]
     });
@@ -51,20 +48,20 @@ export const initializeContentAnalytics = (
     return {
         /**
          * Track a page view.
+         * Session activity is automatically updated by the identity plugin.
          * @param {Record<string, unknown>} payload - The payload to track.
          */
         pageView: (payload: Record<string, unknown> = {}) => {
-            updateSessionActivity();
             analytics?.page(payload);
         },
 
         /**
          * Track a custom event.
+         * Session activity is automatically updated by the identity plugin.
          * @param {string} eventName - The name of the event to track.
          * @param {Record<string, unknown>} payload - The payload to track.
          */
         track: (eventName: string, payload: Record<string, unknown> = {}) => {
-            updateSessionActivity();
             analytics?.track(eventName, payload);
         }
     };
