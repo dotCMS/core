@@ -1,13 +1,14 @@
-import { ChangeDetectionStrategy, Component, input, output, OnInit } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCardFieldContentComponent } from '../../../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../../../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../../../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../../../dot-card-field/dot-card-field.component';
-import { BaseFieldComponent } from '../../../shared/base-field.component';
+import { BaseWrapperField } from '../../../shared/base-wrapper-field';
 import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binary-field.component';
 
 /**
@@ -22,28 +23,37 @@ import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binar
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
         DotMessagePipe,
         DotEditContentBinaryFieldComponent
     ],
     templateUrl: './dot-binary-field-wrapper.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true, optional: true })
+        }
+    ]
 })
-export class DotBinaryFieldWrapperComponent extends BaseFieldComponent implements OnInit {
+export class DotBinaryFieldWrapperComponent extends BaseWrapperField {
+    /**
+     * A signal that holds the field.
+     * It is used to display the field in the binary field wrapper component.
+     */
     $field = input.required<DotCMSContentTypeField>({
         alias: 'field'
     });
+    /**
+     * A signal that holds the contentlet.
+     * It is used to display the contentlet in the binary field wrapper component.
+     */
     $contentlet = input.required<DotCMSContentlet>({
         alias: 'contentlet'
     });
+    /**
+     * An output signal that emits when the value is updated.
+     * It is used to display the value in the binary field wrapper component.
+     */
     valueUpdated = output<{ value: string; fileName: string }>();
-
-    writeValue(_: unknown): void {
-        // Do nothing
-    }
-
-    ngOnInit(): void {
-        this.statusChanges$.subscribe(() => {
-            this.changeDetectorRef.detectChanges();
-        });
-    }
 }
