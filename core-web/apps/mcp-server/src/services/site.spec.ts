@@ -163,10 +163,10 @@ describe('SiteService', () => {
 
             expect(result.name).toBe('Default Site');
             expect(result.hostname).toBe('localhost');
-            expect((result as any).customTextField).toBe('custom value');
-            expect((result as any).customNumber).toBe(42);
-            expect((result as any).customBoolean).toBe(true);
-            expect((result as any).customObject).toEqual({ nested: 'data' });
+            expect((result as Record<string, unknown>).customTextField).toBe('custom value');
+            expect((result as Record<string, unknown>).customNumber).toBe(42);
+            expect((result as Record<string, unknown>).customBoolean).toBe(true);
+            expect((result as Record<string, unknown>).customObject).toEqual({ nested: 'data' });
         });
     });
 });
