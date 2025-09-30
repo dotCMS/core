@@ -35,8 +35,8 @@ const TabDividerClazzEnum = z.enum(['com.dotcms.contenttype.model.field.Immutabl
 const LineDividerClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
 ]);
-const FieldClazzEnum = z.enum([
-    'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+// Known field clazz types - using union to allow for unknown/deprecated types
+const KnownFieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     'com.dotcms.contenttype.model.field.ImmutableCategoryField',
     'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
@@ -60,6 +60,15 @@ const FieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableTimeField',
     'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
+]);
+
+// Flexible field clazz that accepts known types or any string matching the dotCMS field pattern
+const FieldClazzEnum = z.union([
+    KnownFieldClazzEnum,
+    z.string().refine(
+        (val) => /^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/.test(val),
+        { message: 'Field clazz must be a valid dotCMS field type' }
+    )
 ]);
 
 const DividerSchema = z.object({
