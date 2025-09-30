@@ -31,16 +31,17 @@
     <dot-content-drive-sidebar data-testid="sidebar" />
 </div>
 
-<dot-folder-list-view
-    [items]="$items()"
-    [totalItems]="$totalItems()"
-    [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
-    (paginate)="onPaginate($event)"
-    (sort)="onSort($event)"
-    (rightClick)="onContextMenu($event)"
-    (doubleClick)="onDoubleClick($event)"
-    #listView />
-
+<dot-content-drive-dropzone>
+    <dot-folder-list-view
+        [items]="$items()"
+        [totalItems]="$totalItems()"
+        [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
+        (paginate)="onPaginate($event)"
+        (sort)="onSort($event)"
+        (rightClick)="onContextMenu($event)"
+        (doubleClick)="onDoubleClick($event)"
+        #listView />
+</dot-content-drive-dropzone>
 <dot-folder-list-context-menu />
 
 <p-toast position="top-center" data-testId="content-drive-toast" />
