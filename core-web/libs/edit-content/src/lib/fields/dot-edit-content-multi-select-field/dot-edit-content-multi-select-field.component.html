@@ -1,13 +1,18 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <p-multiSelect
             [class.ng-invalid]="hasError"
             [class.ng-dirty]="hasError"
             [options]="$options()"
-            [formControl]="formControl"
+            [formControlName]="field.variable"
             optionLabel="label"
             optionValue="value" />
     </dot-card-field-content>

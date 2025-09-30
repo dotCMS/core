@@ -1,31 +1,18 @@
-import { signalMethod } from '@ngrx/signals';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ReactiveFormsModule, FormsModule, ControlContainer } from '@angular/forms';
 
-import { ChangeDetectionStrategy, Component, inject, input, viewChild } from '@angular/core';
-import {
-    FormControl,
-    ReactiveFormsModule,
-    FormsModule,
-    ControlContainer,
-    FormGroup,
-    Validators
-} from '@angular/forms';
+import { TreeSelectModule } from 'primeng/treeselect';
 
-import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
-
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { HostFolderFiledStore } from './store/host-folder-field.store';
+import { DotHostFolderFieldComponent } from './components/host-folder-field/host-folder-field.component';
 
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../models/dot-edit-content-host-folder-field.interface';
-import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
-import { BaseFieldComponent } from '../shared/base-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
  * Component for editing content site or folder field.
@@ -38,11 +25,12 @@ import { BaseFieldComponent } from '../shared/base-field.component';
     imports: [
         TreeSelectModule,
         ReactiveFormsModule,
-        TruncatePathPipe,
         FormsModule,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        DotHostFolderFieldComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
@@ -52,96 +40,17 @@ import { BaseFieldComponent } from '../shared/base-field.component';
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ],
-    providers: [HostFolderFiledStore]
+    ]
 })
-export class DotEditContentHostFolderFieldComponent extends BaseFieldComponent {
+export class DotEditContentHostFolderFieldComponent extends BaseWrapperField {
+    /**
+     * A signal that holds the field.
+     * It is used to display the field in the component.
+     */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-    $treeSelect = viewChild<TreeSelect>(TreeSelect);
-    readonly store = inject(HostFolderFiledStore);
-    readonly controlContainer = inject(ControlContainer);
-
-    pathControl = new FormControl(null);
-
-    constructor() {
-        super();
-        this.handleNodeExpanedChange(this.store.nodeExpaned);
-        this.handleNodeSelectedChange(this.store.nodeSelected);
-        this.handlePathToSaveChange(this.store.pathToSave);
-    }
-
     /**
-     * Set the value of the field.
-     * If the value is empty, nothing happens.
-     * If the value is not empty, the store is called to get the asset data.
-     *
-     * @param value the value to set
+     * A signal that holds the contentlet.
+     * It is used to display the contentlet in the component.
      */
-    writeValue(currentPath: string): void {
-        this.store.loadSites({
-            path: currentPath,
-            isRequired: this.hasRequiredValidator
-        });
-    }
-
-    readonly handlePathToSaveChange = signalMethod<string>((pathToSave) => {
-        if (pathToSave === null || pathToSave === undefined || !this.onChange || !this.onTouched) {
-            return;
-        }
-
-        this.onChange(pathToSave);
-        this.onTouched();
-    });
-
-    readonly handleNodeSelectedChange = signalMethod<TreeNodeItem>((nodeSelected) => {
-        if (!nodeSelected) {
-            return;
-        }
-
-        this.pathControl.setValue(nodeSelected);
-    });
-
-    readonly handleNodeExpanedChange = signalMethod<TreeNodeSelectItem['node']>((nodeExpaned) => {
-        if (!nodeExpaned) {
-            return;
-        }
-
-        const treeSelect = this.$treeSelect();
-        if (treeSelect.treeViewChild) {
-            treeSelect.treeViewChild.updateSerializedValue();
-            treeSelect.cd.detectChanges();
-        }
-    });
-
-    /**
-     * Sets the disabled state of the control.
-     *
-     * @param isDisabled The disabled state to set.
-     */
-    setDisabledState(isDisabled: boolean): void {
-        if (isDisabled) {
-            this.pathControl.disable({ emitEvent: false });
-        } else {
-            this.pathControl.enable({ emitEvent: false });
-        }
-    }
-
-    /**
-     * Get the control of the field.
-     *
-     * @returns {FormGroup} The control of the field.
-     */
-    get control(): FormGroup {
-        return this.controlContainer.control.get(this.$field().variable) as FormGroup;
-    }
-
-    /**
-     * Get if the field has a required validator.
-     *
-     * @returns {boolean} True if the field has a required validator, false otherwise.
-     */
-    get hasRequiredValidator(): boolean {
-        const control = this.control;
-        return control.hasValidator(Validators.required);
-    }
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 }
