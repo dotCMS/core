@@ -7,8 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:angular-ssr": "node dist/angular-ssr/server/server.mjs",
-    "vercel-build": "ng build"
+    "serve:ssr:angular-ssr": "node dist/angular-ssr/server/server.mjs"
   },
   "prettier": {
     "printWidth": 100,
