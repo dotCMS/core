@@ -15,32 +15,6 @@ export const ContentTypeBaseTypeEnum = z.enum([
 
 export type ContentTypeBaseType = z.infer<typeof ContentTypeBaseTypeEnum>;
 
-export const ContentTypeFieldSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    variable: z.string(),
-    required: z.boolean(),
-    indexed: z.boolean(),
-    listed: z.boolean(),
-    unique: z.boolean(),
-    searchable: z.boolean(),
-    sortOrder: z.number(),
-    values: z.string().optional(),
-    defaultValue: z.string().optional(),
-    hint: z.string().optional(),
-    regexCheck: z.string().optional(),
-    modDate: z.number().optional(),
-    iDate: z.number().optional(),
-    fieldType: z.string().optional(),
-    fieldTypeLabel: z.string().optional(),
-    contentTypeId: z.string().optional(),
-    fixed: z.boolean().optional(),
-    readOnly: z.boolean().optional(),
-    system: z.boolean().optional(),
-    dataType: z.string().optional(),
-    fieldVariables: z.array(z.record(z.any())).optional()
-});
-
 export const WorkflowSchema = z.object({
     archived: z.boolean(),
     creationDate: z.number(),
@@ -136,7 +110,7 @@ const ColumnDividerSchema = z.object({
     variable: z.string().optional()
 });
 
-const LayoutFieldSchema = z.object({
+const ContentTypeFieldSchema = z.object({
     clazz: FieldClazzEnum,
     contentTypeId: z.string(),
     dataType: z.string(),
@@ -145,6 +119,7 @@ const LayoutFieldSchema = z.object({
     fieldVariables: z.array(z.record(z.any())),
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
+    hint: z.string().optional(),
     iDate: z.number(),
     id: z.string(),
     indexed: z.boolean(),
@@ -155,15 +130,16 @@ const LayoutFieldSchema = z.object({
     required: z.boolean(),
     searchable: z.boolean(),
     sortOrder: z.number(),
+    system: z.boolean().optional(),
     unique: z.boolean(),
     variable: z.string(),
     values: z.string().optional(),
-    defaultValue: z.string().optional()
+    defaultValue: z.string().optional(),
 });
 
 const ColumnSchema = z.object({
     columnDivider: ColumnDividerSchema,
-    fields: z.array(LayoutFieldSchema)
+    fields: z.array(ContentTypeFieldSchema)
 });
 
 export const LayoutSchema = z.object({

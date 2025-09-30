@@ -282,8 +282,15 @@ yarn nx build mcp-server
 > [!NOTE]
 > Files are located in `core-web/apps/mcp-server` and we use [Nx monorepo](https://nx.dev/)
 
+#### 2. Use MCP Inspector for debug
 
-#### 2. Use Local Build in AI Assistants
+After a succesful build
+
+```bash
+npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUTH_TOKEN=the-auth-token node dist/apps/mcp-server
+```
+
+#### 3. Use Local Build in AI Assistants
 
 **Claude Desktop Configuration:**
 ```json
