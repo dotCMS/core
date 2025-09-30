@@ -32,7 +32,7 @@ describe('ContentType Validation', () => {
             knownFieldTypes.forEach(fieldType => {
                 const contentTypeData = {
                     baseType: 'CONTENT' as const,
-                    clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                     defaultType: false,
                     fixed: false,
                     folder: 'SYSTEM_FOLDER',
@@ -82,7 +82,7 @@ describe('ContentType Validation', () => {
         it('should validate content types with deprecated field types like ImmutableBinaryField', () => {
             const contentTypeData = {
                 baseType: 'CONTENT' as const,
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
                 fixed: false,
                 folder: 'SYSTEM_FOLDER',
@@ -131,7 +131,7 @@ describe('ContentType Validation', () => {
         it('should validate content types with other unknown field types that follow the dotCMS pattern', () => {
             const contentTypeData = {
                 baseType: 'CONTENT' as const,
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
                 fixed: false,
                 folder: 'SYSTEM_FOLDER',
@@ -180,7 +180,7 @@ describe('ContentType Validation', () => {
         it('should reject content types with invalid field clazz values', () => {
             const contentTypeData = {
                 baseType: 'CONTENT' as const,
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
                 fixed: false,
                 folder: 'SYSTEM_FOLDER',
@@ -229,7 +229,7 @@ describe('ContentType Validation', () => {
         it('should reject content types with field clazz that does not end with Field', () => {
             const contentTypeData = {
                 baseType: 'CONTENT' as const,
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
                 fixed: false,
                 folder: 'SYSTEM_FOLDER',
@@ -276,11 +276,127 @@ describe('ContentType Validation', () => {
         });
     });
 
+    describe('Content Type Clazz Validation', () => {
+        it('should validate content types with known clazz types', () => {
+            const knownContentTypeClazzes = [
+                'com.dotcms.contenttype.model.type.ImmutableDotAssetContentType',
+                'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
+                'com.dotcms.contenttype.model.type.ImmutableFormContentType',
+                'com.dotcms.contenttype.model.type.ImmutableKeyValueContentType',
+                'com.dotcms.contenttype.model.type.ImmutablePageContentType',
+                'com.dotcms.contenttype.model.type.ImmutablePersonaContentType',
+                'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                'com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType',
+                'com.dotcms.contenttype.model.type.ImmutableWidgetContentType'
+            ];
+
+            knownContentTypeClazzes.forEach(clazz => {
+                const contentTypeData = {
+                    baseType: 'CONTENT' as const,
+                    clazz: clazz,
+                    defaultType: false,
+                    fixed: false,
+                    folder: 'SYSTEM_FOLDER',
+                    folderPath: '/SYSTEM_FOLDER',
+                    host: 'test-host',
+                    iDate: 1234567890,
+                    id: 'test-content-type',
+                    layout: [],
+                    metadata: {},
+                    modDate: 1234567890,
+                    multilingualable: true,
+                    name: 'Test Content Type',
+                    sortOrder: 1,
+                    system: false,
+                    variable: 'testContentType',
+                    versionable: true
+                };
+
+                expect(() => ContentTypeSchema.parse(contentTypeData)).not.toThrow();
+            });
+        });
+
+        it('should validate content types with unknown clazz types that follow the dotCMS pattern', () => {
+            const contentTypeData = {
+                baseType: 'CONTENT' as const,
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSomeNewContentType',
+                defaultType: false,
+                fixed: false,
+                folder: 'SYSTEM_FOLDER',
+                folderPath: '/SYSTEM_FOLDER',
+                host: 'test-host',
+                iDate: 1234567890,
+                id: 'test-content-type',
+                layout: [],
+                metadata: {},
+                modDate: 1234567890,
+                multilingualable: true,
+                name: 'Test Content Type',
+                sortOrder: 1,
+                system: false,
+                variable: 'testContentType',
+                versionable: true
+            };
+
+            expect(() => ContentTypeSchema.parse(contentTypeData)).not.toThrow();
+        });
+
+        it('should reject content types with invalid clazz values', () => {
+            const contentTypeData = {
+                baseType: 'CONTENT' as const,
+                clazz: 'com.invalid.type.ImmutableInvalidContentType',
+                defaultType: false,
+                fixed: false,
+                folder: 'SYSTEM_FOLDER',
+                folderPath: '/SYSTEM_FOLDER',
+                host: 'test-host',
+                iDate: 1234567890,
+                id: 'test-content-type',
+                layout: [],
+                metadata: {},
+                modDate: 1234567890,
+                multilingualable: true,
+                name: 'Test Content Type',
+                sortOrder: 1,
+                system: false,
+                variable: 'testContentType',
+                versionable: true
+            };
+
+            expect(() => ContentTypeSchema.parse(contentTypeData)).toThrow();
+        });
+
+        it('should reject content types with clazz that does not end with ContentType', () => {
+            const contentTypeData = {
+                baseType: 'CONTENT' as const,
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSomethingElse',
+                defaultType: false,
+                fixed: false,
+                folder: 'SYSTEM_FOLDER',
+                folderPath: '/SYSTEM_FOLDER',
+                host: 'test-host',
+                iDate: 1234567890,
+                id: 'test-content-type',
+                layout: [],
+                metadata: {},
+                modDate: 1234567890,
+                multilingualable: true,
+                name: 'Test Content Type',
+                sortOrder: 1,
+                system: false,
+                variable: 'testContentType',
+                versionable: true
+            };
+
+            expect(() => ContentTypeSchema.parse(contentTypeData)).toThrow();
+        });
+    });
+
     describe('Content Type with Deprecated Fields', () => {
         it('should validate a complete content type with deprecated binary field', () => {
             const contentTypeData = {
                 baseType: 'CONTENT',
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
                 description: 'Test content type with deprecated field',
                 fixed: false,
@@ -333,7 +449,7 @@ describe('ContentType Validation', () => {
                 entity: [
                     {
                         baseType: 'CONTENT',
-                        clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                         defaultType: false,
                         description: 'Legacy content type with binary field',
                         fixed: false,
@@ -491,7 +607,7 @@ describe('ContentType Validation', () => {
         it('should handle multiple deprecated field types in the same content type', () => {
             const contentTypeWithMultipleDeprecatedFields = {
                 baseType: 'CONTENT',
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableContentType',
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
                 defaultType: false,
                 description: 'Content type with multiple deprecated fields',
                 fixed: false,

@@ -15,6 +15,28 @@ export const ContentTypeBaseTypeEnum = z.enum([
 
 export type ContentTypeBaseType = z.infer<typeof ContentTypeBaseTypeEnum>;
 
+// Known content type clazz types - using union to allow for unknown/deprecated types
+const KnownContentTypeClazzEnum = z.enum([
+    'com.dotcms.contenttype.model.type.ImmutableDotAssetContentType',
+    'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
+    'com.dotcms.contenttype.model.type.ImmutableFormContentType',
+    'com.dotcms.contenttype.model.type.ImmutableKeyValueContentType',
+    'com.dotcms.contenttype.model.type.ImmutablePageContentType',
+    'com.dotcms.contenttype.model.type.ImmutablePersonaContentType',
+    'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    'com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType',
+    'com.dotcms.contenttype.model.type.ImmutableWidgetContentType'
+]);
+
+// Flexible content type clazz that accepts known types or any string matching the dotCMS content type pattern
+const ContentTypeClazzEnum = z.union([
+    KnownContentTypeClazzEnum,
+    z.string().refine(
+        (val) => /^com\.dotcms\.contenttype\.model\.type\.Immutable\w+ContentType$/.test(val),
+        { message: 'Content type clazz must be a valid dotCMS content type' }
+    )
+]);
+
 export const WorkflowSchema = z.object({
     archived: z.boolean(),
     creationDate: z.number(),
@@ -158,7 +180,7 @@ export const LayoutSchema = z.object({
 
 export const ContentTypeSchema = z.object({
     baseType: ContentTypeBaseTypeEnum,
-    clazz: z.string(),
+    clazz: ContentTypeClazzEnum,
     defaultType: z.boolean(),
     description: z.string().optional(),
     fields: z.array(ContentTypeFieldSchema).optional(),
