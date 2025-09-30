@@ -19824,16 +19824,7 @@ components:
       type: object
       properties:
         assetPath:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
+          type: string
         baseTypes:
           type: array
           items:

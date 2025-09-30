@@ -17,7 +17,7 @@ import org.immutables.value.Value;
 public interface AbstractDriveRequestForm {
 
     @JsonProperty("assetPath")
-    List<String> assetPath();
+    String assetPath();
 
     @JsonProperty("language")
     @Value.Default

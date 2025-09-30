@@ -51,6 +51,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple3;
 import io.vavr.control.Try;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -349,9 +351,14 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         //Get Content
+        Instant start = Instant.now();
         final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentFromDB(browserQuery)
                 : Collections.emptyList();
+        Instant end = Instant.now();
+        Duration duration = Duration.between(start, end);
+        Logger.info(this, "SQL Fetch Execution time: " + duration.toSeconds() + "s");
 
+        Instant start2 = Instant.now();
         for (final Contentlet contentlet : contentlets) {
             Map<String, Object> contentMap;
             final Optional<BaseContentType> baseType = contentlet.getBaseType();
@@ -377,8 +384,12 @@ public class BrowserAPIImpl implements BrowserAPI {
             contentMap.put("permissions", permissions);
             returnList.add(contentMap);
         }
+        Instant end2 = Instant.now();
+        Duration duration2 = Duration.between(start2, end2);
+        Logger.info(this, "Hydration Execution time: " + duration2.toSeconds() + "s");
 
         // Filtering
+        //TODO: this sliding needs to take place before hydration so that we only hydrate what we need
         returnList = this.filterReturnList(browserQuery,returnList);
 
         // Sorting

@@ -1460,14 +1460,38 @@ public class ESContentFactoryImpl extends ContentletFactory {
         conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
       }
     }
-    
-    if (conMap.size() != inodes.size()) {
-        final List<String> missingCons = new ArrayList<>(
+
+      final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
+      final boolean contentAsJson = contentletJsonAPI.isPersistContentAsJson();
+
+      if (conMap.size() != inodes.size()) {
+          final List<String> missingCons = new ArrayList<>(
                 CollectionUtils.subtract(inodes, conMap.keySet()));
 
+        //This is slowing down our query
+        String selectClause = "SELECT contentlet.*";
+
+        if(contentAsJson){
+            // Performance wise if we really want to be efficient we need to fetch exactly what we need
+            // I'm leaving out all the old field columns that are no longer needed when using contentlet as JSON
+            selectClause = "SELECT \n"
+                    + "    contentlet.inode, \n"
+                    + "    contentlet.show_on_menu, \n"
+                    + "    contentlet.title, \n"
+                    + "    contentlet.mod_date, \n"
+                    + "    contentlet.mod_user, \n"
+                    + "    contentlet.sort_order, \n"
+                    + "    contentlet.friendly_name, \n"
+                    + "    contentlet.structure_inode, \n"
+                    + "    contentlet.disabled_wysiwyg, \n"
+                    + "    contentlet.identifier, \n"
+                    + "    contentlet.language_id, \n"
+                    + "    contentlet.contentlet_as_json, \n"
+                    + "    contentlet.variant_id \n";
+        }
         final String contentletBase =
-                "select contentlet.*, contentlet_1_.owner  from contentlet join inode contentlet_1_ "
-                        + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+                selectClause +", contentlet_1_.owner FROM contentlet join inode contentlet_1_ "
+                        + " ON contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' WHERE contentlet.inode in ('";
 
         for (int init = 0; init < missingCons.size(); init += 200) {
             int end = Math.min(init + 200, missingCons.size());

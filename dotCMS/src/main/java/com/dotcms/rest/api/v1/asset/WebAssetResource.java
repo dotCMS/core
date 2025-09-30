@@ -457,7 +457,7 @@ public class WebAssetResource {
         Logger.debug(this,
                 String.format("User [%s] is requesting assets info for path [%s]",
                         user.getUserId(), form.assetPath()));
-        return Response.ok(helper.driveSearch(form, user)).build();
+        return Response.ok(new ResponseEntityView<>(helper.driveSearch(form, user))).build();
     }
 
 }

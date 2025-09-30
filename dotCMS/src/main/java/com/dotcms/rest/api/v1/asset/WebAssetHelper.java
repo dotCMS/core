@@ -48,6 +48,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -938,7 +939,18 @@ public class WebAssetHelper {
         return Optional.empty();
     }
 
-    public Object driveSearch(final DriveRequestForm requestForm, final User user)
+    /**
+     * This endpoint is intended to be used to feed content-drive it behaves quite similar to BrowserResource
+     * except that this can take a site/folder path expressed in the form //site/folder/subfolder/
+     * The set of params that can be passed here is wider as it can take multiple languages and content-types making it more flexible
+     * This is also set to use ES for text filtering while BrowserResource relies entirely on the db
+     * @param requestForm Json body request
+     * @param user Current logged in user
+     * @return a Map with all requested properties
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public Map<String, Object> driveSearch(final DriveRequestForm requestForm, final User user)
             throws DotDataException, DotSecurityException {
         final List<Long> langIds = requestForm.language().stream().map(LanguageUtil::getLanguageId).collect(Collectors.toList());
         List<BaseContentType> baseContentTypes = BaseContentType.allBaseTypes();
@@ -956,9 +968,9 @@ public class WebAssetHelper {
         }
 
         final AssetPathResolver resolver = AssetPathResolver.newInstance();
-        final List<String> assetPath = requestForm.assetPath();
-        for (final String path : assetPath) {
-            final ResolvedAssetAndPath assetAndPath = resolver.resolve(path, user, false);
+        final String assetPath = requestForm.assetPath();
+
+            final ResolvedAssetAndPath assetAndPath = resolver.resolve(assetPath, user, false);
             final Host host = assetAndPath.resolvedHost();
             final Folder folder = assetAndPath.resolvedFolder();
 
@@ -985,19 +997,11 @@ public class WebAssetHelper {
             }
 
             if(null != requestForm.filter()) {
-                builder.withUseElasticsearchFiltering(true) //We rely on ES here when filter
+                builder.withUseElasticsearchFiltering(true) //We rely on ES here when filtering text
                 .withFilter(requestForm.filter());
             }
 
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
-            /*
-            final List<Contentlet> assets = folderContent.stream()
-                    .filter(Contentlet.class::isInstance).map(
-                            Contentlet.class::cast).collect(Collectors.toList());
-             */
-            return folderContent;
-        }
-        return null;
+        return browserAPI.getFolderContent(builder.build());
     }
 
     /**
