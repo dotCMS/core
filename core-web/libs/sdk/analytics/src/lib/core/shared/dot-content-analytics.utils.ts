@@ -461,7 +461,7 @@ export const enrichPagePayloadOptimized = (
     // Filter out Analytics.js default properties to get only user-provided properties
     const userProvidedProperties: Record<string, unknown> = {};
     Object.keys(properties).forEach((key) => {
-        if (!ANALYTICS_JS_DEFAULT_PROPERTIES.includes(key as any)) {
+        if (!(ANALYTICS_JS_DEFAULT_PROPERTIES as readonly string[]).includes(key)) {
             userProvidedProperties[key] = properties[key];
         }
     });
