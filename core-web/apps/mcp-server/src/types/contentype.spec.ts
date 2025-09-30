@@ -29,7 +29,7 @@ describe('ContentType Validation', () => {
                 'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
             ];
 
-            knownFieldTypes.forEach(fieldType => {
+            knownFieldTypes.forEach((fieldType) => {
                 const contentTypeData = {
                     baseType: 'CONTENT' as const,
                     clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -290,7 +290,7 @@ describe('ContentType Validation', () => {
                 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType'
             ];
 
-            knownContentTypeClazzes.forEach(clazz => {
+            knownContentTypeClazzes.forEach((clazz) => {
                 const contentTypeData = {
                     baseType: 'CONTENT' as const,
                     clazz: clazz,
@@ -507,7 +507,8 @@ describe('ContentType Validation', () => {
                                         fields: [
                                             {
                                                 clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
-                                                contentTypeId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                                                contentTypeId:
+                                                    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
                                                 dataType: 'BINARY',
                                                 defaultValue: '',
                                                 fieldType: 'Binary',
@@ -531,7 +532,8 @@ describe('ContentType Validation', () => {
                                             },
                                             {
                                                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                                                contentTypeId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                                                contentTypeId:
+                                                    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
                                                 dataType: 'TEXT',
                                                 defaultValue: '',
                                                 fieldType: 'Text',
@@ -601,7 +603,9 @@ describe('ContentType Validation', () => {
                 'com.dotcms.contenttype.model.field.ImmutableBinaryField'
             );
             expect(parsedContentType.layout[0].columns[0].fields[0].fieldType).toBe('Binary');
-            expect(parsedContentType.layout[0].columns[0].fields[0].variable).toBe('documentUpload');
+            expect(parsedContentType.layout[0].columns[0].fields[0].variable).toBe(
+                'documentUpload'
+            );
         });
 
         it('should handle multiple deprecated field types in the same content type', () => {
@@ -673,15 +677,21 @@ describe('ContentType Validation', () => {
                 ]
             };
 
-            expect(() => ContentTypeSchema.parse(contentTypeWithMultipleDeprecatedFields)).not.toThrow();
+            expect(() =>
+                ContentTypeSchema.parse(contentTypeWithMultipleDeprecatedFields)
+            ).not.toThrow();
 
             const parsed = ContentTypeSchema.parse(contentTypeWithMultipleDeprecatedFields);
             expect(parsed.fields).toBeDefined();
             expect(parsed.fields).toHaveLength(2);
 
             if (parsed.fields) {
-                expect(parsed.fields[0].clazz).toBe('com.dotcms.contenttype.model.field.ImmutableBinaryField');
-                expect(parsed.fields[1].clazz).toBe('com.dotcms.contenttype.model.field.ImmutableSomeOtherDeprecatedField');
+                expect(parsed.fields[0].clazz).toBe(
+                    'com.dotcms.contenttype.model.field.ImmutableBinaryField'
+                );
+                expect(parsed.fields[1].clazz).toBe(
+                    'com.dotcms.contenttype.model.field.ImmutableSomeOtherDeprecatedField'
+                );
             }
         });
     });

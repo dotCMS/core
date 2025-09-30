@@ -31,10 +31,12 @@ const KnownContentTypeClazzEnum = z.enum([
 // Flexible content type clazz that accepts known types or any string matching the dotCMS content type pattern
 const ContentTypeClazzEnum = z.union([
     KnownContentTypeClazzEnum,
-    z.string().refine(
-        (val) => /^com\.dotcms\.contenttype\.model\.type\.Immutable\w+ContentType$/.test(val),
-        { message: 'Content type clazz must be a valid dotCMS content type' }
-    )
+    z
+        .string()
+        .refine(
+            (val) => /^com\.dotcms\.contenttype\.model\.type\.Immutable\w+ContentType$/.test(val),
+            { message: 'Content type clazz must be a valid dotCMS content type' }
+        )
 ]);
 
 export const WorkflowSchema = z.object({
@@ -87,10 +89,11 @@ const KnownFieldClazzEnum = z.enum([
 // Flexible field clazz that accepts known types or any string matching the dotCMS field pattern
 const FieldClazzEnum = z.union([
     KnownFieldClazzEnum,
-    z.string().refine(
-        (val) => /^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/.test(val),
-        { message: 'Field clazz must be a valid dotCMS field type' }
-    )
+    z
+        .string()
+        .refine((val) => /^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/.test(val), {
+            message: 'Field clazz must be a valid dotCMS field type'
+        })
 ]);
 
 const DividerSchema = z.object({
@@ -165,7 +168,7 @@ const ContentTypeFieldSchema = z.object({
     unique: z.boolean(),
     variable: z.string(),
     values: z.string().optional(),
-    defaultValue: z.string().optional(),
+    defaultValue: z.string().optional()
 });
 
 const ColumnSchema = z.object({
