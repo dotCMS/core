@@ -46,7 +46,6 @@ const FAKE_FORM_GROUP = new FormGroup({
 
 describe('DotCategoryFieldComponent', () => {
     let spectator: SpectatorHost<DotCategoryFieldComponent, MockFormComponent>;
-    let store: InstanceType<typeof CategoryFieldStore>;
     let service: SpyObject<CategoriesService>;
 
     const createHost = createHostFactory({
@@ -83,7 +82,6 @@ describe('DotCategoryFieldComponent', () => {
                         }
                     }
                 );
-                store = spectator.inject(CategoryFieldStore, true);
                 service = spectator.inject(CategoriesService, true);
             });
 
@@ -164,8 +162,6 @@ describe('DotCategoryFieldComponent', () => {
                     }
                 }
             );
-
-            store = spectator.inject(CategoryFieldStore, true);
 
             // Initialize form control with mock data
             const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
