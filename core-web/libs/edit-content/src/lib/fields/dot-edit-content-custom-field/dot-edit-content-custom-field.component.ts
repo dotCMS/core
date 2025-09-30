@@ -27,7 +27,7 @@ import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../models/dot-edit-content-field
 import { createCustomFieldConfig } from '../../utils/functions.util';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
-import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
 import { BaseWrapperField } from '../shared/base-wrapper-field';
