@@ -8,7 +8,6 @@ import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enri
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { DotCMSAnalyticsConfig } from './shared/models';
 
-
 // Mock dependencies
 jest.mock('analytics');
 jest.mock('./plugin/dot-analytics.plugin');

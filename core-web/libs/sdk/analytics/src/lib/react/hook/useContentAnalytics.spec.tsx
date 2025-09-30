@@ -97,10 +97,9 @@ describe('useContentAnalytics', () => {
     });
 
     it('re-initializes when server changes', () => {
-        const { rerender } = renderHook(
-            (config) => useContentAnalytics(config),
-            { initialProps: mockConfig }
-        );
+        const { rerender } = renderHook((config) => useContentAnalytics(config), {
+            initialProps: mockConfig
+        });
 
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
 
@@ -110,10 +109,9 @@ describe('useContentAnalytics', () => {
     });
 
     it('re-initializes when siteKey changes', () => {
-        const { rerender } = renderHook(
-            (config) => useContentAnalytics(config),
-            { initialProps: mockConfig }
-        );
+        const { rerender } = renderHook((config) => useContentAnalytics(config), {
+            initialProps: mockConfig
+        });
 
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
 
@@ -123,10 +121,9 @@ describe('useContentAnalytics', () => {
     });
 
     it('does not re-initialize when debug changes', () => {
-        const { rerender } = renderHook(
-            (config) => useContentAnalytics(config),
-            { initialProps: mockConfig }
-        );
+        const { rerender } = renderHook((config) => useContentAnalytics(config), {
+            initialProps: mockConfig
+        });
 
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
 

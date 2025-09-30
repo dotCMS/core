@@ -10,7 +10,6 @@ jest.mock('../../shared/dot-content-analytics.utils', () => ({
     getLocalTime: jest.fn().mockReturnValue('2024-01-01T10:00:00.000Z')
 }));
 
-
 describe('dotAnalyticsEnricherPlugin', () => {
     let plugin: ReturnType<typeof dotAnalyticsEnricherPlugin>;
     const mockEnrichPagePayloadOptimized = enrichPagePayloadOptimized as jest.MockedFunction<

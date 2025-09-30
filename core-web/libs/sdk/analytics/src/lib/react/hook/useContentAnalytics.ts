@@ -49,10 +49,7 @@ import { initializeAnalytics } from '../internal';
 export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
     // Memoize instance based on server and siteKey (the critical config values)
     // Only re-initialize if these change
-    const instance = useMemo(
-        () => initializeAnalytics(config),
-        [config.server, config.siteKey]
-    );
+    const instance = useMemo(() => initializeAnalytics(config), [config.server, config.siteKey]);
 
     // Memoize UVE state check to avoid repeated calls
     // UVE state is determined by URL params and window context, so it's stable during component lifecycle
