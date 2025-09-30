@@ -249,7 +249,7 @@ describe('Context Initialization with Deprecated Fields', () => {
         expect(legacyContentType!.fields).toHaveLength(2);
 
         // Verify the deprecated field is present and has the correct clazz
-        const deprecatedField = legacyContentType!.fields.find(
+        const deprecatedField = legacyContentType!.fields?.find(
             (f) => f.variable === 'relationships'
         );
         expect(deprecatedField).toBeDefined();
@@ -259,7 +259,7 @@ describe('Context Initialization with Deprecated Fields', () => {
         expect(deprecatedField!.name).toBe('Relationships');
 
         // Verify the standard field in the same content type still works
-        const titleField = legacyContentType!.fields.find((f) => f.variable === 'title');
+        const titleField = legacyContentType!.fields?.find((f) => f.variable === 'title');
         expect(titleField).toBeDefined();
         expect(titleField!.clazz).toBe('com.dotcms.contenttype.model.field.ImmutableTextField');
         expect(titleField!.name).toBe('Title');
