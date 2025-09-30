@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.Map;
 
 /**
@@ -40,4 +41,17 @@ public interface ScriptEngine {
      */
     Object eval (final HttpServletRequest request, final HttpServletResponse response,
                 final Reader scriptReader, final Map<String, Object> contextParams);
+
+
+    /**
+     * Execute a single function (does not include any context rather than the bindings)
+     * @param functionName
+     * @param script
+     * @param bindings
+     * @return Object
+     */
+    Object executeFunction(String functionName, String script, Map<String, Object> bindings, final Object... args);
+
+
+
 } // E:O:F:ScriptEngine.

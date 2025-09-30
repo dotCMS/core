@@ -13366,6 +13366,54 @@ paths:
       summary: Filter users
       tags:
       - Users
+    post:
+      description: Returns a list of dotCMS users based on specified search criteria
+        with pagination support
+      operationId: filterUsers_1
+      parameters:
+      - description: Page number for pagination
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Number of items per page
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      - description: Column name for sorting results
+        in: query
+        name: orderby
+        schema:
+          type: string
+      - description: "Sorting direction: ASC or DESC"
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListUserView"
+          description: Users retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Filter users
+      tags:
+      - Users
   /v1/users/loginAsData:
     get:
       description: Returns a paginated list of users that can be impersonated (excludes

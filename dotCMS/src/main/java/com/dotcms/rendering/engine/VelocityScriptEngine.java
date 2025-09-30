@@ -50,4 +50,9 @@ public class VelocityScriptEngine implements ScriptEngine {
         return new HashMap<>(Map.of("output", evalResult, "dotJSON", context.get("dotJSON")));
     }
 
+    @Override
+    public Object executeFunction(String functionName, String stringReader, Map<String, Object> bindings, final Object... args) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }

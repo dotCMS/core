@@ -190,6 +190,34 @@ public class JsEngine implements ScriptEngine {
         }
     }
 
+    @Override
+    public Object executeFunction(final String functionName, final String script,
+                                  final Map<String, Object> bindings, final Object... args) {
+        try (Context context = buildContext()) {
+
+            context.eval(ENGINE_JS, script);
+
+            final Value bindingsValue = context.getBindings(ENGINE_JS);
+            bindings.entrySet().forEach(entry -> bindingsValue.putMember(entry.getKey(), entry.getValue()));
+            bindingsValue.putMember("dotlogger", jsDotLogger);
+            final Value functionValue = context.getBindings(ENGINE_JS).getMember(functionName);
+
+            Value result = null;
+            if (functionValue.canExecute()) {
+
+                result = functionValue.execute(args);
+            }
+
+            checkRejected (result);
+
+            return asValue(result, new DotJSON());
+        } catch (final Exception e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new JsEngineException(e);
+        }
+    }
+
     private Object asValue (final Value eval, final DotJSON dotJSON) {
 
         if (eval.isHostObject()) {
