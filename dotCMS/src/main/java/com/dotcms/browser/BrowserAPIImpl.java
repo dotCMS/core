@@ -280,8 +280,9 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return {@code true} if ES should be used for text filtering, {@code false} to use SQL filtering
      */
     boolean isUseElasticSearchForTextFiltering(final BrowserQuery browserQuery) {
-        return  browserQuery.useElasticsearchFiltering &&
-                UtilMethods.isSet(browserQuery.filter) || UtilMethods.isSet(browserQuery.fileName);
+        final boolean hasTextFilter = UtilMethods.isSet(browserQuery.filter) ||
+                UtilMethods.isSet(browserQuery.fileName);
+        return browserQuery.useElasticsearchFiltering && hasTextFilter;
     }
 
     /**
