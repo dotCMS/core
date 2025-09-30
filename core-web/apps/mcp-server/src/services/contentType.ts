@@ -9,7 +9,8 @@ import {
     ContentTypeSchema,
     FieldClazz,
     KnownFieldClazz,
-    Layout
+    Layout,
+    LayoutField
 } from '../types/contentype';
 import { Logger } from '../utils/logger';
 
@@ -309,8 +310,8 @@ export class ContentTypeService extends AgnosticClient {
         return result;
     }
 
-    #extractFieldsFromLayout(layout: Layout[]): ContentTypeField[] {
-        const allFields: ContentTypeField[] = [];
+    #extractFieldsFromLayout(layout: Layout[]): LayoutField[] {
+        const allFields: LayoutField[] = [];
 
         // Check if layout has a layout property (based on your structure)
 

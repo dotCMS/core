@@ -85,8 +85,7 @@ export const ContentTypeFieldSchema = z.object({
     readOnly: z.boolean().optional(),
     system: z.boolean().optional(),
     dataType: z.string().optional(),
-    fieldVariables: z.array(z.record(z.any())).optional(),
-    clazz: FieldClazzEnum.optional()
+    fieldVariables: z.array(z.record(z.any())).optional()
 });
 
 export const WorkflowSchema = z.object({
@@ -191,7 +190,7 @@ export const ContentTypeSchema = z.object({
     clazz: z.string(),
     defaultType: z.boolean(),
     description: z.string().optional(),
-    fields: z.array(ContentTypeFieldSchema).optional(),
+    fields: z.array(z.union([ContentTypeFieldSchema, LayoutFieldSchema])).optional(),
     fixed: z.boolean(),
     folder: z.string(),
     folderPath: z.string(),
@@ -223,6 +222,8 @@ export type ContentTypeField = z.infer<typeof ContentTypeFieldSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
 
 export type Layout = z.infer<typeof LayoutSchema>;
+
+export type LayoutField = z.infer<typeof LayoutFieldSchema>;
 
 export type ContentType = z.infer<typeof ContentTypeSchema>;
 
