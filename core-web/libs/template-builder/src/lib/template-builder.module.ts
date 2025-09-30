@@ -5,7 +5,6 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotContainersService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotLayoutPropertiesComponent } from './components/template-builder/components/dot-layout-properties/dot-layout-properties.component';
@@ -26,7 +25,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderComponentsModule
     ],
     declarations: [TemplateBuilderComponent],
-    providers: [DialogService, DynamicDialogRef, DotContainersService],
+    providers: [DialogService, DynamicDialogRef],
     exports: [TemplateBuilderComponent, DotLayoutPropertiesComponent]
 })
 export class TemplateBuilderModule {}

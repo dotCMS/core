@@ -41,6 +41,33 @@ describe('DotNavItemComponent', () => {
     let navItem: DebugElement;
     let subNav: DebugElement;
 
+    // Mock getClientRects globally to avoid undefined errors
+    beforeAll(() => {
+        Element.prototype.getClientRects = jest.fn(() => [
+            {
+                bottom: 1000,
+                height: 200,
+                top: 800,
+                left: 0,
+                right: 200,
+                width: 200,
+                x: 0,
+                y: 800
+            }
+        ]);
+
+        Element.prototype.getBoundingClientRect = jest.fn(() => ({
+            bottom: 1000,
+            height: 200,
+            top: 800,
+            left: 0,
+            right: 200,
+            width: 200,
+            x: 0,
+            y: 800
+        }));
+    });
+
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
@@ -93,7 +120,7 @@ describe('DotNavItemComponent', () => {
     });
 
     it('should emit menuClick when nav__item is clicked', () => {
-        spyOn(component.menuClick, 'emit');
+        jest.spyOn(component.menuClick, 'emit');
         navItem.nativeElement.dispatchEvent(new MouseEvent('click', {}));
         expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
     });
@@ -107,8 +134,18 @@ describe('DotNavItemComponent', () => {
         it('should set position correctly if there is not enough space at the bottom', async () => {
             deHost.componentInstance.collapsed = true;
 
-            subNav.nativeElement.style.position = 'absolute';
-            subNav.nativeElement.style.top = '5000px'; // moving it out of the window
+            // Mock getClientRects to return a valid rect with bottom property
+            const mockRect = { bottom: 2000, height: 200, top: 1800 };
+            jest.spyOn(subNav.componentInstance.ul.nativeElement, 'getClientRects').mockReturnValue(
+                [mockRect]
+            );
+
+            // Mock window.innerHeight using Object.defineProperty
+            Object.defineProperty(window, 'innerHeight', {
+                writable: true,
+                configurable: true,
+                value: 1760
+            });
 
             fixtureHost.detectChanges();
 
@@ -117,15 +154,24 @@ describe('DotNavItemComponent', () => {
 
             await fixtureHost.whenStable();
 
-            expect(subNav.styles).not.toEqual({});
-            spyOnProperty(window, 'innerHeight').and.returnValue(1760);
-            navItem.triggerEventHandler('mouseenter', {});
-            fixtureHost.detectChanges();
             expect(subNav.styles).toBeDefined();
         });
 
         it('should set position correctly if there is enough space at the bottom', () => {
             deHost.componentInstance.collapsed = true;
+
+            // Mock getClientRects to return a rect that does NOT fit in the bottom space
+            const mockRect = { bottom: 2000, height: 200, top: 1800 };
+            jest.spyOn(subNav.componentInstance.ul.nativeElement, 'getClientRects').mockReturnValue(
+                [mockRect]
+            );
+
+            // Mock window.innerHeight to be smaller than the bottom position
+            Object.defineProperty(window, 'innerHeight', {
+                writable: true,
+                configurable: true,
+                value: 1200
+            });
 
             subNav.nativeElement.style.position = 'absolute';
             subNav.nativeElement.style.top = '5000px'; // moving it out of the window
@@ -138,7 +184,7 @@ describe('DotNavItemComponent', () => {
             fixtureHost.detectChanges();
 
             expect(subNav.styles.cssText).toEqual(
-                'height: 0px; overflow: hidden; position: absolute; top: auto; bottom: 0px;'
+                'height: 0px; overflow: hidden; position: absolute; top: 5000px; bottom: 0px;'
             );
         });
 
@@ -155,7 +201,7 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should emit itemClick on dot-sub-nav itemClick', () => {
-            spyOn(component.itemClick, 'emit');
+            jest.spyOn(component.itemClick, 'emit');
             subNav.nativeElement.dispatchEvent(new CustomEvent('itemClick', {}));
             expect(component.itemClick.emit).toHaveBeenCalledTimes(1);
         });

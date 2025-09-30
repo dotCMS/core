@@ -51,7 +51,11 @@
                 </td>
             </tr>
         } @else {
-            <tr data-testId="item-row">
+            <tr
+                class="content-drive-table__row"
+                data-testId="item-row"
+                (contextmenu)="onContextMenu($event, item)"
+                (dblclick)="onDoubleClick(item)">
                 <td data-testId="item-checkbox">
                     <p-tableCheckbox [value]="item" />
                 </td>
@@ -76,9 +80,20 @@
                         <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
                     }
                 </td>
-                <td data-testId="item-base-type">{{ item.baseType | dm }}</td>
+                <td data-testId="item-base-type">{{ item.contentType | dm }}</td>
                 <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
+                <td data-testId="item-actions" class="text-center">
+                    <p-button
+                        class="content-drive-table__actions-button"
+                        icon="pi pi-ellipsis-v"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        (onClick)="onContextMenu($event, item)"
+                        data-testId="kebab-menu-button"
+                        aria-label="More actions" />
+                </td>
             </tr>
         }
     </ng-template>
@@ -102,3 +117,5 @@
         </tr>
     </ng-template>
 </p-table>
+
+<!-- <p-contextMenu #contextMenu [model]="items" /> -->

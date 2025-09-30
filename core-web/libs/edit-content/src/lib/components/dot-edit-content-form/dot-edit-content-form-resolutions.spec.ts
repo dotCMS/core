@@ -1,4 +1,5 @@
 import { DotCMSClazzes, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeContentlet, createFakeSelectField } from '@dotcms/utils-testing';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
@@ -85,16 +86,6 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     describe('textFieldResolutionFn', () => {
-        it('should remove leading slash from URL', () => {
-            const contentlet = {
-                ...mockContentlet,
-                testField: '/test-url'
-            };
-
-            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, mockField);
-            expect(result).toBe('test-url');
-        });
-
         it('should not modify non-URL values', () => {
             const contentlet = {
                 ...mockContentlet,
@@ -108,6 +99,29 @@ describe('DotEditContentFormResolutions', () => {
         it('should handle null values', () => {
             const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField);
             expect(result).toBe('default value');
+        });
+
+        it('should remove leading slash from URL field in HTMLPAGE content', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: 'HTMLPAGE',
+                url: '/test-url'
+            };
+            const urlField = { ...mockField, variable: 'url' };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, urlField);
+            expect(result).toBe('test-url');
+        });
+
+        it('should NOT remove leading slash from URL field in non-HTMLPAGE content', () => {
+            const contentlet = {
+                ...mockContentlet,
+                myVariable: '/content-url'
+            };
+            const urlField = { ...mockField, variable: 'myVariable' };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, urlField);
+            expect(result).toBe('/content-url');
         });
     });
 
@@ -198,6 +212,45 @@ describe('DotEditContentFormResolutions', () => {
         });
     });
 
+    describe('selectResolutionFn', () => {
+        it('should return the first option when the value and defaultValue are empty', () => {
+            const mockContentlet = createFakeContentlet({
+                testField: null
+            });
+            const mockField = createFakeSelectField({
+                values: 'Option 1|1\r\nOption 2|2\r\nOption 3|3',
+                defaultValue: null,
+                variable: 'testField'
+            });
+            const result = resolutionValue[FIELD_TYPES.SELECT](mockContentlet, mockField);
+            expect(result).toBe('1');
+        });
+
+        it('should return the default value when the value is empty', () => {
+            const mockContentlet = createFakeContentlet({
+                testField: null
+            });
+            const mockField = createFakeSelectField({
+                defaultValue: 'Option 2',
+                variable: 'testField'
+            });
+            const result = resolutionValue[FIELD_TYPES.SELECT](mockContentlet, mockField);
+            expect(result).toBe('Option 2');
+        });
+
+        it('should return the value when the value is not empty', () => {
+            const mockContentlet = createFakeContentlet({
+                testField: 'Option 2'
+            });
+            const mockField = createFakeSelectField({
+                variable: 'testField',
+                defaultValue: null
+            });
+            const result = resolutionValue[FIELD_TYPES.SELECT](mockContentlet, mockField);
+            expect(result).toBe('Option 2');
+        });
+    });
+
     describe('field type mappings', () => {
         it('should have resolution functions for all field types', () => {
             Object.values(FIELD_TYPES).forEach((fieldType) => {
@@ -219,7 +272,6 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.KEY_VALUE,
                 FIELD_TYPES.MULTI_SELECT,
                 FIELD_TYPES.RADIO,
-                FIELD_TYPES.SELECT,
                 FIELD_TYPES.TAG,
                 FIELD_TYPES.TEXTAREA,
                 FIELD_TYPES.WYSIWYG

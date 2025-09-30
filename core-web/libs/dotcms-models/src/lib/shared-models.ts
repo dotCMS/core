@@ -33,7 +33,8 @@ export const enum FeaturedFlags {
 
 export const enum DotConfigurationVariables {
     CONTENT_PALETTE_HIDDEN_CONTENT_TYPES = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES',
-    WYSIWYG_IMAGE_URL_PATTERN = 'WYSIWYG_IMAGE_URL_PATTERN'
+    WYSIWYG_IMAGE_URL_PATTERN = 'WYSIWYG_IMAGE_URL_PATTERN',
+    DEFAULT_CONTAINER = 'DEFAULT_CONTAINER'
 }
 
 export const FEATURE_FLAG_NOT_FOUND = 'NOT_FOUND';
@@ -53,9 +54,4 @@ export type DotDropdownSelectOption<T> = {
 export enum DialogStatus {
     HIDE = 'HIDE',
     SHOW = 'SHOW'
-}
-export interface DotPagination {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
 }

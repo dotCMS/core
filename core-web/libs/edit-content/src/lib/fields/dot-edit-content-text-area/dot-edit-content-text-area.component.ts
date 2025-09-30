@@ -17,7 +17,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
+import { DotLanguageVariableSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
     AvailableEditorTextArea,
@@ -26,6 +26,10 @@ import {
 
 import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 import {
     getCurrentEditorFromDisabled,
     updateDisabledWYSIWYGOnEditorSwitch
@@ -50,7 +54,11 @@ import {
         DotLanguageVariableSelectorComponent,
         DropdownModule,
         FormsModule,
-        DotEditContentMonacoEditorControlComponent
+        DotEditContentMonacoEditorControlComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -60,12 +68,11 @@ import {
         }
     ]
 })
-export class DotEditContentTextAreaComponent {
+export class DotEditContentTextAreaComponent extends BaseFieldComponent {
     /**
-     * Control container for the form
+     * Inject the ControlContainer
      */
-    private readonly controlContainer = inject(ControlContainer);
-
+    readonly controlContainer = inject(ControlContainer);
     /**
      * Reference to the textarea element
      */
@@ -91,16 +98,6 @@ export class DotEditContentTextAreaComponent {
      * Emits the updated disabledWYSIWYG array.
      */
     disabledWYSIWYGChange = output<string[]>();
-
-    /**
-     * Computed property that returns the current value of the field.
-     */
-    $currentValue = computed(() => {
-        const { variable } = this.$field();
-        const control = this.controlContainer.control?.get(variable);
-
-        return control?.value ?? '';
-    });
 
     /**
      * Representing the currently selected editor.
@@ -141,6 +138,7 @@ export class DotEditContentTextAreaComponent {
     readonly editorTypes = AvailableEditorTextArea;
 
     constructor() {
+        super();
         this.handleEditorChange(this.$contentEditorUsed);
     }
 
@@ -196,7 +194,7 @@ export class DotEditContentTextAreaComponent {
         textarea: HTMLTextAreaElement,
         languageVariable: string
     ): void {
-        const control = this.controlContainer.control?.get(this.$field().variable);
+        const control = this.formControl;
 
         if (!control) {
             return;
@@ -260,5 +258,9 @@ export class DotEditContentTextAreaComponent {
      */
     get disabledWYSIWYGField() {
         return this.controlContainer.control?.get(DISABLED_WYSIWYG_FIELD);
+    }
+
+    writeValue(_: unknown): void {
+        // noop
     }
 }

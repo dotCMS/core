@@ -16,6 +16,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -42,9 +43,9 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     private final Function<Host,String> analyticsKeyFunction;
 
     public AnalyticsWebAPIImpl() {
-        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, true)), // injection turn on by default
+        this(new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_AUTO_INJECT_TURNED_ON_KEY, false)), // injection turn on by default
                 WebAPILocator.getHostWebAPI(), APILocator.getAppsAPI(),
-                APILocator::systemUser, currentHost-> String.valueOf(ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost)));
+                APILocator::systemUser, currentHost-> ContentAnalyticsUtil.getSiteKeyFromAppSecrets(currentHost).orElse(StringPool.BLANK));
     }
 
     public AnalyticsWebAPIImpl(final AtomicBoolean isAutoInjectTurnedOn,
@@ -112,9 +113,14 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
     /**
      * Return the Analytics Js Code to inject
      *
+     * Replaces template placeholders:
+     * - ${site_auth}: Analytics site key from the current host → data-analytics-auth
+     * - ${debug}: Debug mode flag (default: false) → data-analytics-debug
+     * - ${auto_page_view}: Auto page view tracking flag (default: true) → data-analytics-auto-page-view
+     *
      * @param currentHost Host to use the {@link com.dotcms.analytics.app.AnalyticsApp}
      * @param request To get the Domain name
-     * @return
+     * @return The processed Analytics JS code with placeholders replaced
      */
     private String getJSCode(final Host currentHost, final HttpServletRequest request) {
 
@@ -122,7 +128,9 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
 
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
 
-            Map.of("${jitsu_key}", this.analyticsKeyFunction.apply(currentHost))
+            Map.of("${site_auth}", this.analyticsKeyFunction.apply(currentHost),
+                   "${debug}", "false",
+                   "${auto_page_view}", "true")
                     .forEach((key, value) -> {
 
                 int start;

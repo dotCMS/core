@@ -191,12 +191,15 @@ describe('DotAppsConfigurationDetailComponent', () => {
         appsServices = TestBed.inject(DotAppsService);
         routerService = TestBed.inject(DotRouterService);
         activatedRoute = TestBed.inject(ActivatedRoute);
-        spyOn(appsServices, 'saveSiteConfiguration').and.callThrough();
+        jest.spyOn(appsServices, 'saveSiteConfiguration');
     }));
 
     describe('Without dynamic params', () => {
         beforeEach(() => {
-            spyOnProperty(activatedRoute, 'data').and.returnValue(of(routeDatamock));
+            Object.defineProperty(activatedRoute, 'data', {
+                value: of(routeDatamock),
+                writable: true
+            });
             fixture.detectChanges();
         });
 
@@ -207,11 +210,11 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should set labels and buttons with right values', () => {
             expect(
                 fixture.debugElement.query(By.css('[data-testid="cancelBtn"]')).nativeElement
-                    .innerText
+                    .textContent
             ).toContain(messageServiceMock.get('Cancel'));
             expect(
                 fixture.debugElement.query(By.css('[data-testid="saveBtn"]')).nativeElement
-                    .innerText
+                    .textContent
             ).toContain(messageServiceMock.get('Save'));
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))
@@ -258,6 +261,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const cancelBtn = fixture.debugElement.query(By.css('[data-testid="cancelBtn"]'));
             cancelBtn.triggerEventHandler('click', {});
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps.key);
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
         });
 
         it('should have dot-copy-link with appKey value', () => {
@@ -327,7 +331,10 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 allowExtraParams: true,
                 sites: sitesDynamic
             };
-            spyOnProperty(activatedRoute, 'data').and.returnValue(of(mockRoute));
+            Object.defineProperty(activatedRoute, 'data', {
+                value: of(mockRoute),
+                writable: true
+            });
 
             fixture.detectChanges();
         });

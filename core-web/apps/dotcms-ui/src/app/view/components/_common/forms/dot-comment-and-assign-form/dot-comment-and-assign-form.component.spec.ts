@@ -60,7 +60,7 @@ describe('DotAssigneeFormComponent', () => {
         fixture = TestBed.createComponent(TestHostComponent);
         component = fixture.componentInstance;
         dotRolesService = fixture.debugElement.injector.get(DotRolesService);
-        spyOn(dotRolesService, 'get').and.returnValue(of(mockProcessedRoles));
+        jest.spyOn(dotRolesService, 'get').mockReturnValue(of(mockProcessedRoles));
     });
 
     it('should show only commentable field', () => {
@@ -106,13 +106,15 @@ describe('DotAssigneeFormComponent', () => {
             const formComponent: DotCommentAndAssignFormComponent = fixture.debugElement.query(
                 By.css('dot-comment-and-assign-form')
             ).componentInstance;
-            spyOn(formComponent.valid, 'emit');
-            spyOn(formComponent.value, 'emit');
+            jest.spyOn(formComponent.valid, 'emit');
+            jest.spyOn(formComponent.value, 'emit');
 
             formComponent.form.setValue(mockFormValue);
 
             expect(formComponent.valid.emit).toHaveBeenCalledWith(true);
+            expect(formComponent.valid.emit).toHaveBeenCalledTimes(1);
             expect(formComponent.value.emit).toHaveBeenCalledWith(mockFormValue);
+            expect(formComponent.value.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

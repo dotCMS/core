@@ -214,7 +214,7 @@ public class PaginationUtil {
 		final int minIndex = this.getMinIndex(pageValue, perPageValue);
 		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : StringPool.BLANK;
 		final Map<String, Object> params = this.getParameters(sanitizeFilter, orderBy, direction, extraParams);
-		PaginatedArrayList items = minIndex >= 0 ? paginator.getItems(user, perPageValue, minIndex, params) : null;
+		PaginatedArrayList <T> items = minIndex >= 0 ? paginator.getItems(user, perPageValue, minIndex, params) : null;
 		if (UtilMethods.isNotSet(items)) {
 			items = new PaginatedArrayList<>();
 		}

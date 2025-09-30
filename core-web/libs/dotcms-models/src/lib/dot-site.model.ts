@@ -75,4 +75,5 @@ export interface SiteEntity {
     variantId: string;
     versionId: string;
     working: boolean;
+    googleMap?: string;
 }

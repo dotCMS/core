@@ -19,6 +19,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
+import { BaseFieldComponent } from '../../../shared/base-field.component';
 import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
@@ -41,7 +42,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotWysiwygTinymceComponent implements OnDestroy {
+export class DotWysiwygTinymceComponent extends BaseFieldComponent implements OnDestroy {
     #dotWysiwygPluginService = inject(DotWysiwygPluginService);
     #dotWysiwygTinymceService = inject(DotWysiwygTinymceService);
 
@@ -118,5 +119,9 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     private removeEditor(): void {
         this.#editor.remove();
         this.#editor = null;
+    }
+
+    writeValue(_: unknown): void {
+        // noop
     }
 }

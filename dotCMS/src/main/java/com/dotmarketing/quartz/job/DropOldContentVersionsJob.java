@@ -8,16 +8,15 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
 
 /**
  * This Quartz Job is in charge of deleting old versions of Contentlets in dotCMS, as well as
@@ -60,8 +59,11 @@ public class DropOldContentVersionsJob implements StatefulJob {
     public static final String PULL_BATCH_PROP = "content.drop-versions.older-days.batch-size";
     public static final String JOB_NAME = "DropOldContentVersionsJob";
     public static final String JOB_GROUP = "DropOldContentVersionsJobGroup";
-    /** At 00:00:00am, on the 1st day, every month */
-    private static final String CRON_EXPRESSION_DEFAULT = "0 0 0 1 * ? *";
+
+    /**
+     * Fire every Monday at 1:15AM
+     */
+    private static final String CRON_EXPRESSION_DEFAULT = "0 15 1 ? * WED";
 
     public static final Lazy<Boolean> ENABLED =
             Lazy.of(() -> Config.getBooleanProperty(ENABLED_PROP, true));

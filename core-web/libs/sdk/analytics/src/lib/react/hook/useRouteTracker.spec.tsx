@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 
 import { useRouterTracker } from './useRouterTracker';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from '../../core/shared/dot-content-analytics.model';
 
 // Mock Next.js hooks
 jest.mock('next/navigation', () => ({

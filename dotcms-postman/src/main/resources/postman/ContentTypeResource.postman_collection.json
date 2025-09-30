@@ -1,0 +1,85 @@
+{
+  "info": {
+    "_postman_id": "b858a505-82a0-4a5e-be48-0e5fcffc859f",
+    "name": "dotCMS",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "24818383"
+  },
+  "item": [
+    {
+      "name": "http://localhost:8080/api/v1/contenttype/basetypes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Response status code is 200\", function () {",
+              "    pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "",
+              "",
+              "pm.test(\"Response contains required fields\", function () {",
+              "    const responseData = pm.response.json();",
+              "    ",
+              "    pm.expect(responseData).to.be.an('object');",
+              "    pm.expect(responseData).to.have.all.keys('entity', 'errors', 'i18nMessagesMap', 'messages', 'pagination', 'permissions');",
+              "});",
+              "",
+              "",
+              "pm.test(\"Entity is an array and contains at least one object\", function () {",
+              "    const responseData = pm.response.json();",
+              "    ",
+              "    pm.expect(responseData).to.be.an('object');",
+              "    pm.expect(responseData.entity).to.be.an('array').that.is.not.empty;",
+              "    pm.expect(responseData.entity).to.satisfy(function(arr) {",
+              "        return arr.every(item => typeof item === 'object' && item !== null);",
+              "    });",
+              "});",
+              "",
+              "pm.test(\"Validate the schema of the objects within the entity array\", function () {",
+              "    const responseData = pm.response.json();",
+              "    ",
+              "    pm.expect(responseData).to.be.an('object');",
+              "    pm.expect(responseData.entity).to.be.an('array');",
+              "",
+              "    responseData.entity.forEach(function(item) {",
+              "        pm.expect(item).to.be.an('object');",
+              "        pm.expect(item).to.have.all.keys('index', 'label', 'name', 'types');",
+              "        pm.expect(item.index).to.be.a('number');",
+              "        pm.expect(item.label).to.be.a('string');",
+              "        pm.expect(item.name).to.be.a('string');",
+              "        pm.expect(item.types).to.satisfy(function(value) {",
+              "            return value === null || Array.isArray(value);",
+              "        });",
+              "    });",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/contenttype/basetypes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "contenttype",
+            "basetypes"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

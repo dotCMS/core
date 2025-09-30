@@ -1,25 +1,29 @@
-import { Component, forwardRef, ChangeDetectionStrategy, signal } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { Component, ChangeDetectionStrategy, signal, input } from '@angular/core';
 
-import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotKeyValue, DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
+
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 @Component({
     selector: 'dot-edit-content-key-value',
-    imports: [DotKeyValueComponent],
+    imports: [
+        DotKeyValueComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-edit-content-key-value.component.html',
     styleUrl: './dot-edit-content-key-value.component.css',
-    providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditContentKeyValueComponent),
-            multi: true
-        }
-    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentKeyValueComponent implements ControlValueAccessor {
+export class DotEditContentKeyValueComponent extends BaseFieldComponent {
     $initialValue = signal<DotKeyValue[]>([]);
-    private onChange: (value: Record<string, string>) => void;
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     updateField(value: DotKeyValue[]): void {
         const keyValue = value.reduce((acc, item) => {
@@ -36,18 +40,6 @@ export class DotEditContentKeyValueComponent implements ControlValueAccessor {
         const initialValue = this.parseToDotKeyValue(value);
         this.$initialValue.set(initialValue);
     }
-
-    registerOnChange(fn: (value: Record<string, string>) => void) {
-        this.onChange = fn;
-    }
-
-    registerOnTouched(fn: () => void) {
-        this.onTouched = fn;
-    }
-
-    private onTouched: () => void = () => {
-        //
-    };
 
     private parseToDotKeyValue(data: Record<string, string>): DotKeyValue[] {
         if (!data) {

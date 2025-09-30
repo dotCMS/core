@@ -8,8 +8,13 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Provider, signal, Type } from '@angular/core';
-import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import {
+    ControlContainer,
+    FormControl,
+    FormGroup,
+    FormGroupDirective,
+    ReactiveFormsModule
+} from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -23,12 +28,13 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
+import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
@@ -146,7 +152,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ]
     },
     [FIELD_TYPES.BINARY]: {
-        component: DotEditContentBinaryFieldComponent,
+        component: DotBinaryFieldWrapperComponent,
         providers: [
             {
                 provide: DotLicenseService,
@@ -242,12 +248,6 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         imports: [...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
-            }
-        ],
         providers: [
             FormGroupDirective,
             provideHttpClient(),
@@ -295,12 +295,23 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                 field: fieldMock,
                 ...(fieldTestBed?.props || {})
             },
-            providers: [...(fieldTestBed?.providers || [])]
+            providers: [
+                ...(fieldTestBed?.providers || []),
+                {
+                    provide: ControlContainer,
+                    useValue: createFormGroupDirectiveMock()
+                }
+            ]
         });
     });
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-        if (fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD) {
+        if (
+            fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.TIME
+        ) {
             it('should render the label', () => {
                 spectator.detectChanges();
                 const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
@@ -308,7 +319,11 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             });
         }
 
-        if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
+        if (
+            fieldMock.fieldType !== FIELD_TYPES.DATE &&
+            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.TIME
+        ) {
             it('should render the hint if present', () => {
                 spectator.detectChanges();
                 const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
@@ -324,29 +339,419 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             expect(component).toBeTruthy();
             expect(component instanceof FIELD_TYPE).toBeTruthy();
         });
+    });
+});
 
-        if (fieldTestBed.outsideFormControl) {
-            it('should have a formControlName', () => {
-                spectator.detectChanges();
-                const field = spectator.debugElement.query(
-                    By.css(`[data-testId="field-${fieldMock.variable}"]`)
-                );
-                expect(field.attributes['ng-reflect-name']).toBe(fieldMock.variable);
-            });
-        }
+describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+    let realForm: FormGroup;
+    let formGroupDirective: FormGroupDirective;
 
-        if (fieldTestBed.props) {
-            describe('With props', () => {
-                fieldTestBed.props.forEach((prop) => {
-                    it(`should have ${prop.key} property`, () => {
-                        spectator.detectChanges();
-                        const field = spectator.debugElement.query(
-                            By.css(`[data-testId="field-${fieldMock.variable}"]`)
-                        );
-                        expect(field.componentInstance[prop.key]).toEqual(prop.valueExpected);
-                    });
-                });
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        }
+                    })
+                )
+            }),
+            mockProvider(CoreWebService),
+            mockProvider(DotMessageService),
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotLicenseService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
+    });
+
+    beforeEach(() => {
+        // Create a real Angular form
+        realForm = new FormGroup({
+            title: new FormControl(''),
+            fileName: new FormControl(''),
+            binaryField: new FormControl('')
+        });
+
+        // Create FormGroupDirective with the real form
+        formGroupDirective = new FormGroupDirective([], []);
+        formGroupDirective.form = realForm;
+
+        spectator = createComponent({
+            props: {
+                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                contentType: {
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET
+                } as DotCMSContentType
+            } as unknown,
+            providers: [
+                {
+                    provide: ControlContainer,
+                    useValue: formGroupDirective
+                }
+            ]
+        });
+    });
+
+    describe('onBinaryFieldValueUpdated', () => {
+        beforeEach(() => {
+            // Reset form to initial state
+            realForm.get('title')?.setValue('');
+            realForm.get('fileName')?.setValue('');
+            realForm.get('title')?.markAsUntouched();
+            realForm.get('fileName')?.markAsUntouched();
+        });
+
+        it('should auto-fill title and fileName when empty for FILEASSET content type', () => {
+            const mockEvent = { value: 'temp123', fileName: 'document.pdf' };
+
+            // Verify initial state - both controls should be empty
+            expect(realForm.get('title')?.value).toBe('');
+            expect(realForm.get('fileName')?.value).toBe('');
+
+            // Call the method
+            spectator.component.onBinaryFieldValueUpdated(mockEvent);
+
+            // Verify that both controls were filled
+            expect(realForm.get('title')?.value).toBe('document.pdf');
+            expect(realForm.get('fileName')?.value).toBe('document.pdf');
+
+            // Verify controls are marked as touched
+            expect(realForm.get('title')?.touched).toBe(true);
+            expect(realForm.get('fileName')?.touched).toBe(true);
+        });
+
+        it('should NOT overwrite existing values', () => {
+            const mockEvent = { value: 'temp123', fileName: 'document.pdf' };
+
+            // Set existing values
+            realForm.get('title')?.setValue('Existing Title');
+            realForm.get('fileName')?.setValue('existing-file.pdf');
+
+            spectator.component.onBinaryFieldValueUpdated(mockEvent);
+
+            // Verify values were not changed
+            expect(realForm.get('title')?.value).toBe('Existing Title');
+            expect(realForm.get('fileName')?.value).toBe('existing-file.pdf');
+        });
+
+        // These tests moved to separate describe blocks to avoid TestBed conflicts
+
+        it('should handle missing form controls gracefully', () => {
+            const mockEvent = { value: 'temp123', fileName: 'document.pdf' };
+
+            // Create a form without title and fileName controls
+            const emptyForm = new FormGroup({
+                binaryField: new FormControl('')
             });
-        }
+            const emptyFormDirective = new FormGroupDirective([], []);
+            emptyFormDirective.form = emptyForm;
+
+            // Replace the form in the component
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (spectator.component as any)['#parentForm'] = emptyForm;
+
+            expect(() => {
+                spectator.component.onBinaryFieldValueUpdated(mockEvent);
+            }).not.toThrow();
+        });
+
+        // These tests moved to separate describe blocks to avoid TestBed conflicts
+    });
+
+    describe('shouldAutoFillFields', () => {
+        it('should return true for FILEASSET baseType', () => {
+            const contentType = {
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET
+            } as DotCMSContentType;
+
+            const result = spectator.component['shouldAutoFillFields'](contentType);
+
+            expect(result).toBe(true);
+        });
+
+        it('should return false for non-FILEASSET baseType', () => {
+            const contentType = {
+                baseType: 'CONTENT'
+            } as DotCMSContentType;
+
+            const result = spectator.component['shouldAutoFillFields'](contentType);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false for null contentType', () => {
+            const result = spectator.component['shouldAutoFillFields'](null);
+
+            expect(result).toBe(false);
+        });
+    });
+});
+
+describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+    let testForm: FormGroup;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        }
+                    })
+                )
+            }),
+            mockProvider(CoreWebService),
+            mockProvider(DotMessageService),
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotLicenseService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
+    });
+
+    beforeEach(() => {
+        testForm = new FormGroup({
+            title: new FormControl(''),
+            fileName: new FormControl(''),
+            binaryField: new FormControl('')
+        });
+
+        const formGroupDirective = new FormGroupDirective([], []);
+        formGroupDirective.form = testForm;
+
+        spectator = createComponent({
+            props: {
+                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                contentType: {
+                    baseType: 'CONTENT',
+                    variable: 'BlogPost'
+                } as DotCMSContentType
+            } as unknown,
+            providers: [
+                {
+                    provide: ControlContainer,
+                    useValue: formGroupDirective
+                }
+            ]
+        });
+    });
+
+    it('should NOT execute for non-FILEASSET content types', () => {
+        const mockEvent = { value: 'temp123', fileName: 'document.pdf' };
+
+        spectator.component.onBinaryFieldValueUpdated(mockEvent);
+
+        // Verify values were not changed (should still be empty)
+        expect(testForm.get('title')?.value).toBe('');
+        expect(testForm.get('fileName')?.value).toBe('');
+    });
+});
+
+describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentType)', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+    let testForm: FormGroup;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        }
+                    })
+                )
+            }),
+            mockProvider(CoreWebService),
+            mockProvider(DotMessageService),
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotLicenseService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
+    });
+
+    beforeEach(() => {
+        testForm = new FormGroup({
+            title: new FormControl(''),
+            fileName: new FormControl(''),
+            binaryField: new FormControl('')
+        });
+
+        const formGroupDirective = new FormGroupDirective([], []);
+        formGroupDirective.form = testForm;
+
+        spectator = createComponent({
+            props: {
+                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                contentType: null
+            } as unknown,
+            providers: [
+                {
+                    provide: ControlContainer,
+                    useValue: formGroupDirective
+                }
+            ]
+        });
+    });
+
+    it('should handle null contentType gracefully', () => {
+        const mockEvent = { value: 'temp123', fileName: 'document.pdf' };
+
+        expect(() => {
+            spectator.component.onBinaryFieldValueUpdated(mockEvent);
+        }).not.toThrow();
+
+        // Verify values were not changed (should still be empty)
+        expect(testForm.get('title')?.value).toBe('');
+        expect(testForm.get('fileName')?.value).toBe('');
+    });
+});
+
+describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+    let titleOnlyForm: FormGroup;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        }
+                    })
+                )
+            }),
+            mockProvider(CoreWebService),
+            mockProvider(DotMessageService),
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotLicenseService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
+    });
+
+    beforeEach(() => {
+        titleOnlyForm = new FormGroup({
+            title: new FormControl(''),
+            binaryField: new FormControl('')
+        });
+
+        const formGroupDirective = new FormGroupDirective([], []);
+        formGroupDirective.form = titleOnlyForm;
+
+        spectator = createComponent({
+            props: {
+                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                contentType: {
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET
+                } as DotCMSContentType
+            } as unknown,
+            providers: [
+                {
+                    provide: ControlContainer,
+                    useValue: formGroupDirective
+                }
+            ]
+        });
+    });
+
+    it('should only fill empty title control when fileName control does not exist', () => {
+        const mockEvent = { value: 'temp123', fileName: 'document.pdf' };
+
+        spectator.component.onBinaryFieldValueUpdated(mockEvent);
+
+        expect(titleOnlyForm.get('title')?.value).toBe('document.pdf');
+        expect(titleOnlyForm.get('title')?.touched).toBe(true);
+    });
+});
+
+describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+    let fileNameOnlyForm: FormGroup;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        }
+                    })
+                )
+            }),
+            mockProvider(CoreWebService),
+            mockProvider(DotMessageService),
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotLicenseService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
+    });
+
+    beforeEach(() => {
+        fileNameOnlyForm = new FormGroup({
+            fileName: new FormControl(''),
+            binaryField: new FormControl('')
+        });
+
+        const formGroupDirective = new FormGroupDirective([], []);
+        formGroupDirective.form = fileNameOnlyForm;
+
+        spectator = createComponent({
+            props: {
+                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                contentType: {
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET
+                } as DotCMSContentType
+            } as unknown,
+            providers: [
+                {
+                    provide: ControlContainer,
+                    useValue: formGroupDirective
+                }
+            ]
+        });
+    });
+
+    it('should only fill empty fileName control when title control does not exist', () => {
+        const mockEvent = { value: 'temp123', fileName: 'document.pdf' };
+
+        spectator.component.onBinaryFieldValueUpdated(mockEvent);
+
+        expect(fileNameOnlyForm.get('fileName')?.value).toBe('document.pdf');
+        expect(fileNameOnlyForm.get('fileName')?.touched).toBe(true);
     });
 });

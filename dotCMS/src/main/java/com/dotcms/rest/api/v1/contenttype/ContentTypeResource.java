@@ -58,6 +58,8 @@ import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.Explode;
+import io.swagger.v3.oas.annotations.enums.ParameterStyle;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -68,6 +70,7 @@ import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.util.LinkedHashSet;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1363,6 +1366,7 @@ public class ContentTypeResource implements Serializable {
 													value = "{\n" +
 															"  \"entity\": [\n" +
 															"    {\n" +
+															"      \"index\": \"int\",\n" +
 															"      \"label\": \"string\",\n" +
 															"      \"name\": \"string\",\n" +
 															"      \"types\": null\n" +
@@ -1387,7 +1391,6 @@ public class ContentTypeResource implements Serializable {
 			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
 			response = Response.ok(new ResponseEntityView<>(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
-
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
@@ -1517,15 +1520,16 @@ public class ContentTypeResource implements Serializable {
 										  ) String direction,
 										  @QueryParam("type") @Parameter(
 												  schema = @Schema(
-														  type = "string",
+														  type = "array",
 														  allowableValues = {
 																  "ANY", "CONTENT", "WIDGET",
 																  "FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
 																  "VANITY_URL", "KEY_VALUE", "DOTASSET"
 														  }
 												  ),
+                                                  style = ParameterStyle.FORM,
 												  description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
-										  ) String type,
+										  ) List<String> types,
 										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
 												  description = "Filter by site identifier."
 										  ) final String siteId,
@@ -1540,8 +1544,9 @@ public class ContentTypeResource implements Serializable {
 		final String orderBy = this.getOrderByRealName(orderByParam);
 		try {
 			final Map<String, Object> extraParams = new HashMap<>();
-			if (null != type) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, type);
+			if (null != types) {
+                //Remove dupe and preserve order
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(types));
 			}
 			if (null != siteId) {
 				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);

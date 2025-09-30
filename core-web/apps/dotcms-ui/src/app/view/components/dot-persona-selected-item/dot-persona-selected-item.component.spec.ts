@@ -81,7 +81,7 @@ describe('DotPersonaSelectedItemComponent', () => {
 
     it('should render persona name and label', () => {
         const name = de.query(By.css('.dot-persona-selector__name')).nativeElement;
-        expect(name.innerText.trim()).toBe('Global Investor');
+        expect(name.textContent.trim()).toBe('Global Investor');
     });
 
     describe('tooltip properties', () => {

@@ -2,10 +2,14 @@ import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/c
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
+import { DotLanguageVariableSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { AvailableLanguageMonaco } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseFieldComponent } from '../shared/base-field.component';
 
 /**
  * JSON field editor component that uses Monaco Editor for JSON content editing.
@@ -17,13 +21,17 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
     imports: [
         ReactiveFormsModule,
         DotEditContentMonacoEditorControlComponent,
-        DotLanguageVariableSelectorComponent
+        DotLanguageVariableSelectorComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe
     ],
     templateUrl: './dot-edit-content-json-field.component.html',
     styleUrls: ['./dot-edit-content-json-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentJsonFieldComponent {
+export class DotEditContentJsonFieldComponent extends BaseFieldComponent {
     /**
      * Input field DotCMSContentTypeField
      */
@@ -65,5 +73,9 @@ export class DotEditContentJsonFieldComponent {
         } else {
             console.warn('Monaco component is not available');
         }
+    }
+
+    writeValue(_: unknown): void {
+        // Do nothing
     }
 }

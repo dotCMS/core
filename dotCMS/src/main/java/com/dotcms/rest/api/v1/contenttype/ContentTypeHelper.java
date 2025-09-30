@@ -671,14 +671,18 @@ public class ContentTypeHelper implements Serializable {
      * @throws LanguageException
      */
     public List<BaseContentTypesView> getTypes(HttpServletRequest request)
-            throws LanguageException {
+            throws LanguageException, IllegalArgumentException{
         List<BaseContentTypesView> result = list();
 
         Locale locale = LocaleUtil.getLocale(request);
         Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
 
-        for(Map.Entry<String,String> baseType : baseContentTypeNames.entrySet()){
-            result.add(new BaseContentTypesView(baseType.getKey(),baseType.getValue(),null));
+        for (Map.Entry<String, String> baseType : baseContentTypeNames.entrySet()) {
+            result.add(new BaseContentTypesView(
+                    baseType.getKey(),
+                    baseType.getValue(),
+                    null,
+                    this.getBaseTypeIndex(baseType.getKey())));
         }
 
         return result;
@@ -709,6 +713,29 @@ public class ContentTypeHelper implements Serializable {
         return contentTypesLabelsMap;
 
     } // getBaseContentTypeNames.
+
+    /**
+     * Retrieves the index for a given base content type name.
+     * <p>
+     * This method searches for a match in the predefined {@BaseContentType} enum
+     * and returns its corresponding index.
+     * <p>
+     * @param baseTypeName The name of the base content type to find. (e.g., "CONTENT", "WIDGET").
+     * @return The integer corresponding to the base type, otherwise throws an IllegalArgumentException.
+     * @see BaseContentType
+     */
+    public int getBaseTypeIndex(String baseTypeName) throws IllegalArgumentException {
+        try {
+            return BaseContentType.getBaseContentType(baseTypeName).getType();
+        } catch (IllegalArgumentException e) {
+            final var message = String.format(
+                    "No enum BaseContentType with name [%s] was found",
+                    baseTypeName
+            );
+            Logger.warn(this, message);
+            throw new IllegalArgumentException(message);
+        }
+    }
 
     @VisibleForTesting
     boolean isStandardOrEnterprise() {

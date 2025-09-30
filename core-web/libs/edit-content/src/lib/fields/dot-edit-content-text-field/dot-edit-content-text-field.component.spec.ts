@@ -1,55 +1,63 @@
-import { describe, test } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { SpectatorHost, createHostFactory, byTestId } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeTextField, createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
 import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 
-import { TEXT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
+}
+
+const TEXT_FIELD_MOCK = createFakeTextField({
+    variable: 'text_field'
+});
 
 describe('DotEditContentTextFieldComponent', () => {
-    let spectator: Spectator<DotEditContentTextFieldComponent>;
+    let spectator: SpectatorHost<DotEditContentTextFieldComponent, MockFormComponent>;
     let textInput: Element;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotEditContentTextFieldComponent,
-        imports: [CommonModule, ReactiveFormsModule, InputTextModule, DotFieldRequiredDirective],
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
-            }
-        ],
-        providers: [FormGroupDirective]
-    });
-    beforeEach(() => {
-        spectator = createComponent({
-            detectChanges: false,
-            props: {
-                field: TEXT_FIELD_MOCK
-            } as unknown
-        });
-        spectator.detectChanges();
-        textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule, InputTextModule],
+        detectChanges: false
     });
 
-    test.each([
-        {
-            variable: TEXT_FIELD_MOCK.variable,
-            attribute: 'id'
-        },
-        {
-            variable: TEXT_FIELD_MOCK.variable,
-            attribute: 'ng-reflect-name'
-        }
-    ])('should have the $variable as $attribute', ({ variable, attribute }) => {
-        expect(textInput.getAttribute(attribute)).toBe(variable);
+    it('should have the variable as id', () => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [TEXT_FIELD_MOCK.variable]: new FormControl('one')
+                    }),
+                    field: TEXT_FIELD_MOCK,
+                    contentlet: createFakeContentlet({
+                        [TEXT_FIELD_MOCK.variable]: 'one'
+                    })
+                }
+            }
+        );
+        spectator.detectChanges();
+        textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
+        expect(textInput.getAttribute('id')).toBe(TEXT_FIELD_MOCK.variable);
     });
 
     describe.each([
@@ -66,11 +74,26 @@ describe('DotEditContentTextFieldComponent', () => {
         const options = INPUT_TEXT_OPTIONS[dataType];
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    field: { ...TEXT_FIELD_MOCK, dataType }
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: {
+                            ...TEXT_FIELD_MOCK,
+                            dataType
+                        },
+                        contentlet: createFakeContentlet({
+                            [TEXT_FIELD_MOCK.variable]: ''
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
         });
@@ -92,5 +115,77 @@ describe('DotEditContentTextFieldComponent', () => {
 
             expect(textInput.getAttribute('step')).toBe(options.step.toString());
         });
+    });
+
+    it('should remove the leading slash from the value if the contentlet is an HTML page and the field is the url', () => {
+        const fieldMock = createFakeTextField({
+            variable: 'url'
+        });
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [fieldMock.variable]: new FormControl('')
+                    }),
+                    field: fieldMock,
+                    contentlet: createFakeContentlet({
+                        baseType: 'HTMLPAGE',
+                        [fieldMock.variable]: '/one'
+                    })
+                }
+            }
+        );
+        spectator.detectChanges();
+        expect(spectator.component.$initValue()).toBe('one');
+    });
+
+    it('should return the default value', () => {
+        const fieldMock = createFakeTextField({
+            variable: 'someValuev1',
+            defaultValue: 'defaultValue'
+        });
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [fieldMock.variable]: new FormControl('')
+                    }),
+                    field: fieldMock,
+                    contentlet: createFakeContentlet()
+                }
+            }
+        );
+        spectator.detectChanges();
+        expect(spectator.component.$initValue()).toBe('defaultValue');
+    });
+
+    it('should return the value from the contentlet', () => {
+        const fieldMock = createFakeTextField({
+            variable: 'field'
+        });
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [fieldMock.variable]: new FormControl('')
+                    }),
+                    field: fieldMock,
+                    contentlet: createFakeContentlet({
+                        [fieldMock.variable]: 'myValue'
+                    })
+                }
+            }
+        );
+        spectator.detectChanges();
+        expect(spectator.component.$initValue()).toBe('myValue');
     });
 });
