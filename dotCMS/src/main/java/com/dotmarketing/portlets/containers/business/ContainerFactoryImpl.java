@@ -1232,10 +1232,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		if (!UtilMethods.isSet(identifier)) {
 			return false;
 		}
-		// Allow UUIDs, known system identifiers, or valid variable names
+		// Allow UUIDs, known system identifiers, or safe alphanumeric patterns
 		return UUIDUtil.isUUID(identifier) ||
 			   isSystemIdentifier(identifier) ||
-			   identifier.matches(com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl.VALID_VARIABLE_NAME_REGEX);
+			   identifier.matches(com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl.VALID_VARIABLE_NAME_REGEX) ||
+			   identifier.matches("^[a-zA-Z0-9_-]{1,255}$"); // Broader fallback for other valid identifiers
 	}
 
 	/**
