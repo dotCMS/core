@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './dot-content-analytics.constants';
+import { ANALYTICS_MINIFIED_SCRIPT_NAME } from './constants';
 import {
     cleanupActivityTracking,
     defaultRedirectFn,
@@ -782,6 +782,13 @@ describe('Analytics Utils', () => {
                 ),
                 utm: {
                     source: 'google'
+                },
+                custom: {
+                    language_id: 'en-US',
+                    persona: 'default',
+                    utm: {
+                        source: 'google'
+                    }
                 }
             });
         });

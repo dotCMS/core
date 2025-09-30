@@ -84,5 +84,6 @@ export const ANALYTICS_JS_DEFAULT_PROPERTIES = [
     'hash',
     'search',
     'width',
-    'height'
+    'height',
+    'referrer'
 ] as const;

@@ -2,7 +2,6 @@
 
 import { dotAnalyticsEnricherPlugin } from './dot-analytics.enricher.plugin';
 
-import { ANALYTICS_SOURCE_TYPE, EVENT_TYPES } from '../../shared/dot-content-analytics.constants';
 import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 
 // Mock the utility functions
@@ -11,14 +10,6 @@ jest.mock('../../shared/dot-content-analytics.utils', () => ({
     getLocalTime: jest.fn().mockReturnValue('2024-01-01T10:00:00.000Z')
 }));
 
-// Mock constants
-jest.mock('../../shared/dot-content-analytics.constants', () => ({
-    ANALYTICS_SOURCE_TYPE: 'dotAnalytics',
-    EVENT_TYPES: {
-        PAGEVIEW: 'pageview',
-        TRACK: 'track'
-    }
-}));
 
 describe('dotAnalyticsEnricherPlugin', () => {
     let plugin: ReturnType<typeof dotAnalyticsEnricherPlugin>;
@@ -56,6 +47,12 @@ describe('dotAnalyticsEnricherPlugin', () => {
         it('should call enrichPagePayloadOptimized with the provided payload', () => {
             // Arrange
             const mockPayload = { event: 'pageview', properties: { page: '/test' } } as any;
+            mockEnrichPagePayloadOptimized.mockReturnValue({
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                page: { url: 'test' },
+                device: { language: 'en' },
+                local_time: '2024-01-01T10:00:00.000Z'
+            } as any);
 
             // Act
             plugin['page:dot-analytics']({ payload: mockPayload });
@@ -68,14 +65,31 @@ describe('dotAnalyticsEnricherPlugin', () => {
         it('should return the result from enrichPagePayloadOptimized', () => {
             // Arrange
             const mockPayload = { event: 'pageview' } as any;
-            const expectedResult = { enriched: true };
-            mockEnrichPagePayloadOptimized.mockReturnValue(expectedResult as any);
+            const expectedEnriched = {
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                page: { url: 'test', title: 'Test' },
+                device: { language: 'en' },
+                local_time: '2024-01-01T10:00:00.000Z'
+            };
+            mockEnrichPagePayloadOptimized.mockReturnValue(expectedEnriched as any);
 
             // Act
             const result = plugin['page:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result).toEqual(expectedResult);
+            expect(result).toEqual({
+                context: expectedEnriched.context,
+                events: [
+                    {
+                        event_type: 'pageview',
+                        local_time: expectedEnriched.local_time,
+                        data: {
+                            page: expectedEnriched.page,
+                            device: expectedEnriched.device
+                        }
+                    }
+                ]
+            });
         });
     });
 
@@ -84,6 +98,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Arrange
             const mockPayload = {
                 event: 'button_click',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
                 properties: {
                     button_id: 'submit-btn',
                     page: '/contact'
@@ -96,25 +111,27 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Assert
             expect(mockGetLocalTime).toHaveBeenCalledTimes(1);
             expect(result).toEqual({
+                context: mockPayload.context,
                 events: [
                     {
-                        event_type: EVENT_TYPES.TRACK,
+                        event_type: 'button_click',
                         local_time: '2024-01-01T10:00:00.000Z',
                         data: {
-                            event: 'button_click',
-                            button_id: 'submit-btn',
-                            page: '/contact',
-                            src: ANALYTICS_SOURCE_TYPE
+                            custom: {
+                                button_id: 'submit-btn',
+                                page: '/contact'
+                            }
                         }
                     }
                 ]
             });
         });
 
-        it('should preserve existing properties and add src', () => {
+        it('should preserve existing properties in custom data', () => {
             // Arrange
             const mockPayload = {
                 event: 'form_submit',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
                 properties: {
                     form_name: 'contact_form',
                     validation_errors: 0,
@@ -127,11 +144,11 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
             // Assert
             expect(result.events[0].data).toEqual({
-                event: 'form_submit',
-                form_name: 'contact_form',
-                validation_errors: 0,
-                session_id: 'session_123',
-                src: ANALYTICS_SOURCE_TYPE
+                custom: {
+                    form_name: 'contact_form',
+                    validation_errors: 0,
+                    session_id: 'session_123'
+                }
             });
         });
 
@@ -139,6 +156,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Arrange
             const mockPayload = {
                 event: 'pageview',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
                 properties: {}
             } as any;
 
@@ -147,15 +165,15 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
             // Assert
             expect(result.events[0].data).toEqual({
-                event: 'pageview',
-                src: ANALYTICS_SOURCE_TYPE
+                custom: {}
             });
         });
 
         it('should handle undefined properties', () => {
             // Arrange
             const mockPayload = {
-                event: 'custom_event'
+                event: 'custom_event',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' }
                 // properties is undefined
             } as any;
 
@@ -164,14 +182,17 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
             // Assert
             expect(result.events[0].data).toEqual({
-                event: 'custom_event',
-                src: ANALYTICS_SOURCE_TYPE
+                custom: undefined
             });
         });
 
         it('should use different local times when called multiple times', () => {
             // Arrange
-            const mockPayload = { event: 'test_event', properties: {} } as any;
+            const mockPayload = {
+                event: 'test_event',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                properties: {}
+            } as any;
             const time1 = '2024-01-01T10:00:00.000Z';
             const time2 = '2024-01-01T11:00:00.000Z';
 
@@ -193,6 +214,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Arrange
             const realWorldPayload = {
                 event: 'content_interaction',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
                 properties: {
                     contentId: 'article-123',
                     contentType: 'blog-post',
@@ -207,15 +229,15 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
             // Assert
             expect(result.events[0]).toMatchObject({
-                event_type: EVENT_TYPES.TRACK,
+                event_type: 'content_interaction',
                 data: {
-                    event: 'content_interaction',
-                    contentId: 'article-123',
-                    contentType: 'blog-post',
-                    category: 'technology',
-                    utm_source: 'newsletter',
-                    utm_medium: 'email',
-                    src: ANALYTICS_SOURCE_TYPE
+                    custom: {
+                        contentId: 'article-123',
+                        contentType: 'blog-post',
+                        category: 'technology',
+                        utm_source: 'newsletter',
+                        utm_medium: 'email'
+                    }
                 }
             });
         });
@@ -224,7 +246,11 @@ describe('dotAnalyticsEnricherPlugin', () => {
     describe('Error Handling', () => {
         it('should propagate getLocalTime errors', () => {
             // Arrange
-            const mockPayload = { event: 'test_event', properties: {} } as any;
+            const mockPayload = {
+                event: 'test_event',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                properties: {}
+            } as any;
             mockGetLocalTime.mockImplementation(() => {
                 throw new Error('Time service unavailable');
             });
@@ -237,7 +263,11 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
         it('should propagate enrichPagePayloadOptimized errors', () => {
             // Arrange
-            const mockPayload = { event: 'pageview', properties: {} } as any;
+            const mockPayload = {
+                event: 'pageview',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                properties: {}
+            } as any;
             mockEnrichPagePayloadOptimized.mockImplementation(() => {
                 throw new Error('Enrichment failed');
             });
@@ -254,6 +284,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Arrange
             const originalPayload = {
                 event: 'test_event',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
                 properties: { original: 'value' }
             } as any;
             const payloadCopy = JSON.parse(JSON.stringify(originalPayload));
@@ -267,7 +298,11 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
         it('should create new objects for each track call', () => {
             // Arrange
-            const mockPayload = { event: 'test_event', properties: {} } as any;
+            const mockPayload = {
+                event: 'test_event',
+                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                properties: {}
+            } as any;
 
             // Act
             const result1 = plugin['track:dot-analytics']({ payload: mockPayload });
@@ -296,14 +331,18 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const events = ['click', 'scroll', 'form_submit', 'page_exit'];
 
             events.forEach((eventType) => {
-                const payload = { event: eventType, properties: {} } as any;
+                const payload = {
+                    event: eventType,
+                    context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                    properties: {}
+                } as any;
 
                 // Act
                 const result = plugin['track:dot-analytics']({ payload });
 
                 // Assert
-                expect(result.events[0].data.event).toBe(eventType);
-                expect(result.events[0].event_type).toBe(EVENT_TYPES.TRACK);
+                expect(result.events[0].event_type).toBe(eventType);
+                expect(result.events[0].data).toEqual({ custom: {} });
             });
         });
     });

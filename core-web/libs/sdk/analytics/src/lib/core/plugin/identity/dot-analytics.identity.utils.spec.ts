@@ -13,7 +13,7 @@ import {
 import {
     DEFAULT_SESSION_TIMEOUT_MINUTES,
     SESSION_UTM_KEY
-} from '../../shared/dot-content-analytics.constants';
+} from '../../shared/constants';
 import { safeSessionStorage } from '../../shared/dot-content-analytics.utils';
 
 // Mock the safeSessionStorage dependency

@@ -6,8 +6,8 @@ import { initializeContentAnalytics } from './dot-content-analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { DotCMSAnalyticsConfig } from './shared/dot-content-analytics.model';
-import { updateSessionActivity } from './shared/dot-content-analytics.utils';
+import { DotCMSAnalyticsConfig } from './shared/models';
+
 
 // Mock dependencies
 jest.mock('analytics');
@@ -23,9 +23,6 @@ const mockDotAnalyticsEnricherPlugin = dotAnalyticsEnricherPlugin as jest.Mocked
 >;
 const mockDotAnalyticsIdentityPlugin = dotAnalyticsIdentityPlugin as jest.MockedFunction<
     typeof dotAnalyticsIdentityPlugin
->;
-const mockUpdateSessionActivity = updateSessionActivity as jest.MockedFunction<
-    typeof updateSessionActivity
 >;
 
 describe('initializeContentAnalytics', () => {
@@ -127,14 +124,13 @@ describe('initializeContentAnalytics', () => {
     });
 
     describe('pageView', () => {
-        it('should call analytics.page with provided payload and update session activity', () => {
+        it('should call analytics.page with provided payload', () => {
             const payload = { path: '/test', title: 'Test Page' };
             const analytics = initializeContentAnalytics(mockConfig);
 
             expect(analytics).not.toBeNull();
             analytics!.pageView(payload);
 
-            expect(mockUpdateSessionActivity).toHaveBeenCalled();
             expect(mockAnalyticsInstance.page).toHaveBeenCalledWith(payload);
         });
 
@@ -144,7 +140,6 @@ describe('initializeContentAnalytics', () => {
             expect(analytics).not.toBeNull();
             analytics!.pageView();
 
-            expect(mockUpdateSessionActivity).toHaveBeenCalled();
             expect(mockAnalyticsInstance.page).toHaveBeenCalledWith({});
         });
 
@@ -159,7 +154,7 @@ describe('initializeContentAnalytics', () => {
     });
 
     describe('track', () => {
-        it('should call analytics.track with event name, payload and update session activity', () => {
+        it('should call analytics.track with event name and payload', () => {
             const eventName = 'button_click';
             const payload = { buttonId: 'submit', value: 123 };
             const analytics = initializeContentAnalytics(mockConfig);
@@ -167,7 +162,6 @@ describe('initializeContentAnalytics', () => {
             expect(analytics).not.toBeNull();
             analytics!.track(eventName, payload);
 
-            expect(mockUpdateSessionActivity).toHaveBeenCalled();
             expect(mockAnalyticsInstance.track).toHaveBeenCalledWith(eventName, payload);
         });
 
@@ -176,9 +170,8 @@ describe('initializeContentAnalytics', () => {
             const analytics = initializeContentAnalytics(mockConfig);
 
             expect(analytics).not.toBeNull();
-            analytics!.track(eventName);
+            analytics!.track(eventName, {});
 
-            expect(mockUpdateSessionActivity).toHaveBeenCalled();
             expect(mockAnalyticsInstance.track).toHaveBeenCalledWith(eventName, {});
         });
 
