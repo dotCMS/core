@@ -1,3 +1,5 @@
+/* eslint-env es6 */
+/* eslint-disable */
 export default [
     {
         context: [
@@ -22,7 +24,16 @@ export default [
         ],
         target: 'http://localhost:8080',
         secure: false,
+        changeOrigin: true, // Essential for Firefox compatibility
         logLevel: 'debug',
+        timeout: 30000, // 30 second timeout for Firefox
+        proxyTimeout: 30000, // Proxy-specific timeout
+        ws: true, // Enable WebSocket proxying
+        followRedirects: true, // Handle redirects properly
+        headers: {
+            Connection: 'keep-alive',
+            'Cache-Control': 'no-cache'
+        },
         pathRewrite: {
             '^/assets/manifest.json': '/dotAdmin/assets/manifest.json',
             '^/assets/monaco-editor/min': '/dotAdmin/assets/monaco-editor/min',
