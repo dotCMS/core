@@ -1,4 +1,4 @@
-@if (store.selected().length) {
+@if ($hasSelectedCategories()) {
     <dot-category-field-chips
         data-testId="category-chip-list"
         [categories]="store.selected()"
