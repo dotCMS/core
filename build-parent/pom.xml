@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v22</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
@@ -52,7 +52,7 @@
             <dependency>
                 <groupId>com.dotcms</groupId>
                 <artifactId>dotcms-application-bom</artifactId>
-                <version>24.04.24</version>
+                <version>24.04.24_lts_v22</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

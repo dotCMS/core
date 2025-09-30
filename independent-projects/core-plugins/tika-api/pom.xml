@@ -6,11 +6,11 @@
     <parent>
         <groupId>com.dotcms.core.plugins</groupId>
         <artifactId>dotcms-core-plugins-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v22</version>
     </parent>
 
     <artifactId>com.dotcms.tika-api</artifactId>
-    <version>24.04.24</version>
+    <version>24.04.24_lts_v22</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

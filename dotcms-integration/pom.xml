@@ -4,13 +4,13 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v22</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
     <artifactId>dotcms-integration</artifactId>
 
-    <version>24.04.24</version>
+    <version>24.04.24_lts_v22</version>
     <properties>
         <license.use>true</license.use>
         <servlet.port>8080</servlet.port>

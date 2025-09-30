@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v22</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
@@ -19,7 +19,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tika.api.version>24.04.24</tika.api.version>
+        <tika.api.version>24.04.24_lts_v22</tika.api.version>
     </properties>
 
     <modules>

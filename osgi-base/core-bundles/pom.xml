@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dotcms-osgi-base</artifactId>
         <groupId>com.dotcms.plugins</groupId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v22</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
