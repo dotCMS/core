@@ -1581,6 +1581,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Permissions in the query
         if (!isAdmin) {
             addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
+            addCategoryPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
         }
 
         if (UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")) {
@@ -1616,6 +1617,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } else {
             return contentFactory.indexSearchScroll(buffy.toString(), sortBy);
         }
+
+    }
+
+    void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
+        if (user.isAdmin()) {
+            return;
+        }
+
+        buffy.append(" +(");
+
+        for (Role role : roles) {
+            buffy.append(ESMappingConstants.CATEGORY_PERMISSIONS + ":" + role.getId() + " ");
+        }
+
+        if (respectFrontendRoles) {
+            buffy.append(ESMappingConstants.CATEGORY_PERMISSIONS + ":"
+                    + ESMappingConstants.MAPPED_PERMISSIONS.cms_anon_role.name() + " ");
+        }
+
+        // always add NONE
+        buffy.append(ESMappingConstants.CATEGORY_PERMISSIONS + ":" + ESMappingConstants.MAPPED_PERMISSIONS.none.name()
+                + " ");
+
+        buffy.append(") ");
 
     }
 

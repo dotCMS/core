@@ -495,6 +495,19 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
             // if user has no permissions to any categories, kaput!
             if (myCats.isEmpty()) {
+                // log if trying to publish or something
+                if (permissionType > 1) {
+                    String msg = "User " + (user != null ? user.getUserId() : "Unknown")
+                            + " cannot " + PermissionLevel.getPermissionLevel(permissionType).name()
+                            + " due to CATEGORY PERMISSIONS on contentlet with id: " + contentlet.getIdentifier();
+                    Logger.warn(this.getClass(), msg);
+                    if (Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK_THROW_EXCEPTION_ON_PUBLISH",
+                            true)) {
+                        throw new DotValidationException(msg);
+                    }
+
+
+                }
                 return false;
             }
         }
