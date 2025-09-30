@@ -1,3 +1,7 @@
 const path = require('path');
-const serverDistPath = path.join(process.cwd(), 'dist/angular-ssr/server/main.server.mjs');
-module.exports = require(serverDistPath).default;
+
+module.exports = async (req, res) => {
+  const serverDistPath = path.join(process.cwd(), 'dist/angular-ssr/server/server.mjs');
+  const { default: app } = await import(serverDistPath);
+  return app(req, res);
+};

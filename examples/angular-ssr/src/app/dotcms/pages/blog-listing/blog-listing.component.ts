@@ -86,7 +86,7 @@ export class BlogListingComponent {
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
         switchMap((url: string) =>
-          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/api/page', {
+          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/data/page', {
             url,
             params: pageParams,
           })
@@ -158,7 +158,7 @@ export class BlogListingComponent {
     const pageParams = this.createPageParams(query);
 
     this.http
-      .post<DotCMSComposedPageResponse<PageResponse>>('/api/page', {
+      .post<DotCMSComposedPageResponse<PageResponse>>('/data/page', {
         url: BLOG_ROUTE,
         params: pageParams,
       })
