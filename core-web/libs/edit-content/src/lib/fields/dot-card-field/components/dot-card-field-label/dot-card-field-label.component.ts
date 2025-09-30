@@ -45,7 +45,6 @@ export class DotCardFieldLabelComponent {
      * When provided, this text will be displayed as a tooltip when users hover over the label.
      *
      * @optional
-     * ```
      */
     $hint = input<string>(null, { alias: 'hint' });
 }

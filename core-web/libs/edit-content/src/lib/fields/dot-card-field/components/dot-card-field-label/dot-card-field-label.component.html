@@ -6,6 +6,9 @@
         <ng-content />
     </label>
     @if ($hint()) {
-        <i class="pi pi-info-circle text-xs" [pTooltip]="$hint()"></i>
+        <i
+            class="pi pi-info-circle text-xs"
+            [pTooltip]="$hint()"
+            tooltipStyleClass="tooltip-label-hint"></i>
     }
 </div>
