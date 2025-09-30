@@ -11,6 +11,12 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
 
+/**
+ * This class implements the {@link PushedAssetsAPI}.
+ *
+ * @author Daniel Silva
+ * @since Jul 16th, 2013
+ */
 public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	private final PushedAssetsFactory pushedAssetsFactory;
@@ -139,13 +145,15 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 		return pushedAssetsFactory.getPushedAssets(bundleId,environmentId);
 	}
 
+    @CloseDBIfOpened
     @Override
-    public List<PushedAssetHistory> getPushedAssets(String assetId, int offset, int limit) throws DotDataException {
+    public List<PushedAssetHistory> getPushedAssets(final String assetId, final int offset, final int limit) throws DotDataException {
         return pushedAssetsFactory.getPushedAssets(assetId, offset, limit);
     }
 
+    @CloseDBIfOpened
     @Override
-    public long getTotalPushedAssets(String assetId) throws DotDataException {
+    public long getTotalPushedAssets(final String assetId) throws DotDataException {
         return pushedAssetsFactory.getTotalPushedAssets(assetId);
     }
 

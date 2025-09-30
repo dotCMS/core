@@ -4,12 +4,20 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.publisher.assets.bean.PushedAsset;
-import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.environment.bean.Environment;
-import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.rest.*;
+import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.CountView;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.ResponseEntityContentletView;
+import com.dotcms.rest.ResponseEntityCountView;
+import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.SearchForm;
+import com.dotcms.rest.SearchView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
 import com.dotcms.util.DotPreconditions;
@@ -43,7 +51,12 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
@@ -142,26 +155,31 @@ public class ContentResource {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404", description = "The specified identifier does not match any contentlet.",
             content = @Content(mediaType = "application/json")),
-    @ApiResponse(responseCode = "500", description = "An internal dotCMS error has occurred.",
-            content = @Content(mediaType = "application/json"))
-})
+            @ApiResponse(responseCode = "500", description = "An internal dotCMS error has occurred.",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{identifier}/push/history")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityPaginatedDataView getPushHistory(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("identifier") final String contentId,
-            @Parameter(description = "Maximum number or results being returned, for pagination purposes.") @QueryParam("limit") final int limit,
+            @Parameter(description = "ID of the Contentlet whose push history will be retrieved.")
+                @PathParam("identifier") final String contentId,
+            @Parameter(description = "Maximum number or results being returned, for pagination purposes.")
+                @QueryParam("limit") final int limit,
             @Parameter(description = "Page number of the results being returned, for pagination purposes.")
-            @QueryParam("offset") final int offset) throws DotDataException {
-
+                @QueryParam("offset") final int offset) throws DotDataException {
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
         final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentId);
-
         if (!UtilMethods.isSet(contentlet)) {
-            throw new ResourceNotFoundException(String.format("Content %s does not exists", contentId));
+            throw new ResourceNotFoundException(String.format("Content ID '%s' does not exist", contentId));
         }
-
+        Logger.debug(this, String.format("Retrieving Push History for Content ID '%s' / limit = %s / offset = %s",
+                contentId, limit, offset));
         final PaginationUtil paginationUtil = new PaginationUtil(new ContentPushHistoryPaginator());
 
         final PaginationUtilParams<Map<String, Object>, PaginatedArrayList<?>> params =

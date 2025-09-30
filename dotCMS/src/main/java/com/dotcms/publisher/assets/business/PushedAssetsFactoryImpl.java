@@ -15,8 +15,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * This class extends/implements the {@link PushedAssetsFactory}.
+ *
+ * @author Daniel Silva
+ * @since Jul 16th, 2013
+ */
 public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
-	private PushedAssetsCache cache=CacheLocator.getPushedAssetsCache();
+
+	private final PushedAssetsCache cache = CacheLocator.getPushedAssetsCache();
+
+    @Override
 	public void savePushedAsset(PushedAsset asset) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(INSERT_ASSETS);
@@ -106,8 +115,6 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 
 	}
 
-
-
 	@Override
 	public void deleteAllPushedAssets() throws DotDataException {
 		final DotConnect db = new DotConnect();
@@ -119,20 +126,33 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	@Override
 	public List<PushedAsset> getPushedAssets(String assetId)
 			throws DotDataException {
-        return getPushedAssetsInner(assetId, 0, -1, PublisherUtil::getPushedAssetByMap);
+        return getPushedAssetsInner(assetId, 0, -1, PublisherUtil::getPushedAssetByMapList);
 	}
 
     @Override
-    public List<PushedAssetHistory> getPushedAssets(String assetId, int offset, int limit) throws DotDataException {
-        return getPushedAssetsInner(assetId, offset, limit, PushedAssetHistory::new);
+    public List<PushedAssetHistory> getPushedAssets(final String assetId, final int offset, final int limit) throws DotDataException {
+        return getPushedAssetsInner(assetId, offset, limit, rows -> new PushedAssetHistoryTransformer(rows).asList());
     }
 
-    private <T> List<T> getPushedAssetsInner(String assetId, int offset, int limit,
-                                                   Function<Map<String, Object>, T> transform) throws DotDataException {
-        List<T> assets = new ArrayList<>();
-
-        if(!UtilMethods.isSet(assetId)) {
-            return assets;
+    /**
+     * Retrieves a paginated list of pushed asset history entries for a given asset.
+     *
+     * @param assetId   the identifier of the asset whose push history is requested
+     * @param offset    zero-based index of the first record to return
+     * @param limit     maximum number of records to return
+     * @param transform The {@link Function} used o transform the information from the database into
+     *                  the expected object list.
+     * @param <T> {@link PushedAsset}, {@link PushedAssetHistory}
+     *
+     * @return A list of objects containing pushed asset history.
+     *
+     * @throws DotDataException An error occurred while accessing the data source.
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T getPushedAssetsInner(String assetId, int offset, int limit,
+                                       Function<List<Map<String, Object>>, T> transform) throws DotDataException {
+        if (!UtilMethods.isSet(assetId)) {
+            return (T) List.of();
         }
 
         final String query = limit >= 1 ? String.format(SELECT_ASSETS_BY_ASSET_ID, " LIMIT " + limit) :
@@ -149,13 +169,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
         }
 
         List<Map<String, Object>> res = dc.loadObjectResults();
-
-        for(Map<String, Object> row : res){
-            T asset = transform.apply(row);
-            assets.add(asset);
-        }
-
-        return assets;
+        return transform.apply(res);
     }
 
     @Override
@@ -181,7 +195,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		return assets;
 	}
 	
-	
+	@Override
 	public PushedAsset getLastPushForAsset(final String assetId, final String environmentId, final String endpointIds)  throws DotDataException {
 		
 		PushedAsset asset = cache.getPushedAsset(assetId, environmentId);

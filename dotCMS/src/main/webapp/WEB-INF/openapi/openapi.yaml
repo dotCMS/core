@@ -6084,7 +6084,8 @@ paths:
       description: Returns the push history of a contentlet
       operationId: getPushHistory
       parameters:
-      - in: path
+      - description: ID of the Contentlet whose push history will be retrieved.
+        in: path
         name: identifier
         required: true
         schema:

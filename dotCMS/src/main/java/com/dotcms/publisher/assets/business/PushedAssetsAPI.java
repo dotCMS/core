@@ -6,6 +6,14 @@ import com.dotmarketing.exception.DotDataException;
 
 import java.util.List;
 
+/**
+ * This API provides access to data related to when a dotCMS asset was Push Published to another
+ * server/environment. This works basically as an audit API that allows you to figure out what
+ * assets have been pushed, when they were pushed, perform CRUD operations on them, and so on.
+ *
+ * @author Daniel Silva
+ * @since Jul 16th, 2013
+ */
 public interface PushedAssetsAPI {
 
 	/**
@@ -113,7 +121,7 @@ public interface PushedAssetsAPI {
      * @return a list of {@link PushedAssetHistory} entries ordered by push date
      * @throws DotDataException if an error occurs while accessing the data source
      */
-    List<PushedAssetHistory> getPushedAssets(String assetId, int offset, int limit) throws DotDataException;
+    List<PushedAssetHistory> getPushedAssets(final String assetId, final int offset, final int limit) throws DotDataException;
 
     /**
      * Returns the total number of push history entries for the specified asset.
@@ -122,5 +130,6 @@ public interface PushedAssetsAPI {
      * @return total number of push history records for the asset
      * @throws DotDataException if an error occurs while accessing the data source
      */
-    long getTotalPushedAssets(String assetId) throws DotDataException;
+    long getTotalPushedAssets(final String assetId) throws DotDataException;
+
 }

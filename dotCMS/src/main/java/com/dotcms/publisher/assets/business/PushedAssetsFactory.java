@@ -6,6 +6,15 @@ import com.dotmarketing.exception.DotDataException;
 
 import java.util.List;
 
+/**
+ * Provides access to data related to the history of pushed assets in dotCMS. Every time a
+ * "pusheable" object is sent to another server/environment, this table is updated with the main
+ * information that allows users/administrators to track down when it was pushed. It also allows
+ * the Push Publishing mechanism to determine when an asset was last pushed.
+ *
+ * @author Daniel Silva
+ * @since Jul 16th, 2013
+ */
 public abstract class PushedAssetsFactory {
 
 	protected static String INSERT_ASSETS = "INSERT INTO publishing_pushed_assets VALUES (?,?,?,?,?,?,?)";
@@ -70,6 +79,7 @@ public abstract class PushedAssetsFactory {
 	public abstract void deleteAllPushedAssets() throws DotDataException;
 
 	public abstract List<PushedAsset> getPushedAssets(String assetId) throws DotDataException;
+
     /**
      * Retrieves a paginated list of pushed asset history entries for a given asset.
      *
@@ -79,7 +89,7 @@ public abstract class PushedAssetsFactory {
      * @return a list of {@link PushedAssetHistory} entries ordered by push date
      * @throws DotDataException if an error occurs while accessing the data source
      */
-    public abstract List<PushedAssetHistory> getPushedAssets(String assetId, int offset, int limit) throws DotDataException;
+    public abstract List<PushedAssetHistory> getPushedAssets(final String assetId, final int offset, final int limit) throws DotDataException;
 
 	public abstract List<PushedAsset> getPushedAssetsByEnvironment(String assetId) throws DotDataException;
 
@@ -92,5 +102,5 @@ public abstract class PushedAssetsFactory {
      * @return total number of push history records for the asset
      * @throws DotDataException if an error occurs while accessing the data source
      */
-    public abstract long getTotalPushedAssets(String assetId) throws DotDataException;
+    public abstract long getTotalPushedAssets(final String assetId) throws DotDataException;
 }

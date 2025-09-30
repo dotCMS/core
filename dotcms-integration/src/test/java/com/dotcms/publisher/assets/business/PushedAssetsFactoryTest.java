@@ -1,12 +1,13 @@
 package com.dotcms.publisher.assets.business;
 
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.rest.api.v1.content.PushedAssetHistory;
@@ -21,7 +22,6 @@ import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
@@ -30,7 +30,13 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class PushedAssetsFactoryTest  {
+/**
+ * Verifies that the {@link PushedAssetsFactory} is working as expected.
+ *
+ * @author Freddy Rodriguez
+ * @since Sep 26th, 2025
+ */
+public class PushedAssetsFactoryTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
