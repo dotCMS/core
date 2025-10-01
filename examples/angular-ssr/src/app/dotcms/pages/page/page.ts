@@ -82,7 +82,7 @@ export class PageComponent implements OnInit {
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
         switchMap((url: string) =>
-          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/api/page', { url })
+          this.http.post<DotCMSComposedPageResponse<PageResponse>>('/data/page', { url })
         )
       )
       .pipe(switchMap((response) => this.editablePageService.listen<PageResponse>(response)))

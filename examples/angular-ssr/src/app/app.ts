@@ -94,7 +94,10 @@ export class App {
     };
 
     this.http
-      .post<DotCMSComposedPageResponse<PageResponse>>('/api/page', { url: '/', params: pageParams })
+      .post<DotCMSComposedPageResponse<PageResponse>>('/data/page', {
+        url: '/',
+        params: pageParams,
+      })
       .subscribe((response) => {
         this.content.set(response?.content);
       });
