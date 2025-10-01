@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -38,6 +38,8 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
+    addNewDotAsset = output<void>();
+
     readonly $items = signal<MenuItem[]>([
         {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
@@ -49,7 +51,10 @@ export class DotContentDriveToolbarComponent {
             }
         },
         {
-            label: this.#dotMessageService.get('content-drive.add-new.context-menu.image')
+            label: this.#dotMessageService.get('content-drive.add-new.context-menu.image'),
+            command: () => {
+                this.addNewDotAsset.emit();
+            }
         },
         {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.video')

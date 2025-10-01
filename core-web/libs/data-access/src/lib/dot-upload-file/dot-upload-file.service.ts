@@ -97,16 +97,21 @@ export class DotUploadFileService {
      * If a string is passed, it will be used as the asset id.
      *
      * @param file The file to be uploaded or the asset id.
+     * @param extraData Additional data to be included in the contentlet object. This will be merged with
+     * the base contentlet data in the request body.
      * @returns An observable that resolves to the created contentlet.
      */
-    uploadDotAsset(file: File | string): Observable<DotCMSContentlet> {
+    uploadDotAsset(
+        file: File | string,
+        extraData?: Record<string, string>
+    ): Observable<DotCMSContentlet> {
         if (file instanceof File) {
             const formData = new FormData();
             formData.append('file', file);
 
             return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(
                 'dotAsset',
-                { file: file.name },
+                { file: file.name, ...extraData },
                 formData
             );
         }

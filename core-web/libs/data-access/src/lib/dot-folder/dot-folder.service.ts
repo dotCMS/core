@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map, pluck } from 'rxjs/operators';
 
 import { DotFolder, DotFolderEntity } from '@dotcms/dotcms-models';
 @Injectable()
@@ -32,6 +32,21 @@ export class DotFolderService {
      */
     createFolder(body: DotFolderEntity) {
         return this.#http.post(`/api/v1/assets/folders`, body);
+    }
+
+    /**
+     * Gets the file masks (allowed file types) for a specific folder
+     *
+     * @param {string} folderId - The ID of the folder to get file masks from
+     * @returns {Observable<string>} Observable that emits the file masks string
+     */
+    getFileMasksForFolder(folderId: string): Observable<string> {
+        return this.#http
+            .get<{ entity: { filesMasks: string } }>(`/api/v1/folder/${folderId}`)
+            .pipe(
+                pluck('entity'),
+                map((entity) => entity.filesMasks)
+            );
     }
 
     /**

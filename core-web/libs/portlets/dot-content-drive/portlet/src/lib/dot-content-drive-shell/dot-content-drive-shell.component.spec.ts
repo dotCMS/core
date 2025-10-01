@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -20,7 +20,8 @@ import {
     DotWorkflowsActionsService,
     DotRouterService,
     DotLanguagesService,
-    DotFolderService
+    DotFolderService,
+    DotUploadFileService
 } from '@dotcms/data-access';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -37,6 +38,7 @@ import {
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -66,6 +68,9 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(DotUploadFileService, {
+                uploadDotAsset: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient()
         ],
@@ -110,7 +115,8 @@ describe('DotContentDriveShellComponent', () => {
                     folders: jest.fn(),
                     selectedNode: jest.fn(),
                     sidebarLoading: jest.fn(),
-                    closeDialog: jest.fn()
+                    closeDialog: jest.fn(),
+                    allowedFileTypes: jest.fn().mockReturnValue(of('*.jpg, *.png'))
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -392,6 +398,91 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$showMessage()).toBe(false);
+        });
+    });
+
+    describe('file upload integration', () => {
+        let mockFile: File;
+        let uploadService: SpyObject<DotUploadFileService>;
+
+        beforeEach(() => {
+            mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
+            uploadService = spectator.inject(DotUploadFileService);
+            spectator.detectChanges();
+        });
+
+        it('should upload file when file input changes', () => {
+            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            store.selectedNode.mockReturnValue({ key: 'folder-123' });
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [mockFile],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.LOADING);
+            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
+                baseType: 'dotAsset',
+                hostFolder: 'folder-123',
+                indexPolicy: 'WAIT_FOR'
+            });
+        });
+
+        fit('should show success message on successful upload', () => {
+            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            const messageService = spectator.inject(MessageService);
+            const addSpy = jest.spyOn(messageService, 'add');
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [mockFile],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(addSpy).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: expect.any(String)
+            });
+        });
+
+        it('should show error message on upload failure', () => {
+            const error = new Error('Upload failed');
+            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
+            const messageService = spectator.inject(MessageService);
+            const addSpy = jest.spyOn(messageService, 'add');
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [mockFile],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(addSpy).toHaveBeenCalledWith({
+                severity: 'error',
+                summary: expect.any(String),
+                detail: expect.any(String)
+            });
+            expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.LOADED);
+        });
+
+        it('should not upload when no files are selected', () => {
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+            expect(store.setStatus).not.toHaveBeenCalled();
         });
     });
 });

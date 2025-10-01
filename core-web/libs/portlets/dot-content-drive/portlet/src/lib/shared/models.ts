@@ -2,6 +2,8 @@ import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 
 import { DIALOG_TYPE } from './constants';
 
+import { TreeNodeItem } from '../utils/tree-folder.utils';
+
 /**
  * The status of the content drive.
  *
@@ -90,6 +92,7 @@ export interface DotContentDriveState extends DotContentDriveInit {
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
+    selectedNode?: TreeNodeItem;
 }
 
 /**

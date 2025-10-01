@@ -20,6 +20,7 @@ import { GlobalStore } from '@dotcms/store';
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withSidebar } from './features/sidebar/withSidebar';
+import { withDotAsset } from './features/withDotAsset/withDotAsset';
 
 import {
     DEFAULT_PAGINATION,
@@ -37,6 +38,7 @@ import {
     DotContentDriveStatus
 } from '../shared/models';
 import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
+import { TreeNodeItem } from '../utils/tree-folder.utils';
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,
@@ -47,7 +49,8 @@ const initialState: DotContentDriveState = {
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
-    isTreeExpanded: DEFAULT_TREE_EXPANDED
+    isTreeExpanded: DEFAULT_TREE_EXPANDED,
+    selectedNode: null
 };
 
 export const DotContentDriveStore = signalStore(
@@ -165,6 +168,12 @@ export const DotContentDriveStore = signalStore(
             },
             setPath(path: string) {
                 patchState(store, { path });
+            },
+                        /**
+             * Sets the selected node
+             */
+            setSelectedNode: (node: TreeNodeItem) => {
+                patchState(store, { selectedNode: node });
             }
         };
     }),
@@ -209,5 +218,6 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
-    withSidebar()
+    withSidebar(),
+    withDotAsset()
 );
