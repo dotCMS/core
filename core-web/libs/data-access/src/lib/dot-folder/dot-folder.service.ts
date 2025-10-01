@@ -35,21 +35,6 @@ export class DotFolderService {
     }
 
     /**
-     * Gets the file masks (allowed file types) for a specific folder
-     *
-     * @param {string} folderId - The ID of the folder to get file masks from
-     * @returns {Observable<string>} Observable that emits the file masks string
-     */
-    getFileMasksForFolder(folderId: string): Observable<string> {
-        return this.#http
-            .get<{ entity: { filesMasks: string } }>(`/api/v1/folder/${folderId}`)
-            .pipe(
-                pluck('entity'),
-                map((entity) => entity.filesMasks)
-            );
-    }
-
-    /**
      * Normalize the path that the backend expects
      * The backend expects a path that starts with //
      *

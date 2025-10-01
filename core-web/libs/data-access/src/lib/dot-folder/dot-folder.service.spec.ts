@@ -138,28 +138,4 @@ describe('DotFolderService', () => {
             req.flush({ entity: mockFolders });
         });
     });
-
-    describe('getFileMasksForFolder', () => {
-        it('should return empty string when API returns empty entity', () => {
-            const folderId = '1';
-
-            spectator.service.getFileMasksForFolder(folderId).subscribe((fileMasks: string) => {
-                expect(fileMasks).toEqual('');
-            });
-
-            const req = spectator.expectOne(`/api/v1/folder/${folderId}`, HttpMethod.GET);
-            req.flush({ entity: { filesMasks: '' } });
-        });
-
-        it('should return file masks when API returns file masks', () => {
-            const folderId = '1';
-
-            spectator.service.getFileMasksForFolder(folderId).subscribe((fileMasks: string) => {
-                expect(fileMasks).toEqual('*.jpg, *.png');
-            });
-
-            const req = spectator.expectOne(`/api/v1/folder/${folderId}`, HttpMethod.GET);
-            req.flush({ entity: { filesMasks: '*.jpg, *.png' } });
-        });
-    });
 });
