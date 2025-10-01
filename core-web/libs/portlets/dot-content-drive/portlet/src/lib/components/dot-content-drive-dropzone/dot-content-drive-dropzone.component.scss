@@ -8,13 +8,8 @@
     min-height: 0;
 
     &.active {
-        &::after {
-            opacity: 1;
-            visibility: visible;
-        }
-
+        &::after,
         .message {
-            pointer-events: all;
             opacity: 1;
             visibility: visible;
         }
@@ -31,10 +26,10 @@
         opacity: 0;
         visibility: visible;
         transition: all $content-drive-animation-speed $content-drive-animation-ease;
+        pointer-events: none;
     }
 
     .message {
-        pointer-events: none;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -46,6 +41,7 @@
         transition: all $content-drive-animation-speed $content-drive-animation-ease;
         opacity: 0;
         visibility: visible;
+        pointer-events: none;
     }
 
     .message__content {
