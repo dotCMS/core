@@ -519,6 +519,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
      * @param mapLowered The map where the category-related permissions will be stored, under a specific key.
      */
     void fillCategoryPermissions(final Contentlet contentlet, final Map<String, Object> mapLowered) {
+        if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
+            return;
+        }
         List<String> requiredRoles = new ArrayList<>();
         requiredRoles.add(ESMappingConstants.MAPPED_PERMISSIONS.cms_admin_role.name());
 

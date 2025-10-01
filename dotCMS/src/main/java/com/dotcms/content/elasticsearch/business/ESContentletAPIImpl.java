@@ -1621,6 +1621,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
+        if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
+            return;
+        }
         if (user.isAdmin()) {
             return;
         }
