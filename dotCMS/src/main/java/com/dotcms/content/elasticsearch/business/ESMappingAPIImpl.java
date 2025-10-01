@@ -510,7 +510,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 
-    private void fillCategoryPermissions(final Contentlet contentlet, final Map<String, Object> mapLowered) {
+    /**
+     * Populates a map with the required roles and permissions associated with the category fields of a given
+     * contentlet. If no categories are found, it adds a default "none" permission.
+     *
+     * @param contentlet The contentlet object containing the category fields to be analyzed and their corresponding
+     *                   permissions.
+     * @param mapLowered The map where the category-related permissions will be stored, under a specific key.
+     */
+    void fillCategoryPermissions(final Contentlet contentlet, final Map<String, Object> mapLowered) {
         List<String> requiredRoles = new ArrayList<>();
         requiredRoles.add(ESMappingConstants.MAPPED_PERMISSIONS.cms_admin_role.name());
 
@@ -526,14 +534,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                                         fv.value())))
                 .collect(Collectors.toList());
 
-        if (permissionedCategories.isEmpty()) {
-            requiredRoles.add(ESMappingConstants.MAPPED_PERMISSIONS.none.name());
-        }
+        boolean hasCats = false;
+
         for (com.dotcms.contenttype.model.field.Field field : permissionedCategories) {
             List<Category> myCats = Try.of(
                             () -> (List<Category>) APILocator.getContentletAPI()
                                     .getFieldValue(contentlet, field, APILocator.systemUser(), false))
                     .getOrElse(List.of());
+            if (!myCats.isEmpty()) {
+                hasCats = true;
+            }
             Set<String> permissions = new HashSet<>();
             myCats.forEach(cat -> {
                 Try.run(() ->
@@ -548,6 +558,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             });
 
             requiredRoles.addAll(permissions);
+        }
+        if (!hasCats) {
+            requiredRoles.add(ESMappingConstants.MAPPED_PERMISSIONS.none.name());
         }
 
         mapLowered.put(ESMappingConstants.CATEGORY_PERMISSIONS, requiredRoles.toArray(new String[0]));

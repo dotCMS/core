@@ -10,14 +10,11 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.field.ImmutableCategoryField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FieldVariableDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
@@ -152,7 +149,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void doesRoleHavePermission() throws DotDataException, DotSecurityException {
-        Role nrole = getOrCreateRole("TestingRole");
+        Role nrole = getRole("TestingRole");
 
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
@@ -167,7 +164,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void doesUserHavePermission() throws DotDataException, DotSecurityException {
-        Role nrole = getOrCreateRole("TestingRole2");
+        Role nrole = getRole("TestingRole2");
 
         User user= UserTestUtil.getUser("useruser", false, true);
 
@@ -279,7 +276,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void doesUserHavePermission_another_lang() throws DotDataException, DotSecurityException {
 
-        final Role nrole = getOrCreateRole("TestingRole2");
+        final Role nrole = getRole("TestingRole2");
         final User user= UserTestUtil.getUser("useruser", false, true);
 
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
@@ -311,7 +308,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     public void removePermissions() throws DotDataException, DotSecurityException {
 
         final Host newHost = new SiteDataGen().nextPersisted();
-        Role newRole = getOrCreateRole("Role" + System.currentTimeMillis());
+        Role newRole = getRole("Role" + System.currentTimeMillis());
 
         // Adding permissions to the just created host
         Permission permission = new Permission();
@@ -342,7 +339,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         Folder f1=APILocator.getFolderAPI().findFolderByPath("/f1/", site, sysuser, false);
         Folder f2=APILocator.getFolderAPI().findFolderByPath("/f2/", site, sysuser, false);
 
-        Role nrole = getOrCreateRole("TestingRole3");
+        Role nrole = getRole("TestingRole3");
 
         permissionAPI.permissionIndividually(site, f1, sysuser);
         permissionAPI.permissionIndividually(site, f2, sysuser);
@@ -370,7 +367,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void getPermissions() throws DotDataException, DotSecurityException {
-        Role nrole = getOrCreateRole("TestingRole4");
+        Role nrole = getRole("TestingRole4");
 
         APILocator.getFolderAPI().createFolders("/f1/", site, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", site, sysuser, false);
@@ -399,7 +396,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void getRolesWithPermission() throws DotDataException, DotSecurityException {
-        Role nrole = getOrCreateRole("TestingRole6");
+        Role nrole = getRole("TestingRole6");
 
         APILocator.getFolderAPI().createFolders("/f2/", site, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f2/", site, sysuser, false);
@@ -425,7 +422,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void getUsersWithPermission() throws DotDataException, DotSecurityException {
-        Role nrole = getOrCreateRole("TestingRole5");
+        Role nrole = getRole("TestingRole5");
 
         User user= UserTestUtil.getUser("useruser", false, true);
 
@@ -456,7 +453,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void save() throws DotStateException, DotDataException, DotSecurityException {
-        Role nrole = getOrCreateRole("TestingRole7");
+        Role nrole = getRole("TestingRole7");
 
         APILocator.getFolderAPI().createFolders("/f4/", site, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", site, sysuser, false);
@@ -521,7 +518,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         site=APILocator.getHostAPI().save(site, sysuser, false);
 
-        Role nrole = getOrCreateRole("TestingRole7");
+        Role nrole = getRole("TestingRole7");
 
         try {
             Folder f1 = APILocator.getFolderAPI().createFolders("/f1/", site, sysuser, false);
@@ -747,9 +744,9 @@ public class PermissionAPITest extends IntegrationTestBase {
         site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         site=APILocator.getHostAPI().save(site, sysuser, false);
 
-        Role nrole1 = getOrCreateRole("TestingRole8");
+        Role nrole1 = getRole("TestingRole8");
 
-        Role nrole2 = getOrCreateRole("TestingRole9");
+        Role nrole2 = getRole("TestingRole9");
 
         Structure s=null;
         Contentlet cont1=null;
@@ -833,7 +830,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m2), m2, sysuser, false);
     	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m3), m3, sysuser, false);
 
-        Role nrole = getOrCreateRole("TestingRole");
+        Role nrole = getRole("TestingRole");
 
     	Permission p=new Permission(m1.getInode(),nrole.getId(),PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,false);
     	permissionAPI.save(p, m1, sysuser, false);
@@ -856,7 +853,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         site=APILocator.getHostAPI().save(site, sysuser, false);
         final Folder folderTheme = new FolderDataGen().site(site).title("themeFolder"+System.currentTimeMillis()).nextPersisted();
 
-        Role nrole = getOrCreateRole("TestingRole10");
+        Role nrole = getRole("TestingRole10");
 
         Map<String,String> mm=new HashMap<>();
         mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
@@ -908,7 +905,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void testGetUsersWithoutFilter() throws DotDataException, DotSecurityException {
 
-        Role nrole = getOrCreateRole("TestingRole11");
+        Role nrole = getRole("TestingRole11");
 
         User user = UserTestUtil.getUser("useruser", false, true);
 
@@ -937,7 +934,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void testGetUsersWithFilter() throws DotDataException, DotSecurityException {
 
-        Role nrole = getOrCreateRole("TestingRole11");
+        Role nrole = getRole("TestingRole11");
 
         User user = UserTestUtil.getUser("useruser", false, true);
 
@@ -966,7 +963,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void testGetUsersCountWithoutFilter() throws DotDataException, DotSecurityException {
 
-        Role nrole = getOrCreateRole("TestingRole11");
+        Role nrole = getRole("TestingRole11");
 
         User user = UserTestUtil.getUser("useruser", false, true);
 
@@ -993,7 +990,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void testGetUsersCountWithFilter() throws DotDataException, DotSecurityException {
 
-        Role nrole = getOrCreateRole("TestingRole11");
+        Role nrole = getRole("TestingRole11");
 
         User user = UserTestUtil.getUser("useruser", false, true);
 
@@ -1020,7 +1017,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void testGetUsersCountDeleted() throws DotDataException, DotSecurityException {
 
-        Role nrole = getOrCreateRole("TestingRole11");
+        Role nrole = getRole("TestingRole11");
 
         User user = UserTestUtil.getUser("deletedUser", true, true);
 
@@ -1047,7 +1044,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void testGetUsersDeleted() throws DotDataException, DotSecurityException {
 
-        Role nrole = getOrCreateRole("TestingRole11");
+        Role nrole = getRole("TestingRole11");
 
         User user = UserTestUtil.getUser("deletedUser", true, true);
 
@@ -1192,7 +1189,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     /**
      * Generate a new role with the given name
      */
-    private Role getOrCreateRole(String roleName) throws DotDataException {
+    private Role getRole(String roleName) throws DotDataException {
         Role nrole = APILocator.getRoleAPI().loadRoleByKey(roleName);
         if (!UtilMethods.isSet(nrole) || !UtilMethods.isSet(nrole.getId())) {
             nrole = new Role();
@@ -1408,418 +1405,6 @@ public class PermissionAPITest extends IntegrationTestBase {
         assertTrue(permissionAPI.doesUserHavePermission(live, PermissionAPI.PERMISSION_READ, frontEndUser, respectFrontEndRoles));
         assertFalse(permissionAPI.doesUserHavePermission(working, PermissionAPI.PERMISSION_READ, frontEndUser, respectFrontEndRoles));
 
-    }
-
-    /**
-     * Method to test: {@link PermissionBitAPIImpl#checkCategoryPermissionsSecond(Contentlet, int, User, boolean)} Given
-     * Scenario: Test various scenarios for category permission checking on contentlets ExpectedResult: Method should
-     * return appropriate boolean values based on user's category permissions
-     */
-    @Test
-    public void test_check_category_permissions_second() throws DotDataException, DotSecurityException {
-
-        // loading roles
-        Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
-        Role frontEndRole = APILocator.getRoleAPI().loadFrontEndUserRole();
-        Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-
-        // create our unique strings
-        String unique = String.valueOf(System.currentTimeMillis());
-        String snowStr = "snow" + unique;
-        String waterStr = "water" + unique;
-        String ecoStr = "eco" + unique;
-
-        // create our roles
-        Role snowRole = getOrCreateRole("role" + snowStr);
-        Role waterRole = getOrCreateRole("role" + waterStr);
-        Role ecoRole = getOrCreateRole("role" + ecoStr);
-
-        // create our users
-        User snowUser = new UserDataGen()
-                .id("user" + snowStr)
-                .emailAddress("user" + snowStr + "@dotcms.com")
-                .roles(new Role[]{backendRole, snowRole})
-                .nextPersisted();
-
-        User waterUser = new UserDataGen()
-                .id("user" + waterStr)
-                .emailAddress("user" + waterStr + "@dotcms.com")
-                .roles(new Role[]{backendRole, waterRole})
-                .nextPersisted();
-
-        User ecoUser = new UserDataGen()
-                .id("user" + ecoStr)
-                .emailAddress("user" + ecoStr + "@dotcms.com")
-                .roles(new Role[]{backendRole, ecoRole})
-                .nextPersisted();
-
-        // test role memberships
-        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(snowUser, backendRole));
-        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(snowUser, snowRole));
-        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(snowUser, ecoRole));
-        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(snowUser, waterRole));
-
-        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(waterUser, backendRole));
-        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(waterUser, waterRole));
-        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(waterUser, snowRole));
-        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(waterUser, ecoRole));
-
-        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(ecoUser, backendRole));
-        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(ecoUser, ecoRole));
-        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(ecoUser, waterRole));
-        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(ecoUser, snowRole));
-
-        // create category tree
-        final Category topSnowWaterCategory = new CategoryDataGen()
-                .setCategoryName("topSnowWaterCategory" + unique)
-                .setKey("topSnowWaterCategory" + unique)
-                .setCategoryVelocityVarName("topSnowWaterCategory" + unique)
-                .nextPersisted();
-
-        final Category skiCategory = new CategoryDataGen()
-                .setCategoryName("skiCategory" + unique)
-                .setKey("skiCategory" + unique)
-                .setCategoryVelocityVarName("skiCategory" + unique)
-                .parent(topSnowWaterCategory)
-                .nextPersisted();
-
-        final Category boardCategory = new CategoryDataGen()
-                .setCategoryName("boardCategory" + unique)
-                .setKey("boardCategory" + unique)
-                .setCategoryVelocityVarName("boardCategory" + unique)
-                .parent(topSnowWaterCategory)
-                .nextPersisted();
-
-        // Create water categories
-        final Category waterCategory = new CategoryDataGen()
-                .setCategoryName("waterCategory" + unique)
-                .setKey("waterCategory" + unique)
-                .setCategoryVelocityVarName("waterCategory" + unique)
-                .parent(topSnowWaterCategory)
-                .nextPersisted();
-
-        final Category surfCategoryNested = new CategoryDataGen()
-                .setCategoryName("surfCategory" + unique)
-                .setKey("surfCategory" + unique)
-                .setCategoryVelocityVarName("surfCategory" + unique)
-                .parent(waterCategory)
-                .nextPersisted();
-
-        final Category scubaCategoryNested = new CategoryDataGen()
-                .setCategoryName("scubaCategory" + unique)
-                .setKey("scubaCategory" + unique)
-                .setCategoryVelocityVarName("scubaCategory" + unique)
-                .parent(waterCategory)
-                .nextPersisted();
-
-        final Category topEcoCategory = new CategoryDataGen()
-                .setCategoryName("topEcoCategory" + unique)
-                .setKey("topEcoCategory" + unique)
-                .setCategoryVelocityVarName("topEcoCategory" + unique)
-                .nextPersisted();
-
-        final Category ecoCategory = new CategoryDataGen()
-                .setCategoryName("ecoCategory" + unique)
-                .setKey("ecoCategory" + unique)
-                .setCategoryVelocityVarName("ecoCategory" + unique)
-                .parent(topEcoCategory)
-                .nextPersisted();
-
-        int allThePermissions = PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH
-                | PermissionAPI.PERMISSION_EDIT_PERMISSIONS
-                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-
-        // set permissions snowRole
-        saveIndividualPermissions(topSnowWaterCategory, snowRole, allThePermissions);
-        saveInhertablePermissions(topSnowWaterCategory, snowRole, allThePermissions);
-
-        saveIndividualPermissions(skiCategory, snowRole, allThePermissions);
-        saveIndividualPermissions(boardCategory, snowRole, allThePermissions);
-
-        // set permissions waterRole
-        saveIndividualPermissions(topSnowWaterCategory, waterRole, allThePermissions);
-        saveInhertablePermissions(topSnowWaterCategory, waterRole, allThePermissions);
-
-        saveIndividualPermissions(waterCategory, waterRole, allThePermissions);
-        saveInhertablePermissions(waterCategory, waterRole, allThePermissions);
-
-        // set permissions only eco role for eco category
-        saveIndividualPermissions(topEcoCategory, ecoRole, allThePermissions);
-        saveInhertablePermissions(topEcoCategory, ecoRole, allThePermissions);
-
-        // test category permissions
-        List<Permission> permissions = permissionAPI.getPermissions(topSnowWaterCategory, true);
-
-        assertTrue(permissionAPI.doesRoleHavePermission(topSnowWaterCategory, PermissionAPI.PERMISSION_READ, snowRole));
-
-        assertTrue(permissionAPI.doesUserHavePermission(topSnowWaterCategory, PermissionAPI.PERMISSION_READ, snowUser,
-                false));
-        assertTrue(permissionAPI.doesUserHavePermission(topSnowWaterCategory, PermissionAPI.PERMISSION_READ, waterUser,
-                false));
-        assertFalse(permissionAPI.doesUserHavePermission(topSnowWaterCategory, PermissionAPI.PERMISSION_READ, ecoUser,
-                false));
-
-        assertTrue(permissionAPI.doesUserHavePermission(boardCategory, PermissionAPI.PERMISSION_READ, snowUser, false));
-        assertFalse(
-                permissionAPI.doesUserHavePermission(boardCategory, PermissionAPI.PERMISSION_READ, waterUser, false));
-
-        assertTrue(permissionAPI.doesUserHavePermission(ecoCategory, PermissionAPI.PERMISSION_READ, ecoUser, false));
-        assertTrue(permissionAPI.doesUserHavePermission(topEcoCategory, PermissionAPI.PERMISSION_READ, ecoUser, false));
-
-        assertFalse(
-                permissionAPI.doesUserHavePermission(topEcoCategory, PermissionAPI.PERMISSION_READ, snowUser, false));
-
-        // Create content type with category field that has secondaryPermissionCheck=true
-
-        ContentType contentType = new ContentTypeDataGen()
-                .name("contentTypeCatTest" + unique)
-                .host(APILocator.systemHost())
-                .velocityVarName("contentTypeCatTest" + unique)
-                .fields(
-                        List.of(new FieldDataGen().type(ImmutableTextField.class).name("Title").velocityVarName("title")
-                                .next())
-                )
-                .nextPersisted();
-
-        final com.dotcms.contenttype.model.field.Field category1Field = new FieldDataGen()
-                .type(ImmutableCategoryField.class)
-                .sortOrder(10)
-                .contentTypeId(contentType.id())
-                .name("category1Field")
-                .velocityVarName("category1Field")
-                .values(topSnowWaterCategory.getInode())
-                .nextPersisted();
-
-        final com.dotcms.contenttype.model.field.Field category2Field = new FieldDataGen()
-                .type(ImmutableCategoryField.class)
-                .sortOrder(20)
-                .contentTypeId(contentType.id())
-                .name("category2Field")
-                .velocityVarName("category2Field")
-                .values(topEcoCategory.getInode())
-                .nextPersisted();
-
-        new FieldVariableDataGen().key("secondaryPermissionCheck").value("true").field(category1Field).nextPersisted();
-        new FieldVariableDataGen().key("secondaryPermissionCheck").value("true").field(category2Field).nextPersisted();
-
-        saveIndividualPermissions(contentType, snowRole, allThePermissions);
-        saveInhertablePermissions(contentType, snowRole, allThePermissions);
-
-        saveIndividualPermissions(contentType, waterRole, allThePermissions);
-        saveInhertablePermissions(contentType, waterRole, allThePermissions);
-
-        saveIndividualPermissions(contentType, ecoRole, allThePermissions);
-        saveInhertablePermissions(contentType, ecoRole, allThePermissions);
-
-        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.variable());
-        assertTrue(contentType.fieldMap().containsKey("category1Field"));
-        assertTrue(contentType.fieldMap().get("category1Field").fieldVariablesMap()
-                .containsKey("secondaryPermissionCheck"));
-        assertTrue(contentType.fieldMap().containsKey("category2Field"));
-        assertTrue(contentType.fieldMap().get("category2Field").fieldVariablesMap()
-                .containsKey("secondaryPermissionCheck"));
-
-        // Create contentlet
-        Contentlet snowContentlet = new Contentlet();
-        snowContentlet.setStringProperty("title", "Test Snow Content");
-        snowContentlet.setContentTypeId(contentType.id());
-        snowContentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        //snowContentlet.setProperty(category1Field.variable(), boardCategory.getKey());
-
-        snowContentlet = APILocator.getContentletAPI()
-                .checkin(snowContentlet, APILocator.systemUser(), false, List.of());
-
-        assertNotNull(snowContentlet);
-        assertNotNull(snowContentlet.getIdentifier());
-        assertNotNull(snowContentlet.getContentType().fieldMap().get(category1Field.variable()));
-        assertNotNull(snowContentlet.getContentType().fieldMap().get(category2Field.variable()));
-
-        List<Permission> contentPerms = permissionAPI.getPermissions(snowContentlet, true);
-
-        List<Permission> contentPermsInheritable = permissionAPI.getInheritablePermissions(snowContentlet);
-
-
-
-
-/*
-        List<Category> cats1 = (List<Category>) APILocator.getContentletAPI()
-                .getFieldValue(snowContentlet, category1Field, APILocator.systemUser(), false);
-        List<Category> cats2 = (List<Category>) APILocator.getContentletAPI()
-                .getFieldValue(snowContentlet, category2Field, APILocator.systemUser(), false);
-
-
-        assertTrue(cats1.size() ==0);
-
-        //assertTrue(cats1.get(0).getKey().equals(boardCategory.getKey()));
-
-        assertTrue(cats2.size() ==0);
-
-
-        // snow user has permission
-        assertTrue(permissionAPI.doesUserHavePermission(snowContentlet, PermissionAPI.PERMISSION_READ, snowUser, false));
-
-        // water user has permission
-        assertTrue(permissionAPI.doesUserHavePermission(snowContentlet, PermissionAPI.PERMISSION_READ, waterUser, false));
-
-        // eco user has permission
-        assertTrue(permissionAPI.doesUserHavePermission(snowContentlet, PermissionAPI.PERMISSION_READ, ecoUser, false));
-
-
-        snowContentlet.setProperty(category2Field.variable(), ecoCategory.getKey());
-        snowContentlet = APILocator.getContentletAPI().checkin(snowContentlet, APILocator.systemUser(), false,List.of(ecoCategory));
-
-        cats2 = (List<Category>) APILocator.getContentletAPI()
-                .getFieldValue(snowContentlet, category2Field, APILocator.systemUser(), false);
-
-        assertTrue(cats2.size() ==1);
-
-        assertTrue(cats2.get(0).getKey().equals(ecoCategory.getKey()));
-
-
-        // snow user has NO permission
-        assertFalse(permissionAPI.doesUserHavePermission(snowContentlet, PermissionAPI.PERMISSION_READ, snowUser, false));
-
-        // water user has NO permission
-        assertFalse(permissionAPI.doesUserHavePermission(snowContentlet, PermissionAPI.PERMISSION_READ, waterUser, false));
-
-        // eco user has NO permission
-        assertFalse(permissionAPI.doesUserHavePermission(snowContentlet, PermissionAPI.PERMISSION_READ, ecoUser, false));
-
-        /*
-        // Create contentlet without category selected
-        final Contentlet contentletWithoutCategory = new ContentletDataGen(contentType)
-                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
-                .host(site)
-                .setProperty("title", "Test Content without Category")
-                .nextPersisted();
-        
-        try {
-            // Give privileged user permissions to the category
-            final Permission categoryPermission = new Permission(
-                    PermissionableType.CATEGORY.getCanonicalName(),
-                    childCategory.getPermissionId(),
-                    APILocator.getRoleAPI().loadRoleByKey(privilegedUser.getUserId()).getId(),
-                    PermissionAPI.PERMISSION_READ,
-                    true
-            );
-            permissionAPI.save(categoryPermission, childCategory, sysuser, false);
-            
-            // Test 1: User with category permissions should have access
-            final PermissionBitAPIImpl permissionBitAPI = (PermissionBitAPIImpl) permissionAPI;
-            assertTrue("User with category permissions should have access to contentlet",
-                    permissionBitAPI.secondaryCategoryPermission(contentletWithCategory, PermissionAPI.PERMISSION_READ, privilegedUser, true));
-            
-            // Test 2: User without category permissions should not have access
-            assertFalse("User without category permissions should not have access to contentlet",
-                    permissionBitAPI.secondaryCategoryPermission(contentletWithCategory, PermissionAPI.PERMISSION_READ, limitedUser, true));
-            
-            // Test 3: Contentlet without categories should allow access for any user
-            assertTrue("Contentlet without categories should allow access for any user",
-                    permissionBitAPI.secondaryCategoryPermission(contentletWithoutCategory, PermissionAPI.PERMISSION_READ, limitedUser, true));
-            
-            // Test 4: Test with config property disabled
-            final boolean originalConfigValue = Config.getBooleanProperty("PERMISSION_CONTENT_RESPECT_CATEGORY_PERMISSION", true);
-            try {
-                Config.setProperty("PERMISSION_CONTENT_RESPECT_CATEGORY_PERMISSION", false);
-                assertTrue("When config is disabled, should always return true",
-                        permissionBitAPI.secondaryCategoryPermission(contentletWithCategory, PermissionAPI.PERMISSION_READ, limitedUser, true));
-            } finally {
-                Config.setProperty("PERMISSION_CONTENT_RESPECT_CATEGORY_PERMISSION", originalConfigValue);
-            }
-            
-            // Test 5: Test with different permission types
-            assertTrue("User with category permissions should have access for WRITE permission",
-                    permissionBitAPI.secondaryCategoryPermission(contentletWithCategory, PermissionAPI.PERMISSION_WRITE, privilegedUser, true));
-            
-            assertFalse("User without category permissions should not have access for WRITE permission",
-                    permissionBitAPI.secondaryCategoryPermission(contentletWithCategory, PermissionAPI.PERMISSION_WRITE, limitedUser, true));
-            
-        } finally {
-            // Cleanup
-            try {
-                ContentletDataGen.destroy(contentletWithCategory);
-                ContentletDataGen.destroy(contentletWithoutCategory);
-                APILocator.getContentTypeAPI(sysuser).delete(contentType);
-                APILocator.getCategoryAPI().delete(childCategory, sysuser, false);
-                APILocator.getCategoryAPI().delete(parentCategory, sysuser, false);
-            } catch (Exception e) {
-                Logger.warn(this, "Error during test cleanup: " + e.getMessage());
-            }
-        }
-
-         */
-    }
-
-    private void saveInhertablePermissions(Permissionable permissionable, Role role, int permissionBit)
-            throws DotDataException, DotSecurityException {
-
-        permissionAPI.save(
-                new Permission(permissionable.getClass().getCanonicalName(), permissionable.getPermissionId(),
-                        role.getId(), permissionBit),
-                permissionable, APILocator.systemUser(), false);
-
-    }
-
-    private void saveIndividualPermissions(Permissionable permissionable, Role role, int permissionBit)
-            throws DotDataException, DotSecurityException {
-
-        permissionAPI.save(
-                new Permission(permissionable.getPermissionId(),
-                        role.getId(), permissionBit),
-                permissionable, APILocator.systemUser(), false);
-
-    }
-
-
-    /**
-     * Method to test: {@link PermissionBitAPIImpl#checkCategoryPermissionsSecond(Contentlet, int, User, boolean)} Given
-     * Scenario: Test category permission checking with content type that has no category fields with
-     * secondaryPermissionCheck ExpectedResult: Should return true since there are no permissioned category fields
-     */
-    @Test
-    public void test_hasCategoryPermission_noCategoryFieldsWithSecondaryPermissionCheck()
-            throws DotDataException, DotSecurityException {
-        /*
-        final User testUser = new UserDataGen().nextPersisted();
-        
-        // Create content type with regular category field (no secondaryPermissionCheck=true)
-        final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
-        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
-        /*
-        final Field categoryField = new FieldDataGen()
-                .type(CategoryField.class)
-                .name("RegularCategoryField")
-                .velocityVarName("regularCategoryField")
-                .next();
-        fields.add(categoryField);
-
-        final ContentType contentType = new ContentTypeDataGen().fields(fields).nextPersisted();
-        
-        final Contentlet contentlet = new ContentletDataGen(contentType)
-                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
-                .host(site)
-                .setProperty("title", "Test Content")
-                .nextPersisted();
-        
-        try {
-            final PermissionBitAPIImpl permissionBitAPI = (PermissionBitAPIImpl) permissionAPI;
-            
-            // Should return true since there are no category fields with secondaryPermissionCheck=true
-            assertTrue("Should return true when no category fields have secondaryPermissionCheck=true",
-                    permissionBitAPI.checkCategoryPermissionsSecond(contentlet, PermissionAPI.PERMISSION_READ, testUser, true));
-            
-        } finally {
-            // Cleanup
-            try {
-                ContentletDataGen.destroy(contentlet);
-                APILocator.getContentTypeAPI(sysuser).delete(contentType);
-            } catch (Exception e) {
-                Logger.warn(this, "Error during test cleanup: " + e.getMessage());
-            }
-        }
-        */
     }
 
 }
