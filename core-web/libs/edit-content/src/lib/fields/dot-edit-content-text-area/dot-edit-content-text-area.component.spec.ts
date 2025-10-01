@@ -66,7 +66,7 @@ describe('DotEditContentTextAreaComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -216,7 +216,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -253,7 +253,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -293,7 +293,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -329,7 +329,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const switchSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -369,7 +369,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const switchBackSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -409,7 +409,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const initSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -445,7 +445,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const preserveSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -484,7 +484,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const workflowSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -533,7 +533,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const noPropertySpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet"/>
                 </form>`,
                 {
                     hostProps: {

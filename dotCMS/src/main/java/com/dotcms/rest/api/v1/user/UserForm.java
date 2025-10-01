@@ -58,9 +58,6 @@ public final class UserForm extends Validated implements LanguageSupport  {
         this.userId = builder.userId;
 
         checkValid();
-        if (!UtilMethods.isSet(this.password)) {
-            throw new IllegalArgumentException("Password can not be null");
-        }
     }
 
     public String getUserId() {

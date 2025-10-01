@@ -1,10 +1,15 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <dot-block-editor
-            [formControl]="formControl"
+            [formControlName]="field.variable"
             [contentlet]="$contentlet()"
             [field]="field" />
     </dot-card-field-content>
