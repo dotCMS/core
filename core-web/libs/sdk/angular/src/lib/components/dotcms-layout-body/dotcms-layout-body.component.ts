@@ -35,7 +35,7 @@ import { DotCMSStore } from '../../store/dotcms.store';
         @if ($isEmpty() && $isDevMode()) {
             <dotcms-page-error-message />
         } @else {
-            @for (row of $rows(); track row.identifier) {
+            @for (row of $rows(); track $index) {
                 <dotcms-row [row]="row" />
             }
         }

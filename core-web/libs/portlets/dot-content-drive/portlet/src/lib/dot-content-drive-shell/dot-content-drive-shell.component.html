@@ -61,6 +61,7 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
+    styleClass="content-drive-dialog"
     (visibleChange)="onHideDialog()">
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
@@ -72,4 +73,9 @@
     }
 </p-dialog>
 
-<input type="file" [accept]="$allowedFileTypes()" (change)="onFileChange($event)" #fileInput hidden />
+<input
+    type="file"
+    [accept]="$allowedFileTypes()"
+    (change)="onFileChange($event)"
+    #fileInput
+    hidden />

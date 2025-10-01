@@ -17,11 +17,12 @@ import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import {
-    DotMessageService,
     DotFolderService,
-    DotWorkflowsActionsService,
     DotUploadFileService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotLocalstorageService,
+    DotWorkflowsActionsService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
@@ -31,7 +32,7 @@ import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
-import { DIALOG_TYPE, SORT_ORDER } from '../shared/constants';
+import { DIALOG_TYPE, HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -63,10 +64,13 @@ export class DotContentDriveShellComponent {
     readonly #router = inject(Router);
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
+
+    readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -78,7 +82,9 @@ export class DotContentDriveShellComponent {
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
-    readonly $showMessage = signal<boolean>(true);
+
+    // Default to false to avoid showing the message banner on init
+    readonly $showMessage = signal<boolean>(false);
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
     readonly $allowedFileTypes = this.#store.allowedFileTypes;
@@ -105,6 +111,12 @@ export class DotContentDriveShellComponent {
         const urlTree = this.#router.createUrlTree([], { queryParams });
         this.#location.go(urlTree.toString());
     });
+
+    ngOnInit() {
+        this.$showMessage.set(
+            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY) // The existence of the key means the message banner has been hidden
+        );
+    }
 
     protected onPaginate(event: LazyLoadEvent) {
         // Explicit check because it can potentially be 0
@@ -170,6 +182,7 @@ export class DotContentDriveShellComponent {
      */
     protected onCloseMessage() {
         this.$showMessage.set(false);
+        this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
     protected onAddNewDotAsset() {

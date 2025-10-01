@@ -61,7 +61,7 @@ export const dotAssetStoreMock = signalStore(
             patchState(store, { selectedNode: node });
         }
     })),
-    withDotAsset(),
+    withDotAsset()
 );
 
 describe('withDotAsset', () => {
@@ -100,7 +100,7 @@ describe('withDotAsset', () => {
         it('should not call getFileMasksForFolder when selectedNode is null', (done) => {
             // Set selectedNode to null
             store.setSelectedNode(null);
-        
+
             setTimeout(() => {
                 expect(folderService.getFileMasksForFolder).not.toHaveBeenCalled();
                 done();

@@ -169,7 +169,7 @@ export const DotContentDriveStore = signalStore(
             setPath(path: string) {
                 patchState(store, { path });
             },
-                        /**
+            /**
              * Sets the selected node
              */
             setSelectedNode: (node: TreeNodeItem) => {

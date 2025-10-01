@@ -21,14 +21,20 @@ import {
     DotRouterService,
     DotLanguagesService,
     DotFolderService,
-    DotUploadFileService
+    DotUploadFileService,
+    DotLocalstorageService
 } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DEFAULT_PAGINATION, DIALOG_TYPE } from '../shared/constants';
+import {
+    DEFAULT_PAGINATION,
+    DIALOG_TYPE,
+    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY
+} from '../shared/constants';
 import {
     MOCK_ITEMS,
     MOCK_ROUTE,
@@ -38,13 +44,13 @@ import {
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
+    let localStorageService: SpyObject<DotLocalstorageService>;
     let filtersSignal: ReturnType<typeof signal>;
 
     const createComponent = createComponentFactory({
@@ -150,12 +156,17 @@ describe('DotContentDriveShellComponent', () => {
                     messageObserver: of({}),
                     clearObserver: of({})
                 }),
-                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
+                mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
+                mockProvider(DotLocalstorageService, {
+                    getItem: jest.fn().mockReturnValue(undefined),
+                    setItem: jest.fn()
+                })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
         router = spectator.inject(Router);
         location = spectator.inject(Location);
+        localStorageService = spectator.inject(DotLocalstorageService);
     });
 
     afterEach(() => {
@@ -376,6 +387,10 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     describe('message', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
         it('should show the message', () => {
             spectator.detectChanges();
 
@@ -398,6 +413,33 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$showMessage()).toBe(false);
+        });
+
+        it('should return true if the hide message banner key is not set', () => {
+            localStorageService.getItem.mockReturnValue(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showMessage()).toBe(true);
+        });
+
+        it('should return false if the hide message banner key is set', () => {
+            localStorageService.getItem.mockReturnValue('true');
+            spectator.detectComponentChanges();
+
+            expect(spectator.component.$showMessage()).toBe(false);
+        });
+
+        it('should call the localStorage service to set the hide message banner key', () => {
+            spectator.detectChanges();
+
+            const closeButton = spectator.query('[data-testid="close-message"]');
+            closeButton.dispatchEvent(new Event('click'));
+            spectator.detectChanges();
+
+            expect(localStorageService.setItem).toHaveBeenCalledWith(
+                HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
+                true
+            );
         });
     });
 
@@ -431,7 +473,7 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        fit('should show success message on successful upload', () => {
+        it('should show success message on successful upload', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
             const messageService = spectator.inject(MessageService);
             const addSpy = jest.spyOn(messageService, 'add');
