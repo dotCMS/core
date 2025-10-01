@@ -8753,7 +8753,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentRelationships;
     }
 
-    @WrapInTransaction
     @Override
     public int deleteOldContent(Date deleteFrom) throws DotDataException {
         int results = 0;

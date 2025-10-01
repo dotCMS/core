@@ -1,13 +1,14 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
 <dot-card-field [hasError]="hasError">
-    <ng-content />
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
-        <dot-key-value-ng
-            (updatedList)="updateField($event)"
-            [variables]="$initialValue()"
-            [dragAndDrop]="true"
-            [showHiddenField]="false" />
+        <dot-key-value-field [hasError]="hasError" [formControlName]="field.variable" />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (hasError) {
