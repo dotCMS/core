@@ -14,11 +14,18 @@ import { DotCMSPageRequestParams, DotErrorPage } from '@dotcms/types';
 // Load environment variables from .env file
 config();
 
-const client = createDotCMSClient({
-  dotcmsUrl: process.env['DOTCMS_URL'] || 'https://demo.dotcms.com',
-  authToken: process.env['DOTCMS_AUTH_TOKEN'] || '',
-  siteId: process.env['DOTCMS_SITE_ID'] || 'YOUR_SITE_ID',
-});
+const getClient = () => {
+  const authToken = process.env['DOTCMS_AUTH_TOKEN'];
+  if (!authToken) {
+    throw new Error('DOTCMS_AUTH_TOKEN environment variable is required');
+  }
+
+  return createDotCMSClient({
+    dotcmsUrl: process.env['DOTCMS_URL'] || 'https://demo.dotcms.com',
+    authToken,
+    siteId: process.env['DOTCMS_SITE_ID'] || 'YOUR_SITE_ID',
+  });
+};
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -27,7 +34,8 @@ const app = express();
 app.use(express.json());
 const angularApp = new AngularNodeAppEngine();
 
-app.post('/api/page', async (req: express.Request, res: express.Response) => {
+// Changed from /api/page to /data/page to avoid Vercel routing conflicts
+app.post('/data/page', async (req: express.Request, res: express.Response) => {
   const { url, params } = req.body as { url?: string; params?: DotCMSPageRequestParams };
 
   if (!url) {
@@ -35,6 +43,7 @@ app.post('/api/page', async (req: express.Request, res: express.Response) => {
   }
 
   try {
+    const client = getClient();
     const response = await client.page.get(url, params ?? {});
     return res.json(response);
   } catch (error) {
@@ -97,3 +106,6 @@ if (isMainModule(import.meta.url)) {
  * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
  */
 export const reqHandler = createNodeRequestHandler(app);
+
+// Export the Express app for Vercel
+export default app;
