@@ -1457,18 +1457,18 @@ public class UserResource implements Serializable {
 			throw new DotDataException("User role not found for: " + userId);
 		}
 
-		final List<Map<String, Object>> permissions = userPermissionHelper
+		final List<UserPermissionAsset> permissions = userPermissionHelper
 			.buildUserPermissionResponse(userRole, requestingUser);
 
-		final Map<String, Object> responseData = Map.of(
-			"userId", finalTargetUser.getUserId(),
-			"roleId", userRole.getId(),
-			"assets", permissions
+		final UserPermissions userPermissions = new UserPermissions(
+			finalTargetUser.getUserId(),
+			userRole.getId(),
+			permissions
 		);
 
 		Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
 			finalTargetUser.getUserId(), requestingUser.getUserId()));
-		return new ResponseEntityUserPermissionsView(responseData);
+		return new ResponseEntityUserPermissionsView(userPermissions);
 	}
 
 

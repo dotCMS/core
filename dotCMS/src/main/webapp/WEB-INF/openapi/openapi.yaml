@@ -22601,6 +22601,49 @@ components:
           type: string
         type:
           type: string
+    PermissionMetadata:
+      type: object
+      description: Permission metadata containing available levels and scopes in the
+        system
+      properties:
+        levels:
+          type: array
+          description: Available permission levels that can be assigned to users and
+            roles
+          example:
+          - READ
+          - WRITE
+          - PUBLISH
+          - EDIT_PERMISSIONS
+          - CAN_ADD_CHILDREN
+          items:
+            type: string
+            description: Available permission levels that can be assigned to users
+              and roles
+            example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
+              ]"
+        scopes:
+          type: array
+          description: Available permission scopes (asset types) that support permissions
+          example:
+          - INDIVIDUAL
+          - HOST
+          - FOLDER
+          - CONTENT
+          - TEMPLATE
+          - PAGE
+          - CONTAINER
+          - STRUCTURE
+          - CATEGORY
+          items:
+            type: string
+            description: Available permission scopes (asset types) that support permissions
+            example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
+              ,\"PAGE\",\"CONTAINER\",\"STRUCTURE\",\"CATEGORY\"]"
+          uniqueItems: true
+      required:
+      - levels
+      - scopes
     PermissionTabField:
       type: object
       allOf:
@@ -24002,9 +24045,7 @@ components:
       type: object
       properties:
         entity:
-          type: object
-          additionalProperties:
-            type: object
+          $ref: "#/components/schemas/PermissionMetadata"
         errors:
           type: array
           items:
@@ -24444,9 +24485,7 @@ components:
       type: object
       properties:
         entity:
-          type: object
-          additionalProperties:
-            type: object
+          $ref: "#/components/schemas/UserPermissions"
         errors:
           type: array
           items:
@@ -26962,6 +27001,104 @@ components:
       - email
       - firstName
       - lastName
+    UserPermissionAsset:
+      type: object
+      description: Permission asset with associated permission assignments
+      properties:
+        canEditPermissions:
+          type: boolean
+          description: Whether the requesting user can edit permissions on this asset
+          example: true
+        hostId:
+          type: string
+          description: "Host identifier (same as id for HOST type, parent host for\
+            \ FOLDER type)"
+          example: abc-123-def-456
+        id:
+          type: string
+          description: "Asset identifier (host identifier for HOST type, folder inode\
+            \ for FOLDER type)"
+          example: abc-123-def-456
+        inheritsPermissions:
+          type: boolean
+          description: Whether this asset inherits permissions from its parent
+          example: false
+        name:
+          type: string
+          description: "Asset name (hostname for HOST, folder name for FOLDER)"
+          example: demo.dotcms.com
+        path:
+          type: string
+          description: Full path to the asset
+          example: /demo.dotcms.com/application
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+              \ to arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              HOST:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+              - PUBLISH
+            items:
+              type: string
+              description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+                \ to arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\"\
+                :[\"READ\"]}"
+          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+            \ arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            HOST:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+            - PUBLISH
+        type:
+          type: string
+          description: Asset type
+          enum:
+          - HOST
+          - FOLDER
+          example: HOST
+      required:
+      - canEditPermissions
+      - hostId
+      - id
+      - inheritsPermissions
+      - name
+      - path
+      - permissions
+      - type
+    UserPermissions:
+      type: object
+      description: User permissions organized by asset type and scope
+      properties:
+        assets:
+          type: array
+          description: List of assets (hosts and folders) with their permission assignments
+          items:
+            $ref: "#/components/schemas/UserPermissionAsset"
+        roleId:
+          type: string
+          description: The user's individual role identifier
+          example: abc-123-def-456
+        userId:
+          type: string
+          description: User identifier (email address or user ID)
+          example: admin@dotcms.com
+      required:
+      - assets
+      - roleId
+      - userId
     VanityUrlContentType:
       type: object
       allOf:

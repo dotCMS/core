@@ -294,26 +294,27 @@ public class PermissionResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    public Response getPermissionMetadata(@Parameter(hidden = true) @Context HttpServletRequest request,
-                                         @Parameter(hidden = true) @Context HttpServletResponse response) {
-        
+    public ResponseEntityPermissionMetadataView getPermissionMetadata(
+            @Parameter(hidden = true) @Context HttpServletRequest request,
+            @Parameter(hidden = true) @Context HttpServletResponse response) {
+
         Logger.debug(this, () -> "Retrieving permission metadata");
-        
+
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
-        
-        final Map<String, Object> permissionMetadata = Map.of(
-            "levels", userPermissionHelper.getAvailablePermissionLevels(),
-            "scopes", userPermissionHelper.getAvailablePermissionScopes()
+
+        final PermissionMetadata permissionMetadata = new PermissionMetadata(
+            userPermissionHelper.getAvailablePermissionLevels(),
+            userPermissionHelper.getAvailablePermissionScopes()
         );
-        
+
         Logger.info(this, "Permission metadata retrieved successfully");
-        
-        return Response.ok(new ResponseEntityPermissionMetadataView(permissionMetadata)).build();
+
+        return new ResponseEntityPermissionMetadataView(permissionMetadata);
     }
 
     private boolean filter(final PermissionAPI.Type permissionType, final Permission permission) {

@@ -71,7 +71,7 @@ public class UserPermissionHelper {
     /**
      * Builds permission response data for the given role, grouped by asset.
      */
-    public List<Map<String, Object>> buildUserPermissionResponse(final Role role, final User requestingUser) 
+    public List<UserPermissionAsset> buildUserPermissionResponse(final Role role, final User requestingUser)
             throws DotDataException, DotSecurityException {
 
         final User systemUser = userAPI.getSystemUser();
@@ -83,10 +83,10 @@ public class UserPermissionHelper {
 
         final List<Permission> permissions = permissionAPI.getPermissionsByRole(role, true, true);
 
-        collectPermissionAssets(permissions, systemUser, respectFrontendRoles, 
+        collectPermissionAssets(permissions, systemUser, respectFrontendRoles,
                                permissionAssets, permissionsByInode);
 
-        final List<Map<String, Object>> result = new ArrayList<>();
+        final List<UserPermissionAsset> result = new ArrayList<>();
         boolean systemHostInList = false;
 
         for (Permissionable asset : permissionAssets) {
@@ -147,43 +147,48 @@ public class UserPermissionHelper {
     /**
      * Builds response data for a single permissionable asset.
      */
-    private Map<String, Object> buildAssetResponse(final Permissionable asset, 
+    private UserPermissionAsset buildAssetResponse(final Permissionable asset,
                                                    final List<Permission> permissions,
                                                    final User requestingUser,
-                                                   final User systemUser) 
+                                                   final User systemUser)
             throws DotDataException, DotSecurityException {
 
-        final Map<String, Object> response = new HashMap<>();
-        
+        final String id;
+        final String type;
+        final String name;
+        final String path;
+        final String hostId;
+
         if (asset instanceof Host) {
             final Host host = (Host) asset;
-            response.put("id", host.getIdentifier());
-            response.put("type", "HOST");
-            response.put("name", host.getHostname());
-            response.put("path", "/" + host.getHostname());
-            response.put("hostId", host.getIdentifier());
+            id = host.getIdentifier();
+            type = "HOST";
+            name = host.getHostname();
+            path = "/" + host.getHostname();
+            hostId = host.getIdentifier();
         } else if (asset instanceof Folder) {
             final Folder folder = (Folder) asset;
-            final Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+            final Identifier identifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
             final Host host = hostAPI.find(folder.getHostId(), systemUser, false);
-            
-            response.put("id", folder.getInode());
-            response.put("type", "FOLDER");
-            response.put("name", folder.getName());
-            response.put("path", "/" + host.getHostname() + id.getParentPath() + folder.getName());
-            response.put("hostId", folder.getHostId());
+
+            id = folder.getInode();
+            type = "FOLDER";
+            name = folder.getName();
+            path = "/" + host.getHostname() + identifier.getParentPath() + folder.getName();
+            hostId = folder.getHostId();
+        } else {
+            throw new DotDataException("Unsupported asset type: " + asset.getClass().getName());
         }
 
-        response.put("canEditPermissions", 
-            permissionAPI.doesUserHavePermission(
-                asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, requestingUser, false));
-                
-        response.put("inheritsPermissions",
-            permissionAPI.isInheritingPermissions(asset));
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+                asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, requestingUser, false);
 
-        response.put("permissions", buildPermissionMap(permissions));
+        final boolean inheritsPermissions = permissionAPI.isInheritingPermissions(asset);
 
-        return response;
+        final Map<String, List<String>> permissionMap = buildPermissionMap(permissions);
+
+        return new UserPermissionAsset(id, type, name, path, hostId,
+                                      canEditPermissions, inheritsPermissions, permissionMap);
     }
 
     /**
