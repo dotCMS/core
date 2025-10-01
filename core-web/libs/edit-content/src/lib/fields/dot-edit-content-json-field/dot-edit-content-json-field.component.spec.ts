@@ -2,11 +2,13 @@ import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngnea
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotLanguagesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
-import { monacoMock } from '@dotcms/utils-testing';
+import { createFakeContentlet, monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentJsonFieldComponent } from './dot-edit-content-json-field.component';
 
@@ -17,11 +19,23 @@ import { JSON_FIELD_MOCK } from '../../utils/mocks';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = monacoMock;
 
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    contentlet: DotCMSContentlet;
+    field: DotCMSContentTypeField;
+}
 describe('DotEditContentJsonFieldComponent', () => {
-    let spectator: SpectatorHost<DotEditContentJsonFieldComponent>;
+    let spectator: SpectatorHost<DotEditContentJsonFieldComponent, MockFormComponent>;
 
     const createHost = createHostFactory({
         component: DotEditContentJsonFieldComponent,
+        host: MockFormComponent,
         imports: [ReactiveFormsModule],
         detectChanges: false,
         componentMocks: [
@@ -39,14 +53,17 @@ describe('DotEditContentJsonFieldComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-json-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-json-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [JSON_FIELD_MOCK.variable]: new FormControl()
                         }),
-                        field: JSON_FIELD_MOCK
+                        field: JSON_FIELD_MOCK,
+                        contentlet: createFakeContentlet({
+                            [JSON_FIELD_MOCK.variable]: null
+                        })
                     }
                 }
             );
@@ -122,14 +139,17 @@ describe('DotEditContentJsonFieldComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-json-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-json-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [JSON_FIELD_MOCK.variable]: new FormControl()
                         }),
-                        field: { ...JSON_FIELD_MOCK, required: true }
+                        field: { ...JSON_FIELD_MOCK, required: true },
+                        contentlet: createFakeContentlet({
+                            [JSON_FIELD_MOCK.variable]: null
+                        })
                     }
                 }
             );
@@ -151,14 +171,17 @@ describe('DotEditContentJsonFieldComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-json-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-json-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [JSON_FIELD_MOCK.variable]: new FormControl()
                         }),
-                        field: JSON_FIELD_MOCK
+                        field: JSON_FIELD_MOCK,
+                        contentlet: createFakeContentlet({
+                            [JSON_FIELD_MOCK.variable]: null
+                        })
                     }
                 }
             );

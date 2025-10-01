@@ -63,7 +63,7 @@ public class DropOldContentVersionsJob implements StatefulJob {
     /**
      * Fire every Monday at 1:15AM
      */
-    private static final String CRON_EXPRESSION_DEFAULT = "0 15 1 ? * WED";
+    private static final String CRON_EXPRESSION_DEFAULT = "0 15 1 ? * WED *";
 
     public static final Lazy<Boolean> ENABLED =
             Lazy.of(() -> Config.getBooleanProperty(ENABLED_PROP, true));
