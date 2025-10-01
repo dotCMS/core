@@ -44,6 +44,7 @@ import {
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { ALL_FOLDER } from '../utils/tree-folder.utils';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -470,6 +471,32 @@ describe('DotContentDriveShellComponent', () => {
                 hostFolder: 'folder-123',
                 indexPolicy: 'WAIT_FOR'
             });
+        });
+
+        it('should sent the folder id when the selected node is not the all folder', () => {
+            store.selectedNode.mockReturnValue({ key: 'folder-123' });
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            spectator.detectChanges();
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [mockFile],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
+                baseType: 'dotAsset',
+                hostFolder: 'folder-123',
+                indexPolicy: 'WAIT_FOR'
+            });
+        });
+
+        it('should sent the current site identifier when the selected node is the all folder', () => {
+            store.selectedNode.mockReturnValue(ALL_FOLDER);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            spectator.detectChanges();
         });
 
         it('should show success message on successful upload', () => {

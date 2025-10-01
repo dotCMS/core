@@ -37,6 +37,7 @@ import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/model
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
+import { ALL_FOLDER } from '../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -199,10 +200,15 @@ export class DotContentDriveShellComponent {
 
         this.#store.setStatus(DotContentDriveStatus.LOADING);
 
+        const hostFolder =
+            this.#store.selectedNode() === ALL_FOLDER
+                ? this.#store.currentSite()?.identifier
+                : this.#store.selectedNode()?.key;
+
         this.#fileService
             .uploadDotAsset(file, {
                 baseType: 'dotAsset',
-                hostFolder: this.#store.selectedNode()?.key,
+                hostFolder,
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
