@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
@@ -72,17 +72,11 @@ const initialState: DotContentDriveState = {
     totalItems: 0,
     pagination: { limit: 40, offset: 0 },
     sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
-    isTreeExpanded: true,
-    selectedNode: ALL_FOLDER
+    isTreeExpanded: true
 };
 
 export const sidebarStoreMock = signalStore(
     withState<DotContentDriveState>(initialState),
-    withMethods((store) => ({
-        setSelectedNode: (node: TreeNodeItem) => {
-            patchState(store, { selectedNode: node });
-        }
-    })),
     withSidebar()
 );
 
@@ -261,11 +255,7 @@ describe('withSidebar - null site scenarios', () => {
             ...initialState,
             currentSite: null
         }),
-        withMethods((store) => ({
-            setSelectedNode: (node: TreeNodeItem) => {
-                patchState(store, { selectedNode: node });
-            }
-        })),
+
         withSidebar()
     );
 
@@ -303,11 +293,6 @@ describe('withSidebar - undefined path scenarios', () => {
             ...initialState,
             path: undefined
         }),
-        withMethods((store) => ({
-            setSelectedNode: (node: TreeNodeItem) => {
-                patchState(store, { selectedNode: node });
-            }
-        })),
         withSidebar()
     );
 

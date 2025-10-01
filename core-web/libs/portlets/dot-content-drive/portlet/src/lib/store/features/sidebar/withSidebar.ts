@@ -20,6 +20,7 @@ import { ALL_FOLDER, buildTreeFolderNodes, TreeNodeItem } from '../../../utils/t
 interface WithSidebarState {
     sidebarLoading: boolean;
     folders: TreeNodeItem[];
+    selectedNode: TreeNodeItem;
 }
 
 export function withSidebar() {
@@ -29,7 +30,8 @@ export function withSidebar() {
         },
         withState<WithSidebarState>({
             sidebarLoading: true,
-            folders: []
+            folders: [],
+            selectedNode: ALL_FOLDER
         }),
         withMethods((store, dotFolderService = inject(DotFolderService)) => ({
             /**
@@ -66,6 +68,13 @@ export function withSidebar() {
             ): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> => {
                 return getFolderNodesByPath(path, dotFolderService);
             },
+            /**
+             * Sets the selected node
+             */
+            setSelectedNode: (node: TreeNodeItem) => {
+                patchState(store, { selectedNode: node });
+            },
+
             /**
              * Updates the folders array
              */

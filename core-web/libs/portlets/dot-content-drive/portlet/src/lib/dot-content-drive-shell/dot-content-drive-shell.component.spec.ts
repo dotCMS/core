@@ -121,8 +121,7 @@ describe('DotContentDriveShellComponent', () => {
                     folders: jest.fn(),
                     selectedNode: jest.fn(),
                     sidebarLoading: jest.fn(),
-                    closeDialog: jest.fn(),
-                    allowedFileTypes: jest.fn().mockReturnValue(of('*.jpg, *.png'))
+                    closeDialog: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(

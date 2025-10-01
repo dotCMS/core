@@ -87,7 +87,6 @@ export class DotContentDriveShellComponent {
     readonly $showMessage = signal<boolean>(false);
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
-    readonly $allowedFileTypes = this.#store.allowedFileTypes;
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -192,42 +191,39 @@ export class DotContentDriveShellComponent {
     protected onFileChange(event: Event) {
         const input = event.target as HTMLInputElement;
 
-        if (input.files && input.files.length > 0) {
-            const file = input.files[0];
-
-            this.#store.setStatus(DotContentDriveStatus.LOADING);
-
-            // First upload the file and get the fileTempId
-            this.#fileService
-                .uploadDotAsset(file, {
-                    baseType: 'dotAsset',
-                    hostFolder: this.#store.selectedNode()?.key,
-                    indexPolicy: 'WAIT_FOR'
-                })
-                .subscribe({
-                    next: () => {
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get(
-                                'content-drive.add-dotasset-success'
-                            )
-                        });
-                        this.#store.loadItems();
-                    },
-                    error: (error) => {
-                        console.error('error => ', error);
-                        this.#messageService.add({
-                            severity: 'error',
-                            summary: this.#dotMessageService.get(
-                                'content-drive.add-dotasset-error'
-                            ),
-                            detail: this.#dotMessageService.get(
-                                'content-drive.add-dotasset-error-detail'
-                            )
-                        });
-                        this.#store.setStatus(DotContentDriveStatus.LOADED);
-                    }
-                });
+        if (!input.files || input.files.length === 0) {
+            return;
         }
+
+        const file = input.files[0];
+
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
+
+        this.#fileService
+            .uploadDotAsset(file, {
+                baseType: 'dotAsset',
+                hostFolder: this.#store.selectedNode()?.key,
+                indexPolicy: 'WAIT_FOR'
+            })
+            .subscribe({
+                next: () => {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success')
+                    });
+                    this.#store.loadItems();
+                },
+                error: (error) => {
+                    console.error('error => ', error);
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.add-dotasset-error-detail'
+                        )
+                    });
+                    this.#store.setStatus(DotContentDriveStatus.LOADED);
+                }
+            });
     }
 }

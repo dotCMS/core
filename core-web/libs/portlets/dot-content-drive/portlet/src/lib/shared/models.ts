@@ -92,7 +92,6 @@ export interface DotContentDriveState extends DotContentDriveInit {
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
-    selectedNode?: TreeNodeItem;
 }
 
 /**
