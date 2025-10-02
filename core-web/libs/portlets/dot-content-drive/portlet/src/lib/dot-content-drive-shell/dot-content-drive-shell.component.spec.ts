@@ -285,6 +285,13 @@ describe('DotContentDriveShellComponent', () => {
             const dialogFolder = spectator.query('[data-testId="dialog-folder"]');
             expect(dialogFolder).toBeTruthy();
         });
+
+        it('should have a dropzone component', () => {
+            spectator.detectChanges();
+
+            const dropzone = spectator.query('[data-testid="dropzone"]');
+            expect(dropzone).toBeTruthy();
+        });
     });
 
     describe('onPaginate', () => {
