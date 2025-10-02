@@ -68,7 +68,6 @@ export function withSidebar() {
             ): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> => {
                 return getFolderNodesByPath(path, dotFolderService);
             },
-
             /**
              * Sets the selected node
              */

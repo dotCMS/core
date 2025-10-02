@@ -11,7 +11,7 @@ import {
     DotActionBulkResult
 } from '@dotcms/dotcms-models';
 
-interface DotActionRequestOptions {
+export interface DotActionRequestOptions {
     contentType?: string;
     data: { [key: string]: string };
     action: ActionToFire;
