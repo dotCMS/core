@@ -668,6 +668,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}).collect(Collectors.toList());
 			}
 
+			// Sanitize orderBy parameter to prevent SQL injection
+			String orderBy = SQLUtil.sanitizeSortBy(searchParams.orderBy());
+			orderBy = UtilMethods.isEmpty(orderBy) ? "mod_date desc" : orderBy;
+
 			if (UtilMethods.isSet(orderBy)) {
 				switch (orderBy.toLowerCase()) {
 					case "title asc":
@@ -896,7 +900,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 						.append(" and tree.parent = ? and tree.child=asset.inode");
 				// Validate the contentTypeIdOrVar to prevent injection (UUID, variable name, or identifier)
 				final String contentTypeIdOrVar = searchParams.contentTypeIdOrVar();
-				if (!UtilMethods.isSet(contentTypeIdOrVar) || !isValidIdentifier(contentTypeIdOrVar)) {
+				if (!UtilMethods.isSet(contentTypeIdOrVar) || !com.dotcms.util.SecurityUtils.isValidIdentifier(contentTypeIdOrVar)) {
 					throw new DotSecurityException("Invalid content type identifier: " + contentTypeIdOrVar);
 				}
 				paramValues.add(contentTypeIdOrVar);
@@ -1019,7 +1023,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				conditionQueryBuffer.append(" = ?");
 				// Validate identifier/inode format to prevent SQL injection
 				final String value = (String) entry.getValue();
-				if (!UtilMethods.isSet(value) || !isValidIdentifier(value)) {
+				if (!UtilMethods.isSet(value) || !com.dotcms.util.SecurityUtils.isValidIdentifier(value)) {
 					throw new DotSecurityException("Invalid " + entry.getKey() + " format: " + value);
 				}
 				paramValues.add(value);
