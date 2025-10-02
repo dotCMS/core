@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,10 +33,10 @@ public class BlockDirectiveCacheImplTest {
         final String now = "now:" + System.currentTimeMillis();
         Map<String, Serializable> cacheMap = Map.of(cacheKey, now);
 
-        blockCacheAdmin.add(cacheKey, cacheMap, 5);
+        blockCacheAdmin.add(cacheKey, cacheMap, Duration.ofSeconds(5));
         Assert.assertTrue(blockCacheAdmin.get(cacheKey).size() > 0);
 
-        blockCacheAdmin.add(cacheKey, cacheMap, 0);
+        blockCacheAdmin.add(cacheKey, cacheMap, Duration.ofSeconds(0));
 
         Assert.assertTrue(blockCacheAdmin.get(cacheKey).isEmpty());
 
@@ -50,7 +51,7 @@ public class BlockDirectiveCacheImplTest {
         final String now = "now:" + System.currentTimeMillis();
         Map<String, Serializable> cacheMap = Map.of(cacheKey, now);
 
-        blockCacheAdmin.add(cacheKey, cacheMap, 2);
+        blockCacheAdmin.add(cacheKey, cacheMap, Duration.ofSeconds(2));
         Assert.assertTrue(blockCacheAdmin.get(cacheKey).size() > 0);
 
         Thread.sleep(2500);
@@ -68,7 +69,7 @@ public class BlockDirectiveCacheImplTest {
         final String now = "now:" + System.currentTimeMillis();
         Map<String, Serializable> cacheMap = Map.of(cacheKey, now);
 
-        blockCacheAdmin.add(cacheKey, cacheMap, Integer.MAX_VALUE);
+        blockCacheAdmin.add(cacheKey, cacheMap, Duration.ofSeconds(Integer.MAX_VALUE));
         Assert.assertTrue(blockCacheAdmin.get(cacheKey).size() > 0);
 
         blockCacheAdmin.clearCache();
@@ -84,7 +85,7 @@ public class BlockDirectiveCacheImplTest {
         final String now = "now:" + System.currentTimeMillis();
         Map<String, Serializable> cacheMap = Map.of(cacheKey, now);
 
-        blockCacheAdmin.add(cacheKey, cacheMap, Integer.MAX_VALUE);
+        blockCacheAdmin.add(cacheKey, cacheMap, Duration.ofSeconds(Integer.MAX_VALUE));
         Assert.assertTrue(blockCacheAdmin.get(cacheKey).size() > 0);
 
         blockCacheAdmin.remove(cacheKey);
