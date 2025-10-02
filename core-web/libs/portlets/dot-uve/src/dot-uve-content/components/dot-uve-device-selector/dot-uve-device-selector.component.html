@@ -38,7 +38,7 @@
         styleClass="more-menu"
         data-testId="more-menu">
         <ng-template pTemplate="submenuheader" let-item>
-            <span class="text-primary font-bold">{{ item.label }}</span>
+            <span class="text-primary font-bold">{{ item.label | dm }}</span>
         </ng-template>
         <ng-template pTemplate="item" let-item>
             <a
