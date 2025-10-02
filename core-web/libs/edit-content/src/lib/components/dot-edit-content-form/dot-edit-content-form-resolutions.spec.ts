@@ -1,4 +1,9 @@
-import { DotCMSClazzes, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSClazzes,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeSelectField } from '@dotcms/utils-testing';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
@@ -9,6 +14,9 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
 jest.mock('../../utils/relationshipFromContentlet', () => ({
     getRelationshipFromContentlet: jest.fn()
 }));
+
+// Ensure resolutionValue is properly initialized before each test
+let originalResolutionValue: typeof resolutionValue;
 
 describe('DotEditContentFormResolutions', () => {
     const mockField: DotCMSContentTypeField = {
@@ -61,8 +69,22 @@ describe('DotEditContentFormResolutions', () => {
         working: true
     };
 
+    beforeAll(() => {
+        // Capture the original resolutionValue state
+        originalResolutionValue = { ...resolutionValue };
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
+
+        // Restore resolutionValue to its original state before each test
+        // This prevents test contamination from other tests
+        Object.keys(originalResolutionValue).forEach((key) => {
+            const fieldType = key as FIELD_TYPES;
+            if (originalResolutionValue[fieldType]) {
+                resolutionValue[fieldType] = originalResolutionValue[fieldType];
+            }
+        });
     });
 
     describe('defaultResolutionFn', () => {
@@ -126,9 +148,62 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     describe('hostFolderResolutionFn', () => {
-        it('should construct host folder path from hostName and url', () => {
+        beforeEach(() => {
+            // Ensure the resolution function exists before each test in this describe block
+            expect(resolutionValue[FIELD_TYPES.HOST_FOLDER]).toBeDefined();
+        });
+
+        it('should construct host folder path from hostName and url for non-file assets', () => {
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](mockContentlet, mockField);
             expect(result).toBe('https://example.com');
+        });
+
+        it('should handle file assets by removing filename from path', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                hostName: 'https://example.com',
+                url: '/path/to/file.jpg'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('https://example.com/path/to');
+        });
+
+        it('should handle file assets with single segment path', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                hostName: 'https://example.com',
+                url: '/file.jpg'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('https://example.com');
+        });
+
+        it('should extract path up to /content for non-file assets', () => {
+            const contentlet = {
+                ...mockContentlet,
+                type: 'content',
+                hostName: 'https://example.com',
+                url: '/content/test-page'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('https://example.com');
+        });
+
+        it('should return full path when /content is not found', () => {
+            const contentlet = {
+                ...mockContentlet,
+                type: 'content',
+                hostName: 'https://example.com',
+                url: '/some/other/path'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('https://example.com/some/other/path');
         });
 
         it('should return defaultValue when hostName is missing', () => {
@@ -145,6 +220,50 @@ describe('DotEditContentFormResolutions', () => {
 
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
             expect(result).toBe('default value');
+        });
+
+        it('should return defaultValue when hostName is not a string', () => {
+            const contentlet = {
+                ...mockContentlet,
+                hostName: 123
+            } as unknown as DotCMSContentlet;
+
+            // Ensure the resolution function exists before calling it
+            expect(resolutionValue[FIELD_TYPES.HOST_FOLDER]).toBeDefined();
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('default value');
+        });
+
+        it('should return defaultValue when url is not a string', () => {
+            const contentlet = {
+                ...mockContentlet,
+                url: 123
+            } as unknown as DotCMSContentlet;
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('default value');
+        });
+
+        it('should return defaultValue when contentlet is null', () => {
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField);
+            expect(result).toBe('default value');
+        });
+
+        it('should return defaultValue when contentlet is undefined', () => {
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField);
+            expect(result).toBe('default value');
+        });
+
+        it('should return empty string when field has no defaultValue', () => {
+            const field = { ...mockField };
+            delete field.defaultValue;
+
+            const contentlet = { ...mockContentlet };
+            delete contentlet.hostName;
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field);
+            expect(result).toBe('');
         });
     });
 

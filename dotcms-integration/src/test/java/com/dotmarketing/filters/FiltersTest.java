@@ -8,37 +8,6 @@ import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.FilterChain;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionContext;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.FolderDataGen;
@@ -69,8 +38,39 @@ import com.dotmarketing.servlets.SpeedyAssetServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.FilterChain;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionContext;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class FiltersTest {
 
@@ -662,7 +662,7 @@ public class FiltersTest {
      * This tests the demo site for its 404 image
      */
     @Test
-    public void shouldRedirect401() throws IOException {
+    public void shouldRedirect401() throws Exception {
 
         HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
         MockResponseWrapper response = new MockResponseWrapper(res);
@@ -671,7 +671,8 @@ public class FiltersTest {
         when(response.getOutputStream()).thenReturn(servletOutputStream);
 
         FilterChain chain = Mockito.mock(FilterChain.class);
-        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/", APILocator.systemUser());
+        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/",
+                APILocator.getUserAPI().getAnonymousUser());
 
         try {
             new CMSFilter().doFilter(request, response, chain);

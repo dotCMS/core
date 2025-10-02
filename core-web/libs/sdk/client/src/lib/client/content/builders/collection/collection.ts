@@ -1,4 +1,10 @@
-import { DotCMSClientConfig } from '@dotcms/types';
+import {
+    DotHttpClient,
+    DotRequestOptions,
+    DotHttpError,
+    DotCMSClientConfig,
+    DotErrorContent
+} from '@dotcms/types';
 
 import { CONTENT_API_URL } from '../../shared/const';
 import {
@@ -6,7 +12,6 @@ import {
     BuildQuery,
     SortBy,
     GetCollectionRawResponse,
-    GetCollectionError,
     OnFullfilled,
     OnRejected
 } from '../../shared/types';
@@ -14,8 +19,6 @@ import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../sh
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
 import { sanitizeQuery } from '../query/utils';
-
-export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.
@@ -36,8 +39,8 @@ export class CollectionBuilder<T = unknown> {
     #rawQuery?: string;
     #languageId: number | string = 1;
     #draft = false;
-
-    #requestOptions: ClientOptions;
+    #requestOptions: DotRequestOptions;
+    #httpClient: DotHttpClient;
     #config: DotCMSClientConfig;
 
     /**
@@ -45,12 +48,20 @@ export class CollectionBuilder<T = unknown> {
      * @param {ClientOptions} requestOptions Options for the client request.
      * @param {DotCMSClientConfig} config The client configuration.
      * @param {string} contentType The content type to fetch.
+     * @param {DotHttpClient} httpClient HTTP client for making requests.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: ClientOptions, config: DotCMSClientConfig, contentType: string) {
+    constructor(
+        requestOptions: DotRequestOptions,
+        config: DotCMSClientConfig,
+        contentType: string,
+        httpClient: DotHttpClient
+    ) {
         this.#requestOptions = requestOptions;
         this.#config = config;
         this.#contentType = contentType;
+        this.#httpClient = httpClient;
+        this.#config = config;
 
         // Build the default query with the contentType field
         this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
@@ -336,31 +347,58 @@ export class CollectionBuilder<T = unknown> {
      *
      * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
      * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
-     * @return {Promise<GetCollectionResponse<T> | GetCollectionError>} A promise that resolves to the content or rejects with an error.
+     * @return {Promise<GetCollectionResponse<T> | DotErrorContent>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | GetCollectionError> {
-        return this.fetch().then(async (response) => {
-            const data = await response.json();
-            if (response.ok) {
+    ): Promise<GetCollectionResponse<T> | DotErrorContent> {
+        return this.fetch().then(
+            (data) => {
                 const formattedResponse = this.formatResponse<T>(data);
 
-                const finalResponse =
-                    typeof onfulfilled === 'function'
-                        ? onfulfilled(formattedResponse)
-                        : formattedResponse;
+                if (typeof onfulfilled === 'function') {
+                    const result = onfulfilled(formattedResponse);
+                    // Ensure we always return a value, fallback to formattedResponse if callback returns undefined
+                    return result ?? formattedResponse;
+                }
 
-                return finalResponse;
-            } else {
-                return {
-                    status: response.status,
-                    ...data
-                };
+                return formattedResponse;
+            },
+            (error: unknown) => {
+                // Wrap error in DotCMSContentError
+                let contentError: DotErrorContent;
+
+                if (error instanceof DotHttpError) {
+                    contentError = new DotErrorContent(
+                        `Content API failed for '${this.#contentType}' (fetch): ${error.message}`,
+                        this.#contentType,
+                        'fetch',
+                        error,
+                        this.getFinalQuery()
+                    );
+                } else {
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    contentError = new DotErrorContent(
+                        `Content API failed for '${this.#contentType}' (fetch): ${errorMessage}`,
+                        this.#contentType,
+                        'fetch',
+                        undefined,
+                        this.getFinalQuery()
+                    );
+                }
+
+                if (typeof onrejected === 'function') {
+                    const result = onrejected(contentError);
+                    // Ensure we always return a value, fallback to original error if callback returns undefined
+                    return result ?? contentError;
+                }
+
+                // Throw the wrapped error to trigger .catch()
+                throw contentError;
             }
-        }, onrejected);
+        );
     }
 
     /**
@@ -394,16 +432,17 @@ export class CollectionBuilder<T = unknown> {
      * Calls the content API to fetch the content.
      *
      * @private
-     * @return {Promise<Response>} The fetch response.
+     * @return {Promise<GetCollectionRawResponse<T>>} The fetch response data.
+     * @throws {DotHttpError} When the HTTP request fails.
      * @memberof CollectionBuilder
      */
-    private fetch(): Promise<Response> {
+    private fetch(): Promise<GetCollectionRawResponse<T>> {
         const finalQuery = this.getFinalQuery();
         const sanitizedQuery = sanitizeQueryForContentType(finalQuery, this.#contentType);
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return fetch(this.url, {
+        return this.#httpClient.request<GetCollectionRawResponse<T>>(this.url, {
             ...this.#requestOptions,
             method: 'POST',
             headers: {
