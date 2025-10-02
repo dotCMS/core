@@ -49,7 +49,7 @@ export class BlogComponent {
         map((event: NavigationEnd) => event.urlAfterRedirects),
         startWith(route),
         switchMap((url: string) =>
-          this.http.post<DotCMSComposedPageResponse<BlogPage>>('/api/page', { url })
+          this.http.post<DotCMSComposedPageResponse<BlogPage>>('/data/page', { url })
         )
       )
       .pipe(switchMap((response) => this.editablePageService.listen<BlogPage>(response)))
