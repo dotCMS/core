@@ -203,7 +203,7 @@ export class DotContentDriveShellComponent {
         const hostFolder =
             this.#store.selectedNode() === ALL_FOLDER
                 ? this.#store.currentSite()?.identifier
-                : this.#store.selectedNode()?.key;
+                : this.#store.selectedNode()?.data.id;
 
         this.#fileService
             .uploadDotAsset(file, {

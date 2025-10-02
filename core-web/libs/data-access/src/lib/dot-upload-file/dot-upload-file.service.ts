@@ -8,7 +8,10 @@ import { catchError, pluck, switchMap } from 'rxjs/operators';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotUploadService } from '../dot-upload/dot-upload.service';
-import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import {
+    DotActionRequestOptions,
+    DotWorkflowActionsFireService
+} from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',
@@ -103,7 +106,7 @@ export class DotUploadFileService {
      */
     uploadDotAsset(
         file: File | string,
-        extraData?: Record<string, string>
+        extraData?: DotActionRequestOptions['data']
     ): Observable<DotCMSContentlet> {
         if (file instanceof File) {
             const formData = new FormData();

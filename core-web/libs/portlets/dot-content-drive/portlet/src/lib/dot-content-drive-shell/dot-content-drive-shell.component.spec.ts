@@ -44,7 +44,7 @@ import {
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { ALL_FOLDER } from '../utils/tree-folder.utils';
+import { ALL_FOLDER, TreeNodeItem } from '../utils/tree-folder.utils';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -455,7 +455,17 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should upload file when file input changes', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            store.selectedNode.mockReturnValue({ key: 'folder-123' });
+            const mockNode: TreeNodeItem = {
+                data: {
+                    id: 'folder-123',
+                    hostname: 'localhost',
+                    path: 'folder-123',
+                    type: 'folder'
+                },
+                key: 'folder-123',
+                label: 'folder-123'
+            };
+            store.selectedNode.mockReturnValue(mockNode as TreeNodeItem);
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
             Object.defineProperty(fileInput, 'files', {
@@ -474,7 +484,18 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should sent the folder id when the selected node is not the all folder', () => {
-            store.selectedNode.mockReturnValue({ key: 'folder-123' });
+            const mockNode: TreeNodeItem = {
+                data: {
+                    id: 'folder-123',
+                    hostname: 'localhost',
+                    path: 'folder-123',
+                    type: 'folder'
+                },
+                key: 'folder-123',
+                label: 'folder-123'
+            };
+            store.selectedNode.mockReturnValue(mockNode);
+
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
             spectator.detectChanges();
 
