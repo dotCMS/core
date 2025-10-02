@@ -255,6 +255,7 @@ describe('withSidebar - null site scenarios', () => {
             ...initialState,
             currentSite: null
         }),
+
         withSidebar()
     );
 
