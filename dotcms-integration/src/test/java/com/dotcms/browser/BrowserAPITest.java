@@ -1359,4 +1359,331 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertTrue("Should process single character", result.contains("a"));
     }
 
+    /**
+     * Test Case: Smart Pagination - Page 1 with 25 folders and 100 contentlets, page size 26
+     * Expected: 25 folders + 1 contentlet
+     *
+     * Tests the intelligent pagination system that handles elements from different sources:
+     * - Folders (loaded in memory)
+     * - Links (loaded in memory)
+     * - Contentlets (database-paginated)
+     *
+     * The goal is to avoid loading all contentlets from DB and use counts of folders/links
+     * to calculate the offset within the database pagination.
+     */
+    @Test
+    public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
+        // Create test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 25 folders
+        final List<Folder> subFolders = new ArrayList<>();
+        for (int i = 0; i < 25; i++) {
+            final Folder subFolder = new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+            subFolders.add(subFolder);
+        }
+
+        // Create 100 contentlets
+        for (int i = 0; i < 100; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 1 with page size 26
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .showLinks(false) // Simplify test by disabling links
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(0)
+                .maxResults(26)
+                .build();
+
+        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", result);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+
+        assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
+        assertEquals("Folder count should be 25", 25, result.get("folderCount"));
+        assertEquals("Content count should be 1", 1, result.get("contentCount"));
+        assertEquals("Content total count should be 100", 100, result.get("contentTotalCount"));
+
+        // Verify first 25 items are folders
+        for (int i = 0; i < 25; i++) {
+            final Map<String, Object> item = list.get(i);
+            assertNotNull("Item should have name", item.get("name"));
+            assertTrue("First 25 items should be folders",
+                item.get("name").toString().startsWith("folder_"));
+        }
+
+        // Verify last item is a contentlet
+        final Map<String, Object> lastItem = list.get(25);
+        assertNotNull("Last item should have extension", lastItem.get("extension"));
+        assertEquals("Last item should be a file", "txt", lastItem.get("extension"));
+    }
+
+    /**
+     * Test Case: Smart Pagination - Page 2 with same data (offset=26, still 26 items per page)
+     * Expected: 25 contentlets (all folders were shown on page 1)
+     */
+    @Test
+    public void test_SmartPaginationPage2_25Contentlets() throws Exception {
+        // Create test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 25 folders
+        for (int i = 0; i < 25; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Create 100 contentlets
+        for (int i = 0; i < 100; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 2 (offset=26)
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(26) // Second page
+                .maxResults(26)
+                .build();
+
+        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", result);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+
+        assertEquals("Should return exactly 25 items (25 contentlets, no folders)", 25, list.size());
+        assertEquals("Folder count should be 25", 25, result.get("folderCount"));
+        assertEquals("Content count should be 25", 25, result.get("contentCount"));
+        assertEquals("Content total count should be 100", 100, result.get("contentTotalCount"));
+
+        // Verify all items are contentlets
+        for (Map<String, Object> item : list) {
+            assertNotNull("Item should have extension", item.get("extension"));
+            assertEquals("All items should be files", "txt", item.get("extension"));
+        }
+    }
+
+    /**
+     * Test Case: Smart Pagination - Page 3 (offset=52)
+     * Expected: 26 more contentlets
+     */
+    @Test
+    public void test_SmartPaginationPage3_26MoreContentlets() throws Exception {
+        // Create test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 25 folders
+        for (int i = 0; i < 25; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Create 100 contentlets
+        for (int i = 0; i < 100; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 3 (offset=52)
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(52) // Third page (26*2)
+                .maxResults(26)
+                .build();
+
+        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", result);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+
+        assertEquals("Should return exactly 26 items (26 contentlets)", 26, list.size());
+        assertEquals("Folder count should be 25", 25, result.get("folderCount"));
+        assertEquals("Content count should be 26", 26, result.get("contentCount"));
+        assertEquals("Content total count should be 100", 100, result.get("contentTotalCount"));
+
+        // Verify all items are contentlets
+        for (Map<String, Object> item : list) {
+            assertNotNull("Item should have extension", item.get("extension"));
+            assertEquals("All items should be files", "txt", item.get("extension"));
+        }
+    }
+
+    /**
+     * Test Case: Smart Pagination - Only folders, no contentlets
+     * Expected: Only folders returned, no database query for contentlets should be performed
+     */
+    @Test
+    public void test_SmartPaginationOnlyFolders() throws Exception {
+        // Create test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 15 folders
+        for (int i = 0; i < 15; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 1 with only folders enabled
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(false) // Disable content
+                .showFiles(false)
+                .showDotAssets(false)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(0)
+                .maxResults(10)
+                .build();
+
+        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", result);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+
+        assertEquals("Should return exactly 10 folders", 10, list.size());
+        assertEquals("Folder count should be 15", 15, result.get("folderCount"));
+        assertEquals("Content count should be 0", 0, result.get("contentCount"));
+        assertEquals("Content total count should be 0", 0, result.get("contentTotalCount"));
+
+        // Verify all items are folders
+        for (Map<String, Object> item : list) {
+            assertNotNull("Item should have name", item.get("name"));
+            assertTrue("All items should be folders",
+                item.get("name").toString().startsWith("folder_"));
+        }
+    }
+
+    /**
+     * Test Case: Smart Pagination with Links
+     * Tests pagination with folders, links, and contentlets together
+     */
+    @Test
+    public void test_SmartPaginationWithLinks() throws Exception {
+        // Create test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 10 folders
+        for (int i = 0; i < 10; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Create 5 links
+        for (int i = 0; i < 5; i++) {
+            new LinkDataGen()
+                    .hostId(host.getIdentifier())
+                    .title(String.format("link_%02d", i))
+                    .parent(parentFolder)
+                    .target("https://example.com")
+                    .linkType("EXTERNAL")
+                    .nextPersisted();
+        }
+
+        // Create 50 contentlets
+        for (int i = 0; i < 50; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 1 with page size 20
+        // Expected: 10 folders + 5 links + 5 contentlets
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showLinks(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(0)
+                .maxResults(20)
+                .build();
+
+        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", result);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+
+        assertEquals("Should return exactly 20 items (10 folders + 5 links + 5 contentlets)", 20, list.size());
+        assertEquals("Folder count should be 10", 10, result.get("folderCount"));
+        assertEquals("Link count should be 5", 5, result.get("linkCount"));
+        assertEquals("Content count should be 5", 5, result.get("contentCount"));
+        assertEquals("Content total count should be 50", 50, result.get("contentTotalCount"));
+
+        // Verify item types in order
+        int folderCount = 0, linkCount = 0, contentCount = 0;
+        for (Map<String, Object> item : list) {
+            if (item.get("mimeType") != null && item.get("mimeType").equals("application/dotlink")) {
+                linkCount++;
+            } else if (item.get("extension") != null && item.get("extension").equals("txt")) {
+                contentCount++;
+            } else if (item.get("name") != null && item.get("name").toString().startsWith("folder_")) {
+                folderCount++;
+            }
+        }
+
+        assertTrue("Should have folders in the result", folderCount > 0);
+        assertTrue("Should have links in the result", linkCount > 0);
+        assertTrue("Should have content in the result", contentCount > 0);
+    }
+
 }

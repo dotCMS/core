@@ -425,49 +425,77 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     @Override
     @CloseDBIfOpened
-    public Map<String, Object> getPaginatedFolderContents(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException{
-        final Role[] roles = APILocator.getRoleAPI().loadRolesForUser(browserQuery.user.getUserId()).toArray(new Role[0]);
+    public Map<String, Object> getPaginatedFolderContents(final BrowserQuery browserQuery)
+            throws DotSecurityException, DotDataException {
+
+        final Role[] roles = APILocator.getRoleAPI()
+                .loadRolesForUser(browserQuery.user.getUserId())
+                .toArray(new Role[0]);
+
         final List<Map<String, Object>> list = new LinkedList<>();
         final LinkedHashMap<String, Object> returnMap = new LinkedHashMap<>();
-        int contentTotalCount = 0;
-        int contentCount = 0;
+
+        int offset = browserQuery.offset;
+        int maxResults = browserQuery.maxResults;
+
         int folderCount = 0;
         int linkCount = 0;
+        int contentTotalCount = 0;
+        int contentCount = 0;
 
-        //We don't know how many records this will bring we need to keep things within the pagination range
+        // 1. Folders
         if (browserQuery.showFolders) {
             final List<Map<String, Object>> folders = getFolders(browserQuery, roles);
             folderCount = folders.size();
-            list.addAll(folders);
-            returnMap.put("folderCount",folderCount);
+            returnMap.put("folderCount", folderCount);
+
+            // Calculate if the offset still falls within folders
+            if (offset < folderCount) {
+                int toIndex = Math.min(folderCount, offset + maxResults);
+                list.addAll(folders.subList(offset, toIndex));
+                maxResults -= (toIndex - offset);
+                offset = 0;
+            } else {
+                offset -= folderCount;
+            }
         }
 
-        //Same here we don't know how many of these we will get here, but we need to stay within range
-        if (browserQuery.showLinks) {
+        // 2. Links
+        if (browserQuery.showLinks && maxResults > 0) {
             final List<Map<String, Object>> links = includeLinks(browserQuery);
             linkCount = links.size();
-            list.addAll(links);
-            returnMap.put("linkCount",linkCount);
+            returnMap.put("linkCount", linkCount);
+
+            if (offset < linkCount) {
+                int toIndex = Math.min(linkCount, offset + maxResults);
+                list.addAll(links.subList(offset, toIndex));
+                maxResults -= (toIndex - offset);
+                offset = 0;
+            } else {
+                offset -= linkCount;
+            }
         }
 
-        //Get Content
-        if(browserQuery.showContent){
-            //This call to getContentUnderParentFromDB needs to do pagination.
-            //In previous versions it was fetching the entire content and then hydrating everything making this query really slow
-            final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, browserQuery.offset, browserQuery.maxResults);
+        // 3. Contentlets
+        if (browserQuery.showContent && maxResults > 0) {
+            // Now the offset is adjusted (subtracting folders+links already seen)
+            final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
             contentTotalCount = fromDB.totalResults;
             contentCount = fromDB.contentlets.size();
+
             for (final Contentlet contentlet : fromDB.contentlets) {
                 final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
                 list.add(contentMap);
             }
-            returnMap.put("contentCount",contentCount);
-            returnMap.put("contentTotalCount",contentTotalCount);
+
+            returnMap.put("contentCount", contentCount);
+            returnMap.put("contentTotalCount", contentTotalCount);
         }
 
-        //Folders appear first
+        // Final sorting (optional: maybe you only need to sort within each block before slicing)
         list.sort(new WebAssetMapComparator(browserQuery.sortBy, browserQuery.sortByDesc));
-        returnMap.put("list",list);
+
+        returnMap.put("list", list);
         return returnMap;
     }
 
