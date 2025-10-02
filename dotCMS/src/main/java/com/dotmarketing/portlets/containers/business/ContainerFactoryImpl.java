@@ -668,8 +668,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}).collect(Collectors.toList());
 			}
 
-			if (UtilMethods.isSet(searchParams.orderBy())) {
-				switch (searchParams.orderBy().toLowerCase()) {
+			if (UtilMethods.isSet(orderBy)) {
+				switch (orderBy.toLowerCase()) {
 					case "title asc":
 						containers.sort(Comparator.comparing(Container::getTitle));
 					break;
@@ -679,12 +679,19 @@ public class ContainerFactoryImpl implements ContainerFactory {
                         break;
 
 					case "moddate asc":
+					case "mod_date asc":
 						containers.sort(Comparator.comparing(Container::getModDate));
 						break;
 
                     case "moddate desc":
+                    case "mod_date desc":
                         containers.sort(Comparator.comparing(Container::getModDate).reversed());
                         break;
+
+					default:
+						// For malicious or unknown orderBy values, use default mod_date desc sorting
+						containers.sort(Comparator.comparing(Container::getModDate).reversed());
+						break;
 				}
 			}
 
