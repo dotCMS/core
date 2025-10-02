@@ -13,7 +13,7 @@ export type TreeNodeItem = TreeNode<TreeNodeData>;
 
 export const ALL_FOLDER: TreeNodeItem = {
     key: 'ALL_FOLDER',
-    label: 'Root',
+    label: 'All',
     loading: false,
     data: {
         type: 'folder',

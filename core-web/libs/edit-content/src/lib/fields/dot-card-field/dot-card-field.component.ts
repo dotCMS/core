@@ -8,7 +8,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         }
 
         <div class="flex flex-column gap-2">
-            <ng-content />
+            <ng-content select="dot-card-field-label" />
             <ng-content select="dot-card-field-content" />
             <ng-content select="dot-card-field-footer" />
         </div>
