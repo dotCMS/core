@@ -987,6 +987,8 @@ public class WebAssetHelper {
                     .withLanguageIds(langIds)
                     .showImages(requestForm.showImages())
                     .showContent(requestForm.showContent())
+                    .offset(requestForm.offset())
+                    .maxResults(requestForm.maxResults())
                     .sortBy(requestForm.sortBy());
 
             //We're requesting an asset specifically therefore we need to find it and  build the response
@@ -1001,7 +1003,7 @@ public class WebAssetHelper {
                 .withFilter(requestForm.filter());
             }
 
-        return browserAPI.getFolderContent(builder.build());
+        return browserAPI.getPaginatedFolderContents(builder.build());
     }
 
     /**

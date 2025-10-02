@@ -48,8 +48,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import io.vavr.Tuple3;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
@@ -58,12 +56,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Default implementation for the {@link BrowserAPI} class.
@@ -111,26 +112,51 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The list of filtered contentlets.
      */
     @Override
-    @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
+        return getContentUnderParentFromDB(browserQuery, -1, -1).contentlets;
+    }
 
-        final QueryAndParams sqlQuery = this.selectQuery(browserQuery);
-        final DotConnect dc = new DotConnect().setSQL(sqlQuery.query);
-        sqlQuery.params.forEach(dc::addParam);
+    /**
+     * Returns a collection of contentlets based on specific filtering criteria specified via the
+     * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
+     * language, among many others. After that, the resulting list is filtered based on {@code READ} permissions.
+     * This version of the method applies database pagination through a startRow and maxRow param
+     * @param browserQuery The {@link BrowserQuery} object specifying the filtering criteria.
+     * @param startRow
+     * @param maxRows
+     * @return The list of filtered contentlets.
+     */
+    @CloseDBIfOpened
+    ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int startRow, final int maxRows) {
+
+        final SelectAndCountQueries sqlQuery = this.selectAndCountQueries(browserQuery);
+        final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.countQuery);
+        sqlQuery.params.forEach(dcCount::addParam);
+        final int count = dcCount.getInt("count");
+
+        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+        sqlQuery.params.forEach(dcSelect::addParam);
+        //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
+        if(startRow >= 0 && maxRows > 0) {
+            dcSelect.setStartRow(startRow)
+                    .setMaxRows(maxRows);
+        }
+
         try {
             @SuppressWarnings("unchecked")
-            final List<Map<String,String>> inodesMapList =  dc.loadResults();
+            final List<Map<String,String>> inodesMapList =  dcSelect.loadResults();
             Set<String> inodes =
                     inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
             if(isUseElasticSearchForTextFiltering(browserQuery) && !inodes.isEmpty()){
-              //After having applied the text filters these are the good inodes we need to return
-              inodes = new HashSet<>(inodesByTextFromES(browserQuery, inodes));
+                //After having applied the text filters these are the good inodes we need to return
+                inodes = new HashSet<>(inodesByTextFromES(browserQuery, inodes));
             }
             //Now this should load the good contentlets
             final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(inodes));
 
-            return permissionAPI.filterCollection(contentlets,
-                    PermissionAPI.PERMISSION_READ, true, browserQuery.user);
+            final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
+                    PERMISSION_READ, true, browserQuery.user);
+            return new ContentUnderParent(filtered, count);
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
             final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
@@ -140,6 +166,17 @@ public class BrowserAPIImpl implements BrowserAPI {
             throw new DotRuntimeException(errorMsg, e);
         }
     }
+
+    static class ContentUnderParent {
+        final List<Contentlet> contentlets;
+        final int totalResults;
+
+        ContentUnderParent(List<Contentlet> contentlets, int totalResults) {
+            this.contentlets = contentlets;
+            this.totalResults = totalResults;
+        }
+    }
+
 
     /**
      * Filters the provided set of inodes by performing text-based searches in Elasticsearch.
@@ -241,7 +278,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         // Wrap in mandatory group for ES query_string syntax
-        return " +(" + baseQuery.toString() + ')';
+        return " +(" + baseQuery + ')';
     }
 
     /**
@@ -316,7 +353,6 @@ public class BrowserAPIImpl implements BrowserAPI {
                 : Collections.emptyList();
         final List<Treeable> returnList = new ArrayList<>(contentlets);
 
-        //TODO: filter folders by text if a filter is provided
         if (browserQuery.showFolders) {
             List<Folder> folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(), false);
             if (browserQuery.showMenuItemsOnly) {
@@ -351,45 +387,15 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         //Get Content
-        Instant start = Instant.now();
         final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentFromDB(browserQuery)
                 : Collections.emptyList();
-        Instant end = Instant.now();
-        Duration duration = Duration.between(start, end);
-        Logger.info(this, "SQL Fetch Execution time: " + duration.toSeconds() + "s");
 
-        Instant start2 = Instant.now();
         for (final Contentlet contentlet : contentlets) {
-            Map<String, Object> contentMap;
-            final Optional<BaseContentType> baseType = contentlet.getBaseType();
-            if (baseType.isPresent() && baseType.get() == BaseContentType.FILEASSET) {
-                final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-                contentMap = fileAssetMap(fileAsset);
-            } else if (baseType.isPresent() && baseType.get() == BaseContentType.DOTASSET) {
-                contentMap = dotAssetMap(contentlet);
-            } else if (baseType.isPresent() &&  baseType.get() == BaseContentType.HTMLPAGE) {
-                final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-                contentMap = htmlPageMap(page);
-            } else {
-                contentMap = dotContentMap(contentlet);
-            }
-            if (browserQuery.showShorties) {
-                contentMap.put("shortyIdentifier", this.shortyIdAPI.shortify(contentlet.getIdentifier()));
-                contentMap.put("shortyInode", this.shortyIdAPI.shortify(contentlet.getInode()));
-            }
-            final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(contentlet, roles, browserQuery.user);
-            final WfData wfdata = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
-            contentMap.put("wfActionMapList", wfdata.wfActionMapList);
-            contentMap.put("contentEditable", wfdata.contentEditable);
-            contentMap.put("permissions", permissions);
+            final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
             returnList.add(contentMap);
         }
-        Instant end2 = Instant.now();
-        Duration duration2 = Duration.between(start2, end2);
-        Logger.info(this, "Hydration Execution time: " + duration2.toSeconds() + "s");
 
         // Filtering
-        //TODO: this sliding needs to take place before hydration so that we only hydrate what we need
         returnList = this.filterReturnList(browserQuery,returnList);
 
         // Sorting
@@ -417,21 +423,99 @@ public class BrowserAPIImpl implements BrowserAPI {
         return returnMap;
     }
 
+    @Override
+    @CloseDBIfOpened
+    public Map<String, Object> getPaginatedFolderContents(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException{
+        final Role[] roles = APILocator.getRoleAPI().loadRolesForUser(browserQuery.user.getUserId()).toArray(new Role[0]);
+        final List<Map<String, Object>> list = new LinkedList<>();
+        final LinkedHashMap<String, Object> returnMap = new LinkedHashMap<>();
+        int contentTotalCount = 0;
+        int contentCount = 0;
+        int folderCount = 0;
+        int linkCount = 0;
+
+        //We don't know how many records this will bring we need to keep things within the pagination range
+        if (browserQuery.showFolders) {
+            final List<Map<String, Object>> folders = getFolders(browserQuery, roles);
+            folderCount = folders.size();
+            list.addAll(folders);
+            returnMap.put("folderCount",folderCount);
+        }
+
+        //Same here we don't know how many of these we will get here, but we need to stay within range
+        if (browserQuery.showLinks) {
+            final List<Map<String, Object>> links = includeLinks(browserQuery);
+            linkCount = links.size();
+            list.addAll(links);
+            returnMap.put("linkCount",linkCount);
+        }
+
+        //Get Content
+        if(browserQuery.showContent){
+            //This call to getContentUnderParentFromDB needs to do pagination.
+            //In previous versions it was fetching the entire content and then hydrating everything making this query really slow
+            final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, browserQuery.offset, browserQuery.maxResults);
+            contentTotalCount = fromDB.totalResults;
+            contentCount = fromDB.contentlets.size();
+            for (final Contentlet contentlet : fromDB.contentlets) {
+                final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
+                list.add(contentMap);
+            }
+            returnMap.put("contentCount",contentCount);
+            returnMap.put("contentTotalCount",contentTotalCount);
+        }
+
+        //Folders appear first
+        list.sort(new WebAssetMapComparator(browserQuery.sortBy, browserQuery.sortByDesc));
+        returnMap.put("list",list);
+        return returnMap;
+    }
+
+    /**
+     * hydrate and transform fetched contentlets
+     * @param browserQuery QueryParams
+     * @param contentlet incoming
+     * @param roles precalculated roles
+     * @return Map
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private @NotNull Map<String, Object> hydrate(BrowserQuery browserQuery,
+            Contentlet contentlet, Role[] roles) throws DotDataException, DotSecurityException {
+        Map<String, Object> contentMap;
+        final Optional<BaseContentType> baseType = contentlet.getBaseType();
+        if (baseType.isPresent() && baseType.get() == BaseContentType.FILEASSET) {
+            final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+            contentMap = fileAssetMap(fileAsset);
+        } else if (baseType.isPresent() && baseType.get() == BaseContentType.DOTASSET) {
+            contentMap = dotAssetMap(contentlet);
+        } else if (baseType.isPresent() &&  baseType.get() == BaseContentType.HTMLPAGE) {
+            final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+            contentMap = htmlPageMap(page);
+        } else {
+            contentMap = dotContentMap(contentlet);
+        }
+        if (browserQuery.showShorties) {
+            contentMap.put("shortyIdentifier", this.shortyIdAPI.shortify(contentlet.getIdentifier()));
+            contentMap.put("shortyInode", this.shortyIdAPI.shortify(contentlet.getInode()));
+        }
+        final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(contentlet, roles, browserQuery.user);
+        final WfData wfdata = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
+        contentMap.put("wfActionMapList", wfdata.wfActionMapList);
+        contentMap.put("contentEditable", wfdata.contentEditable);
+        contentMap.put("permissions", permissions);
+        return contentMap;
+    }
+
     private List<Map<String, Object>> filterReturnList(final BrowserQuery browserQuery, final List<Map<String, Object>> returnList) {
 
         final List<Map<String, Object>> filteredList = new ArrayList<>();
         for (final Map<String, Object> asset : returnList) {
 
-            String name = (String) asset.get("name");
-            name = name == null ? BLANK : name;
-
-            String description = (String) asset.get("description");
-            description = description == null ? BLANK : description;
-
             String mimeType = (String) asset.get("mimeType");
             mimeType = mimeType == null ? BLANK : mimeType;
 
-            if (browserQuery.mimeTypes != null && browserQuery.mimeTypes.size() > 0) {
+            if (browserQuery.mimeTypes != null && !browserQuery.mimeTypes.isEmpty()) {
 
                 boolean match = false;
                 for (final String mType : browserQuery.mimeTypes) {
@@ -445,7 +529,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 }
             }
 
-            if (browserQuery.extensions != null && browserQuery.extensions.size() > 0) {
+            if (browserQuery.extensions != null && !browserQuery.extensions.isEmpty()) {
 
                 boolean match = false;
                 for (final String extension : browserQuery.extensions) {
@@ -466,96 +550,130 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Generates the SQL query that will be used to search for contents under a given folder path
-     * and filtered by the criteria specified via the {@link BrowserQuery} parameter.
+     * Generates both the select and count SQL queries with all filtering criteria applied.
+     * This method ensures that both queries use identical filtering logic for consistency.
      *
      * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
-     * @return The {@link Tuple3} object containing (1) the SQL query, and (2) the parameters that
-     * must be provided for the queries.
+     * @return The {@link SelectAndCountQueries} object containing both select and count queries with parameters.
      */
-    private QueryAndParams selectQuery(final BrowserQuery browserQuery) {
+    private SelectAndCountQueries selectAndCountQueries(final BrowserQuery browserQuery) {
 
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
-        final StringBuilder sqlQuery = new StringBuilder(
-                buildBaseQuery(browserQuery, workingLiveInode)
-        );
+        final BaseQuery baseQueries = buildBaseQuery(browserQuery, workingLiveInode);
+        final StringBuilder selectQuery = new StringBuilder(baseQueries.selectQuery);
+        final StringBuilder countQuery = new StringBuilder(baseQueries.countQuery);
 
         final List<Object> parameters = new ArrayList<>();
+        final List<Object> dump = new ArrayList<>();
 
         if (!browserQuery.getLanguageIds().isEmpty()) {
-            appendLanguageQuery(sqlQuery, browserQuery.getLanguageIds(),
+            appendLanguageQuery(selectQuery, browserQuery.getLanguageIds(),
+                    browserQuery.showDefaultLangItems);
+            appendLanguageQuery(countQuery, browserQuery.getLanguageIds(),
                     browserQuery.showDefaultLangItems);
         }
         if (browserQuery.site != null) {
-            appendSiteQuery(sqlQuery, browserQuery.site.getIdentifier(), parameters);
+            appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(), parameters);
+            appendSiteQuery(countQuery, browserQuery.site.getIdentifier(), dump);
         }
         if (browserQuery.folder != null) {
-            appendFolderQuery(sqlQuery, browserQuery.folder.getPath(), parameters);
+            appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
+            appendFolderQuery(countQuery, browserQuery.folder.getPath(), dump);
         }
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
-                appendFilterQuery(sqlQuery, browserQuery.filter, parameters);
+                appendFilterQuery(selectQuery, browserQuery.filter, parameters);
+                appendFilterQuery(countQuery, browserQuery.filter, dump);
             }
             if (UtilMethods.isSet(browserQuery.fileName)) {
-                appendFileNameQuery(sqlQuery, browserQuery.fileName, parameters);
+                appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
+                appendFileNameQuery(countQuery, browserQuery.fileName, dump);
             }
         }
         if (browserQuery.showMenuItemsOnly) {
-            appendShowOnMenuQuery(sqlQuery);
+            appendShowOnMenuQuery(selectQuery);
+            appendShowOnMenuQuery(countQuery);
         }
         if (!browserQuery.showArchived) {
-            appendExcludeArchivedQuery(sqlQuery);
+            appendExcludeArchivedQuery(selectQuery);
+            appendExcludeArchivedQuery(countQuery);
         }
-        Logger.debug(this, "Final SQL Query: " + sqlQuery);
-        return new QueryAndParams(sqlQuery.toString(), parameters);
+
+        Logger.debug(this, "Final Select Query: " + selectQuery);
+        Logger.debug(this, "Final Count Query: " + countQuery);
+
+        return new SelectAndCountQueries(selectQuery.toString(), countQuery.toString(), parameters);
     }
 
-
-    static class QueryAndParams {
-        final String query;
+    /**
+     * Simple inner class to pass around data and make things a bit easier to understand
+     */
+    static class SelectAndCountQueries {
+        final String selectQuery;
+        final String countQuery;
         final List<Object> params;
-        QueryAndParams(String query, List<Object> params) {
-            this.query = query;
+        SelectAndCountQueries(String selectQuery, String countQuery, List<Object> params) {
+            this.selectQuery = selectQuery;
+            this.countQuery = countQuery;
             this.params = params;
         }
     }
 
     /**
-     * Builds the base SQL query for content retrieval based on specific filtering criteria.
+     * Builds the base SQL queries (both regular and count) for content retrieval based on specific filtering criteria.
      *
      * @param browserQuery     The {@link BrowserQuery} object specifying the filtering criteria.
      * @param workingLiveInode The identifier of the working live inode.
-     * @return The base SQL query as a {@code String}.
+     * @return The {@link BaseQuery} object containing both regular and count SQL queries.
      */
-    private String buildBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
+    private BaseQuery buildBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
 
+        // Common base clause shared between select and count queries
+        final String baseClause = " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
+                + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
+                + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
+                + DEFAULT_VARIANT.name() + "' ";
+
+        // Build the main query
         final StringBuilder baseQuery = new StringBuilder(
-                "select cvi." + workingLiveInode + " as inode "
-                        + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
-                        + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
-                        + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
-                        + DEFAULT_VARIANT.name() + "' ");
+                "select cvi." + workingLiveInode + " as inode " + baseClause);
+
+        // Build the count query
+        final StringBuilder countQuery = new StringBuilder(
+                "select count(cvi." + workingLiveInode + ") as count " + baseClause);
 
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         if (!showAllBaseTypes) {
             final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType()))
                             .collect(Collectors.toList());
-            baseQuery.append(" and struc.structuretype in (").
-                    append(String.join(" , ", baseTypes)).append(") ");
+            String baseTypeFilter = " and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ";
+            baseQuery.append(baseTypeFilter);
+            countQuery.append(baseTypeFilter);
         }
 
         if(!browserQuery.contentTypeIds.isEmpty()){
-          baseQuery.append(" and struc.inode in (").
-                  append(browserQuery.contentTypeIds.stream()
-                          .map(id -> "'" + id + "'")
-                          .collect(Collectors.joining(" , "))).append(") ");
+            String contentTypeFilter = " and struc.inode in (" +
+                    browserQuery.contentTypeIds.stream()
+                            .map(id -> "'" + id + "'")
+                            .collect(Collectors.joining(" , ")) + ") ";
+            baseQuery.append(contentTypeFilter);
+            countQuery.append(contentTypeFilter);
         }
 
-        return baseQuery.toString();
+        return new BaseQuery(baseQuery.toString(), countQuery.toString());
+    }
+
+    static class BaseQuery {
+        final String selectQuery;
+        final String countQuery;
+        BaseQuery(String selectQuery, String countQuery) {
+            this.selectQuery = selectQuery;
+            this.countQuery = countQuery;
+        }
     }
 
     /**
