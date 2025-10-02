@@ -842,6 +842,10 @@ public class UserResource implements Serializable {
 						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
 				);
 
+        if (!UtilMethods.isSet(createUserForm.getPassword())) {
+            throw new IllegalArgumentException("Password can not be null");
+        }
+
 		if (isRoleAdministrator) {
 
 			final User userToUpdated = this.createNewUser(
@@ -1227,7 +1231,11 @@ public class UserResource implements Serializable {
 		}
 
 		// Password has changed, so it has to be validated
-		userToSave.setPassword(new String(updateUserForm.getPassword()));
+        if(UtilMethods.isSet(updateUserForm.getPassword())){
+
+            userToSave.setPassword(new String(updateUserForm.getPassword()));
+        }
+
 
 		if (APILocator.getPermissionAPI().doesUserHavePermission
 				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
@@ -1238,15 +1246,9 @@ public class UserResource implements Serializable {
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
-			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
-					updateUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
+            this.processRoles(updateUserForm, userToSave);
 
-			for (final String roleKey : roleKeys) {
-
-				UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
-			}
-
-			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
+            Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' , the roles have been updated.");
 
 		} else {
@@ -1257,7 +1259,25 @@ public class UserResource implements Serializable {
 		return userToSave;
 	}
 
-	/**
+    private void processRoles(final UserForm updateUserForm, final User userToSave) throws DotDataException {
+
+        if (UtilMethods.isSet(updateUserForm.getRoles())) {
+
+            final List<String> roleKeys = updateUserForm.getRoles();
+
+            this.helper.removeRoles(userToSave);  // the source of true is whatever is coming from the payload
+
+            for (final String roleKey : roleKeys) {
+
+                UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
+            }
+        } else {
+
+            Logger.debug(this, ()-> "Not roles sent at all, nothing has been modified in terms of roles");
+        }
+    }
+
+    /**
 	 * Deletes an existing user.
 	 *
 	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
@@ -1389,14 +1409,14 @@ public class UserResource implements Serializable {
 		description = "Retrieves permissions for a user's individual role, organized by asset type and permission scope"
 	)
 	@ApiResponses(value = {
-		@ApiResponse(responseCode = "200", 
+		@ApiResponse(responseCode = "200",
 					description = "User permissions retrieved successfully",
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
-		@ApiResponse(responseCode = "403", 
+		@ApiResponse(responseCode = "403",
 					description = "Forbidden - insufficient permissions",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "400", 
+		@ApiResponse(responseCode = "400",
 					description = "Bad request - invalid user id",
 					content = @Content(mediaType = "application/json"))
 	})
@@ -1416,7 +1436,7 @@ public class UserResource implements Serializable {
 		final User requestingUser = initData.getUser();
 
 		if (!UtilMethods.isSet(userId)) {
-			Logger.debug(this, () -> String.format("Invalid user ID request from %s", 
+			Logger.debug(this, () -> String.format("Invalid user ID request from %s",
 				requestingUser.getUserId()));
 			throw new BadRequestException("User ID is required");
 		}
@@ -1428,7 +1448,7 @@ public class UserResource implements Serializable {
 			throw new ForbiddenException("Insufficient permissions to view user permissions");
 		}
 
-		Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s", 
+		Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s",
 			finalTargetUser.getUserId(), requestingUser.getUserId()));
 
 		final Role userRole = roleAPI.getUserRole(finalTargetUser);
@@ -1446,7 +1466,7 @@ public class UserResource implements Serializable {
 			"assets", permissions
 		);
 
-		Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)", 
+		Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
 			finalTargetUser.getUserId(), requestingUser.getUserId()));
 		return new ResponseEntityUserPermissionsView(responseData);
 	}

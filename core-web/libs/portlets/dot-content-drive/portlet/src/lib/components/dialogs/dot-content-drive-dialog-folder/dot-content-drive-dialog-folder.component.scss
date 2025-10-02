@@ -19,6 +19,7 @@
             opacity: 0;
             display: none;
             transition: max-height $content-drive-animation-speed $content-drive-animation-ease;
+            padding: 0 $spacing-4;
         }
 
         .p-tabview-panel[aria-hidden="false"] {
@@ -66,4 +67,5 @@
     justify-content: flex-end;
     gap: $spacing-3;
     margin-top: $spacing-3;
+    padding: 0 $spacing-4;
 }

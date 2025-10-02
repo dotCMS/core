@@ -31,7 +31,6 @@ export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
 export * from './lib/modules/dot-dialog/dot-dialog.component';
-export * from './lib/dot-tree-folder/dot-tree-folder.component';
 
 // Directives
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
@@ -62,6 +61,7 @@ export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
+export * from './lib/pipes/dot-folder-name/dot-folder-name.pipe';
 // Resolvers
 export * from './lib/resolvers/dot-analytics-health-check.resolver.service';
 export * from './lib/resolvers/dot-enterprise-license-resolver.service';
