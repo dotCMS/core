@@ -27,6 +27,7 @@ export default [
             '^/assets/manifest.json': '/dotAdmin/assets/manifest.json',
             '^/assets/monaco-editor/min': '/dotAdmin/assets/monaco-editor/min',
             '^/assets/edit-ema': '/dotAdmin/assets/edit-ema',
+            '^/assets/dot-uve': '/dotAdmin/assets/dot-uve',
             '^/assets/seo': '/dotAdmin/assets/seo',
             '^/assets': '/dotAdmin',
             '^/tinymce': '/dotAdmin/tinymce'

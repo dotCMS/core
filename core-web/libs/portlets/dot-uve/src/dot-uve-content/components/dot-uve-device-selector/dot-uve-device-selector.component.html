@@ -1,30 +1,23 @@
-@for (device of defaultDevices; track $index) {
+@for (device of systemDevices; track $index) {
+    @let isActive = device.inode === $currentDeviceInode();
     <p-button
+        tooltipPosition="bottom"
         [icon]="device.icon"
         [pTooltip]="device.name | dm"
-        tooltipPosition="bottom"
-        styleClass="p-button-text p-button-sm p-button-rounded"
-        [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
-        (click)="onDeviceSelect(device)"
-        [attr.data-testId]="device.inode" />
+        [styleClass]="
+            'p-button-text p-button-sm p-button-rounded ' + (isActive ? 'active-device' : '')
+        "
+        (click)="onDeviceSelect(device)" />
 }
 
 <p-button
     styleClass="p-button-text p-button-sm p-button-rounded orientation p-button-icon-only"
-    [disabled]="$disableOrientation()"
+    [ngClass]="'vertical'"
+    [disabled]="$allowRotation()"
     (click)="onOrientationChange()"
     data-testId="orientation">
-    <svg
-        [ngClass]="$currentOrientation()"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        width="24px"
-        height="24px">
-        <use
-            data-testId="orientation"
-            href="/assets/dot-uve/orientation.svg#orientation"
-            width="24px"
-            height="24px"></use>
+    <svg fill="currentColor" viewBox="0 0 24 24" width="24px" height="24px">
+        <use href="./assets/edit-ema/orientation.svg#orientation" width="24px" height="24px"></use>
     </svg>
 </p-button>
 
@@ -32,17 +25,17 @@
     <p-button
         icon="pi pi-angle-down"
         iconPos="right"
-        [label]="$moreButtonLabel() | dm"
-        [class.active]="$isMoreButtonActive()"
+        [label]="'more' | dm"
+        [class.active]="false"
         styleClass="p-button-text p-2 p-button-sm"
         (click)="menu.toggle($event)"
         data-testId="more-button" />
 
     <p-menu
         #menu
+        [model]="$menuItems()"
         [popup]="true"
         styleClass="more-menu"
-        [model]="$menuItems()"
         data-testId="more-menu">
         <ng-template pTemplate="submenuheader" let-item>
             <span class="text-primary font-bold">{{ item.label }}</span>
@@ -51,7 +44,7 @@
             <a
                 pRipple
                 class="flex align-items-center p-menuitem-link menu-item"
-                [ngClass]="{ 'menu-item--active': item.id === activeMenuItemId() }">
+                [ngClass]="{ 'menu-item--active': item.id === 'social-media' }">
                 <span>{{ item.label }}</span>
             </a>
         </ng-template>
