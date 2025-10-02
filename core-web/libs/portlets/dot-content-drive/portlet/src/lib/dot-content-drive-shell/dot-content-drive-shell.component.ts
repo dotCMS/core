@@ -213,6 +213,8 @@ export class DotContentDriveShellComponent {
     protected resolveFilesUpload(files: FileList) {
         if (files.length > 1) {
             this.uploadFiles(files);
+
+            return;
         }
         this.uploadFile(files[0]);
     }
