@@ -73,7 +73,7 @@ class TestHostFilledComponent {
 }
 
 @Component({
-    selector: 'dot-fake-form',
+    selector: 'dot-fake-form-empty',
     template: `
         <form [formGroup]="form">
             <dot-theme-selector-dropdown formControlName="theme"></dot-theme-selector-dropdown>
@@ -208,11 +208,10 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 expect(component.themes).toEqual(mockDotThemes);
             }));
 
-            it('should call paginatorService get method to System Host on init ', () => {
+            it('should set paginatorService configuration on init ', () => {
                 fixture.detectChanges();
                 expect(paginationService.url).toEqual('v1/themes');
-                expect(paginationService.extraParams.get('hostId')).toEqual('SYSTEM_HOST');
-                expect(paginationService.get).toHaveBeenCalled();
+                expect(paginationService.paginationPerPage).toEqual(5);
             });
 
             it('should not call pagination service if the url is not set', () => {
@@ -261,16 +260,16 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 searchable.triggerEventHandler('switch', { ...value });
                 expect(component.value).toEqual(value);
                 expect(component.propagateChange).toHaveBeenCalledWith(value.identifier);
-                expect(component.propagateChange).toHaveBeenCalledTimes(2); // Called once in ngOnInit and once in onChange
+                expect(component.propagateChange).toHaveBeenCalledTimes(1); // Only called once in onChange
                 expect(searchable.componentInstance.toggleOverlayPanel).toHaveBeenCalledTimes(1);
             });
         });
 
         describe('filters', () => {
             beforeEach(() => {
-                fixture.detectChanges();
                 jest.spyOn(paginationService, 'setExtraParams');
                 jest.spyOn(paginationService, 'getWithOffset').mockReturnValue(of(mockDotThemes));
+                fixture.detectChanges();
                 Object.defineProperty(paginationService, 'totalRecords', {
                     value: 3,
                     writable: true
@@ -295,8 +294,8 @@ describe('DotThemeSelectorDropdownComponent', () => {
                     identifier: '123'
                 });
                 tick();
-                expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123');
-                expect(paginationService.setExtraParams).toHaveBeenCalledTimes(2); // Called once in ngOnInit and once in siteChange
+                expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123'); // Call from dropdown open (onShow)
+                expect(paginationService.setExtraParams).toHaveBeenCalledTimes(2); // Called twice: once when dropdown opens (onShow) and once on siteChange
                 expect(component.themes).toEqual(mockDotThemes);
                 expect(component.totalRecords).toBe(3);
             }));
@@ -368,17 +367,24 @@ describe('DotThemeSelectorDropdownComponent', () => {
             expect(selector.value).toEqual(mockDotThemes[1]);
         });
 
-        it('should not get theme when value is empty', () => {
+        it('should load default system theme when no identifier is provided', () => {
             fixture = TestBed.createComponent(TestHostEmtpyComponent);
             de = fixture.debugElement;
             dotThemesService = TestBed.inject(DotThemesService);
-            fixture.detectChanges();
+            paginationService = TestBed.inject(PaginatorService);
+            jest.spyOn(paginationService, 'get');
+
+            // Create a spy function and assign it to propagateChange
+            const mockPropagateChange = jest.fn();
             const selector = de.query(By.css('dot-theme-selector-dropdown')).componentInstance;
-            selector.value = null; // Paginator service is called once on init and it sets a default value that we need to clean to test this
+            selector.propagateChange = mockPropagateChange;
+
             fixture.detectChanges();
 
-            expect(dotThemesService.get).not.toHaveBeenCalled();
-            expect(selector.value).toBeNull();
+            expect(paginationService.extraParams.get('hostId')).toEqual('SYSTEM_HOST');
+            expect(paginationService.get).toHaveBeenCalled();
+            expect(selector.value).toEqual(mockDotThemes[0]); // Should be set to first theme from system host
+            expect(mockPropagateChange).toHaveBeenCalledWith(mockDotThemes[0].identifier);
         });
     });
 });

@@ -104,7 +104,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -204,7 +204,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             const switchSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -241,7 +241,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             const switchBackSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -277,7 +277,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             const initSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -308,7 +308,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             const preserveSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -351,7 +351,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             const workflowSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {

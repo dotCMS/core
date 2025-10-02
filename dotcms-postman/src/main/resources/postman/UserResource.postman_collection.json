@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "cb26d522-79ac-4555-ad8c-9f0122729670",
+		"_postman_id": "d5e911d7-34a2-4553-9c35-053356d4164c",
 		"name": "User Resource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1325,6 +1325,325 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"victory123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "UpdateUserWhenNullRolesAndPass",
+			"item": [
+				{
+					"name": "CreateTestUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Postman Tests: User Creation/Assignment Success",
+									"",
+									"// 1. Check for a successful status code (e.g., 200 OK or 201 Created)",
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// 2. Check if the response is valid JSON",
+									"pm.test(\"Response is valid JSON\", function () {",
+									"    pm.response.to.have.json;",
+									"});",
+									"",
+									"// Get the JSON data for further checks",
+									"const responseData = pm.response.json();",
+									"",
+									"// 3. Verify core structure and top-level fields",
+									"pm.test(\"Response has the 'entity' object\", function () {",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    pm.expect(responseData).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"});",
+									"",
+									"// 4. Verify fields within the 'entity' object",
+									"pm.test(\"'entity' contains roleId, userID, and user object\", function () {",
+									"    pm.expect(responseData.entity).to.have.property('roleId').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('userID').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('user').that.is.an('object');",
+									"});",
+									"",
+									"// 5. Verify key user attributes and types",
+									"pm.test(\"User object has required fields and types\", function () {",
+									"    const user = responseData.entity.user;",
+									"    pm.expect(user).to.have.property('id').that.is.a('string');",
+									"    pm.expect(user).to.have.property('firstName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('lastName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('emailAddress').that.is.a('string');",
+									"    pm.expect(user).to.have.property('active').that.is.a('boolean');",
+									"    pm.expect(user.active).to.be.true; // Assuming a newly created/assigned user is active",
+									"});",
+									"",
+									"// 6. Capture the userID for subsequent requests (e.g., GET, PUT, DELETE)",
+									"// This sets a collection or environment variable named 'new_user_id'",
+									"pm.test(\"Set 'new_user_id' environment variable\", function () {",
+									"    const userId = responseData.entity.userID;",
+									"",
+									"    // Use pm.environment.set() or pm.collectionVariables.set() as needed",
+									"    pm.environment.set(\"new_user_id\", userId);",
+									"",
+									"    console.log(\"Captured new_user_id: \" + userId);",
+									"    pm.expect(userId).to.be.a('string').and.to.have.length.above(0);",
+									"});",
+									"",
+									"pm.environment.set(\"usertestid\", responseData.entity.userID)"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName\",\n    \"lastName\": \"TestUserUpdateLastName\",\n    \"email\": \"allsitesv3@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\"],\n    \"roles\": [\"DOTCMS_FRONT_END_USER\", \"Scripting Developer\"]\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateWithoutPasswordAndLessRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Postman Tests: User Creation/Assignment Success",
+									"",
+									"// 1. Check for a successful status code (e.g., 200 OK or 201 Created)",
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// 2. Check if the response is valid JSON",
+									"pm.test(\"Response is valid JSON\", function () {",
+									"    pm.response.to.have.json;",
+									"});",
+									"",
+									"// Get the JSON data for further checks",
+									"const responseData = pm.response.json();",
+									"",
+									"// 3. Verify core structure and top-level fields",
+									"pm.test(\"Response has the 'entity' object\", function () {",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    pm.expect(responseData).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"});",
+									"",
+									"// 4. Verify fields within the 'entity' object",
+									"pm.test(\"'entity' contains roleId, userID, and user object\", function () {",
+									"    pm.expect(responseData.entity).to.have.property('userID').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('user').that.is.an('object');",
+									"});",
+									"",
+									"// 5. Verify key user attributes and types",
+									"pm.test(\"User object has required fields and types\", function () {",
+									"    const user = responseData.entity.user;",
+									"    pm.expect(user).to.have.property('id').that.is.a('string');",
+									"    pm.expect(user).to.have.property('firstName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('lastName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('emailAddress').that.is.a('string');",
+									"    pm.expect(user).to.have.property('active').that.is.a('boolean');",
+									"    pm.expect(user.active).to.be.true; // Assuming a newly created/assigned user is active",
+									"});",
+									"",
+									"// 6. Capture the userID for subsequent requests (e.g., GET, PUT, DELETE)",
+									"// This sets a collection or environment variable named 'new_user_id'",
+									"pm.test(\"Set 'new_user_id' environment variable\", function () {",
+									"    const userId = responseData.entity.userID;",
+									"",
+									"    // Use pm.environment.set() or pm.collectionVariables.set() as needed",
+									"    pm.environment.set(\"new_user_id\", userId);",
+									"",
+									"    console.log(\"Captured new_user_id: \" + userId);",
+									"    pm.expect(userId).to.be.a('string').and.to.have.length.above(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{usertestid}}\",\n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName2\",\n    \"lastName\": \"TestUserUpdateLastName2\",\n    \"email\": \"allsitesv3@dotcms.com\",\n    \"roles\": [\"DOTCMS_BACK_END_USER\"]\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateUserWithoutAnyRolesAndPasswordSent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Postman Tests: User Creation/Assignment Success",
+									"",
+									"// 1. Check for a successful status code (e.g., 200 OK or 201 Created)",
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// 2. Check if the response is valid JSON",
+									"pm.test(\"Response is valid JSON\", function () {",
+									"    pm.response.to.have.json;",
+									"});",
+									"",
+									"// Get the JSON data for further checks",
+									"const responseData = pm.response.json();",
+									"",
+									"// 3. Verify core structure and top-level fields",
+									"pm.test(\"Response has the 'entity' object\", function () {",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    pm.expect(responseData).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"});",
+									"",
+									"// 4. Verify fields within the 'entity' object",
+									"pm.test(\"'entity' contains roleId, userID, and user object\", function () {",
+									"    pm.expect(responseData.entity).to.have.property('userID').that.is.a('string');",
+									"    pm.expect(responseData.entity).to.have.property('user').that.is.an('object');",
+									"});",
+									"",
+									"// 5. Verify key user attributes and types",
+									"pm.test(\"User object has required fields and types\", function () {",
+									"    const user = responseData.entity.user;",
+									"    pm.expect(user).to.have.property('id').that.is.a('string');",
+									"    pm.expect(user).to.have.property('firstName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('lastName').that.is.a('string');",
+									"    pm.expect(user).to.have.property('emailAddress').that.is.a('string');",
+									"    pm.expect(user).to.have.property('active').that.is.a('boolean');",
+									"    pm.expect(user.active).to.be.true; // Assuming a newly created/assigned user is active",
+									"});",
+									"",
+									"// 6. Capture the userID for subsequent requests (e.g., GET, PUT, DELETE)",
+									"// This sets a collection or environment variable named 'new_user_id'",
+									"pm.test(\"Set 'new_user_id' environment variable\", function () {",
+									"    const userId = responseData.entity.userID;",
+									"",
+									"    // Use pm.environment.set() or pm.collectionVariables.set() as needed",
+									"    pm.environment.set(\"new_user_id\", userId);",
+									"",
+									"    console.log(\"Captured new_user_id: \" + userId);",
+									"    pm.expect(userId).to.be.a('string').and.to.have.length.above(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{usertestid}}\",\n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName3\",\n    \"lastName\": \"TestUserUpdateLastName3\",\n    \"email\": \"allsitesv3@dotcms.com\"\n  }",
 							"options": {
 								"raw": {
 									"language": "json"

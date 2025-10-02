@@ -1366,6 +1366,7 @@ public class ContentTypeResource implements Serializable {
 													value = "{\n" +
 															"  \"entity\": [\n" +
 															"    {\n" +
+															"      \"index\": \"int\",\n" +
 															"      \"label\": \"string\",\n" +
 															"      \"name\": \"string\",\n" +
 															"      \"types\": null\n" +
@@ -1390,7 +1391,6 @@ public class ContentTypeResource implements Serializable {
 			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
 			response = Response.ok(new ResponseEntityView<>(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
-
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 

@@ -114,7 +114,7 @@ describe('DotContentDriveToolbarComponent', () => {
             spectator.detectChanges();
             const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
             expect(toggler).toBeDefined();
-            expect(toggler?.classes.hidden).toBe(true);
+            expect(toggler?.classes['sidebar-expanded']).toBe(true);
         });
     });
 

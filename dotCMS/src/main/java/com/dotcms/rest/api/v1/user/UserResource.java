@@ -802,6 +802,10 @@ public class UserResource implements Serializable {
 						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
 				);
 
+        if (!UtilMethods.isSet(createUserForm.getPassword())) {
+            throw new IllegalArgumentException("Password can not be null");
+        }
+
 		if (isRoleAdministrator) {
 
 			final User userToUpdated = this.createNewUser(
@@ -1187,7 +1191,11 @@ public class UserResource implements Serializable {
 		}
 
 		// Password has changed, so it has to be validated
-		userToSave.setPassword(new String(updateUserForm.getPassword()));
+        if(UtilMethods.isSet(updateUserForm.getPassword())){
+
+            userToSave.setPassword(new String(updateUserForm.getPassword()));
+        }
+
 
 		if (APILocator.getPermissionAPI().doesUserHavePermission
 				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
@@ -1198,15 +1206,9 @@ public class UserResource implements Serializable {
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
-			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
-					updateUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
+            this.processRoles(updateUserForm, userToSave);
 
-			for (final String roleKey : roleKeys) {
-
-				UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
-			}
-
-			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
+            Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' , the roles have been updated.");
 
 		} else {
@@ -1217,7 +1219,25 @@ public class UserResource implements Serializable {
 		return userToSave;
 	}
 
-	/**
+    private void processRoles(final UserForm updateUserForm, final User userToSave) throws DotDataException {
+
+        if (UtilMethods.isSet(updateUserForm.getRoles())) {
+
+            final List<String> roleKeys = updateUserForm.getRoles();
+
+            this.helper.removeRoles(userToSave);  // the source of true is whatever is coming from the payload
+
+            for (final String roleKey : roleKeys) {
+
+                UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
+            }
+        } else {
+
+            Logger.debug(this, ()-> "Not roles sent at all, nothing has been modified in terms of roles");
+        }
+    }
+
+    /**
 	 * Deletes an existing user.
 	 *
 	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
@@ -1334,4 +1354,5 @@ public class UserResource implements Serializable {
 			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
 	} // delete.
+
 }
