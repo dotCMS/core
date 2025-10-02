@@ -50,24 +50,8 @@
             class="p-toast-message-icon"
             [attr.aria-hidden]="true"
             [attr.data-pc-section]="'icon'">
-            @switch (message.severity) {
-                @case ('success') {
-                    <CheckIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
-                }
-                @case ('info') {
-                    <InfoCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
-                }
-                @case ('error') {
-                    <TimesCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
-                }
-                @case ('warn') {
-                    <ExclamationTriangleIcon
-                        [attr.aria-hidden]="true"
-                        [attr.data-pc-section]="'icon'" />
-                }
-            }
+            <dot-severity-icon [severity]="message.severity" />
         </span>
-
         <div class="p-toast-message-text">
             <span class="p-toast-summary" innerHtml="{{ message.summary }}"></span>
             <span class="p-toast-detail" innerHtml="{{ message.detail }}"></span>

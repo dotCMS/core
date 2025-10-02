@@ -13,10 +13,6 @@ import { Router } from '@angular/router';
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { CheckIcon } from 'primeng/icons/check';
-import { ExclamationTriangleIcon } from 'primeng/icons/exclamationtriangle';
-import { InfoCircleIcon } from 'primeng/icons/infocircle';
-import { TimesCircleIcon } from 'primeng/icons/timescircle';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
@@ -29,7 +25,7 @@ import {
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
-import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
@@ -58,10 +54,7 @@ import { ALL_FOLDER } from '../utils/tree-folder.utils';
         ButtonModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
-        CheckIcon,
-        InfoCircleIcon,
-        TimesCircleIcon,
-        ExclamationTriangleIcon
+        DotSeverityIconComponent
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
