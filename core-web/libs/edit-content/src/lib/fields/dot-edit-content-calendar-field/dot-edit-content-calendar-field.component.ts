@@ -1,33 +1,25 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { CalendarModule } from 'primeng/calendar';
-import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotSystemTimezone
+    DotSystemTimezone,
+    DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import {
-    CALENDAR_OPTIONS_PER_TYPE,
-    convertServerTimeToUtc,
-    createUtcDateAtMidnight,
-    extractDateComponents,
-    getCurrentServerTime,
-    processExistingValue,
-    processFieldDefaultValue
-} from './dot-edit-content-calendar-field.util';
+import { DotCalendarFieldComponent } from './components/calendar-field/calendar-field.component';
 
 import { CALENDAR_FIELD_TYPES_WITH_TIME } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { FieldType } from '../../models/dot-edit-content-field.type';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
-import { BaseFieldComponent } from '../shared/base-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
  * DotEditContentCalendarFieldComponent
@@ -58,19 +50,31 @@ import { BaseFieldComponent } from '../shared/base-field.component';
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
-        DotFieldRequiredDirective,
-        TooltipModule
+        DotCardFieldLabelComponent,
+        DotCalendarFieldComponent
     ],
     templateUrl: 'dot-edit-content-calendar-field.component.html',
-    styleUrls: ['./dot-edit-content-calendar-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
-export class DotEditContentCalendarFieldComponent extends BaseFieldComponent implements OnInit {
+export class DotEditContentCalendarFieldComponent extends BaseWrapperField {
     /**
      * The field configuration (required).
      * Determines the type of calendar field (date, time, datetime).
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+
+    /**
+     * The contentlet (optional).
+     * Used to determine if the field is a date or time field.
+     * Alias: contentlet
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
     /**
      * The system timezone (optional).
@@ -80,64 +84,11 @@ export class DotEditContentCalendarFieldComponent extends BaseFieldComponent imp
     $systemTimezone = input<DotSystemTimezone | null>(null, { alias: 'utcTimezone' });
 
     /**
-     * Whether to show the label.
-     */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
-    });
-
-    /**
      * The content type (optional).
      * Used to determine if the field is a date or time field.
      * Alias: contentType
      */
     $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
-
-    // Store last value to reprocess when timezone becomes available
-    private lastUtcValue: number | null = null;
-
-    /**
-     * The internal form control for the calendar field.
-     */
-    internalFormControl = new FormControl<Date | null>(null);
-
-    constructor() {
-        super();
-        // Reprocess existing values when timezone becomes available
-        effect(() => {
-            const systemTimezone = this.$systemTimezone();
-            const fieldType = this.$field().fieldType as FieldType;
-
-            // If timezone is now available and we have a stored value, reprocess it
-            if (systemTimezone && this.lastUtcValue !== null) {
-                const displayValue = processExistingValue(
-                    this.lastUtcValue,
-                    fieldType as FieldType,
-                    systemTimezone
-                );
-                this.internalFormControl.setValue(displayValue);
-            }
-        });
-    }
-
-    ngOnInit() {
-        this.statusChanges$.subscribe(() => {
-            this.changeDetectorRef.detectChanges();
-        });
-    }
-
-    /**
-     * The configuration for the field type.
-     * Computed based on the field type.
-     */
-    $fieldTypeConfig = computed(() => {
-        const fieldType = this.$field().fieldType;
-        return CALENDAR_OPTIONS_PER_TYPE[fieldType];
-    });
-
     /**
      * Whether to show timezone information.
      * Only shown for fields that include time.
@@ -146,118 +97,4 @@ export class DotEditContentCalendarFieldComponent extends BaseFieldComponent imp
         const fieldType = this.$field().fieldType as FIELD_TYPES; // TODO: Fix fieldType on DotCMSContentTypeField to FieldType instead of string
         return CALENDAR_FIELD_TYPES_WITH_TIME.includes(fieldType);
     });
-
-    $isExpireDateField = computed(() => {
-        const contentType = this.$contentType();
-        const field = this.$field();
-        return contentType?.expireDateVar === field.variable;
-    });
-
-    // ControlValueAccessor implementation
-    writeValue(utcValue: number | null): void {
-        // Store the value for reprocessing when timezone is available
-        this.lastUtcValue = utcValue;
-
-        if (utcValue !== null && utcValue !== undefined) {
-            // Debug logging for unexpected value types
-            if (typeof utcValue !== 'number') {
-                console.warn('Calendar field received non-number value:', {
-                    value: utcValue,
-                    type: typeof utcValue,
-                    fieldVariable: this.$field().variable
-                });
-            }
-
-            // Process existing value from form/backend (numeric timestamp)
-            const displayValue = processExistingValue(
-                utcValue,
-                this.$field().fieldType as FieldType,
-                this.$systemTimezone()
-            );
-
-            this.internalFormControl.setValue(displayValue);
-        } else {
-            // Process default value for new/empty field (this is NOT a UTC value, it's literal)
-            const defaultResult = processFieldDefaultValue(this.$field(), this.$systemTimezone());
-
-            if (defaultResult) {
-                // Use displayValue directly - no conversion needed for default values
-                this.internalFormControl.setValue(defaultResult.displayValue);
-
-                // Store pending default value to apply when onChange is registered
-                this.onChange(defaultResult.formValue.getTime());
-            } else {
-                this.internalFormControl.setValue(null);
-            }
-        }
-    }
-
-    /**
-     * Computed property for the default date when calendar opens (navigation only)
-     * Shows current server time without affecting the form value
-     */
-    $defaultDate = computed(() => {
-        return getCurrentServerTime(this.$systemTimezone());
-    });
-
-    /**
-     * Handles calendar value changes from user selection
-     * Converts the selected date appropriately based on field type
-     */
-    onCalendarChange(selectedDate: Date | null): void {
-        if (!selectedDate) {
-            this.internalFormControl.setValue(null);
-            this.onChange(null);
-            this.onTouched();
-            return;
-        }
-
-        const systemTimezone = this.$systemTimezone();
-        const fieldType = this.$field().fieldType;
-
-        // Extract date/time components from user selection
-        const { year, month, date, hours, minutes, seconds } = extractDateComponents(selectedDate);
-
-        // Create display value (what user sees in the input)
-        const displayValue = new Date(year, month, date, hours, minutes, seconds);
-
-        // Create form value based on field type
-        let formValue: Date;
-
-        if (fieldType === FIELD_TYPES.DATE) {
-            // For date-only fields: UTC midnight represents "the date" globally
-            formValue = createUtcDateAtMidnight(year, month, date);
-        } else if (fieldType === FIELD_TYPES.TIME) {
-            // For time-only fields: preserve time components but use consistent date base (today)
-            // This ensures time is stored consistently regardless of date
-            const today = new Date();
-            const timeInServerTz = new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate(),
-                hours,
-                minutes,
-                seconds
-            );
-            formValue = convertServerTimeToUtc(timeInServerTz, systemTimezone);
-        } else {
-            // For datetime fields: convert server timezone selection to UTC for storage
-            formValue = convertServerTimeToUtc(displayValue, systemTimezone);
-        }
-
-        // Update internal display value (what user sees)
-        this.internalFormControl.setValue(displayValue);
-
-        // Send the correct moment to form control
-        this.onChange(formValue);
-        this.onTouched();
-    }
-
-    setDisabledState(isDisabled: boolean): void {
-        if (isDisabled) {
-            this.internalFormControl.disable();
-        } else {
-            this.internalFormControl.enable();
-        }
-    }
 }

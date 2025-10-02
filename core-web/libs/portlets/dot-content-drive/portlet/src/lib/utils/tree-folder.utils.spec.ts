@@ -13,7 +13,7 @@ describe('Sidebar Utils', () => {
         it('should have correct structure', () => {
             expect(ALL_FOLDER).toEqual({
                 key: 'ALL_FOLDER',
-                label: 'Root',
+                label: 'All',
                 loading: false,
                 data: {
                     type: 'folder',

@@ -21,7 +21,7 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotFolderEntity } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     SUGGESTED_ALLOWED_FILE_EXTENSIONS,
@@ -50,7 +50,8 @@ interface FolderForm {
         ButtonModule,
         InputNumberModule,
         AutoCompleteModule,
-        AutoFocusModule
+        AutoFocusModule,
+        DotFieldRequiredDirective
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
     styleUrls: ['./dot-content-drive-dialog-folder.component.scss']

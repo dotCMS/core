@@ -164,6 +164,9 @@ public class ContainerLoader implements DotLoader {
                                       final PageMode mode,
                                       final String filePath) throws DotDataException, DotSecurityException {
 
+        
+        final String transformedUUID = ContainerUUID.UUID_LEGACY_VALUE.equals(uuid) ? ContainerUUID.UUID_START_VALUE : uuid;
+
         final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         final StringBuilder velocityCodeBuilder = new StringBuilder();
         final List<ContainerStructure> containerContentTypeList = APILocator.getContainerAPI()
@@ -175,7 +178,7 @@ public class ContainerLoader implements DotLoader {
             .append(container.getIdentifier())
             .append("')");
         velocityCodeBuilder.append("#set ($CONTAINER_UNIQUE_ID = '")
-            .append(uuid)
+            .append(transformedUUID)
             .append("')");
         velocityCodeBuilder.append("#set ($CONTAINER_INODE = '")
             .append(container.getInode())
@@ -232,7 +235,7 @@ public class ContainerLoader implements DotLoader {
                     .append(" data-dot-identifier=")
                     .append("\"" + this.getDataDotIdentifier(container) + "\"")
                     .append(" data-dot-uuid=")
-                    .append("\"" + uuid + "\"")
+                    .append("\"" + transformedUUID + "\"")
                     .append(" data-max-contentlets=")
                     .append("\"" + container.getMaxContentlets() + "\"")
                     .append(" data-dot-accept-types=")
