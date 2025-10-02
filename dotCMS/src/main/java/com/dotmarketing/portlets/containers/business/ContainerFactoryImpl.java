@@ -917,8 +917,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			query.append(" and identifier.host_inode = ?");
 			// Validate siteId format (UUID or special identifiers like SYSTEM_HOST)
 			final String siteId = searchParams.siteId();
-			if (!isValidIdentifier(siteId)) {
-				throw new DotSecurityException("Invalid site ID format: " + siteId);
+			try {
+				com.dotcms.util.SecurityUtils.validateIdentifier(siteId);
+			} catch (SecurityException e) {
+				throw new DotSecurityException("Invalid site ID format: " + siteId, e);
 			}
 			paramValues.add(siteId);
 		}
@@ -928,8 +930,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			query.append(" and asset.inode = ?");
 			// Validate containerInode format (UUID or system identifier)
 			final String containerInode = searchParams.containerInode();
-			if (!isValidIdentifier(containerInode)) {
-				throw new DotSecurityException("Invalid container inode format: " + containerInode);
+			try {
+				com.dotcms.util.SecurityUtils.validateIdentifier(containerInode);
+			} catch (SecurityException e) {
+				throw new DotSecurityException("Invalid container inode format: " + containerInode, e);
 			}
 			paramValues.add(containerInode);
 		}
@@ -939,8 +943,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			query.append(" and asset.identifier = ?");
 			// Validate containerIdentifier format (UUID or special identifier)
 			final String containerIdentifier = searchParams.containerIdentifier();
-			if (!isValidIdentifier(containerIdentifier)) {
-				throw new DotSecurityException("Invalid container identifier format: " + containerIdentifier);
+			try {
+				com.dotcms.util.SecurityUtils.validateIdentifier(containerIdentifier);
+			} catch (SecurityException e) {
+				throw new DotSecurityException("Invalid container identifier format: " + containerIdentifier, e);
 			}
 			paramValues.add(containerIdentifier);
 		}
@@ -1224,52 +1230,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
             Logger.error(ContainerFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
-	}
-
-
-	/**
-	 * Validates if a string is a valid dotCMS identifier.
-	 * Accepts UUIDs, system identifiers (SYSTEM_HOST, SYSTEM_FOLDER), and variable names.
-	 * More flexible validation to avoid being too restrictive.
-	 *
-	 * @param identifier the identifier to validate
-	 * @return true if the identifier is valid, false otherwise
-	 */
-	private boolean isValidIdentifier(final String identifier) {
-		if (!UtilMethods.isSet(identifier)) {
-			return false;
-		}
-		// Allow UUIDs, known system identifiers, or safe alphanumeric patterns
-		return UUIDUtil.isUUID(identifier) ||
-			   isSystemIdentifier(identifier) ||
-			   identifier.matches(com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl.VALID_VARIABLE_NAME_REGEX) ||
-			   identifier.matches("^[a-zA-Z0-9_-]{1,255}$"); // Broader fallback for other valid identifiers
-	}
-
-	/**
-	 * Checks if the identifier is a known system identifier.
-	 * Based on fabrizzio's suggestion to handle system identifiers like SYSTEM_HOST, SYSTEM_FOLDER.
-	 *
-	 * @param identifier the identifier to check
-	 * @return true if it's a known system identifier
-	 */
-	private boolean isSystemIdentifier(final String identifier) {
-		return "SYSTEM_HOST".equals(identifier) ||
-			   "SYSTEM_FOLDER".equals(identifier);
-	}
-
-	/**
-	 * Validates if a string is a valid velocity variable name for content types.
-	 * Uses the established VALID_VARIABLE_NAME_REGEX from WorkflowFactoryImpl.
-	 *
-	 * @param variableName the variable name to validate
-	 * @return true if the variable name is valid, false otherwise
-	 */
-	private boolean isValidVariableName(final String variableName) {
-		if (!UtilMethods.isSet(variableName)) {
-			return false;
-		}
-		return variableName.matches(com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl.VALID_VARIABLE_NAME_REGEX);
 	}
 
 }
