@@ -139,6 +139,7 @@ public class UserResource implements Serializable {
 	private final ErrorResponseHelper errorHelper;
 	private final PaginationUtil paginationUtil;
 	private final RoleAPI roleAPI;
+	private final PermissionAPI permissionAPI;
 	private final UserPermissionHelper userPermissionHelper;
 
 	/**
@@ -151,6 +152,7 @@ public class UserResource implements Serializable {
 																 .setUserAPI(APILocator.getUserAPI())
 																 .setHostAPI(APILocator.getHostAPI())
 																 .setRoleAPI(APILocator.getRoleAPI())
+																 .setPermissionAPI(APILocator.getPermissionAPI())
 																 .setErrorHelper(ErrorResponseHelper.INSTANCE),
 				userPermissionHelper);
 	}
@@ -180,6 +182,7 @@ public class UserResource implements Serializable {
 		this.siteAPI = instanceProvider.getHostAPI();
 		this.errorHelper = instanceProvider.getErrorHelper();
 		this.roleAPI = instanceProvider.getRoleAPI();
+		this.permissionAPI = instanceProvider.getPermissionAPI();
 		this.userPermissionHelper = userPermissionHelper;
 	}
 
@@ -1421,10 +1424,10 @@ public class UserResource implements Serializable {
 					content = @Content(mediaType = "application/json"))
 	})
 	public ResponseEntityUserPermissionsView getUserPermissions(
-		@Context HttpServletRequest request,
-		@Context HttpServletResponse response,
+		@Context final HttpServletRequest request,
+		@Context final HttpServletResponse response,
 		@Parameter(description = "User ID or email address", required = true)
-		@PathParam("userId") String userId
+		@PathParam("userId") final String userId
 	) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -1453,7 +1456,7 @@ public class UserResource implements Serializable {
 
 		final Role userRole = roleAPI.getUserRole(finalTargetUser);
 		if (userRole == null) {
-			Logger.error(this, String.format("User role not found for user: %s", userId));
+			Logger.warn(this, String.format("User role not found for user: %s", userId));
 			throw new DotDataException("User role not found for: " + userId);
 		}
 
@@ -1469,6 +1472,111 @@ public class UserResource implements Serializable {
 		Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
 			finalTargetUser.getUserId(), requestingUser.getUserId()));
 		return new ResponseEntityUserPermissionsView(userPermissions);
+	}
+
+	/**
+	 * Updates permissions for a user's individual role on a specific asset.
+	 * Replicates RoleAjax.saveRolePermission() functionality for REST API.
+	 *
+	 * @param request HTTP servlet request
+	 * @param response HTTP servlet response
+	 * @param userId User ID or email address
+	 * @param assetId Asset ID (host identifier or folder inode)
+	 * @param form Permission assignments to save
+	 * @return Response with updated permissions
+	 * @throws DotDataException if data access fails
+	 * @throws DotSecurityException if security check fails
+	 */
+	@Operation(
+		summary = "Update user permissions on asset",
+		description = "Updates permissions for a user's individual role on a specific asset (host or folder). " +
+					  "Automatically breaks permission inheritance if the asset inherits from parent. " +
+					  "Supports cascading permissions to all children assets."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Permissions updated successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntitySaveUserPermissionsView.class))),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - invalid user ID, asset ID, or permission data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - user lacks EDIT_PERMISSIONS on asset",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Not found - user or asset not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{userId}/permissions/{assetId}")
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntitySaveUserPermissionsView updateUserPermissions(
+		@Context final HttpServletRequest request,
+		@Context final HttpServletResponse response,
+		@Parameter(description = "User ID or email address", required = true)
+		@PathParam("userId") final String userId,
+		@Parameter(description = "Asset ID (host identifier or folder inode)", required = true)
+		@PathParam("assetId") final String assetId,
+		@io.swagger.v3.oas.annotations.parameters.RequestBody(
+			description = "Permission assignments to save. Replaces existing permissions for this user's role on the asset.",
+			required = true,
+			content = @Content(schema = @Schema(implementation = SaveUserPermissionsForm.class)))
+		final SaveUserPermissionsForm form
+	) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+			.requiredBackendUser(true)
+			.requestAndResponse(request, response)
+			.rejectWhenNoUser(true)
+			.init();
+
+		final User requestingUser = initData.getUser();
+
+		if (!UtilMethods.isSet(userId)) {
+			throw new BadRequestException("User ID is required");
+		}
+		if (!UtilMethods.isSet(assetId)) {
+			throw new BadRequestException("Asset ID is required");
+		}
+
+		form.checkValid();
+
+		Logger.debug(this, () -> String.format("PUT /users/%s/permissions/%s requested by %s",
+			userId, assetId, requestingUser.getUserId()));
+
+		final User targetUser = helper.loadUserByIdOrEmail(userId, userAPI.getSystemUser(), requestingUser);
+		final Permissionable asset = userPermissionHelper.resolveAsset(assetId, userAPI.getSystemUser());
+
+		// Security check 1: User can update own permissions or admin can update any
+		if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(targetUser.getUserId())) {
+			Logger.warn(this, () -> String.format("User %s attempted to update permissions for %s without authorization",
+				requestingUser.getUserId(), userId));
+			throw new ForbiddenException("Insufficient permissions to update user permissions");
+		}
+
+		// Security check 2: User must have EDIT_PERMISSIONS on the asset
+		// This matches RoleAjax.getRolePermissions() behavior (lines 783, 790) which checks permissionToEditPermissions
+		// JSP disables UI based on this check; REST API must validate server-side
+		if (!permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, requestingUser)) {
+			Logger.warn(this, () -> String.format("User %s does not have EDIT_PERMISSIONS on asset %s",
+				requestingUser.getUserId(), assetId));
+			throw new ForbiddenException("User does not have permission to edit permissions on this asset");
+		}
+
+		final SaveUserPermissionsResponse saveResponse = userPermissionHelper.saveUserPermissions(
+			targetUser.getUserId(),
+			assetId,
+			form,
+			requestingUser
+		);
+
+		Logger.info(this, () -> String.format("Successfully updated permissions for user %s on asset %s (requested by %s)",
+			targetUser.getUserId(), assetId, requestingUser.getUserId()));
+
+		return new ResponseEntitySaveUserPermissionsView(saveResponse);
 	}
 
 

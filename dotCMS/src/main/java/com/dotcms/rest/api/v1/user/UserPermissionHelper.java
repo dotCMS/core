@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -7,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,6 +24,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -164,7 +167,7 @@ public class UserPermissionHelper {
             id = host.getIdentifier();
             type = "HOST";
             name = host.getHostname();
-            path = "/" + host.getHostname();
+            path = StringPool.FORWARD_SLASH + host.getHostname();
             hostId = host.getIdentifier();
         } else if (asset instanceof Folder) {
             final Folder folder = (Folder) asset;
@@ -174,7 +177,7 @@ public class UserPermissionHelper {
             id = folder.getInode();
             type = "FOLDER";
             name = folder.getName();
-            path = "/" + host.getHostname() + identifier.getParentPath() + folder.getName();
+            path = StringPool.FORWARD_SLASH + host.getHostname() + identifier.getParentPath() + folder.getName();
             hostId = folder.getHostId();
         } else {
             throw new DotDataException("Unsupported asset type: " + asset.getClass().getName());
@@ -229,6 +232,26 @@ public class UserPermissionHelper {
         Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
         Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),
         Map.entry(Host.class.getCanonicalName().toUpperCase(), "HOST")
+    );
+
+    /**
+     * Maps from API scope names (UPPERCASE) to Permission type strings.
+     * Reverse mapping of PERMISSION_TYPE_MAPPINGS.
+     * Based on RoleAjax.saveRolePermission() logic.
+     */
+    private static final Map<String, String> SCOPE_TO_PERMISSION_TYPE = Map.ofEntries(
+        Map.entry("INDIVIDUAL", PermissionAPI.INDIVIDUAL_PERMISSION_TYPE),
+        Map.entry("HOST", Host.class.getCanonicalName()),
+        Map.entry("FOLDER", Folder.class.getCanonicalName()),
+        Map.entry("CONTAINER", Container.class.getCanonicalName()),
+        Map.entry("TEMPLATE", Template.class.getCanonicalName()),
+        Map.entry("TEMPLATE_LAYOUT", TemplateLayout.class.getCanonicalName()),
+        Map.entry("LINK", Link.class.getCanonicalName()),
+        Map.entry("CONTENT", Contentlet.class.getCanonicalName()),
+        Map.entry("PAGE", IHTMLPage.class.getCanonicalName()),
+        Map.entry("STRUCTURE", Structure.class.getCanonicalName()),
+        Map.entry("CATEGORY", Category.class.getCanonicalName()),
+        Map.entry("RULE", Rule.class.getCanonicalName())
     );
 
     private String getModernPermissionType(final String permissionType) {
@@ -286,5 +309,204 @@ public class UserPermissionHelper {
         }
 
         return permissions;
+    }
+
+    /**
+     * Converts permission level names to permission bit mask.
+     * Inverse operation of convertBitsToPermissionNames().
+     *
+     * @param permissionNames List of permission names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
+     * @return Combined permission bit mask
+     */
+    public int convertPermissionNamesToBits(final List<String> permissionNames) {
+        if (permissionNames == null || permissionNames.isEmpty()) {
+            return 0;
+        }
+
+        int permissionBits = 0;
+
+        for (final String permissionName : permissionNames) {
+            switch (permissionName.toUpperCase()) {
+                case "READ":
+                    permissionBits |= PermissionAPI.PERMISSION_READ;
+                    break;
+                case "WRITE":
+                    permissionBits |= PermissionAPI.PERMISSION_WRITE;
+                    break;
+                case "PUBLISH":
+                    permissionBits |= PermissionAPI.PERMISSION_PUBLISH;
+                    break;
+                case "EDIT_PERMISSIONS":
+                    permissionBits |= PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+                    break;
+                case "CAN_ADD_CHILDREN":
+                    permissionBits |= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+                    break;
+                default:
+                    Logger.warn(this, "Unknown permission name: " + permissionName);
+            }
+        }
+
+        return permissionBits;
+    }
+
+    /**
+     * Gets the Permission type string for a given scope name.
+     * Maps from REST API scope names (UPPERCASE) to Permission type class names.
+     *
+     * @param scopeName The scope name from API (UPPERCASE like "HOST", "FOLDER", "INDIVIDUAL")
+     * @return Permission type class name or INDIVIDUAL constant
+     */
+    public String getPermissionTypeForScope(final String scopeName) {
+        final String permissionType = SCOPE_TO_PERMISSION_TYPE.get(scopeName.toUpperCase());
+        if (permissionType == null) {
+            Logger.warn(this, "Unknown permission scope: " + scopeName);
+            return scopeName;
+        }
+        return permissionType;
+    }
+
+    /**
+     * Resolves asset (Host or Folder) from asset ID.
+     * Replicates RoleAjax.saveRolePermission() logic (lines 815-820).
+     *
+     * @param assetId The asset identifier (host identifier or folder inode)
+     * @param systemUser System user for lookups
+     * @return The resolved Permissionable asset
+     * @throws DotDataException if asset resolution fails
+     * @throws DotSecurityException if security check fails
+     */
+    public Permissionable resolveAsset(final String assetId, final User systemUser)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> "Resolving asset: " + assetId);
+
+        // Try host first (line 815)
+        final Host host = hostAPI.find(assetId, systemUser, false);
+        if (host != null) {
+            Logger.debug(this, () -> "Asset resolved as Host: " + host.getHostname());
+            return host;
+        }
+
+        // Try folder (lines 817-819)
+        final Folder folder = folderAPI.find(assetId, systemUser, false);
+        if (folder != null && UtilMethods.isSet(() -> folder.getIdentifier())) {
+            Logger.debug(this, () -> "Asset resolved as Folder: " + folder.getName());
+            return folder;
+        }
+
+        Logger.warn(this, "Asset not found: " + assetId);
+        throw new com.dotcms.rest.exception.NotFoundException("Asset not found: " + assetId);
+    }
+
+    /**
+     * Saves permissions for a user's individual role on a specific asset.
+     * Replicates RoleAjax.saveRolePermission() functionality (lines 801-899).
+     *
+     * CRITICAL: This method does NOT use @WrapInTransaction because:
+     * - assignPermissions() is already @WrapInTransaction (PermissionBitAPIImpl:765)
+     * - permissionIndividuallyByRole() is already @WrapInTransaction (PermissionBitAPIImpl:1691)
+     *
+     * @param userId User identifier (email or ID)
+     * @param assetId Asset identifier (host or folder)
+     * @param form Permission save form
+     * @param requestingUser User making the request
+     * @return Save response with updated asset
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    public SaveUserPermissionsResponse saveUserPermissions(
+            final String userId,
+            final String assetId,
+            final SaveUserPermissionsForm form,
+            final User requestingUser) throws DotDataException, DotSecurityException {
+
+        Logger.info(this, () -> String.format("Applying permissions for user %s on asset %s", userId, assetId));
+
+        final User systemUser = userAPI.getSystemUser();
+        final boolean respectFrontendRoles = false;
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+
+        // Load user and get individual role
+        final User targetUser = userAPI.loadUserById(userId);
+        if (targetUser == null) {
+            throw new com.dotcms.rest.exception.NotFoundException("User not found: " + userId);
+        }
+
+        final Role userRole = roleAPI.getUserRole(targetUser);
+        if (userRole == null) {
+            throw new DotDataException("User role not found for: " + userId);
+        }
+
+        final Permissionable asset = resolveAsset(assetId, systemUser);
+
+        if (permissionAPI.isInheritingPermissions(asset)) {
+            Logger.debug(this, () -> "Breaking permission inheritance for asset: " + assetId);
+            final Permissionable parentPermissionable = permissionAPI.findParentPermissionable(asset);
+            permissionAPI.permissionIndividuallyByRole(parentPermissionable, asset, systemUser, userRole);
+        }
+
+        final List<Permission> permissionsToSave = new ArrayList<>();
+        final Map<String, List<String>> permissionMap = form.getPermissions();
+
+        for (final Map.Entry<String, List<String>> entry : permissionMap.entrySet()) {
+            final String scope = entry.getKey();
+            final List<String> levels = entry.getValue();
+
+            if (levels == null || levels.isEmpty()) {
+                continue;
+            }
+
+            final int permissionBits = convertPermissionNamesToBits(levels);
+            if (permissionBits == 0) {
+                continue;
+            }
+
+            final String permissionType = getPermissionTypeForScope(scope);
+            final Permission permission = new Permission(
+                permissionType,
+                asset.getPermissionId(),
+                userRole.getId(),
+                permissionBits,
+                true
+            );
+            permissionsToSave.add(permission);
+
+            Logger.debug(this, () -> String.format("Added permission: scope=%s, bits=%d, type=%s",
+                scope, permissionBits, permissionType));
+        }
+
+        // NOTE: assignPermissions() requires non-empty list
+        if (!permissionsToSave.isEmpty()) {
+            Logger.debug(this, () -> String.format("Assigning %d permissions to asset %s for role %s",
+                permissionsToSave.size(), assetId, userRole.getId()));
+            permissionAPI.assignPermissions(permissionsToSave, asset, systemUser, respectFrontendRoles);
+        } else {
+            Logger.warn(this, "No permissions to save - assignPermissions throws on empty list");
+            throw new BadRequestException("At least one permission must be specified");
+        }
+
+        boolean cascadeInitiated = false;
+        if (form.isCascade() && asset.isParentPermissionable()) {
+            Logger.info(this, () -> String.format("Cascading permissions for asset %s", assetId));
+            CascadePermissionsJob.triggerJobImmediately(asset, userRole);
+            cascadeInitiated = true;
+        }
+
+        final List<Permission> updatedPermissions = permissionAPI.getPermissionsByRole(userRole, true, true)
+            .stream()
+            .filter(p -> p.getInode().equals(assetId))
+            .collect(Collectors.toList());
+
+        final UserPermissionAsset updatedAsset = buildAssetResponse(
+            asset,
+            updatedPermissions,
+            requestingUser,
+            systemUser
+        );
+
+        Logger.info(this, () -> String.format("Successfully saved permissions for user %s on asset %s", userId, assetId));
+
+        return new SaveUserPermissionsResponse(userId, userRole.getId(), updatedAsset, cascadeInitiated);
     }
 }
