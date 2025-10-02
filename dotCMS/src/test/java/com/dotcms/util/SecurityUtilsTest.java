@@ -13,6 +13,9 @@ import com.dotcms.mock.request.MockHttpRequestUnitTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.google.common.collect.ImmutableList;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+
 public class SecurityUtilsTest {
 
   final static String PORTAL_HOST = "portalhost.com";
