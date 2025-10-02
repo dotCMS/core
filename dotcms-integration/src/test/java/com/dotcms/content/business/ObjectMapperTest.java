@@ -1,5 +1,6 @@
 package com.dotcms.content.business;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.IntegrationTestInitService;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,9 +24,9 @@ public class ObjectMapperTest {
 
     @Test
     public void TestJsonHtmlEscapingDisabledByDefault() throws JsonProcessingException {
-        final ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         final String inputHtml = "<p>Any Random text will do</p>";
-        final Map<String,Object> in = ImmutableMap.of("html", inputHtml);
+        final Map<String,Object> in = Map.of("html", inputHtml);
         final String out = objectMapper.writeValueAsString(in);
         //If the text would have come out escaped this could never be true
         Assert.assertTrue(out.contains(inputHtml));
@@ -95,7 +96,7 @@ public class ObjectMapperTest {
 
         final ItemContainer container = new ItemContainer("container", item);
 
-        final ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
         final String withNoViews = objectMapper
                 .writeValueAsString(container);
