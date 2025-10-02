@@ -13,13 +13,16 @@ import { Router } from '@angular/router';
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { CheckIcon } from 'primeng/icons/check';
+import { ExclamationTriangleIcon } from 'primeng/icons/exclamationtriangle';
+import { InfoCircleIcon } from 'primeng/icons/infocircle';
+import { TimesCircleIcon } from 'primeng/icons/timescircle';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import {
     DotFolderService,
     DotUploadFileService,
-    DotWorkflowActionsFireService,
     DotLocalstorageService,
     DotWorkflowsActionsService,
     DotMessageService
@@ -54,7 +57,11 @@ import { ALL_FOLDER } from '../utils/tree-folder.utils';
         MessagesModule,
         ButtonModule,
         DotMessagePipe,
-        DotContentDriveDropzoneComponent
+        DotContentDriveDropzoneComponent,
+        CheckIcon,
+        InfoCircleIcon,
+        TimesCircleIcon,
+        ExclamationTriangleIcon
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
@@ -71,7 +78,6 @@ export class DotContentDriveShellComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
-    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     readonly #localStorageService = inject(DotLocalstorageService);
 
@@ -191,15 +197,55 @@ export class DotContentDriveShellComponent {
         this.$fileInput().nativeElement.click();
     }
 
+    /**
+     * Handles file change event
+     * @param event The event that triggered the file change
+     */
     protected onFileChange(event: Event) {
         const input = event.target as HTMLInputElement;
 
-        if (!input.files || input.files.length === 0) {
+        const files = input.files;
+
+        if (!files || files.length === 0) {
             return;
         }
 
-        const file = input.files[0];
+        this.resolveFilesUpload(files);
+    }
 
+    /**
+     * Resolves the upload of multiple files or a single file
+     * @param files The files to upload
+     */
+    protected resolveFilesUpload(files: FileList) {
+        if (files.length > 1) {
+            this.uploadFiles(files);
+        }
+        this.uploadFile(files[0]);
+    }
+
+    /**
+     * Shows a warning message when multiple files are uploaded
+     *
+     * @protected
+     * @param {FileList} files
+     * @memberof DotContentDriveShellComponent
+     */
+    protected uploadFiles(files: FileList) {
+        this.#messageService.add({
+            severity: 'warn',
+            summary: this.#dotMessageService.get('content-drive.work-in-progress'),
+            detail: this.#dotMessageService.get('content-drive.multiple-files-warning')
+        });
+
+        this.uploadFile(files[0]);
+    }
+
+    /**
+     * Uploads a file to the content drive
+     * @param file The file to upload
+     */
+    protected uploadFile(file: File) {
         this.#store.setStatus(DotContentDriveStatus.LOADING);
 
         const hostFolder =
@@ -214,15 +260,20 @@ export class DotContentDriveShellComponent {
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
-                next: () => {
+                next: ({ title }) => {
                     this.#messageService.add({
                         severity: 'success',
-                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success')
+                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.add-dotasset-success-detail',
+                            title
+                        )
                     });
+
                     this.#store.loadItems();
                 },
                 error: (error) => {
-                    console.error('error => ', error);
+                    console.error('Content drive upload error => ', error);
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),

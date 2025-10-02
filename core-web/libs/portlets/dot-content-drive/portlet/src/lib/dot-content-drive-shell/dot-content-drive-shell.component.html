@@ -31,7 +31,7 @@
     <dot-content-drive-sidebar data-testid="sidebar" />
 </div>
 
-<dot-content-drive-dropzone data-testid="dropzone">
+<dot-content-drive-dropzone data-testid="dropzone" (uploadFiles)="resolveFilesUpload($event)">
     <dot-folder-list-view
         [items]="$items()"
         [totalItems]="$totalItems()"
@@ -44,7 +44,36 @@
 </dot-content-drive-dropzone>
 <dot-folder-list-context-menu />
 
-<p-toast position="top-center" data-testId="content-drive-toast" />
+<p-toast position="top-center" data-testId="content-drive-toast">
+    <ng-template let-message pTemplate="message">
+        <span
+            class="p-toast-message-icon"
+            [attr.aria-hidden]="true"
+            [attr.data-pc-section]="'icon'">
+            @switch (message.severity) {
+                @case ('success') {
+                    <CheckIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+                }
+                @case ('info') {
+                    <InfoCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+                }
+                @case ('error') {
+                    <TimesCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+                }
+                @case ('warn') {
+                    <ExclamationTriangleIcon
+                        [attr.aria-hidden]="true"
+                        [attr.data-pc-section]="'icon'" />
+                }
+            }
+        </span>
+
+        <div class="p-toast-message-text">
+            <span class="p-toast-summary" innerHtml="{{ message.summary }}"></span>
+            <span class="p-toast-detail" innerHtml="{{ message.detail }}"></span>
+        </div>
+    </ng-template>
+</p-toast>
 
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
