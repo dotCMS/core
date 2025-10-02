@@ -6,11 +6,13 @@
     [loading]="$isLoading()"
     [ngClass]="{ selected: !isDefaultPersona }"
     styleClass="p-button-text p-button-sm">
-    <p-avatar
-        dotAvatar
-        styleClass="persona-avatar selected"
-        [text]="$persona().name | dm"
-        [image]="$photo()" />
+    @if (!$isLoading()) {
+        <p-avatar
+            dotAvatar
+            styleClass="persona-avatar selected"
+            [text]="$persona().name | dm"
+            [image]="$photo()" />
+    }
 </p-button>
 
 <p-overlayPanel #op>

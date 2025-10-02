@@ -1,9 +1,11 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CalendarModule } from 'primeng/calendar';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -20,14 +22,29 @@ import { DotUVEModeSelectorComponent } from '../dot-uve-mode-selector/dot-uve-mo
 import { DotUVEPersonaSelectorComponent } from '../dot-uve-persona-selector/dot-uve-persona-selector.component';
 import { DotUVEWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
+/**
+ * Get the minimum allowed date for the calendar component.
+ * Sets hours/minutes/seconds/milliseconds to 0 to avoid collisions with preview date
+ * when initializing, which would cause the input to be empty.
+ *
+ * @returns {Date} The minimum allowed date with time set to midnight
+ */
+const getMinDate = () => {
+    const minDate = new Date();
+    minDate.setHours(0, 0, 0, 0);
+    return minDate;
+};
+
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
         NgClass,
+        FormsModule,
         ToolbarModule,
         ButtonModule,
         TooltipModule,
         ClipboardModule,
+        CalendarModule,
         DotMessagePipe,
         DotUVEBookmarkComponent,
         DotUVEModeSelectorComponent,
@@ -64,6 +81,9 @@ export class DotUVEToolbarComponent {
         return `${origin}${url}?${params}${userParams ? `&${userParams}` : ''}`;
     });
 
+    protected readonly $MIN_DATE = signal<Date>(getMinDate());
+    protected readonly $SELECTED_DATE = signal<Date>(new Date());
+
     /**
      * Trigger the copy toasts
      *
@@ -75,5 +95,14 @@ export class DotUVEToolbarComponent {
             summary: this.#dotMessageService.get('Copied'),
             life: 3000
         });
+    }
+
+    /**
+     * Fetch the page on a given date
+     * @param {Date} publishDate
+     * @memberof DotUVEToolbarComponent
+     */
+    protected onCalendarChange(_event?: Date) {
+        /** */
     }
 }
