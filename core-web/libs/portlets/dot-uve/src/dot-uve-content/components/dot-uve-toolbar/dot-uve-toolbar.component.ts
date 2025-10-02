@@ -15,6 +15,7 @@ import { PERSONA_KEY } from '../../../store/model';
 import { buildUVEQueryParams, getUserParams } from '../../../utils';
 import { DotUVEBookmarkComponent } from '../dot-uve-bookmark/dot-uve-bookmark.component';
 import { DotUVELanguageSelectorComponent } from '../dot-uve-language-selector/dot-uve-language-selector.component';
+import { DotUVEModeSelectorComponent } from '../dot-uve-mode-selector/dot-uve-mode-selector.component';
 import { DotUVEPersonaSelectorComponent } from '../dot-uve-persona-selector/dot-uve-persona-selector.component';
 import { DotUVEWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
@@ -30,7 +31,8 @@ import { DotUVEWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-
         DotUVELanguageSelectorComponent,
         DotUVEWorkflowActionsComponent,
         DotUVEPersonaSelectorComponent,
-        DotUVEBookmarkComponent
+        DotUVEBookmarkComponent,
+        DotUVEModeSelectorComponent
     ],
     providers: [MessageService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -52,11 +54,12 @@ export class DotUVEToolbarComponent {
         const url = this.#store.url();
         const personId = this.#store.configuration[PERSONA_KEY]();
         const languageId = this.#store.configuration.language_id();
+        const origin = window.location.origin;
         // TODO: Maybe `getUserParams` and `buildUVEQueryParams` should be merged into a single function receiving a partial UVEConfiguration
         const userParams = getUserParams();
         // TODO: Double check if this is correct beacuse I'm just sending the language and persona id rest of the params seems to irrelavant for the copy url
         const params = buildUVEQueryParams({ language_id: languageId, [PERSONA_KEY]: personId });
-        return `${url}?${params}${userParams ? `&${userParams}` : ''}`;
+        return `${origin}${url}?${params}${userParams ? `&${userParams}` : ''}`;
     });
 
     /**

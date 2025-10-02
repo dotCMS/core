@@ -30,7 +30,7 @@ export class DotPageService {
      */
     get(url: string, language_id: string): Observable<DotCMSPageAsset> {
         const pageType = 'json';
-        const pageURL = `${this.BASE_URL}/${pageType}/${url}?language_id=${language_id}`;
+        const pageURL = `${this.BASE_URL}/${pageType}/${this.removeFirstSlash(url)}?language_id=${language_id}`;
 
         return this.http
             .get<{
@@ -62,5 +62,13 @@ export class DotPageService {
                 };
             })
         );
+    }
+
+    private removeFirstSlash(url: string): string {
+        if (url.startsWith('/')) {
+            return url.replace(/^\//, '');
+        }
+
+        return url;
     }
 }

@@ -1,10 +1,6 @@
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start gap-2" [ngClass]="{ 'p-0': true }">
-        <p-button
-            icon="pi pi-angle-down"
-            iconPos="right"
-            label="Draft"
-            styleClass="p-button-outlined p-2 p-button-sm mode-selector" />
+        <dot-uve-mode-selector />
         <dot-uve-bookmark />
         <p-button
             icon="pi pi-copy"
