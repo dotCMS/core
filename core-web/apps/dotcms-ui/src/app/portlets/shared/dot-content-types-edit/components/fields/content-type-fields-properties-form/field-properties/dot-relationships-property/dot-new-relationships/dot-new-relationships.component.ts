@@ -41,7 +41,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     contentType: DotCMSContentType;
     currentCardinalityIndex: number;
 
-    protected readonly lastSearch = signal({
+    readonly lastSearch = signal({
         filter: null,
         offset: null
     });
