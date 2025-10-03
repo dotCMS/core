@@ -1,5 +1,13 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    ElementRef,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
@@ -10,8 +18,11 @@ import { ToastModule } from 'primeng/toast';
 
 import {
     DotFolderService,
+    DotUploadFileService,
+    DotWorkflowActionsFireService,
     DotLocalstorageService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
@@ -26,6 +37,7 @@ import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/model
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
+import { ALL_FOLDER } from '../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -54,6 +66,11 @@ export class DotContentDriveShellComponent {
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
 
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #messageService = inject(MessageService);
+    readonly #fileService = inject(DotUploadFileService);
+    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
+
     readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
@@ -69,6 +86,8 @@ export class DotContentDriveShellComponent {
 
     // Default to false to avoid showing the message banner on init
     readonly $showMessage = signal<boolean>(false);
+
+    readonly $fileInput = viewChild<ElementRef>('fileInput');
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -164,5 +183,53 @@ export class DotContentDriveShellComponent {
     protected onCloseMessage() {
         this.$showMessage.set(false);
         this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
+    }
+
+    protected onAddNewDotAsset() {
+        this.$fileInput().nativeElement.click();
+    }
+
+    protected onFileChange(event: Event) {
+        const input = event.target as HTMLInputElement;
+
+        if (!input.files || input.files.length === 0) {
+            return;
+        }
+
+        const file = input.files[0];
+
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
+
+        const hostFolder =
+            this.#store.selectedNode() === ALL_FOLDER
+                ? this.#store.currentSite()?.identifier
+                : this.#store.selectedNode()?.data.id;
+
+        this.#fileService
+            .uploadDotAsset(file, {
+                baseType: 'dotAsset',
+                hostFolder,
+                indexPolicy: 'WAIT_FOR'
+            })
+            .subscribe({
+                next: () => {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success')
+                    });
+                    this.#store.loadItems();
+                },
+                error: (error) => {
+                    console.error('error => ', error);
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.add-dotasset-error-detail'
+                        )
+                    });
+                    this.#store.setStatus(DotContentDriveStatus.LOADED);
+                }
+            });
     }
 }

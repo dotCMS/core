@@ -194,7 +194,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
             Logger.debug(this.getClass(), "--- ", t);
             throw new DotRuntimeException(t);
         } finally {
-            if (Thread.holdsLock(lock)) {
+            if (hasLock) {
                 lock.unlock();
             }
             byteArrayLocal.get().reset();
