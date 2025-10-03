@@ -230,7 +230,8 @@ export class DotContentDriveShellComponent {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
-            detail: this.#dotMessageService.get('content-drive.multiple-files-warning')
+            detail: this.#dotMessageService.get('content-drive.multiple-files-warning'),
+            life: 4500
         });
 
         this.uploadFile(files[0]);
@@ -262,7 +263,8 @@ export class DotContentDriveShellComponent {
                         detail: this.#dotMessageService.get(
                             'content-drive.add-dotasset-success-detail',
                             title
-                        )
+                        ),
+                        life: 4000
                     });
 
                     this.#store.loadItems();
