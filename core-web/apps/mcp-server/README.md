@@ -91,6 +91,7 @@ Before setting up the MCP server, you need these environment variables to connec
 | ------------ | -------- | ---------------------------------- | ------- |
 | `DOTCMS_URL` | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
+| `PORT`       | ❌       | HTTP server port (defaults to 3000) | `3000` |
 | `VERBOSE`    | ❌       | Enable detailed logging for troubleshooting | `true` |
 | `RESPONSE_MAX_LENGTH` | ❌       | Maximum character limit for response truncation (no truncation if not set) | `5000` |
 
@@ -122,7 +123,7 @@ Get up and running with the dotCMS MCP Server in minutes:
 
 ### Claude Desktop Setup
 
-Add the MCP server to your Claude Desktop configuration file. The configuration file location varies by operating system:
+The MCP server now runs as an HTTP server using Streamable HTTP transport. Add the server to your Claude Desktop configuration file. The configuration file location varies by operating system:
 
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -135,7 +136,8 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
             "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-auth-token",
+                "PORT": "3000"
             }
         }
     }
@@ -154,7 +156,8 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
             "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-auth-token",
+                "PORT": "3000"
             }
         }
     }
@@ -284,10 +287,14 @@ yarn nx build mcp-server
 
 #### 2. Use MCP Inspector for debug
 
-After a succesful build
+After a successful build, start the HTTP server and connect the MCP Inspector:
 
 ```bash
-npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUTH_TOKEN=the-auth-token node dist/apps/mcp-server
+# Start the server (it will listen on http://localhost:3000/mcp by default)
+DOTCMS_URL=https://demo.dotcms.com AUTH_TOKEN=the-auth-token node dist/apps/mcp-server/main.js
+
+# In another terminal, connect the MCP Inspector
+npx @modelcontextprotocol/inspector http://localhost:3000/mcp
 ```
 
 #### 3. Use Local Build in AI Assistants
@@ -301,7 +308,8 @@ npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUT
             "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/main.js"],
             "env": {
                 "DOTCMS_URL": "your-dotcms-url",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-auth-token",
+                "PORT": "3000"
             }
         }
     }
@@ -317,7 +325,8 @@ npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUT
             "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/main.js"],
             "env": {
                 "DOTCMS_URL": "your-dotcms-url",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-auth-token",
+                "PORT": "3000"
             }
         }
     }
