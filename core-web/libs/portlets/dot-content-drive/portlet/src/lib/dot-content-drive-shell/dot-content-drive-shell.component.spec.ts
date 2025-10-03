@@ -55,6 +55,8 @@ describe('DotContentDriveShellComponent', () => {
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
     let localStorageService: SpyObject<DotLocalstorageService>;
+    let messageService: SpyObject<MessageService>;
+    let uploadService: SpyObject<DotUploadFileService>;
     let filtersSignal: ReturnType<typeof signal>;
 
     const createComponent = createComponentFactory({
@@ -170,6 +172,8 @@ describe('DotContentDriveShellComponent', () => {
         router = spectator.inject(Router);
         location = spectator.inject(Location);
         localStorageService = spectator.inject(DotLocalstorageService);
+        messageService = spectator.inject(MessageService);
+        uploadService = spectator.inject(DotUploadFileService);
     });
 
     afterEach(() => {
@@ -455,16 +459,17 @@ describe('DotContentDriveShellComponent', () => {
 
     describe('file upload integration', () => {
         let mockFile: File;
-        let uploadService: SpyObject<DotUploadFileService>;
 
         beforeEach(() => {
             mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            uploadService = spectator.inject(DotUploadFileService);
             spectator.detectChanges();
         });
 
         it('should upload file when file input changes', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+
+            const addSpy = jest.spyOn(messageService, 'add');
+
             const mockNode: TreeNodeItem = {
                 data: {
                     id: 'folder-123',
@@ -485,7 +490,11 @@ describe('DotContentDriveShellComponent', () => {
 
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.LOADING);
+            expect(addSpy).toHaveBeenCalledWith({
+                severity: 'info',
+                summary: expect.any(String),
+                detail: expect.any(String)
+            });
             expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
                 baseType: 'dotAsset',
                 hostFolder: 'folder-123',
@@ -530,9 +539,27 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
         });
 
+        it('should show info message when upload starts', () => {
+            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            const addSpy = jest.spyOn(messageService, 'add');
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [mockFile],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(addSpy).toHaveBeenCalledWith({
+                severity: 'info',
+                summary: expect.any(String),
+                detail: expect.any(String)
+            });
+        });
+
         it('should show success message on successful upload', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const messageService = spectator.inject(MessageService);
             const addSpy = jest.spyOn(messageService, 'add');
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
@@ -554,7 +581,6 @@ describe('DotContentDriveShellComponent', () => {
         it('should show error message on upload failure', () => {
             const error = new Error('Upload failed');
             uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
-            const messageService = spectator.inject(MessageService);
             const addSpy = jest.spyOn(messageService, 'add');
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
@@ -589,7 +615,6 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should show warning message when multiple files are selected and upload only the first file', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const messageService = spectator.inject(MessageService);
             const addSpy = jest.spyOn(messageService, 'add');
 
             const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
@@ -635,10 +660,7 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     describe('dropzone file upload', () => {
-        let uploadService: SpyObject<DotUploadFileService>;
-
         beforeEach(() => {
-            uploadService = spectator.inject(DotUploadFileService);
             spectator.detectChanges();
         });
 
@@ -675,7 +697,6 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should trigger resolveFilesUpload when dropzone emits uploadFiles event with multiple files', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const messageService = spectator.inject(MessageService);
             const addSpy = jest.spyOn(messageService, 'add');
 
             const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
