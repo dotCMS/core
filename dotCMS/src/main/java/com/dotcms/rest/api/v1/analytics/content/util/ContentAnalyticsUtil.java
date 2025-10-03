@@ -10,7 +10,10 @@ import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
 import com.dotcms.jitsu.validators.AnalyticsValidator;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.jitsu.validators.SiteAuthValidator;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0e9fe9ebb20d703cf202b9a663760cb08c2caa65
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
@@ -181,7 +184,7 @@ public class ContentAnalyticsUtil {
 
     /**
      * Submits analytics events to the event logging system.
-     * 
+     *
      * @param request The HTTP servlet request containing host information
      * @param userEventPayload The map containing event payload data to be logged
      * @throws RuntimeException If there is an error retrieving the host or logging the event
@@ -260,7 +263,7 @@ public class ContentAnalyticsUtil {
         try {
             final Optional<AppSecrets> secretsOpt = APILocator.getAppsAPI()
                     .getSecrets(CONTENT_ANALYTICS_APP_KEY, true, currentSite, APILocator.systemUser());
-            
+
             if (secretsOpt.isPresent()) {
                 final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
                 final Secret siteKeySecret = secretsMap.get("siteKey");
@@ -270,7 +273,7 @@ public class ContentAnalyticsUtil {
             }
             return Optional.empty();
         } catch (final DotDataException | DotSecurityException e) {
-            Logger.error(ContentAnalyticsUtil.class, 
+            Logger.error(ContentAnalyticsUtil.class,
                     "Error retrieving site key from app secrets for site: " + currentSite.getIdentifier(), e);
             return Optional.empty();
         }

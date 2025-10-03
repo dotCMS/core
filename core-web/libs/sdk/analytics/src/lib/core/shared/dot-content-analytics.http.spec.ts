@@ -38,12 +38,12 @@ describe('DotAnalytics HTTP Utils', () => {
             server: 'https://example.com',
             debug: false,
             autoPageView: true,
-            siteKey: 'test-site-key'
+            siteAuth: 'test-site-key'
         };
 
         mockPayload = {
             context: {
-                site_key: 'test-site-key',
+                site_auth: 'test-site-key',
                 session_id: 'test-session-id',
                 user_id: 'test-user-id'
             },
@@ -135,7 +135,7 @@ describe('DotAnalytics HTTP Utils', () => {
         it('should serialize complex payload objects correctly', async () => {
             const complexPayload: DotCMSTrackRequestBody = {
                 context: {
-                    site_key: 'test-site-key',
+                    site_auth: 'test-site-key',
                     session_id: 'test-session-id',
                     user_id: 'test-user-id'
                 },
@@ -263,7 +263,7 @@ describe('DotAnalytics HTTP Utils', () => {
             // Create a payload that can't be serialized (circular reference)
             const circularPayload: DotCMSTrackRequestBody = {
                 context: {
-                    site_key: 'test-site-key',
+                    site_auth: 'test-site-key',
                     session_id: 'test-session-id',
                     user_id: 'test-user-id'
                 },
@@ -304,7 +304,7 @@ describe('DotAnalytics HTTP Utils', () => {
         it('should not make any requests when payload is empty', async () => {
             const emptyPayload: DotCMSTrackRequestBody = {
                 context: {
-                    site_key: 'test-site-key',
+                    site_auth: 'test-site-key',
                     session_id: 'test-session-id',
                     user_id: 'test-user-id'
                 },
@@ -392,7 +392,7 @@ describe('DotAnalytics HTTP Utils', () => {
             // Create a large payload
             const largePayload: DotCMSTrackRequestBody = {
                 context: {
-                    site_key: 'test-site-key',
+                    site_auth: 'test-site-key',
                     session_id: 'test-session-id',
                     user_id: 'test-user-id'
                 },
@@ -437,7 +437,7 @@ describe('DotAnalytics HTTP Utils', () => {
             const promises = Array.from({ length: 5 }, (_, i) => {
                 const concurrentPayload: DotCMSTrackRequestBody = {
                     context: {
-                        site_key: 'test-site-key',
+                        site_auth: 'test-site-key',
                         session_id: 'test-session-id',
                         user_id: 'test-user-id'
                     },

@@ -930,7 +930,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                         "\"context\": {" +
-                            "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                            "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                             "\"session_id\": \"abc\"," +
                             "\"user_id\": \"abc\"" +
                         "}," +
@@ -979,7 +979,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
@@ -1031,7 +1031,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final String json =
                 "{" +
                     "\"context\": {" +
-                        "\"site_key\": \"" + TEST_SITE_KEY + "\"," +
+                        "\"site_auth\": \"" + TEST_SITE_AUTH + "\"," +
                         "\"session_id\": \"abc\"," +
                         "\"user_id\": \"abc\"" +
                     "}," +
