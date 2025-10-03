@@ -337,7 +337,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public <T> ESSearchResults <T> esSearch(String esQuery, boolean live, User user,
+    public ESSearchResults esSearch(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearch(esQuery, live, user, respectFrontendRoles);
     }

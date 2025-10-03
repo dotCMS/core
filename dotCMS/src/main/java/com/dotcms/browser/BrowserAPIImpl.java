@@ -12,6 +12,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -294,17 +295,18 @@ public class BrowserAPIImpl implements BrowserAPI {
     List<String> performSearchES(String baseQuery, List<String> partition, BrowserQuery browserQuery) {
         final boolean live = !browserQuery.showWorking;
         final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
-        List<String> collectedInodes = List.of();
+        final List<String> collectedInodes = new ArrayList<>();
         // Build the complete query by combining the precompiled base query with the inode filter
         final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", partition));
         final String luceneQuery = inodeFilter + baseQuery;
         Logger.info(BrowserAPIImpl.class," Content-Drive Request Lucene Query: "+luceneQuery);
         final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
         try {
-            collectedInodes = esSearchAPI.<Contentlet>esSearch(esQuery,
-                            live,
-                            browserQuery.user, false).stream().map(Contentlet::getInode)
-                    .collect(Collectors.toList());
+            esSearchAPI.esSearch(esQuery, live, browserQuery.user, false).forEach(result -> {
+                final Contentlet contentlet = (Contentlet)result;
+                 collectedInodes.add(contentlet.getInode());
+            });
+
         } catch (Exception e) {
             Logger.error(this, String.format("Error while getting content from lucene with query: %s",luceneQuery), e);
         }

@@ -1,17 +1,16 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.suggest.Suggest;
-import org.jetbrains.annotations.NotNull;
 
-public class ESSearchResults <E> implements List <E> {
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
+public class ESSearchResults implements List {
 
 	String query;
 	String rewrittenQuery;
@@ -19,13 +18,17 @@ public class ESSearchResults <E> implements List <E> {
 
 	final SearchResponse response;
 
-	public ESSearchResults(final SearchResponse response, final List <E> contentlets) {
+	public ESSearchResults(final SearchResponse response, final List contentlets) {
 		super();
 		this.response = response;
 		this.scrollId = response.getScrollId();
 		this.cons = contentlets;
 	}
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	String scrollId;
 
 	public String getScrollId() {
@@ -33,18 +36,18 @@ public class ESSearchResults <E> implements List <E> {
 	}
 
 	@Override
-	public  <T> T @NotNull [] toArray(T[] a) {
-		return (T[]) cons.toArray();
+	public Object[] toArray(Object[] a) {
+		return cons.toArray();
 	}
 
 	@Override
-	public boolean addAll(@NotNull Collection c) {
+	public boolean addAll(Collection c) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean addAll(int index, @NotNull Collection c) {
+	public boolean addAll(int index, Collection c) {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -73,7 +76,7 @@ public class ESSearchResults <E> implements List <E> {
 		return response.getAggregations();
 	}
 
-	final List <E> cons;
+	final List cons;
 
 	public long getCount() {
 		return response.getHits().getHits().length;
@@ -112,7 +115,7 @@ public class ESSearchResults <E> implements List <E> {
 		this.populationTook = populationTook;
 	}
 
-	public List <E> getContentlets() {
+	public List getContentlets() {
 
 		return cons;
 
@@ -136,13 +139,13 @@ public class ESSearchResults <E> implements List <E> {
 	}
 
 	@Override
-	public @NotNull Iterator <E> iterator() {
+	public Iterator iterator() {
 
 		return cons.iterator();
 	}
 
 	@Override
-	public Object @NotNull [] toArray() {
+	public Object[] toArray() {
 
 		return cons.toArray();
 	}
@@ -154,18 +157,18 @@ public class ESSearchResults <E> implements List <E> {
 	}
 
 	@Override
-	public boolean containsAll(Collection <?> c) {
+	public boolean containsAll(Collection c) {
 
-		return new HashSet<>(cons).containsAll(c);
+		return cons.containsAll(c);
 	}
 
 	@Override
-	public boolean removeAll(@NotNull Collection <?> c) {
+	public boolean removeAll(Collection c) {
 		return cons.removeAll(c);
 	}
 
 	@Override
-	public boolean retainAll(@NotNull Collection <?> c) {
+	public boolean retainAll(Collection c) {
 		return cons.retainAll(c);
 	}
 
@@ -176,23 +179,23 @@ public class ESSearchResults <E> implements List <E> {
 	}
 
 	@Override
-	public E get(int index) {
+	public Object get(int index) {
 		return cons.get(index);
 	}
 
 	@Override
-	public E set(int index, E element) {
+	public Object set(int index, Object element) {
 		return cons.set(index, element);
 	}
 
 	@Override
-	public void add(int index, E element) {
+	public void add(int index, Object element) {
 		cons.add(index, element);
 
 	}
 
 	@Override
-	public E remove(int index) {
+	public Object remove(int index) {
 
 		return cons.remove(index);
 	}
@@ -208,17 +211,17 @@ public class ESSearchResults <E> implements List <E> {
 	}
 
 	@Override
-	public @NotNull ListIterator<E> listIterator() {
+	public ListIterator<Object> listIterator() {
 		return cons.listIterator();
 	}
 
 	@Override
-	public @NotNull ListIterator<E> listIterator(int index) {
+	public ListIterator<Object> listIterator(int index) {
 		return cons.listIterator(index);
 	}
 
 	@Override
-	public @NotNull List<E> subList(int fromIndex, int toIndex) {
+	public List<Object> subList(int fromIndex, int toIndex) {
 		return cons.subList(fromIndex, toIndex);
 	}
 
@@ -228,7 +231,7 @@ public class ESSearchResults <E> implements List <E> {
 	}
 
 	@Override
-	public boolean add(E e) {
+	public boolean add(Object e) {
 		return cons.add(e);
 	}
 

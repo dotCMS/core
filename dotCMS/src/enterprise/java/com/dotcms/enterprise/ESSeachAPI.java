@@ -47,7 +47,7 @@ public interface ESSeachAPI {
 	 * @throws DotDataException
 	 *             An error occurred when retrieving the data.
 	 */
-	public <T> ESSearchResults <T> esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
+	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException;
 
 	/**
