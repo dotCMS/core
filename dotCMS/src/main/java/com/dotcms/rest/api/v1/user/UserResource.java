@@ -59,12 +59,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
-import javax.ws.rs.Consumes;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -502,8 +502,10 @@ public class UserResource implements Serializable {
         if (isRoleAdministrator) {
 
             final User user = this.userAPI.loadUserById(userId);
+            final Role role = APILocator.getRoleAPI().getUserRole(user);
+
             return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
-                    "user", user.toMap())); // 200
+                    "user", user.toMap(), "roleId", role.getId())); // 200
         }
 
         final String message = USER_MSG + modUser.getUserId() + " does not have permissions to retrieve users";
@@ -1274,11 +1276,6 @@ public class UserResource implements Serializable {
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
-
-            if (null == updateUserForm.getRoles()) {
-
-                UserHelper.getInstance().removeRoles (userToSave);
-            }
 
 			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
 					updateUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
