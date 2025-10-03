@@ -249,7 +249,11 @@ export class DotContentDriveShellComponent {
      * @param file The file to upload
      */
     protected uploadFile(file: File) {
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
+        this.#messageService.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
+            detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
+        });
 
         const hostFolder =
             this.#store.selectedNode() === ALL_FOLDER
