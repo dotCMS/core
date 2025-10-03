@@ -3,7 +3,6 @@ package com.dotmarketing.beans;
 import java.io.Serializable;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  *
@@ -73,8 +72,14 @@ public class Tree implements Serializable, Comparable {
         this.treeOrder = treeOrder;
     }
 
+    @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "Tree{" +
+                "parent='" + parent + '\'' +
+                ", child='" + child + '\'' +
+                ", relationType='" + relationType + '\'' +
+                ", treeOrder=" + treeOrder +
+                '}';
     }
 
     public boolean equals(Object other) {

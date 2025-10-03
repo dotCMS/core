@@ -8,11 +8,9 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
-import java.io.Serializable;
 
 /**
  *
@@ -236,8 +234,18 @@ public class MultiTree implements Serializable {
     public MultiTree setOrder(final int treeOrder) {
         return this.setTreeOrder(treeOrder);
     }
+
+    @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "MultiTree{" +
+                "parent1='" + parent1 + '\'' +
+                ", parent2='" + parent2 + '\'' +
+                ", child='" + child + '\'' +
+                ", relationType='" + relationType + '\'' +
+                ", treeOrder=" + treeOrder +
+                ", personalization='" + personalization + '\'' +
+                ", variantId='" + variantId + '\'' +
+                '}';
     }
 
     public boolean equals(Object other) {

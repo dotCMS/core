@@ -2,7 +2,11 @@ package com.dotmarketing.portlets.containers.model;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
@@ -17,8 +21,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -278,16 +280,27 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 		this.luceneQuery = luceneQuery;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.lang.Object#toString()
-	 */
-	public String toString() {
-		return ToStringBuilder.reflectionToString(this);
-	}
+    @Override
+    public String toString() {
+        return "Container{" +
+                "inode='" + inode + '\'' +
+                ", identifier='" + identifier + '\'' +
+                ", title='" + getTitle() + '\'' +
+                "code='" + code + '\'' +
+                ", maxContentlets=" + maxContentlets +
+                ", useDiv=" + useDiv +
+                ", sortContentletsBy='" + sortContentletsBy + '\'' +
+                ", preLoop='" + preLoop + '\'' +
+                ", postLoop='" + postLoop + '\'' +
+                ", staticify=" + staticify +
+                ", luceneQuery='" + luceneQuery + '\'' +
+                ", notes='" + notes + '\'' +
+                ", source=" + source +
+                ", owner='" + owner + '\'' +
+                '}';
+    }
 
-	public String getNotes() {
+    public String getNotes() {
 		return this.notes;
 	}
 

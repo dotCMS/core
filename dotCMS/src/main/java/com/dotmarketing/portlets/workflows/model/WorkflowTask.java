@@ -3,8 +3,6 @@ package com.dotmarketing.portlets.workflows.model;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
@@ -169,9 +167,23 @@ public class WorkflowTask implements Serializable {
         this.webasset = webasset;
     }
 
-	@Override
+
+    @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "WorkflowTask{" +
+                "id='" + id + '\'' +
+                ", creationDate=" + creationDate +
+                ", modDate=" + modDate +
+                ", dueDate=" + dueDate +
+                ", createdBy='" + createdBy + '\'' +
+                ", assignedTo='" + assignedTo + '\'' +
+                ", belongsTo='" + belongsTo + '\'' +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", status='" + status + '\'' +
+                ", webasset='" + webasset + '\'' +
+                ", languageId=" + languageId +
+                '}';
     }
 
     /**

@@ -5,7 +5,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** 
  * 	@author Hibernate CodeGenerator
@@ -78,8 +77,14 @@ public class PermissionReference implements Serializable {
         this.type = type;
     }
 
-	public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+    @Override
+    public String toString() {
+        return "PermissionReference{" +
+                "id=" + id +
+                ", assetId='" + assetId + '\'' +
+                ", referenceId='" + referenceId + '\'' +
+                ", type='" + type + '\'' +
+                '}';
     }
 
     @Override

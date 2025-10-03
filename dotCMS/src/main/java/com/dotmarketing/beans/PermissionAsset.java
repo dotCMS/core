@@ -3,7 +3,6 @@ package com.dotmarketing.beans;
 import com.dotmarketing.business.Permissionable;
 import java.io.Serializable;
 import java.util.ArrayList;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  *
@@ -32,11 +31,18 @@ public class PermissionAsset implements Serializable, Comparable {
     public PermissionAsset() {
     }
 
+    @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "PermissionAsset{" +
+                "permissions=" + permissions +
+                ", asset=" + asset +
+                ", permissionableAsset=" + permissionableAsset +
+                ", pathToMe='" + pathToMe + '\'' +
+                ", identifier='" + identifier + '\'' +
+                '}';
     }
 
-	/**
+    /**
 	 * Returns the asset.
 	 * @return WebAsset
 	 */

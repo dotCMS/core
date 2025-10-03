@@ -1,18 +1,17 @@
 package com.dotmarketing.beans;
 
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** 
  * 	@author Hibernate CodeGenerator
@@ -95,11 +94,19 @@ public class Permission implements Serializable {
         this.permission = permission;
     }
 
+    @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "Permission{" +
+                "id=" + id +
+                ", inode='" + inode + '\'' +
+                ", roleId='" + roleId + '\'' +
+                ", permission=" + permission +
+                ", isBitPermission=" + isBitPermission +
+                ", type='" + type + '\'' +
+                '}';
     }
 
-	/**
+    /**
 	 * Returns the id.
 	 * @return long
 	 */

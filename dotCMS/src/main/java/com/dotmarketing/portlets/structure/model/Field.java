@@ -10,7 +10,6 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang.builder.ToStringBuilder;
 /**
  * 
  * @deprecated use {@link com.dotcms.contenttype.model.field.Field}
@@ -391,12 +390,32 @@ public class Field extends Inode implements  FieldIf
 		this.modDate = modDate;
 	}
 
-	@Override
-	public String toString() {
-		return ToStringBuilder.reflectionToString(this);
-	}
+    @Override
+    public String toString() {
+        return "Field{" +
+                "structureInode='" + structureInode + '\'' +
+                ", fieldName='" + fieldName + '\'' +
+                ", fieldType='" + fieldType + '\'' +
+                ", fieldRelationType='" + fieldRelationType + '\'' +
+                ", fieldContentlet='" + fieldContentlet + '\'' +
+                ", required=" + required +
+                ", velocityVarName='" + velocityVarName + '\'' +
+                ", sortOrder=" + sortOrder +
+                ", values='" + values + '\'' +
+                ", regexCheck='" + regexCheck + '\'' +
+                ", hint='" + hint + '\'' +
+                ", defaultValue='" + defaultValue + '\'' +
+                ", indexed=" + indexed +
+                ", listed=" + listed +
+                ", fixed=" + fixed +
+                ", readOnly=" + readOnly +
+                ", searchable=" + searchable +
+                ", unique=" + unique +
+                ", modDate=" + modDate +
+                '}';
+    }
 
-	public String getDataType() {
+    public String getDataType() {
 		return this.getFieldContentlet().replaceAll("[0-9]*", "");
 	}
 }
