@@ -25,12 +25,12 @@ export class DotContentDriveDropzoneComponent {
 
     readonly elementRef = inject(ElementRef);
 
-    readonly $active = signal(false);
+    readonly $isActive = signal(false);
 
     readonly #store = inject(DotContentDriveStore);
 
     @HostBinding('class.active') get active() {
-        return this.$active();
+        return this.$isActive();
     }
 
     /**
@@ -46,7 +46,7 @@ export class DotContentDriveDropzoneComponent {
             return;
         }
 
-        this.$active.set(true);
+        this.$isActive.set(true);
 
         // Reset the context menu
         this.#store.resetContextMenu();
@@ -78,7 +78,7 @@ export class DotContentDriveDropzoneComponent {
         }
 
         // Drag has left the dropzone
-        this.$active.set(false);
+        this.$isActive.set(false);
     }
 
     /**
@@ -88,7 +88,7 @@ export class DotContentDriveDropzoneComponent {
     @HostListener('dragend', ['$event'])
     onDragEnd(event: DragEvent) {
         event.preventDefault();
-        this.$active.set(false);
+        this.$isActive.set(false);
     }
 
     /**
@@ -103,7 +103,7 @@ export class DotContentDriveDropzoneComponent {
 
         const files = event.dataTransfer?.files ?? undefined;
 
-        this.$active.set(false);
+        this.$isActive.set(false);
 
         if (files?.length) {
             this.uploadFiles.emit(files);
