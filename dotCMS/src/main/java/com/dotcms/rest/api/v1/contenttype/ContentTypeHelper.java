@@ -36,11 +36,7 @@ import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple2;
 import java.io.Serializable;
 import java.net.URISyntaxException;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -768,6 +764,26 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return key;
+    }
+
+    /**
+     * Ensures that the Content Types provided as parameter are included in the list of Content Type returned.
+     * <p>
+     * This method searches for a match in the predefined {@BaseContentType} enum
+     * and returns its corresponding index.
+     * <p>
+     *
+     * @param ensuredContentTypes List of Content Types required to be included in the response
+//     * @param contentTypes List of Content Types to be filtered
+     * @return list of Content Types including the ones specified in the param
+     */
+    public List<String> getEnsuredContentTypes(final String ensuredContentTypes) {
+        System.out.println("Ensured content types params: " + ensuredContentTypes);
+        return ensuredContentTypes == null || ensuredContentTypes.isBlank()
+                ? Collections.emptyList()
+                : Arrays.stream(ensuredContentTypes.split("\\s*,\\s*"))
+                .map(s -> s.trim().toLowerCase())
+                .collect(Collectors.toList());
     }
 
 } // E:O:F:ContentTypeHelper.

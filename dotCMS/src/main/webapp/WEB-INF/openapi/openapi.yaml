@@ -6369,6 +6369,12 @@ paths:
         name: sites
         schema:
           type: string
+      - description: "Guarantee Content Types to be included in the response: Comma-separated\
+          \ content type keys (e.g. `activity, blog, product`)."
+        in: query
+        name: ensure
+        schema:
+          type: string
       responses:
         "200":
           content:

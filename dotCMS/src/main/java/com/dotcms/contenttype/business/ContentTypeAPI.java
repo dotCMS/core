@@ -465,6 +465,23 @@ public interface ContentTypeAPI {
           throws DotDataException;
 
   /**
+   * Returns a List of content type based on the given condition and the Base Content Type,
+   * organized by the given column.
+   *
+   * @param condition           Condition that the Content Type needs to met
+   * @param base                Base Content Type that wants to be search
+   * @param orderBy             Specifies an order criteria for the results
+   * @param limit               Amount of results
+   * @param offset              Start position of the resulting list
+   * @param includeContentTypes The Content Types that are explicitly required to be included.
+   * @return List of Content Types Objects
+   * @throws DotDataException Error occurred when performing the action.
+   */
+  List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit,
+          int offset, String hostId, List<String> includeContentTypes)
+          throws DotDataException;
+
+  /**
    * Returns a list of Content Types based on the specified list of search criteria. In
    * particular, this method allows you to search for Content Types in a specific list of Sites
    * only, not in all the dotCMS content repository.
@@ -484,6 +501,32 @@ public interface ContentTypeAPI {
    * @throws DotDataException An error occurred when retrieving information from the database.
    */
   List<ContentType> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
+          throws DotDataException;
+
+  /**
+   * Returns a list of Content Types based on the specified list of search criteria. In
+   * particular, this method allows you to search for Content Types in a specific list of Sites
+   * only, not in all the dotCMS content repository.
+   *
+   * @param sites     The list of one or more Sites to search for Content Types. You can pass down
+   *                  their Identifiers or Site Keys.
+   * @param condition Allows you to add more conditions to the query via SQL code. It's internally
+   *                  sanitized by this Factory.
+   * @param base      The {@link BaseContentType} to search for.
+   * @param orderBy   The order-by clause, which is internally sanitized by this Factory.
+   * @param limit     The maximum number of returned items in the result set, for pagination
+   *                  purposes.
+   * @param offset    The requested page number of the result set, for pagination purposes.
+   * @param includeContentTypeIds
+   *                  The Content Types that are explicitly required to be included.
+   *
+   * @return The list of {@link ContentType} objects matching the specified search criteria.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  List<ContentType> search(final List<String> sites, final String condition,
+          final BaseContentType base, final String orderBy, final int limit, final int offset,
+          List<String> includeContentTypeIds)
           throws DotDataException;
 
   /**

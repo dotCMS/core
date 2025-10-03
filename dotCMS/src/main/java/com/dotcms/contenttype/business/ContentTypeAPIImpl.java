@@ -63,6 +63,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.HashSet;
+import java.util.Set;
 import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.ArrayList;
@@ -830,11 +832,126 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final List<String> sites, final String condition,
+          final BaseContentType base, final String orderBy, final int limit, final int offset,
+          final List<String> includeContentTypes)
+          throws DotDataException {
+
+      final List<ContentType> returnTypes = new ArrayList<>();
+      final Set<String> returnedIds = new HashSet<>();
+      int remainingLimit = limit;
+      int rollingOffset = offset;
+
+      try {
+          final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(sites, this.user,
+                  this.respectFrontendRoles);
+
+//        Fetch and include explicitly request content types
+          if (includeContentTypes != null && !includeContentTypes.isEmpty()) {
+              // Retrieve the ContentTypes required to be included
+              final List<ContentType> includedContentTypes = this.contentTypeFactory.find(
+                      includeContentTypes, null, rollingOffset, remainingLimit, orderBy);
+
+              // Filter for read permission
+              final List<ContentType> authorizedIncluded = this.perms.filterCollection(
+                      includedContentTypes, PermissionAPI.PERMISSION_READ,
+                      this.respectFrontendRoles,
+                      this.user);
+
+              // Add the authorized items to the result list and tracking set
+              for (ContentType contentType : authorizedIncluded) {
+                  if (remainingLimit < 0 || returnTypes.size() < remainingLimit) {
+                      returnTypes.add(contentType);
+                      returnedIds.add(
+                              contentType.inode()); // Use a unique identifier to track additions
+                      returnedIds.add(contentType.id());
+                  }
+              }
+
+              // Update remaining limit for the next search loop
+              if (limit > 0) {
+                  remainingLimit = limit - returnTypes.size();
+                  if (remainingLimit <= 0) {
+                      return returnTypes;
+                  }
+              }
+          }
+
+//        2. Perform the main paginated search
+          while ((limit < 0) || (returnTypes.size() < limit)) {
+              // Adjust limit for the factory call to prevent fetching too many unneeded items
+              int currentLimit = (remainingLimit < 0) ? -1 : remainingLimit;
+
+              final List<ContentType> rawContentTypes = this.contentTypeFactory.search(
+                      resolvedSiteIds, condition, base.getType(), orderBy, currentLimit,
+                      rollingOffset);
+
+              if (rawContentTypes.isEmpty()) {
+                  break;
+              }
+
+              // Filter for read permission ad prevent duplicates
+//        returnTypes.addAll(this.perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user));
+              final List<ContentType> newContentTypes = new ArrayList<>();
+              for (ContentType rawContentType : rawContentTypes) {
+                  // Check if the item is authorized AND not already in the list (from the explicit inclusion step)
+                  if (this.perms.doesUserHavePermission(rawContentType,
+                          PermissionAPI.PERMISSION_READ, this.user, this.respectFrontendRoles)
+                          && !returnedIds.contains(rawContentType.inode())
+                          && !returnedIds.contains(
+                          rawContentType.id())) {
+
+                      if (returnTypes.size() < limit) {
+//                      if (limit < 0 || returnTypes.size() < limit) {
+                          newContentTypes.add(rawContentType);
+                          // todo wich of these two is the unique identifier in a contentype
+                          returnedIds.add(rawContentType.inode());
+                          returnedIds.add(rawContentType.id());
+                      }
+                  }
+              }
+
+              returnTypes.addAll(newContentTypes);
+
+              if (limit > 0) {
+                  remainingLimit = limit - returnTypes.size();
+
+                  if (remainingLimit <= 0 || rawContentTypes.size() < currentLimit) {
+                      break;
+                  }
+              }
+              rollingOffset += rawContentTypes.size();
+          }
+
+          // 3. Final result slice (mostly relevant if limit < 0 was initially passed)
+          final int maxAmount =
+                  (limit < 0) ? returnTypes.size() : Math.min(limit, returnTypes.size());
+          return returnTypes.subList(0, maxAmount);
+      } catch (final DotSecurityException e) {
+          Logger.error(this,
+                  String.format("An error occurred when searching for Content Types: " +
+                          "%s", ExceptionUtil.getErrorMessage(e)));
+          throw new DotStateException(e);
+      }
+  }
+
+  @CloseDBIfOpened
     @Override
     public List<ContentType> search(final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset, final String siteId)
             throws DotDataException {
         return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base, orderBy, limit, offset);
     }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final String condition, final BaseContentType base,
+          final String orderBy, final int limit, final int offset, final String siteId,
+          final List<String> requiredContentTypes)
+          throws DotDataException {
+      return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base,
+              orderBy, limit, offset, requiredContentTypes);
+  }
 
   @CloseDBIfOpened
   @Override
