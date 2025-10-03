@@ -10,10 +10,6 @@ import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
 import com.dotcms.jitsu.validators.AnalyticsValidator;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.jitsu.validators.SiteAuthValidator;
-<<<<<<< HEAD
-
-=======
->>>>>>> 0e9fe9ebb20d703cf202b9a663760cb08c2caa65
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;

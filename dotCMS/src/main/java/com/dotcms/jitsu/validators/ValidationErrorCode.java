@@ -50,10 +50,6 @@ public enum ValidationErrorCode {
     /**
      * Indicates that the provided Site Key is invalid, or does not match the expected format.
      */
-<<<<<<< HEAD
-
-=======
->>>>>>> 0e9fe9ebb20d703cf202b9a663760cb08c2caa65
     INVALID_SITE_AUTH,
 
 
