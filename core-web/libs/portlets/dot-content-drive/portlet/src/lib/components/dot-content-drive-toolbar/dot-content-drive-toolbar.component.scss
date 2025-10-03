@@ -9,8 +9,8 @@
             dot-content-drive-tree-toggler {
                 display: flex;
                 visibility: visible;
-                width: 100%;
-
+                width: inherit;
+                grid-area: tree-toogler;
                 transition: all $content-drive-animation-speed $content-drive-animation-ease;
 
                 &.sidebar-expanded {
@@ -32,10 +32,15 @@
 }
 
 .p-toolbar-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
     gap: $spacing-1;
+    display: grid;
+    width: 100%;
+    grid-template-columns: min-content 1fr;
+    grid-template-areas:
+        "tree-toogler toolbar-group-top"
+        ". toolbar-group-bottom";
+
+    place-items: center;
 }
 
 .p-toolbar-group-top {
@@ -43,6 +48,7 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    grid-area: toolbar-group-top;
 
     .search-input {
         max-width: 22rem;
@@ -54,6 +60,7 @@
     grid-template-columns: repeat(3, minmax(4.5rem, 14rem));
     width: 100%;
     gap: 1rem;
+    grid-area: toolbar-group-bottom;
 }
 
 .p-toolbar-group-top,

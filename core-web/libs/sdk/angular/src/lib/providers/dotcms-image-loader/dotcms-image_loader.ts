@@ -7,6 +7,11 @@ import { Provider } from '@angular/core';
 interface DotCMSImageLoaderParams {
     isOutsideSRC?: boolean;
     languageId?: string;
+    /**
+     * Quality of the image
+     * @default 50
+     */
+    quality?: number;
 }
 
 /**
@@ -84,10 +89,11 @@ function createDotCMSURL(config: ImageLoaderConfig, path?: string): string {
     const dotcmsHost = path ? new URL(path).origin : '';
     const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`;
     const languageId = params?.languageId ?? '1';
+    const quality = params?.quality ?? 50;
 
     if (width) {
-        return `${dotcmsHost}${imageSRC}/${width}w?language_id=${languageId}`;
+        return `${dotcmsHost}${imageSRC}/${width}w/${quality}q?language_id=${languageId}`;
     }
 
-    return `${dotcmsHost}${imageSRC}?language_id=${languageId}`;
+    return `${dotcmsHost}${imageSRC}/${quality}q?language_id=${languageId}`;
 }

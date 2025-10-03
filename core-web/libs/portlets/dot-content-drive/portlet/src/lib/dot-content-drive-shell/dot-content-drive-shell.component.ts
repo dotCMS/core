@@ -1,5 +1,13 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    ElementRef,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
@@ -9,9 +17,12 @@ import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import {
-    DotMessageService,
     DotFolderService,
-    DotWorkflowsActionsService
+    DotUploadFileService,
+    DotWorkflowActionsFireService,
+    DotLocalstorageService,
+    DotWorkflowsActionsService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
@@ -21,11 +32,12 @@ import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
-import { DIALOG_TYPE, SORT_ORDER } from '../shared/constants';
+import { DIALOG_TYPE, HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, SORT_ORDER } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters } from '../utils/functions';
+import { ALL_FOLDER } from '../utils/tree-folder.utils';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -53,7 +65,13 @@ export class DotContentDriveShellComponent {
     readonly #router = inject(Router);
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #messageService = inject(MessageService);
+    readonly #fileService = inject(DotUploadFileService);
+    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
+
+    readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
     readonly $totalItems = this.#store.totalItems;
@@ -65,7 +83,11 @@ export class DotContentDriveShellComponent {
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
-    readonly $showMessage = signal<boolean>(true);
+
+    // Default to false to avoid showing the message banner on init
+    readonly $showMessage = signal<boolean>(false);
+
+    readonly $fileInput = viewChild<ElementRef>('fileInput');
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -89,6 +111,12 @@ export class DotContentDriveShellComponent {
         const urlTree = this.#router.createUrlTree([], { queryParams });
         this.#location.go(urlTree.toString());
     });
+
+    ngOnInit() {
+        this.$showMessage.set(
+            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY) // The existence of the key means the message banner has been hidden
+        );
+    }
 
     protected onPaginate(event: LazyLoadEvent) {
         // Explicit check because it can potentially be 0
@@ -154,5 +182,54 @@ export class DotContentDriveShellComponent {
      */
     protected onCloseMessage() {
         this.$showMessage.set(false);
+        this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
+    }
+
+    protected onAddNewDotAsset() {
+        this.$fileInput().nativeElement.click();
+    }
+
+    protected onFileChange(event: Event) {
+        const input = event.target as HTMLInputElement;
+
+        if (!input.files || input.files.length === 0) {
+            return;
+        }
+
+        const file = input.files[0];
+
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
+
+        const hostFolder =
+            this.#store.selectedNode() === ALL_FOLDER
+                ? this.#store.currentSite()?.identifier
+                : this.#store.selectedNode()?.data.id;
+
+        this.#fileService
+            .uploadDotAsset(file, {
+                baseType: 'dotAsset',
+                hostFolder,
+                indexPolicy: 'WAIT_FOR'
+            })
+            .subscribe({
+                next: () => {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success')
+                    });
+                    this.#store.loadItems();
+                },
+                error: (error) => {
+                    console.error('error => ', error);
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.add-dotasset-error-detail'
+                        )
+                    });
+                    this.#store.setStatus(DotContentDriveStatus.LOADED);
+                }
+            });
     }
 }

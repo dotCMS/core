@@ -22,7 +22,7 @@
     </p-messages>
 }
 
-<dot-content-drive-toolbar data-testid="toolbar" />
+<dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />
 
 <div
     class="tree-selector center-content"
@@ -61,6 +61,7 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
+    styleClass="content-drive-dialog"
     (visibleChange)="onHideDialog()">
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
@@ -71,3 +72,6 @@
         }
     }
 </p-dialog>
+
+<!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
+<input type="file" (change)="onFileChange($event)" #fileInput hidden />
