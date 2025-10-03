@@ -26,13 +26,13 @@ export default [
         secure: false,
         changeOrigin: true, // Essential for Firefox compatibility
         logLevel: 'debug',
-        timeout: 30000, // 30 second timeout for Firefox
-        proxyTimeout: 30000, // Proxy-specific timeout
-        ws: true, // Enable WebSocket proxying
-        followRedirects: true, // Handle redirects properly
+        timeout: 300000, // 5 minute timeout for large file uploads
+        proxyTimeout: 300000, // Proxy-specific timeout for large file uploads
+        ws: false, // Disable WebSocket proxying to prevent connection issues
+        // CRITICAL: followRedirects must be false to avoid 10MB body limit from follow-redirects library
+        followRedirects: false,
         headers: {
-            Connection: 'keep-alive',
-            'Cache-Control': 'no-cache'
+            Connection: 'keep-alive'
         },
         pathRewrite: {
             '^/assets/manifest.json': '/dotAdmin/assets/manifest.json',
