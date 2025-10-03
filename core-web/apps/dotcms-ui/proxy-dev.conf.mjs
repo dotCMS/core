@@ -28,7 +28,7 @@ export default [
         logLevel: 'debug',
         timeout: 300000, // 5 minute timeout for large file uploads
         proxyTimeout: 300000, // Proxy-specific timeout for large file uploads
-        ws: false, // Disable WebSocket proxying to prevent connection issues
+        ws: true, // Enable WebSocket proxying for real-time features
         // CRITICAL: followRedirects must be false to avoid 10MB body limit from follow-redirects library
         followRedirects: false,
         headers: {
