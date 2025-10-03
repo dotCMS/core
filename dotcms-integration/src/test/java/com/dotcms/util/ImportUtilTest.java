@@ -1,33 +1,10 @@
 package com.dotcms.util;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_JSON;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_SITE_FOLDER_REF;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_NUMBER_FORMAT;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.UNREACHABLE_URL_CONTENT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtil;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
@@ -41,7 +18,6 @@ import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -118,6 +94,14 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.io.FileUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -134,13 +118,31 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.io.FileUtils;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_JSON;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_NUMBER_FORMAT;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_SITE_FOLDER_REF;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.UNREACHABLE_URL_CONTENT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -199,6 +201,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on CSV but no permissions, ";
     private static final String TEST_WITH_WF_ACTION_ON_DROPDOWN_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on dropdown but not permission, ";
     private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS_AND_USING_DROPDOWN_ACTION = ", Test with WF Action ID set on CSV (but no permission) and using dropdown action, ";
+    private static final String UNIQUE_FIELDS_WARNING = "There are unique fields in this Content Type. Duplicate values are rejected during import.";
 
     public static class RelationshipTestCase {
 
@@ -740,8 +743,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Validations
         validate(results, true, false, true);
 
-        assertTrue(results.get("warnings").size() == 1);
-        assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+        assertEquals(1, results.get("warnings").size());
+        assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
     }
 
     /**
@@ -801,9 +804,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
-
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -866,8 +868,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertEquals(2, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
@@ -938,9 +940,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(1, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -1003,9 +1005,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(1, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -3346,91 +3348,82 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void testingImportWithUniqueFields() throws DotSecurityException, DotDataException, IOException {
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
 
-        try {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+        com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
+                .name("unique").type(TextField.class).unique(true).next();
 
-            final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
 
-            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
-                    .name("title").velocityVarName("title").type(TextField.class).next();
+        titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+        uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
 
-            com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
-                    .name("unique").type(TextField.class).unique(true).next();
+        String csvWContent = "A, A" + "\r\n" +
+                "B, B" + "\r\n";
 
-            ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
+        final Reader reader = createTempFile(csvWContent);
 
-            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
-            uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
+        final CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
 
-            String csvWContent = "A, A" + "\r\n" +
-                    "B, B" + "\r\n";
+        final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
+                contentType.inode(),
+                new String[]{titleField.id(), uniqueField.id()}, false, false,
+                user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                -1, reader,
+                schemeStepActionResult1.getAction().getId(), getHttpRequest());
 
-            final Reader reader = createTempFile(csvWContent);
+        //Checking import result
+        final List<String> results = imported.get("results");
+        assertEquals(2, results.size());
 
-            final CsvReader csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
+        final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
+        assertTrue(String.format("Expected Message %s, real messages (%s)", expectedMessage, results),
+                results.contains(expectedMessage));
 
-            final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
-                    contentType.inode(),
-                    new String[]{titleField.id(), uniqueField.id()}, false, false,
-                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                    -1, reader,
-                    schemeStepActionResult1.getAction().getId(), getHttpRequest());
+        final List<String> errors = imported.get("errors");
+        assertTrue( errors.isEmpty());
 
-            //Checking import result
-            final List<String> results = imported.get("results");
-            assertEquals(2, results.size());
+        final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
+                APILocator.systemUser(), false, -1, 0);
 
-            final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
-            assertTrue(String.format("Expected Message %s, real messages (%s)", expectedMessage, results),
-                    results.contains(expectedMessage));
+        assertEquals(2, contentlets.size());
 
-            final List<String> errors = imported.get("errors");
-            assertTrue( errors.isEmpty());
+        final List<String> titles = contentlets.stream()
+                .map(Contentlet::getTitle)
+                .collect(Collectors.toList());
 
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
-                    APILocator.systemUser(), false, -1, 0);
+        assertTrue(titles.contains("A"));
+        assertTrue(titles.contains("B"));
 
-            assertEquals(2, contentlets.size());
+        //Checking unique_fields table
+        List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                        "WHERE supporting_values->>'contentTypeId' = ?")
+                .addParam(contentType.id())
+                .loadObjectResults();
 
-            final List<String> titles = contentlets.stream()
-                    .map(Contentlet::getTitle)
-                    .collect(Collectors.toList());
+        assertEquals(2, maps.size());
 
-            assertTrue(titles.contains("A"));
-            assertTrue(titles.contains("B"));
+        final List<String> titlesUniqueFields = maps.stream()
+                .map(entry -> getSupportingValues(entry))
+                .flatMap(supportingValues -> ((List<String>) supportingValues.get("contentletIds")).stream())
+                .map(id -> {
+                    try {
+                        return APILocator.getContentletAPI().findContentletByIdentifier(id, false, 1, APILocator.systemUser(), false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .map(Contentlet::getTitle)
+                .collect(Collectors.toList());
 
-            //Checking unique_fields table
-            List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
-                            "WHERE supporting_values->>'contentTypeId' = ?")
-                    .addParam(contentType.id())
-                    .loadObjectResults();
-
-            assertEquals(2, maps.size());
-
-            final List<String> titlesUniqueFields = maps.stream()
-                    .map(entry -> getSupportingValues(entry))
-                    .flatMap(supportingValues -> ((List<String>) supportingValues.get("contentletIds")).stream())
-                    .map(id -> {
-                        try {
-                            return APILocator.getContentletAPI().findContentletByIdentifier(id, false, 1, APILocator.systemUser(), false);
-                        } catch (DotDataException | DotSecurityException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .map(Contentlet::getTitle)
-                    .collect(Collectors.toList());
-
-            assertTrue(titlesUniqueFields.contains("A"));
-            assertTrue(titlesUniqueFields.contains("B"));
-        } finally {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
-        }
+        assertTrue(titlesUniqueFields.contains("A"));
+        assertTrue(titlesUniqueFields.contains("B"));
     }
 
     private static Map<String, Object> getSupportingValues(Map<String, Object> entry)  {
@@ -3455,102 +3448,96 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void testingImportPreviewWithUniqueFields() throws DotSecurityException, DotDataException, IOException {
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
 
-        try {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+        com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
+                .name("unique").type(TextField.class).unique(true).next();
 
-            final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
 
-            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
-                    .name("title").velocityVarName("title").type(TextField.class).next();
+        titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+        uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
 
-            com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
-                    .name("unique").type(TextField.class).unique(true).next();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "C")
+                .setProperty(uniqueField.variable(), "A")
+                .nextPersisted();
 
-            ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
+        String csvWContent = "A, A" + "\r\n" + //This has the dupe value that we expect will break the import
+                "B, B" + "\r\n";               //This is valid
 
-            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
-            uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
+        final Reader reader = createTempFile(csvWContent);
 
-            final Contentlet contentlet = new ContentletDataGen(contentType)
-                    .setProperty(titleField.variable(), "C")
-                    .setProperty(uniqueField.variable(), "A")
-                    .nextPersisted();
+        final CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
 
-            String csvWContent = "A, A" + "\r\n" + //This has the dupe value that we expect will break the import
-                    "B, B" + "\r\n";               //This is valid
+        final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
+                .importId(0L)
+                .siteId(defaultSite.getInode())
+                .contentTypeInode(contentType.inode())
+                .keyFields(titleField.id(), uniqueField.id())
+                .user(user)
+                .language(defaultLanguage.getId())
+                .csvHeaders(csvHeaders)
+                .csvReader(csvreader)
+                .languageCodeHeaderColumn(-1)
+                .countryCodeHeaderColumn(-1)
+                .stopOnError(true)
+                .workflowActionId(schemeStepActionResult1.getAction().getId())
+                .request(getHttpRequest())
+                .build();
+        final ImportResult result = ImportUtil.importFileResult(importFileParams);
+        final  HashMap<String, List<String>> imported = ImportResultConverter.toLegacyFormat(result, user);
 
-            final Reader reader = createTempFile(csvWContent);
+        //Check import result
+        final List<String> results = imported.get("results");
+        assertEquals(2, results.size());
 
-            final CsvReader csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
+        final String resultErrorMessage = String.format("0 \"%s\" content updated corresponding to 0 repeated content based on the key provided",
+                contentType.name());
 
-            final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
-                    .importId(0L)
-                    .siteId(defaultSite.getInode())
-                    .contentTypeInode(contentType.inode())
-                    .keyFields(titleField.id(), uniqueField.id())
-                    .user(user)
-                    .language(defaultLanguage.getId())
-                    .csvHeaders(csvHeaders)
-                    .csvReader(csvreader)
-                    .languageCodeHeaderColumn(-1)
-                    .countryCodeHeaderColumn(-1)
-                    .stopOnError(true)
-                    .workflowActionId(schemeStepActionResult1.getAction().getId())
-                    .request(getHttpRequest())
-                    .build();
-            final ImportResult result = ImportUtil.importFileResult(importFileParams);
-            final  HashMap<String, List<String>> imported = ImportResultConverter.toLegacyFormat(result, user);
+        final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
+        assertTrue(String.format("Expected message: %s /real message: %s", expectedMessage, results),
+                results.contains(expectedMessage));
+        assertTrue(String.format("Expected: %s / reals: %s", resultErrorMessage, results),
+                results.contains(resultErrorMessage));
 
-            //Check import result
-            final List<String> results = imported.get("results");
-            assertEquals(2, results.size());
+        final List<String> errors = imported.get("errors");
+        assertEquals(2, errors.size());
 
-            final String resultErrorMessage = String.format("0 \"%s\" content updated corresponding to 0 repeated content based on the key provided", contentType.name());
+        final String errorMessage = String.format("Line #2: Contentlet with ID 'Unknown/New' ['A'] has invalid/missing field(s). " +
+                        "The unique value 'a' for the field '%s' in the Content Type '%s' already exists " +
+                        "- Fields: [UNIQUE]: %s (%s)",
+                uniqueField.variable(), contentType.variable(), uniqueField.name(), uniqueField.variable());
 
-            final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
-            assertTrue(String.format("Expected message: %s /real message: %s", expectedMessage, results),
-                    results.contains(expectedMessage));
-            assertTrue(String.format("Expected: %s / reals: %s", resultErrorMessage, results),
-                    results.contains(resultErrorMessage));
+        assertTrue("Expected error message is not present", errors.contains(errorMessage));
 
-            final List<String> errors = imported.get("errors");
-            assertEquals(2, errors.size());
+        final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
+                APILocator.systemUser(), false, -1, 0);
 
-            final String errorMessage = String.format("Line #2: Contentlet with ID 'Unknown/New' ['A'] has invalid/missing field(s). - Fields: [UNIQUE]: %s (%s)",
-                    uniqueField.name(), uniqueField.variable());
+        assertEquals(1, contentlets.size());
+        assertEquals("C", contentlets.get(0).getTitle());
 
-            assertTrue(errors.contains(errorMessage));
+        //Checking unique_fields table
+        List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                        "WHERE supporting_values->>'contentTypeId' = ?")
+                .addParam(contentType.id())
+                .loadObjectResults();
 
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
-                    APILocator.systemUser(), false, -1, 0);
+        assertEquals(1, maps.size());
 
-            assertEquals(1, contentlets.size());
-            assertEquals("C", contentlets.get(0).getTitle());
+        final Map<String, Object> supportingValues =
+                getSupportingValues(maps.get(0));
+        final List<String> contentletIds = ((List<String>) supportingValues.get("contentletIds")).stream()
+                .filter(id -> !contentlet.getIdentifier().equals(id))
+                .collect(Collectors.toList());
 
-            //Checking unique_fields table
-            List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
-                            "WHERE supporting_values->>'contentTypeId' = ?")
-                    .addParam(contentType.id())
-                    .loadObjectResults();
-
-            assertEquals(1, maps.size());
-
-            final Map<String, Object> supportingValues =
-                    getSupportingValues(maps.get(0));
-            final List<String> contentletIds = ((List<String>) supportingValues.get("contentletIds")).stream()
-                    .filter(id -> !contentlet.getIdentifier().equals(id))
-                    .collect(Collectors.toList());
-
-            assertTrue(contentletIds.isEmpty());
-        } finally {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
-        }
+        assertTrue(contentletIds.isEmpty());
     }
 
     /**

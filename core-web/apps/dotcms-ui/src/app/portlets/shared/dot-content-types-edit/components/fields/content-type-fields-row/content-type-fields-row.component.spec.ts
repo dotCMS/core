@@ -14,11 +14,8 @@ import {
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import {
-    dotcmsContentTypeFieldBasicMock,
-    FieldUtil,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsRowComponent } from '.';
 
@@ -172,7 +169,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
                 hostComp.setData(mock);
                 hostFixture.detectChanges();
-                spyOn(dotDialogService, 'confirm');
+                jest.spyOn(dotDialogService, 'confirm');
             });
 
             it('should show 1 remove button', () => {

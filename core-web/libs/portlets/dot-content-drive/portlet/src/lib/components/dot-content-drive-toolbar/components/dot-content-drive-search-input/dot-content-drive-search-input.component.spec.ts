@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -13,24 +13,18 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 
 describe('DotContentDriveSearchInputComponent', () => {
     let spectator: Spectator<DotContentDriveSearchInputComponent>;
-    let mockStore: {
-        setFilters: jest.Mock;
-        removeFilter: jest.Mock;
-        getFilterValue: jest.Mock;
-    };
+    let mockStore: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveSearchInputComponent,
         imports: [ReactiveFormsModule, IconFieldModule, InputIconModule, InputTextModule],
         providers: [
-            {
-                provide: DotContentDriveStore,
-                useFactory: () => ({
-                    setFilters: jest.fn(),
-                    removeFilter: jest.fn(),
-                    getFilterValue: jest.fn()
-                })
-            }
+            mockProvider(DotContentDriveStore, {
+                patchFilters: jest.fn(),
+                removeFilter: jest.fn(),
+                getFilterValue: jest.fn(),
+                setGlobalSearch: jest.fn()
+            })
         ],
         detectChanges: false
     });
@@ -87,18 +81,18 @@ describe('DotContentDriveSearchInputComponent', () => {
         });
     });
 
-    describe('Search Action', () => {
+    describe('Global Search Action', () => {
         beforeEach(() => {
             spectator.detectChanges();
         });
 
-        it('should call setFilters after debounce when input has value', fakeAsync(() => {
+        it('should call patchFilters after debounce when input has value', fakeAsync(() => {
             const input = spectator.query('input') as HTMLInputElement;
 
             spectator.typeInElement('search term', input);
             tick(500);
 
-            expect(mockStore.setFilters).toHaveBeenCalledWith({ title: 'search term' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('search term');
         }));
 
         it('should call removeFilter when input is empty', fakeAsync(() => {
@@ -107,7 +101,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('   ', input);
             tick(500);
 
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('title');
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('');
         }));
 
         it('should debounce input changes by 500ms', fakeAsync(() => {
@@ -115,13 +109,13 @@ describe('DotContentDriveSearchInputComponent', () => {
 
             spectator.typeInElement('test', input);
 
-            expect(mockStore.setFilters).not.toHaveBeenCalled();
+            expect(mockStore.patchFilters).not.toHaveBeenCalled();
 
             tick(499);
-            expect(mockStore.setFilters).not.toHaveBeenCalled();
+            expect(mockStore.patchFilters).not.toHaveBeenCalled();
 
             tick(1);
-            expect(mockStore.setFilters).toHaveBeenCalledWith({ title: 'test' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('test');
         }));
 
         it('should trim whitespace from input values', fakeAsync(() => {
@@ -130,7 +124,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('  trimmed value  ', input);
             tick(500);
 
-            expect(mockStore.setFilters).toHaveBeenCalledWith({ title: 'trimmed value' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('trimmed value');
         }));
 
         it('should handle special characters correctly', fakeAsync(() => {
@@ -140,7 +134,20 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement(specialChars, input);
             tick(500);
 
-            expect(mockStore.setFilters).toHaveBeenCalledWith({ title: specialChars });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith(specialChars);
+        }));
+    });
+
+    describe('OnDestroy', () => {
+        it('should not call store methods after component is destroyed', fakeAsync(() => {
+            spectator.detectChanges();
+            const input = spectator.query('input') as HTMLInputElement;
+
+            spectator.typeInElement('test', input);
+            spectator.fixture.destroy();
+            tick(500);
+
+            expect(mockStore.patchFilters).not.toHaveBeenCalled();
         }));
     });
 });

@@ -1,22 +1,51 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
-<div class="dot-wysiwyg__controls">
-    <p-dropdown
-        [options]="editorOptions"
-        [(ngModel)]="$selectedEditorDropdown"
-        [ngModelOptions]="{ standalone: true }"
-        (onChange)="onEditorChange($event.value)"
-        data-testId="editor-selector" />
-
-    <dot-language-variable-selector
-        data-testid="language-variable-selector"
-        (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
-</div>
-
-<div class="dot-wysiwyg__editor">
-    @if ($displayedEditor() === editorTypes.TinyMCE) {
-        <dot-wysiwyg-tinymce [field]="field" />
-    } @else {
-        <dot-edit-content-monaco-editor-control [field]="field" />
+<dot-card-field [hasError]="hasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
     }
-</div>
+    <dot-card-field-content>
+        <div class="dot-wysiwyg__wrapper">
+            <div class="dot-wysiwyg__controls">
+                <p-dropdown
+                    [options]="editorOptions"
+                    [(ngModel)]="$selectedEditorDropdown"
+                    [ngModelOptions]="{ standalone: true }"
+                    (onChange)="onEditorChange($event.value)"
+                    data-testId="editor-selector" />
+
+                <dot-language-variable-selector
+                    data-testid="language-variable-selector"
+                    (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+            </div>
+
+            <div class="dot-wysiwyg__editor">
+                @if ($displayedEditor() === editorTypes.TinyMCE) {
+                    <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
+                } @else {
+                    <dot-edit-content-monaco-editor-control [field]="field" [hasError]="hasError" />
+                }
+            </div>
+        </div>
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
+        }
+
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

@@ -1,7 +1,14 @@
 @use "variables" as *;
 
+p-skeleton {
+    // Responsive skeleton that adapts to content and container
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+}
+
 .p-skeleton {
-    background-color: $color-palette-gray-300;
+    background-color: $color-palette-gray-200;
     border-radius: 3px;
 }
 .p-skeleton:after {

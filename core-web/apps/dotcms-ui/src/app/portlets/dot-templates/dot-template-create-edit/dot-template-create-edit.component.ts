@@ -6,10 +6,10 @@ import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms
 import { DialogService } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 
-import { filter, takeUntil, tap } from 'rxjs/operators';
+import { takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { Site, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
@@ -211,31 +211,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private setSwitchSiteListener(): void {
-        /**
-         * When the portlet reload (from the browser reload button), the site service emits
-         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
-         * an unwanted reload.
-         *
-         * This extra work in the filter is to prevent that extra reload.
-         *
-         */
-        let currentHost = this.dotSiteService.currentSite?.hostname || null;
-        this.dotSiteService.switchSite$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((site: Site) => {
-                    if (currentHost === null) {
-                        currentHost = site?.hostname;
-
-                        return false;
-                    }
-
-                    return true;
-                })
-            )
-            .subscribe(() => {
-                this.#store.goToTemplateList();
-            });
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.#store.goToTemplateList();
+        });
     }
 
     private formatTemplateItem({ layout, body, themeId }: DotTemplate): DotTemplateItem {

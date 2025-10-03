@@ -7,7 +7,7 @@ import { filter, map, tap } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
 
 const MAX_COLS_PER_ROW = 4;
 

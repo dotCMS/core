@@ -55,7 +55,7 @@ describe('DotShowHideFeatureDirective', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
+            jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
             fixture.detectChanges();
         });
 
@@ -132,7 +132,7 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
+            jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
             fixture.detectChanges();
         });
 

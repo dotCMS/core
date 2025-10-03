@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 @Component({
@@ -20,9 +21,11 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 export class DotContentDriveSearchInputComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #destroyRef = inject(DestroyRef);
+
     readonly searchControl = new FormControl('');
 
-    ngOnInit(): void {
+    // We need to use ngOnInit to retrieve the filter value from the store
+    ngOnInit() {
         const searchValue = this.#store.getFilterValue('title');
 
         if (searchValue) {
@@ -30,14 +33,14 @@ export class DotContentDriveSearchInputComponent implements OnInit {
         }
 
         this.searchControl.valueChanges
-            .pipe(takeUntilDestroyed(this.#destroyRef), debounceTime(500), distinctUntilChanged())
+            .pipe(
+                debounceTime(DEBOUNCE_TIME),
+                distinctUntilChanged(),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
-                if (searchValue) {
-                    this.#store.setFilters({ title: searchValue });
-                } else {
-                    this.#store.removeFilter('title');
-                }
+                this.#store.setGlobalSearch(searchValue);
             });
     }
 }

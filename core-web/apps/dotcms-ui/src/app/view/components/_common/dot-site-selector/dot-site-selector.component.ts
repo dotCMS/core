@@ -88,9 +88,9 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
                 });
         });
 
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.siteService.currentSite$.pipe(takeUntil(this.destroy$)).subscribe((site) => {
             setTimeout(() => {
-                this.updateCurrentSite(this.siteService.currentSite);
+                this.updateCurrentSite(site);
             }, 200);
         });
     }

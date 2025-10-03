@@ -1,31 +1,7 @@
 @use "variables" as *;
 
 :host {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    width: 2rem;
-    height: 2rem;
-    border-radius: $border-radius-circular;
-
-    .tree-toggle-icon {
+    svg.p-button-icon.pi {
         color: $color-palette-gray-800;
-    }
-
-    &:hover {
-        .tree-toggle-icon {
-            color: $color-palette-gray-900;
-        }
-
-        background-color: $color-palette-gray-200;
-    }
-
-    &.active {
-        .tree-toggle-icon {
-            color: $color-palette-primary-500;
-        }
-
-        background-color: $color-palette-primary-200;
     }
 }

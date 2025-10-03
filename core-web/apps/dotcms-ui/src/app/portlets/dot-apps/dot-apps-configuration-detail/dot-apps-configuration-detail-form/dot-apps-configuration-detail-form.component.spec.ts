@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { MarkdownService } from 'ngx-markdown';
 
@@ -293,13 +293,14 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const field = secrets[4];
 
-            const openMock = jasmine.createSpy();
+            const openMock = jest.fn();
             window.open = openMock;
             const row = spectator.query(byTestId('integration'));
             const buttonElement = row.querySelector('button');
 
             buttonElement.click();
             expect(openMock).toHaveBeenCalledWith(field.value, '_blank');
+            expect(openMock).toHaveBeenCalledTimes(1);
         });
 
         it('should emit form state when loaded', async () => {
@@ -316,8 +317,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state when value changed', () => {
-            const spyDataOutput = spyOn(spectator.component.data, 'emit');
-            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+            const spyDataOutput = jest.spyOn(spectator.component.data, 'emit');
+            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('Test2');
             spectator.component.myFormGroup.get('password').setValue('Password2');
@@ -328,10 +329,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state disabled when required field empty', () => {
-            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);
+            expect(spyValidOutput).toHaveBeenCalledTimes(1);
         });
     });
 

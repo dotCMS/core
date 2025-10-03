@@ -89,6 +89,10 @@
     font-size: $font-size-xl;
     padding-right: $spacing-1;
     color: $color-palette-primary;
+
+    &.text-warning-yellow {
+        color: $color-palette-yellow;
+    }
 }
 
 .p-dialog.p-confirm-dialog .p-confirm-dialog-message {

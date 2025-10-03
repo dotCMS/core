@@ -61,7 +61,7 @@ public class OpenAIContentPromptActionlet extends WorkFlowActionlet {
 
     @Override
     public String getName() {
-        return "AI Content Prompt";
+        return "AI - Content Prompt";
     }
 
     @Override

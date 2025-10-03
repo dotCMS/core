@@ -8,10 +8,10 @@ import { DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
+import { EMPTY_FIELD } from '@dotcms/utils';
 import {
     dotcmsContentTypeFieldBasicMock,
     DotFieldVariablesServiceMock,
-    EMPTY_FIELD,
     LoginServiceMock,
     mockFieldVariables
 } from '@dotcms/utils-testing';
@@ -66,13 +66,13 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should load the component with one empty row', () => {
-        spyOn(dotFieldVariableService, 'load').and.returnValue(of([]));
+        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
         fixtureHost.detectChanges();
         expect(comp.fieldVariables.length).toBe(0);
     });
 
     it('should save a variable', () => {
-        spyOn(dotFieldVariableService, 'save').and.returnValue(of(mockFieldVariables[0]));
+        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of(mockFieldVariables[0]));
         const response = mockFieldVariables[0];
 
         fixtureHost.detectChanges();
@@ -93,7 +93,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             value: 'test'
         };
 
-        spyOn(dotFieldVariableService, 'save').and.returnValue(of(variable));
+        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of(variable));
 
         fixtureHost.detectChanges();
 
@@ -104,13 +104,16 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, variable);
+        expect(dotFieldVariableService.save).toHaveBeenCalledTimes(1);
 
         expect(comp.fieldVariables[0]).toEqual(variable);
     });
 
     it('should delete a variable from the server', () => {
         const variableToDelete = mockFieldVariables[0];
-        spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').and.returnValue(of([]));
+        jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').mockReturnValue(
+            of([])
+        );
         const deletedCollection = mockFieldVariables.filter(
             (item: DotFieldVariable) => variableToDelete.key !== item.key
         );
@@ -120,6 +123,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         dotKeyValue.triggerEventHandler('delete', variableToDelete);
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
+        expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
         expect(comp.fieldVariables).toEqual(deletedCollection);
     });
 
@@ -134,7 +138,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should set variable correctly', () => {
-            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').and.returnValue(
+            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
                 of(mockFieldVariables)
             );
             fixtureHost.detectChanges();
@@ -142,7 +146,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should not set allowedBlocks variable', () => {
-            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').and.returnValue(
+            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',

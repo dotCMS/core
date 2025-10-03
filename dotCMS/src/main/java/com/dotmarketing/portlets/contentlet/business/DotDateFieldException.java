@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.util.FieldNameUtils.convertFieldClassName;
+
+import com.dotmarketing.util.FieldNameUtils;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.exception.ImportLineError;
 import java.util.HashMap;
@@ -19,7 +22,6 @@ public class DotDateFieldException extends DotContentletStateException implement
 
     private final String field;
     private final String value;
-    private final String fieldName;
     private final String fieldType;
     private final String expectedFormat;
     private final String[] acceptedFormats;
@@ -29,7 +31,6 @@ public class DotDateFieldException extends DotContentletStateException implement
         super(message);
         this.field = field;
         this.value = value == null ? "" : value.toString();
-        this.fieldName = null;
         this.fieldType = null;
         this.expectedFormat = null;
         this.acceptedFormats = null;
@@ -39,13 +40,12 @@ public class DotDateFieldException extends DotContentletStateException implement
     /**
      * Enhanced constructor for Builder pattern
      */
-    private DotDateFieldException(String message, String field, Object value, String fieldName, 
+    private DotDateFieldException(String message, String field, Object value, 
                                  String fieldType, String expectedFormat, String[] acceptedFormats, 
                                  Map<String, String> additionalContext) {
         super(message);
         this.field = field;
         this.value = value == null ? "" : value.toString();
-        this.fieldName = fieldName;
         this.fieldType = fieldType;
         this.expectedFormat = expectedFormat;
         this.acceptedFormats = acceptedFormats;
@@ -70,20 +70,14 @@ public class DotDateFieldException extends DotContentletStateException implement
     @Override
     public Optional<Map<String, ?>> getContext() {
         Map<String, String> context = new HashMap<>(additionalContext);
-        if (fieldName != null) {
-            context.put("fieldName", fieldName);
-        }
         if (fieldType != null) {
-            context.put("fieldType", fieldType);
+            context.put("fieldType", convertFieldClassName(fieldType));
         }
         if (expectedFormat != null) {
             context.put("expectedFormat", expectedFormat);
         }
         if (acceptedFormats != null && acceptedFormats.length > 0) {
             context.put("acceptedFormats", String.join(", ", acceptedFormats));
-        }
-        if (field != null) {
-            context.put("velocityVarName", field);
         }
         return context.isEmpty() ? Optional.empty() : Optional.of(context);
     }
@@ -94,7 +88,6 @@ public class DotDateFieldException extends DotContentletStateException implement
     public static class Builder {
         private final String field;
         private final Object value;
-        private String fieldName;
         private String fieldType;
         private String expectedFormat;
         private String[] acceptedFormats;
@@ -106,13 +99,6 @@ public class DotDateFieldException extends DotContentletStateException implement
             this.value = value;
         }
 
-        /**
-         * Set the display name of the field
-         */
-        public Builder fieldName(String fieldName) {
-            this.fieldName = fieldName;
-            return this;
-        }
 
         /**
          * Set the type of the field (e.g., "date", "datetime", etc.)
@@ -166,7 +152,7 @@ public class DotDateFieldException extends DotContentletStateException implement
                 String specificMessageTemplate = getFieldTypeSpecificMessage();
                 message = String.format(specificMessageTemplate, value, field);
             }
-            return new DotDateFieldException(message, field, value, fieldName, fieldType, 
+            return new DotDateFieldException(message, field, value, fieldType, 
                                            expectedFormat, acceptedFormats, additionalContext);
         }
         

@@ -1,7 +1,10 @@
+import { Subscription } from 'rxjs';
+
 import { animate, style, transition, trigger } from '@angular/animations';
-import { NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     computed,
     DestroyRef,
@@ -45,6 +48,7 @@ import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
+import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
@@ -116,6 +120,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #document = inject(DOCUMENT);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -159,6 +164,14 @@ export class DotEditContentFormComponent implements OnInit {
     form!: FormGroup;
 
     /**
+     * Subscription for form value changes - using this to manage the listener lifecycle
+     *
+     * @private
+     * @memberof DotEditContentFormComponent
+     */
+    private formValueSubscription?: Subscription;
+
+    /**
      * Computed property that determines if the content type has only one tab.
      *
      * @memberof DotEditContentFormComponent
@@ -171,6 +184,8 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     $tabs = this.$store.tabs;
+
+    changeDetectorRef = inject(ChangeDetectorRef);
 
     /**
      * The system timezone.
@@ -186,15 +201,39 @@ export class DotEditContentFormComponent implements OnInit {
 
     constructor() {
         /**
-         * Effect that enables or disables the form based on the loading state.
+         * Effect that reinitializes the form when contentlet changes (e.g., when viewing historical versions)
+         *
+         * This effect listens for changes in the contentlet and reinitializes the form
+         * to reflect the new content data.
+         */
+        effect(() => {
+            const contentlet = this.$store.contentlet();
+            const tabs = this.$store.tabs();
+
+            // Only reinitialize if we have both contentlet and tabs, and form exists
+            if (contentlet && tabs.length > 0 && this.form) {
+                this.initializeForm();
+                this.initializeFormListener();
+            }
+        });
+
+        /**
+         * Effect that enables or disables the form based on the loading state and historical view.
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
+            // const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
+            const contentlet = this.$store.contentlet();
 
-            if (isLoading) {
-                this.form.disable();
-            } else {
-                this.form.enable();
+            // Only apply state changes if form exists
+            if (this.form && contentlet) {
+                // TODO: put back isViewingHistoricalVersion in the
+                // condition after all fields have disabled state
+                if (isLoading) {
+                    this.form.disable();
+                } else {
+                    this.form.enable();
+                }
             }
         });
 
@@ -227,14 +266,21 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Initializes a listener for form value changes.
+     * Automatically handles cleanup of previous subscriptions to avoid memory leaks.
      *
      * @private
      * @memberof DotEditContentFormComponent
      */
     private initializeFormListener() {
-        this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((value) => {
-            this.onFormChange(value);
-        });
+        // Clean up any existing subscription before creating a new one
+        this.formValueSubscription?.unsubscribe?.();
+
+        // Create new subscription
+        this.formValueSubscription = this.form.valueChanges
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((value) => {
+                this.onFormChange(value);
+            });
     }
 
     /**
@@ -260,6 +306,15 @@ export class DotEditContentFormComponent implements OnInit {
         languageId,
         identifier
     }: DotWorkflowActionParams): void {
+        if (this.form.invalid) {
+            this.form.markAllAsTouched();
+            this.changeDetectorRef.detectChanges();
+            requestAnimationFrame(() => {
+                this.scrollToFirstError();
+            });
+            return;
+        }
+
         const contentlet = {
             ...this.processFormValue(this.form.value),
             contentType,
@@ -360,7 +415,7 @@ export class DotEditContentFormComponent implements OnInit {
         return Object.fromEntries(
             Object.entries(value).map(([key, fieldValue]) => {
                 // Handle disabledWYSIWYG as a special case - preserve array format
-                if (key === 'disabledWYSIWYG') {
+                if (key === DISABLED_WYSIWYG_FIELD) {
                     return [key, fieldValue || []];
                 }
 
@@ -400,7 +455,7 @@ export class DotEditContentFormComponent implements OnInit {
         const contentlet = this.$store.contentlet();
         const disabledWYSIWYG = contentlet?.disabledWYSIWYG || [];
 
-        controls['disabledWYSIWYG'] = this.#fb.control(disabledWYSIWYG);
+        controls[DISABLED_WYSIWYG_FIELD] = this.#fb.control(disabledWYSIWYG);
 
         this.form = this.#fb.group(controls);
     }
@@ -568,5 +623,53 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form && this.form.get('disabledWYSIWYG')) {
             this.form.get('disabledWYSIWYG')?.setValue(disabledWYSIWYG, { emitEvent: true });
         }
+    }
+
+    /**
+     * Scrolls to the first field with validation errors and focuses on it for better accessibility.
+     * Uses smooth scrolling with proper offset calculation and fallback mechanisms.
+     */
+    scrollToFirstError(): void {
+        const errorElements =
+            this.#document.querySelectorAll<HTMLDivElement>('.field-error-marker');
+
+        if (errorElements.length === 0) {
+            return;
+        }
+
+        const firstErrorField = errorElements[0];
+        if (!firstErrorField) {
+            return;
+        }
+
+        // Try multiple container selectors for better compatibility
+        const scrollContainer = this.#document.querySelector<HTMLElement>(
+            '.edit-content-layout__body'
+        );
+        if (!scrollContainer) {
+            return;
+        }
+
+        this.#scrollToElement(firstErrorField, scrollContainer);
+    }
+
+    /**
+     * Scrolls to the element within the specified container
+     */
+    #scrollToElement(element: HTMLElement, container: HTMLElement): void {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+
+        // Calculate the position relative to the container
+        const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+
+        // Add some offset to ensure the element is not at the very top
+        const offset = 80;
+        const scrollPosition = Math.max(0, relativeTop - offset);
+
+        container.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+        });
     }
 }

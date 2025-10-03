@@ -1,5 +1,3 @@
-import { faker } from '@faker-js/faker';
-
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -108,7 +106,7 @@ export class DotSideBarComponent {
      * @returns {string} A string representing a percentage between 75% and 100%.
      */
     getPercentage(): string {
-        const number = faker.number.int({ max: 100, min: 75 });
+        const number = Math.floor(Math.random() * (100 - 75 + 1)) + 75;
 
         return `${number}%`;
     }

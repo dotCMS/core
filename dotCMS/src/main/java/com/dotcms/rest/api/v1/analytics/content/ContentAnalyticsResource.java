@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.analytics.content;
 
+import com.dotcms.analytics.attributes.CustomAttributeAPI;
+import com.dotcms.analytics.attributes.CustomAttributeProcessingException;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ContentAnalyticsQuery;
 import com.dotcms.analytics.content.ReportResponse;
@@ -16,16 +18,15 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.MapUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.Lazy;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.inject.Inject;
@@ -65,88 +66,23 @@ public class ContentAnalyticsResource {
 
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
+    private final CustomAttributeAPI customAttributeAPI;
 
     @Inject
-    public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI) {
-        this(new WebResource(), contentAnalyticsAPI);
+    public ContentAnalyticsResource(final ContentAnalyticsAPI contentAnalyticsAPI,
+                                    final CustomAttributeAPI customAttributeAPI) {
+        this(new WebResource(), contentAnalyticsAPI, customAttributeAPI);
     }
 
     @VisibleForTesting
     public ContentAnalyticsResource(final WebResource webResource,
-                                    final ContentAnalyticsAPI contentAnalyticsAPI) {
+                                    final ContentAnalyticsAPI contentAnalyticsAPI,
+                                    final CustomAttributeAPI customAttributeAPI) {
         this.webResource = webResource;
         this.contentAnalyticsAPI = contentAnalyticsAPI;
+        this.customAttributeAPI = customAttributeAPI;
     }
 
-    /**
-     * Query Content Analytics data.
-     *
-     * @param request   the HTTP request.
-     * @param response  the HTTP response.
-     * @param queryForm the query form.
-     * @return the report response entity view.
-     */
-    @Operation(
-            operationId = "postContentAnalyticsQuery",
-            summary = "Retrieve Content Analytics data",
-            description = "Returns information of specific dotCMS objects whose health and " +
-                    "engagement data is tracked. This method takes a specific less verbose JSON " +
-                    "format to query the data.",
-            tags = {"Content Analytics"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Content Analytics data being queried",
-                            content = @Content(mediaType = "application/json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value = "{\n" +
-                                                            "    \"query\": {\n" +
-                                                            "        \"measures\": [\n" +
-                                                            "            \"request.count\"\n" +
-                                                            "        ],\n" +
-                                                            "        \"order\": \"request.count DESC\",\n" +
-                                                            "        \"dimensions\": [\n" +
-                                                            "            \"request.url\",\n" +
-                                                            "            \"request.pageId\",\n" +
-                                                            "            \"request.pageTitle\"\n" +
-                                                            "        ],\n" +
-                                                            "        \"filters\": \"request.whatAmI = ['PAGE']\",\n" +
-                                                            "        \"limit\": 100,\n" +
-                                                            "        \"offset\": 1\n" +
-                                                            "    }\n" +
-                                                            "}"
-                                            )
-                                    }
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
-            }
-    )
-    @POST
-    @Path("/_query")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ReportResponseEntityView query(@Context final HttpServletRequest request,
-                                          @Context final HttpServletResponse response,
-                                          final QueryForm queryForm) {
-
-        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
-                .requestAndResponse(request, response)
-                .requiredBackendUser(true)
-                .rejectWhenNoUser(true)
-                .init();
-
-        final User user = initDataObject.getUser();
-        checkNotNull(queryForm, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
-        Logger.debug(this, () -> "Querying content analytics data with the form: " + queryForm);
-        final ReportResponse reportResponse =
-                this.contentAnalyticsAPI.runReport(queryForm.getQuery(), user);
-        return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
-    }
 
     /**
      * Query Content Analytics data.
@@ -158,9 +94,10 @@ public class ContentAnalyticsResource {
      */
     @Operation(
             operationId = "postContentAnalyticsQuery",
-            summary = "Retrieve Content Analytics data",
+            summary = "Retrieve Content Analytics data **(Beta)**",
             description = "Returns information of specific dotCMS objects whose health and " +
-                    "engagement data is tracked, using a CubeJS JSON query.",
+                    "engagement data is tracked, using a CubeJS JSON query." +
+                    " **Note:** This endpoint is in **beta** and may change.",
             tags = {"Content Analytics"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data " +
@@ -192,7 +129,7 @@ public class ContentAnalyticsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ReportResponseEntityView queryCubeJs(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
-                                          final String cubeJsQueryJson) {
+                                          final String cubeJsQueryJson) throws CustomAttributeProcessingException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
@@ -204,82 +141,17 @@ public class ContentAnalyticsResource {
         checkNotNull(cubeJsQueryJson, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
         Logger.debug(this,  ()->"Querying content analytics data with the cube query json: " + cubeJsQueryJson);
 
-        final ReportResponse reportResponse =
-                this.contentAnalyticsAPI.runRawReport(cubeJsQueryJson, user);
+        final CustomAttributeAPI.TranslatedQuery translatedQuery = customAttributeAPI.translateFromFriendlyName(cubeJsQueryJson);
+
+        ReportResponse reportResponse =
+                this.contentAnalyticsAPI.runRawReport(translatedQuery.getTranslateQuery(), user);
+
+        if (!translatedQuery.getMatchApplied().isEmpty()) {
+            reportResponse = customAttributeAPI.translateResults(reportResponse,
+                    MapUtil.invertMap(translatedQuery.getMatchApplied()));
+        }
 
         return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
-    }
-
-
-    /**
-     * Returns information of specific dotCMS objects whose health and engagement data is tracked,
-     * using simplified version of a query sent to the Content Analytics service. This helps
-     * abstract the complexity of the underlying JSON format for users that need an easier way to
-     * query for specific data.
-     *
-     * @param request  The current instance of the {@link HttpServletRequest} object.
-     * @param response The current instance of the {@link HttpServletResponse} object.
-     * @param form     A Map with the parameters that will be used to generate the query
-     *                 internally.
-     *
-     * @return The request information from the Content Analytics server.
-     */
-    @Operation(
-            operationId = "postContentAnalyticsSimpleQuery",
-            summary = "Returns Content Analytics data",
-            description = "Returns information of specific dotCMS objects whose health and " +
-                    "engagement data is tracked, using Path Parameters instead of a CubeJS JSON " +
-                    "query. This helps abstract the complexity of the underlying JSON format for " +
-                    "users that need an easier way to query for specific data.",
-            tags = {"Content Analytics"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Content Analytics data " +
-                            "being queried",
-                            content = @Content(mediaType = "application/json",
-                                    examples = {
-                                            @ExampleObject(
-                                                    value = "{\n" +
-                                                            "    \"measures\": \"request.count request.totalSessions\",\n" +
-                                                            "    \"dimensions\": \"request.host request.whatAmI request.url\",\n" +
-                                                            "    \"timeDimensions\": \"request.createdAt:day:Last month\",\n" +
-                                                            "    \"filters\": \"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE\",\n" +
-                                                            "    \"order\": \"request.count asc:request.createdAt asc\",\n" +
-                                                            "    \"limit\": 15,\n" +
-                                                            "    \"offset\": 0\n" +
-                                                            "}"
-                                            )
-                                    }
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
-            }
-    )
-    @POST
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ReportResponseEntityView query(@Context final HttpServletRequest request,
-                                          @Context final HttpServletResponse response,
-                                          final Map<String, Object> form) {
-        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
-                .requestAndResponse(request, response)
-                .requiredBackendUser(true)
-                .rejectWhenNoUser(true)
-                .init();
-        final User user = initDataObject.getUser();
-        Logger.debug(this, () -> "Querying content analytics data with the following parameters: " + form);
-        checkNotNull(form, IllegalArgumentException.class, "The 'form' JSON data cannot be null");
-        checkArgument(!form.isEmpty(), IllegalArgumentException.class, "The 'form' JSON data cannot be empty");
-        final ContentAnalyticsQuery contentAnalyticsQuery = new ContentAnalyticsQuery.Builder().build(form);
-        final String cubeJsQuery = JsonUtil.getJsonStringFromObject(contentAnalyticsQuery);
-        Logger.debug(this, () -> "Generated query: " + cubeJsQuery);
-        final ReportResponse reportResponse = this.contentAnalyticsAPI.runRawReport(cubeJsQuery, user);
-        return new ReportResponseEntityView(reportResponse.getResults()
-                .stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
     }
 
     /**
@@ -292,8 +164,9 @@ public class ContentAnalyticsResource {
      */
     @Operation(
             operationId = "fireUserCustomEvent",
-            summary = "Fire an user custom event.",
-            description = "receives a custom event payload and fires the event to the collectors",
+            summary = "Fire an user custom event **(Beta)**.",
+            description = "receives a custom event payload and fires the event to the collectors. " +
+                    "**Note:** This endpoint is in **beta** and may change.",
             tags = {"Content Analytics"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "If the event was created successfully",

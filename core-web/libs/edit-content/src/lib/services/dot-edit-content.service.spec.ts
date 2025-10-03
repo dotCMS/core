@@ -141,6 +141,141 @@ describe('DotEditContentService', () => {
             expect(req.request.body).toEqual({ comment });
             req.flush({ entity: mockActivity });
         });
+
+        it('should get versions with offset and limit parameters', (done) => {
+            const identifier = '123-456-789';
+            const paginationParams = { offset: 2, limit: 10 };
+            const mockVersions = [
+                {
+                    archived: false,
+                    country: 'United States',
+                    countryCode: 'US',
+                    experimentVariant: false,
+                    inode: 'test-inode-123',
+                    isoCode: 'en-us',
+                    language: 'English',
+                    languageCode: 'en',
+                    languageFlag: 'en_US',
+                    languageId: 1,
+                    live: true,
+                    modDate: 1756414525995,
+                    modUser: 'dotcms.org.1',
+                    title: 'Test Version',
+                    working: true
+                }
+            ];
+            const mockPagination = {
+                currentPage: 2,
+                perPage: 10,
+                totalEntries: 50,
+                totalPages: 5
+            };
+            const mockResponse = {
+                entity: mockVersions,
+                pagination: mockPagination
+            };
+
+            spectator.service.getVersions(identifier, paginationParams).subscribe((response) => {
+                expect(response.entity).toEqual(mockVersions);
+                expect(response.pagination).toEqual(mockPagination);
+                done();
+            });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/versions/id/${identifier}/history?offset=2&limit=10`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should get versions with languageId parameter', (done) => {
+            const identifier = '123-456-789';
+            const languageId = 1;
+            const mockVersions = [
+                {
+                    archived: false,
+                    country: 'United States',
+                    countryCode: 'US',
+                    experimentVariant: false,
+                    inode: 'test-inode-123',
+                    isoCode: 'en-us',
+                    language: 'English',
+                    languageCode: 'en',
+                    languageFlag: 'en_US',
+                    languageId: 1,
+                    live: true,
+                    modDate: 1756414525995,
+                    modUser: 'dotcms.org.1',
+                    title: 'Test Version',
+                    working: true
+                }
+            ];
+            const mockResponse = {
+                entity: mockVersions
+            };
+
+            spectator.service
+                .getVersions(identifier, undefined, languageId)
+                .subscribe((response) => {
+                    expect(response.entity).toEqual(mockVersions);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/versions/id/${identifier}/history?languageId=1`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should get versions with pagination and languageId parameters', (done) => {
+            const identifier = '123-456-789';
+            const paginationParams = { offset: 2, limit: 10 };
+            const languageId = 1;
+            const mockVersions = [
+                {
+                    archived: false,
+                    country: 'United States',
+                    countryCode: 'US',
+                    experimentVariant: false,
+                    inode: 'test-inode-123',
+                    isoCode: 'en-us',
+                    language: 'English',
+                    languageCode: 'en',
+                    languageFlag: 'en_US',
+                    languageId: 1,
+                    live: true,
+                    modDate: 1756414525995,
+                    modUser: 'dotcms.org.1',
+                    title: 'Test Version',
+                    working: true
+                }
+            ];
+            const mockPagination = {
+                currentPage: 2,
+                perPage: 10,
+                totalEntries: 50,
+                totalPages: 5
+            };
+            const mockResponse = {
+                entity: mockVersions,
+                pagination: mockPagination
+            };
+
+            spectator.service
+                .getVersions(identifier, paginationParams, languageId)
+                .subscribe((response) => {
+                    expect(response.entity).toEqual(mockVersions);
+                    expect(response.pagination).toEqual(mockPagination);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/versions/id/${identifier}/history?offset=2&limit=10&languageId=1`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
     });
 
     describe('Facades', () => {

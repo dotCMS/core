@@ -1,45 +1,43 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { format } from 'date-fns';
 
-import { ActivatedRoute, Router } from '@angular/router';
+import { Dropdown } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsDashboardFiltersComponent } from './dot-analytics-dashboard-filters.component';
 
-import { CUSTOM_TIME_RANGE, DEFAULT_TIME_PERIOD, TIME_PERIOD_OPTIONS } from '../../constants';
-import { fromUrlFriendly, toUrlFriendly } from '../../utils/dot-analytics.utils';
+import { TIME_PERIOD_OPTIONS } from '../../constants';
 
 describe('DotAnalyticsDashboardFiltersComponent', () => {
     let spectator: Spectator<DotAnalyticsDashboardFiltersComponent>;
-    let router: Router;
 
-    const mockActivatedRoute = {
-        snapshot: {
-            queryParams: {}
-        }
-    };
+    const messageServiceMock = new MockDotMessageService({
+        'analytics.metrics.total-pageviews': 'Total Pageviews',
+        'analytics.metrics.unique-visitors': 'Unique Visitors',
+        'analytics.metrics.top-page-performance': 'Top Page Performance'
+    });
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardFiltersComponent,
-        mocks: [DotMessageService, Router],
+        mocks: [DotMessageService],
         providers: [
             {
-                provide: ActivatedRoute,
-                useValue: mockActivatedRoute
+                provide: DotMessageService,
+                useValue: messageServiceMock
             }
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-        router = spectator.inject(Router);
-
-        // Setup the mock to return translated values
-        const messageService = spectator.inject(DotMessageService);
-        (messageService.get as jest.Mock).mockImplementation((key: string) => `Translated ${key}`);
-
-        // Reset router mock
-        (router.navigate as jest.Mock).mockClear();
+        spectator = createComponent({
+            props: {
+                timeRange: TIME_RANGE_OPTIONS.last7days
+            } as unknown
+        });
     });
 
     describe('Component Initialization', () => {
@@ -65,7 +63,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
 
     describe('Default Values', () => {
         it('should initialize with default time period from constants', () => {
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
         it('should have time period options from constants', () => {
@@ -79,7 +77,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
 
     describe('Custom Time Range Visibility', () => {
         it('should show custom calendar when CUSTOM_TIME_RANGE is selected', () => {
-            spectator.component.$selectedTimeRange.set(CUSTOM_TIME_RANGE);
+            spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
             spectator.detectChanges();
 
             expect(spectator.component.$showCustomTimeRange()).toBe(true);
@@ -88,11 +86,11 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
 
         it('should hide custom calendar when switching away from CUSTOM_TIME_RANGE', () => {
-            spectator.component.$selectedTimeRange.set(CUSTOM_TIME_RANGE);
+            spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
             spectator.detectChanges();
             expect(spectator.query(byTestId('custom-date-range-calendar'))).toBeTruthy();
 
-            spectator.component.$selectedTimeRange.set('from 7 days ago to now');
+            spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.last7days);
             spectator.detectChanges();
 
             expect(spectator.component.$showCustomTimeRange()).toBe(false);
@@ -101,335 +99,107 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         });
     });
 
-    describe('URL Mapping Functions', () => {
-        describe('toUrlFriendly', () => {
-            it('should convert internal values to URL-friendly values', () => {
-                const testCases = [
-                    { internal: 'today', urlFriendly: 'today' },
-                    { internal: 'yesterday', urlFriendly: 'yesterday' },
-                    { internal: 'from 7 days ago to now', urlFriendly: 'last7days' },
-                    { internal: 'from 30 days ago to now', urlFriendly: 'last30days' },
-                    { internal: CUSTOM_TIME_RANGE, urlFriendly: 'custom' }
-                ];
+    describe('timeRange input change', () => {
+        it('should show custom calendar when custom date range is selected', () => {
+            spectator.setInput('timeRange', ['2024-01-01', '2024-01-31']);
+            spectator.detectChanges();
 
-                testCases.forEach(({ internal, urlFriendly }) => {
-                    expect(toUrlFriendly(internal)).toBe(urlFriendly);
-                });
-            });
+            expect(spectator.component.$showCustomTimeRange()).toBe(true);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeTruthy();
 
-            it('should return original value for unknown internal values', () => {
-                const unknownValue = 'unknown-value';
-                expect(toUrlFriendly(unknownValue)).toBe(unknownValue);
-            });
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.custom);
+            const customDateRange = spectator.component.$customDateRange();
+            const from = format(customDateRange[0], 'yyyy-MM-dd');
+            const to = format(customDateRange[1], 'yyyy-MM-dd');
+            expect([from, to]).toEqual(['2024-01-01', '2024-01-31']);
         });
 
-        describe('fromUrlFriendly', () => {
-            it('should convert URL-friendly values to internal values', () => {
-                const testCases = [
-                    { urlFriendly: 'today', internal: 'today' },
-                    { urlFriendly: 'yesterday', internal: 'yesterday' },
-                    { urlFriendly: 'last7days', internal: 'from 7 days ago to now' },
-                    { urlFriendly: 'last30days', internal: 'from 30 days ago to now' },
-                    { urlFriendly: 'custom', internal: CUSTOM_TIME_RANGE }
-                ];
+        it('should reset custom date range when time range is changed to last7days', () => {
+            spectator.setInput('timeRange', TIME_RANGE_OPTIONS.last7days);
+            spectator.detectChanges();
 
-                testCases.forEach(({ urlFriendly, internal }) => {
-                    expect(fromUrlFriendly(urlFriendly)).toBe(internal);
-                });
-            });
+            expect(spectator.component.$showCustomTimeRange()).toBe(false);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeFalsy();
 
-            it('should return original value for unknown URL values', () => {
-                const unknownValue = 'unknown-url-value';
-                expect(fromUrlFriendly(unknownValue)).toBe(unknownValue);
-            });
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+            expect(spectator.component.$customDateRange()).toBeNull();
+        });
+
+        it('should reset custom date range when time range is changed to last30days', () => {
+            spectator.setInput('timeRange', TIME_RANGE_OPTIONS.last30days);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showCustomTimeRange()).toBe(false);
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            expect(calendar).toBeFalsy();
+
+            expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last30days);
+            expect(spectator.component.$customDateRange()).toBeNull();
         });
     });
 
-    describe('URL Parameter Updates', () => {
-        describe('Predefined Time Ranges', () => {
-            it('should update URL with URL-friendly values for predefined ranges', () => {
-                // Test the URL update method directly by calling the private method
+    describe('Custom Date Range Change', () => {
+        it('should emit custom date range when custom date range is selected', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const customDateRange = [
+                new Date('2024-01-01T00:00:00'),
+                new Date('2024-01-31T00:00:00')
+            ];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
 
-                const updateUrlParamsSpy = jest.spyOn(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    spectator.component as any,
-                    'updateUrlParams'
-                );
-
-                const timeRange = 'from 7 days ago to now';
-
-                // Call the private method directly to test URL update behavior
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (spectator.component as any).updateUrlParams(timeRange);
-
-                expect(updateUrlParamsSpy).toHaveBeenCalledWith(timeRange);
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        time_range: 'last7days',
-                        from: null,
-                        to: null
-                    },
-                    queryParamsHandling: 'merge',
-                    replaceUrl: true
-                });
-            });
-
-            it('should clear custom date params when setting predefined range', () => {
-                spectator.component.onTimeRangeChange('today');
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        time_range: 'today',
-                        from: null,
-                        to: null
-                    },
-                    queryParamsHandling: 'merge',
-                    replaceUrl: true
-                });
-            });
-        });
-
-        describe('Custom Date Ranges', () => {
-            it('should update URL with custom date range params', () => {
-                const startDate = new Date('2024-01-01');
-                const endDate = new Date('2024-01-31');
-                spectator.component.$customDateRange.set([startDate, endDate]);
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        time_range: 'custom',
-                        from: '2024-01-01',
-                        to: '2024-01-31'
-                    },
-                    queryParamsHandling: 'merge',
-                    replaceUrl: true
-                });
-            });
-
-            it('should not update URL for incomplete date ranges', () => {
-                // Test with null
-                spectator.component.$customDateRange.set(null);
-                spectator.detectChanges();
-                expect(router.navigate).not.toHaveBeenCalled();
-
-                // Test with single date
-                spectator.component.$customDateRange.set([new Date('2024-01-01')]);
-                spectator.detectChanges();
-                expect(router.navigate).not.toHaveBeenCalled();
-            });
-        });
-    });
-
-    describe('URL Initialization', () => {
-        it('should initialize from URL with predefined time range', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'last7days'
-            };
-
-            spectator = createComponent();
-
-            expect(spectator.component.$selectedTimeRange()).toBe('from 7 days ago to now');
-        });
-
-        it('should initialize from URL with custom date range', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
+            expect(changeFiltersSpy).toHaveBeenCalledWith({
+                time_range: TIME_RANGE_OPTIONS.custom,
                 from: '2024-01-01',
                 to: '2024-01-31'
-            };
-
-            spectator = createComponent();
-
-            expect(spectator.component.$selectedTimeRange()).toBe(CUSTOM_TIME_RANGE);
-            expect(spectator.component.$customDateRange()).toEqual([
-                new Date('2024-01-01'),
-                new Date('2024-01-31')
-            ]);
-        });
-
-        it('should not initialize from invalid URL params', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'invalid-range'
-            };
-
-            spectator = createComponent();
-
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    time_range: 'last7days',
-                    from: null,
-                    to: null
-                },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
             });
         });
 
-        it('should not initialize custom range without from/to params', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom'
-            };
+        it('should not emit custom date range when custom date range is selected with incomplete date range', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const customDateRange = [new Date('2024-01-01T00:00:00')];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
 
-            spectator = createComponent();
-
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
-            expect(spectator.component.$customDateRange()).toBeNull();
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
         });
 
-        it('should fall back to default when custom dates are invalid', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
-                from: 'invalid-date',
-                to: '2024-01-31'
-            };
+        it('should not emit custom date range when custom date range is selected with invalid date range', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const customDateRange = [
+                new Date('2024-01-01T00:00:00'),
+                new Date('1993-01-01T00:00:00')
+            ];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
 
-            spectator = createComponent();
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
+        });
+    });
 
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
-            expect(spectator.component.$customDateRange()).toBeNull();
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    time_range: 'last7days', // URL-friendly for DEFAULT_TIME_PERIOD
-                    from: null,
-                    to: null
-                },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
+    describe('onChangeTimeRange', () => {
+        it('should emit time range when time range is selected', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            spectator.triggerEventHandler(Dropdown, 'onChange', {
+                value: TIME_RANGE_OPTIONS.last7days,
+                originalEvent: createFakeEvent('change')
+            });
+
+            expect(changeFiltersSpy).toHaveBeenCalledWith({
+                time_range: TIME_RANGE_OPTIONS.last7days
             });
         });
 
-        it('should fall back to default when from date is after to date', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
-                from: '2024-01-31', // After to date
-                to: '2024-01-01'
-            };
-
-            spectator = createComponent();
-
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
-            expect(spectator.component.$customDateRange()).toBeNull();
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    time_range: 'last7days',
-                    from: null,
-                    to: null
-                },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
+        it('should not emit when time range is a custom date range', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            spectator.triggerEventHandler(Dropdown, 'onChange', {
+                value: TIME_RANGE_OPTIONS.custom,
+                originalEvent: createFakeEvent('change')
             });
-        });
 
-        it('should fall back to default when both dates are invalid', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'custom',
-                from: 'not-a-date',
-                to: 'also-not-a-date'
-            };
-
-            spectator = createComponent();
-
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
-            expect(spectator.component.$customDateRange()).toBeNull();
-        });
-
-        it('should fall back to default when time_range is invalid predefined value', () => {
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'invalid-time-range'
-            };
-
-            spectator = createComponent();
-
-            expect(spectator.component.$selectedTimeRange()).toBe(DEFAULT_TIME_PERIOD);
-            expect(spectator.component.$customDateRange()).toBeNull();
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    time_range: 'last7days',
-                    from: null,
-                    to: null
-                },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-            });
-        });
-    });
-
-    describe('Effects Behavior', () => {
-        it('should clear custom date range when switching away from CUSTOM_TIME_RANGE', async () => {
-            const dateRange = [new Date('2024-01-01'), new Date('2024-01-31')];
-            spectator.component.$customDateRange.set(dateRange);
-            spectator.component.$selectedTimeRange.set(CUSTOM_TIME_RANGE);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-
-            expect(spectator.component.$customDateRange()).toEqual(dateRange);
-
-            spectator.component.$selectedTimeRange.set('from 7 days ago to now');
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-
-            expect(spectator.component.$customDateRange()).toBeNull();
-        });
-
-        it('should avoid infinite loops with URL synchronization', async () => {
-            // Set up URL state that matches what we're about to set
-            mockActivatedRoute.snapshot.queryParams = {
-                time_range: 'last7days'
-            };
-
-            // This should not trigger URL update since it matches
-            spectator.component.$selectedTimeRange.set('from 7 days ago to now');
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-
-            // Should not have called navigate because values match
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('Dropdown Interaction', () => {
-        it('should have correct dropdown properties', () => {
-            const dropdown = spectator.query(byTestId('period-dropdown'));
-
-            expect(dropdown).toHaveAttribute('optionLabel', 'label');
-            expect(dropdown).toHaveAttribute('optionValue', 'value');
-            expect(dropdown).toHaveAttribute('size', 'small');
-        });
-    });
-
-    describe('Calendar Properties', () => {
-        beforeEach(() => {
-            spectator.component.$selectedTimeRange.set(CUSTOM_TIME_RANGE);
-            spectator.detectChanges();
-        });
-
-        it('should have correct calendar properties when visible', () => {
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
-
-            expect(calendar).toHaveAttribute('selectionMode', 'range');
-            expect(calendar).toHaveAttribute('dateFormat', 'mm/dd/yy');
-        });
-    });
-
-    describe('Accessibility', () => {
-        it('should have proper test ids for testing', () => {
-            expect(spectator.query(byTestId('analytics-filters'))).toBeTruthy();
-            expect(spectator.query(byTestId('period-dropdown'))).toBeTruthy();
-        });
-
-        it('should have proper dropdown id for accessibility', () => {
-            const dropdown = spectator.query('#period-filter');
-            expect(dropdown).toBeTruthy();
-        });
-
-        it('should have custom calendar test id when visible', () => {
-            spectator.component.$selectedTimeRange.set(CUSTOM_TIME_RANGE);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('custom-date-range-calendar'))).toBeTruthy();
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
         });
     });
 });

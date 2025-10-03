@@ -1,9 +1,13 @@
 package com.dotmarketing.business;
 
+import com.dotcms.ai.api.AIVisionAPI;
 import com.dotcms.ai.api.DotAIAPI;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
+import com.dotcms.ai.api.OpenAIVisionAPIImpl;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsAPIImpl;
+import com.dotcms.analytics.attributes.CustomAttributeAPI;
+import com.dotcms.analytics.attributes.CustomAttributeAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.BayesianAPIImpl;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
@@ -173,7 +177,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -315,7 +318,11 @@ public class APILocator extends Locator<APIIndex> {
 		return (StoryBlockAPI)getInstance(APIIndex.STORY_BLOCK_API);
 	}
 
-	@VisibleForTesting
+	public static CustomAttributeAPI getAnalyticsCustomAttribute() {
+		return (CustomAttributeAPI) getInstance(APIIndex.ANALYTICS_CUSTOM_ATTRIBUTE_API);
+	}
+
+    @VisibleForTesting
 	protected CompanyAPI getCompanyAPIImpl() {
 		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
 	}
@@ -446,6 +453,15 @@ public class APILocator extends Locator<APIIndex> {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
 
+
+   /**
+    * Retrieves an instance of the AIVisionAPI.
+    *
+    * @return An instance of AIVisionAPI obtained from the API index.
+    */
+   public static AIVisionAPI getAiVisionAPI() {
+      return (AIVisionAPI) getInstance(APIIndex.AI_VISION_API);
+   }
     /**
      * This is the contentletAPI which an application should use to do ALL
      * normal {@link ContentletAPI} logic.
@@ -1377,7 +1393,9 @@ enum APIIndex
 	SYSTEM_API,
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
-	JOB_QUEUE_MANAGER_API;
+	JOB_QUEUE_MANAGER_API,
+   AI_VISION_API,
+	ANALYTICS_CUSTOM_ATTRIBUTE_API;
 
 	Object create() {
 		switch(this) {
@@ -1472,6 +1490,9 @@ enum APIIndex
 			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: return CDIUtils.getBeanThrows(ContentAnalyticsAPI.class);
 			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBeanThrows(JobQueueManagerAPI.class);
+         case AI_VISION_API:
+            return new OpenAIVisionAPIImpl();
+			case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

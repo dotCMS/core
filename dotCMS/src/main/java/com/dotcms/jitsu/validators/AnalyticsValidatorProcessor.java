@@ -69,6 +69,7 @@ public class AnalyticsValidatorProcessor {
 
     final static AnalyticsValidatorProcessor INSTANCE = new AnalyticsValidatorProcessor();
     public static final String VALIDATOR_TYPE_ATTRIBUTE = "type";
+    public static final String VALIDATOR_ARRAY_TYPE_ATTRIBUTE = "array_type";
 
     private AnalyticsValidatorProcessor(){}
 
@@ -98,7 +99,7 @@ public class AnalyticsValidatorProcessor {
      * 
      * @return The map of validators for each event type
      */
-    public Map<EventType, Validators> getEventTypeValidators() {
+    public Map<EventType, Validators> getEventTypeValidators(List<Validators.JSONPathValidators> eventsGlobalValidators) {
         final Map<EventType, Validators> validatorsByEventType = new HashMap<>();
 
         try {
@@ -107,7 +108,8 @@ public class AnalyticsValidatorProcessor {
                 final String eventName = eventType.getName();
                 final String eventJsonPath = String.format(EVENT_JSON_PATH_TEMPLATE, eventName);
 
-                final Validators validators = getValidators(eventJsonPath);
+                final Validators validators = getValidators(eventJsonPath, "data");
+                validators.addAll(eventsGlobalValidators);
 
                 validatorsByEventType.put(eventType, validators);
             }
@@ -120,9 +122,13 @@ public class AnalyticsValidatorProcessor {
     }
 
     private Validators getValidators(String eventJsonPath) throws IOException {
+        return getValidators(eventJsonPath, "");
+    }
+
+    private Validators getValidators(final String eventJsonPath, final String pathPrefix)
+            throws IOException {
         final String jsonContent = FileUtil.getFileContentFromResourceContext(eventJsonPath);
-        final Validators validators = processValidatorsMap(new JSONObject(jsonContent));
-        return validators;
+        return processValidatorsMap(new JSONObject(jsonContent), pathPrefix);
     }
 
 
@@ -132,10 +138,10 @@ public class AnalyticsValidatorProcessor {
      * @param jsonValidationConfig    The JSON configuration
      * @return The map of field paths to validator classes
      */
-    private Validators processValidatorsMap(final JSONObject jsonValidationConfig) {
+    private Validators processValidatorsMap(final JSONObject jsonValidationConfig, final String pathPrefix) {
 
         final List<Validators.JSONPathValidators> jsonPathValidatorsList = new ArrayList<>();
-        processValidatorsRecursive(jsonValidationConfig, "", jsonPathValidatorsList);
+        processValidatorsRecursive(jsonValidationConfig, pathPrefix, jsonPathValidatorsList);
 
         return new Validators(jsonPathValidatorsList);
     }
@@ -172,12 +178,53 @@ public class AnalyticsValidatorProcessor {
                     jsonPathValidatorsList.add(new Validators.JSONPathValidators(currentPath, fieldValidators));
                 }
 
-                if (ValidatorType.JSON_OBJECT == type) {
-                    processValidatorsRecursive(jsonValue.getJSONObject("allowed_attributes"),
-                            currentPath, jsonPathValidatorsList);
-                }
+                callRecursivelyIfNeed(jsonPathValidatorsList, type, jsonValue, currentPath);
             }
         }
+    }
+
+/**
+     * If the current validator type represents a JSON object or an array of JSON objects,
+     * recursively processes the nested "allowed_attributes" section to collect validators
+     * for nested fields.
+     *
+     * @param jsonPathValidatorsList Collector list where discovered path validators are added
+     * @param type                   The validator type for the current node (object/array/etc.)
+     * @param jsonValue              The JSON configuration object at the current path
+     * @param currentPath            The dot-notation path accumulated so far
+     */
+    private void callRecursivelyIfNeed(final List<Validators.JSONPathValidators> jsonPathValidatorsList,
+                                       final ValidatorType type, JSONObject jsonValue,
+                                       final String currentPath) {
+        if (isJsonObject(type) || isJsonObjectArray(type, jsonValue)) {
+            if (jsonValue.has("allowed_attributes")) {
+                processValidatorsRecursive(jsonValue.getJSONObject("allowed_attributes"),
+                        currentPath, jsonPathValidatorsList);
+            }
+        }
+    }
+
+    /**
+     * Determines whether the current validator node represents an array of JSON objects.
+     * This is true when the node type is JSON_ARRAY and the array_type is JSON_OBJECT.
+     *
+     * @param type      The declared validator type for the node
+     * @param jsonValue The JSON configuration object for the node
+     * @return true if this node is an array of JSON objects; false otherwise
+     */
+    private static boolean isJsonObjectArray(final ValidatorType type, final JSONObject jsonValue) {
+        return ValidatorType.JSON_ARRAY == type &&
+                ValidatorType.valueOf(jsonValue.get(VALIDATOR_ARRAY_TYPE_ATTRIBUTE).toString().toUpperCase()) == ValidatorType.JSON_OBJECT;
+    }
+
+    /**
+     * Checks if the validator type denotes a JSON object node.
+     *
+     * @param type The validator type to check
+     * @return true if the type is JSON_OBJECT; false otherwise
+     */
+    private static boolean isJsonObject(ValidatorType type) {
+        return ValidatorType.JSON_OBJECT == type;
     }
 
     /**

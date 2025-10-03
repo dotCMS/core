@@ -13,7 +13,8 @@ import java.net.URL;
 import java.util.Map;
 
 /**
- * Util class to handle JSON
+ * This utility class exposes different methods that allow you to transform JSON Strings into Java
+ * Objects and vice versa, as well as methods to validate JSON.
  *
  * @author Freddy Rodriguez
  * @since Jun 8th, 2022
@@ -22,10 +23,12 @@ public class JsonUtil {
 
     public final static ObjectMapper JSON_MAPPER = new ObjectMapper();
 
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> getJsonFileContent(final String path) throws IOException {
         return JSON_MAPPER.readValue(getJsonFileContentAsString(path), Map.class);
     }
 
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> getJsonFromString(final String json) throws IOException {
         return JSON_MAPPER.readValue(json, Map.class);
     }
@@ -78,6 +81,19 @@ public class JsonUtil {
                 () -> JSON_MAPPER.writeValueAsString(object)).getOrElse(StringPool.BLANK);
 
         return json;
+    }
+
+    /**
+     * Transforms the specified object into a prettified JSON String.
+     *
+     * @param object The object to be transformed.
+     *
+     * @return The prettified JSON String.
+     */
+    public static String getPrettyJsonStringFromObject(final Object object) {
+        return Try.of(() ->
+                JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(object))
+                .getOrElse(StringPool.BLANK);
     }
 
     /**
@@ -160,4 +176,5 @@ public class JsonUtil {
             );
         }
     }
+
 }

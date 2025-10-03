@@ -241,7 +241,6 @@ public class FieldHandlerStrategyFactory {
                             tempFileOptional.get().file);
                 } else {
                     throw DotBinaryFieldException.invalidTempFileBuilder(field.variable(), value)
-                            .fieldName(field.name())
                             .fieldType(field.typeName())
                             .expectedFormat("Valid temporary file")
                             .addContext("tempFileResource", value.toString())
@@ -251,7 +250,6 @@ public class FieldHandlerStrategyFactory {
             }
         } catch (IOException e) {
             throw DotBinaryFieldException.ioErrorBuilder(field.variable(), value)
-                    .fieldName(field.name())
                     .fieldType(field.typeName())
                     .expectedFormat("File or temporary file resource")
                     .addContext("providedType", value != null ? value.getClass().getSimpleName() : "null")
@@ -308,7 +306,6 @@ public class FieldHandlerStrategyFactory {
                 } catch (Exception e) {
 
                     throw DotDateFieldException.conversionErrorBuilder(field.variable(), value)
-                            .fieldName(field.name())
                             .fieldType(field.typeName())
                             .acceptedFormats(dateFormats)
                             .addContext("errorMessage", e.getMessage())
@@ -321,7 +318,6 @@ public class FieldHandlerStrategyFactory {
         } else if (field.required() && value == null) {
 
             throw DotDateFieldException.invalidTypeBuilder(field.variable(), value)
-                    .fieldName(field.name())
                     .fieldType(field.typeName())
                     .expectedFormat("String or Date")
                     .addContext("providedType", value != null ? value.getClass().getSimpleName() : "null")
@@ -368,7 +364,6 @@ public class FieldHandlerStrategyFactory {
                     contentlet.getMap().put(field.variable(), stringValue);
                 }
                 throw DotNumericFieldException.floatFieldBuilder(field.variable(), value)
-                        .fieldName(field.name())
                         .fieldType(field.typeName())
                         .build();
             }
@@ -399,7 +394,6 @@ public class FieldHandlerStrategyFactory {
             } catch (Exception e) {
                 //If we throw this exception here... the contentlet will never get to the validateContentlet Method
                 throw DotNumericFieldException.longFieldBuilder(field.variable(), value)
-                        .fieldName(field.name())
                         .fieldType(field.typeName())
                         .build();
             }

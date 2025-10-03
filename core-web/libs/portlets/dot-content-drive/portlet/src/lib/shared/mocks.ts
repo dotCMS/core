@@ -1,18 +1,25 @@
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentType,
+    DotContentDriveItem,
+    SiteEntity,
+    StructureTypeView
+} from '@dotcms/dotcms-models';
+import { createFakeContentType } from '@dotcms/utils-testing';
 
-export const mockItems: DotContentDriveItem[] = [
+export const MOCK_ITEMS: DotContentDriveItem[] = [
     { identifier: '123', title: 'Test Content 1' } as DotContentDriveItem,
     { identifier: '456', title: 'Test Content 2' } as DotContentDriveItem
 ];
 
-export const mockSearchResponse = {
+export const MOCK_SEARCH_RESPONSE = {
     jsonObjectView: {
-        contentlets: mockItems
+        contentlets: MOCK_ITEMS
     },
     resultsSize: 2
 };
 
-export const mockRoute = {
+export const MOCK_ROUTE = {
     snapshot: {
         queryParams: {
             path: '/test/path',
@@ -21,7 +28,7 @@ export const mockRoute = {
     }
 };
 
-export const mockSites: SiteEntity[] = [
+export const MOCK_SITES: SiteEntity[] = [
     {
         aliases: 'demo.com,www.demo.com',
         archived: false,
@@ -198,4 +205,49 @@ export const mockSites: SiteEntity[] = [
         versionId: '',
         working: true
     }
+];
+
+export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
+    {
+        id: '1',
+        name: 'Blog',
+        variable: 'blog',
+        baseType: DotCMSBaseTypesContentTypes.CONTENT,
+        system: false
+    },
+    {
+        id: '2',
+        name: 'News',
+        variable: 'news',
+        baseType: DotCMSBaseTypesContentTypes.CONTENT,
+        system: false
+    },
+    {
+        id: '3',
+        name: 'Contact Form',
+        variable: 'contactForm',
+        baseType: DotCMSBaseTypesContentTypes.FORM,
+        system: false
+    },
+    {
+        id: '4',
+        name: 'System Content',
+        variable: 'systemContent',
+        baseType: DotCMSBaseTypesContentTypes.CONTENT,
+        system: true
+    }
+].map(createFakeContentType);
+
+export const SELECTED_CONTENT_TYPES: DotCMSContentType[] = [
+    MOCK_CONTENT_TYPES[0],
+    MOCK_CONTENT_TYPES[1],
+    MOCK_CONTENT_TYPES[2],
+    MOCK_CONTENT_TYPES[3]
+].filter((ct) => ct.baseType !== DotCMSBaseTypesContentTypes.FORM); // Select only content types that are not form
+
+export const MOCK_BASE_TYPES: StructureTypeView[] = [
+    { name: 'Content', label: 'Content', types: null },
+    { name: 'Widget', label: 'Widget', types: null },
+    { name: 'FORM', label: 'FORM', types: null },
+    { name: 'FileAsset', label: 'FileAsset', types: null }
 ];

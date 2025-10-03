@@ -1,17 +1,26 @@
-import { describe } from '@jest/globals';
-import { mockProvider } from '@ngneat/spectator';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { describe, expect } from '@jest/globals';
+import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
+import { DotContentSearchService, DotFolderService } from '@dotcms/data-access';
 import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
-import { DEFAULT_PATH, DEFAULT_TREE_EXPANDED, SYSTEM_HOST } from '../shared/constants';
-import { mockItems, mockSites } from '../shared/mocks';
+import {
+    BASE_QUERY,
+    DEFAULT_PAGINATION,
+    DEFAULT_PATH,
+    DEFAULT_SORT,
+    DEFAULT_TREE_EXPANDED,
+    SYSTEM_HOST
+} from '../shared/constants';
+import { MOCK_ITEMS, MOCK_SEARCH_RESPONSE, MOCK_SITES } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
@@ -28,7 +37,12 @@ describe('DotContentDriveStore', () => {
             }),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
-            })
+            }),
+            mockProvider(DotContentSearchService),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            provideHttpClient()
         ]
     });
 
@@ -45,6 +59,7 @@ describe('DotContentDriveStore', () => {
             expect(store.items()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
+            expect(store.sort()).toEqual(DEFAULT_SORT);
         });
     });
 
@@ -53,15 +68,12 @@ describe('DotContentDriveStore', () => {
             it('should build base query when no path or filters are provided', () => {
                 const baseQuery = new QueryBuilder()
                     .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    )
                     .build();
 
-                expect(store.$query()).toEqual(baseQuery);
+                expect(store.$searchParams().query).toEqual(baseQuery);
             });
 
             it('should include path in query when provided', () => {
@@ -74,20 +86,19 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
+                    .raw(BASE_QUERY)
                     .field('parentPath')
                     .equals(testPath)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    )
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
 
             it('should include custom site in query when provided', () => {
-                const customSite = mockSites[0] as SiteEntity;
+                const customSite = MOCK_SITES[0] as SiteEntity;
 
                 store.initContentDrive({
                     currentSite: customSite,
@@ -97,21 +108,18 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
-                    .field('conhost')
-                    .equals(customSite.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(BASE_QUERY)
+                    .raw(
+                        `+(conhost:${customSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    )
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
 
             it('should include filters in query when provided', () => {
                 const filters = {
-                    contentType: 'Blog',
+                    contentType: ['Blog'],
                     status: 'published'
                 };
 
@@ -123,20 +131,17 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
+                    .raw(BASE_QUERY)
+                    .raw(
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    )
                     .field('contentType')
                     .equals('Blog')
                     .field('status')
                     .equals('published')
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
 
             it('should include title filter in query when provided', () => {
@@ -152,18 +157,39 @@ describe('DotContentDriveStore', () => {
                 });
 
                 const expectedQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .field('parentPath')
-                    .equals(DEFAULT_PATH)
-                    .field('conhost')
-                    .equals(SYSTEM_HOST.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier)
-                    .field('title_dotraw')
-                    .equals('*Blog*')
+                    .raw(BASE_QUERY)
+                    .raw(
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    )
+                    .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
                     .build();
 
-                expect(store.$query()).toEqual(expectedQuery);
+                expect(store.$searchParams().query).toEqual(expectedQuery);
+            });
+
+            it('should include title filter in query when provided with multiple words', () => {
+                const filters = {
+                    title: 'Blog Post'
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const expectedQuery = new QueryBuilder()
+                    .raw(BASE_QUERY)
+                    .raw(
+                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                    )
+                    .raw(
+                        `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
+                    )
+                    .build();
+
+                expect(store.$searchParams().query).toEqual(expectedQuery);
             });
         });
     });
@@ -171,9 +197,9 @@ describe('DotContentDriveStore', () => {
     describe('Methods', () => {
         describe('initContentDrive', () => {
             it('should update state with provided values and set status to LOADING', () => {
-                const testSite = mockSites[0];
+                const testSite = MOCK_SITES[0];
                 const testPath = '/some/path';
-                const testFilters = { contentType: 'Blog' };
+                const testFilters = { contentType: ['Blog'] };
 
                 store.initContentDrive({
                     currentSite: testSite,
@@ -192,16 +218,16 @@ describe('DotContentDriveStore', () => {
 
         describe('setItems', () => {
             it('should update items and set status to LOADED', () => {
-                store.setItems(mockItems, mockItems.length);
+                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
 
-                expect(store.items()).toEqual(mockItems);
+                expect(store.items()).toEqual(MOCK_ITEMS);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
             });
 
             it('should update items with empty array', () => {
                 // First set some items
-                store.setItems(mockItems, mockItems.length);
-                expect(store.items()).toEqual(mockItems);
+                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                expect(store.items()).toEqual(MOCK_ITEMS);
 
                 // Then clear them
                 const emptyItems: DotContentDriveItem[] = [];
@@ -229,10 +255,27 @@ describe('DotContentDriveStore', () => {
             });
         });
 
-        describe('setFilters', () => {
+        describe('patchFilters', () => {
             it('should update filters with provided values', () => {
-                store.setFilters({ contentType: 'Blog' });
-                expect(store.filters()).toEqual({ contentType: 'Blog' });
+                store.patchFilters({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+            });
+
+            it('should remove filter if value is undefined', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+
+                store.patchFilters({ contentType: undefined });
+                expect(store.filters()).toEqual({});
+            });
+
+            it('should update filters and reset pagination offset', () => {
+                store.setPagination({ limit: 10, offset: 10 });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 10 });
+
+                store.patchFilters({ contentType: ['Blog'] });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
             });
         });
 
@@ -254,7 +297,6 @@ describe('DotContentDriveStore', () => {
         });
     });
 });
-
 describe('DotContentDriveStore - onInit', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
@@ -272,8 +314,15 @@ describe('DotContentDriveStore - onInit', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(mockSites[2])
-            })
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
+            }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            provideHttpClient()
         ]
     });
 
@@ -282,12 +331,99 @@ describe('DotContentDriveStore - onInit', () => {
         store = spectator.service;
     });
 
-    it('should use default path if not provided in query params', () => {
+    it('should initialize with provided values', () => {
+        spectator.flushEffects();
+
         expect(store.path()).toBe('/initial/test/path');
         expect(store.filters()).toEqual({
-            contentType: 'InitialTestContentType'
+            contentType: ['InitialTestContentType']
         });
         expect(store.isTreeExpanded()).toBe(true);
-        expect(store.currentSite()).toEqual(mockSites[2]);
+        expect(store.currentSite()).toBe(MOCK_SITES[2]);
+    });
+});
+
+describe('DotContentDriveStore - Content Loading Effect', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let contentSearchService: jest.Mocked<DotContentSearchService>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {}
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        contentSearchService = spectator.inject(DotContentSearchService);
+    });
+
+    beforeEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    it('should fetch content when store has a non-SYSTEM_HOST site', () => {
+        spectator.flushEffects();
+
+        expect(contentSearchService.get).toHaveBeenCalled();
+        expect(store.items()).toEqual(MOCK_ITEMS);
+        expect(store.totalItems()).toBe(MOCK_ITEMS.length);
+        expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+    });
+
+    it('should handle errors from content search service', () => {
+        // Mock error from content search
+        contentSearchService.get.mockReturnValue(
+            throwError(() => new Error('Failed to get content'))
+        );
+
+        spectator.flushEffects();
+
+        expect(store.status()).toBe(DotContentDriveStatus.ERROR);
+    });
+
+    it('should handle sorting', () => {
+        // Set sort in store
+        store.setSort({ field: 'baseType', order: DotContentDriveSortOrder.DESC });
+
+        spectator.flushEffects();
+
+        expect(contentSearchService.get).toHaveBeenCalledWith({
+            query: expect.any(String),
+            limit: DEFAULT_PAGINATION.limit,
+            offset: DEFAULT_PAGINATION.offset,
+            sort: 'score,baseType desc'
+        });
+    });
+
+    it('should handle pagination', () => {
+        // Set pagination in store
+        store.setPagination({ limit: 10, offset: 0 });
+
+        spectator.flushEffects();
+
+        expect(contentSearchService.get).toHaveBeenCalledWith({
+            query: expect.any(String),
+            limit: 10,
+            offset: 0,
+            sort: expect.any(String)
+        });
     });
 });

@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Pipe, PipeTransform } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
@@ -27,6 +27,7 @@ describe('ContainerCreateComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotContainerCreateComponent, DotMessageMockPipe],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {

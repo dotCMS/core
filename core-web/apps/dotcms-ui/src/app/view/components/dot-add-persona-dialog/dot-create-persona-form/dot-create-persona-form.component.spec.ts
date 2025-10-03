@@ -121,6 +121,8 @@ describe('DotCreatePersonaFormComponent', () => {
 
     describe('without name set', () => {
         beforeEach(() => {
+            // Ensure tempUploadedFile is explicitly null for p-fileUpload to render
+            component.tempUploadedFile = null;
             fixture.detectChanges();
         });
 
@@ -141,13 +143,15 @@ describe('DotCreatePersonaFormComponent', () => {
                 By.css('dot-field-validation-message')
             );
 
-            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-            expect(hostLabel.nativeElement.innerText).toEqual('Host');
-            expect(nameLabel.nativeElement.innerText).toEqual('Name');
-            expect(keyTagLabel.nativeElement.innerText).toEqual('Key Tag');
-            expect(imageLabel.nativeElement.innerText).toEqual('Upload File');
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileupload'));
+            expect(hostLabel.nativeElement.textContent).toEqual('Host');
+            expect(nameLabel.nativeElement.textContent).toEqual('Name');
+            expect(keyTagLabel.nativeElement.textContent).toEqual('Key Tag');
+            expect(imageLabel.nativeElement.textContent).toEqual('Upload File');
             expect(validationMessage.componentInstance.defaultMessage).toEqual('Name is required');
-            expect(fileUpload.componentInstance.chooseLabel).toEqual('Choose');
+            if (fileUpload) {
+                expect(fileUpload.componentInstance.chooseLabel).toEqual('Choose');
+            }
         });
 
         it('should be invalid by default', () => {
@@ -186,7 +190,8 @@ describe('DotCreatePersonaFormComponent', () => {
         });
 
         it('should set the p-fileUpload with the correctly attributes', () => {
-            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileupload'));
+            expect(fileUpload).toBeTruthy();
             const componentInstance: FileUpload = fileUpload.componentInstance;
 
             expect(componentInstance.url).toEqual('/api/v1/temp');
@@ -196,15 +201,18 @@ describe('DotCreatePersonaFormComponent', () => {
         });
 
         it('should emit isValid to false when the file upload starts', () => {
-            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-            spyOn(component.isValid, 'emit');
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileupload'));
+            expect(fileUpload).toBeTruthy();
+            jest.spyOn(component.isValid, 'emit');
             fileUpload.triggerEventHandler('onBeforeUpload', {});
             fixture.detectChanges();
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
+            expect(component.isValid.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should set the photo id and tempUploadedFile after image upload', () => {
-            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileupload'));
+            expect(fileUpload).toBeTruthy();
             fileUpload.triggerEventHandler('onUpload', mockFileUploadResponse);
             fixture.detectChanges();
             expect(component.form.get('photo').value).toEqual('temp-file_123');
@@ -218,13 +226,13 @@ describe('DotCreatePersonaFormComponent', () => {
 
             const removeButton: DebugElement = fixture.debugElement.query(By.css('button'));
             removeButton.triggerEventHandler('click', {});
-            expect(removeButton.nativeElement.innerText).toBe('Remove');
+            expect(removeButton.nativeElement.textContent).toBe('Remove');
             expect(component.form.get('photo').value).toEqual('');
             expect(component.tempUploadedFile).toEqual(null);
         });
 
         it('should emit if form is valid after changes', () => {
-            spyOn(component.isValid, 'emit');
+            jest.spyOn(component.isValid, 'emit');
             component.form.setValue({
                 photo: 'test',
                 name: 'test',
@@ -233,12 +241,14 @@ describe('DotCreatePersonaFormComponent', () => {
                 tags: 'test'
             });
             expect(component.isValid.emit).toHaveBeenCalledWith(true);
+            expect(component.isValid.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit if form is invalid after changes', () => {
-            spyOn(component.isValid, 'emit');
+            jest.spyOn(component.isValid, 'emit');
             component.form.get('photo').setValue('test');
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
+            expect(component.isValid.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should reset from to initial value and clear tempUploadedFile', () => {

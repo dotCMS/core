@@ -35,18 +35,6 @@ describe('DotContentDriveTreeTogglerComponent', () => {
         expect(icon).toBeTruthy();
     });
 
-    it('should have active class when tree is expanded', () => {
-        store.isTreeExpanded.mockReturnValue(true);
-        spectator.detectChanges();
-        expect(spectator.element.classList.contains('active')).toBe(true);
-    });
-
-    it('should not have active class when tree is collapsed', () => {
-        store.isTreeExpanded.mockReturnValue(false);
-        spectator.detectChanges();
-        expect(spectator.element.classList.contains('active')).toBe(false);
-    });
-
     it('should collapse the tree when clicked and currently expanded', () => {
         store.isTreeExpanded.mockReturnValue(true);
         spectator.detectChanges();
