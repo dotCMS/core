@@ -32,7 +32,14 @@ import { DotContentDriveDropzoneComponent } from '../components/dot-content-driv
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
-import { DIALOG_TYPE, HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, SORT_ORDER } from '../shared/constants';
+import {
+    DIALOG_TYPE,
+    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
+    SORT_ORDER,
+    SUCCESS_MESSAGE_LIFE,
+    WARNING_MESSAGE_LIFE,
+    ERROR_MESSAGE_LIFE
+} from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -231,7 +238,7 @@ export class DotContentDriveShellComponent {
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
             detail: this.#dotMessageService.get('content-drive.multiple-files-warning'),
-            life: 4500
+            life: WARNING_MESSAGE_LIFE
         });
 
         this.uploadFile(files[0]);
@@ -264,7 +271,7 @@ export class DotContentDriveShellComponent {
                             'content-drive.add-dotasset-success-detail',
                             title
                         ),
-                        life: 4000
+                        life: SUCCESS_MESSAGE_LIFE
                     });
 
                     this.#store.loadItems();
@@ -276,7 +283,8 @@ export class DotContentDriveShellComponent {
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
                         detail: this.#dotMessageService.get(
                             'content-drive.add-dotasset-error-detail'
-                        )
+                        ),
+                        life: ERROR_MESSAGE_LIFE
                     });
                     this.#store.setStatus(DotContentDriveStatus.LOADED);
                 }

@@ -33,7 +33,10 @@ import { DotContentDriveShellComponent } from './dot-content-drive-shell.compone
 import {
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
-    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY
+    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
+    WARNING_MESSAGE_LIFE,
+    SUCCESS_MESSAGE_LIFE,
+    ERROR_MESSAGE_LIFE
 } from '../shared/constants';
 import {
     MOCK_ITEMS,
@@ -544,7 +547,7 @@ describe('DotContentDriveShellComponent', () => {
                 severity: 'success',
                 summary: expect.any(String),
                 detail: expect.any(String),
-                life: 4000
+                life: SUCCESS_MESSAGE_LIFE
             });
         });
 
@@ -565,7 +568,8 @@ describe('DotContentDriveShellComponent', () => {
             expect(addSpy).toHaveBeenCalledWith({
                 severity: 'error',
                 summary: expect.any(String),
-                detail: expect.any(String)
+                detail: expect.any(String),
+                life: ERROR_MESSAGE_LIFE
             });
             expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.LOADED);
         });
@@ -617,7 +621,7 @@ describe('DotContentDriveShellComponent', () => {
                 severity: 'warn',
                 summary: expect.any(String),
                 detail: expect.any(String),
-                life: 4500
+                life: WARNING_MESSAGE_LIFE
             });
 
             // Should upload only the first file
@@ -708,7 +712,7 @@ describe('DotContentDriveShellComponent', () => {
                 severity: 'warn',
                 summary: expect.any(String),
                 detail: expect.any(String),
-                life: 4500
+                life: WARNING_MESSAGE_LIFE
             });
 
             // Should upload only the first file
