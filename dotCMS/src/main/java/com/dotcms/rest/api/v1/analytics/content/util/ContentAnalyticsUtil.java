@@ -262,7 +262,7 @@ public class ContentAnalyticsUtil {
 
             if (secretsOpt.isPresent()) {
                 final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
-                final Secret siteKeySecret = secretsMap.get("siteKey");
+                final Secret siteKeySecret = secretsMap.get("siteAuth");
                 if (siteKeySecret != null) {
                     return Optional.of(siteKeySecret.getString());
                 }
