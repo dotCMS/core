@@ -542,7 +542,8 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(addSpy).toHaveBeenCalledWith({
                 severity: 'success',
-                summary: expect.any(String)
+                summary: expect.any(String),
+                detail: expect.any(String)
             });
         });
 
