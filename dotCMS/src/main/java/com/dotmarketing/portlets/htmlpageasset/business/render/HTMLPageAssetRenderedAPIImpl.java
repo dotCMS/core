@@ -47,12 +47,11 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -295,13 +294,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletRequest request,
             final HttpServletResponse response)
             throws DotSecurityException, DotDataException {
-        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Getting the HTML for the context: " + context.toString());
+        Logger.debug(this, () -> "HTMLPageAssetRenderedAPIImpl_getPageHtml Getting the HTML for the context: "
+                + context.toString());
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
-        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Host object retrieved from the request is: " + host.getIdentifier());
+        Logger.debug(this, () -> "HTMLPageAssetRenderedAPIImpl_getPageHtml Host object retrieved from the request is: "
+                + host.getIdentifier());
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
         final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
-        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml HTMLPageUrl: " + htmlPageUrl.toString());
+        Logger.debug(this, () -> "HTMLPageAssetRenderedAPIImpl_getPageHtml HTMLPageUrl: " + htmlPageUrl.toString());
 
         String pageHTML = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)

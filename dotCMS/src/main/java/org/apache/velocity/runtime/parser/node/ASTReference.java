@@ -19,10 +19,11 @@ package org.apache.velocity.runtime.parser.node;
  * under the License.    
  */
 
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
-
 import org.apache.velocity.app.event.EventHandlerUtil;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
@@ -39,9 +40,6 @@ import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.introspection.Info;
 import org.apache.velocity.util.introspection.VelMethod;
 import org.apache.velocity.util.introspection.VelPropertySet;
-
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.VelocityUtil;
 
 /**
  * This class is responsible for handling the references in
@@ -478,9 +476,9 @@ public class ASTReference extends SimpleNode implements TokenImageSaver
             writer.write(morePrefix);
             writer.write(localNullString);
 
-            if (logOnNull && referenceType != QUIET_REFERENCE && Logger.isDebugEnabled(this.getClass()))
+            if (logOnNull && referenceType != QUIET_REFERENCE)
             {
-                Logger.debug(this,"Null reference [template '" + getTemplateName()
+                Logger.debug(this, () -> "Null reference [template '" + getTemplateName()
                         + "', line " + this.getLine() + ", column " + this.getColumn() + "] : "
                         + this.literal() + " cannot be resolved.");
             }

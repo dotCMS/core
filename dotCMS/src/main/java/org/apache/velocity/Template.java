@@ -23,9 +23,21 @@ import com.dotcms.rendering.velocity.events.DotVelocityExceptionHandlerFactory;
 import com.dotcms.rendering.velocity.events.ExceptionHandler;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.Logger;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.util.List;
+import java.util.Optional;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.exception.*;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.exception.TemplateInitException;
+import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.directive.Scope;
@@ -34,10 +46,6 @@ import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceManager;
-
-import java.io.*;
-import java.util.List;
-import java.util.Optional;
 
 
 /**
@@ -395,10 +403,9 @@ public class Template extends Resource
                 {
                     throw stop;
                 }
-                else if (Logger.isDebugEnabled(this.getClass()))
-                {
-                    Logger.debug(this,stop.getMessage());
-                }
+
+                Logger.debug(this, () -> stop.getMessage());
+
             }
             catch (IOException e)
             {

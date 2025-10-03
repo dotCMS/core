@@ -1,5 +1,14 @@
 package com.dotmarketing.filters;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+import static com.liferay.util.StringPool.PERIOD;
+import static com.liferay.util.StringPool.UNDERLINE;
+import static java.util.stream.Collectors.toSet;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -27,10 +36,6 @@ import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -43,15 +48,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
-import static com.liferay.util.StringPool.PERIOD;
-import static com.liferay.util.StringPool.UNDERLINE;
-import static java.util.stream.Collectors.toSet;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -127,10 +126,11 @@ public class CMSUrlUtil {
 			final String uri,
 			final Host site,
 			final long languageId) {
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType");
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType URI = " + uri);
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType site = " + site.getIdentifier());
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType lang = " + languageId);
+
+        Logger.debug(this.getClass(),
+                () -> "CMSUrlUtil_resolveResourceType\n- URI  = " + uri + "\n - site = " + site.getIdentifier()
+                        + "\n- lang = " + languageId);
+
 
 		final String uriWithoutQueryString = this.getUriWithoutQueryString (uri);
 		if (isFileAsset(uriWithoutQueryString, site, languageId)) {
@@ -140,7 +140,7 @@ public class CMSUrlUtil {
 		Tuple2<Boolean, IAmSubType> isPage = resolvePageAssetSubtype(uriWithoutQueryString, site, languageId);
 
 		if (isPage._1()) {
-			Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType is a Page");
+            Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolveResourceType is a Page");
 			return Tuple.of(IAm.PAGE, isPage._2());
 		}
 
@@ -170,10 +170,10 @@ public class CMSUrlUtil {
 	 * 		   and the IAmSubType will be the type of page asset when the boolean is true
 	 */
 	public Tuple2<Boolean, IAmSubType> resolvePageAssetSubtype(final String uri, final Host host, final Long languageId) {
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype");
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype URI = " + uri);
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtypet site = " + host.getIdentifier());
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype lang = " + languageId);
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolvePageAssetSubtype");
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolvePageAssetSubtype URI = " + uri);
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolvePageAssetSubtypet site = " + host.getIdentifier());
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolvePageAssetSubtype lang = " + languageId);
 
 		Identifier id;
 		if (!UtilMethods.isSet(uri)) {
@@ -185,16 +185,17 @@ public class CMSUrlUtil {
 			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
 			return Tuple.of(false, IAmSubType.NONE);
 		}
-		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Id " + id == null? "Not Found" : id.toString());
+        Logger.debug(this.getClass(),
+                () -> "CMSUrlUtil_resolvePageAssetSubtype Id " + id == null ? "Not Found" : id.toString());
 		if (id == null || id.getId() == null) {
 			return Tuple.of(false, IAmSubType.NONE);
 		}
 		if (HTMLPAGE.equals(id.getAssetType())) {
-			Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Id AssetType is Page");
+            Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolvePageAssetSubtype Id AssetType is Page");
 			return Tuple.of(true, IAmSubType.NONE);
 		}
 		if (CONTENTLET.equals(id.getAssetType())) {
-			Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Id AssetType is Contentlet");
+            Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolvePageAssetSubtype Id AssetType is Contentlet");
 			try {
 
 				//Get the list of languages use by the application
@@ -229,9 +230,11 @@ public class CMSUrlUtil {
 					Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype is not a Page returning false");
 					return Tuple.of(false, IAmSubType.NONE);//At this point we know is not a page
 				}
-				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Trying to get Contentlet");
+                Logger.debug(this.getClass(), () -> "CMSUrlUtil_resolvePageAssetSubtype Trying to get Contentlet");
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.get().getWorkingInode(), APILocator.systemUser(),false);
-				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Contentlet found " + c.toString());
+                Logger.debug(this.getClass(), () -> {
+                    return "CMSUrlUtil_resolvePageAssetSubtype Contentlet found " + c.toString();
+                });
 				return Tuple.of(c.isHTMLPage(), IAmSubType.NONE);
 
 			} catch (Exception e) {
@@ -249,7 +252,8 @@ public class CMSUrlUtil {
 					APILocator.getUserAPI().getSystemUser());
 
 			boolean isUrlMap = APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
-			Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Id AssetType is UrlMap " + isUrlMap);
+            Logger.debug(this.getClass(),
+                    () -> "CMSUrlUtil_resolvePageAssetSubtype Id AssetType is UrlMap " + isUrlMap);
 			return Tuple.of(isUrlMap, isUrlMap ? IAmSubType.PAGE_URL_MAP : IAmSubType.NONE);
 		} catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
@@ -267,10 +271,12 @@ public class CMSUrlUtil {
 	 * @return true if the URI is a File Asset, false if not
 	 */
 	public boolean isFileAsset(String uri, Host host, Long languageId) {
-		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset");
-		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset URI = " + uri);
-		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset site = " + (Objects.nonNull(host)?host.getIdentifier(): StringPool.UNKNOWN));
-		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset lang = " + languageId);
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset");
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset URI = " + uri);
+        Logger.debug(this.getClass(),
+                () -> "CMSUrlUtil_isFileAsset site = " + (Objects.nonNull(host) ? host.getIdentifier()
+                        : StringPool.UNKNOWN));
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset lang = " + languageId);
 
 		// languageId is not used now, but will be used in future functionality. Issue #7141
 
@@ -281,24 +287,25 @@ public class CMSUrlUtil {
 			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
 			return false;
 		}
-		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Id " + (id == null? "Not Found" : id.toString()));
+        Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset Id " + (id == null ? "Not Found" : id.toString()));
 		if (id == null || id.getId() == null) {
 			return false;
 		}
 		if (FILE_ASSET.equals(id.getAssetType())) {
-			Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Id AssetType is FileAsset");
+            Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset Id AssetType is FileAsset");
 			return true;
 		}
 
 		if (CONTENTLET.equals(id.getAssetType())) {
-			Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Id AssetType is Contentlet");
+            Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset Id AssetType is Contentlet");
 			try {
 				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
 				Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset contentletVersionInfo for Lang " + (cinfo.isEmpty() ? "Not Found" : cinfo.toString()));
 				if ((cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) && Config
 						.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
-					Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset contentletVersionInfo for lang not found trying defaultLang");
+                    Logger.debug(this.getClass(),
+                            () -> "CMSUrlUtil_isFileAsset contentletVersionInfo for lang not found trying defaultLang");
 					//Get the Default Language
 					Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 					//If the fallback to Default Language is set to true, let's see if the requested file is stored with Default Language
@@ -308,14 +315,14 @@ public class CMSUrlUtil {
 				}
 
 				if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
-					Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset is not a FileAsset returning false");
+                    Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset is not a FileAsset returning false");
 					return false;//At this point we know is not a File Asset
 				} else {
-					Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Trying to get Contentlet");
+                    Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset Trying to get Contentlet");
 					Contentlet c = APILocator.getContentletAPI()
 							.find(cinfo.get().getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
-					Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset Contentlet found " + c.toString());
+                    Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFileAsset Contentlet found " + c.toString());
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
 			} catch (Exception e) {
@@ -348,7 +355,7 @@ public class CMSUrlUtil {
 
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
-			Logger.debug(this.getClass(), "CMSUrlUtil_isFolder Id " + (id == null? "Not Found" : id.toString()));
+            Logger.debug(this.getClass(), () -> "CMSUrlUtil_isFolder Id " + (id == null ? "Not Found" : id.toString()));
 			if (id == null || id.getId() == null) {
 				return false;
 			}

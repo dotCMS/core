@@ -1,14 +1,12 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
@@ -18,7 +16,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -36,21 +33,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.velocity.Template;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -58,8 +49,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Date;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.velocity.Template;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
 
 /**
  * The purpose of this object is to provide an easy way on the frontend of dotCMS
@@ -639,8 +633,13 @@ public class ContentMap implements Serializable {
 
 	public String toString() {
 		getContentletsTitle();
-		getStructure();
-		return ToStringBuilder.reflectionToString(this);
+        return "contentMap:{"
+                + "contentlet:" + content.toString()
+                + ", map:" + content.getMap().toString()
+                + ", contentType:" + content.getContentType().toString()
+                + ", fields:" + content.getContentType().fieldMap().keySet()
+                + "}";
+
 	}
 
 	public Boolean isHTMLPage() {

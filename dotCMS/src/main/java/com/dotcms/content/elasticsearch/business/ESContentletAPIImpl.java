@@ -1399,27 +1399,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Logger.debug(this, "search - inode Added: " + conwrap.getInode());
         }
 
-        Logger.debug(this, "search - inodes: " + inodes);
+        Logger.debug(this, () -> "search - inodes: " + inodes);
         List<Contentlet> contentlets = findContentlets(inodes);
-        Logger.debug(this, "search - contentlets size: " + contentlets.size());
-        Logger.debug(this, "search - contentlets: " + contentlets);
+        Logger.debug(this, () -> "search - contentlets size: " + contentlets.size());
+        Logger.debug(this, () -> "search - contentlets: " + contentlets);
         Map<String, Contentlet> map = new HashMap<>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
-            Logger.debug(this, "search - contentlet: " + contentlet);
-            Logger.debug(this, "search - contentlet inode: " + contentlet.getInode());
+            Logger.debug(this, () -> "search - contentlet: " + contentlet);
+            Logger.debug(this, () -> "search - contentlet inode: " + contentlet.getInode());
             map.put(contentlet.getInode(), contentlet);
-            Logger.debug(this, "search - map size: " + map.size());
+            Logger.debug(this, () -> "search - map size: " + map.size());
         }
-        Logger.debug(this, "search - map: " + map);
+        Logger.debug(this, () -> "search - map: " + map);
         for (String inode : inodes) {
-            Logger.debug(this, "search - inode: " + inode);
+            Logger.debug(this, () -> "search - inode: " + inode);
             if (map.get(inode) != null) {
-                Logger.debug(this, "search - map.get(inode): " + map.get(inode));
+                Logger.debug(this, () -> "search - map.get(inode): " + map.get(inode));
                 contents.add(map.get(inode));
-                Logger.debug(this, "search - contents size: " + contents.size());
+                Logger.debug(this, () -> "search - contents size: " + contents.size());
             }
         }
-        Logger.debug(this, "search - contents: " + contents);
+        Logger.debug(this, () -> "search - contents: " + contents);
         return contents;
     }
 

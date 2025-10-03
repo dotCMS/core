@@ -51,6 +51,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -59,6 +60,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -74,7 +76,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang3.BooleanUtils;
 
 /**
@@ -587,11 +588,36 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return hasExtension;
     }
 
-    /**
-     *
-     */
+
+    private static final Lazy<Boolean> featureFlagIncludeMapInToString = Lazy.of(
+            () -> Config.getBooleanProperty("INCLUDE_MAP_IN_CONTENTLET_TOSTRING", false));
+
+    private transient String lastCachedToString = null;
+
+
+    @JsonIgnore
+    @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+
+        if (lastCachedToString != null) {
+            return lastCachedToString;
+        }
+
+        StringBuilder builder = new StringBuilder()
+                .append("Contentlet{")
+                .append("title=" + getTitle())
+                .append(", inode=" + map.get(INODE_KEY))
+                .append(", identifier=" + map.get(IDENTIFIER_KEY))
+                .append(", language=" + map.get(LANGUAGEID_KEY))
+                .append(", contentType=" + getContentTypeId())
+                .append(", variantId='" + variantId);
+        if (featureFlagIncludeMapInToString.get()) {
+            builder.append(", map=" + map);
+        }
+        builder.append('}');
+        this.lastCachedToString = builder.toString();
+        return this.lastCachedToString;
+
     }
 
     /**
@@ -1674,6 +1700,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		    final Object oldValue = this.get(key);
 		    if(!java.util.Objects.equals(oldValue, newValue)) {
 		        Contentlet.this.markAsDirty();
+                Contentlet.this.lastCachedToString = null;
 		    }
 
 		    if(newValue==null) {

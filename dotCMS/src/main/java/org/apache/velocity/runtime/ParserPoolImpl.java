@@ -19,11 +19,10 @@ package org.apache.velocity.runtime;
  * under the License.    
  */
 
+import com.dotmarketing.util.Logger;
+import org.apache.velocity.runtime.parser.CharStream;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.SimplePool;
-import org.apache.velocity.runtime.parser.CharStream;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * This wraps the original parser SimplePool class.  It also handles
@@ -52,10 +51,8 @@ public class ParserPoolImpl implements ParserPool {
             pool.put(rsvc.createNewParser());
         }
 
-        if (Logger.isDebugEnabled(this.getClass()))
-        {
-            Logger.debug(this,"Created '" + max + "' parsers.");
-        }
+        Logger.debug(this, () -> "Created '" + max + "' parsers.");
+
     }
 
     /**

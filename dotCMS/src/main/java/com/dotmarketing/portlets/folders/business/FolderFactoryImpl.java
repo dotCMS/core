@@ -22,6 +22,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -902,7 +903,7 @@ public class FolderFactoryImpl extends FolderFactory {
         dc.addParam(false);
         dc.addParam(0);
         dc.addParam(SYSTEM_FOLDER);
-        dc.addParam(APILocator.getUserAPI().getSystemUser().getUserId());
+          dc.addParam(UserAPI.SYSTEM_USER_ID);
         dc.addParam(new Date());
         dc.loadResult(connection);
 

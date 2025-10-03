@@ -296,7 +296,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
 		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-		if (user.getUserId().equals(APILocator.systemUser().getUserId()) || user.isAdmin()){
+        if (user.getUserId().equals(UserAPI.SYSTEM_USER_ID) || user.isAdmin()) {
 			return true;
 		}
 
@@ -342,7 +342,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 										  final Contentlet contentlet) throws DotDataException {
 
 		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-		if (user.getUserId().equals(APILocator.systemUser().getUserId())){
+        if (user.getUserId().equals(UserAPI.SYSTEM_USER_ID)) {
 			return true;
 		}
 
@@ -1527,7 +1527,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return false;
 		}
 
-		if(user!=null && user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
+        if (user != null && user.getUserId().equals(UserAPI.SYSTEM_USER_ID)) {
 			return true;
 		}
 

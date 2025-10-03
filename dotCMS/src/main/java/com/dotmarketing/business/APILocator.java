@@ -1250,9 +1250,8 @@ public class APILocator extends Locator<APIIndex> {
 
 		Object serviceRef = apiLocatorInstance.getServiceInstance(index);
 
-		if( Logger.isDebugEnabled(APILocator.class) ) {
-			Logger.debug(APILocator.class, apiLocatorInstance.audit(index));
-		}
+        Logger.debug(APILocator.class, () -> apiLocatorInstance.audit(index));
+
 
 		return serviceRef;
 	}

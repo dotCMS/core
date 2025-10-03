@@ -211,7 +211,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
      * @return PageCacheParameters instance with all cache keys
      */
     private PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
-        String userId = (getUser() != null) ? getUser().getUserId() : "anonymous";
+        String userId = (getUserId() != null) ? getUserId() : "anonymous";
         String language = String.valueOf(langId);
         String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
         String vanityUrl = request.getAttribute(VANITY_URL_OBJECT) != null
@@ -252,6 +252,10 @@ public class VelocityLiveMode extends VelocityModeHandler {
         this.getTemplate(htmlPage, mode).merge(context, out);
     }
 
+    String getUserId() {
+        return PortalUtil.getUserId(request);
+
+    }
 
     User getUser() {
         return PortalUtil.getUser(request);
