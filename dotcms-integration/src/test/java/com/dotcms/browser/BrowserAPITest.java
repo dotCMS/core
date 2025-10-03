@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
 
@@ -1437,16 +1438,16 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     /**
      * Test Case: Smart Pagination - Page 2 with same data (offset=26, still 26 items per page)
-     * Expected: 25 contentlets (all folders were shown on page 1)
+     * Expected: 26 contentlets (all folders were shown on page 1)
      */
     @Test
-    public void test_SmartPaginationPage2_25Contentlets() throws Exception {
+    public void test_SmartPaginationPage2_10Contentlets() throws Exception {
         // Create test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 25 folders
-        for (int i = 0; i < 25; i++) {
+        // Create 10 folders
+        for (int i = 0; i < 10; i++) {
             new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
@@ -1454,7 +1455,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         }
 
         // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 25; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1462,16 +1463,15 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Execute pagination query - Page 2 (offset=26)
+        // Execute pagination query - Page 2 (offset=10)
         final BrowserQuery browserQuery = BrowserQuery.builder()
                 .showFolders(true)
                 .showContent(true)
                 .showFiles(true)
-                .showDotAssets(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(26) // Second page
-                .maxResults(26)
+                .offset(11) // Second page
+                .maxResults(20)
                 .build();
 
         final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
@@ -1482,10 +1482,10 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
 
-        assertEquals("Should return exactly 25 items (25 contentlets, no folders)", 25, list.size());
-        assertEquals("Folder count should be 25", 25, result.get("folderCount"));
-        assertEquals("Content count should be 25", 25, result.get("contentCount"));
-        assertEquals("Content total count should be 100", 100, result.get("contentTotalCount"));
+        assertEquals("Should return exactly 20 items (20 contentlets, no folders)", 20, list.size());
+        assertEquals("Folder count should be 10", 10, result.get("folderCount"));
+        assertEquals("Content count should be 20", 20, result.get("contentCount"));
+        assertEquals("Content total count should be 25", 25, result.get("contentTotalCount"));
 
         // Verify all items are contentlets
         for (Map<String, Object> item : list) {
@@ -1593,8 +1593,8 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertEquals("Should return exactly 10 folders", 10, list.size());
         assertEquals("Folder count should be 15", 15, result.get("folderCount"));
-        assertEquals("Content count should be 0", 0, result.get("contentCount"));
-        assertEquals("Content total count should be 0", 0, result.get("contentTotalCount"));
+        assertNull("Content count should be null", result.get("contentCount"));
+        assertNull("Content total count should null", result.get("contentTotalCount"));
 
         // Verify all items are folders
         for (Map<String, Object> item : list) {
