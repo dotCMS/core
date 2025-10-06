@@ -3733,18 +3733,38 @@ paths:
       - Web Assets
   /v1/assets/drive:
     post:
+      description: Search and browse assets using drive-like functionality with filtering
+        and navigation capabilities
       operationId: drive
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/DriveRequestForm"
+        description: Drive search request parameters
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                type: object
+                description: Drive search response containing assets and navigation
+                  data
+          description: Drive search results retrieved successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Invalid request parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Not found. e.g Site/folder not found
+      summary: Search assets with drive functionality
       tags:
       - Web Assets
   /v1/assets/folders:
