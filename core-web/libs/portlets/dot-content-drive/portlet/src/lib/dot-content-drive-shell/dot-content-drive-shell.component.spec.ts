@@ -429,6 +429,13 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$showMessage()).toBe(false);
         });
 
+        it('should have a learn more link', () => {
+            spectator.detectChanges();
+
+            const learnMoreLink = spectator.query('[data-testid="learn-more-link"]');
+            expect(learnMoreLink).toBeTruthy();
+        });
+
         it('should return true if the hide message banner key is not set', () => {
             localStorageService.getItem.mockReturnValue(undefined);
             spectator.detectChanges();
