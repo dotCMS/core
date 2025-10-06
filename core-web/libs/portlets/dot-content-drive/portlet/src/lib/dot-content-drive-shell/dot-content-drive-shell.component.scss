@@ -2,6 +2,7 @@
 
 :host {
     display: grid;
+    position: relative;
     grid-template-columns: min-content 1fr min-content;
 
     /* This is the height according to figma for the first row */
@@ -59,7 +60,7 @@ p-messages {
     }
 }
 
-dot-folder-list-view {
+dot-content-drive-dropzone {
     grid-area: list;
 }
 

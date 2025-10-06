@@ -89,6 +89,14 @@ export class DotFolderListViewContextMenuComponent {
         }
     });
 
+    readonly closeOnContextMenuReset = effect(() => {
+        const data = this.#store.contextMenu();
+
+        if (!data?.contentlet && this.contextMenu()?.visible()) {
+            this.contextMenu()?.hide();
+        }
+    });
+
     /**
      * Hides the context menu by clearing the triggered event.
      */
