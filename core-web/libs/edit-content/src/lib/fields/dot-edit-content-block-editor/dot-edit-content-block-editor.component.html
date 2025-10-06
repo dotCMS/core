@@ -9,6 +9,7 @@
     }
     <dot-card-field-content>
         <dot-block-editor
+            [languageId]="$languageId()"
             [formControlName]="field.variable"
             [contentlet]="$contentlet()"
             [field]="field" />
