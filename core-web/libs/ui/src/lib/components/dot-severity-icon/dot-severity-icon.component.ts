@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 
 import { CheckIcon } from 'primeng/icons/check';
@@ -15,8 +14,7 @@ import { TimesCircleIcon } from 'primeng/icons/timescircle';
  */
 @Component({
     selector: 'dot-severity-icon',
-    standalone: true,
-    imports: [CommonModule, CheckIcon, InfoCircleIcon, TimesCircleIcon, ExclamationTriangleIcon],
+    imports: [CheckIcon, InfoCircleIcon, TimesCircleIcon, ExclamationTriangleIcon],
     templateUrl: './dot-severity-icon.component.html'
 })
 export class DotSeverityIconComponent {

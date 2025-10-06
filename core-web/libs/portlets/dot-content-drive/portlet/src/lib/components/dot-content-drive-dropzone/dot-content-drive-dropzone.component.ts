@@ -29,7 +29,11 @@ export class DotContentDriveDropzoneComponent {
 
     readonly #store = inject(DotContentDriveStore);
 
-    @HostBinding('class.active') get active() {
+    /**
+     * @description Get the active state of the dropzone
+     * @returns {boolean} - The active state of the dropzone
+     */
+    @HostBinding('class.active') get active(): boolean {
         return this.$isActive();
     }
 
