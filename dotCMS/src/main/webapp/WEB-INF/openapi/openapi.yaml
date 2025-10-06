@@ -6079,6 +6079,51 @@ paths:
           description: default response
       tags:
       - Content
+  /v1/content/{identifier}/push/history:
+    get:
+      description: Returns the push history of a contentlet
+      operationId: getPushHistory
+      parameters:
+      - description: ID of the Contentlet whose push history will be retrieved.
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: "Maximum number or results being returned, for pagination purposes."
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - description: "Page number of the results being returned, for pagination purposes."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: History data retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required.
+        "404":
+          content:
+            application/json: {}
+          description: The specified identifier does not match any contentlet.
+        "500":
+          content:
+            application/json: {}
+          description: An internal dotCMS error has occurred.
+      summary: Contentlet Push History
+      tags:
+      - Content
   /v1/content/{identifier}/references/count:
     get:
       operationId: getAllContentletReferencesCount

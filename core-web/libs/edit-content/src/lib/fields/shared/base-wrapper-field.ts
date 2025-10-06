@@ -4,18 +4,19 @@ import { FormControl, Validators, TouchedChangeEvent, ControlContainer } from '@
 
 import { filter } from 'rxjs/operators';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 /**
- * Base class for all field components that provides common functionality
+ * Base class for all wrapper field components that provides common functionality
  * for form control management, validation, and state handling.
  *
  * Note: Child components must define the $field input property.
  */
-export abstract class BaseWrapperFieldComponent {
+export abstract class BaseWrapperField {
     protected destroyRef = inject(DestroyRef);
     protected controlContainer = inject(ControlContainer);
     abstract $field: InputSignal<DotCMSContentTypeField>;
+    abstract $contentlet: InputSignal<DotCMSContentlet>;
 
     $showLabel = computed(() => {
         const field = this.$field();

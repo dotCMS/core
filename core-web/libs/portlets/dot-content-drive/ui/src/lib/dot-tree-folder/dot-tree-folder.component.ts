@@ -3,10 +3,7 @@ import { ChangeDetectionStrategy, Component, input, output, computed } from '@an
 import { TreeNode } from 'primeng/api';
 import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
-import { DotMessagePipe } from '../dot-message/dot-message.pipe';
-import { FolderNamePipe } from '../pipes/dot-folder-name/dot-folder-name.pipe';
-
-export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
+import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-tree-folder',

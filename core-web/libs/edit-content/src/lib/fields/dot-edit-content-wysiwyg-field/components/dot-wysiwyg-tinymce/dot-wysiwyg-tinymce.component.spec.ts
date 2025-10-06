@@ -10,13 +10,13 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeWYSIWYGField } from '@dotcms/utils-testing';
 
 import { DotWysiwygTinymceComponent } from './dot-wysiwyg-tinymce.component';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
 import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
-import { WYSIWYG_MOCK } from '../../mocks/dot-edit-content-wysiwyg-field.mock';
 
 const mockSystemWideConfig = { systemWideOption: 'value' };
 
@@ -29,7 +29,13 @@ export class MockFormComponent {
     // Host Props
     formGroup: FormGroup;
     field: DotCMSContentTypeField;
+    hasError = false;
 }
+
+const WYSIWYG_MOCK = createFakeWYSIWYGField({
+    values: '<p>HELLO</p>',
+    variable: 'variable'
+});
 
 describe('DotWysiwygTinymceComponent', () => {
     let spectator: SpectatorHost<DotWysiwygTinymceComponent, MockFormComponent>;
@@ -56,14 +62,15 @@ describe('DotWysiwygTinymceComponent', () => {
     it('should initialize editor with correct configuration', () => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [formControl]="formGroup.get(field.variable)" [field]="field" />
+                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
             </form>`,
             {
                 hostProps: {
                     formGroup: new FormGroup({
                         [WYSIWYG_MOCK.variable]: new FormControl()
                     }),
-                    field: WYSIWYG_MOCK
+                    field: WYSIWYG_MOCK,
+                    hasError: false
                 }
             }
         );
@@ -92,14 +99,15 @@ describe('DotWysiwygTinymceComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [formControl]="formGroup.get(field.variable)" [field]="field" />
+                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
             </form>`,
             {
                 hostProps: {
                     formGroup: new FormGroup({
                         [WYSIWYG_MOCK.variable]: new FormControl()
                     }),
-                    field: WYSIWYG_MOCK
+                    field: WYSIWYG_MOCK,
+                    hasError: false
                 },
                 providers: [
                     mockProvider(DotWysiwygTinymceService, {
@@ -152,14 +160,15 @@ describe('DotWysiwygTinymceComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [formControl]="formGroup.get(field.variable)" [field]="field" />
+                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
             </form>`,
             {
                 hostProps: {
                     formGroup: new FormGroup({
                         [fieldWithVariables.variable]: new FormControl()
                     }),
-                    field: fieldWithVariables
+                    field: fieldWithVariables,
+                    hasError: false
                 }
             }
         );
