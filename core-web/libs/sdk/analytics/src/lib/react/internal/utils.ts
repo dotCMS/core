@@ -24,7 +24,7 @@ export const initializeAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
     // Reset singleton if config changes
     if (
         cachedConfig &&
-        (cachedConfig.server !== config.server || cachedConfig.siteKey !== config.siteKey)
+        (cachedConfig.server !== config.server || cachedConfig.siteAuth !== config.siteAuth)
     ) {
         singleton = undefined;
     }
