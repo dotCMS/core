@@ -2,7 +2,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import {
-    extractUTMParameters,
     getLastActivityTime,
     hasPassedMidnight,
     hasUTMChanged,
@@ -11,10 +10,11 @@ import {
 } from './dot-analytics.identity.utils';
 
 import { DEFAULT_SESSION_TIMEOUT_MINUTES, SESSION_UTM_KEY } from '../../shared/constants';
-import { safeSessionStorage } from '../../shared/dot-content-analytics.utils';
+import { extractUTMParameters, safeSessionStorage } from '../../shared/dot-content-analytics.utils';
 
-// Mock the safeSessionStorage dependency
+// Mock the safeSessionStorage dependency but keep other exports
 jest.mock('../../shared/dot-content-analytics.utils', () => ({
+    ...jest.requireActual('../../shared/dot-content-analytics.utils'),
     safeSessionStorage: {
         getItem: jest.fn(),
         setItem: jest.fn()
@@ -207,7 +207,7 @@ describe('DotAnalytics Identity Utils', () => {
                 configurable: true
             });
 
-            const result = extractUTMParameters();
+            const result = extractUTMParameters(window.location);
             expect(result).toEqual({});
         });
 
@@ -223,12 +223,11 @@ describe('DotAnalytics Identity Utils', () => {
                 configurable: true
             });
 
-            const result = extractUTMParameters();
+            const result = extractUTMParameters(window.location);
             expect(result).toEqual({
                 source: 'google',
                 medium: 'cpc',
-                campaign: 'spring_sale',
-                id: '12345'
+                campaign: 'spring_sale'
             });
         });
 
@@ -244,7 +243,7 @@ describe('DotAnalytics Identity Utils', () => {
                 configurable: true
             });
 
-            const result = extractUTMParameters();
+            const result = extractUTMParameters(window.location);
             expect(result).toEqual({
                 source: 'google',
                 medium: 'cpc'
@@ -263,7 +262,7 @@ describe('DotAnalytics Identity Utils', () => {
                 configurable: true
             });
 
-            const result = extractUTMParameters();
+            const result = extractUTMParameters(window.location);
             expect(result).toEqual({
                 source: 'facebook',
                 campaign: 'summer'
@@ -282,11 +281,10 @@ describe('DotAnalytics Identity Utils', () => {
                 configurable: true
             });
 
-            const result = extractUTMParameters();
+            const result = extractUTMParameters(window.location);
             expect(result).toEqual({
                 source: 'google',
-                campaign: 'spring sale',
-                id: 'test 1'
+                campaign: 'spring sale'
             });
         });
     });

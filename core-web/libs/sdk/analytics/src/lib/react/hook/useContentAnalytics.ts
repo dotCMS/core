@@ -6,45 +6,59 @@ import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../core/shared/models
 import { initializeAnalytics } from '../internal';
 
 /**
- * Custom hook that handles analytics tracking for anonymous users.
- * Provides methods to track events and page views.
+ * React hook for tracking user interactions and page views in your DotCMS application.
  *
- * **UVE Editor Behavior:**
- * - Automatically disables ALL tracking when inside the Universal Visual Editor (UVE)
- * - This prevents editor interactions and preview activities from polluting analytics data
- * - UVE detection is memoized for performance - checked once per component lifecycle
+ * Use this hook to add analytics tracking to your React components. It automatically
+ * handles user sessions, device information, and UTM campaign parameters.
  *
- * **Performance:**
- * - Uses a singleton pattern - all components with the same config share the same analytics instance
- * - Only re-initializes when server or siteKey changes (not debug flag)
- * - UVE state check is memoized to avoid repeated function calls
+ * **Important:** Tracking is automatically disabled when editing content in DotCMS to avoid
+ * polluting your analytics data with editor activity.
  *
  * @example
+ * Basic usage - Track custom events
  * ```tsx
- * function Button({ title, urlTitle }) {
- *   const { track, pageView } = useContentAnalytics({
+ * function ProductCard({ title, price }) {
+ *   const { track } = useContentAnalytics({
  *     server: 'https://demo.dotcms.com',
  *     siteAuth: 'my-site-auth',
  *     debug: false
  *   });
  *
- *   // Track button click - automatically skipped in UVE editor
- *   const handleClick = () => {
- *     track('btn-click', { title, urlTitle });
+ *   const handleAddToCart = () => {
+ *     track('add-to-cart', {
+ *       product: title,
+ *       price: price
+ *     });
  *   };
  *
- *   // Track page view - also skipped in UVE editor
- *   useEffect(() => {
- *     pageView({ page: title });
- *   }, [title, pageView]);
- *
- *   return <button onClick={handleClick}>See Details →</button>;
+ *   return <button onClick={handleAddToCart}>Add to Cart</button>;
  * }
  * ```
  *
- * @param {DotCMSAnalyticsConfig} config - Required configuration object for analytics initialization
- * @returns {DotCMSAnalytics} The analytics instance with tracking capabilities
- * @throws {Error} When analytics initialization fails due to invalid configuration
+ * @example
+ * Track page views manually
+ * ```tsx
+ * function ArticlePage({ article }) {
+ *   const { pageView } = useContentAnalytics({
+ *     server: 'https://demo.dotcms.com',
+ *     siteKey: 'your-site-key'
+ *   });
+ *
+ *   useEffect(() => {
+ *     pageView({
+ *       category: article.category,
+ *       author: article.author
+ *     });
+ *   }, [article.id]);
+ * }
+ * ```
+ *
+ * @param config - Configuration object with server URL and site key
+ * @param config.server - The URL of your DotCMS Analytics server
+ * @param config.siteKey - Your unique site key for authentication
+ * @param config.debug - Optional. Set to true to see analytics events in the console
+ * @returns Object with `track()` and `pageView()` methods for analytics tracking
+ * @throws {Error} If the configuration is invalid (missing server or siteKey)
  */
 export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
     // Memoize instance based on server and siteAuth (the critical config values)
