@@ -767,23 +767,20 @@ public class ContentTypeHelper implements Serializable {
     }
 
     /**
-     * Ensures that the Content Types provided as parameter are included in the list of Content Type returned.
-     * <p>
-     * This method searches for a match in the predefined {@BaseContentType} enum
-     * and returns its corresponding index.
+     * Maps a comma-separated Content Types (String) to a List of Content Types (List<String>)
      * <p>
      *
-     * @param ensuredContentTypes List of Content Types required to be included in the response
-//     * @param contentTypes List of Content Types to be filtered
-     * @return list of Content Types including the ones specified in the param
+     * @param ensuredContentTypes List of Content Types requested to be included in the response
+     * @return List of Content Types names in lowercase (e.g. [video, content]).
      */
     public List<String> getEnsuredContentTypes(final String ensuredContentTypes) {
         System.out.println("Ensured content types params: " + ensuredContentTypes);
         return ensuredContentTypes == null || ensuredContentTypes.isBlank()
                 ? Collections.emptyList()
                 : Arrays.stream(ensuredContentTypes.split("\\s*,\\s*"))
-                .map(s -> s.trim().toLowerCase())
-                .collect(Collectors.toList());
+                        .map(s -> s.trim().toLowerCase())
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
     }
 
 } // E:O:F:ContentTypeHelper.
