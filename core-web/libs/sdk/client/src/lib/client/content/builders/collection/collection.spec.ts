@@ -1,30 +1,27 @@
 /// <reference types="jest" />
 
-import { DotCMSClientConfig } from '@dotcms/types';
+import {
+    DotRequestOptions,
+    DotCMSClientConfig,
+    DotHttpError,
+    DotErrorContent
+} from '@dotcms/types';
 
-import { ClientOptions, CollectionBuilder } from './collection';
+import { CollectionBuilder } from './collection';
 
+import { FetchHttpClient } from '../../../adapters/fetch-http-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortBy } from '../../shared/types';
 import { Equals } from '../query/lucene-syntax';
 
-global.fetch = jest.fn().mockReturnValue(
-    Promise.resolve({
-        ok: true,
-        json: () =>
-            Promise.resolve({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: []
-                    },
-                    resultsSize: 0
-                }
-            })
-    })
-);
+// Mock the FetchHttpClient
+jest.mock('../../../adapters/fetch-http-client');
 
 describe('CollectionBuilder', () => {
-    const requestOptions: ClientOptions = {
+    const mockRequest = jest.fn();
+    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+
+    const requestOptions: DotRequestOptions = {
         cache: 'no-cache' // To simulate a valid request
     };
 
@@ -44,24 +41,51 @@ describe('CollectionBuilder', () => {
 
     const requestURL = `${config.dotcmsUrl}${CONTENT_API_URL}`;
 
+    const mockResponseData = {
+        entity: {
+            jsonObjectView: {
+                contentlets: []
+            },
+            resultsSize: 0
+        }
+    };
+
     beforeEach(() => {
-        (fetch as jest.Mock).mockClear();
+        mockRequest.mockReset();
+        MockedFetchHttpClient.mockImplementation(
+            () =>
+                ({
+                    request: mockRequest
+                }) as Partial<FetchHttpClient> as FetchHttpClient
+        );
+
+        mockRequest.mockResolvedValue(mockResponseData);
     });
 
     it('should initialize with valid configuration', async () => {
         const contentType = 'my-content-type';
-        const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+        const collectionBuilder = new CollectionBuilder(
+            requestOptions,
+            config,
+            contentType,
+            new FetchHttpClient()
+        );
         expect(collectionBuilder).toBeDefined();
     });
 
     describe('successful requests', () => {
         it('should build a query for a basic collection', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder;
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:song +languageId:1 +live:true +conhost:test-site',
@@ -75,7 +99,12 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             const response = await collectionBuilder;
 
@@ -89,7 +118,12 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response with sort', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             const sortBy: SortBy[] = [
                 {
@@ -115,11 +149,16 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with a specific language', async () => {
             const contentType = 'ringsOfPower';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.language(13);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:ringsOfPower +languageId:13 +live:true +conhost:test-site',
@@ -133,11 +172,16 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with render on true', async () => {
             const contentType = 'boringContentType';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.render();
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:boringContentType +languageId:1 +live:true +conhost:test-site',
@@ -151,7 +195,12 @@ describe('CollectionBuilder', () => {
 
         it("should build a query with multiply sortBy's", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.sortBy([
                 {
@@ -168,7 +217,7 @@ describe('CollectionBuilder', () => {
                 }
             ]);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:jedi +languageId:1 +live:true +conhost:test-site',
@@ -183,11 +232,16 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with a specific depth', async () => {
             const contentType = 'droid';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.depth(2);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:droid +languageId:1 +live:true +conhost:test-site',
@@ -201,11 +255,16 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with a specific limit and page', async () => {
             const contentType = 'ship';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.limit(20).page(3);
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:ship +languageId:1 +live:true +conhost:test-site',
@@ -219,7 +278,12 @@ describe('CollectionBuilder', () => {
 
         it('should build a query with an specific query with main fields and custom fields of the content type', async () => {
             const contentType = 'lightsaber';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder
                 .query(
@@ -229,7 +293,7 @@ describe('CollectionBuilder', () => {
                 )
                 .query('+modDate:2024-05-28'); // modDate is a main field so it doesn't need to specify the content type
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +conhost:test-site +modDate:2024-05-28',
@@ -243,7 +307,12 @@ describe('CollectionBuilder', () => {
 
         it("should throw an error if the query doesn't end in an instance of Equals", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -256,12 +325,17 @@ describe('CollectionBuilder', () => {
                 );
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should throw an error if the parameter for query is not a function or string', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -274,12 +348,17 @@ describe('CollectionBuilder', () => {
                 );
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should throw an error if the depth is out of range (positive value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -288,12 +367,17 @@ describe('CollectionBuilder', () => {
                 expect(error).toEqual(new Error('Depth value must be between 0 and 3'));
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should throw an error if the depth is out of range (negative value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             try {
                 // Force the error
@@ -302,16 +386,21 @@ describe('CollectionBuilder', () => {
                 expect(error).toEqual(new Error('Depth value must be between 0 and 3'));
             }
 
-            expect(fetch).not.toHaveBeenCalled();
+            expect(mockRequest).not.toHaveBeenCalled();
         });
 
         it('should build a query for draft content', async () => {
             const contentType = 'draftContent';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.draft();
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:draftContent +languageId:1 +live:false +conhost:test-site',
@@ -325,11 +414,16 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for a collection with a specific variant', async () => {
             const contentType = 'adventure';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             await collectionBuilder.variant('dimension-1334-adventure');
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true +conhost:test-site',
@@ -343,7 +437,12 @@ describe('CollectionBuilder', () => {
 
         it('should handle all the query methods on GetCollection', async () => {
             const contentType = 'forceSensitive';
-            const collectionBuilder = new CollectionBuilder(requestOptions, config, contentType);
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
 
             // be sure that this test is updated when new methods are added
             let methods = Object.getOwnPropertyNames(
@@ -407,7 +506,7 @@ describe('CollectionBuilder', () => {
                 .query('+modDate:2024-05-28 +conhost:MyCoolSite'); // Raw query to append to the main query // Fetch the content
 
             // Check that the request was made with the correct query
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +conhost:test-site +modDate:2024-05-28 +conhost:MyCoolSite',
@@ -437,12 +536,13 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 configWithSite,
-                contentType
+                contentType,
+                new FetchHttpClient()
             );
 
             await collectionBuilder;
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site',
@@ -464,14 +564,15 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 configWithSite,
-                contentType
+                contentType,
+                new FetchHttpClient()
             );
 
             await collectionBuilder.query('+conhost:user-specified-site');
 
             // The current implementation adds both the default site constraint and the user-specified one
             // because the raw query is appended after the site constraint decision is made
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site +conhost:user-specified-site',
@@ -493,12 +594,13 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 configWithoutSite,
-                contentType
+                contentType,
+                new FetchHttpClient()
             );
 
             await collectionBuilder;
 
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true',
@@ -520,7 +622,8 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 configWithSite,
-                contentType
+                contentType,
+                new FetchHttpClient()
             );
 
             await collectionBuilder.query((qb) =>
@@ -529,7 +632,7 @@ describe('CollectionBuilder', () => {
 
             // When using the query builder, the conhost constraint is part of the base query
             // so the shouldAddSiteIdConstraint function will detect it and not add the default
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+conhost:user-specified-site +contentType:blog +languageId:1 +live:true',
@@ -551,14 +654,15 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 configWithSite,
-                contentType
+                contentType,
+                new FetchHttpClient()
             );
 
             await collectionBuilder.query('-conhost:my-default-site');
 
             // The current implementation still adds the default site constraint because
             // the exclusion is in the raw query which is processed after the site constraint decision
-            expect(fetch).toHaveBeenCalledWith(requestURL, {
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
                     query: '+contentType:blog +languageId:1 +live:true +conhost:my-default-site -conhost:my-default-site',
@@ -577,19 +681,30 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 config,
-                contentType
+                contentType,
+                new FetchHttpClient()
             ).language(13);
 
-            // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockRejectedValue(new Error('URL is invalid'));
+            // Mock the request to return a rejected promise
+            mockRequest.mockRejectedValue(new Error('URL is invalid'));
 
             collectionBuilder.then(
-                () => {
+                (response) => {
                     /* */
+                    return response;
                 },
                 (error) => {
-                    expect(error).toEqual(new Error('URL is invalid'));
+                    expect(error).toBeInstanceOf(DotErrorContent);
+                    if (error instanceof DotErrorContent) {
+                        expect(error.contentType).toBe('song');
+                        expect(error.operation).toBe('fetch');
+                        expect(error.message).toBe(
+                            "Content API failed for 'song' (fetch): URL is invalid"
+                        );
+                        expect(error.query).toBeDefined();
+                    }
                     done();
+                    return error;
                 }
             );
         });
@@ -599,14 +714,23 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 config,
-                contentType
+                contentType,
+                new FetchHttpClient()
             ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
 
-            // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockRejectedValue(new Error('DNS are not resolving'));
+            // Mock the request to return a rejected promise
+            mockRequest.mockRejectedValue(new Error('DNS are not resolving'));
 
             collectionBuilder.then().catch((error) => {
-                expect(error).toEqual(new Error('DNS are not resolving'));
+                expect(error).toBeInstanceOf(DotErrorContent);
+                if (error instanceof DotErrorContent) {
+                    expect(error.contentType).toBe('song');
+                    expect(error.operation).toBe('fetch');
+                    expect(error.message).toBe(
+                        "Content API failed for 'song' (fetch): DNS are not resolving"
+                    );
+                    expect(error.query).toBeDefined();
+                }
                 done();
             });
         });
@@ -616,50 +740,101 @@ describe('CollectionBuilder', () => {
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 config,
-                contentType
+                contentType,
+                new FetchHttpClient()
             ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
 
             // Mock a network error
-            (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+            mockRequest.mockRejectedValue(new Error('Network error'));
 
             try {
                 await collectionBuilder;
             } catch (e) {
-                expect(e).toEqual(new Error('Network error'));
+                expect(e).toBeInstanceOf(DotErrorContent);
+                if (e instanceof DotErrorContent) {
+                    expect(e.contentType).toBe('song');
+                    expect(e.operation).toBe('fetch');
+                    expect(e.message).toBe("Content API failed for 'song' (fetch): Network error");
+                    expect(e.query).toBeDefined();
+                }
             }
         });
-    });
 
-    describe('fetch resolves on error', () => {
-        it('should have the error content on then', async () => {
+        it('should throw HttpError when HTTP request fails', async () => {
             const contentType = 'song';
             const collectionBuilder = new CollectionBuilder(
                 requestOptions,
                 config,
-                contentType
+                contentType,
+                new FetchHttpClient()
             ).limit(10);
 
-            const error = {
-                message: 'Internal server error',
-                buffer: {
-                    stacktrace: 'Some really long server stacktrace'
-                }
-            };
-
-            // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockReturnValue(
-                Promise.resolve({
-                    status: 500,
-                    json: () => Promise.resolve(error)
-                })
-            );
-
-            collectionBuilder.then((response) => {
-                expect(response).toEqual({
-                    status: 500,
-                    ...error
-                });
+            const httpError = new DotHttpError({
+                status: 404,
+                statusText: 'Not Found',
+                message: 'Content not found',
+                data: { error: 'Content type does not exist' }
             });
+
+            // Mock the request to throw an HttpError
+            mockRequest.mockRejectedValue(httpError);
+
+            try {
+                await collectionBuilder;
+                fail('Expected DotCMSContentError to be thrown');
+            } catch (error) {
+                expect(error).toBeInstanceOf(DotErrorContent);
+                if (error instanceof DotErrorContent) {
+                    expect(error.contentType).toBe('song');
+                    expect(error.operation).toBe('fetch');
+                    expect(error.httpError).toBe(httpError);
+                    expect(error.message).toBe(
+                        "Content API failed for 'song' (fetch): Content not found"
+                    );
+                    expect(error.query).toBeDefined();
+                }
+            }
+        });
+
+        it('should handle HttpError in onrejected callback', (done) => {
+            const contentType = 'song';
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            ).language(13);
+
+            const httpError = new DotHttpError({
+                status: 500,
+                statusText: 'Internal Server Error',
+                message: 'Server error occurred',
+                data: { error: 'Internal server error' }
+            });
+
+            // Mock the request to throw an HttpError
+            mockRequest.mockRejectedValue(httpError);
+
+            collectionBuilder.then(
+                (response) => {
+                    fail('Expected onrejected callback to be called');
+                    return response;
+                },
+                (error) => {
+                    expect(error).toBeInstanceOf(DotErrorContent);
+                    if (error instanceof DotErrorContent) {
+                        expect(error.contentType).toBe('song');
+                        expect(error.operation).toBe('fetch');
+                        expect(error.httpError).toBe(httpError);
+                        expect(error.message).toBe(
+                            "Content API failed for 'song' (fetch): Server error occurred"
+                        );
+                        expect(error.query).toBeDefined();
+                    }
+                    done();
+                    return error;
+                }
+            );
         });
     });
 });

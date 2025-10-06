@@ -37,6 +37,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -65,12 +66,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
-import javax.ws.rs.Consumes;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -646,7 +647,6 @@ public class UserResource implements Serializable {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
@@ -661,9 +661,16 @@ public class UserResource implements Serializable {
 
         if (isRoleAdministrator) {
 
-            final User user = this.userAPI.loadUserById(userId);
-            return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
-                    "user", user.toMap())); // 200
+            try {
+                final User user = this.userAPI.loadUserById(userId);
+                final Role role = APILocator.getRoleAPI().getUserRole(user);
+
+                return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
+                        "user", user.toMap(), "roleId", role.getId())); // 200
+            } catch (NoSuchUserException e) {
+
+                throw new DoesNotExistException("User " + userId + " does not exist", e);
+            }
         }
 
         final String message = USER_MSG + modUser.getUserId() + " does not have permissions to retrieve users";
@@ -1039,6 +1046,10 @@ public class UserResource implements Serializable {
 						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
 				);
 
+        if (!UtilMethods.isSet(createUserForm.getPassword())) {
+            throw new IllegalArgumentException("Password can not be null");
+        }
+
 		if (isRoleAdministrator) {
 
 			final User userToUpdated = this.createNewUser(
@@ -1174,7 +1185,6 @@ public class UserResource implements Serializable {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
 				.requestAndResponse(httpServletRequest, httpServletResponse)
 				.rejectWhenNoUser(true)
 				.init().getUser();
@@ -1250,7 +1260,6 @@ public class UserResource implements Serializable {
 
         final User modUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true)
                 .init().getUser();
@@ -1334,7 +1343,6 @@ public class UserResource implements Serializable {
 
         final User modUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true)
                 .init().getUser();
@@ -1424,7 +1432,11 @@ public class UserResource implements Serializable {
 		}
 
 		// Password has changed, so it has to be validated
-		userToSave.setPassword(new String(updateUserForm.getPassword()));
+        if(UtilMethods.isSet(updateUserForm.getPassword())){
+
+            userToSave.setPassword(new String(updateUserForm.getPassword()));
+        }
+
 
 		if (APILocator.getPermissionAPI().doesUserHavePermission
 				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
@@ -1435,20 +1447,9 @@ public class UserResource implements Serializable {
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
-            if (null == updateUserForm.getRoles()) {
+            this.processRoles(updateUserForm, userToSave);
 
-                UserHelper.getInstance().removeRoles (userToSave);
-            }
-
-			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
-					updateUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
-
-			for (final String roleKey : roleKeys) {
-
-				UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
-			}
-
-			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
+            Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' , the roles have been updated.");
 
 		} else {
@@ -1459,7 +1460,25 @@ public class UserResource implements Serializable {
 		return userToSave;
 	}
 
-	/**
+    private void processRoles(final UserForm updateUserForm, final User userToSave) throws DotDataException {
+
+        if (UtilMethods.isSet(updateUserForm.getRoles())) {
+
+            final List<String> roleKeys = updateUserForm.getRoles();
+
+            this.helper.removeRoles(userToSave);  // the source of true is whatever is coming from the payload
+
+            for (final String roleKey : roleKeys) {
+
+                UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
+            }
+        } else {
+
+            Logger.debug(this, ()-> "Not roles sent at all, nothing has been modified in terms of roles");
+        }
+    }
+
+    /**
 	 * Deletes an existing user.
 	 *
 	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
@@ -1524,7 +1543,6 @@ public class UserResource implements Serializable {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
 				.requestAndResponse(httpServletRequest, new EmptyHttpResponse())
 				.rejectWhenNoUser(true)
 				.init().getUser();
@@ -1576,4 +1594,5 @@ public class UserResource implements Serializable {
 			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
 	} // delete.
+
 }
