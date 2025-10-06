@@ -267,13 +267,14 @@ export class DotContentDriveShellComponent {
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
-                next: ({ title }) => {
+                next: ({ title, contentType }) => {
                     this.#messageService.add({
                         severity: 'success',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
                         detail: this.#dotMessageService.get(
                             'content-drive.add-dotasset-success-detail',
-                            title
+                            title,
+                            contentType
                         ),
                         life: SUCCESS_MESSAGE_LIFE
                     });
