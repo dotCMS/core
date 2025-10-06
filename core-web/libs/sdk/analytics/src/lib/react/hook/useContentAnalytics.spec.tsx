@@ -80,7 +80,7 @@ describe('useContentAnalytics', () => {
 
         expect(() => {
             renderHook(() => useContentAnalytics(mockConfig));
-        }).toThrow('Failed to initialize DotContentAnalytics');
+        }).toThrow('DotCMS Analytics: Failed to initialize');
 
         console.error = originalError;
     });

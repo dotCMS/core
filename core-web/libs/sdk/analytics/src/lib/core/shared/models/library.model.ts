@@ -4,15 +4,30 @@
  */
 
 import {
-    DotCMSAnalyticsContext,
-    DotCMSDeviceData,
-    DotCMSPageData,
-    DotCMSUtmData
+    DotCMSAnalyticsEventContext,
+    DotCMSEventDeviceData,
+    DotCMSEventPageData,
+    DotCMSEventUtmData
 } from './data.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
-// Internal event type used by Analytics.js
-type DotAnalyticsInternalEventType = 'pageview' | 'track';
+/**
+ * Main interface for the DotCMS Analytics SDK.
+ * Provides the core methods for tracking page views and custom events.
+ */
+export interface DotCMSAnalytics {
+    /**
+     * Track a page view event.
+     */
+    pageView: (payload?: Record<string, unknown>) => void;
+
+    /**
+     * Track a custom event.
+     * @param eventName - The name/type of the event to track
+     * @param payload - Optional additional data to include with the event
+     */
+    track: (eventName: string, payload: Record<string, unknown>) => void;
+}
 
 /**
  * Configuration interface for DotCMS Analytics SDK.
@@ -41,117 +56,26 @@ export interface DotCMSAnalyticsConfig {
 }
 
 /**
- * The payload structure for DotCMS analytics events.
- * This interface represents the complete data structure that flows through
- * the analytics pipeline, including original event data and enriched context.
- *
- * This is the internal payload used by Analytics.js and our plugins.
+ * Track event payload with context.
+ * This is the payload for custom track events after the identity plugin adds context.
+ * Used in the track:dot-analytics enricher plugin.
  */
-export interface DotCMSAnalyticsPayload {
+export interface AnalyticsTrackPayloadWithContext extends AnalyticsBasePayload {
     /** The event name or identifier */
     event: string;
-    /** Additional properties associated with the event */
-    properties: Record<string, unknown>;
-    /** Configuration options for the event */
-    options: Record<string, unknown>;
-
-    // Properties added by plugins during processing
-    /** Analytics context shared across events */
-    context: DotCMSAnalyticsContext;
-    /** Page data for the current page */
-    page?: DotCMSPageData;
-    /** Device and browser information */
-    device?: DotCMSDeviceData;
-    /** UTM parameters for campaign tracking */
-    utm?: DotCMSUtmData;
-    /** Local timestamp when the event occurred */
-    local_time: string;
-
-    /** Internal event type */
-    type: DotAnalyticsInternalEventType;
-
-    /** Custom data associated with the event */
-    custom?: Record<string, unknown>;
-}
-
-/**
- * Parameters passed to DotCMS Analytics plugin methods (before enrichment).
- * Contains the configuration and raw payload data to be enriched.
- */
-export interface DotCMSAnalyticsParams {
-    /** Configuration for the analytics client */
-    config: DotCMSAnalyticsConfig;
-    /** The event payload to be processed (before enrichment) */
-    payload: DotCMSAnalyticsPayload;
+    /** Analytics context added by identity plugin */
+    context: DotCMSAnalyticsEventContext;
 }
 
 /**
  * Parameters passed to DotCMS Analytics plugin methods (after enrichment).
  * The payload is the complete request body ready to send to the server.
  */
-export interface DotCMSAnalyticsEnrichedParams {
+export interface DotCMSAnalyticsParams {
     /** Configuration for the analytics client */
     config: DotCMSAnalyticsConfig;
-    /** The complete request body (enriched and ready to send) */
+    /** The complete request body */
     payload: DotCMSAnalyticsRequestBody;
-}
-
-/**
- * Main interface for the DotCMS Analytics SDK.
- * Provides the core methods for tracking page views and custom events.
- */
-export interface DotCMSAnalytics {
-    /**
-     * Track a page view event.
-     */
-    pageView: (payload?: Record<string, unknown>) => void;
-
-    /**
-     * Track a custom event.
-     * @param eventName - The name/type of the event to track
-     * @param payload - Optional additional data to include with the event
-     */
-    track: (eventName: string, payload: Record<string, unknown>) => void;
-}
-
-/**
- * Browser event data collected from the user's session in DotCMS.
- * Contains comprehensive information about the user's browser environment,
- * page context, and session details for analytics tracking.
- *
- * This is an internal type used by utility functions.
- */
-export interface DotCMSBrowserEventData {
-    /** UTC timestamp when the event occurred */
-    utc_time: string;
-    /** Local timezone offset in minutes */
-    local_tz_offset: number;
-    /** Screen resolution as a string (e.g., "1920x1080") */
-    screen_resolution: string | undefined;
-    /** Viewport size as a string (e.g., "1200x800") */
-    vp_size: string | undefined;
-    /** User's preferred language */
-    user_language: string | undefined;
-    /** Document encoding */
-    doc_encoding: string | undefined;
-    /** Document path */
-    doc_path: string | undefined;
-    /** Document host */
-    doc_host: string | undefined;
-    /** Document protocol (http/https) */
-    doc_protocol: string | undefined;
-    /** Document hash fragment */
-    doc_hash: string;
-    /** Document search parameters */
-    doc_search: string;
-    /** Referrer URL */
-    referrer: string | undefined;
-    /** Page title */
-    page_title: string | undefined;
-    /** Current page URL */
-    url: string | undefined;
-    /** UTM parameters for campaign tracking */
-    utm: Record<string, string>;
 }
 
 /**
@@ -159,7 +83,7 @@ export interface DotCMSBrowserEventData {
  * Represents the payload structure used by Analytics.js lifecycle hooks
  * for intercepting and modifying analytics events.
  */
-export interface DotCMSAnalyticsHookPayload {
+export interface AnalyticsBasePayload {
     /** The type of analytics event */
     type: string;
     /** Properties associated with the event */
@@ -184,7 +108,7 @@ export interface DotCMSAnalyticsHookPayload {
     /** Configuration options for the event */
     options: Record<string, unknown>;
     /** User identifier */
-    userId: string | null;
+    userId: string;
     /** Anonymous user identifier */
     anonymousId: string;
     /** Metadata about the event */
@@ -197,6 +121,33 @@ export interface DotCMSAnalyticsHookPayload {
         hasCallback: boolean;
     };
 }
+
+/**
+ * Analytics.js payload with context.
+ * This is the result of enriching the base Analytics.js payload
+ * with context data added by the identity plugin.
+ */
+export interface AnalyticsBasePayloadWithContext extends AnalyticsBasePayload {
+    context: DotCMSAnalyticsEventContext;
+}
+
+/**
+ * Enriched analytics payload with DotCMS-specific data.
+ * This is the result of enriching the base Analytics.js payload with context (from identity plugin)
+ * and then adding page, device, UTM, and custom data (from enricher plugin).
+ */
+export type EnrichedAnalyticsPayload = AnalyticsBasePayloadWithContext & {
+    /** Page data for the current page */
+    page: DotCMSEventPageData;
+    /** Device and browser information */
+    device: DotCMSEventDeviceData;
+    /** UTM parameters for campaign tracking */
+    utm?: DotCMSEventUtmData;
+    /** Custom data associated with the event */
+    custom?: Record<string, unknown>;
+    /** Local timestamp when the event occurred */
+    local_time: string;
+};
 
 /**
  * Analytics.js instance structure for DotCMS.
@@ -222,9 +173,9 @@ export interface DotCMSAnalyticsInstance {
  * Contains all the context and data needed for Analytics.js lifecycle hooks
  * to process and modify analytics events.
  */
-export interface DotCMSAnalyticsBaseParams {
+export interface AnalyticsBaseParams {
     /** The event payload data */
-    payload: DotCMSAnalyticsHookPayload;
+    payload: AnalyticsBasePayload;
     /** The analytics instance */
     instance: DotCMSAnalyticsInstance;
     /** Global configuration settings */

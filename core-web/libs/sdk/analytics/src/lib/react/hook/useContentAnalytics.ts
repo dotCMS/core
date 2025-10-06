@@ -47,9 +47,9 @@ import { initializeAnalytics } from '../internal';
  * @throws {Error} When analytics initialization fails due to invalid configuration
  */
 export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
-    // Memoize instance based on server and siteKey (the critical config values)
+    // Memoize instance based on server and siteAuth (the critical config values)
     // Only re-initialize if these change
-    const instance = useMemo(() => initializeAnalytics(config), [config.server, config.siteKey]);
+    const instance = useMemo(() => initializeAnalytics(config), [config.server, config.siteAuth]);
 
     // Memoize UVE state check to avoid repeated calls
     // UVE state is determined by URL params and window context, so it's stable during component lifecycle
@@ -59,7 +59,7 @@ export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
 
     if (!instance) {
         throw new Error(
-            'Failed to initialize DotContentAnalytics. Please verify the required configuration (server and siteAuth).'
+            'DotCMS Analytics: Failed to initialize. Please verify the required configuration (server and siteAuth).'
         );
     }
 

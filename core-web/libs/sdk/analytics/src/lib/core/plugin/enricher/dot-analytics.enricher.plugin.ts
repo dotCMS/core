@@ -1,8 +1,8 @@
 import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 import {
-    DotCMSAnalyticsPayload,
-    DotCMSCustomEventRequestBody,
-    DotCMSPageViewRequestBody
+    AnalyticsBasePayloadWithContext,
+    AnalyticsTrackPayloadWithContext,
+    DotCMSAnalyticsRequestBody
 } from '../../shared/models';
 
 /**
@@ -20,18 +20,18 @@ export const dotAnalyticsEnricherPlugin = () => {
         /**
          * PAGE VIEW ENRICHMENT - Runs after identity context injection
          * Returns the complete request body for pageview events
-         * @returns {DotCMSPageViewRequestBody} Complete request body ready to send
+         * @returns {DotCMSAnalyticsRequestBody} Complete request body ready to send
          */
         'page:dot-analytics': ({
             payload
         }: {
-            payload: DotCMSAnalyticsPayload;
-        }): DotCMSPageViewRequestBody => {
-            const enriched = enrichPagePayloadOptimized(payload);
-            const { context, page, device, utm, custom, local_time } = enriched;
+            payload: AnalyticsBasePayloadWithContext;
+        }): DotCMSAnalyticsRequestBody => {
+            const { context, page, device, utm, custom, local_time } =
+                enrichPagePayloadOptimized(payload);
 
             if (!page || !device) {
-                throw new Error('DotAnalytics: Missing required page or device data');
+                throw new Error('DotCMS Analytics: Missing required page or device data');
             }
 
             return {
@@ -54,13 +54,13 @@ export const dotAnalyticsEnricherPlugin = () => {
         /**
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
          * Returns the complete request body for custom events
-         * @returns {DotCMSCustomEventRequestBody} Complete request body ready to send
+         * @returns {DotCMSAnalyticsRequestBody} Complete request body ready to send
          */
         'track:dot-analytics': ({
             payload
         }: {
-            payload: DotCMSAnalyticsPayload;
-        }): DotCMSCustomEventRequestBody => {
+            payload: AnalyticsTrackPayloadWithContext;
+        }): DotCMSAnalyticsRequestBody => {
             const { event, properties, context } = payload;
             const local_time = getLocalTime();
 

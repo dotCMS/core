@@ -3,7 +3,7 @@
  * Contains interfaces for HTTP request and response structures
  */
 
-import { DotCMSAnalyticsContext } from './data.model';
+import { DotCMSAnalyticsEventContext } from './data.model';
 import { DotCMSCustomEvent, DotCMSEvent, DotCMSPageViewEvent } from './event.model';
 
 /**
@@ -12,7 +12,7 @@ import { DotCMSCustomEvent, DotCMSEvent, DotCMSPageViewEvent } from './event.mod
  */
 export interface DotCMSRequestBody<T extends DotCMSEvent> {
     /** Context information shared across all events */
-    context: DotCMSAnalyticsContext;
+    context: DotCMSAnalyticsEventContext;
     /** Array of analytics events to be tracked */
     events: T[];
 }

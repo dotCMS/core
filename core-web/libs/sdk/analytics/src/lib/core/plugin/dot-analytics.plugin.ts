@@ -1,5 +1,5 @@
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
-import { DotCMSAnalyticsConfig, DotCMSAnalyticsEnrichedParams } from '../shared/models';
+import { DotCMSAnalyticsConfig, DotCMSAnalyticsParams } from '../shared/models';
 
 /**
  * Analytics plugin for tracking page views and custom events in DotCMS applications.
@@ -32,11 +32,11 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
          * Track a page view event
          * The enricher plugin has already built the complete request body
          */
-        page: (params: DotCMSAnalyticsEnrichedParams) => {
+        page: (params: DotCMSAnalyticsParams) => {
             const { config, payload } = params;
 
             if (!isInitialized) {
-                throw new Error('DotAnalytics: Plugin not initialized');
+                throw new Error('DotCMS Analytics: Plugin not initialized');
             }
 
             // Extract only context and events (strip any extra properties from Analytics.js)
@@ -52,11 +52,11 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
          * Track a custom event
          * The enricher plugin has already built the complete request body
          */
-        track: (params: DotCMSAnalyticsEnrichedParams) => {
+        track: (params: DotCMSAnalyticsParams) => {
             const { config, payload } = params;
 
             if (!isInitialized) {
-                throw new Error('DotAnalytics: Plugin not initialized');
+                throw new Error('DotCMS Analytics: Plugin not initialized');
             }
 
             // Extract only context and events (strip any extra properties from Analytics.js)

@@ -25,12 +25,12 @@ export type DotCMSPredefinedEventType =
  * Custom event type - any string except predefined event types
  * These events have flexible data structures defined by the user
  */
-export type CustomEventType = Exclude<string, DotCMSPredefinedEventType>;
+export type DotCMSCustomEventType = Exclude<string, DotCMSPredefinedEventType>;
 
 /**
  * Union type for all possible event types
  */
-export type DotCMSEventType = DotCMSPredefinedEventType | CustomEventType;
+export type DotCMSEventType = DotCMSPredefinedEventType | DotCMSCustomEventType;
 
 /**
  * Expected UTM parameter keys for campaign tracking
@@ -40,8 +40,7 @@ export const EXPECTED_UTM_KEYS = [
     'utm_medium',
     'utm_campaign',
     'utm_term',
-    'utm_content',
-    'utm_id'
+    'utm_content'
 ] as const;
 
 /**

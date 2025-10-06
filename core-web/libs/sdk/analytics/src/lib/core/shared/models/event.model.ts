@@ -3,10 +3,10 @@
  * Contains interfaces for different types of analytics events
  */
 
-import { DotCMSDeviceData, DotCMSPageData, DotCMSUtmData } from './data.model';
+import { DotCMSEventDeviceData, DotCMSEventPageData, DotCMSEventUtmData } from './data.model';
 
 import {
-    CustomEventType,
+    DotCMSCustomEventType,
     DotCMSEventType,
     DotCMSPredefinedEventType
 } from '../constants/dot-content-analytics.constants';
@@ -31,11 +31,11 @@ export interface DotCMSPageViewEvent extends DotCMSEventBase {
     /** Pageview-specific event data with structured format */
     data: {
         /** Page data associated with the event */
-        page: DotCMSPageData;
+        page: DotCMSEventPageData;
         /** Device and browser information */
-        device: DotCMSDeviceData;
+        device: DotCMSEventDeviceData;
         /** UTM parameters for campaign tracking (optional) */
-        utm?: DotCMSUtmData;
+        utm?: DotCMSEventUtmData;
         /** Custom data associated with the event */
         custom?: Record<string, unknown>;
     };
@@ -47,7 +47,7 @@ export interface DotCMSPageViewEvent extends DotCMSEventBase {
  */
 export interface DotCMSCustomEvent extends DotCMSEventBase {
     /** The type of event being tracked (any string except structured events) */
-    event_type: CustomEventType;
+    event_type: DotCMSCustomEventType;
     /** Custom event data with structured format */
     data: {
         /** Custom data associated with the event */

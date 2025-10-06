@@ -127,7 +127,7 @@ describe('DotAnalytics HTTP Utils', () => {
                 await sendAnalyticsEventToServer(mockPayload, debugConfig);
 
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    'DotAnalytics: HTTP Body to send:',
+                    'DotCMS Analytics: HTTP Body to send:',
                     JSON.stringify(mockPayload, null, 2)
                 );
             });
@@ -163,61 +163,61 @@ describe('DotAnalytics HTTP Utils', () => {
 
                 expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
                 expect(mockConsoleWarn).toHaveBeenCalledWith(
-                    `DotAnalytics: ${errorMessage} (HTTP 400: Bad Request)`
+                    `DotCMS Analytics: ${errorMessage} (HTTP 400: Bad Request)`
+                );
+            });
+
+            it('should log appropriate message when error response has no message property', async () => {
+                const mockResponse = {
+                    ok: false,
+                    status: 500,
+                    statusText: 'Internal Server Error',
+                    json: jest.fn().mockResolvedValue({ error: 'some error', code: 'ERR_500' })
+                } as unknown as Response;
+
+                mockFetch.mockResolvedValue(mockResponse);
+
+                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+
+                expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
+                expect(mockConsoleWarn).toHaveBeenCalledWith(
+                    'DotCMS Analytics: HTTP 500: Internal Server Error - No error message in response'
+                );
+            });
+
+            it('should log error when response JSON parsing fails', async () => {
+                const mockResponse = {
+                    ok: false,
+                    status: 400,
+                    statusText: 'Bad Request',
+                    json: jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+                } as unknown as Response;
+
+                mockFetch.mockResolvedValue(mockResponse);
+
+                await sendAnalyticsEventToServer(mockPayload, mockConfig);
+
+                expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
+                expect(mockConsoleWarn).toHaveBeenCalledWith(
+                    'DotCMS Analytics: HTTP 400: Bad Request - Failed to parse error response:',
+                    expect.any(Error)
                 );
             });
         });
 
-        it('should log appropriate message when error response has no message property', async () => {
-            const mockResponse = {
-                ok: false,
-                status: 500,
-                statusText: 'Internal Server Error',
-                json: jest.fn().mockResolvedValue({ error: 'some error', code: 'ERR_500' })
-            } as unknown as Response;
+        describe('Error Handling - Network Errors', () => {
+            it('should handle network errors gracefully', async () => {
+                const networkError = new Error('Network request failed');
+                mockFetch.mockRejectedValue(networkError);
 
-            mockFetch.mockResolvedValue(mockResponse);
+                await sendAnalyticsEventToServer(mockPayload, mockConfig);
 
-            await sendAnalyticsEventToServer(mockPayload, mockConfig);
-
-            expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
-            expect(mockConsoleWarn).toHaveBeenCalledWith(
-                'DotAnalytics: HTTP 500: Internal Server Error - No error message in response'
-            );
-        });
-
-        it('should log error when response JSON parsing fails', async () => {
-            const mockResponse = {
-                ok: false,
-                status: 400,
-                statusText: 'Bad Request',
-                json: jest.fn().mockRejectedValue(new Error('Invalid JSON'))
-            } as unknown as Response;
-
-            mockFetch.mockResolvedValue(mockResponse);
-
-            await sendAnalyticsEventToServer(mockPayload, mockConfig);
-
-            expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
-            expect(mockConsoleWarn).toHaveBeenCalledWith(
-                'DotAnalytics: HTTP 400: Bad Request - Failed to parse error response:',
-                expect.any(Error)
-            );
-        });
-    });
-
-    describe('Error Handling - Network Errors', () => {
-        it('should handle network errors gracefully', async () => {
-            const networkError = new Error('Network request failed');
-            mockFetch.mockRejectedValue(networkError);
-
-            await sendAnalyticsEventToServer(mockPayload, mockConfig);
-
-            expect(mockConsoleError).toHaveBeenCalledTimes(1);
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                'DotAnalytics: Error sending event:',
-                networkError
-            );
+                expect(mockConsoleError).toHaveBeenCalledTimes(1);
+                expect(mockConsoleError).toHaveBeenCalledWith(
+                    'DotCMS Analytics: Error sending event:',
+                    networkError
+                );
+            });
         });
     });
 });

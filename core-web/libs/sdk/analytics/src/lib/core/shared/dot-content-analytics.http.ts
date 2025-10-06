@@ -13,7 +13,7 @@ export const sendAnalyticsEventToServer = async (
 ): Promise<void> => {
     try {
         if (config.debug) {
-            console.warn('DotAnalytics: HTTP Body to send:', JSON.stringify(payload, null, 2));
+            console.warn('DotCMS Analytics: HTTP Body to send:', JSON.stringify(payload, null, 2));
         }
 
         const response = await fetch(`${config.server}${ANALYTICS_ENDPOINT}`, {
@@ -30,22 +30,22 @@ export const sendAnalyticsEventToServer = async (
             try {
                 const errorData = await response.json();
                 if (errorData.message) {
-                    console.warn(`DotAnalytics: ${errorData.message} (${baseErrorMessage})`);
+                    console.warn(`DotCMS Analytics: ${errorData.message} (${baseErrorMessage})`);
                 } else {
                     // JSON parsed successfully but no message property
                     console.warn(
-                        `DotAnalytics: ${baseErrorMessage} - No error message in response`
+                        `DotCMS Analytics: ${baseErrorMessage} - No error message in response`
                     );
                 }
             } catch (parseError) {
                 // JSON parsing failed, log the HTTP status with parse error
                 console.warn(
-                    `DotAnalytics: ${baseErrorMessage} - Failed to parse error response:`,
+                    `DotCMS Analytics: ${baseErrorMessage} - Failed to parse error response:`,
                     parseError
                 );
             }
         }
     } catch (error) {
-        console.error('DotAnalytics: Error sending event:', error);
+        console.error('DotCMS Analytics: Error sending event:', error);
     }
 };

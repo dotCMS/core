@@ -16,13 +16,13 @@ export const initializeContentAnalytics = (
     config: DotCMSAnalyticsConfig
 ): DotCMSAnalytics | null => {
     if (!config.siteAuth) {
-        console.error('DotContentAnalytics: Missing "siteAuth" in configuration');
+        console.error('DotCMS Analytics: Missing "siteAuth" in configuration');
 
         return null;
     }
 
     if (!config.server) {
-        console.error('DotContentAnalytics: Missing "server" in configuration');
+        console.error('DotCMS Analytics: Missing "server" in configuration');
 
         return null;
     }

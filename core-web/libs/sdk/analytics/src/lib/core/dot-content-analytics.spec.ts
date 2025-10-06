@@ -116,7 +116,7 @@ describe('initializeContentAnalytics', () => {
 
         expect(analytics).toBeNull();
         expect(consoleSpy).toHaveBeenCalledWith(
-            'DotContentAnalytics: Missing "server" in configuration'
+            'DotCMS Analytics: Missing "server" in configuration'
         );
 
         consoleSpy.mockRestore();

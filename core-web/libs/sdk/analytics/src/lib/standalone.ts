@@ -44,14 +44,14 @@ declare global {
                     analytics.pageView();
                 }
             } else {
-                console.warn('DotAnalytics: Auto page view is disabled');
+                console.warn('DotCMS Analytics: Auto page view is disabled');
             }
         } else {
             window[ANALYTICS_WINDOWS_KEY] = null;
         }
     } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('DotAnalytics: Failed to initialize:', error);
+        console.error('DotCMS Analytics: Failed to initialize:', error);
         window[ANALYTICS_WINDOWS_KEY] = null;
     }
 })();
