@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0d48c92c-ab64-4999-9dc9-673e6106fadd",
+		"_postman_id": "6496517b-8250-414a-9539-600f9f9c007a",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
