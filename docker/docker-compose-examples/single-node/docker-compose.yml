@@ -16,7 +16,8 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-
+    ports:
+      - "5435:5432"
   opensearch:
     image: opensearchproject/opensearch:1
     environment:
@@ -45,9 +46,9 @@ services:
           memory: 2G
 
   dotcms:
-    image: dotcms/dotcms:latest
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
     environment:
-      CMS_JAVA_OPTS: '-Xmx1g '
+      CMS_JAVA_OPTS: '-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=*:8000'
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       DB_BASE_URL: "jdbc:postgresql://db/dotcms"
@@ -57,8 +58,19 @@ services:
       DOT_ES_ENDPOINTS: 'https://opensearch:9200'
       DOT_INITIAL_ADMIN_PASSWORD: 'admin'
       DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
+      DOT_ANALYTICS_IDP_URL: "http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/token"
+      DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
       GLOWROOT_ENABLED: 'true'
       GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
+      #DOT_ANALYTICS_APP_CONFIG_URL: "http://host.docker.internal:61111/c/customer1/cluster1/keys"
+      #DOT_ANALYTICS_APP_WRITE_URL: "http://host.docker.internal/api/v1/event"
+      #DOT_ANALYTICS_APP_READ_URL: "http://host.docker.internal:4000"
+      DOT_FEATURE_FLAG_EXPERIMENTS: "true"
+      DOT_ENABLE_EXPERIMENTS_AUTO_JS_INJECTION: "true"
+      DOT_FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT: "true"
+      DOT_FEATURE_FLAG_CONTENT_ANALYTICS: "true"
+      #DOT_ANALYTICS_APP_CLIENT_ID: "analytics-customer-customer1"
+      #DOT_ANALYTICS_APP_CLIENT_SECRET: "testsecret"
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
       #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
@@ -73,6 +85,7 @@ services:
       - db_net
       - opensearch-net
     ports:
+      - "8000:8000"
       - "8082:8082"
       - "8443:8443"
       - "4000:4000" # Glowroot web ui if enabled
