@@ -567,6 +567,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				internalOffset += internalLimit;
 			}
 
+			// Sort the combined list of DB and file containers before applying pagination
+			sortCombinedContainers(toReturn, orderBy);
+
 			getPaginatedAssets(searchParams.offset(), searchParams.limit(), assets, toReturn);
 			if (searchParams.includeSystemContainer()) {
 				// System Container is being included, so increase the total result count by 1
@@ -579,6 +582,48 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		return assets;
+	}
+
+	/**
+	 * Sorts the combined list of database and file-based containers according to the specified orderBy parameter.
+	 * This ensures consistent sorting across both container types before pagination is applied.
+	 *
+	 * @param containers The list of containers to sort (will be modified in place)
+	 * @param orderBy    The sanitized orderBy parameter (e.g., "title asc", "mod_date desc")
+	 */
+	private void sortCombinedContainers(final List<Permissionable> containers, final String orderBy) {
+		if (!UtilMethods.isSet(orderBy) || containers.isEmpty()) {
+			return;
+		}
+
+		final String orderByLower = orderBy.toLowerCase();
+		switch (orderByLower) {
+			case "title":
+			case "title asc":
+				containers.sort(Comparator.comparing(p -> ((Container) p).getTitle()));
+				break;
+
+			case "title desc":
+				containers.sort(Comparator.comparing(p -> ((Container) p).getTitle()).reversed());
+				break;
+
+			case "moddate":
+			case "mod_date":
+			case "moddate asc":
+			case "mod_date asc":
+				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate()));
+				break;
+
+			case "moddate desc":
+			case "mod_date desc":
+				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate()).reversed());
+				break;
+
+			default:
+				// Default to mod_date desc for unknown or malicious orderBy values
+				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate()).reversed());
+				break;
+		}
 	}
 
 	private void getPaginatedAssets(final int offset,
