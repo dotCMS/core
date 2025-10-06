@@ -600,28 +600,28 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		switch (orderByLower) {
 			case "title":
 			case "title asc":
-				containers.sort(Comparator.comparing(p -> ((Container) p).getTitle()));
+				containers.sort(Comparator.comparing(p -> ((Container) p).getTitle(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
 				break;
 
 			case "title desc":
-				containers.sort(Comparator.comparing(p -> ((Container) p).getTitle()).reversed());
+				containers.sort(Comparator.comparing(p -> ((Container) p).getTitle(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)).reversed());
 				break;
 
 			case "moddate":
 			case "mod_date":
 			case "moddate asc":
 			case "mod_date asc":
-				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate()));
+				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate(), Comparator.nullsLast(Comparator.naturalOrder())));
 				break;
 
 			case "moddate desc":
 			case "mod_date desc":
-				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate()).reversed());
+				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate(), Comparator.nullsLast(Comparator.naturalOrder())).reversed());
 				break;
 
 			default:
 				// Default to mod_date desc for unknown or malicious orderBy values
-				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate()).reversed());
+				containers.sort(Comparator.comparing(p -> ((Container) p).getModDate(), Comparator.nullsLast(Comparator.naturalOrder())).reversed());
 				break;
 		}
 	}
