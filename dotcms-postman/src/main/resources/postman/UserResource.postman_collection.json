@@ -1670,7 +1670,62 @@
 			"name": "FindUsers",
 			"item": [
 				{
-					"name": "FindUserById",
+					"name": "FindUserByIdNotFound",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse the JSON response and set up variables",
+									"const responseJson = pm.response.json();",
+									"const entity = responseJson.entity;",
+									"const user = entity ? entity.user : null;",
+									"",
+									"// ===========================================",
+									"// STRUCTURAL AND SUCCESS TESTS",
+									"// ===========================================",
+									"",
+									"pm.test(\"Status code is 404 OK\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/dotcmsxxxx",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"dotcmsxxxx"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FindUserById Copy",
 					"event": [
 						{
 							"listen": "test",

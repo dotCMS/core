@@ -31,6 +31,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -486,7 +487,6 @@ public class UserResource implements Serializable {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
@@ -501,11 +501,16 @@ public class UserResource implements Serializable {
 
         if (isRoleAdministrator) {
 
-            final User user = this.userAPI.loadUserById(userId);
-            final Role role = APILocator.getRoleAPI().getUserRole(user);
+            try {
+                final User user = this.userAPI.loadUserById(userId);
+                final Role role = APILocator.getRoleAPI().getUserRole(user);
 
-            return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
-                    "user", user.toMap(), "roleId", role.getId())); // 200
+                return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
+                        "user", user.toMap(), "roleId", role.getId())); // 200
+            } catch (NoSuchUserException e) {
+
+                throw new DoesNotExistException("User " + userId + " does not exist", e);
+            }
         }
 
         final String message = USER_MSG + modUser.getUserId() + " does not have permissions to retrieve users";
@@ -1020,7 +1025,6 @@ public class UserResource implements Serializable {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
 				.requestAndResponse(httpServletRequest, httpServletResponse)
 				.rejectWhenNoUser(true)
 				.init().getUser();
@@ -1096,7 +1100,6 @@ public class UserResource implements Serializable {
 
         final User modUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true)
                 .init().getUser();
@@ -1180,7 +1183,6 @@ public class UserResource implements Serializable {
 
         final User modUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true)
                 .init().getUser();
@@ -1381,7 +1383,6 @@ public class UserResource implements Serializable {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
 				.requestAndResponse(httpServletRequest, new EmptyHttpResponse())
 				.rejectWhenNoUser(true)
 				.init().getUser();
