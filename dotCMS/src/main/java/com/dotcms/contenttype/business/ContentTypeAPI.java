@@ -473,12 +473,12 @@ public interface ContentTypeAPI {
    * @param orderBy             Specifies an order criteria for the results
    * @param limit               Amount of results
    * @param offset              Start position of the resulting list
-   * @param includeContentTypes The Content Types that are explicitly required to be included.
+   * @param requestedContentTypes The Content Types that are explicitly requested to be included.
    * @return List of Content Types Objects
    * @throws DotDataException Error occurred when performing the action.
    */
   List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit,
-          int offset, String hostId, List<String> includeContentTypes)
+          int offset, String hostId, List<String> requestedContentTypes)
           throws DotDataException;
 
   /**
