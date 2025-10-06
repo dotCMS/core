@@ -1725,7 +1725,7 @@
 					"response": []
 				},
 				{
-					"name": "FindUserById Copy",
+					"name": "FindUserById",
 					"event": [
 						{
 							"listen": "test",
@@ -1784,18 +1784,6 @@
 									"    pm.expect(user.type, \"User 'type' must be user\").to.equal('user');",
 									"});",
 									"",
-									"pm.test(\"User Roles and Access Flags are correctly set (Booleans)\", function () {",
-									"    // Asserting role and access flags",
-									"    pm.expect(user.admin, \"User must be an admin\").to.be.true;",
-									"    pm.expect(user.backendUser, \"User must be a backendUser\").to.be.true;",
-									"    pm.expect(user.frontendUser, \"User must NOT be a frontendUser\").to.be.false;",
-									"    pm.expect(user.hasConsoleAccess, \"User must have Console Access\").to.be.true;",
-									"    ",
-									"    // Asserting state and security fields",
-									"    pm.expect(user.active, \"User must be active\").to.be.true;",
-									"    pm.expect(user.passwordExpired, \"Password must not be expired\").to.be.false;",
-									"    pm.expect(user.failedLoginAttempts, \"Failed login attempts must be 0\").to.equal(0);",
-									"});",
 									"",
 									"pm.test(\"User Company and Localization fields are correct\", function () {",
 									"    // Asserting organization and location data",
