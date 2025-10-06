@@ -16,7 +16,8 @@ import {
     DotCMSEventDeviceData,
     DotCMSEventPageData,
     DotCMSEventUtmData,
-    EnrichedAnalyticsPayload
+    EnrichedAnalyticsPayload,
+    JsonObject
 } from './models';
 
 // Export activity tracking functions from separate module
@@ -484,7 +485,7 @@ export const enrichPagePayloadOptimized = (
     const { properties } = payload;
 
     // Filter out Analytics.js default properties to get only user-provided properties
-    const userProvidedProperties: Record<string, unknown> = {};
+    const userProvidedProperties: JsonObject = {};
     Object.keys(properties).forEach((key) => {
         if (!(ANALYTICS_JS_DEFAULT_PROPERTIES as readonly string[]).includes(key)) {
             userProvidedProperties[key] = properties[key as keyof typeof properties];

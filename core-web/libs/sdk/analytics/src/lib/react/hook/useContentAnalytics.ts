@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 
 import { getUVEState } from '@dotcms/uve';
 
-import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../core/shared/models';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from '../../core/shared/models';
 import { initializeAnalytics } from '../internal';
 
 /**
@@ -78,7 +78,7 @@ export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
     }
 
     const track = useCallback(
-        (eventName: string, payload: Record<string, unknown> = {}) => {
+        (eventName: string, payload: JsonObject = {}) => {
             // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
             // with editor interactions and preview activities
             if (isInUVE) {
@@ -91,7 +91,7 @@ export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
     );
 
     const pageView = useCallback(
-        (payload: Record<string, unknown> = {}) => {
+        (payload: JsonObject = {}) => {
             // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
             // with editor interactions and preview activities
             if (isInUVE) {

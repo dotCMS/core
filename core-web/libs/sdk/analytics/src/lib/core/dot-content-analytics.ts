@@ -4,7 +4,7 @@ import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { cleanupActivityTracking } from './shared/dot-content-analytics.utils';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig } from './shared/models';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
 
 /**
  * Creates an analytics instance for content analytics tracking.
@@ -49,19 +49,19 @@ export const initializeContentAnalytics = (
         /**
          * Track a page view.
          * Session activity is automatically updated by the identity plugin.
-         * @param {Record<string, unknown>} payload - The payload to track.
+         * @param payload - Optional custom data to include with the page view (any valid JSON object)
          */
-        pageView: (payload: Record<string, unknown> = {}) => {
+        pageView: (payload: JsonObject = {}) => {
             analytics?.page(payload);
         },
 
         /**
          * Track a custom event.
          * Session activity is automatically updated by the identity plugin.
-         * @param {string} eventName - The name of the event to track.
-         * @param {Record<string, unknown>} payload - The payload to track.
+         * @param eventName - The name of the event to track
+         * @param payload - Custom data to include with the event (any valid JSON object)
          */
-        track: (eventName: string, payload: Record<string, unknown> = {}) => {
+        track: (eventName: string, payload: JsonObject = {}) => {
             analytics?.track(eventName, payload);
         }
     };

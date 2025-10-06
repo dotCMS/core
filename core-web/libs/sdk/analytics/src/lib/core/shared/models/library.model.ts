@@ -9,6 +9,7 @@ import {
     DotCMSEventPageData,
     DotCMSEventUtmData
 } from './data.model';
+import { JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
 /**
@@ -18,15 +19,16 @@ import { DotCMSAnalyticsRequestBody } from './request.model';
 export interface DotCMSAnalytics {
     /**
      * Track a page view event.
+     * @param payload - Optional custom data to include with the page view (any valid JSON object)
      */
-    pageView: (payload?: Record<string, unknown>) => void;
+    pageView: (payload?: JsonObject) => void;
 
     /**
      * Track a custom event.
      * @param eventName - The name/type of the event to track
-     * @param payload - Optional additional data to include with the event
+     * @param payload - Custom data to include with the event (any valid JSON object)
      */
-    track: (eventName: string, payload: Record<string, unknown>) => void;
+    track: (eventName: string, payload: JsonObject) => void;
 }
 
 /**
@@ -143,8 +145,8 @@ export type EnrichedAnalyticsPayload = AnalyticsBasePayloadWithContext & {
     device: DotCMSEventDeviceData;
     /** UTM parameters for campaign tracking */
     utm?: DotCMSEventUtmData;
-    /** Custom data associated with the event */
-    custom?: Record<string, unknown>;
+    /** Custom data associated with the event (any valid JSON) */
+    custom?: JsonObject;
     /** Local timestamp when the event occurred */
     local_time: string;
 };
