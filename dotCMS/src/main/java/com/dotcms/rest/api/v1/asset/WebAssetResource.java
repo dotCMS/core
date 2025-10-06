@@ -437,13 +437,39 @@ public class WebAssetResource {
     }
 
 
+    /**
+     * Search assets using drive functionality
+     */
+    @Operation(
+        summary = "Search assets with drive functionality",
+        description = "Search and browse assets using drive-like functionality with filtering and navigation capabilities"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Drive search results retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object",
+                                                      description = "Drive search response containing assets and navigation data"))),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Not found. e.g Site/folder not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400",
+                    description = "Invalid request parameters",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/drive")
     @POST
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response drive(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @RequestBody(description = "Drive search request parameters", required = true,
+                       content = @Content(schema = @Schema(implementation = DriveRequestForm.class)))
             DriveRequestForm form
     ) throws DotSecurityException, DotDataException {
 

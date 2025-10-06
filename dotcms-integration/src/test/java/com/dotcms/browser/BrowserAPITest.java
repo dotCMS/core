@@ -1118,8 +1118,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         final long timeMillis = System.currentTimeMillis();
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().name("parentFolder"+timeMillis).site(host).nextPersisted();
-        final Folder subFolder = new FolderDataGen().name("subFolder_lol_"+timeMillis).parent(parentFolder).nextPersisted();
-
 
         // Create additional languages
         final Language lang1 = new LanguageDataGen().nextPersisted();
@@ -1437,8 +1435,8 @@ public class BrowserAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Test Case: Smart Pagination - Page 2 with same data (offset=26, still 26 items per page)
-     * Expected: 26 contentlets (all folders were shown on page 1)
+     * Test Case: Smart Pagination - Page 2 with the same data (offset=11, still 11 items per page)
+     * Expected: 11 contentlets (all folders were shown on page 1)
      */
     @Test
     public void test_SmartPaginationPage2_10Contentlets() throws Exception {
