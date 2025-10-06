@@ -687,6 +687,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 						containers.sort(Comparator.comparing(Container::getModDate));
 						break;
 
+					case "moddate":
+					case "mod_date":
                     case "moddate desc":
                     case "mod_date desc":
                         containers.sort(Comparator.comparing(Container::getModDate).reversed());
