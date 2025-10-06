@@ -711,7 +711,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"context\": {\n        \"site_auth\": \"DOT.7d1d2b220cf8f957c82fe48cbcd2dde4.0bMpB9szVVUixsNcsSZiiGo6X\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n           \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        },\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        }\n    ]\n}",
+									"raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\" \n    },\n    \"events\": [\n        {\n           \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        },\n        {\n            \"local_time\": \"2025-07-28T14:30:00+02:00\"\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
