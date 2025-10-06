@@ -220,6 +220,9 @@ public class SecurityUtilsTest {
   public void test_isSystemIdentifier() {
     assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_HOST"));
     assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_FOLDER"));
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_CONTAINER"));
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_TEMPLATE"));
+    assertTrue(SecurityUtils.isSystemIdentifier("SYSTEM_THEME"));
     assertFalse(SecurityUtils.isSystemIdentifier("system_host")); // case-sensitive
     assertFalse(SecurityUtils.isSystemIdentifier("OTHER_SYSTEM"));
     assertFalse(SecurityUtils.isSystemIdentifier(null));

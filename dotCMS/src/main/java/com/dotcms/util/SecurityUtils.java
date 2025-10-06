@@ -315,7 +315,7 @@ public class SecurityUtils {
    * This method checks if the identifier is one of the following valid formats:
    * <ul>
    *   <li>A valid UUID format</li>
-   *   <li>A known system identifier (e.g., SYSTEM_HOST, SYSTEM_FOLDER)</li>
+   *   <li>A known system identifier (e.g., SYSTEM_HOST, SYSTEM_FOLDER, SYSTEM_CONTAINER, SYSTEM_TEMPLATE, SYSTEM_THEME)</li>
    *   <li>A valid content type variable name (alphanumeric with underscores, starting with letter/underscore)</li>
    * </ul>
    *
@@ -329,7 +329,7 @@ public class SecurityUtils {
 
     if (!isValidIdentifier(identifier)) {
       throw new SecurityException(
-          String.format("Invalid identifier format: '%s'. Must be a valid UUID, system identifier (SYSTEM_HOST, SYSTEM_FOLDER), or content type variable name.",
+          String.format("Invalid identifier format: '%s'. Must be a valid UUID, system identifier (SYSTEM_HOST, SYSTEM_FOLDER, SYSTEM_CONTAINER, SYSTEM_TEMPLATE, SYSTEM_THEME), or content type variable name.",
                        identifier));
     }
   }
@@ -339,7 +339,7 @@ public class SecurityUtils {
    * An identifier is considered valid if it is:
    * <ul>
    *   <li>A valid UUID format</li>
-   *   <li>A known system identifier (SYSTEM_HOST, SYSTEM_FOLDER)</li>
+   *   <li>A known system identifier (SYSTEM_HOST, SYSTEM_FOLDER, SYSTEM_CONTAINER, SYSTEM_TEMPLATE, SYSTEM_THEME)</li>
    *   <li>A valid content type variable name</li>
    * </ul>
    *
@@ -378,7 +378,10 @@ public class SecurityUtils {
    */
   public static boolean isSystemIdentifier(final String identifier) {
     return "SYSTEM_HOST".equals(identifier) ||
-           "SYSTEM_FOLDER".equals(identifier);
+           "SYSTEM_FOLDER".equals(identifier) ||
+           "SYSTEM_CONTAINER".equals(identifier) ||
+           "SYSTEM_TEMPLATE".equals(identifier) ||
+           "SYSTEM_THEME".equals(identifier);
   }
 
   /**
