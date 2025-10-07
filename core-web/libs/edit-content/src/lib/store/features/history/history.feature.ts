@@ -255,12 +255,19 @@ export function withHistory() {
                             dotContentletService.getContentletByInode(inode).pipe(
                                 tapResponse({
                                     next: (versionContent) => {
+                                        const currentContentlet = store.contentlet();
                                         patchState(store, {
                                             compareContentlet: versionContent,
                                             uiState: {
                                                 ...store.uiState(),
                                                 view: 'compare'
-                                            }
+                                            },
+                                            // Store original contentlet if not already stored
+                                            originalContentlet: store.isViewingHistoricalVersion()
+                                                ? store.originalContentlet()
+                                                : currentContentlet,
+                                            isViewingHistoricalVersion: false,
+                                            historicalVersionInode: inode
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {

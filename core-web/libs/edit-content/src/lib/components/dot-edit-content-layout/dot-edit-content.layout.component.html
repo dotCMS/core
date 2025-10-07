@@ -106,9 +106,7 @@
         }
     } @else if (view === 'compare') {
         @defer (when view === 'compare') {
-            <div class="edit-content-layout__body overflow-y-auto p-4">
-                <dot-content-compare [data]="$store.compareData()" />
-            </div>
+            <dot-edit-content-compare class="edit-content-layout__body" />
         }
     }
 

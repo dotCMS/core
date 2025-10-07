@@ -20,12 +20,12 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
+import { DotEditContentCompareComponent } from '../dot-edit-content-compare/dot-edit-content-compare.component';
 import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 
@@ -84,7 +84,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule,
-        DotContentCompareModule
+        DotEditContentCompareComponent
     ],
     providers: [
         DotWorkflowsActionsService,
