@@ -13656,17 +13656,6 @@ paths:
           type: integer
           format: int32
           default: 40
-      - description: Column name for sorting results
-        in: query
-        name: orderby
-        schema:
-          type: string
-      - description: "Sorting direction: ASC or DESC"
-        in: query
-        name: direction
-        schema:
-          type: string
-          default: ASC
       responses:
         "200":
           content:
@@ -13868,6 +13857,10 @@ paths:
           content:
             application/json: {}
           description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: NotFound - User not found
       summary: Find an user
       tags:
       - Users
@@ -23832,7 +23825,7 @@ components:
         entity:
           type: array
           items:
-            $ref: "#/components/schemas/User"
+            $ref: "#/components/schemas/UserView"
         errors:
           type: array
           items:
@@ -25212,9 +25205,7 @@ components:
       type: object
       properties:
         entity:
-          type: object
-          additionalProperties:
-            type: object
+          $ref: "#/components/schemas/UserView"
         errors:
           type: array
           items:
@@ -26984,6 +26975,17 @@ components:
       - email
       - firstName
       - lastName
+    UserView:
+      type: object
+      properties:
+        roleId:
+          type: string
+        user:
+          type: object
+          additionalProperties:
+            type: object
+        userID:
+          type: string
     VanityUrlContentType:
       type: object
       allOf:

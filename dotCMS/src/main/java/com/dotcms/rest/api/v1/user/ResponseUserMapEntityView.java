@@ -9,8 +9,8 @@ import java.util.Map;
  * userID -> {userId}
  * user   -> {userMap}
  */
-public class ResponseUserMapEntityView extends ResponseEntityView <Map<String, Object>> {
-    public ResponseUserMapEntityView(Map<String, Object> entity) {
+public class ResponseUserMapEntityView extends ResponseEntityView <UserView> {
+    public ResponseUserMapEntityView(UserView entity) {
         super(entity);
     }
 }

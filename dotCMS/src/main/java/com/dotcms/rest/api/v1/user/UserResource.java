@@ -523,14 +523,11 @@ public class UserResource implements Serializable {
 	public ResponseEntityListUserView filterByPredicate(@Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
 						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
-						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-						   @Parameter(description = "Column name for sorting results") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
-						   @Parameter(description = "Sorting direction: ASC or DESC") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction)
+						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage)
             throws DotDataException, IOException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init();
@@ -559,6 +556,7 @@ public class UserResource implements Serializable {
 
             Logger.debug(this, ()-> "Filtering by using the js script: " + fullScript);
             for (final User user : allUsers) {
+
                 final Map<String, Object> bindings = new HashMap<>();
                 final Object result = jsEngine.executeFunction("filter", fullScript, bindings, new JsUser(user), new JsRolesFetcherByUser(user.getUserId()));
 
@@ -583,15 +581,23 @@ public class UserResource implements Serializable {
         }
     }
 
-    private List<User> applyPagination(List<User> users, int page, int perPage) {
-        int fromIndex = page * perPage;
-        int toIndex = Math.min(fromIndex + perPage, users.size());
+    private List<UserView> applyPagination(final List<User> users, final int page, final int perPage) throws DotDataException {
+
+        final int fromIndex = page * perPage;
+        final int toIndex = Math.min(fromIndex + perPage, users.size());
 
         if (fromIndex >= users.size()) {
             return new ArrayList<>();
         }
-        // Nota: La ordenación (orderBy, direction) debería aplicarse antes del subList si es necesario.
-        return users.subList(fromIndex, toIndex);
+
+        final List<UserView> userViewList = new ArrayList<>();
+        for (final User user : users.subList(fromIndex, toIndex)) {
+
+            final Role role = APILocator.getRoleAPI().getUserRole(user);
+            userViewList.add(new UserView(user, role));
+        }
+
+        return userViewList;
     }
 
 
@@ -600,19 +606,9 @@ public class UserResource implements Serializable {
      * Only admin user can retrieve someone else user
      * @param request          The current instance of the {@link HttpServletRequest}.
      * @param response         The current instance of the {@link HttpServletResponse}.
-     * @param filter           Allows you to filter Users by their full name or parts of it.
-     * @param page             The results page or offset, for pagination purposes.
-     * @param perPage          The size of the results page, for pagination purposes.
-     * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
-     *                         check {@link SQLUtil #ORDERBY_WHITELIST(private method in SQLUtil)}.
-     * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
-     * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
-     * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
-     * @param assetInode       The Inode of a specific asset, if you're querying Users that have a specific permission
-     *                         on it.
-     * @param permission       The permission type that Users may have on the previous asset.
+     * @param userId           id of the user to retrieve
      *
-     * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
+     * @return A {@link ResponseUserMapEntityView} User View
      */
     @Operation(
             operationId = "findUser",
@@ -626,6 +622,9 @@ public class UserResource implements Serializable {
                             schema = @Schema(implementation = ResponseUserMapEntityView.class))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "NotFound - User not found",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - insufficient permissions",
@@ -665,8 +664,7 @@ public class UserResource implements Serializable {
                 final User user = this.userAPI.loadUserById(userId);
                 final Role role = APILocator.getRoleAPI().getUserRole(user);
 
-                return new ResponseUserMapEntityView(Map.of(USER_ID, user.getUserId(),
-                        "user", user.toMap(), "roleId", role.getId())); // 200
+                return new ResponseUserMapEntityView(new UserView(user, role)); // 200
             } catch (NoSuchUserException e) {
 
                 throw new DoesNotExistException("User " + userId + " does not exist", e);
@@ -1283,8 +1281,8 @@ public class UserResource implements Serializable {
             userToUpdated.setActive(true);
             this.userAPI.save(userToUpdated, modUser, false);
 
-            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
-                    "user", userToUpdated.toMap())); // 200
+            final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+            return new ResponseUserMapEntityView(new UserView(userToUpdated, role)); // 200
         }
 
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
@@ -1365,9 +1363,9 @@ public class UserResource implements Serializable {
 
             userToUpdated.setActive(false);
             this.userAPI.save(userToUpdated, modUser, false);
+            final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
 
-            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
-                    "user", userToUpdated.toMap())); // 200
+            return new ResponseUserMapEntityView(new UserView(userToUpdated, role)); // 200
         }
 
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
