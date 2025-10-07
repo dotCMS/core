@@ -550,6 +550,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}
 			}
 
+			Logger.debug(this, String.format("Finding containers with query: %s, params: %s, offset: %d, limit: %d",
+				query.toString(), paramValues, searchParams.offset(), searchParams.limit()));
+
 			// Adding Containers as Files located in the /application/containers/ folder
 			toReturn.addAll(this.findFolderAssetContainers(user, searchParams));
 
@@ -567,7 +570,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				internalOffset += internalLimit;
 			}
 
+			Logger.debug(this, String.format("Found %d total containers before pagination, applying offset=%d, limit=%d",
+				toReturn.size(), searchParams.offset(), searchParams.limit()));
+
 			getPaginatedAssets(searchParams.offset(), searchParams.limit(), assets, toReturn);
+
+			Logger.debug(this, String.format("Returning %d paginated containers", assets.size()));
+
 			if (searchParams.includeSystemContainer()) {
 				// System Container is being included, so increase the total result count by 1
 				assets.setTotalResults(assets.getTotalResults() + 1L);
