@@ -221,4 +221,3 @@ describe('DotAnalytics HTTP Utils', () => {
         });
     });
 });
-});

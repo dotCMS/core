@@ -50,7 +50,7 @@ export interface DotCMSBrowserData {
  */
 export interface DotCMSAnalyticsEventContext {
     /** The site key for the DotCMS instance */
-    site_key: string;
+    site_auth: string;
     /** Unique session identifier */
     session_id: string;
     /** Unique user identifier */
