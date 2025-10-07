@@ -1,544 +1,214 @@
 <script type="application/javascript">
-(function() {
-    'use strict';
+// Global Constants
+const hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
+const defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")'; // try to preload the default template.
 
-    // Configuration
-    const CONFIG = {
-        DEBUG_MODE: false,
-        PAGE_SIZE: 15,
-        SEARCH_DELAY: 300,
-        FILTER_SELECT_WIDTH: '350px',
-        TEMPLATE_THUMBNAIL_WIDTH: '250w',
-        USE_BUTTON_STYLE_PAGINATION: true,
-        ENABLE_LOADING_ANIMATION: true
-    };
+dojo.require("dotcms.dojo.data.TemplateReadStore");
 
-    // Global Constants
-    const hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
-    const defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")';
+// UTILS
 
-    // Global State
-    let templateStore;
-    let templateSelect;
+/**
+* Normalizes the key of a template
+*
+*/
+const normalizeKey = function (template) {
+    return template.fullTitle.replace(new RegExp("\\("+template.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
+}
 
-    // Utility Functions
-    const Logger = {
-        log: function(message, ...args) {
-            if (CONFIG.DEBUG_MODE) {
-                console.log(`[TemplateCustomField] ${message}`, ...args);
-            }
-        },
-
-        error: function(message, error) {
-            console.error(`[TemplateCustomField] ${message}`, error);
-        },
-
-        warn: function(message, ...args) {
-            console.warn(`[TemplateCustomField] ${message}`, ...args);
+/**
+* Returns a map of templates by name and by id
+*
+*/
+const getTemplatesMaps = (templates) => {
+    const mapByName = templates.reduce(function(map, template) {
+        const key = normalizeKey(template);
+        if (!map[key]) {
+            map[key] = template;
         }
-    };
 
-    const ValidationUtils = {
-        isValidHostId: function(hostId) {
-            return hostId &&
-                   hostId !== 'null' &&
-                   hostId !== 'undefined' &&
-                   hostId !== '*' &&
-                   hostId.trim() !== '';
+        return map;
+    }, {});
+
+    const mapById = templates.reduce(function(map, template) {
+        map[template.identifier] = template;
+        return map;
+    }, {});
+
+
+    return {
+        mapByName,
+        mapById
+    }
+}
+
+// UTILS END
+/**
+* Fetches the template image from the server
+*
+*/
+function fetchTemplateImage(templateId) {
+    fetch("/api/v1/templates/image", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
         },
+        body: JSON.stringify({ templateId})
+    }).then(async (response) => {
+        // The ok value represents the result of the response status 200 codes
+        if (response.ok) {
+            const result = await response.json();
 
-        isValidTemplateId: function(templateId) {
-            return templateId && templateId !== "0" && templateId.trim() !== '';
-        },
-
-        isInodeSet: function(imageInode) {
-            return imageInode && imageInode.trim() !== '';
+            getTemplateCallBack(result); // here we pass the result of the json response to the callback function
+        } else {
+            throw new Error("Error fetching template image");
         }
-    };
-
-    const DOMUtils = {
-        getElement: function(id) {
-            const element = dojo.byId(id);
-            if (!element) {
-                Logger.error(`Element with id '${id}' not found`);
-            }
-            return element;
-        },
-
-        getWidget: function(id) {
-            const widget = dijit.byId(id);
-            if (!widget) {
-                Logger.error(`Widget with id '${id}' not found`);
-            }
-            return widget;
-        },
-
-        setElementValue: function(id, value) {
-            const element = this.getElement(id);
-            if (element) {
-                element.value = value || '';
-            }
-        },
-
-        getElementValue: function(id) {
-            const element = this.getElement(id);
-            return element ? element.value : '';
-        }
-    };
-
-    // UI Enhancement Functions
-    const UIEnhancements = {
-        enhancePaginationItems: function() {
-            try {
-                if (CONFIG.USE_BUTTON_STYLE_PAGINATION) {
-                    const menu = dojo.query('.dijitComboBoxMenu')[0];
-                    if (menu) {
-                        dojo.addClass(menu, 'dijitComboBoxMenu-button-style');
-                    }
-                }
-
-                setTimeout(() => {
-                    const previousButtons = dojo.query('.dijitComboBoxMenu .dijitMenuPreviousButton');
-                    const nextButtons = dojo.query('.dijitComboBoxMenu .dijitMenuNextButton');
-
-                    previousButtons.forEach(button => {
-                        dojo.attr(button, 'data-pagination-type', 'previous');
-                        Logger.log('Enhanced Previous button:', button);
-                    });
-
-                    nextButtons.forEach(button => {
-                        dojo.attr(button, 'data-pagination-type', 'next');
-                        Logger.log('Enhanced Next button:', button);
-                    });
-                }, 100);
-
-            } catch (error) {
-                Logger.error('Error enhancing pagination items:', error);
-            }
-        },
-
-        isPaginationItem: function(element) {
-            if (!element) return false;
-
-            if (dojo.hasClass(element, 'dijitMenuPreviousButton') ||
-                dojo.hasClass(element, 'dijitMenuNextButton')) {
-                return true;
-            }
-
-            const text = element.textContent || element.innerText || '';
-            const paginationTexts = [
-                'more choices', 'previous choices', 'más opciones', 'opciones anteriores',
-                'more', 'previous', 'next', 'load more', 'cargar más'
-            ];
-            return paginationTexts.some(pText =>
-                text.toLowerCase().includes(pText.toLowerCase())
-            );
-        },
-
-        addLoadingAnimation: function(item) {
-            if (!CONFIG.ENABLE_LOADING_ANIMATION) return;
-
-            try {
-                dojo.addClass(item, 'loading');
-                setTimeout(() => {
-                    dojo.removeClass(item, 'loading');
-                }, 1500);
-            } catch (error) {
-                Logger.error('Error adding loading animation:', error);
-            }
-        },
-
-        setupPaginationHandlers: function() {
-            try {
-                dojo.connect(document, 'click', function(event) {
-                    const target = event.target;
-                    const menuItem = dojo.query(target).closest('.dijitComboBoxMenu .dijitMenuItem')[0];
-
-                    if (menuItem && UIEnhancements.isPaginationItem(menuItem)) {
-                        Logger.log('Pagination item clicked:', menuItem.textContent);
-                        UIEnhancements.addLoadingAnimation(menuItem);
-
-                        dojo.addClass(menuItem, 'clicked');
-                        setTimeout(() => {
-                            dojo.removeClass(menuItem, 'clicked');
-                        }, 200);
-                    }
-                });
-            } catch (error) {
-                Logger.error('Error setting up pagination handlers:', error);
-            }
-        }
-    };
-
-    // Template Management Functions
-    const TemplateManager = {
-        normalizeKey: function(template) {
-            if (!template || !template.fullTitle || !template.hostName) {
-                Logger.warn('Invalid template object for normalizeKey:', template);
-                return '';
-            }
-            return template.fullTitle
-                .replace(new RegExp("\\(" + template.hostName + "\\)"), '')
-                .replace(/\s+/g, '')
-                .toLowerCase();
-        },
-
-        getTemplatesMaps: function(templates) {
-            if (!Array.isArray(templates)) {
-                Logger.error('Templates parameter must be an array');
-                return { mapByName: {}, mapById: {} };
-            }
-
-            const mapByName = templates.reduce((map, template) => {
-                try {
-                    const key = this.normalizeKey(template);
-                    if (key && !map[key]) {
-                        map[key] = template;
-                    }
-                } catch (error) {
-                    Logger.error('Error processing template for mapByName:', error);
-                }
-                return map;
-            }, {});
-
-            const mapById = templates.reduce((map, template) => {
-                try {
-                    if (template && template.identifier) {
-                        map[template.identifier] = template;
-                    }
-                } catch (error) {
-                    Logger.error('Error processing template for mapById:', error);
-                }
-                return map;
-            }, {});
-
-            return { mapByName, mapById };
-        },
-
-        fetchTemplateImage: function(templateId) {
-            if (!ValidationUtils.isValidTemplateId(templateId)) {
-                Logger.warn('Invalid templateId for fetchTemplateImage:', templateId);
-                this.resetTemplateImage();
-                return;
-            }
-
-            Logger.log('Fetching template image for:', templateId);
-
-            fetch("/api/v1/templates/image", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ templateId })
-            })
-            .then(async (response) => {
-                if (response.ok) {
-                    const result = await response.json();
-                    this.handleTemplateImageResponse(result);
-                } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-            })
-            .catch((error) => {
-                Logger.error('Error fetching template image:', error);
-                this.resetTemplateImage();
-            });
-        },
-
-        handleTemplateImageResponse: function(data) {
-            try {
-                const imageInode = data.identifier;
-                const imageEl = DOMUtils.getElement("templateThumbnailHolder");
-
-                if (!imageEl) return;
-
-                if (ValidationUtils.isInodeSet(imageInode)) {
-                    imageEl.src = `/dA/${imageInode}/${CONFIG.TEMPLATE_THUMBNAIL_WIDTH}`;
-                    imageEl.style.border = '1px solid #B6CBEB';
-                    imageEl.style.marginTop = '1rem';
-                } else {
-                    this.resetTemplateImage();
-                }
-            } catch (error) {
-                Logger.error('Error handling template image response:', error);
-                this.resetTemplateImage();
-            }
-        },
-
-        resetTemplateImage: function() {
-            const imageEl = DOMUtils.getElement("templateThumbnailHolder");
-            if (imageEl) {
-                imageEl.src = "/html/images/shim.gif";
-                imageEl.style.border = '0px';
-                imageEl.style.marginTop = '';
-            }
-        },
-
-        resetTemplateSelection: function() {
-            Logger.log('Resetting template selection');
-
-            const templateSel = DOMUtils.getWidget("templateSel");
-            if (templateSel) {
-                templateSel.set("value", "");
-            }
-
-            DOMUtils.setElementValue("template", '');
-            DOMUtils.setElementValue("templateSel", "");
-            DOMUtils.setElementValue("currentTemplateId", "");
-
-            this.resetTemplateImage();
-        },
-
-        setSelectedTemplate: function(template) {
-            if (!template) {
-                Logger.warn('No template provided to setSelectedTemplate');
-                return;
-            }
-
-            try {
-                const { identifier, fullTitle } = template;
-
-                DOMUtils.setElementValue("currentTemplateId", identifier);
-                DOMUtils.setElementValue("template", identifier);
-
-                const templateSel = DOMUtils.getWidget('templateSel');
-                if (templateSel) {
-                    templateSel.set("displayedValue", fullTitle);
-                }
-
-                this.fetchTemplateImage(identifier);
-            } catch (error) {
-                Logger.error('Error setting selected template:', error);
-            }
-        }
-    };
-
-    // Event Handlers
-    const EventHandlers = {
-        onTemplateFetchComplete: function(templates, currentRequest) {
-            try {
-                Logger.log('Template fetch completed with', templates ? templates.length : 0, 'templates');
-
-                if (!templates || templates.length === 0) {
-                    Logger.warn('No templates received');
-                    return;
-                }
-
-                const templateId = DOMUtils.getElementValue("template");
-                const isTemplateValid = ValidationUtils.isValidTemplateId(templateId);
-
-                const { mapById, mapByName } = TemplateManager.getTemplatesMaps(templates);
-                const normalizedName = defaultTemplateName.replace(/\s+/g, '').toLowerCase();
-                const template = isTemplateValid ? mapById[templateId] : mapByName[normalizedName];
-
-                if (template) {
-                    TemplateManager.setSelectedTemplate(template);
-                } else {
-                    Logger.warn('No matching template found for current selection');
-                }
-
-                UIEnhancements.enhancePaginationItems();
-
-            } catch (error) {
-                Logger.error('Error in onTemplateFetchComplete:', error);
-            }
-        },
-
-        onTemplateChanged: function(newValue) {
-            try {
-                Logger.log('Template changed to:', newValue);
-
-                const templateSel = DOMUtils.getWidget("templateSel");
-                const value = newValue || (templateSel ? templateSel.get('value') : '');
-
-                if (!value) {
-                    TemplateManager.resetTemplateSelection();
-                    return;
-                }
-
-                if (value === "0") {
-                    Logger.log('User selected "All Sites" option');
-                    this.handleAllSiteSelection();
-                    return;
-                }
-
-                DOMUtils.setElementValue("template", value);
-                TemplateManager.fetchTemplateImage(value);
-            } catch (error) {
-                Logger.error('Error in onTemplateChanged:', error);
-            }
-        },
-
-        handleAllSiteSelection: function() {
-            try {
-                Logger.log('Switching to all sites view');
-
-                if (templateStore) {
-                    templateStore.hostId = "*";
-                    templateStore.allSiteLabel = false;
-                }
-
-                TemplateManager.resetTemplateSelection();
-
-                const allSitesFetchParams = {
-                    query: { fullTitle: '' },
-                    queryOptions: {},
-                    start: 0,
-                    count: CONFIG.PAGE_SIZE,
-                    sort: [],
-                    onComplete: function(templates, request) {
-                        Logger.log('All sites templates loaded:', templates ? templates.length : 0);
-
-                        const templateSel = DOMUtils.getWidget("templateSel");
-                        if (templateSel && templateSel.loadDropDown) {
-                            templateSel._announceOption = function() {};
-                            templateSel.loadDropDown(function() {
-                                Logger.log('FilteringSelect dropdown refreshed with all sites data');
-                                UIEnhancements.enhancePaginationItems();
-                            });
-                        }
-                    }
-                };
-
-                if (templateStore) {
-                    templateStore.fetch(allSitesFetchParams);
-                }
-            } catch (error) {
-                Logger.error('Error handling all site selection:', error);
-            }
-        }
-    };
-
-    // Initialization Functions
-    const Initialization = {
-        processHostId: function() {
-            Logger.log('Processing hostId from session:', hostId);
-
-            if (ValidationUtils.isValidHostId(hostId)) {
-                Logger.log('Using specific site hostId:', hostId);
-                return hostId;
-            } else {
-                Logger.log('No specific site selected, will show all sites. hostId was:', hostId);
-                return '';
-            }
-        },
-
-        createTemplateStore: function(actualHostId, templateId) {
-            try {
-                return new dotcms.dojo.data.TemplateReadStore({
-                    hostId: actualHostId,
-                    templateSelected: templateId,
-                    allSiteLabel: actualHostId === '',
-                    debug: CONFIG.DEBUG_MODE
-                });
-            } catch (error) {
-                Logger.error('Error creating template store:', error);
-                throw error;
-            }
-        },
-
-        createTemplateSelect: function(templateId) {
-            try {
-                const widget = new dijit.form.FilteringSelect({
-                    id: "templateSel",
-                    name: "templateSel",
-                    style: `width:${CONFIG.FILTER_SELECT_WIDTH};`,
-                    onChange: EventHandlers.onTemplateChanged.bind(EventHandlers),
-                    store: templateStore,
-                    searchDelay: CONFIG.SEARCH_DELAY,
-                    pageSize: CONFIG.PAGE_SIZE,
-                    autoComplete: false,
-                    ignoreCase: true,
-                    labelType: "html",
-                    searchType: "html",
-                    labelAttr: "htmlTitle",
-                    searchAttr: "fullTitle",
-                    value: templateId,
-                    invalidMessage: '$text.get("Invalid-option-selected")',
-                    queryExpr: "${0}*",
-                    hasDownArrow: true
-                }, "templateHolder");
-
-                dojo.connect(widget, '_openDropDown', function() {
-                    setTimeout(() => {
-                        UIEnhancements.enhancePaginationItems();
-                    }, 50);
-                });
-
-                return widget;
-            } catch (error) {
-                Logger.error('Error creating template select:', error);
-                throw error;
-            }
-        },
-
-        performInitialFetch: function() {
-            const templateFetchParams = {
-                query: { fullTitle: '' },
-                queryOptions: {},
-                start: 0,
-                count: CONFIG.PAGE_SIZE,
-                sort: [],
-                onComplete: EventHandlers.onTemplateFetchComplete.bind(EventHandlers)
-            };
-
-            try {
-                templateStore.fetch(templateFetchParams);
-            } catch (error) {
-                Logger.error('Error performing initial fetch:', error);
-            }
-        },
-
-        initialize: function() {
-            try {
-                Logger.log('Starting template custom field initialization');
-
-                dojo.require("dotcms.dojo.data.TemplateReadStore");
-
-                const templateId = DOMUtils.getElementValue("template");
-                const isTemplateValid = ValidationUtils.isValidTemplateId(templateId);
-
-                DOMUtils.setElementValue("currentTemplateId", templateId);
-
-                const actualHostId = this.processHostId();
-
-                templateStore = this.createTemplateStore(actualHostId, templateId);
-                templateSelect = this.createTemplateSelect(templateId);
-
-                UIEnhancements.setupPaginationHandlers();
-
-                if (isTemplateValid) {
-                    TemplateManager.fetchTemplateImage(templateId);
-
-                    const templateSel = DOMUtils.getWidget("templateSel");
-                    if (templateSel) {
-                        templateSel.set("value", templateId);
-                    }
-                }
-
-                this.performInitialFetch();
-
-                Logger.log('Template custom field initialization completed');
-
-            } catch (error) {
-                Logger.error('Error during initialization:', error);
-            }
-        }
-    };
-
-    // Initialize when DOM is ready
-    dojo.ready(function() {
-        try {
-            Initialization.initialize();
-        } catch (error) {
-            console.error('[TemplateCustomField] Critical initialization error:', error);
-        }
+    })
+    .catch((error) => {
+        const imageEl = dojo.byId("templateThumbnailHolder");
+        imageEl.src = "/html/images/shim.gif";
+        imageEl.style.border = "0px";
+    });
+};
+
+/**
+* Callback function to handle the template fetch
+*
+*/
+const onTemplateFetchComplete = function(templates, currentRequest) {
+    const templateId = dojo.byId("template").value;
+    const isTemplateValid  = templateId && templateId != "0";
+
+    if(!templates || templates.length === 0){
+        return;
+    }
+
+    const { mapById, mapByName } = getTemplatesMaps(templates);
+    const normalizedName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
+    const template = isTemplateValid ? mapById[templateId]:mapByName[normalizedName];
+
+    if(!template){
+        return;
+    }
+
+    const { identifier, fullTitle } = template;
+
+    // We set the values directly into the components because setting it directly into`templateSelect` fires another load operation.
+    dojo.byId("currentTemplateId").value = identifier;
+    dojo.byId("template").value = identifier;
+    dijit.byId('templateSel').set("displayedValue", fullTitle);
+    fetchTemplateImage(identifier);
+};
+
+function resetTemplateSelection() {
+    const templateSel = dijit.byId("templateSel");
+    templateSel.set("value","");
+    templateSel.filter();
+    dojo.byId("template").value= '';
+    dojo.byId("templateSel").value = "";
+    dojo.byId("currentTemplateId").value = "";
+    dojo.byId("templateThumbnailHolder").src = "/html/images/shim.gif";
+    dojo.byId("templateThumbnailHolder").style.border = '0px';
+}
+
+
+/**
+* Get the template callback
+*
+*/
+function getTemplateCallBack(data) {
+    const imageInode = data.identifier;
+    const imageExtension = data.extension;
+    const imageEl=dojo.byId("templateThumbnailHolder");
+
+    if (isInodeSet(imageInode)) {
+    	imageEl.src = "/dA/" + imageInode + "/250w";
+        imageEl.style.border = '1px solid #B6CBEB';
+        imageEl.style.marginTop = '1rem';
+    } else {
+        imageEl.src  = "/html/images/shim.gif";
+        imageEl.style.border = '0px';
+    }
+
+}
+
+dojo.ready(function(){
+    const templateId = dojo.byId("template").value;
+    const isTemplateValid  = templateId && templateId != "0";
+
+    const currentTemplateIdElement = dojo.byId("currentTemplateId");
+    currentTemplateIdElement.value = templateId;
+
+    const templateStore = new dotcms.dojo.data.TemplateReadStore({
+        hostId: '',
+        templateSelected: templateId,
+        allSiteLabel: true,
     });
 
-        // Note: All functionality is now encapsulated within the module
-    // No external API exposure needed for this implementation
+    const templateSelect = new dijit.form.FilteringSelect({
+        id:"templateSel",
+        name:"templateSel",
+        style:"width:350px;",
+        onChange: templateChanged,
+        store: templateStore,
+        searchDelay: 300,
+        pageSize: 15,
+        autoComplete: false,
+        ignoreCase: true,
+        labelType:"html",
+        searchType:"html",
+        labelAttr: "htmlTitle",
+        searchAttr: "fullTitle",
+        value: templateId,
+        invalidMessage: '$text.get("Invalid-option-selected")',
+    },"templateHolder");
 
-})();
+    if (isTemplateValid){
+       fetchTemplateImage(templateId);
+
+        const templateSel = dijit.byId("templateSel");
+        templateSel.set("value", templateId);
+    }
+
+    const templateFetchParams = {
+        query: {
+            fullTitle: '*'
+        },
+        queryOptions: {},
+        start: 0,
+        count: 15,
+        onComplete: onTemplateFetchComplete
+    };
+
+    function handleAllSiteClick() {
+        templateStore.hostId = "*";
+        templateStore.allSiteLabel=false;
+        resetTemplateSelection();
+    }
+
+    /**
+    * Handles the template change event
+    *
+    */
+    function templateChanged() {
+        const templateSel = dijit.byId("templateSel");
+        const value = templateSel?.get('value');
+
+        if(!value) {
+            resetTemplateSelection();
+            return;
+        }
+
+        if(value == "0") {
+            handleAllSiteClick();
+            return;
+        }
+
+        dojo.byId("template").value=value;
+        fetchTemplateImage(value);
+    }
+
+    templateStore.fetch(templateFetchParams);
+});
 </script>
 
 <div id="templateHolder"></div>

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -34,7 +34,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
 @Component({
-    standalone: true,
     imports: [
         AsyncPipe,
         NgIf,
@@ -62,16 +61,14 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentStatus = DotExperimentStatus;
     confirmDialogKey = CONFIGURATION_CONFIRM_DIALOG_KEY;
     protected readonly ComponentStatus = ComponentStatus;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute
-    ) {}
 
     ngOnInit(): void {
         this.dotExperimentsConfigurationStore.loadExperiment(

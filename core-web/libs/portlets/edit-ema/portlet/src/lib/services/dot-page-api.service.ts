@@ -1,13 +1,13 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
-import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
+import { graphqlToPageEntity } from '@dotcms/client/internal';
+import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
+import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPageAssetParams, SavePagePayload } from '../shared/models';
@@ -23,6 +23,9 @@ export interface DotPageApiParams {
     experimentId?: string;
     clientHost?: string;
     publishDate?: string;
+    // We need this to allow any other query param to be passed by the user
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [x: string]: any;
 }
 
 export enum DotPageAssetKeys {
@@ -46,18 +49,12 @@ export interface GetPersonasParams {
 
 export interface GetPersonasResponse {
     data: DotPersona[];
-    pagination: PaginationData;
-}
-
-export interface PaginationData {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
+    pagination: DotPagination;
 }
 
 @Injectable()
 export class DotPageApiService {
-    constructor(private http: HttpClient) {}
+    private http = inject(HttpClient);
 
     /**
      * Get a page from the Page API
@@ -108,8 +105,8 @@ export class DotPageApiService {
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
-            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+        return this.http.get<{ entity: DotPersona[]; pagination: DotPagination }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: DotPagination }) => ({
                 data: res.entity,
                 pagination: res.pagination
             }))
@@ -169,17 +166,21 @@ export class DotPageApiService {
             dotcachettl: '0'
         };
 
-        return this.http.post<{ data }>('/api/v1/graphql', { query, variables }, { headers }).pipe(
-            pluck('data'),
-            map(({ page, ...content }) => {
-                const pageEntity = graphqlToPageEntity({ page } as DotCMSGraphQLPageResponse);
+        return this.http
+            .post<{
+                data: { page: DotCMSGraphQLPage };
+            }>('/api/v1/graphql', { query, variables }, { headers })
+            .pipe(
+                pluck('data'),
+                map(({ page, ...content }) => {
+                    const pageEntity = graphqlToPageEntity(page);
 
-                return {
-                    pageAsset: pageEntity,
-                    content
-                };
-            })
-        );
+                    return {
+                        pageAsset: pageEntity,
+                        content
+                    };
+                })
+            );
     }
 
     private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {

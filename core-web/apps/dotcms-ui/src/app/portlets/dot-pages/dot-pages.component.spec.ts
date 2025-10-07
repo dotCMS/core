@@ -1,4 +1,4 @@
-import { Observable, Subject, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -11,19 +11,17 @@ import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
     DotPageRenderService,
     DotRouterService,
     DotSessionStorageService,
-    DotIframeService,
-    DotFormatDateService
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -45,15 +43,20 @@ import {
     LoginServiceMock,
     MockDotHttpErrorManagerService,
     MockDotRouterService,
-    mockResponseView
+    mockResponseView,
+    SiteServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
 
+import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+
 @Component({
     selector: 'dot-pages-favorite-panel',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPagesFavoritePanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
@@ -62,7 +65,8 @@ class MockDotPagesFavoritePanelComponent {
 
 @Component({
     selector: 'dot-pages-listing-panel',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPagesListingPanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
@@ -71,7 +75,8 @@ class MockDotPagesListingPanelComponent {
 
 @Component({
     selector: 'dot-add-to-bundle',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotAddToBundleComponent {
     @Input() assetIdentifier: string;
@@ -114,15 +119,15 @@ const storeMock = {
     get pageTypes$() {
         return of([{ ...dotcmsContentTypeBasicMock }]);
     },
-    clearMenuActions: jasmine.createSpy(),
-    getFavoritePages: jasmine.createSpy(),
-    getPages: jasmine.createSpy(),
-    getPageTypes: jasmine.createSpy(),
-    showActionsMenu: jasmine.createSpy(),
-    setInitialStateData: jasmine.createSpy(),
-    limitFavoritePages: jasmine.createSpy(),
-    setPortletStatus: jasmine.createSpy(),
-    updateSinglePageData: jasmine.createSpy(),
+    clearMenuActions: jest.fn(),
+    getFavoritePages: jest.fn(),
+    getPages: jest.fn(),
+    getPageTypes: jest.fn(),
+    showActionsMenu: jest.fn(),
+    setInitialStateData: jest.fn(),
+    limitFavoritePages: jest.fn(),
+    setPortletStatus: jest.fn(),
+    updateSinglePageData: jest.fn(),
     vm$: of({
         favoritePages: {
             items: [],
@@ -166,7 +171,7 @@ describe('DotPagesComponent', () => {
     const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
         new DotContentletEditorServiceMock();
 
-    const switchSiteSubject = new Subject();
+    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -227,15 +232,7 @@ describe('DotPagesComponent', () => {
                 },
                 {
                     provide: SiteService,
-                    useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        }
-                    }
+                    useValue: siteServiceMock
                 }
             ]
         }).compileComponents();
@@ -255,15 +252,16 @@ describe('DotPagesComponent', () => {
         component = fixture.componentInstance;
 
         fixture.detectChanges();
-        spyOn(component.menu, 'hide');
-        spyOn(component, 'scrollToTop');
-        spyOn(dotMessageDisplayService, 'push');
-        spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
-        spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(component.menu, 'hide');
+        jest.spyOn(component, 'scrollToTop');
+        jest.spyOn(dotMessageDisplayService, 'push');
+        jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
     });
 
     it('should init store', () => {
         expect(store.setInitialStateData).toHaveBeenCalledWith(500);
+        expect(store.setInitialStateData).toHaveBeenCalledTimes(1);
     });
 
     it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
@@ -288,12 +286,14 @@ describe('DotPagesComponent', () => {
     });
 
     it('should call goToUrl method from DotPagesFavoritePanel and throw User permission error', () => {
-        dotPageRenderService.checkPermission = jasmine.createSpy().and.returnValue(of(false));
+        dotPageRenderService.checkPermission = jest.fn().mockReturnValue(of(false));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
         expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
+        // setPortletStatus is called multiple times during the flow
+        expect(store.setPortletStatus).toHaveBeenCalledTimes(3);
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
             new HttpErrorResponse(
                 new HttpResponse({
@@ -308,15 +308,16 @@ describe('DotPagesComponent', () => {
 
     it('should throw error dialog when call GoTo and url does not match with existing page', () => {
         const error404 = mockResponseView(404);
-        dotPageRenderService.checkPermission = jasmine
-            .createSpy()
-            .and.returnValue(throwError(error404));
+        dotPageRenderService.checkPermission = jest.fn().mockReturnValue(throwError(error404));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
         expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
+        // setPortletStatus is called multiple times during the flow
+        expect(store.setPortletStatus).toHaveBeenCalledTimes(5);
     });
 
     it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
@@ -347,6 +348,8 @@ describe('DotPagesComponent', () => {
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
         expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
+        // setPortletStatus is called multiple times during the flow
+        expect(store.setPortletStatus).toHaveBeenCalledTimes(6);
         expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
             lang: '1',
             url: '/page/1'
@@ -386,7 +389,7 @@ describe('DotPagesComponent', () => {
     it('should call closedActionsMenu method from p-menu', () => {
         const elem = de.query(By.css('p-menu'));
 
-        component.closedActionsMenu = jasmine.createSpy('closedActionsMenu');
+        component.closedActionsMenu = jest.fn();
         elem.triggerEventHandler('onHide', {});
 
         expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);
@@ -438,9 +441,10 @@ describe('DotPagesComponent', () => {
     });
 
     it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
+        siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
         expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+        // getPages is called multiple times during initialization and site changes
+        expect(store.getPages).toHaveBeenCalledTimes(2);
         expect(component.scrollToTop).toHaveBeenCalled();
     });
 });

@@ -15,6 +15,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,7 +39,7 @@ import org.glassfish.jersey.server.JSONP;
  * REST API for {@link com.dotcms.variant.model.Variant}
  */
 @Path("/v1/variants")
-@Tag(name = "Variant")
+@Tag(name = "Variants", description = "Endpoints for managing content variants")
 public class VariantResource {
 
     private final WebResource webResource;
@@ -47,9 +53,24 @@ public class VariantResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "promoteVariant",
+            summary = "Promotes a variant to become the default",
+            description = "Promotes a content variant to replace the default content version. " +
+                    "This action makes the variant content live for all users.",
+            tags = {"Variants"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Variant promoted successfully"),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid variant name"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "404", description = "Variant not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public Response promote(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("variantName") final String variantName) throws DotDataException {
+            @Parameter(description = "Name of the variant to promote") @PathParam("variantName") final String variantName) throws DotDataException {
 
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
@@ -71,8 +92,27 @@ public class VariantResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "addVariant",
+            summary = "Creates a new content variant",
+            description = "Creates a new content variant with the specified name and description. " +
+                    "Variants allow for A/B testing and personalization of content.",
+            tags = {"Variants"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Variant created successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityVariantView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid variant data or variant already exists"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public ResponseEntityVariantView addVariant(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
+                                                         @RequestBody(description = "Variant configuration including name and description",
+                                                                 required = true,
+                                                                 content = @Content(schema = @Schema(implementation = VariantForm.class)))
                                                          final VariantForm variantForm) throws DotDataException, DotSecurityException {
 
         DotPreconditions.isTrue(variantForm!=null, ()->"Missing Variant Form",

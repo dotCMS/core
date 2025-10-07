@@ -10,15 +10,17 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotRouterService } from '@dotcms/data-access';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContainerHistoryComponent } from './dot-container-history.component';
 
+import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -30,7 +32,8 @@ export class IframeMockComponent {
     selector: `dot-host-component`,
     template: `
         <dot-container-history [containerId]="containerId"></dot-container-history>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     containerId = '';
@@ -89,6 +92,7 @@ describe('ContainerHistoryComponent', () => {
             historyIframe.custom.emit(customEvent);
 
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith('456');
+            expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
         });
     });
 });

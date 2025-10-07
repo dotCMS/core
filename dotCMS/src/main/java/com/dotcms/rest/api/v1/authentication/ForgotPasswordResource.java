@@ -16,6 +16,7 @@ import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
@@ -32,6 +33,14 @@ import java.io.Serializable;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
 
 /**
  * This resource sends email with a link to recovery your password, if it is successfully returns the User email where the message is gonna be sent,
@@ -40,6 +49,8 @@ import javax.servlet.http.HttpServletResponse;
  * @author jsanca
  */
 @Path("/v1/forgotpassword")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Authentication")
 public class ForgotPasswordResource implements Serializable {
 
     private final UserLocalManager userLocalManager;
@@ -68,13 +79,33 @@ public class ForgotPasswordResource implements Serializable {
         this.responseUtil = responseUtil;
     }
 
+    @Operation(
+        summary = "Send password reset email",
+        description = "Sends a password reset email to the specified user. Returns the email address where the reset link was sent."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Password reset email sent successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityForgotPasswordView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid email address or user not found (if configured to show)",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @InitRequestRequired
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response forgotPassword(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
+                                         @RequestBody(description = "Forgot password form containing user ID or email address", 
+                                                    required = true,
+                                                    content = @Content(schema = @Schema(implementation = ForgotPasswordForm.class)))
                                          final ForgotPasswordForm forgotPasswordForm) {
 
         Response res;
@@ -98,7 +129,7 @@ public class ForgotPasswordResource implements Serializable {
             this.userService.sendResetPassword(
                     this.companyAPI.getCompanyId(request), emailAddress, locale);
 
-            res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
+            res = Response.ok(new ResponseEntityView<>(emailAddress)).build(); // 200
 
         } catch (NoSuchUserException e) {
 
@@ -123,7 +154,7 @@ public class ForgotPasswordResource implements Serializable {
                                 "User [%s] does NOT exist in the Database, returning OK message for security reasons. IP [%s]",
                                 emailAddress, request.getRemoteAddr()));
 
-                res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
+                res = Response.ok(new ResponseEntityView<>(emailAddress)).build(); // 200
             }
         } catch (SendPasswordException e) {
 

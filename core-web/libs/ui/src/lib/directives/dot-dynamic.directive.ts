@@ -1,9 +1,9 @@
-import { Directive, ViewContainerRef } from '@angular/core';
+import { Directive, ViewContainerRef, inject } from '@angular/core';
 
 @Directive({
     standalone: true,
     selector: '[dotDynamic]'
 })
 export class DotDynamicDirective {
-    constructor(public viewContainerRef: ViewContainerRef) {}
+    viewContainerRef = inject(ViewContainerRef);
 }

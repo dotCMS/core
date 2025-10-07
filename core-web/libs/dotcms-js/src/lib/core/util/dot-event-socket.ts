@@ -1,6 +1,6 @@
 import { Subject, Observable, timer } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { tap } from 'rxjs/operators';
 
@@ -33,6 +33,11 @@ enum ConnectionStatus {
  */
 @Injectable()
 export class DotEventsSocket {
+    private dotEventsSocketURL = inject(DotEventsSocketURL);
+    private dotcmsConfigService = inject(DotcmsConfigService);
+    private loggerService = inject(LoggerService);
+    private coreWebService = inject(CoreWebService);
+
     private protocolImpl: Protocol;
 
     private status: ConnectionStatus = ConnectionStatus.NONE;
@@ -43,20 +48,6 @@ export class DotEventsSocket {
     private readonly INITIAL_RETRY_DELAY = 1000;
     private readonly MAX_RETRY_DELAY = 30000; // 30 seconds max delay
     private retryCount = 0;
-
-    /**
-     * Initializes this service with the configuration properties that are
-     * necessary for opening the Websocket with the System Events end-point.
-     *
-     * @param dotcmsConfigService - The dotCMS configuration properties that include
-     * the Websocket parameters.
-     */
-    constructor(
-        private dotEventsSocketURL: DotEventsSocketURL,
-        private dotcmsConfigService: DotcmsConfigService,
-        private loggerService: LoggerService,
-        private coreWebService: CoreWebService
-    ) {}
 
     /**
      * Connect to a Event socket using  Web Socket protocol,

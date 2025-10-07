@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.BooleanUtils;
@@ -60,6 +61,7 @@ import java.util.stream.Stream;
  * This class is a RESTful resource for OSGi related operations.
  * @author jsanca
  */
+@Tag(name = "OSGi Plugins")
 @Path ("/v1/osgi")
 public class OSGIResource {
 

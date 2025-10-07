@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Pipe, PipeTransform } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
@@ -12,7 +12,8 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotContainerCreateComponent } from './dot-container-create.component';
 
 @Pipe({
-    name: 'dm'
+    name: 'dm',
+    standalone: false
 })
 class DotMessageMockPipe implements PipeTransform {
     transform(): string {
@@ -26,6 +27,7 @@ describe('ContainerCreateComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotContainerCreateComponent, DotMessageMockPipe],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {

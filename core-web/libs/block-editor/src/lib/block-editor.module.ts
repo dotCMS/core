@@ -1,5 +1,7 @@
+import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
+
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
@@ -31,15 +33,13 @@ import {
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
+import { DragHandleDirective } from './directive/drag-handle.directive';
+import { DotAddButtonComponent } from './elements/dot-add-button/dot-add-button.component';
+import { DotBubbleMenuComponent } from './elements/dot-bubble-menu/dot-bubble-menu.component';
+import { DotContextMenuComponent } from './elements/dot-context-menu/dot-context-menu.component';
 import {
     BubbleFormComponent,
-    BubbleLinkFormComponent,
-    BubbleMenuButtonComponent,
-    BubbleMenuComponent,
-    DragHandlerComponent,
     FloatingButtonComponent,
-    FormActionsComponent,
-    SuggestionPageComponent,
     UploadPlaceholderComponent
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
@@ -69,18 +69,17 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DialogModule,
         InputTextareaModule,
         PaginatorModule,
-        DotSpinnerModule
+        DotSpinnerModule,
+        DotBubbleMenuComponent,
+        TiptapBubbleMenuDirective,
+        DragHandleDirective,
+        DotContextMenuComponent,
+        DotAddButtonComponent
     ],
     declarations: [
         EditorDirective,
         ContentletBlockComponent,
-        DragHandlerComponent,
-        BubbleMenuComponent,
-        BubbleMenuButtonComponent,
-        BubbleLinkFormComponent,
-        FormActionsComponent,
         BubbleFormComponent,
-        SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
         FloatingButtonComponent
@@ -95,24 +94,21 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotContentSearchService,
         DotLanguagesService,
         DotContentTypeService,
-
         DotWorkflowActionsFireService,
-        {
-            provide: APP_INITIALIZER,
-            useFactory: initTranslations,
-            deps: [DotMessageService],
-            multi: true
-        }
+        provideAppInitializer(() => {
+            const initializerFn = initTranslations(inject(DotMessageService));
+            return initializerFn();
+        })
     ],
     exports: [
         EditorDirective,
-        BubbleMenuComponent,
-        BubbleLinkFormComponent,
+        DotBubbleMenuComponent,
         ReactiveFormsModule,
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        DotSpinnerModule
+        DotSpinnerModule,
+        DragHandleDirective
     ]
 })
 export class BlockEditorModule {}

@@ -19,7 +19,7 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -29,7 +29,7 @@ import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'field.class',
+    clazz: DotCMSClazzes.TEXT,
     name: 'fieldName',
     id: '123'
 };
@@ -37,7 +37,8 @@ const mockDFormFieldData = {
 @Component({
     selector: 'dot-host-tester',
     template:
-        '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
+        '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>',
+    standalone: false
 })
 class DotHostTesterComponent {
     mockDFormFieldData: DotCMSContentTypeField = {
@@ -46,7 +47,8 @@ class DotHostTesterComponent {
 }
 
 @Directive({
-    selector: '[dotDynamicFieldProperty]'
+    selector: '[dotDynamicFieldProperty]',
+    standalone: false
 })
 class TestDynamicFieldPropertyDirective {
     @Input()
@@ -159,7 +161,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     describe('should init component', () => {
         beforeEach(() => {
-            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+            jest.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
                 'property1',
                 'property2',
                 'property3',
@@ -170,8 +172,9 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(async () => await startHostComponent());
 
         it('should init form', () => {
-            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith('field.class');
-            expect(comp.form.get('clazz').value).toBe('field.class');
+            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith(DotCMSClazzes.TEXT);
+            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledTimes(1);
+            expect(comp.form.get('clazz').value).toBe(DotCMSClazzes.TEXT);
 
             expect(comp.form.get('id').value).toBe('123');
             expect(comp.form.get('property1').value).toBe('');
@@ -185,23 +188,24 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
 
         it('should emit false to valid when saveFieldProperties is called', () => {
-            spyOn(comp.valid, 'next');
+            jest.spyOn(comp.valid, 'next');
             comp.saveFieldProperties();
 
             expect(comp.valid.next).toHaveBeenCalledWith(false);
+            expect(comp.valid.next).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('checkboxes interactions', () => {
         beforeEach(() => {
-            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+            jest.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
                 'searchable',
                 'required',
                 'unique',
                 'indexed',
                 'listed'
             ]);
-            spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
+            jest.spyOn(mockFieldPropertyService, 'existsComponent').mockReturnValue(true);
         });
 
         beforeEach(async () => await startHostComponent());
@@ -239,12 +243,12 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     describe('checkboxes interactions with undefined fields', () => {
         beforeEach(() => {
-            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+            jest.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
                 'searchable',
                 'unique',
                 'listed'
             ]);
-            spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
+            jest.spyOn(mockFieldPropertyService, 'existsComponent').mockReturnValue(true);
         });
 
         beforeEach(async () => await startHostComponent());
@@ -259,13 +263,13 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     describe('form fields', () => {
         beforeEach(() => {
-            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+            jest.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
                 'property1',
                 'searchable',
                 'unique',
                 'listed'
             ]);
-            spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
+            jest.spyOn(mockFieldPropertyService, 'existsComponent').mockReturnValue(true);
         });
 
         beforeEach(async () => await startHostComponent());

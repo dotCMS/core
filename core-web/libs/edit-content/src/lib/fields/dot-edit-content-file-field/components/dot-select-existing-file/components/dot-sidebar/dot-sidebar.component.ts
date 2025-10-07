@@ -1,5 +1,3 @@
-import { faker } from '@faker-js/faker';
-
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -16,13 +14,11 @@ import { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 
-import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
-
+import { TruncatePathPipe } from '../../../../../../pipes/truncate-path.pipe';
 import { SYSTEM_HOST_ID } from '../../store/select-existing-file.store';
 
 @Component({
     selector: 'dot-sidebar',
-    standalone: true,
     imports: [TreeModule, TruncatePathPipe, SkeletonModule],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
@@ -110,7 +106,7 @@ export class DotSideBarComponent {
      * @returns {string} A string representing a percentage between 75% and 100%.
      */
     getPercentage(): string {
-        const number = faker.number.int({ max: 100, min: 75 });
+        const number = Math.floor(Math.random() * (100 - 75 + 1)) + 75;
 
         return `${number}%`;
     }

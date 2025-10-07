@@ -1,8 +1,8 @@
 import { v4 as uuid } from 'uuid';
 
-import { Component, ElementRef } from '@angular/core';
+import { Component, ElementRef, inject } from '@angular/core';
 
-import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayoutBody, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
@@ -57,6 +57,60 @@ export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
 export const DEFAULT_CONTAINER_IDENTIFIER = '//demo.dotcms.com/application/containers/default/';
 
 export const BANNER_CONTAINER_IDENTIFIER = '//demo.dotcms.com/application/containers/banner/';
+
+// Mock containers for defaultContainer tests
+export const mockDefaultContainerWithPath: DotContainer = {
+    identifier: 'default-container-id',
+    name: 'Default Container',
+    type: 'containers',
+    source: CONTAINER_SOURCE.FILE,
+    live: true,
+    working: true,
+    deleted: false,
+    locked: false,
+    title: 'Default Container Title',
+    path: '/default/container/path',
+    archived: false,
+    categoryId: 'default-category',
+    parentPermissionable: {
+        hostname: 'default-host'
+    }
+};
+
+export const mockDefaultContainerWithoutPath: DotContainer = {
+    identifier: 'default-container-id',
+    name: 'Default Container',
+    type: 'containers',
+    source: CONTAINER_SOURCE.FILE,
+    live: true,
+    working: true,
+    deleted: false,
+    locked: false,
+    title: 'Default Container Title',
+    archived: false,
+    categoryId: 'default-category',
+    parentPermissionable: {
+        hostname: 'default-host'
+    }
+};
+
+export const mockTempContainer: DotContainer = {
+    identifier: 'temp-container-id',
+    name: 'Temp Container',
+    type: 'containers',
+    source: CONTAINER_SOURCE.FILE,
+    live: true,
+    working: true,
+    deleted: false,
+    locked: false,
+    title: 'Temp Container Title',
+    path: '/temp/container/path',
+    archived: false,
+    categoryId: 'temp-category',
+    parentPermissionable: {
+        hostname: 'temp-host'
+    }
+};
 
 export const CONTAINERS_DATA_MOCK = [
     {
@@ -876,10 +930,13 @@ export const BOX_MOCK = {
  */
 @Component({
     selector: 'dotcms-grid-stack-element',
-    template: '<div>Element</div>'
+    template: '<div>Element</div>',
+    standalone: false
 })
 export class MockGridStackElementComponent {
-    constructor(public el: ElementRef) {
+    el = inject(ElementRef);
+
+    constructor() {
         this.el.nativeElement.ddElement = {
             on: () => {
                 /* noop */

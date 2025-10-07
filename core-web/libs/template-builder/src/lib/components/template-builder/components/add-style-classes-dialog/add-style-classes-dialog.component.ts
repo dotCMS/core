@@ -21,7 +21,6 @@ const UNIQUE_CLASSES = true;
 
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
-    standalone: true,
     imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],

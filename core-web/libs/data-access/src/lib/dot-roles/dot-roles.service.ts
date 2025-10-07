@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, pluck } from 'rxjs/operators';
 
@@ -13,10 +13,8 @@ const CURRENT_USER_KEY = 'CMS Anonymous';
 
 @Injectable()
 export class DotRolesService {
-    constructor(
-        private dotMessageService: DotMessageService,
-        private coreWebService: CoreWebService
-    ) {}
+    private dotMessageService = inject(DotMessageService);
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Return list of roles associated to specific role .

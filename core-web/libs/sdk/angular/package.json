@@ -1,17 +1,19 @@
 {
   "name": "@dotcms/angular",
-  "version": "0.0.1-beta.2",
+  "version": "1.1.1",
   "peerDependencies": {
+    "rxjs": ">=7.0.0",
     "@angular/common": ">=17.0.0",
     "@angular/core": ">=17.0.0",
-    "@angular/router": ">=17.0.0",
-    "@dotcms/client": "next",
-    "@dotcms/uve": "next",
-    "@tinymce/tinymce-angular": "^8.0.0",
-    "rxjs": ">=7.0.0"
+    "@angular/router": ">=17.0.0"
+  },
+  "dependencies": {
+    "@tinymce/tinymce-angular": "9.0.0",
+    "@dotcms/client": "latest",
+    "@dotcms/uve": "latest"
   },
   "devDependencies": {
-    "@dotcms/types": "next"
+    "@dotcms/types": "latest"
   },
   "description": "Official Angular Components library to render a dotCMS page.",
   "repository": {

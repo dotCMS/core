@@ -19,7 +19,8 @@ import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
             <div data-testId="leftExtraContent" left></div>
             <div data-testId="rightExtraContent" right></div>
         </dot-portlet-toolbar>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 
@@ -94,7 +95,7 @@ describe('DotPortletToolbarComponent', () => {
     describe('action buttons', () => {
         describe('primary', () => {
             it('should show one button and call function on click', () => {
-                const spy = jasmine.createSpy();
+                const spy = jest.fn();
                 component.actions = {
                     primary: [
                         {
@@ -149,7 +150,9 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should one button show and handle error', () => {
-                spyOn(console, 'error');
+                const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                    //
+                });
 
                 component.actions = {
                     primary: [
@@ -171,7 +174,9 @@ describe('DotPortletToolbarComponent', () => {
                 );
 
                 actionsPrimaryButton.triggerEventHandler('click', {});
-                expect(console.error).toHaveBeenCalledTimes(1);
+                expect(consoleSpy).toHaveBeenCalledTimes(1);
+
+                consoleSpy.mockRestore();
             });
 
             it('should show dropdown menu', () => {
@@ -207,11 +212,11 @@ describe('DotPortletToolbarComponent', () => {
                 expect(actionsMenu.componentInstance.model).toEqual([
                     {
                         label: 'Design',
-                        command: jasmine.any(Function)
+                        command: expect.any(Function)
                     },
                     {
                         label: 'Code',
-                        command: jasmine.any(Function)
+                        command: expect.any(Function)
                     }
                 ]);
             });
@@ -219,7 +224,7 @@ describe('DotPortletToolbarComponent', () => {
 
         describe('cancel', () => {
             it('should show and call function on click', () => {
-                const spy = jasmine.createSpy();
+                const spy = jest.fn();
                 component.actions = {
                     primary: null,
                     cancel: spy
@@ -231,6 +236,7 @@ describe('DotPortletToolbarComponent', () => {
 
                 expect(actionsCancelButton.nativeElement.textContent).toBe('Cancel');
                 expect(spy).toHaveBeenCalledWith({});
+                expect(spy).toHaveBeenCalledTimes(1);
             });
 
             it('should bind input cancelButtonLabel', () => {
@@ -248,7 +254,9 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should show and handle error', () => {
-                spyOn(console, 'error');
+                const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                    //
+                });
 
                 component.actions = {
                     primary: null,
@@ -261,7 +269,9 @@ describe('DotPortletToolbarComponent', () => {
                 const actionsCancelButton = de.query(By.css('[data-testId="actionsCancelButton"]'));
 
                 actionsCancelButton.triggerEventHandler('click', {});
-                expect(console.error).toHaveBeenCalledTimes(1);
+                expect(consoleSpy).toHaveBeenCalledTimes(1);
+
+                consoleSpy.mockRestore();
             });
         });
     });

@@ -1,16 +1,19 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 @Component({
     selector: 'dot-palette-content-type',
     templateUrl: './dot-palette-content-type.component.html',
-    styleUrls: ['./dot-palette-content-type.component.scss']
+    styleUrls: ['./dot-palette-content-type.component.scss'],
+    standalone: false
 })
 export class DotPaletteContentTypeComponent {
+    private dotContentletEditorService = inject(DotContentletEditorService);
+
     @ViewChild('filterInput', { static: true }) filterInput: DotPaletteInputFilterComponent;
 
     @Input() items: DotCMSContentType[] = [];
@@ -19,8 +22,6 @@ export class DotPaletteContentTypeComponent {
 
     @Output() selected = new EventEmitter<string>();
     @Output() filter = new EventEmitter<string>();
-
-    constructor(private dotContentletEditorService: DotContentletEditorService) {}
 
     /**
      * Set the content Type being dragged from the Content palette to dotContentletEditorService

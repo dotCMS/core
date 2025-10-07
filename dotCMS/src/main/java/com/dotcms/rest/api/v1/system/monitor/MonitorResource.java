@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.system.monitor;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.annotation.NoCache;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,6 +23,7 @@ import java.util.Map;
  * @since Jul 18th, 2018
  */
 @Path("/v1/{a:system-status|probes}")
+@Tag(name = "System Monitoring", description = "System monitoring and health checks")
 public class MonitorResource {
 
     private static final int SERVICE_UNAVAILABLE = HttpServletResponse.SC_SERVICE_UNAVAILABLE;

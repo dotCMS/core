@@ -47,6 +47,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
                 this.getDelegate(config.getServletContext());
 
         final AnalyticsTrackWebInterceptor analyticsTrackWebInterceptor = new AnalyticsTrackWebInterceptor();
+        // Note: RequestTrackingInterceptor replaced by RequestTrackingFilter for better performance and accuracy
         delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new PreRenderSEOWebInterceptor());
         delegate.add(new EMAWebInterceptor());

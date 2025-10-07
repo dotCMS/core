@@ -10,7 +10,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { LazyLoadEvent, MessageService } from 'primeng/api';
@@ -45,12 +46,18 @@ import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
         DotMessagePipe,
         InputTextModule
     ],
-    standalone: true,
     templateUrl: './template-builder-theme-selector.component.html',
     styleUrls: ['./template-builder-theme-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy {
+    private config = inject(DynamicDialogConfig);
+    private dotThemesService = inject(DotThemesService);
+    private paginatorService = inject(PaginatorService);
+    private ref = inject(DynamicDialogRef);
+    private siteService = inject(SiteService);
+    private cd = inject(ChangeDetectorRef);
+
     @Output()
     selected = new EventEmitter<DotTheme>();
 
@@ -66,14 +73,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     private SEARCH_PARAM = 'searchParam';
     private initialLoad = true;
 
-    constructor(
-        private config: DynamicDialogConfig,
-        private dotThemesService: DotThemesService,
-        private paginatorService: PaginatorService,
-        private ref: DynamicDialogRef,
-        private siteService: SiteService,
-        private cd: ChangeDetectorRef
-    ) {
+    constructor() {
         const { themeId } = this.config.data;
         this.themeId = themeId;
 

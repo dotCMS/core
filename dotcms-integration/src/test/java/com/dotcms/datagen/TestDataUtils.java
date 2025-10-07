@@ -259,6 +259,14 @@ public class TestDataUtils {
                 );
                 fields.add(
                         new FieldDataGen()
+                                .name("expireDate")
+                                .velocityVarName("expireDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
                                 .name("seo")
                                 .velocityVarName("seo")
                                 .defaultValue(null)
@@ -311,6 +319,7 @@ public class TestDataUtils {
                         .fields(fields)
                         .workflowId(workflowIds)
                         .publishDateFieldVarName("publishDate")
+                        .expireDateFieldVarName("expireDate")
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -2390,6 +2399,7 @@ public class TestDataUtils {
                                 .velocityVarName("textFieldNumeric")
                                 .type(TextField.class)
                                 .dataType(DataTypes.INTEGER)
+                                .defaultValue("0")
                                 .next()
                 );
                 fields.add(
@@ -2398,6 +2408,7 @@ public class TestDataUtils {
                                 .velocityVarName("textFieldFloat")
                                 .type(TextField.class)
                                 .dataType(DataTypes.FLOAT)
+                                .defaultValue("0")
                                 .next()
                 );
                 fields.add(
@@ -2462,6 +2473,7 @@ public class TestDataUtils {
                                 .name("keyValueField")
                                 .velocityVarName("keyValueField")
                                 .type(KeyValueField.class)
+                                .defaultValue("{}")
                                 .next()
                 );
 

@@ -183,10 +183,14 @@ dotCMS/dependencies.gradle
 .cursorignore
 
 # Vite config timestamp files
-**/*vite.config*.timestamp-*.mjs
-**/*vite.config*.timestamp-*.ts
+**/*vite.config*.timestamp*
+**/*vitest.config*.timestamp*
 
 # Examples package-lock.json
 examples/nextjs/package-lock.json
 examples/angular/package-lock.json
 examples/astro/package-lock.json
+
+local/
+
+**/.yalc/

@@ -71,7 +71,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       final Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
       if (opt.isPresent()) {
         shortyId = opt.get();
-      } else if (shortStr.length() == 36) {
+      } else if (shortStr.length() == 32 || shortStr.length() == 36 ) {
         shortyId = viaDbEquals(shortStr, shortyType);
         new ShortyIdCache().add(shortyId);
       } else {

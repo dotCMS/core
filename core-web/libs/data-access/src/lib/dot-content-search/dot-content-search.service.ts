@@ -11,7 +11,6 @@ export enum ESOrderDirectionSearch {
     ASC = 'ASC',
     DESC = 'DESC'
 }
-
 export interface EsQueryParamsSearch {
     itemsPerPage?: number;
     filter?: string;
@@ -20,9 +19,9 @@ export interface EsQueryParamsSearch {
     query: string;
     sortField?: string;
     limit?: number;
+    sort?: string;
     sortOrder?: ESOrderDirectionSearch;
 }
-
 export interface DotContentSearchParams {
     globalSearch?: string;
     systemSearchableFields?: Record<string, unknown>;
@@ -30,7 +29,6 @@ export interface DotContentSearchParams {
     page?: number;
     perPage?: number;
 }
-
 export interface DotContentSearchResponse {
     entity: {
         jsonObjectView: {
@@ -39,7 +37,6 @@ export interface DotContentSearchResponse {
         resultsSize: number;
     };
 }
-
 @Injectable({
     providedIn: 'root'
 })
@@ -52,11 +49,16 @@ export class DotContentSearchService {
      * @returns Observable<ESContent>
      * @memberof DotESContentService
      */
-    public get<T>({ query, limit = 0, offset = 0 }: EsQueryParamsSearch): Observable<T> {
+    public get<T>({
+        query,
+        limit = 0,
+        offset = 0,
+        sort = 'score,modDate desc'
+    }: EsQueryParamsSearch): Observable<T> {
         return this.#http
             .post('/api/content/_search', {
                 query,
-                sort: 'score,modDate desc',
+                sort,
                 limit,
                 offset
             })

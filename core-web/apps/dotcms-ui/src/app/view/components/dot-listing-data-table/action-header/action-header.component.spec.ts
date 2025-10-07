@@ -4,12 +4,12 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ActionHeaderComponent } from './action-header.component';
 
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 
 xdescribe('ActionHeaderComponent', () => {
@@ -86,8 +86,8 @@ xdescribe('ActionHeaderComponent', () => {
     });
 
     it('should trigger the methods in the action buttons', () => {
-        const primarySpy = jasmine.createSpy('spy');
-        const secondarySpy = jasmine.createSpy('spy2');
+        const primarySpy = jest.fn();
+        const secondarySpy = jest.fn();
         const options = {
             secondary: [
                 {

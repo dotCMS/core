@@ -6,7 +6,8 @@ import { UntypedFormGroup } from '@angular/forms';
     selector: 'dot-layout-properties',
     templateUrl: './dot-layout-properties.component.html',
     styleUrls: ['./dot-layout-properties.component.scss'],
-    encapsulation: ViewEncapsulation.None
+    encapsulation: ViewEncapsulation.None,
+    standalone: false
 })
 export class DotLayoutPropertiesComponent {
     @Input() group: UntypedFormGroup;

@@ -3,10 +3,13 @@ package com.dotcms.csspreproc;
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.DownloadUtil;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -61,13 +64,68 @@ public class CSSPreProcessServlet extends HttpServlet {
             final boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
             final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             final String originalURI = req.getRequestURI();
-            final String fileUri = originalURI.replace(SassPreProcessServlet.DOTSASS_PREFIX,"");
+            
+            // Check for dotsass=true query parameter to enable SASS compilation for non-standard URLs
+            final String dotsassParam = req.getParameter("dotsass");
+            final boolean isDotsassParam = "true".equalsIgnoreCase(dotsassParam);
+            
+            String fileUri;
+            if (isDotsassParam) {
+                // Process request with dotsass=true parameter
+                Logger.debug(this, "Processing request with dotsass=true parameter");
+                
+                // Check if this is a forwarded request from ShortyServlet or ScssQueryParamFilter
+                String shortyURI = (String) req.getAttribute("originalShortyURI");
+                String scssURI = (String) req.getAttribute("originalScssURI");
+                String uriToProcess = originalURI;
+                
+                if (shortyURI != null) {
+                    Logger.debug(this, "Received forwarded request from ShortyServlet with original URI: " + shortyURI);
+                    // Use the original URI from the ShortyServlet
+                    uriToProcess = shortyURI;
+                } else if (scssURI != null) {
+                    Logger.debug(this, "Received forwarded request from ScssQueryParamFilter with original URI: " + scssURI);
+                    // Use the original URI from the ScssQueryParamFilter
+                    uriToProcess = scssURI;
+                }
+                
+                if (uriToProcess.startsWith("/dA/")) {
+                    // Handle shorty ID pattern: /dA/{identifier}?dotsass=true
+                    fileUri = handleShortyRequest(req, resp, uriToProcess, currentSite, live, user);
+                    if (fileUri == null) {
+                        // Error already handled in handleShortyRequest
+                        return;
+                    }
+                } else {
+                    // Handle direct file path pattern: /path/to/file.scss?dotsass=true
+                    // For direct SCSS files with dotsass=true, we need to ensure they're processed as SASS
+                    if (uriToProcess.toLowerCase().endsWith(".scss")) {
+                        Logger.debug(this, "Processing direct SCSS file with dotsass=true: " + uriToProcess);
+                        fileUri = uriToProcess;
+                    } else {
+                        // For other files, just use the original URI
+                        fileUri = originalURI;
+                    }
+                }
+            } else {
+                // Handle standard SASS preprocessing request: /DOTSASS/path/to/file.scss
+                fileUri = originalURI.replace(SassPreProcessServlet.DOTSASS_PREFIX,"");
+            }
+            
             Logger.debug(this, String.format("-> Original URI = %s", originalURI));
             Logger.debug(this, String.format("-> File URI     = %s", fileUri));
             final DotLibSassCompiler compiler = new DotLibSassCompiler(currentSite, fileUri, live, req);
             
-            // check if the asset exists
-            actualUri = fileUri.substring(0, fileUri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
+            // Check if the asset exists
+            actualUri = fileUri;
+            if (!fileUri.toLowerCase().endsWith("." + compiler.getDefaultExtension())) {
+                if (fileUri.contains(".")) {
+                    actualUri = fileUri.substring(0, fileUri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
+                } else {
+                    actualUri = fileUri + "." + compiler.getDefaultExtension();
+                }
+            }
+            
             Logger.debug(this, String.format("-> Actual URI   = %s", actualUri));
             final Identifier ident = APILocator.getIdentifierAPI().find(currentSite, actualUri);
             if (null == ident || !InodeUtils.isSet(ident.getId())) {
@@ -328,6 +386,82 @@ public class CSSPreProcessServlet extends HttpServlet {
             resp.sendError(code);
         } catch (IOException e) {
             Logger.error(CSSPreProcessServlet.class, String.format("Error writing response code [%d]", code), e);
+        }
+    }
+    
+    /**
+     * Handles requests with shorty IDs like /dA/{identifier}?dotsass=true
+     * This method extracts the shorty ID from the URI, resolves it to a file asset,
+     * verifies it's a SCSS file, and returns the file path for SASS compilation.
+     * 
+     * @param req The HTTP request
+     * @param resp The HTTP response
+     * @param originalURI The original request URI
+     * @param currentSite The current site/host
+     * @param live Whether to use the live version
+     * @param user The current user
+     * @return The file URI to use for SASS compilation, or null if an error occurred
+     * @throws ServletException If a servlet error occurs
+     * @throws IOException If an I/O error occurs
+     */
+    private String handleShortyRequest(final HttpServletRequest req, final HttpServletResponse resp, 
+                                      final String originalURI, final Host currentSite, final boolean live, final User user) 
+                                      throws ServletException, IOException {
+        
+        try {
+            // Extract the shorty ID from the URI
+            String[] uriParts = originalURI.split("/");
+            if (uriParts.length < 3) {
+                sendError(resp, HttpStatus.SC_BAD_REQUEST);
+                Logger.error(this, String.format("Invalid shorty ID format in URI: %s", originalURI));
+                return null;
+            }
+            
+            String inodeOrIdentifier = uriParts[2];
+            // Remove any API suffix that might be present
+            if (inodeOrIdentifier.endsWith("API")) {
+                inodeOrIdentifier = inodeOrIdentifier.substring(0, inodeOrIdentifier.length() - 3);
+            }
+            
+            final Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
+            
+            if (shortOpt.isEmpty()) {
+                sendError(resp, HttpStatus.SC_NOT_FOUND);
+                Logger.error(this, String.format("Shorty ID not found: %s", inodeOrIdentifier));
+                return null;
+            }
+            
+            final ShortyId shorty = shortOpt.get();
+            
+            // Get the file path from the shorty ID
+            if (shorty.type == ShortType.IDENTIFIER || shorty.type == ShortType.INODE) {
+                // Get the file asset from the identifier
+                final long defLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                final FileAsset fileAsset = (shorty.type == ShortType.IDENTIFIER) 
+                    ?  APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, live, defLang, user, true))
+                    : APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(shorty.longId, user, true));
+                
+                // Check if it's a SCSS file
+                if (!fileAsset.getFileName().toLowerCase().endsWith(".scss")) {
+                    sendError(resp, HttpStatus.SC_BAD_REQUEST);
+                    Logger.error(this, String.format("Not a SCSS file: %s", fileAsset.getFileName()));
+                    return null;
+                }
+                
+                // Get the file path
+                String filePath = fileAsset.getPath() + fileAsset.getFileName();
+                Logger.debug(this, String.format("-> File path from shorty ID = %s", filePath));
+                return filePath;
+            } else {
+                // Handle other shorty types if needed
+                sendError(resp, HttpStatus.SC_BAD_REQUEST);
+                Logger.error(this, String.format("Unsupported shorty type: %s", shorty.type));
+                return null;
+            }
+        } catch (DotStateException | DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error retrieving file from shorty ID: " + e.getMessage(), e);
+            sendError(resp, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return null;
         }
     }
 

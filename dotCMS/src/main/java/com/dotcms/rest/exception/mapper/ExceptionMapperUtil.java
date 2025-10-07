@@ -254,7 +254,7 @@ public final class ExceptionMapperUtil {
         } catch (Exception e) {
             Logger.debug(ExceptionMapperUtil.class, e.getMessage(), e);
         }
-        return Response.status(status).entity(new ResponseEntityView(errorEntities))
+        return Response.status(status).entity(new ResponseEntityView<>(errorEntities))
                 .type(MediaType.APPLICATION_JSON).build();
     }
 

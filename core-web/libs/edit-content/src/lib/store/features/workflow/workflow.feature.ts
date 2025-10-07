@@ -28,8 +28,8 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSWorkflow, DotContentletDepths } from '@dotcms/dotcms-models';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
 
@@ -198,7 +198,9 @@ export function withWorkflow() {
                  *
                  * This method triggers a sequence of events to fire a workflow action
                  * and handles the response or error. If the action is successful,
-                 * it navigates to the content view with the updated contentlet and actions.
+                 * it updates the store with the new contentlet and actions. In route mode,
+                 * it also navigates to the content view with the updated contentlet.
+                 * In dialog mode, it only updates the store without navigation.
                  * In case of an error, it updates the state with an error message.
                  *
                  * @param options The options required to fire the workflow action.
@@ -259,8 +261,12 @@ export function withWorkflow() {
                                         isReset,
                                         workflowStatus
                                     }) => {
-                                        // Always navigate if the inode has changed
-                                        if (contentlet.inode !== currentContentlet?.inode) {
+                                        // Only navigate if NOT in dialog mode and the inode has changed
+                                        const isDialogMode = store.isDialogMode();
+                                        if (
+                                            !isDialogMode &&
+                                            contentlet.inode !== currentContentlet?.inode
+                                        ) {
                                             router.navigate(['/content', contentlet.inode], {
                                                 replaceUrl: true,
                                                 queryParamsHandling: 'preserve'
@@ -283,7 +289,8 @@ export function withWorkflow() {
                                                 initialContentletState: 'reset',
                                                 state: ComponentStatus.LOADED,
                                                 currentStep: null,
-                                                error: null
+                                                error: null,
+                                                workflowActionSuccess: contentlet
                                             });
                                         } else {
                                             patchState(store, {
@@ -292,7 +299,8 @@ export function withWorkflow() {
                                                 currentSchemeId: store.currentSchemeId(),
                                                 state: ComponentStatus.LOADED,
                                                 currentStep: step,
-                                                error: null
+                                                error: null,
+                                                workflowActionSuccess: contentlet
                                             });
                                         }
 
@@ -351,7 +359,17 @@ export function withWorkflow() {
                                 );
                         })
                     )
-                )
+                ),
+
+                /**
+                 * Clears the workflow action success signal.
+                 * Used to reset the signal after it has been processed to prevent duplicate emissions.
+                 */
+                clearWorkflowActionSuccess: () => {
+                    patchState(store, {
+                        workflowActionSuccess: null
+                    });
+                }
             })
         ),
         withHooks({

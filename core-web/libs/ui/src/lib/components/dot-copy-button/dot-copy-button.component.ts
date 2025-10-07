@@ -13,7 +13,6 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
  */
 @Component({
     selector: 'dot-copy-button',
-    standalone: true,
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss'],
@@ -69,13 +68,11 @@ export class DotCopyButtonComponent {
             .copy(this.copy())
             .then(() => {
                 this.$tempTooltipText.set(this.dotMessageService.get('Copied'));
-
-                setTimeout(() => {
-                    this.$tempTooltipText.set('');
-                }, 1000);
+                setTimeout(() => this.$tempTooltipText.set(''), 1000);
             })
-            .catch(() => {
+            .catch((error) => {
                 this.$tempTooltipText.set('Error');
+                console.error('[DotCopyButtonComponent] Error copying to clipboard: ', error);
             });
     }
 }

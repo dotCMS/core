@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -204,41 +203,42 @@ class MockRouter {
 
 @Injectable()
 class MockActivatedRoute {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     root: any;
 }
 
 describe('DotCrumbtrailService', () => {
+    let spectator: SpectatorService<DotCrumbtrailService>;
     const dotNavigationServiceMock: MockDotMainNavigationService =
         new MockDotMainNavigationService();
     const mockRouter = new MockRouter();
     const mockActivatedRoute = new MockActivatedRoute();
 
-    let service: DotCrumbtrailService;
     let firstCrumb: DotCrumb[];
     let secondCrumb: DotCrumb[];
 
+    const createService = createServiceFactory({
+        service: DotCrumbtrailService,
+        providers: [
+            {
+                provide: DotNavigationService,
+                useValue: dotNavigationServiceMock
+            },
+            {
+                provide: Router,
+                useValue: mockRouter
+            },
+            {
+                provide: ActivatedRoute,
+                useValue: mockActivatedRoute
+            }
+        ]
+    });
+
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
-            providers: [
-                DotCrumbtrailService,
-                {
-                    provide: DotNavigationService,
-                    useValue: dotNavigationServiceMock
-                },
-                {
-                    provide: Router,
-                    useValue: mockRouter
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: mockActivatedRoute
-                }
-            ]
-        });
+        spectator = createService();
 
-        service = testbed.get(DotCrumbtrailService);
-
-        service.crumbTrail$.subscribe((crumbs) => {
+        spectator.service.crumbTrail$.subscribe((crumbs) => {
             if (!firstCrumb) {
                 firstCrumb = crumbs;
             } else {
@@ -514,6 +514,136 @@ describe('DotCrumbtrailService', () => {
                 url: ''
             }
         ]);
+    });
+
+    describe('URL Processing', () => {
+        it('Should handle URLs with query parameters correctly', () => {
+            mockActivatedRoute.root = {
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        data: new BehaviorSubject({}),
+                        firstChild: {
+                            firstChild: null,
+                            data: new BehaviorSubject({
+                                contentType: {
+                                    name: 'Content Type Testing'
+                                }
+                            })
+                        }
+                    }
+                }
+            };
+
+            const urlWithParams = '/content-types-angular/edit/123?param1=value1&param2=value2';
+            const mockNavigationEnd = new NavigationEnd(1, urlWithParams, urlWithParams);
+
+            dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
+
+            expect(secondCrumb).toEqual([
+                {
+                    label: 'Types & Tag',
+                    target: '_self',
+                    url: '#/content-types-angular'
+                },
+                {
+                    label: 'Content Types',
+                    target: '_self',
+                    url: '#/content-types-angular'
+                },
+                {
+                    label: 'Content Type Testing',
+                    target: '_self',
+                    url: ''
+                }
+            ]);
+        });
+
+        it('Should handle URLs with fragments and query parameters', () => {
+            const urlWithParamsAndFragment = '/portlet/action?param=value#fragment';
+            const mockNavigationEnd = new NavigationEnd(
+                1,
+                urlWithParamsAndFragment,
+                urlWithParamsAndFragment
+            );
+
+            dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
+
+            expect(secondCrumb).toEqual([
+                {
+                    label: 'menu',
+                    target: '_self',
+                    url: '#/menulink/first_portlet'
+                },
+                {
+                    label: 'Potlet Label',
+                    target: '_self',
+                    url: '#/menulink/portlet'
+                }
+            ]);
+        });
+
+        it('Should handle URLs without query parameters correctly', () => {
+            mockActivatedRoute.root = {
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        data: new BehaviorSubject({}),
+                        firstChild: {
+                            firstChild: null,
+                            data: new BehaviorSubject({
+                                contentType: {
+                                    name: 'Content Type Testing'
+                                }
+                            })
+                        }
+                    }
+                }
+            };
+
+            const cleanUrl = '/content-types-angular/edit/123';
+            const mockNavigationEnd = new NavigationEnd(1, cleanUrl, cleanUrl);
+
+            dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
+
+            expect(secondCrumb).toEqual([
+                {
+                    label: 'Types & Tag',
+                    target: '_self',
+                    url: '#/content-types-angular'
+                },
+                {
+                    label: 'Content Types',
+                    target: '_self',
+                    url: '#/content-types-angular'
+                },
+                {
+                    label: 'Content Type Testing',
+                    target: '_self',
+                    url: ''
+                }
+            ]);
+        });
+
+        it('Should filter out empty sections and "c" prefix correctly', () => {
+            const urlWithCPrefix = '/c/site-browser/folder?param=value';
+            const mockNavigationEnd = new NavigationEnd(1, urlWithCPrefix, urlWithCPrefix);
+
+            dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
+
+            expect(secondCrumb).toEqual([
+                {
+                    label: 'site',
+                    target: '_self',
+                    url: '#/c/site-browser'
+                },
+                {
+                    label: 'Browser',
+                    target: '_self',
+                    url: '#/c/site-browser'
+                }
+            ]);
+        });
     });
 });
 describe('DotCrumbtrailService with alternative Menu', () => {

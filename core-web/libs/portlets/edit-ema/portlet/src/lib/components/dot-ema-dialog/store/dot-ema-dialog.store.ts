@@ -6,9 +6,8 @@ import { Injectable, inject } from '@angular/core';
 
 import { switchMap } from 'rxjs/operators';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSPage } from '@dotcms/types';
+import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
 import { LAYOUT_URL, CONTENTLET_SELECTOR_URL } from '../../../shared/consts';
@@ -35,7 +34,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
             },
-            clientAction: CLIENT_ACTIONS.NOOP
+            clientAction: DotCMSUVEAction.NOOP
         });
     }
 
@@ -145,7 +144,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             {
                 inode,
                 title,
-                clientAction = CLIENT_ACTIONS.NOOP,
+                clientAction = DotCMSUVEAction.NOOP,
                 angularCurrentPortlet
             }: EditContentletPayload
         ) => {
@@ -279,7 +278,14 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                 status: FormStatus.PRISTINE,
                 isTranslation: false
             },
-            clientAction: CLIENT_ACTIONS.NOOP
+            clientAction: DotCMSUVEAction.NOOP
+        };
+    });
+
+    readonly resetActionPayload = this.updater((state) => {
+        return {
+            ...state,
+            actionPayload: undefined
         };
     });
 

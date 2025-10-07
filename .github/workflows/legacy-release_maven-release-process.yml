@@ -117,6 +117,16 @@ jobs:
           
           git add .mvn/maven.config
           
+          # Update LICENSE file Change Date
+          chmod +x .github/actions/update-license-date.sh
+          .github/actions/update-license-date.sh
+          
+          # Add LICENSE file if it was modified
+          if ! git diff --quiet HEAD -- LICENSE; then
+            echo "LICENSE file was updated, adding to commit"
+            git add LICENSE
+          fi
+          
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
           git push origin ${release_branch}

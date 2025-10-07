@@ -35,6 +35,7 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
@@ -66,6 +67,7 @@ import java.util.Optional;
  * @author jsanca
  */
 @Path("/v1/templates")
+@Tag(name = "Templates", description = "Endpoints for managing page templates and layouts")
 public class TemplateResource {
 
     private static final String ARCHIVE_PARAM = "archive";
@@ -119,7 +121,6 @@ public class TemplateResource {
     @GET
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response list(@Context final HttpServletRequest httpRequest,
                                         @Context final HttpServletResponse httpResponse,
@@ -172,7 +173,6 @@ public class TemplateResource {
     @Path("/{templateId}/live")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
                                @Context final HttpServletResponse httpResponse,
@@ -208,7 +208,6 @@ public class TemplateResource {
     @Path("/{templateId}/working")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
                                          @Context final HttpServletResponse httpResponse,

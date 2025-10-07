@@ -27,21 +27,21 @@
             [class.selected]="value && value.identifier === item.identifier"
             [class.highlight]="item.name === selectedOptionValue"
             class="theme-selector__data-list-item">
-            <img
-                *ngIf="item?.themeThumbnail; else imageFallback"
-                [src]="
-                    item.identifier === 'SYSTEM_THEME'
-                        ? item.themeThumbnail
-                        : '/dA/' + item.themeThumbnail + '/titleImage/500w/50q/thumbnail.png'
-                "
-                [alt]="item.name"
-                class="dot-theme-item__image" />
-
-            <ng-template #imageFallback>
+            @if (item?.themeThumbnail) {
+                <img
+                    [src]="
+                        item.identifier === 'SYSTEM_THEME'
+                            ? item.themeThumbnail
+                            : '/dA/' + item.themeThumbnail + '/titleImage/500w/50q/thumbnail.png'
+                    "
+                    [alt]="item.name"
+                    class="dot-theme-item__image" />
+            } @else {
                 <div class="dot-theme-item__image--fallback">
                     <span>{{ item.label.charAt(0) }}</span>
                 </div>
-            </ng-template>
+            }
+
             <span class="dot-theme-item__meta">
                 <span class="dot-theme-item__label">{{ item.label }}</span>
                 <span class="dot-theme-item__date">

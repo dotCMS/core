@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-contextMenu
         (onHide)="closedActionsContextMenu()"
         [model]="vm.pages.menuActions"
@@ -35,12 +35,13 @@
                             type="text"
                             pInputText
                             dotAutofocus />
-                        <i
-                            *ngIf="input.value.length"
-                            (click)="filterData('')"
-                            class="pi pi-times"
-                            data-testid="dot-pages-listing-header__keyword-input-clear"
-                            role="button"></i>
+                        @if (input.value.length) {
+                            <i
+                                (click)="filterData('')"
+                                class="pi pi-times"
+                                data-testid="dot-pages-listing-header__keyword-input-clear"
+                                role="button"></i>
+                        }
                     </div>
                     <p-dropdown
                         (onChange)="setPagesLanguage($event.value)"
@@ -62,32 +63,34 @@
             </div>
         </ng-template>
         <ng-template pTemplate="header">
-            <tr *ngIf="vm.pages.items.length !== 0">
-                <th pSortableColumn="title" style="width: 25%">
-                    {{ 'title' | dm }}
-                    <p-sortIcon field="title"></p-sortIcon>
-                </th>
-                <th pSortableColumn="urlMap" style="width: 20%">
-                    {{ 'url' | dm }}
-                    <p-sortIcon field="urlMap"></p-sortIcon>
-                </th>
-                <th pSortableColumn="contentType" style="width: 12%">
-                    {{ 'type' | dm }}
-                    <p-sortIcon field="contentType"></p-sortIcon>
-                </th>
-                <th pSortableColumn="languageId" style="width: 12%">
-                    {{ 'status' | dm }}
-                    <p-sortIcon field="languageId"></p-sortIcon>
-                </th>
-                <th style="width: 12%">
-                    {{ 'Last-Editor' | dm }}
-                </th>
-                <th pSortableColumn="modDate" style="width: 14%">
-                    {{ 'Last-Edited' | dm }}
-                    <p-sortIcon field="modDate"></p-sortIcon>
-                </th>
-                <th style="width: 5%"></th>
-            </tr>
+            @if (vm.pages.items.length !== 0) {
+                <tr>
+                    <th pSortableColumn="title" style="width: 25%">
+                        {{ 'title' | dm }}
+                        <p-sortIcon field="title"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="urlMap" style="width: 20%">
+                        {{ 'url' | dm }}
+                        <p-sortIcon field="urlMap"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="contentType" style="width: 12%">
+                        {{ 'type' | dm }}
+                        <p-sortIcon field="contentType"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="languageId" style="width: 12%">
+                        {{ 'status' | dm }}
+                        <p-sortIcon field="languageId"></p-sortIcon>
+                    </th>
+                    <th style="width: 12%">
+                        {{ 'Last-Editor' | dm }}
+                    </th>
+                    <th pSortableColumn="modDate" style="width: 14%">
+                        {{ 'Last-Edited' | dm }}
+                        <p-sortIcon field="modDate"></p-sortIcon>
+                    </th>
+                    <th style="width: 5%"></th>
+                </tr>
+            }
         </ng-template>
         <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
             <tr
@@ -148,4 +151,4 @@
             </tr>
         </ng-template>
     </p-table>
-</ng-container>
+}

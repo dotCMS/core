@@ -1,5 +1,4 @@
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -12,14 +11,26 @@ import {
     signal,
     viewChild
 } from '@angular/core';
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
+
+import { CustomFieldConfig } from '../../models/dot-edit-content-custom-field.interface';
+import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../models/dot-edit-content-field.constant';
+import { createCustomFieldConfig } from '../../utils/functions.util';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
  * This component is used to render a custom field in the DotCMS content editor.
@@ -27,8 +38,18 @@ import { WINDOW } from '@dotcms/utils';
  */
 @Component({
     selector: 'dot-edit-content-custom-field',
-    standalone: true,
-    imports: [SafeUrlPipe, DotIconModule, ButtonModule],
+    imports: [
+        SafeUrlPipe,
+        DotIconModule,
+        ButtonModule,
+        InputTextModule,
+        DialogModule,
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent
+    ],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,17 +59,11 @@ import { WINDOW } from '@dotcms/utils';
             useValue: window
         }
     ],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
     host: {
         '[class.no-label]': '!$showLabel()'
     }
 })
-export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewInit {
+export class DotEditContentCustomFieldComponent extends BaseWrapperField implements OnDestroy {
     /**
      * The field to render.
      */
@@ -60,8 +75,15 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     /**
      * The iframe element to render the custom field in.
      */
-    iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
-
+    $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
+    /**
+     * The contentlet to render the field for.
+     */
+    $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
+    /**
+     * The inode of the content to render the field for.
+     */
+    $inode = computed(() => this.$contentlet()?.inode);
     /**
      * The window object.
      */
@@ -86,6 +108,8 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     $src = computed(() => {
         const field = this.$field();
         const contentType = this.$contentType();
+        const inode = this.$inode() || '';
+        const fieldConfig = this.$fieldConfig();
 
         if (!field || !contentType) {
             return '';
@@ -93,20 +117,16 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
 
         const params = new URLSearchParams({
             variable: contentType,
-            field: field.variable
+            field: field.variable,
+            inode
         });
 
+        // Add modal parameter if in modal mode
+        if (fieldConfig.showAsModal) {
+            params.set('modal', 'true');
+        }
+
         return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
-    });
-
-    /**
-     * Whether to show the label.
-     */
-    $showLabel = computed(() => {
-        const field = this.$field();
-        if (!field) return true;
-
-        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
     });
 
     /**
@@ -123,6 +143,20 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      */
     $minContainerHeight = computed(() => {
         return this.$showLabel() ? '40px' : '17px';
+    });
+
+    /**
+     * Computed field configuration that combines default values with field variables.
+     */
+    $fieldConfig = computed((): CustomFieldConfig => {
+        const field = this.$field();
+
+        if (!field?.fieldVariables) {
+            // Return default config if no field variables
+            return DEFAULT_CUSTOM_FIELD_CONFIG;
+        }
+
+        return createCustomFieldConfig(field.fieldVariables);
     });
 
     /**
@@ -144,13 +178,23 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     $form = computed(() => (this.#controlContainer as FormGroupDirective).form);
 
     /**
+     * Whether the modal dialog is visible
+     */
+    $showModal = signal(false);
+
+    /**
+     * The input text options for the custom field.
+     */
+    protected readonly inputTextOptions = INPUT_TEXT_OPTIONS;
+
+    /**
      * Handles messages from the custom field and toggles fullscreen mode.
      * @param event - The message event.
      */
     @HostListener('window:message', ['$event'])
     onMessageFromCustomField({ data, origin }: MessageEvent) {
         if (!this.ALLOWED_ORIGINS.includes(origin)) {
-            console.warn('Message received from unauthorized origin:', origin);
+            console.warn('❌ Message received from unauthorized origin:', origin);
 
             return;
         }
@@ -159,14 +203,58 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
             case 'toggleFullscreen':
                 this.$isFullscreen.update((value) => !value);
                 break;
+
+            case 'dotcms:iframe:resize':
+                this.handleIframeResize(data.height, data.fieldVariable);
+                break;
+
+            default:
+                console.warn('❓ Unknown message type:', data.type);
         }
+    }
+
+    /**
+     * Handles iframe resize requests from the custom field.
+     * @param height - The new height for the iframe.
+     * @param fieldVariable - The field variable to identify which iframe sent the message.
+     * @param iframeId - The unique iframe identifier.
+     */
+    private handleIframeResize(height: number, fieldVariable?: string): void {
+        // Skip auto-resize for modal mode - use fixed dimensions from config
+        const fieldConfig = this.$fieldConfig();
+        if (fieldConfig.showAsModal) {
+            return;
+        }
+
+        // Check if this message is for this specific iframe
+        const currentFieldVariable = this.$field()?.variable;
+        if (fieldVariable && currentFieldVariable !== fieldVariable) {
+            return;
+        }
+
+        const iframeEl = this.$iframe()?.nativeElement;
+        if (!iframeEl) {
+            return;
+        }
+
+        if (!height || height <= 0) {
+            return;
+        }
+
+        // Update iframe height smoothly
+        iframeEl.style.height = `${height}px`;
+        iframeEl.dataset.lastHeight = height.toString();
+
+        // Ensure iframe allows dropdowns to be visible
+        iframeEl.style.overflow = 'visible';
+        iframeEl.style.zIndex = '1000';
     }
 
     /**
      * Handles the iframe load event.
      */
     onIframeLoad() {
-        const iframeEl = this.iframe()?.nativeElement;
+        const iframeEl = this.$iframe()?.nativeElement;
         if (!iframeEl) return;
 
         iframeEl.classList.add('loaded');
@@ -213,7 +301,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      * Gets the iframe window.
      */
     private getIframeWindow(): Window | null {
-        const iframeEl = this.iframe()?.nativeElement;
+        const iframeEl = this.$iframe()?.nativeElement;
         if (!iframeEl) {
             console.warn('Iframe not initialized');
 
@@ -249,81 +337,22 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     }
 
     /**
-     * Adjusts the iframe height and sets up the resize observer.
+     * Opens the custom field in a modal dialog
      */
-    private adjustIframeHeight() {
-        const iframeEl = this.iframe()?.nativeElement;
-        if (!iframeEl) {
-            return () => void 0;
-        }
+    openModal(): void {
+        this.$showModal.set(true);
+    }
 
-        // Set iframe styles to hide scrollbars
-        iframeEl.style.overflow = 'hidden';
-        iframeEl.style.scrollbarWidth = 'none'; // Firefox
-
-        const updateHeight = () => {
-            try {
-                const body = iframeEl.contentWindow?.document.body;
-                if (body) {
-                    body.style.margin = '0';
-
-                    // Add styles to body to hide scrollbars
-                    body.style.overflow = 'hidden';
-                    body.style.scrollbarWidth = 'none'; // Firefox
-
-                    // Get scroll height and add a small buffer to prevent internal scrolling
-                    // Without causing continuous growth
-                    const height = body.scrollHeight;
-                    if (height > 0) {
-                        // Add a small buffer (2px) but use a data attribute to prevent continuous growth
-                        const currentHeight = parseInt(iframeEl.dataset.lastHeight || '0', 10);
-
-                        // Only update if height has changed or initial setting
-                        if (!iframeEl.dataset.lastHeight || Math.abs(height - currentHeight) >= 2) {
-                            const newHeight = height + 2; // Small buffer to avoid scrollbar
-                            iframeEl.style.height = `${newHeight}px`;
-                            iframeEl.dataset.lastHeight = newHeight.toString();
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn('Error adjusting iframe height:', error);
-            }
-        };
-
-        iframeEl.addEventListener('load', updateHeight);
-
-        const observer = new MutationObserver(() => {
-            requestAnimationFrame(updateHeight);
-        });
-
-        iframeEl.addEventListener('load', () => {
-            const body = iframeEl.contentWindow?.document.body;
-            if (body) {
-                observer.observe(body, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true
-                });
-            }
-        });
-
-        return () => {
-            observer.disconnect();
-            iframeEl.removeEventListener('load', updateHeight);
-        };
+    /**
+     * Closes the modal dialog
+     */
+    closeModal(): void {
+        this.$showModal.set(false);
     }
 
     ngOnDestroy(): void {
         if (this.#formBridge) {
             this.#formBridge.destroy();
         }
-    }
-
-    /**
-     * Adjusts the iframe height and sets up the resize observer.
-     */
-    ngAfterViewInit() {
-        this.adjustIframeHeight();
     }
 }

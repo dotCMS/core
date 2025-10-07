@@ -7,12 +7,9 @@ import {
     navigationQuery,
 } from "./queries";
 
-export const getDotCMSPage = cache(async (path, searchParams = {}) => {
-    // Avoid passing mode if you have a read only auth token
-    const { mode, ...params } = searchParams;
+export const getDotCMSPage = cache(async (path) => {
     try {
         const pageData = await dotCMSClient.page.get(path, {
-            ...params,
             graphql: {
                 content: {
                     blogs: blogQuery,

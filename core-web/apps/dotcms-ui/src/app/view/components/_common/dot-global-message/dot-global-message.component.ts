@@ -1,6 +1,13 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectorRef, Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    HostBinding,
+    OnDestroy,
+    OnInit,
+    inject
+} from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
@@ -16,9 +23,13 @@ import { DotEvent, DotGlobalMessage } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-global-message',
     templateUrl: './dot-global-message.component.html',
-    styleUrls: ['./dot-global-message.component.scss']
+    styleUrls: ['./dot-global-message.component.scss'],
+    standalone: false
 })
 export class DotGlobalMessageComponent implements OnInit, OnDestroy {
+    private dotEventsService = inject(DotEventsService);
+    private cd = inject(ChangeDetectorRef);
+
     @HostBinding('class')
     get classes(): string {
         return `${this.visibility ? 'dot-global-message--visible' : ''} ${this.message.type}`;
@@ -34,11 +45,6 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
         warning: 'pi pi-exclamation-triangle'
     };
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotEventsService: DotEventsService,
-        private cd: ChangeDetectorRef
-    ) {}
 
     ngOnDestroy(): void {
         this.destroy$.next(true);

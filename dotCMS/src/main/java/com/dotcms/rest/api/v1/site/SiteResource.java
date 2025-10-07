@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.IdentifierValidator;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -44,6 +45,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.JSONP;
@@ -85,6 +87,7 @@ import static com.dotcms.rest.api.v1.site.SiteHelper.toView;
  * @author jsanca
  */
 @Path("/v1/site")
+@Tag(name = "Sites", description = "Endpoints for managing sites (hosts) and their configuration")
 public class SiteResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -848,6 +851,19 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException("siteName can not be Null");
         }
 
+        // SECURITY: Validate site identifier format to prevent injection attacks
+        if (UtilMethods.isSet(newSiteForm.getIdentifier()) && 
+            !IdentifierValidator.isValid(newSiteForm.getIdentifier(), IdentifierValidator.NEW_SITE_PROFILE)) {
+            Logger.warn(this, "Invalid site identifier rejected in createNewSite");
+            throw new IllegalArgumentException("Invalid site identifier format");
+        }
+        
+        // SECURITY: Validate site name format to prevent injection attacks  
+        if (!IdentifierValidator.isValid(newSiteForm.getSiteName(), IdentifierValidator.NEW_SITE_PROFILE)) {
+            Logger.warn(this, "Invalid site name rejected in createNewSite");
+            throw new IllegalArgumentException("Invalid site name format");
+        }
+
         Logger.debug(this, "Creating the site: " + newSiteForm);
         newSite.setHostname(newSiteForm.getSiteName());
         if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
@@ -866,6 +882,8 @@ public class SiteResource implements Serializable {
                 )
         )).build();
     }
+
+
 
     /**
      * Copy the most common properties from the REST form into the Site object.

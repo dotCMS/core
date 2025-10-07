@@ -3,22 +3,24 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-toolbar',
     styleUrls: ['./dot-toolbar.component.scss'],
-    templateUrl: './dot-toolbar.component.html'
+    templateUrl: './dot-toolbar.component.html',
+    standalone: false
 })
 export class DotToolbarComponent implements OnInit {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #dotcmsEventsService = inject(DotcmsEventsService);
     readonly #siteService = inject(SiteService);
     readonly #destroyRef = inject(DestroyRef);
-    dotNavigationService = inject(DotNavigationService);
     iframeOverlayService = inject(IframeOverlayService);
+
+    featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
 
     ngOnInit(): void {
         this.#dotcmsEventsService

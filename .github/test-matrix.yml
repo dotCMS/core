@@ -1,0 +1,156 @@
+# Test Matrix Configuration
+# This file defines all test configurations for the CI/CD pipeline in a DRY, maintainable way.
+# 
+# Structure:
+# - defaults: Global settings applied to all tests
+# - test_types: Each test type with its own defaults and suites
+
+defaults:
+  timeout_minutes: 240
+  runner: ubuntu-latest
+  maven_opts: "-Xmx2048m"
+  requires_checkout: true
+  generates_test_results: true
+  cleanup_runner: true
+
+test_types:
+  # === SIMPLE TESTS (single suite) ===
+  
+  jvm:
+    condition_input: jvm_unit_test
+    defaults:
+      needs_license: false
+      needs_docker: false
+      needs_node: false
+    suites:
+      - name: "JVM Unit Tests"
+        maven_args: "test -Dprod -pl :dotcms-core"
+        stage_name: "JVM Tests"
+
+  cli:
+    condition_input: cli
+    defaults:
+      needs_license: true
+      needs_docker: true
+      needs_node: false
+    suites:
+      - name: "CLI Tests"
+        maven_args: "verify -pl :dotcms-api-data-model,:dotcms-cli"
+        stage_name: "CLI Tests"
+
+  frontend:
+    condition_input: frontend
+    defaults:
+      needs_license: false
+      needs_docker: false
+      needs_node: false
+    suites:
+      - name: "Frontend Unit Tests"
+        maven_args: "test -pl :dotcms-core-web"
+        stage_name: "Frontend Tests"
+
+  # === MULTI-SUITE TESTS ===
+  
+  integration:
+    condition_input: integration
+    defaults:
+      needs_license: true
+      needs_docker: false
+      needs_node: false
+      # Base command for all integration tests
+      base_maven_args: >-
+        verify -Dit.test.forkcount=1 -pl :dotcms-integration 
+        -Dcoreit.test.skip=false
+    suites:
+      - name: "Integration Tests - MainSuite 1a"
+        test_class: "MainSuite1a"
+        stage_name: "IT Tests MainSuite 1a"
+      - name: "Integration Tests - MainSuite 1b"
+        test_class: "MainSuite1b"
+        stage_name: "IT Tests MainSuite 1b"
+      - name: "Integration Tests - MainSuite 2a"
+        test_class: "MainSuite2a"
+        stage_name: "IT Tests MainSuite 2a"
+      - name: "Integration Tests - MainSuite 2b"
+        test_class: "MainSuite2b"
+        stage_name: "IT Tests MainSuite 2b"
+      - name: "Integration Tests - MainSuite 3a"
+        test_class: "MainSuite3a"
+        stage_name: "IT Tests MainSuite 3a"
+      - name: "Integration Tests - Junit5 Suite 1"
+        test_class: "Junit5Suite1"
+        stage_name: "IT Tests Junit5Suite1"
+
+  postman:
+    condition_input: postman
+    defaults:
+      needs_license: true
+      needs_docker: true
+      needs_node: true
+      # Base command for all Postman tests
+      base_maven_args: >-
+        verify -pl :dotcms-postman 
+        -Dpostman.test.skip=false
+    suites:
+      # AI and ML related tests
+      - name: "Postman Tests - AI"
+        collection: "ai"
+      
+      # Content management tests
+      - name: "Postman Tests - Category Content"
+        collection: "category-content"
+      - name: "Postman Tests - Container"
+        collection: "container"
+      - name: "Postman Tests - Page"
+        collection: "page"
+      - name: "Postman Tests - Template"
+        collection: "template"
+      
+      # Feature-specific tests
+      - name: "Postman Tests - Experiment"
+        collection: "experiment"
+      - name: "Postman Tests - GraphQL"
+        collection: "graphql"
+      - name: "Postman Tests - Workflow"
+        collection: "workflow"
+      
+      # Push/Publish tests
+      - name: "Postman Tests - PP"
+        collection: "pp"
+      
+      # Default test suites
+      - name: "Postman Tests - Default Split"
+        collection: "default-split"
+      - name: "Postman Tests - Default"
+        collection: "default"
+
+  karate:
+    condition_input: karate
+    defaults:
+      needs_license: true
+      needs_docker: true
+      needs_node: true
+      base_maven_args: >-
+        verify -pl :dotcms-test-karate 
+        -Dkarate.test.skip=false
+    suites:
+      - name: "Karate Tests - Default"
+        test_class: "KarateCITests#defaults"
+        stage_name: "Karate Default"
+
+  e2e:
+    condition_input: e2e
+    defaults:
+      needs_license: true
+      needs_docker: true
+      needs_node: true
+      base_maven_args: "verify -De2e.test.skip=false"
+    suites:
+      - name: "E2E Tests - JVM Suite"
+        maven_args: >-
+          -Dci=true -Dit.test=E2eTestSuite 
+          -De2e.test.forkCount=1 -pl :dotcms-e2e-java
+        stage_name: "E2E JVM E2E Suite"
+      - name: "E2E Tests - Node Suite"
+        maven_args: "-De2e.test.env=ci -pl :dotcms-e2e-node"
+        stage_name: "E2E Node E2E Suite" 

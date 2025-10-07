@@ -8,7 +8,8 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+
+import { DotBlockEditorSidebarComponent } from './dot-block-editor-sidebar.component';
 
 @NgModule({
     declarations: [DotBlockEditorSidebarComponent],

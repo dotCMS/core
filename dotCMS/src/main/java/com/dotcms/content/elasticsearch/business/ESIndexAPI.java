@@ -1337,7 +1337,7 @@ public class ESIndexAPI {
         }
         if (stats == null) {
             Logger.fatal(this.getClass(), "No Elasticsearch, dying an ugly death");
-            System.exit(1);
+            com.dotcms.shutdown.SystemExitManager.immediateExit(1, "Elasticsearch connection failed after maximum attempts");
         }
         return true;
 

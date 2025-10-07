@@ -15,6 +15,13 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -40,6 +47,7 @@ import java.util.function.Supplier;
  * It includes methods for generating completions based on a given prompt.
  */
 @Path("/v1/ai/completions")
+@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class CompletionsResource {
 
     /**
@@ -53,8 +61,24 @@ public class CompletionsResource {
     @POST
     @JSONP
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Operation(
+        operationId = "summarizeFromContent",
+        summary = "Generate AI completions from content",
+        description = "Creates AI-powered content summaries and completions based on provided prompts. Supports both streaming and non-streaming responses.",
+        tags = {"AI"},
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Completion generated successfully",
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing or invalid prompt"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
     public final Response summarizeFromContent(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
+                                               @RequestBody(description = "Completion form with prompt and configuration", 
+                                                          content = @Content(schema = @Schema(implementation = CompletionsForm.class)))
                                                final CompletionsForm formIn) {
         final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
         return getResponse(
@@ -79,8 +103,24 @@ public class CompletionsResource {
     @POST
     @JSONP
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Operation(
+        operationId = "rawPrompt",
+        summary = "Generate AI completions from raw prompt",
+        description = "Processes raw prompts directly through the AI service without content preprocessing. Supports both streaming and non-streaming responses.",
+        tags = {"AI"},
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Raw completion generated successfully",
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request - Missing or invalid prompt"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
     public final Response rawPrompt(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response,
+                                    @RequestBody(description = "Completion form with raw prompt and configuration", 
+                                               content = @Content(schema = @Schema(implementation = CompletionsForm.class)))
                                     final CompletionsForm formIn) {
         final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
         return getResponse(
@@ -104,6 +144,19 @@ public class CompletionsResource {
     @JSONP
     @Path("/config")
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Operation(
+        operationId = "getAiConfig",
+        summary = "Get AI service configuration",
+        description = "Retrieves the current AI service configuration including available models, API settings, and host-specific configurations.",
+        tags = {"AI"},
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Configuration retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = Map.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
     public final Response getConfig(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response) {
         // get user if we have one (this allows anon)

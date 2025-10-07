@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -26,7 +26,6 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',
-    standalone: true,
     imports: [
         CommonModule,
         DotMessagePipe,
@@ -42,6 +41,8 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     vm$: Observable<ConfigurationTrafficStepViewModel> =
         this.dotExperimentsConfigurationStore.trafficStepVm$.pipe(
             tap(({ status }) => this.handleSidebar(status))
@@ -54,10 +55,6 @@ export class DotExperimentsConfigurationTrafficComponent {
         | DotExperimentsConfigurationTrafficAllocationAddComponent
         | DotExperimentsConfigurationTrafficSplitAddComponent
     >;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     /**
      * Open sidebar to set Traffic Allocation

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -33,13 +33,11 @@ export const ProductsTableTemplate = `
     template: ProductsTableTemplate
 })
 export class DynamicDialogProductsComponent implements OnInit {
-    products: Product[];
+    private productService = inject(ProductService);
+    ref = inject(DynamicDialogRef);
+    config = inject(DynamicDialogConfig);
 
-    constructor(
-        private productService: ProductService,
-        public ref: DynamicDialogRef,
-        public config: DynamicDialogConfig
-    ) {}
+    products: Product[];
 
     ngOnInit() {
         this.productService.getProductsSmall().then((products) => (this.products = products));

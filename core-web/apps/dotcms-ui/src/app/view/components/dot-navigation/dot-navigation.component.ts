@@ -1,15 +1,17 @@
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { DotNavigationService } from './services/dot-navigation.service';
 
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+
 @Component({
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],
-    templateUrl: 'dot-navigation.component.html'
+    templateUrl: 'dot-navigation.component.html',
+    standalone: false
 })
 export class DotNavigationComponent {
     /**
@@ -80,6 +82,11 @@ export class DotNavigationComponent {
         if (this.$isCollapsed()) {
             this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
+            // Check if the menu is not already open to prevent redundant navigation actions.
+            if (!event.data.isOpen) {
+                this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+            }
+
             this.#dotNavigationService.setOpen(event.data.id);
         }
     }

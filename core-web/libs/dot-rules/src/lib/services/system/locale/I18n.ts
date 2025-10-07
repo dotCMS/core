@@ -2,7 +2,7 @@ import { defer as observableDefer, Observer } from 'rxjs';
 import { Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -30,7 +30,7 @@ export class TreeNode {
     $addAllFromJson(key: string, childJson: any): void {
         const cNode = this.$child(key);
         if (Verify.isString(childJson)) {
-            cNode._value = childJson;
+            cNode._value = childJson.toString();
         } else {
             Object.keys(childJson).forEach((cKey) => {
                 cNode.$addAllFromJson(cKey, childJson[cKey]);
@@ -98,15 +98,16 @@ export class TreeNode {
 
 @Injectable()
 export class I18nService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     root: TreeNode;
     private _apiRoot: ApiRoot;
     private _baseUrl;
 
-    constructor(
-        apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = inject(ApiRoot);
+
         this._apiRoot = apiRoot;
         this._baseUrl = '/api/v1/system/i18n';
         this.root = new TreeNode(null, 'root');

@@ -1,19 +1,95 @@
-<div class="legacy-custom-field" [style.min-height]="$minContainerHeight()">
-    @if ($src(); as src) {
-        <iframe
-            (load)="onIframeLoad()"
-            [src]="src | safeUrl"
-            [class.legacy-custom-field--fullscreen]="$isFullscreen()"
-            [style]="
-                !$isFullscreen() ? { height: $variables()?.height, width: $variables()?.width } : {}
-            "
-            [title]="$iframeTitle()"
-            class="legacy-custom-field"
-            #iframe
-            data-testId="custom-field-iframe"
-            frameborder="0"></iframe>
+@let src = $src();
+@let fieldConfig = $fieldConfig();
+@let showAsModal = fieldConfig.showAsModal;
+@let field = $field();
+@let showLabel = $showLabel();
+
+<dot-card-field [hasError]="hasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
     }
-</div>
+    <dot-card-field-content>
+        <div class="legacy-custom-field">
+            @if (src) {
+                @if (showAsModal) {
+                    <!-- Modal mode: Show input with button -->
+                    <div class="flex gap-2 legacy-custom-field__modal-trigger">
+                        <input
+                            class="disabled-input"
+                            [id]="field.variable"
+                            [attr.data-testId]="field.variable"
+                            [formControlName]="field.variable"
+                            [readonly]="true"
+                            type="text"
+                            pInputText />
+
+                        <button
+                            pButton
+                            [outlined]="true"
+                            type="button"
+                            label="Open"
+                            class="legacy-custom-field__show-button"
+                            (click)="openModal()"
+                            data-testId="custom-field-show-button"></button>
+                    </div>
+
+                    <!-- Modal Dialog -->
+                    @defer (when $showModal()) {
+                        <p-dialog
+                            [(visible)]="$showModal"
+                            [header]="$field()?.name"
+                            [modal]="true"
+                            [style]="{ width: fieldConfig.width, height: fieldConfig.height }"
+                            styleClass="legacy-custom-field__modal"
+                            data-testId="custom-field-modal">
+                            <iframe
+                                (load)="onIframeLoad()"
+                                [src]="src | safeUrl"
+                                [title]="$iframeTitle()"
+                                [style]="{ width: '100%', height: '100%' }"
+                                class="legacy-custom-field__modal-iframe"
+                                frameborder="0"
+                                #iframe
+                                data-testId="custom-field-modal-iframe"></iframe>
+
+                            <ng-template pTemplate="footer">
+                                <p-button
+                                    label="Done"
+                                    severity="primary"
+                                    (onClick)="$showModal.set(false)" />
+                            </ng-template>
+                        </p-dialog>
+                    }
+                } @else {
+                    <!-- Inline mode: Show iframe directly -->
+                    <iframe
+                        (load)="onIframeLoad()"
+                        [src]="src | safeUrl"
+                        [title]="$iframeTitle()"
+                        class="legacy-custom-field__iframe"
+                        #iframe
+                        data-testId="custom-field-iframe"
+                        frameborder="0"></iframe>
+                }
+            }
+        </div>
+    </dot-card-field-content>
+    @if (field.hint) {
+        <dot-card-field-footer>
+            <div class="flex justify-content-between align-items-center">
+                <div class="hint-message">
+                    <small
+                        [attr.data-testId]="'hint-' + field.variable"
+                        data-testid="calendar-field-hint">
+                        {{ field.hint }}
+                    </small>
+                </div>
+            </div>
+        </dot-card-field-footer>
+    }
+</dot-card-field>
 
 @if ($isFullscreen()) {
     <p-button

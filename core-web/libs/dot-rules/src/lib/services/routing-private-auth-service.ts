@@ -1,6 +1,6 @@
 import { Observable, Observer } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { RoutingService } from '@dotcms/dotcms-js';
@@ -9,12 +9,10 @@ import { DotRouterService } from '@dotcms/dotcms-js';
 
 @Injectable()
 export class RoutingPrivateAuthService implements CanActivate {
-    constructor(
-        private router: DotRouterService,
-        private routingService: RoutingService,
-        private loginService: LoginService,
-        private dotcmsConfigService: DotcmsConfigService
-    ) {}
+    private router = inject(DotRouterService);
+    private routingService = inject(RoutingService);
+    private loginService = inject(LoginService);
+    private dotcmsConfigService = inject(DotcmsConfigService);
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return Observable.create((obs) => {

@@ -16,18 +16,44 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.util.*;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.ZipUtil;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import org.quartz.SchedulerException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -37,23 +63,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation.Builder;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
-import org.quartz.SchedulerException;
 
 /**
  * This REST end-point provides all the required mechanisms for the execution of
@@ -81,6 +90,7 @@ import org.quartz.SchedulerException;
  *
  */
 @Path("/integrity")
+@Tag(name = "Data Integrity", description = "Data integrity checking and conflict resolution")
 public class IntegrityResource {
 
     private final WebResource webResource = new WebResource();
@@ -1008,20 +1018,24 @@ public class IntegrityResource {
     }
 
     /**
-     * Sets the status for the checking integrity process of a given endpoint in session
+     * Sets the status for the checking integrity process of a given endpoint as an attribute in the
+     * current session.
      *
-     * @param session
-     * @param endpointId
-     * @param status
-     * @param message
+     * @param session    The current instance of the {@link HttpSession}.
+     * @param endpointId The ID of the Endpoint whose data integrity is being checked.
+     * @param status     The {@link ProcessStatus} of the integrity check process.
+     * @param message    An optional message associated with the integrity check process.
      */
-    public static void setStatus ( HttpSession session, String endpointId, ProcessStatus status, String message ) {
+    public static void setStatus(final HttpSession session, final String endpointId, final ProcessStatus status, final String message ) {
         session.setAttribute( "integrityCheck_" + endpointId, status );
         if ( message != null ) {
             session.setAttribute( "integrityCheck_message_" + endpointId, message );
         } else {
             session.removeAttribute( "integrityCheck_message_" + endpointId );
         }
+        // Required when the Tomcat Redis Session Manager plugin is enabled. This forces the session
+        // to be persisted to Redis and correctly update the Integrity Checker status
+        session.setAttribute( "__dot_session_persist_now__", true);
     }
 
     /**
@@ -1140,6 +1154,7 @@ public class IntegrityResource {
                     try {
                         IntegrityUtil.completeDiscardConflicts(endpoint.getId());
                         conflictPresent = IntegrityUtil.completeCheckIntegrity(endpoint.getId());
+                        Logger.debug(IntegrityResource.class, "================ Integrity check completed ================");
                     } catch (Exception e) {
                         Logger.error(IntegrityResource.class, "Error checking integrity", e);
 
@@ -1156,18 +1171,27 @@ public class IntegrityResource {
                         }
                     }
 
+                    Logger.debug(IntegrityResource.class, "is Conflict Present? " + conflictPresent);
+
                     if (conflictPresent) {
                         //Setting the process status
+                        Logger.debug(IntegrityResource.class, "Setting status to finished");
                         setStatus(session, endpoint.getId(), ProcessStatus.FINISHED, null);
                     } else {
                         String noConflictMessage;
                         try {
+                            Logger.debug(IntegrityResource.class, "Getting no conflicts message");
                             noConflictMessage = LanguageUtil.get(
                                     loggedUser.getLocale(),
                                     "push_publish_integrity_conflicts_not_found");
                         } catch (LanguageException e) {
                             noConflictMessage = "No Integrity Conflicts found";
+                        } catch (Exception e) {
+                            Logger.error(IntegrityResource.class, "Error while getting no conflicts message", e);
+                            noConflictMessage = "No Integrity Conflicts found";
                         }
+
+                        Logger.debug(IntegrityResource.class, "Setting status to no conflicts");
                         //Setting the process status
                         setStatus(session, endpoint.getId(), ProcessStatus.NO_CONFLICTS, noConflictMessage);
                     }

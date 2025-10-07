@@ -65,8 +65,6 @@
         <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
         <tomcat.run.data.folder>${project.build.directory}/tomcat-run-data/${context.name}</tomcat.run.data.folder>
         <cleanup.data.folder>false</cleanup.data.folder>
-        <!-- Add enterprise to sonar sources -->
-        <sonar.sources>src/main/java,src/enterprise/java</sonar.sources>
     </properties>
     <dependencies>
         <!-- Force dependency resolution when using also-make option even though these do not provide jar dependencies -->
@@ -226,10 +224,6 @@
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.hibernate-validator</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -763,6 +757,10 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
         </dependency>
 
         <dependency>
@@ -1330,6 +1328,14 @@
             <scope>test</scope>
         </dependency>
 
+
+        <!-- Jandex for test annotation scanning -->
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- explicitly add all the declared logging dependencies -->
         <!-- Logging framework support Log4j2 as base logger
             very specific artifacts are required to support other frameworks.
@@ -1401,6 +1407,20 @@
             </exclusions>
         </dependency>
 
+        <!-- Metrics and Monitoring -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-jmx</artifactId>
+        </dependency>
+
         <!-- Weld CDI -->
 
         <dependency>
@@ -1439,11 +1459,6 @@
 
         <!-- Weld CDI -->
 
-        <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>jandex</artifactId>
-            <version>3.0.5</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina</artifactId>
@@ -1866,6 +1881,11 @@
                                     <SDKMAN_JAVA_VERSION>${runtime.docker.sdkman.java.version}</SDKMAN_JAVA_VERSION>
                                 </args>
                             </build>
+                            <run>
+                                <env combine.children="append">
+                                    <DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>false</DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>
+                                </env>
+                            </run>
                         </dotcms>
                     </imagesMap>
                 </configuration>
@@ -1964,6 +1984,39 @@
                                 </fileSet>
                             </fileSets>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- OpenAPI/Swagger documentation generation -->
+            <plugin>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <configuration>
+                    <outputFileName>openapi</outputFileName>
+                    <!--<outputPath>${project.build.directory}/generated-resources/openapi</outputPath>-->
+                    <outputPath>${project.basedir}/src/main/webapp/WEB-INF/openapi</outputPath>
+                    <outputFormat>YAML</outputFormat>
+                    <prettyPrint>true</prettyPrint>
+                    <!-- Enable sorting for consistent output -->
+                    <sortOutput>true</sortOutput>
+                    <!-- Scan all dotCMS packages to extract @OpenAPIDefinition -->
+                    <resourcePackages>
+                        <package>com.dotcms.rest.config</package>
+                        <package>com.dotcms.rest</package>
+                        <package>com.dotcms.contenttype.model.field</package>
+                        <package>com.dotcms.rendering.js</package>
+                        <package>com.dotcms.ai.rest</package>
+                        <package>com.dotcms.health</package>
+                    </resourcePackages>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-openapi</id>
+                        <goals>
+                            <goal>resolve</goal>
+                        </goals>
+                        <phase>compile</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -2190,6 +2243,39 @@
                                 </dotcms>
                             </imagesMap>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>docker-stop-no-remove</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <defaultGoal>validate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <removeVolumes>false</removeVolumes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>docker-stop-no-remove</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <keepContainer>true</keepContainer>
+                                    <removeVolumes>false</removeVolumes>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

@@ -9,9 +9,6 @@ function extractLocationsAndActivities(contentlet) {
 
     return (
         contentlet?.reduce((acc, { activities, ...location }) => {
-            // This is a relationship between Contentlets
-            // Event -> Location -> Activities
-            // Depth 3
             acc.activities = acc.activities.concat(activities);
             acc.locations.push(location);
 

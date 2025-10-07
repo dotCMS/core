@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
@@ -15,12 +16,17 @@ import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTyp
 import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeTest;
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
+import com.dotmarketing.business.SecondaryCategoryPermissionTest;
+import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
+import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
+import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(MainBaseSuite.class)
 @Suite.SuiteClasses({
+    RuleAPITest.class,
         DeterministicIdentifierAPITest.class,
         ExperimentFeatureFlagMetricTypeTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
@@ -35,7 +41,13 @@ import org.junit.runners.Suite;
         CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
-        TimeMachineUtilTest.class
+        TimeMachineUtilTest.class,
+        Task250604UpdateFolderInodesTest.class,
+        AnalyticsValidatorUtilTest.class,
+        Task250826AddIndexesToUniqueFieldsTableTest.class,
+        SecondaryCategoryPermissionTest.class
 })
+
 public class MainSuite3a {
+
 }

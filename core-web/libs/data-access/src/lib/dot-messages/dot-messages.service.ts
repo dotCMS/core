@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -21,12 +21,10 @@ const BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
     providedIn: 'root'
 })
 export class DotMessageService {
-    private messageMap: { [key: string]: string } = {};
+    private readonly http = inject(HttpClient);
+    private readonly dotLocalstorageService = inject(DotLocalstorageService);
 
-    constructor(
-        private readonly http: HttpClient,
-        private readonly dotLocalstorageService: DotLocalstorageService
-    ) {}
+    private messageMap: { [key: string]: string } = {};
 
     /**
      * Initializes the DotMessageService.

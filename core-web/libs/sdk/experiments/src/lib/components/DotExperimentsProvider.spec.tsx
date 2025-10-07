@@ -1,6 +1,7 @@
 import { render, waitFor } from '@testing-library/react';
 
-import * as dotcmsClient from '@dotcms/client';
+import { UVE_MODE, UVEState } from '@dotcms/types';
+import * as uve from '@dotcms/uve';
 
 import { DotExperimentsProvider } from './DotExperimentsProvider';
 
@@ -23,7 +24,7 @@ describe('DotExperimentsProvider', () => {
     it('initializes DotExperiments instance when not inside the editor', async () => {
         const config = { apiKey: 'key', server: 'server', debug: true };
 
-        jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
+        jest.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.EDIT } as UVEState);
 
         const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
@@ -45,7 +46,7 @@ describe('DotExperimentsProvider', () => {
     it('initializes DotExperiments instance when is inside the editor', async () => {
         const config = { apiKey: 'key', server: 'server', debug: true };
 
-        jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+        jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
         const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 

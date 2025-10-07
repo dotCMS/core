@@ -38,7 +38,8 @@ const mockContentType: DotCMSContentType = {
 @Component({
     template: `
         <dot-form-selector [show]="show"></dot-form-selector>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     show = false;
@@ -104,7 +105,7 @@ describe('DotFormSelectorComponent', () => {
 
     describe('show dialog', () => {
         beforeEach(() => {
-            spyOn(paginatorService, 'getWithOffset').and.callFake(getWithOffsetMock);
+            jest.spyOn(paginatorService, 'getWithOffset').mockImplementation(getWithOffsetMock);
 
             fixture.detectChanges();
             fixture.componentInstance.show = true;
@@ -139,6 +140,7 @@ describe('DotFormSelectorComponent', () => {
                     paginatorService.paginationPerPage = 5;
                     fixture.detectChanges();
                     expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+                    expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
                     expect(component.items).toEqual([mockContentType]);
                     expect(component.dotDialog.dialog.nativeElement.classList).toContain(
                         'paginator'
@@ -148,8 +150,8 @@ describe('DotFormSelectorComponent', () => {
 
             describe('events', () => {
                 beforeEach(async () => {
-                    spyOn(component.pick, 'emit');
-                    spyOn(component.shutdown, 'emit');
+                    jest.spyOn(component.pick, 'emit');
+                    jest.spyOn(component.shutdown, 'emit');
 
                     fixture.componentInstance.show = true;
                     paginatorService.totalRecords = 1;
@@ -163,6 +165,7 @@ describe('DotFormSelectorComponent', () => {
                     dialog.triggerEventHandler('hide', true);
 
                     expect(component.shutdown.emit).toHaveBeenCalledWith(true);
+                    expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
                 });
 
                 it('trigger event when click select button', () => {
@@ -170,6 +173,7 @@ describe('DotFormSelectorComponent', () => {
                     const button = de.query(By.css('.form-selector__button'));
                     button.triggerEventHandler('click', null);
                     expect(component.pick.emit).toHaveBeenCalledWith(mockContentType);
+                    expect(component.pick.emit).toHaveBeenCalledTimes(1);
                 });
             });
         });

@@ -3,7 +3,7 @@
 # Set default environment variables
 export LANG=${LANG:-"C.UTF-8"}
 
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseZGC -XX:+ZGenerational "}
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+ZGenerational "}
 
 export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
 
@@ -91,8 +91,8 @@ export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 export DOT_MAIL_SMTP_HOST=${DOT_MAIL_SMTP_HOST:-"smtp.dotcms.site"}
 export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 
-# Set environment variable for jemalloc
-export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}
+# Set environment variable for mimalloc
+export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libmimalloc.so.2"}
 
 # This needs to be set in order for catalina to read environmental properties
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
@@ -139,6 +139,14 @@ else
   export CATALINA_OPTS="$CATALINA_OPTS -DLog4jContextSelector=org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector"
 fi
 
+# Disable log4j automatic shutdown hook to allow dotCMS to control shutdown order
+if echo "$CATALINA_OPTS" | grep -q '\-Dlog4j2\.shutdownHookEnabled'; then
+  echo "Log4j shutdown hook setting already configured"
+else
+  echo "Disabling log4j automatic shutdown hook - dotCMS will control logging shutdown"
+  export CATALINA_OPTS="$CATALINA_OPTS -Dlog4j2.shutdownHookEnabled=false"
+fi
+
 ADDITIONAL_CLASSPATH="$CATALINA_HOME/log4j2/lib/*"
 
 # Set CLASSPATH with additional path if necessary
@@ -160,6 +168,19 @@ fi
 
 if [ -z "$CATALINA_TMPDIR" ]; then
       CATALINA_TMPDIR="$CATALINA_HOME/temp"
+fi
+
+# Clean up temp directory before startup to prevent accumulation of old files
+# Can be disabled by setting DOTCMS_DISABLE_TEMP_CLEANUP=true
+# Age threshold can be configured via DOTCMS_TEMP_CLEANUP_AGE_MINUTES (default: 60 minutes)
+if [ "${DOTCMS_DISABLE_TEMP_CLEANUP}" != "true" ]; then
+  if [ -d "${CATALINA_TMPDIR}" ]; then
+    CLEANUP_AGE_MINUTES=${DOTCMS_TEMP_CLEANUP_AGE_MINUTES:-60}
+    echo "Cleaning up temp directory (${CATALINA_TMPDIR}) before dotCMS startup..."
+    echo "Removing files older than ${CLEANUP_AGE_MINUTES} minutes..."
+    find "${CATALINA_TMPDIR}" -type f -user $(id -u) -mmin +${CLEANUP_AGE_MINUTES} -delete 2>/dev/null || true
+    echo "Temp directory cleanup completed"
+  fi
 fi
 
 add_glowroot_agent() {

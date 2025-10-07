@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Path("/structure")
+@Tag(name = "Content Type", description = "Content type definitions and schema management")
 public class StructureResource {
 
 	@GET

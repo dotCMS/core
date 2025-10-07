@@ -37,3 +37,59 @@ Feature: General Helpers and Functions
         return cleanedUrl;
       }
       """
+
+  @checkEndpointBlocked
+  Scenario: Check if endpoint returns 404 with correct error message
+    # Only execute when called with explicit arguments
+    * if (!__arg || !__arg.url) karate.abort()
+    * def requestUrl = __arg.url
+    Given url requestUrl
+    When method get
+    Then status 404
+    And match response contains 'Management endpoints are only available on the management port'
+
+  @makeRequest
+  Scenario: Make HTTP request and return response
+    # Only execute when called with explicit arguments
+    * if (!__arg || !__arg.url) karate.abort()
+    * def requestUrl = __arg.url
+    * def requestMethod = __arg.method || 'GET'
+    * def requestHeaders = __arg.headers || {}
+
+    Given url requestUrl
+    And headers requestHeaders
+    When method requestMethod
+    * def result = { status: responseStatus, body: response }
+
+  @waitForReady
+  Scenario: Wait for application to be ready
+    * def defaultManagementUrl = karate.properties['karate.management.url'] || 'http://localhost:8090'
+    * def managementUrl = __arg && __arg.managementUrl ? __arg.managementUrl : defaultManagementUrl
+    * def waitForReady = 
+      """
+      function() {
+        var maxAttempts = 30; // 30 attempts = 5 minutes with 10 second intervals
+        var attempt = 0;
+        while (attempt < maxAttempts) {
+          attempt++;
+          karate.log('Checking readiness, attempt', attempt, 'of', maxAttempts);
+          try {
+            var callResult = karate.call('classpath:tests/management/readiness-check.feature', {
+              readinessUrl: managementUrl + '/dotmgt/readyz'
+            });
+            karate.log('Readiness check response:', callResult.responseStatus, callResult.response);
+            if (callResult.responseStatus == 200 && callResult.response == 'ready') {
+              karate.log('Application is ready!');
+              return true;
+            }
+          } catch (e) {
+            karate.log('Readiness check failed:', e.message);
+          }
+          java.lang.Thread.sleep(10000); // Wait 10 seconds
+        }
+        karate.log('Application did not become ready after', maxAttempts, 'attempts');
+        return false;
+      }
+      """
+    * def isReady = waitForReady()
+    * if (!isReady) karate.fail('Application failed to become ready within timeout')

@@ -49,4 +49,8 @@ public class HttpHeaders {
 
 	public static final String USER_AGENT = "User-Agent";
 
+	public static final String ORIGIN = "Origin";
+
+	public static final String REFERER = "Referer";
+
 }

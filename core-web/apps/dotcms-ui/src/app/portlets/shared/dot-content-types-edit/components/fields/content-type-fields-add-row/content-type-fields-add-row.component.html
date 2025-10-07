@@ -1,44 +1,48 @@
 <div class="dot-add-rows__container">
-    <div
-        *ngIf="rowState === 'add'"
-        [ngClass]="{ 'dot-add-rows__add': rowState === 'add' }"
-        class="dot-add-rows-button__container">
-        <p-splitButton
-            (onClick)="setColumnSelect()"
-            [disabled]="disabled"
-            [model]="actions"
-            label="{{ 'contenttypes.dropzone.rows.add' | dm }}"></p-splitButton>
-    </div>
-
-    <div *ngIf="rowState === 'select'" class="dot-add-rows-columns-list__container">
-        <div class="dot-add-rows-columns-list__title">
-            {{ 'contenttypes.content.add_column_title' | dm }}
+    @if (rowState === 'add') {
+        <div
+            [ngClass]="{ 'dot-add-rows__add': rowState === 'add' }"
+            class="dot-add-rows-button__container">
+            <p-splitButton
+                (onClick)="setColumnSelect()"
+                [disabled]="disabled"
+                [model]="actions"
+                label="{{ 'contenttypes.dropzone.rows.add' | dm }}"></p-splitButton>
         </div>
+    }
 
-        <p-button
-            (click)="showAddView()"
-            icon="pi pi-times"
-            styleClass="p-button-rounded  p-button-text p-button-sm"></p-button>
-
-        <ul
-            [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
-            class="dot-add-rows-columns-list"
-            #colContainer>
-            <li
-                *ngFor="let colNum of columns; let i = index"
-                (mouseenter)="onMouseEnter(i, $event)"
-                (mouseleave)="onMouseLeave($event)"
-                (click)="emitColumnNumber()"
-                [ngClass]="{ active: i === selectedColumnIndex }"
-                class="dot-add-rows-columns-list__item"
-                tabindex="-1">
-                <span class="dot-add-rows-columns-list__item-title">{{ setColumnValue(i) }}</span>
-                <div class="dot-add-rows-columns-list__item-container">
-                    <div
-                        *ngFor="let i of numberOfCols(colNum)"
-                        class="dot-add-rows-columns-list__item-col"></div>
-                </div>
-            </li>
-        </ul>
-    </div>
+    @if (rowState === 'select') {
+        <div class="dot-add-rows-columns-list__container">
+            <div class="dot-add-rows-columns-list__title">
+                {{ 'contenttypes.content.add_column_title' | dm }}
+            </div>
+            <p-button
+                (click)="showAddView()"
+                icon="pi pi-times"
+                styleClass="p-button-rounded  p-button-text p-button-sm"></p-button>
+            <ul
+                [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
+                class="dot-add-rows-columns-list"
+                #colContainer>
+                @for (colNum of columns; track colNum; let i = $index) {
+                    <li
+                        (mouseenter)="onMouseEnter(i, $event)"
+                        (mouseleave)="onMouseLeave($event)"
+                        (click)="emitColumnNumber()"
+                        [class.active]="i === selectedColumnIndex"
+                        class="dot-add-rows-columns-list__item"
+                        tabindex="-1">
+                        <span class="dot-add-rows-columns-list__item-title">
+                            {{ setColumnValue(i) }}
+                        </span>
+                        <div class="dot-add-rows-columns-list__item-container">
+                            @for (col of numberOfCols(colNum); track $index) {
+                                <div class="dot-add-rows-columns-list__item-col"></div>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
 </div>

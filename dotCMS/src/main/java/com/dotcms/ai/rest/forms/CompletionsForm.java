@@ -13,7 +13,7 @@ import io.vavr.control.Try;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.Size;
+import org.hibernate.validator.constraints.Length;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -29,7 +29,7 @@ public class CompletionsForm {
             "innerProduct",
             "<#>");
 
-    @Size(min = 1, max = 4096)
+    @Length(min = 1, max = 4096)
     public final String prompt;
     @Min(1)
     @Max(1000)

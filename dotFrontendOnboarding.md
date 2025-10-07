@@ -1,8 +1,17 @@
-# Frontend Project Onboarding Guide
+# dotCMS Frontend Onboarding Guide
 
 ## Get Started
 
-Welcome to the frontend onboarding guide. This document will help you get set up quickly and efficiently, providing all the necessary information to start contributing to the project. 
+Welcome to the frontend onboarding guide. This document will help you get set up quickly and efficiently, providing all the necessary information to start contributing to the project.
+
+> **📚 Important**: After completing this onboarding, refer to the comprehensive documentation in the `/docs/` directory for detailed development patterns, coding standards, and architectural guidance. Start with [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) and [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) for frontend development.
+
+### Tech Stack Overview
+- **Angular**: 18.2.3 with standalone components and signals
+- **UI Components**: PrimeNG 17.18.11, PrimeFlex 3.3.1  
+- **State Management**: NgRx Signals, Component Store
+- **Build Tool**: Nx 19.6.5
+- **Testing**: Jest + Spectator (required) 
 
 ## Prerequisites
 
@@ -107,37 +116,52 @@ To run the frontend application locally, follow these steps. This section will g
 
 ## Testing
 
-Ensuring the quality and reliability of the code is crucial in any development process. This section provides the necessary commands and steps to run tests, lint the code, and perform continuous integration tests for the **dotCMS** project. 
+Testing is crucial for ensuring code quality and reliability. The dotCMS frontend uses **Jest + Spectator** for comprehensive testing.
 
-The following commands are essential for testing the frontend application:
+### Essential Testing Commands
 
-- **Run Unit Tests for dotCMS UI**:
-  ```sh
-  nx run dotcms-ui:test
-  ```
+1. **Run Unit Tests for Specific Component**:
+   ```bash
+   # Run tests for specific component (recommended during development)
+   cd core-web && nx run dotcms-ui:test --testNamePattern="MyComponent"
+   ```
 
-- **Run Affected Tests for dotCMS**:
-This command runs tests for the affected parts of the project, excluding those tagged to skip tests.
+2. **Run All Unit Tests**:
+   ```bash
+   # Run all unit tests for dotcms-ui
+   cd core-web && nx run dotcms-ui:test
+   ```
 
-  ```sh
-  nx affected -t test --exclude='tag:skip:test'
-  ```
+3. **Run Affected Tests**:
+   ```bash
+   # Run tests only for files changed since last commit
+   cd core-web && nx affected -t test --exclude='tag:skip:test'
+   ```
 
-- **Lint dotCMS**:
-Linting helps in maintaining code quality by checking for syntax and style issues.
+4. **Lint Code**:
+   ```bash
+   # Check code quality and style
+   cd core-web && nx run dotcms-ui:lint
+   ```
 
-  ```sh
-  nx run-many -t test --exclude='tag:skip:lint'
-  ```
+### Testing Standards (Critical)
 
-- **Continuous Integration Tests for dotCMS**:
-This command runs tests in the CI environment.
+**ALWAYS follow these patterns when writing tests:**
 
-  ```sh
-  ../mvnw -pl :dotcms-core-web test
-  ```
+```typescript
+// ✅ ALWAYS use data-testid for element selection
+const button = spectator.query(byTestId('submit-button'));
 
-By utilizing these commands, you can effectively manage and ensure the quality of the codebase through thorough testing and linting.  
+// ✅ ALWAYS use spectator.setInput() for component inputs  
+spectator.setInput('inputProperty', 'value');
+// NEVER: spectator.component.inputProperty = 'value';
+
+// ✅ Test user interactions, not implementation details
+spectator.click(byTestId('save-button'));
+expect(spectator.query(byTestId('success-message'))).toBeVisible();
+```
+
+> **📚 Next Steps**: After onboarding, see the comprehensive documentation in `/docs/frontend/` for detailed Angular development patterns, testing best practices with Spectator, component architecture guidelines, and styling standards.  
 
 ## Advanced Configurations
 

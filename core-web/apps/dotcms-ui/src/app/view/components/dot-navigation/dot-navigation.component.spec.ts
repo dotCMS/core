@@ -1,4 +1,4 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -6,12 +6,9 @@ import { provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
@@ -19,6 +16,10 @@ import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.compone
 import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavigationService } from './services/dot-navigation.service';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
+
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotRandomIconPipeModule } from '../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 describe('DotNavigationComponent collapsed', () => {
     let spectator: Spectator<DotNavigationComponent>;
@@ -89,7 +90,7 @@ describe('DotNavigationComponent collapsed', () => {
         it('should reload portlet and hide overlay', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -102,13 +103,14 @@ describe('DotNavigationComponent collapsed', () => {
 
             expect(stopPropSpy).toHaveBeenCalled();
             expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
+            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
 
         it('should NOT reload portlet', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -134,6 +136,7 @@ describe('DotNavigationComponent collapsed', () => {
             });
 
             expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
+            expect(navigationService.goTo).toHaveBeenCalledTimes(1);
         });
 
         it('should not have scroll', () => {
@@ -218,7 +221,7 @@ describe('DotNavigationComponent expanded', () => {
         it('should reload portlet and hide overlay', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -231,13 +234,14 @@ describe('DotNavigationComponent expanded', () => {
 
             expect(stopPropSpy).toHaveBeenCalled();
             expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
+            expect(navigationService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
 
         it('should NOT reload portlet', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jasmine.createSpy('stopProp');
+            const stopPropSpy = jest.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -256,6 +260,55 @@ describe('DotNavigationComponent expanded', () => {
             spectator.detectChanges();
 
             expect(spectator.debugElement.styles.cssText).toEqual('overflow-y: auto;');
+        });
+    });
+
+    describe('menuClick event expanded', () => {
+        it('should navigate and set open when menu is closed', () => {
+            spectator.detectChanges();
+
+            const mockMenu = {
+                ...dotMenuMock(),
+                isOpen: false
+            };
+
+            spectator.component.onMenuClick({
+                originalEvent: {} as unknown as MouseEvent,
+                data: mockMenu
+            });
+
+            expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
+            expect(navigationService.goTo).toHaveBeenCalledTimes(1);
+            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+            expect(navigationService.setOpen).toHaveBeenCalledTimes(1);
+        });
+
+        it('should only set open when menu is already open', () => {
+            spectator.detectChanges();
+
+            const mockMenu = {
+                ...dotMenuMock(),
+                isOpen: true
+            };
+
+            spectator.component.onMenuClick({
+                originalEvent: {} as unknown as MouseEvent,
+                data: mockMenu
+            });
+
+            expect(navigationService.goTo).not.toHaveBeenCalled();
+            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+            expect(navigationService.setOpen).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('collapse button', () => {
+        it('should toggle navigation when collapse button is clicked', () => {
+            spectator.detectChanges();
+
+            spectator.component.handleCollapseButtonClick();
+
+            expect(navigationService.toggle).toHaveBeenCalledTimes(1);
         });
     });
 });

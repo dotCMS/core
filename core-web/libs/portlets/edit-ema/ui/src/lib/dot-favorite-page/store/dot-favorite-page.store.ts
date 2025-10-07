@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { Observable, throwError, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, switchMap, take } from 'rxjs/operators';
 
@@ -48,6 +48,12 @@ export const CMS_OWNER_ROLE_LIST = ['CMS OWNER'];
 
 @Injectable()
 export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
+    private dotPageRenderService = inject(DotPageRenderService);
+    private dotMessageService = inject(DotMessageService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotTempFileUploadService = inject(DotTempFileUploadService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+
     readonly vm$ = this.state$;
 
     // SELECTORS
@@ -194,13 +200,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
         });
     }
 
-    constructor(
-        private dotPageRenderService: DotPageRenderService,
-        private dotMessageService: DotMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotTempFileUploadService: DotTempFileUploadService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService
-    ) {
+    constructor() {
         super(null);
     }
 

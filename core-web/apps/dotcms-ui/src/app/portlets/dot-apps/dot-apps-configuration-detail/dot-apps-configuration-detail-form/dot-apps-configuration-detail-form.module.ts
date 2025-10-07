@@ -11,9 +11,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
+
+import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
 
 @NgModule({
     imports: [
@@ -28,7 +30,8 @@ import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuratio
         TooltipModule,
         MarkdownModule.forChild(),
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        DotAppsConfigurationDetailGeneratedStringFieldComponent
     ],
     declarations: [DotAppsConfigurationDetailFormComponent],
     exports: [DotAppsConfigurationDetailFormComponent],

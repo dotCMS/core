@@ -1,31 +1,64 @@
 @let field = $field();
+@let showLabel = $showLabel();
 
-<div class="dot-textarea__container flex flex-column gap-2">
-    <div class="dot-textarea__controls flex justify-content-between">
-        <p-dropdown
-            [options]="textAreaEditorOptions"
-            [(ngModel)]="$selectedEditorDropdown"
-            [ngModelOptions]="{ standalone: true }"
-            (onChange)="onEditorChange($event.value)"
-            data-testId="editor-selector" />
-        <dot-language-variable-selector
-            (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
-    </div>
+<dot-card-field [hasError]="hasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        <div class="dot-textarea__container flex flex-column gap-2">
+            <div class="dot-textarea__controls flex flex-wrap gap-2 justify-content-between">
+                <p-dropdown
+                    [class.ng-invalid]="hasError"
+                    [class.ng-dirty]="hasError"
+                    [options]="textAreaEditorOptions"
+                    [(ngModel)]="$selectedEditorDropdown"
+                    [ngModelOptions]="{ standalone: true }"
+                    (onChange)="onEditorChange($event.value)"
+                    data-testId="editor-selector" />
+                <dot-language-variable-selector
+                    (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+            </div>
 
-    <div class="dot-text-area__editor">
-        @if ($displayedEditor() === editorTypes.PlainText) {
-            <textarea
-                #textarea
-                [id]="field.variable"
-                [formControlName]="field.variable"
-                [attr.data-testId]="field.variable"
-                [style]="{
-                    'min-height': '9.375rem',
-                    resize: 'vertical'
-                }"
-                pInputTextarea></textarea>
-        } @else {
-            <dot-edit-content-monaco-editor-control #monaco [field]="field" />
+            <div class="dot-text-area__editor">
+                @if ($displayedEditor() === editorTypes.PlainText) {
+                    <textarea
+                        #textarea
+                        [id]="field.variable"
+                        [formControlName]="field.variable"
+                        [class.ng-invalid]="hasError"
+                        [class.ng-dirty]="hasError"
+                        [attr.data-testId]="field.variable"
+                        [style]="{
+                            'min-height': '9.375rem',
+                            resize: 'vertical'
+                        }"
+                        pInputTextarea></textarea>
+                } @else {
+                    <dot-edit-content-monaco-editor-control
+                        #monaco
+                        [hasError]="hasError"
+                        [field]="field" />
+                }
+            </div>
+        </div>
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
         }
-    </div>
-</div>
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

@@ -5,17 +5,19 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { NgControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { CategoriesPropertyComponent } from './categories-property.component';
 
+import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
+import { PaginationEvent } from '../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
+
 @Component({
     selector: 'dot-searchable-dropdown',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestSearchableDropdownComponent {
     @Input()
@@ -41,7 +43,8 @@ class TestSearchableDropdownComponent {
 
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input()
@@ -130,12 +133,12 @@ describe('CategoriesPropertyComponent', () => {
     });
 
     describe('Pagination events', () => {
-        let spyMethod: jasmine.Spy;
+        let spyMethod: jest.SpyInstance;
 
         beforeEach(() => {
             const divForm: DebugElement = de.query(By.css('div'));
             searchableDropdown = divForm.query(By.css('dot-searchable-dropdown'));
-            spyMethod = spyOn(paginatorService, 'getWithOffset').and.returnValue(of([]));
+            spyMethod = jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([]));
         });
 
         it('should change Page', () => {
@@ -146,6 +149,7 @@ describe('CategoriesPropertyComponent', () => {
 
             expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(2);
+            expect(spyMethod).toHaveBeenCalledTimes(1);
         });
 
         it('should filter', () => {
@@ -153,6 +157,7 @@ describe('CategoriesPropertyComponent', () => {
 
             expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(0);
+            expect(spyMethod).toHaveBeenCalledTimes(1);
         });
 
         it('should valuePropertyName be undefined', () => {

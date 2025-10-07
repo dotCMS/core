@@ -1,4 +1,3 @@
-import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -18,9 +17,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { Table, TableModule } from 'primeng/table';
 
-import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import {
     DotAlertConfirmService,
     DotFormatDateService,
@@ -53,18 +49,23 @@ import {
     DotRelativeDatePipe
 } from '@dotcms/ui';
 import {
+    createFakeEvent,
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotMessageService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { ContainerListRoutingModule } from './container-list-routing.module';
 import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
+
+import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
+import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
+import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
+import { ActionHeaderModule } from '../../../view/components/dot-listing-data-table/action-header/action-header.module';
+import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
 
 const containersMock: DotContainer[] = [
     {
@@ -206,7 +207,8 @@ class ActivatedRouteMock {
 
 @Component({
     selector: 'dot-content-type-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotContentTypeSelectorComponent {
     @Input() value: SelectItem;
@@ -267,9 +269,9 @@ describe('ContainerListComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToEditContainer: jest.fn(),
+                        goToSiteBrowser: jest.fn()
                     }
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -308,7 +310,7 @@ describe('ContainerListComponent', () => {
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
         paginatorService = TestBed.inject(PaginatorService);
-        spyOn(paginatorService, 'get').and.returnValue(of(containersMock));
+        jest.spyOn(paginatorService, 'get').mockReturnValue(of(containersMock));
 
         fixture = TestBed.createComponent(ContainerListComponent);
         comp = fixture.componentInstance;
@@ -322,7 +324,7 @@ describe('ContainerListComponent', () => {
             tick(2);
             fixture.detectChanges();
 
-            spyOn(dotPushPublishDialogService, 'open');
+            jest.spyOn(dotPushPublishDialogService, 'open');
             table = fixture.debugElement.query(
                 By.css('[data-testId="container-list-table"]')
             ).componentInstance;
@@ -343,10 +345,10 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
             const actions = setBasicOptions();
             actions.push({
-                menuItem: { label: 'Unpublish', command: jasmine.any(Function) }
+                menuItem: { label: 'Unpublish', command: expect.any(Function) }
             });
             actions.push({
-                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+                menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
             expect(publishContainer.actions).toEqual(actions);
@@ -358,10 +360,10 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
             const actions = setBasicOptions();
             actions.push({
-                menuItem: { label: 'Archive', command: jasmine.any(Function) }
+                menuItem: { label: 'Archive', command: expect.any(Function) }
             });
             actions.push({
-                menuItem: { label: 'Duplicate', command: jasmine.any(Function) }
+                menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
             expect(unPublishContainer.actions).toEqual(actions);
@@ -373,8 +375,8 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
 
             const actions = [
-                { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
-                { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
+                { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
+                { menuItem: { label: 'Delete', command: expect.any(Function) } }
             ];
             expect(archivedContainer.actions).toEqual(actions);
         });
@@ -383,7 +385,9 @@ describe('ContainerListComponent', () => {
             const menu: Menu = fixture.debugElement.query(
                 By.css('.container-listing__header-options p-menu')
             ).componentInstance;
-            spyOn(dotContainersService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
+            jest.spyOn(dotContainersService, 'publish').mockReturnValue(
+                of(mockBulkResponseSuccess)
+            );
 
             comp.selectedContainers = containersMock;
 
@@ -415,7 +419,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should click on file container and move on Browser Screen', () => {
-            spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of(null));
+            jest.spyOn(dotSiteBrowserService, 'setSelectedFolder').mockReturnValue(of(null));
             fixture.debugElement
                 .query(By.css('[data-testrowid="FILE_CONTAINER"]'))
                 .triggerEventHandler('click', null);
@@ -423,11 +427,12 @@ describe('ContainerListComponent', () => {
             fixture.detectChanges();
             const path = new URL(`http:${containersMock[4].path}`).pathname;
             expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(path);
+            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when content types selector changes', () => {
-            spyOn(store, 'getContainersByContentType');
+            jest.spyOn(store, 'getContainersByContentType');
             fixture.detectChanges();
 
             contentTypesSelector = fixture.debugElement.query(
@@ -437,10 +442,11 @@ describe('ContainerListComponent', () => {
             contentTypesSelector.selected.emit('test');
 
             expect(store.getContainersByContentType).toHaveBeenCalledWith('test');
+            expect(store.getContainersByContentType).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when archive state change', () => {
-            spyOn(store, 'getContainersByArchiveState');
+            jest.spyOn(store, 'getContainersByArchiveState');
 
             const headerCheckbox = fixture.debugElement.query(
                 By.css('[data-testId="archiveCheckbox"]')
@@ -449,10 +455,11 @@ describe('ContainerListComponent', () => {
             headerCheckbox.onChange.emit({ checked: true });
 
             expect(store.getContainersByArchiveState).toHaveBeenCalledWith(true);
+            expect(store.getContainersByArchiveState).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers when query change', () => {
-            spyOn(store, 'getContainersByQuery');
+            jest.spyOn(store, 'getContainersByQuery');
 
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
@@ -464,18 +471,20 @@ describe('ContainerListComponent', () => {
             fixture.detectChanges();
 
             expect(store.getContainersByQuery).toHaveBeenCalledWith('test');
+            expect(store.getContainersByQuery).toHaveBeenCalledTimes(1);
         });
 
         it('should fetch containers with offset when table emits onPage', () => {
-            spyOn(store, 'getContainersWithOffset');
+            jest.spyOn(store, 'getContainersWithOffset');
 
             table.onPage.emit({ first: 10, rows: 10 });
 
             expect(store.getContainersWithOffset).toHaveBeenCalledWith(10);
+            expect(store.getContainersWithOffset).toHaveBeenCalledTimes(1);
         });
 
         it('should update selectedContainers in store when actions button is clicked', () => {
-            spyOn(store, 'updateSelectedContainers');
+            jest.spyOn(store, 'updateSelectedContainers');
             comp.selectedContainers = [containersMock[0]];
             fixture.detectChanges();
 
@@ -486,10 +495,11 @@ describe('ContainerListComponent', () => {
             bulkButton.click();
 
             expect(store.updateSelectedContainers).toHaveBeenCalledWith([containersMock[0]]);
+            expect(store.updateSelectedContainers).toHaveBeenCalledTimes(1);
         });
 
         it('should focus first row when you press arrow down in query input', () => {
-            spyOn(comp, 'focusFirstRow');
+            jest.spyOn(comp, 'focusFirstRow');
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
             ).nativeElement;
@@ -502,7 +512,7 @@ describe('ContainerListComponent', () => {
         });
 
         it("should fetch containers when site is changed and it's not the first time", () => {
-            spyOn(paginatorService, 'setExtraParams').and.callThrough();
+            jest.spyOn(paginatorService, 'setExtraParams');
 
             siteService.setFakeCurrentSite(mockSites[1]);
 
@@ -518,10 +528,10 @@ describe('ContainerListComponent', () => {
 
     function setBasicOptions() {
         return [
-            { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Push Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Add To Bundle', command: jasmine.any(Function) } }
+            { menuItem: { label: 'Edit', command: expect.any(Function) } },
+            { menuItem: { label: 'Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Push Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Add To Bundle', command: expect.any(Function) } }
         ];
     }
 });

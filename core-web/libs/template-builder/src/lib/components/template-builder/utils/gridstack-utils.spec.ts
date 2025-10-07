@@ -1,12 +1,14 @@
 import { describe, expect, it } from '@jest/globals';
 
+import { DotContainer } from '@dotcms/dotcms-models';
+
 import {
     getRemainingSpaceForBox,
     parseFromDotObjectToGridStack,
     parseFromGridStackToDotObject,
     willBoxFitInRow
 } from './gridstack-utils';
-import { EMPTY_ROWS_VALUE, FULL_DATA_MOCK_UNSORTED, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
+import { FULL_DATA_MOCK_UNSORTED, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -48,13 +50,105 @@ describe('parseFromDotObjectToGridStack', () => {
     it('should return a row with one container when body is undefined', () => {
         const result = parseFromDotObjectToGridStack(undefined);
 
-        expect(result).toEqual(EMPTY_ROWS_VALUE);
+        // Compare structure without comparing UUIDs
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            w: 12,
+            h: 1,
+            x: 0,
+            y: 0,
+            styleClass: []
+        });
+        expect(result[0].id).toBeDefined();
+        expect(result[0].subGridOpts?.children).toHaveLength(1);
+        expect(result[0].subGridOpts?.children[0]).toMatchObject({
+            w: 3,
+            h: 1,
+            y: 0,
+            x: 0,
+            styleClass: [],
+            containers: []
+        });
+        expect(result[0].subGridOpts?.children[0].id).toBeDefined();
     });
 
     it('should return a row with one container when rows is empty', () => {
         const result = parseFromDotObjectToGridStack({ rows: [] });
 
-        expect(result).toEqual(EMPTY_ROWS_VALUE);
+        // Compare structure without comparing UUIDs
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            w: 12,
+            h: 1,
+            x: 0,
+            y: 0,
+            styleClass: []
+        });
+        expect(result[0].id).toBeDefined();
+        expect(result[0].subGridOpts?.children).toHaveLength(1);
+        expect(result[0].subGridOpts?.children[0]).toMatchObject({
+            w: 3,
+            h: 1,
+            y: 0,
+            x: 0,
+            styleClass: [],
+            containers: []
+        });
+        expect(result[0].subGridOpts?.children[0].id).toBeDefined();
+    });
+
+    it('should return a row with container when body is empty and container is provided', () => {
+        const mockContainer = {
+            identifier: 'test-container-id',
+            path: '/test/container/path',
+            name: 'Test Container',
+            title: 'Test Container Title'
+        } as unknown as DotContainer;
+
+        const result = parseFromDotObjectToGridStack(undefined, mockContainer);
+
+        // Compare structure without comparing UUIDs
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            w: 12,
+            h: 1,
+            x: 0,
+            y: 0,
+            styleClass: []
+        });
+        expect(result[0].id).toBeDefined();
+        expect(result[0].subGridOpts?.children).toHaveLength(1);
+        expect(result[0].subGridOpts?.children[0]).toMatchObject({
+            w: 3,
+            h: 1,
+            y: 0,
+            x: 0,
+            styleClass: [],
+            containers: [{ identifier: '/test/container/path' }] // Should use path as identifier
+        });
+        expect(result[0].subGridOpts?.children[0].id).toBeDefined();
+    });
+
+    it('should return a row with container using identifier when path is not available', () => {
+        const mockContainer = {
+            identifier: 'test-container-id',
+            name: 'Test Container',
+            title: 'Test Container Title'
+            // No path property
+        } as unknown as DotContainer;
+
+        const result = parseFromDotObjectToGridStack({ rows: [] }, mockContainer);
+
+        // Compare structure without comparing UUIDs
+        expect(result).toHaveLength(1);
+        expect(result[0].subGridOpts?.children[0]).toMatchObject({
+            w: 3,
+            h: 1,
+            y: 0,
+            x: 0,
+            styleClass: [],
+            containers: [{ identifier: 'test-container-id' }] // Should use identifier when path is not available
+        });
     });
 });
 

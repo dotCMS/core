@@ -2,7 +2,7 @@ import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -36,7 +36,6 @@ import { DotExperimentsListStore, VmListExperiments } from './store/dot-experime
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-list',
     imports: [
         AsyncPipe,
@@ -58,6 +57,10 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListComponent {
+    private readonly dotExperimentsListStore = inject(DotExperimentsListStore);
+    private readonly router = inject(Router);
+    private readonly dotMessageService = inject(DotMessageService);
+
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$.pipe(
         tap(({ sidebar }) => this.handleSidebar(sidebar))
@@ -70,12 +73,6 @@ export class DotExperimentsListComponent {
         icon: 'pi-filter-fill rotate-180'
     };
     private componentRef: ComponentRef<DotExperimentsCreateComponent>;
-
-    constructor(
-        private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly router: Router,
-        private readonly dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Update the list of selected statuses

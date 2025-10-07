@@ -1,7 +1,15 @@
 package com.dotcms.exception;
 
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
+
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.config.DotServiceLocatorImpl.QuietServiceShutdownException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
@@ -17,8 +25,12 @@ import com.dotmarketing.exception.DotDuplicateDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.portlets.contentlet.business.DotBinaryFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotDateFieldException;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
+import com.dotmarketing.portlets.contentlet.business.DotNumericFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.business.AddContentToFolderPermissionException;
@@ -39,8 +51,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,16 +60,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 import org.jvnet.mimepull.MIMEParsingException;
-
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
 
 /**
  * This utility class provides useful methods to extract and process different pieces of information
@@ -70,7 +72,7 @@ import static com.dotmarketing.portlets.contentlet.business.DotContentletValidat
  */
 public class ExceptionUtil {
 
-    public static final Set<Class<? extends Throwable>> DUPLICATE_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> DUPLICATE_EXCEPTIONS = Set
             .of(
                     DotDuplicateDataException.class,
                     DuplicateFileException.class,
@@ -83,7 +85,7 @@ public class ExceptionUtil {
                     DuplicateUserIdException.class
             );
 
-    public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = Set
             .of(
                     DotSecurityException.class,
                     InvalidLicenseException.class,
@@ -91,18 +93,18 @@ public class ExceptionUtil {
                     AddContentToFolderPermissionException.class
             );
 
-    public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = Set
             .of(
                     NotFoundInDbException.class,
                     DoesNotExistException.class
             );
 
-    public static final Set<Class<? extends Throwable>> MALFORMED_MULTIPART_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> MALFORMED_MULTIPART_EXCEPTIONS = Set
             .of(
                     MIMEParsingException.class
             );
 
-    public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = Set
             .of(
                     AlreadyExistException.class,
                     IllegalArgumentException.class,
@@ -110,6 +112,10 @@ public class ExceptionUtil {
                     DotStateException.class,
                     DotContentletStateException.class,
                     DotDataValidationException.class,
+                    DotJsonFieldException.class,
+                    DotNumericFieldException.class,
+                    DotDateFieldException.class,
+                    DotBinaryFieldException.class,
                     ValidationException.class,
                     BadRequestException.class,
                     JsonProcessingException.class,

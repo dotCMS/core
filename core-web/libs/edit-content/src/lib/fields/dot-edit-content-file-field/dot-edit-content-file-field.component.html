@@ -1,105 +1,34 @@
-<div
-    class="file-field__container"
-    [class.file-field__container--empty]="store.isInit()"
-    [class.file-field__container--preview]="store.isPreview()"
-    [class.file-field__container--uploading]="store.isUploading()">
-    @switch (store.fileStatus()) {
-        @case ('init') {
-            <div
-                [class.file-field__drop-zone--active]="store.dropZoneActive()"
-                class="file-field__drop-zone">
-                <input
-                    #inputFile
-                    [accept]="store.acceptedFiles().join(',')"
-                    (change)="fileSelected(inputFile.files)"
-                    data-testId="file-field__file-input"
-                    type="file" />
-                <dot-drop-zone
-                    [accept]="store.acceptedFiles()"
-                    [maxFileSize]="store.maxFileSize()"
-                    (fileDragLeave)="store.setDropZoneState(false)"
-                    (fileDragOver)="store.setDropZoneState(true)"
-                    (fileDropped)="handleFileDrop($event)"
-                    data-testId="dropzone">
-                    <dot-file-field-ui-message [uiMessage]="store.uiMessage()">
-                        <button
-                            (click)="inputFile.click()"
-                            class="file-field__drop-zone-btn"
-                            data-testId="choose-file-btn"
-                            type="button">
-                            {{ 'dot.file.field.action.choose.file' | dm }}
-                        </button>
-                    </dot-file-field-ui-message>
-                </dot-drop-zone>
-            </div>
+@let field = $field();
+@let showLabel = $showLabel();
 
-            <div class="file-field__actions">
-                @if (store.allowURLImport()) {
-                    <p-button
-                        (click)="showImportUrlDialog()"
-                        [label]="'dot.file.field.action.import.from.url' | dm"
-                        data-testId="action-import-from-url"
-                        icon="pi pi-link"
-                        styleClass="p-button-link p-button-sm" />
-                }
-                @if (store.allowExistingFile()) {
-                    <p-button
-                        (click)="showSelectExistingFileDialog()"
-                        [label]="'dot.file.field.action.select.existing.file' | dm"
-                        data-testId="action-existing-file"
-                        icon="pi pi-file"
-                        styleClass="p-button-link p-button-sm" />
-                }
-                @if (store.allowCreateFile()) {
-                    <p-button
-                        (click)="showFileEditorDialog()"
-                        [label]="'dot.file.field.action.create.new.file' | dm"
-                        data-testId="action-new-file"
-                        icon="pi pi-code"
-                        styleClass="p-button-link p-button-sm" />
-                }
-                @if (store.allowGenerateImg()) {
-                    <p-button
-                        [disabled]="!$isAIPluginInstalled()"
-                        tooltipPosition="bottom"
-                        [pTooltip]="$tooltipTextAIBtn()"
-                        (click)="showAIImagePromptDialog()"
-                        tooltipPosition="bottom"
-                        data-testId="action-generate-with-ai"
-                        [label]="'dot.file.field.action.generate.with.dotai' | dm"
-                        styleClass="p-button-link p-button-sm pointer-events-auto">
-                        <ng-template pTemplate="icon">
-                            <svg
-                                fill="none"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                width="18"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M9.48043 13.2597L5.40457 14.5046C5.29885 14.5368 5.20602 14.6037 5.13999 14.6952C5.07396 14.7868 5.03828 14.8981 5.03828 15.0124C5.03828 15.1268 5.07396 15.238 5.13999 15.3296C5.20602 15.4211 5.29885 15.488 5.40457 15.5203L9.48043 16.7651L10.6799 20.9949C10.711 21.1046 10.7755 21.2009 10.8637 21.2695C10.9519 21.338 11.0591 21.375 11.1693 21.375C11.2795 21.375 11.3867 21.338 11.4749 21.2695C11.5631 21.2009 11.6276 21.1046 11.6586 20.9949L12.8586 16.7651L16.9345 15.5203C17.0402 15.488 17.133 15.4211 17.1991 15.3296C17.2651 15.238 17.3008 15.1268 17.3008 15.0124C17.3008 14.8981 17.2651 14.7868 17.1991 14.6952C17.133 14.6037 17.0402 14.5368 16.9345 14.5046L12.8586 13.2597L11.6586 9.02989C11.6276 8.92018 11.5631 8.82385 11.4749 8.75533C11.3867 8.6868 11.2795 8.64977 11.1693 8.64977C11.0591 8.64977 10.9519 8.6868 10.8637 8.75533C10.7754 8.82385 10.711 8.92018 10.6799 9.02989L9.48043 13.2597Z"
-                                    fill="#426BF0" />
-                                <path
-                                    d="M14.4668 5.66732L16.6779 4.99138C16.7836 4.95914 16.8764 4.89224 16.9424 4.8007C17.0084 4.70916 17.0441 4.59789 17.0441 4.48355C17.0441 4.3692 17.0084 4.25794 16.9424 4.16639C16.8764 4.07485 16.7836 4.00795 16.6779 3.97571L14.4668 3.3003L13.8154 1.00513C13.7844 0.895414 13.7199 0.799084 13.6317 0.730559C13.5435 0.662034 13.4362 0.625 13.3261 0.625C13.2159 0.625 13.1086 0.662034 13.0204 0.730559C12.9322 0.799084 12.8677 0.895414 12.8367 1.00513L12.1859 3.3003L9.9743 3.97571C9.86858 4.00794 9.77575 4.07483 9.70972 4.16638C9.6437 4.25792 9.60801 4.3692 9.60801 4.48355C9.60801 4.5979 9.6437 4.70917 9.70972 4.80072C9.77575 4.89226 9.86858 4.95915 9.9743 4.99138L12.1859 5.66732L12.8367 7.96196C12.8677 8.07168 12.9322 8.16801 13.0204 8.23653C13.1086 8.30506 13.2159 8.34209 13.3261 8.34209C13.4362 8.34209 13.5435 8.30506 13.6317 8.23653C13.7199 8.16801 13.7844 8.07168 13.8154 7.96196L14.4668 5.66732Z"
-                                    fill="#426BF0" />
-                                <path
-                                    d="M3.24925 6.62823L1.01825 7.57256C0.924385 7.61231 0.844063 7.68016 0.787521 7.76748C0.730978 7.8548 0.700781 7.95761 0.700781 8.06282C0.700781 8.16802 0.730978 8.27083 0.787521 8.35815C0.844063 8.44547 0.924385 8.51333 1.01825 8.55307L3.24925 9.4974L4.1592 11.8127C4.19751 11.9101 4.2629 11.9935 4.34704 12.0522C4.43118 12.1109 4.53026 12.1422 4.63163 12.1422C4.733 12.1422 4.83208 12.1109 4.91622 12.0522C5.00036 11.9935 5.06576 11.9101 5.10406 11.8127L6.01402 9.4974L8.24456 8.55307C8.33841 8.51332 8.41873 8.44546 8.47527 8.35815C8.53181 8.27083 8.56201 8.16801 8.56201 8.06282C8.56201 7.95762 8.53181 7.8548 8.47527 7.76749C8.41873 7.68017 8.33841 7.61231 8.24456 7.57256L6.01402 6.62823L5.10406 4.31342C5.06576 4.21602 5.00036 4.13266 4.91622 4.07399C4.83208 4.01531 4.733 3.98397 4.63163 3.98397C4.53026 3.98397 4.43118 4.01531 4.34704 4.07399C4.2629 4.13266 4.19751 4.21602 4.1592 4.31342L3.24925 6.62823Z"
-                                    fill="#426BF0" />
-                            </svg>
-                        </ng-template>
-                    </p-button>
+<dot-card-field [hasError]="hasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        <dot-file-field
+            [field]="field"
+            [contentlet]="$contentlet()"
+            [formControlName]="field.variable"
+            [hasError]="hasError" />
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (hasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                 }
             </div>
         }
-        @case ('uploading') {
-            <dot-spinner data-testId="loading" />
+
+        @if (!hasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
         }
-        @case ('preview') {
-            @let uploadedFile = store.uploadedFile();
-            @if (uploadedFile) {
-                <dot-file-field-preview
-                    (removeFile)="store.removeFile()"
-                    [previewFile]="uploadedFile" />
-            }
-        }
-    }
-</div>
+    </dot-card-field-footer>
+</dot-card-field>

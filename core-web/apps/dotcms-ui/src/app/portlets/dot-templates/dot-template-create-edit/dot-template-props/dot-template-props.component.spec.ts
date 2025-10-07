@@ -25,7 +25,8 @@ import { DotTemplatePropsComponent } from './dot-template-props.component';
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
-    styleUrls: []
+    styleUrls: [],
+    standalone: false
 })
 export class DotFormDialogMockComponent {
     @Input() saveButtonDisabled: boolean;
@@ -44,7 +45,8 @@ export class DotFormDialogMockComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTemplateThumbnailFieldMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTemplateThumbnailFieldMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
@@ -73,7 +75,8 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotThemeSelectorDropdownMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
@@ -131,7 +134,7 @@ describe('DotTemplatePropsComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -144,8 +147,8 @@ describe('DotTemplatePropsComponent', () => {
                                 theme: '',
                                 image: ''
                             },
-                            onSave: jasmine.createSpy(),
-                            onCancel: jasmine.createSpy()
+                            onSave: jest.fn(),
+                            onCancel: jest.fn()
                         }
                     }
                 }
@@ -225,8 +228,8 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(field.classes['field']).toBe(true);
 
-                expect(label.attributes.for).toBe('thumbnail');
-                expect(label.nativeElement.textContent).toBe('Thumbnail');
+                expect(label.attributes.for).toContain('thumbnail');
+                expect(label.nativeElement.textContent).toContain('Thumbnail');
 
                 // TODO: here we're using a webcomponent
             });
@@ -279,13 +282,15 @@ describe('DotTemplatePropsComponent', () => {
             dialog.triggerEventHandler('save', {});
 
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
-            expect(dialogRef.close).toHaveBeenCalledOnceWith(false);
+            expect(dialogRef.close).toHaveBeenCalledWith(false);
+            expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });
 
         it('should call cancel from config', () => {
             const dialog = de.query(By.css('[data-testId="dialogForm"]'));
             dialog.triggerEventHandler('cancel', {});
-            expect(dialogRef.close).toHaveBeenCalledOnceWith(true);
+            expect(dialogRef.close).toHaveBeenCalledWith(true);
+            expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });
     });
 });

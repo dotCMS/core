@@ -25,6 +25,7 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
     -   [Debugging Tips](#debugging-tips)
     -   [Version Compatibility](#version-compatibility)
     -   [Still Having Issues?](#still-having-issues)
+-   [Migration from Alpha to 1.0.X](./MIGRATION.md)
 -   [dotCMS Support](#dotcms-support)
 -   [How To Contribute](#how-to-contribute)
 -   [Licensing Information](#licensing-information)
@@ -78,13 +79,17 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 ### Install Dependencies
 
 ```bash
-npm install @dotcms/react@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-react
+npm install @dotcms/react@latest
 ```
+
+This will automatically install the required dependencies:
+- `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
+- `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
 
 ### dotCMS Client Configuration
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
+import { createDotCMSClient } from '@dotcms/client';
 
 type DotCMSClient = ReturnType<typeof createDotCMSClient>;
 
@@ -149,7 +154,7 @@ The following example demonstrates how to quickly set up a basic dotCMS page ren
 ```tsx
 // /src/app/pages/dotcms-page.tsx
 import { useState, useEffect } from 'react';
-import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react/next';
+import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react';
 import { DotCMSPageResponse } from '@dotcms/types';
 
 import { dotCMSClient } from './dotCMSClient';
@@ -194,7 +199,7 @@ Looking to get started quickly? We've got you covered! Our [Next.js starter proj
 
 ## SDK Reference
 
-All components and hooks should be imported from `@dotcms/react/next`:
+All components and hooks should be imported from `@dotcms/react`:
 
 ### DotCMSLayoutBody
 
@@ -218,7 +223,7 @@ All components and hooks should be imported from `@dotcms/react/next`:
 
 ```tsx
 import type { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody } from '@dotcms/react/next';
+import { DotCMSLayoutBody } from '@dotcms/react';
 
 import { MyBlogCard } from './MyBlogCard';
 import { DotCMSProductComponent } from './DotCMSProductComponent';
@@ -273,7 +278,7 @@ const DYNAMIC_COMPONENTS = {
 
 ```tsx
 import type { DotCMSBasicContentlet } from '@dotcms/types';
-import { DotCMSEditableText } from '@dotcms/react/next';
+import { DotCMSEditableText } from '@dotcms/react';
 
 const MyBannerComponent = ({ contentlet }: { contentlet: DotCMSBasicContentlet }) => {
     const { inode, title, link } = contentlet;
@@ -318,7 +323,7 @@ export default MyBannerComponent;
 
 ```tsx
 import type { DotCMSBasicContentlet } from '@dotcms/types';
-import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
+import { DotCMSBlockEditorRenderer } from '@dotcms/react';
 
 import { MyCustomBannerBlock } from './MyCustomBannerBlock';
 import { MyCustomH1 } from './MyCustomH1';
@@ -359,7 +364,7 @@ const DetailPage = ({ contentlet }: { contentlet: DotCMSBasicContentlet }) => {
 
 ```tsx
 import { UVE_MODE } from '@dotcms/types';
-import { DotCMSShow } from '@dotcms/react/next';
+import { DotCMSShow } from '@dotcms/react';
 
 const MyComponent = () => {
     return (
@@ -399,7 +404,7 @@ When you use the hook, it:
 ```tsx
 'use client';
 
-import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react/next';
+import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react';
 import type { DotCMSPageResponse } from '@dotcms/types';
 
 const COMPONENTS_MAP = {
@@ -425,7 +430,7 @@ export function DotCMSPage({ pageResponse }: { pageResponse: DotCMSPageResponse 
 
 ```tsx
 import { UVE_MODE } from '@dotcms/types';
-import { useDotCMSShowWhen } from '@dotcms/react/next';
+import { useDotCMSShowWhen } from '@dotcms/react';
 
 const MyEditButton = () => {
     const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT); // returns a boolean
@@ -486,7 +491,7 @@ const MyEditButton = () => {
 
 2. **Runtime Errors**: Console errors about missing imports or components not rendering
     - **Solutions**:
-        - Check all imports are from `@dotcms/react/next`
+        - Check all imports are from `@dotcms/react`
         - Verify all peer dependencies are installed
         - Update to latest compatible versions
 
@@ -517,7 +522,7 @@ const MyEditButton = () => {
             // components/DotCMSPage.tsx (Client Component)
             'use client';
 
-            import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react/next';
+            import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react';
             import type { DotCMSPageResponse } from '@dotcms/types';
 
             const COMPONENTS_MAP = {

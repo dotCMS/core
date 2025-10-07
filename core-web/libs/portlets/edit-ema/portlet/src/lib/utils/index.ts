@@ -1,5 +1,3 @@
-import { Params } from '@angular/router';
-
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -18,7 +16,7 @@ import {
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import {
     BASE_IFRAME_MEASURE_UNIT,
     COMMON_ERRORS,
@@ -72,6 +70,21 @@ export function insertContentletInContainer(action: ActionPayload): {
 
     const { pageContainers, container, personaTag, newContentletId } = action;
 
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
+
     const newPageContainers = pageContainers.map((pageContainer) => {
         if (
             areContainersEquals(pageContainer, container) &&
@@ -106,6 +119,21 @@ export function deleteContentletFromContainer(action: ActionPayload): {
     const { pageContainers, container, contentlet, personaTag } = action;
 
     let contentletsId = [];
+
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
 
     const newPageContainers = pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
@@ -169,6 +197,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
+
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
 
     const newPageContainers = pageContainers.map((pageContainer) => {
         if (
@@ -586,7 +629,7 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
                 move
             } as ContentletDragPayload
         };
-    } catch (error) {
+    } catch {
         // It can fail if the data.item is not a valid JSON
         // In that case, we are draging an invalid element from the window
         return null;
@@ -659,25 +702,6 @@ export const checkClientHostAccess = (
 
     return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
 };
-
-/**
- * Retrieve the page params from the router query params
- *
- * @export
- * @param {Params} params
- * @return {*}  {DotPageApiParams}
- */
-export function getAllowedPageParams(params: Params): DotPageAssetParams {
-    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
-
-    return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
-        .reduce((obj, key) => {
-            obj[key] = params[key];
-
-            return obj;
-        }, {}) as DotPageAssetParams;
-}
 
 /**
  * Determines the target URL for navigation.

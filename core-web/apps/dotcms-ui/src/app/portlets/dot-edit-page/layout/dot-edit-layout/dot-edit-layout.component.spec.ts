@@ -1,14 +1,19 @@
 import { of } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import {
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    DebugElement,
+    EventEmitter,
+    Input,
+    NO_ERRORS_SCHEMA,
+    Output
+} from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { EMPTY_TEMPLATE_DESIGN } from '@dotcms/app/portlets/dot-templates/dot-template-create-edit/store/dot-template.store';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -23,10 +28,15 @@ import { MockDotMessageService, mockDotRenderedPage } from '@dotcms/utils-testin
 
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
 
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotShowHideFeatureDirective } from '../../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { EMPTY_TEMPLATE_DESIGN } from '../../../dot-templates/dot-template-create-edit/store/dot-template.store';
+
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dotcms-template-builder-lib',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class MockTemplateBuilderComponent {
     @Input()
@@ -55,6 +65,7 @@ describe('DotEditLayoutComponent', () => {
         TestBed.configureTestingModule({
             declarations: [DotEditLayoutComponent, MockTemplateBuilderComponent],
             imports: [DotShowHideFeatureDirective, RouterTestingModule],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
             providers: [
                 RouterTestingModule,
                 DotSessionStorageService,
@@ -68,7 +79,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn().mockReturnValue(of({}))
                     }
                 },
                 {
@@ -78,9 +89,9 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotGlobalMessageService,
                     useValue: {
-                        loading: jasmine.createSpy(),
-                        success: jasmine.createSpy(),
-                        error: jasmine.createSpy()
+                        loading: jest.fn(),
+                        success: jest.fn(),
+                        error: jest.fn()
                     }
                 },
                 {
@@ -94,7 +105,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotTemplateContainersCacheService,
                     useValue: {
-                        set: jasmine.createSpy()
+                        set: jest.fn()
                     }
                 },
                 {
@@ -136,7 +147,7 @@ describe('DotEditLayoutComponent', () => {
                 themeId: '123'
             } as DotTemplateDesigner;
 
-            spyOn(component.updateTemplate, 'next');
+            jest.spyOn(component.updateTemplate, 'next');
 
             builder.triggerEventHandler('templateChange', template);
 

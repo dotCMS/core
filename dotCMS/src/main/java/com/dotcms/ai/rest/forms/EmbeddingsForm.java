@@ -11,7 +11,7 @@ import com.liferay.portal.util.PortalUtil;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.Size;
+import org.hibernate.validator.constraints.Length;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -19,7 +19,7 @@ import java.util.Objects;
 @JsonDeserialize(builder = EmbeddingsForm.Builder.class)
 public class EmbeddingsForm {
 
-    @Size(min = 1, max = 4096)
+    @Length(min = 1, max = 4096)
     public final String query;
 
     @Min(1)

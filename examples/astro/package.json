@@ -12,22 +12,27 @@
   "dependencies": {
     "@astrojs/check": "^0.9.3",
     "@astrojs/react": "^3.6.2",
-    "@astrojs/tailwind": "^5.1.0",
+    "@astrojs/ts-plugin": "^1.10.4",
     "@astrojs/vercel": "^7.8.0",
-    "@dotcms/client": "next",
-    "@dotcms/react": "next",
-    "@dotcms/uve": "next",
-    "@dotcms/types": "next",
+    "@dotcms/client": "latest",
+    "@dotcms/react": "latest",
+    "@dotcms/types": "latest",
+    "@dotcms/uve": "latest",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.1.10",
+    "@tinymce/tinymce-react": "6.2.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "astro": "^4.14.3",
+    "dotenv": "^16.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwindcss": "^3.4.10",
+    "tailwindcss": "^4.1.10",
     "typescript": "^5.5.4"
   },
   "devDependencies": {
-    "prettier": "^3.3.3",
-    "prettier-plugin-astro": "^0.14.1"
+    "@types/node": "^20.11.19",
+    "prettier": "^3.2.5",
+    "prettier-plugin-astro": "^0.13.0"
   }
 }

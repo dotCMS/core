@@ -36,19 +36,21 @@ import {
     DotStringFormatPipe
 } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table';
 
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonAction } from '../../../shared/models/action-header/button-action.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 
 @Component({
     selector: 'dot-empty-state',
     template: `
         <h1>Im empty</h1>
-    `
+    `,
+    standalone: false
 })
 class EmptyMockComponent {}
 
@@ -73,7 +75,8 @@ class EmptyMockComponent {}
             [paginatorExtraParams]="paginatorExtraParams">
             <dot-empty-state></dot-empty-state>
         </dot-listing-data-table>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() columns: DataTableColumn[];
@@ -374,7 +377,7 @@ describe('DotListingDataTableComponent', () => {
                             comp.columns[cellIndex].format === 'date'
                                 ? new Date(
                                       item[comp.columns[cellIndex].fieldName]
-                                  ).toLocaleDateString('US-en', {
+                                  ).toLocaleDateString('en-US', {
                                       month: '2-digit',
                                       day: '2-digit',
                                       year: 'numeric'
@@ -445,7 +448,7 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         const actionButton = de.query(By.css('dot-action-menu-button'));
 
-        const spy = spyOn(fakeActions[0].menuItem, 'command');
+        const spy = jest.spyOn(fakeActions[0].menuItem, 'command');
 
         actionButton.nativeElement.children[0].click();
 
@@ -476,7 +479,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should focus first row on arrowDown in Global Search Input', fakeAsync(() => {
-        spyOn(comp, 'focusFirstRow').and.callThrough();
+        jest.spyOn(comp, 'focusFirstRow');
         setRequestSpy(items);
         comp.loadFirstPage();
         hostFixture.detectChanges();
@@ -508,21 +511,21 @@ describe('DotListingDataTableComponent', () => {
 
     it('should emit when a row is clicked or enter', fakeAsync(() => {
         setRequestSpy(items);
-        spyOn(comp.rowWasClicked, 'emit');
+        jest.spyOn(comp.rowWasClicked, 'emit');
         comp.loadFirstPage();
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
         const firstRow: DebugElement = de.queryAll(By.css('tr'))[1];
-        firstRow.triggerEventHandler('click', null);
-        firstRow.triggerEventHandler('keyup.enter', null);
+        firstRow.triggerEventHandler('click', { target: firstRow.nativeElement });
+        firstRow.triggerEventHandler('keyup.enter', { target: firstRow.nativeElement });
 
         expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
     }));
 
     it('should never emit when a SYSTEM TEMPLATE row is clicked or enter', fakeAsync(() => {
         setRequestSpy(items);
-        spyOn(comp.rowWasClicked, 'emit');
+        jest.spyOn(comp.rowWasClicked, 'emit');
 
         comp.loadFirstPage();
 
@@ -531,15 +534,15 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
 
         const systemFile: DebugElement = de.query(By.css('tr[data-testRowId="SYSTEM_TEMPLATE"]'));
-        systemFile.triggerEventHandler('click', null);
-        systemFile.triggerEventHandler('keyup.enter', null);
+        systemFile.triggerEventHandler('click', { target: systemFile.nativeElement });
+        systemFile.triggerEventHandler('keyup.enter', { target: systemFile.nativeElement });
 
         expect(comp.rowWasClicked.emit).not.toHaveBeenCalled();
     }));
 
     it('should set pContextMenuRowDisabled correctly', fakeAsync(() => {
         setRequestSpy(items);
-        spyOn(comp.rowWasClicked, 'emit');
+        jest.spyOn(comp.rowWasClicked, 'emit');
         comp.loadFirstPage();
         hostFixture.detectChanges();
         tick(1);
@@ -576,7 +579,7 @@ describe('DotListingDataTableComponent', () => {
         tick(1);
         hostFixture.detectChanges();
         const emptyState = de.query(By.css('dot-empty-state'));
-        expect(emptyState.nativeElement.innerText).toBe('Im empty');
+        expect(emptyState.nativeElement.textContent).toBe('Im empty');
     }));
 
     it('should show no results message if filtered content is empty', fakeAsync(() => {
@@ -588,7 +591,7 @@ describe('DotListingDataTableComponent', () => {
         tick(de.componentInstance.filterDelay + 1);
         hostFixture.detectChanges();
         const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
-        expect(noResults.nativeElement.innerText).toEqual('No Results Found');
+        expect(noResults.nativeElement.textContent.trim()).toEqual('No Results Found');
     }));
 
     it('should hide entries for system content types', fakeAsync(() => {
@@ -602,11 +605,11 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     function setRequestSpy(response: any): void {
-        spyOn<any>(coreWebService, 'requestView').and.returnValue(
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(
             of({
                 entity: response,
-                header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-            })
+                header: (type: any) => (type === 'Link' ? 'test;test=test' : '10')
+            }) as any
         );
     }
 });

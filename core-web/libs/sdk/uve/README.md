@@ -67,8 +67,8 @@ Here's a minimal setup using `@dotcms/client` and `@dotcms/uve`:
 
 ```ts
 // getPage.ts
-import { createDotCMSClient } from '@dotcms/client/next';
-import { initUVE, createUVESubscription } from '@dotcms/uve/next';
+import { createDotCMSClient } from '@dotcms/client';
+import { initUVE, createUVESubscription } from '@dotcms/uve';
 
 const dotCMSClient = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
@@ -90,7 +90,7 @@ const getPage = async () => {
 > ⚠️ The `initUVE()` function only works with a `PageResponse` returned by `@dotcms/client`. If you try to pass in data from another source or build your own structure, it won't initialize properly.
 
 ```ts
-import { initUVE, createUVESubscription } from '@dotcms/uve/next';
+import { initUVE, createUVESubscription } from '@dotcms/uve';
 import { getPage } from './getPage';
 
 const pageResponse = await getPage();
@@ -196,7 +196,7 @@ For a step-by-step guide on setting up the Universal Visual Editor, check out ou
 ### Installation
 
 ```bash
-npm install @dotcms/uve@next
+npm install @dotcms/uve@latest
 ```
 
 ### Using the SDK with TypeScript
@@ -204,7 +204,7 @@ npm install @dotcms/uve@next
 All interfaces and types are available through the `@dotcms/types` package:
 
 ```bash
-npm install @dotcms/types@next --save-dev
+npm install @dotcms/types@latest --save-dev
 ```
 
 #### Common Types

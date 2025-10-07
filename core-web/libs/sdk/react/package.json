@@ -1,15 +1,17 @@
 {
   "name": "@dotcms/react",
-  "version": "0.0.1-beta-2",
+  "version": "1.1.1",
   "peerDependencies": {
     "react": ">=18",
-    "react-dom": ">=18",
-    "@dotcms/client": "next",
-    "@dotcms/uve": "next",
-    "@tinymce/tinymce-react": "^6.0.0"
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "@dotcms/uve": "latest",
+    "@dotcms/client": "latest",
+    "@tinymce/tinymce-react": "6.2.1"
   },
   "devDependencies": {
-    "@dotcms/types": "next"
+    "@dotcms/types": "latest"
   },
   "description": "Official React Components library to render a dotCMS page.",
   "repository": {
@@ -27,13 +29,11 @@
   ],
   "exports": {
     "./package.json": "./package.json",
-    ".": "./src/index.ts",
-    "./next": "./src/next.ts"
+    ".": "./src/index.ts"
   },
   "typesVersions": {
     "*": {
-      ".": ["./src/index.d.ts"],
-      "next": ["./src/next.d.ts"]
+      ".": ["./src/index.d.ts"]
     }
   },
   "author": "dotcms <dev@dotcms.com>",

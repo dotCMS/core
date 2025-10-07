@@ -1,0 +1,209 @@
+@use "variables" as *;
+
+// Text Blocks
+p {
+    font-size: $font-size-lmd;
+    line-height: 1.5;
+    margin: 0 0 $spacing-1 0;
+    padding: $spacing-0 0; // Minimal padding for better click targets
+    color: $black;
+    font-weight: 400;
+}
+
+p.is-empty {
+    margin: 0 0 $spacing-1 0;
+    padding: $spacing-0 0;
+    min-height: $spacing-4; // Prevents collapse
+    box-sizing: content-box;
+}
+
+// Ensure empty paragraphs have consistent spacing
+p:empty {
+    margin: 0 0 $spacing-1 0;
+    padding: $spacing-0 0;
+    min-height: $spacing-4; // Prevents collapse and maintains rhythm
+}
+
+// Headings
+h1 {
+    font-size: $font-size-xxxxl;
+    line-height: 1.2;
+    margin: $spacing-5 0 $spacing-4 0;
+    padding: 0;
+    color: $black;
+    position: relative;
+}
+
+h2 {
+    font-size: $font-size-xxxl;
+    line-height: 1.2;
+    margin: $spacing-4 0 $spacing-4 0;
+    padding: 0;
+    color: $black;
+}
+
+h3 {
+    font-size: $font-size-xxl;
+    line-height: 1.3;
+    margin: $spacing-4 0 $spacing-4 0;
+    padding: 0;
+    color: $black;
+}
+
+h4 {
+    font-size: $font-size-xl;
+    line-height: 1.3;
+    margin: $spacing-4 0 $spacing-4 0;
+    padding: 0;
+    color: $black;
+}
+
+h5 {
+    font-size: $font-size-lg;
+    line-height: 1.4;
+    margin: $spacing-4 0 $spacing-4 0;
+    padding: 0;
+    color: $black;
+}
+
+h6 {
+    font-size: $font-size-slg;
+    line-height: 1.4;
+    margin: $spacing-4 0 $spacing-4 0;
+    padding: 0;
+    color: $black;
+}
+
+// List Blocks
+ul,
+ol {
+    font-size: $font-size-lmd;
+    line-height: 1.5;
+    margin: $spacing-1 0 $spacing-4 0;
+    padding: 0;
+    padding-left: $spacing-4; // Consistent indentation
+}
+
+li {
+    margin: 0 0 $spacing-0 0; // Tight spacing between items
+    padding: $spacing-xxs 0; // Minimal padding for click targets
+    line-height: 1.5;
+}
+
+li p {
+    margin: 0; // Remove paragraph margins in lists
+    padding: 0;
+}
+
+// Nested lists
+ul ul,
+ol ol,
+ul ol,
+ol ul {
+    margin: $spacing-0 0 0 0; // Minimal top margin for nested
+    padding-left: $spacing-4;
+}
+
+// JSP List Decimal Support
+ol li {
+    list-style-type: decimal;
+}
+
+// JSP List Disc Support
+ul li {
+    list-style-type: disc;
+}
+
+// Content Blocks
+blockquote {
+    font-size: $font-size-lmd;
+    line-height: 1.5;
+    margin: $spacing-4 0;
+    padding: $spacing-2 0 $spacing-2 $spacing-4; // Top/bottom padding with left padding
+    border-left: 3px solid $color-palette-gray-400;
+    color: $color-palette-gray-700;
+    background: transparent;
+}
+
+blockquote p {
+    margin: 0 0 $spacing-1 0; // Override paragraph margins in quotes
+}
+
+// Code Block
+pre {
+    font-size: $font-size-md; // Slightly smaller for code readability
+    line-height: 1.4;
+    margin: $spacing-4 0;
+    padding: $spacing-3 20px; // Consistent padding
+    background: $color-palette-gray-900;
+    color: $white;
+    border-radius: $spacing-1;
+    overflow-x: auto;
+    font-family: "Monaco", "Menlo", "Consolas", monospace;
+}
+
+pre code {
+    font-family: "Monaco", "Menlo", "Consolas", monospace;
+    font-size: $font-size-md;
+    background: none;
+    padding: 0;
+    color: inherit;
+    line-height: 1.4;
+}
+
+// Media Blocks
+img.dot-image {
+    display: block;
+    margin: $spacing-4 0;
+    padding: 0;
+    max-height: 300px;
+    max-width: 50%;
+    height: auto;
+    border-radius: $spacing-0;
+
+    &:before {
+        content: "The image URL " attr(src) " seems to be broken, please double check the URL.";
+        align-items: center;
+        background: $color-palette-gray-200;
+        border-radius: 3px;
+        border: 1px solid $color-palette-gray-500;
+        color: $color-palette-gray-900;
+        display: flex;
+        height: 100%;
+        padding: $spacing-2;
+        text-align: center;
+        width: 100%;
+    }
+
+    &.dot-node-center {
+        margin: $spacing-4 auto;
+    }
+
+    &.dot-node-right {
+        margin-left: auto;
+    }
+
+    &.dot-node-left {
+        margin-right: auto;
+    }
+}
+
+// Image with links
+a:has(img.dot-image) {
+    display: block;
+    margin: $spacing-4 0;
+    padding: 0;
+    max-width: 100%;
+}
+
+// Video Block
+.video-container {
+    margin-bottom: $spacing-3;
+    aspect-ratio: 16/9;
+    height: 300px;
+
+    video {
+        width: 100%;
+        height: 100%;
+    }
+}

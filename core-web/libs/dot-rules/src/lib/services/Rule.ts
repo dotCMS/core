@@ -1,7 +1,7 @@
 import { from as observableFrom, Subject, Observable, BehaviorSubject } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, map, tap } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
@@ -251,6 +251,11 @@ export const DEFAULT_RULE: IRule = {
 // @dynamic
 @Injectable()
 export class RuleService {
+    _apiRoot = inject(ApiRoot);
+    private _resources = inject(I18nService);
+    private siteService = inject(SiteService);
+    private coreWebService = inject(CoreWebService);
+
     get rules(): RuleModel[] {
         return this._rules;
     }
@@ -279,12 +284,9 @@ export class RuleService {
 
     private _rules: RuleModel[];
 
-    constructor(
-        public _apiRoot: ApiRoot,
-        private _resources: I18nService,
-        private siteService: SiteService,
-        private coreWebService: CoreWebService
-    ) {
+    constructor() {
+        const _resources = this._resources;
+
         this._rulesEndpointUrl = `/ruleengine/rules`;
         this._actionsEndpointUrl = `/ruleengine/actions`;
         this._conditionTypesEndpointUrl = `/api/v1/system/ruleengine/conditionlets`;
@@ -308,7 +310,7 @@ export class RuleService {
             }
         );
 
-        this.siteService.switchSite$.subscribe((site) => {
+        this.siteService.currentSite$.subscribe((site) => {
             const siteId = this.loadRulesSiteId();
             if (siteId === site.identifier) {
                 this.sendLoadRulesRequest(site.identifier);

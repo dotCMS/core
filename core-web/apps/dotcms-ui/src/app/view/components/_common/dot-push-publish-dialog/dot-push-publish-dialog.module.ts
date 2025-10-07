@@ -6,12 +6,13 @@ import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
-import { DotPushPublishDialogComponent } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
-import { DotPushPublishFormModule } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.module';
 import { DotPushPublishFiltersService } from '@dotcms/data-access';
 import { DotDialogModule, DotFieldValidationMessageComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 
+import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
+
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
+import { DotPushPublishFormModule } from '../forms/dot-push-publish-form/dot-push-publish-form.module';
 
 @NgModule({
     declarations: [DotPushPublishDialogComponent],

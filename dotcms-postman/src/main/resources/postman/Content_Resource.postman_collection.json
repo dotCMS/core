@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "dd2afcb5-bb50-4718-acce-83a05dd215c6",
+		"_postman_id": "7d7888e2-37a5-47e3-9bbb-f6c890cc6ff1",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1724,8 +1724,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test content created successfully\", function () {",
+											"pm.test(\"Test Contentlet created successfully\", function () {",
 											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.summary.failCount).to.eql(0, \"An error occurred when creating the test Contentlet\");",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
 											"    var contentId = Object.keys(jsonData.entity.results[0]);",
 											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
@@ -1779,7 +1780,7 @@
 											"    ",
 											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
 											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
-											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.ownerUserName).to.not.equal(undefined, \"The 'ownerUserName' attribute must be present\");",
 											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
 											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
 											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",
@@ -3625,7 +3626,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											""
+											"pm.test(\"HTTP Status code must be 201 for tag creation\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -3643,18 +3646,17 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+									"raw": "[\n   {\n      \"name\":\"{{testTagOne}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"{{testTagTwo}}\",\n      \"siteId\":\"{{defaultSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v2/tags/",
+									"raw": "{{serverURL}}/api/v2/tags",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"v2",
-										"tags",
-										""
+										"tags"
 									]
 								},
 								"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -4067,9 +4069,12 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"HTTP Status code must be successful\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
+									"// Skip status check for Tags endpoint since it correctly returns 201",
+									"if (!pm.request.url.toString().includes('/api/v2/tags')) {",
+									"    pm.test(\"HTTP Status code must be successful\", function () {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"}",
 									""
 								]
 							}

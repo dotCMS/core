@@ -1,11 +1,10 @@
 import { forkJoin, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -25,11 +24,13 @@ import {
     DotEnvironment,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import { ActionHeaderOptions } from '@models/action-header';
-import { ButtonModel } from '@models/action-header/button.model';
-import { DataTableColumn } from '@models/data-table';
 
 import { DotContentTypeStore } from './dot-content-type.store';
+
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonModel } from '../../../shared/models/action-header/button.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 type DotRowActions = {
     pushPublish: boolean;
@@ -49,9 +50,23 @@ type DotRowActions = {
     selector: 'dot-content-types',
     styleUrls: ['./dot-content-types.component.scss'],
     templateUrl: 'dot-content-types.component.html',
-    providers: [DotContentTypeStore]
+    providers: [DotContentTypeStore],
+    standalone: false
 })
 export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
+    private contentTypesInfoService = inject(DotContentTypesInfoService);
+    private crudService = inject(DotCrudService);
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotLicenseService = inject(DotLicenseService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private pushPublishService = inject(PushPublishService);
+    private route = inject(ActivatedRoute);
+    private router = inject(Router);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotContentTypeStore = inject(DotContentTypeStore);
+
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
     filterBy: string;
@@ -67,21 +82,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     public dotDynamicDialog: ViewContainerRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private dialogDestroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private contentTypesInfoService: DotContentTypesInfoService,
-        private crudService: DotCrudService,
-        private dotContentTypeService: DotContentTypeService,
-        private dotDialogService: DotAlertConfirmService,
-        private dotLicenseService: DotLicenseService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private pushPublishService: PushPublishService,
-        private route: ActivatedRoute,
-        private router: Router,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotContentTypeStore: DotContentTypeStore
-    ) {}
 
     ngOnInit() {
         forkJoin(

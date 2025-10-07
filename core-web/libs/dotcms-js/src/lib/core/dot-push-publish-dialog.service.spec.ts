@@ -1,22 +1,21 @@
-import { TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
 
 import { DotPushPublishDialogService } from './dot-push-publish-dialog.service';
 
 const mockEventData = { assetIdentifier: 'test', title: 'Title' };
 
 describe('DotPushPublishDialogService', () => {
-    const dotPushPublishDialogService = TestBed.get(DotPushPublishDialogService);
-    let data;
+    let spectator: SpectatorService<DotPushPublishDialogService>;
+    const createService = createServiceFactory(DotPushPublishDialogService);
 
     beforeEach(() => {
-        TestBed.configureTestingModule({});
-        dotPushPublishDialogService.showDialog$.subscribe((dialogData: any) => {
-            data = dialogData;
-        });
+        spectator = createService();
     });
 
     it('should receive data', () => {
-        dotPushPublishDialogService.open(mockEventData);
-        expect(data).toEqual(mockEventData);
+        spectator.service.showDialog$.subscribe((dialogData) => {
+            expect(dialogData).toEqual(mockEventData);
+        });
+        spectator.service.open(mockEventData);
     });
 });

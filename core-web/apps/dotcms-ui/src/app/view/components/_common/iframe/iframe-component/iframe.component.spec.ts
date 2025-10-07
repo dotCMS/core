@@ -5,10 +5,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotSafeUrlPipe } from '@components/_common/iframe/pipes/dot-safe-url/dot-safe-url.pipe';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotRouterService, DotIframeService } from '@dotcms/data-access';
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
@@ -22,6 +19,8 @@ import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
 
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotOverlayMaskModule } from '../../dot-overlay-mask/dot-overlay-mask.module';
+import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 
 const fakeHtmlEl = {
     hello: 'html'
@@ -29,7 +28,8 @@ const fakeHtmlEl = {
 
 @Component({
     selector: 'dot-loading-indicator',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotLoadingIndicatorComponent {}
 
@@ -72,10 +72,10 @@ describe('IframeComponent', () => {
         comp = fixture.componentInstance;
         de = fixture.debugElement;
 
-        dotIframeService = TestBed.get(DotIframeService);
-        dotUiColorsService = TestBed.get(DotUiColorsService);
-        dotRouterService = TestBed.get(DotRouterService);
-        spyOn(dotUiColorsService, 'setColors');
+        dotIframeService = TestBed.inject(DotIframeService);
+        dotUiColorsService = TestBed.inject(DotUiColorsService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        jest.spyOn(dotUiColorsService, 'setColors');
 
         comp.isLoading = false;
         comp.src = 'etc/etc?hello=world';
@@ -87,20 +87,20 @@ describe('IframeComponent', () => {
         beforeEach(() => {
             comp.iframeElement.nativeElement = {
                 location: {
-                    reload: jasmine.createSpy('reload')
+                    reload: jest.fn()
                 },
                 contentWindow: {
-                    postMessage: jasmine.createSpy('postMessage'),
+                    postMessage: jest.fn(),
                     document: {
                         body: {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jasmine.createSpy('docAddEventListener'),
-                        removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                        addEventListener: jest.fn(),
+                        removeEventListener: jest.fn()
                     },
-                    addEventListener: jasmine.createSpy('docAddEventListener'),
-                    removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                    addEventListener: jest.fn(),
+                    removeEventListener: jest.fn()
                 }
             };
         });
@@ -141,7 +141,7 @@ describe('IframeComponent', () => {
                     }
                 },
                 location: {
-                    reload: jasmine.createSpy('reload')
+                    reload: jest.fn()
                 }
             }
         };
@@ -155,7 +155,7 @@ describe('IframeComponent', () => {
     it('should call function in the iframe window', () => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                fakeFunction: jasmine.createSpy('reload'),
+                fakeFunction: jest.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'
@@ -196,11 +196,11 @@ describe('IframeComponent', () => {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jasmine.createSpy('docAddEventListener'),
-                        removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                        addEventListener: jest.fn(),
+                        removeEventListener: jest.fn()
                     },
-                    addEventListener: jasmine.createSpy('addEventListener'),
-                    removeEventListener: jasmine.createSpy('removeEventListener')
+                    addEventListener: jest.fn(),
+                    removeEventListener: jest.fn()
                 }
             };
         });
@@ -216,17 +216,17 @@ describe('IframeComponent', () => {
 
             expect(
                 comp.iframeElement.nativeElement.contentWindow.removeEventListener
-            ).toHaveBeenCalledWith('keydown', jasmine.any(Function));
+            ).toHaveBeenCalledWith('keydown', expect.any(Function));
             expect(
                 comp.iframeElement.nativeElement.contentWindow.document.removeEventListener
-            ).toHaveBeenCalledWith('ng-event', jasmine.any(Function));
+            ).toHaveBeenCalledWith('ng-event', expect.any(Function));
 
             expect(
                 comp.iframeElement.nativeElement.contentWindow.addEventListener
-            ).toHaveBeenCalledWith('keydown', jasmine.any(Function));
+            ).toHaveBeenCalledWith('keydown', expect.any(Function));
             expect(
                 comp.iframeElement.nativeElement.contentWindow.document.addEventListener
-            ).toHaveBeenCalledWith('ng-event', jasmine.any(Function));
+            ).toHaveBeenCalledWith('ng-event', expect.any(Function));
         });
 
         it('should set the colors to the jsp on load', () => {
@@ -274,7 +274,7 @@ describe('IframeComponent', () => {
 
         it('should hide on click and call hide event', () => {
             comp.showOverlay = true;
-            spyOn(iframeOverlayService, 'hide').and.callThrough();
+            jest.spyOn(iframeOverlayService, 'hide');
             fixture.detectChanges();
             let dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             dotOverlayMask.triggerEventHandler('click', {});
@@ -289,7 +289,7 @@ describe('IframeComponent', () => {
     it('should refresh OSGI Plugis list on OSGI_BUNDLES_LOADED websocket event', fakeAsync(() => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                getBundlesData: jasmine.createSpy('getBundlesData'),
+                getBundlesData: jest.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'

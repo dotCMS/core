@@ -3,11 +3,10 @@
 
 import { of as observableOf, throwError as observableThrowError } from 'rxjs';
 
-import { waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentTypesInfoService,
     DotCrudService,
@@ -21,14 +20,15 @@ import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-te
 
 import { DotContentTypeEditResolver } from './dot-content-types-edit-resolver.service';
 
+import { DOTTestBed } from '../../../test/dot-test-bed';
+
 class CrudServiceMock {
     getDataById() {}
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
+const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
+    'toString'
+]);
 activatedRouteSnapshotMock.paramMap = {};
 
 describe('DotContentTypeEditResolver', () => {
@@ -38,7 +38,7 @@ describe('DotContentTypeEditResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     beforeEach(waitForAsync(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             providers: [
                 DotContentTypeEditResolver,
                 DotContentTypesInfoService,
@@ -56,15 +56,15 @@ describe('DotContentTypeEditResolver', () => {
             ],
             imports: [RouterTestingModule]
         });
-        crudService = testbed.get(DotCrudService);
-        dotContentTypeEditResolver = testbed.get(DotContentTypeEditResolver);
-        dotRouterService = testbed.get(DotRouterService);
-        dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
+        crudService = TestBed.inject(DotCrudService);
+        dotContentTypeEditResolver = TestBed.inject(DotContentTypeEditResolver);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
     }));
 
     it('should get and return a content type', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';
-        spyOn(crudService, 'getDataById').and.returnValue(
+        jest.spyOn(crudService, 'getDataById').mockReturnValue(
             observableOf({
                 fake: 'content-type',
                 object: 'right?'
@@ -80,18 +80,19 @@ describe('DotContentTypeEditResolver', () => {
                 });
             });
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
+        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
     });
 
     it("should redirect to content-types if content type it's not found", () => {
         activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
 
-        spyOn<any>(dotHttpErrorManagerService, 'handle').and.returnValue(
+        jest.spyOn<any>(dotHttpErrorManagerService, 'handle').mockReturnValue(
             observableOf({
                 redirected: false
             })
         );
 
-        spyOn(crudService, 'getDataById').and.returnValue(
+        jest.spyOn(crudService, 'getDataById').mockReturnValue(
             observableThrowError({
                 bodyJsonObject: {
                     error: ''
@@ -105,6 +106,7 @@ describe('DotContentTypeEditResolver', () => {
         dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
 
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
+        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', {
             replaceUrl: true
         });
@@ -113,13 +115,13 @@ describe('DotContentTypeEditResolver', () => {
     it('should get and return null and go to home', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';
 
-        spyOn<any>(dotHttpErrorManagerService, 'handle').and.returnValue(
+        jest.spyOn<any>(dotHttpErrorManagerService, 'handle').mockReturnValue(
             observableOf({
                 redirected: false
             })
         );
 
-        spyOn(crudService, 'getDataById').and.returnValue(
+        jest.spyOn(crudService, 'getDataById').mockReturnValue(
             observableThrowError({
                 bodyJsonObject: {
                     error: ''
@@ -132,6 +134,7 @@ describe('DotContentTypeEditResolver', () => {
 
         dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
+        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', {
             replaceUrl: true
         });
@@ -142,7 +145,7 @@ describe('DotContentTypeEditResolver', () => {
             return param === 'type' ? 'content' : false;
         };
 
-        spyOn(crudService, 'getDataById').and.returnValue(observableOf(false));
+        jest.spyOn(crudService, 'getDataById').mockReturnValue(observableOf(false));
         dotContentTypeEditResolver
             .resolve(activatedRouteSnapshotMock)
             .subscribe((res: DotCMSContentType) => {

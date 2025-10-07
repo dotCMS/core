@@ -26,10 +26,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+@Tag(name = "File Assets")
 @Path("/v1/content/fileassets")
 public class FileAssetsResource {
 

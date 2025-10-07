@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { Pipe, PipeTransform, inject } from '@angular/core';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 
@@ -7,10 +7,8 @@ import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
  */
 @Pipe({ name: 'dotRelativeDate', standalone: true })
 export class DotRelativeDatePipe implements PipeTransform {
-    constructor(
-        private readonly dotFormatDateService: DotFormatDateService,
-        private readonly dotMessageService: DotMessageService
-    ) {}
+    private readonly dotFormatDateService = inject(DotFormatDateService);
+    private readonly dotMessageService = inject(DotMessageService);
 
     transform(date: string | number, format = 'MM/dd/yyyy', timeStampAfter = 7): string {
         const time = date || new Date().getTime();

@@ -5,9 +5,12 @@ import { SelectItem } from 'primeng/api';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
+import { CustomFieldConfig } from './dot-edit-content-custom-field.interface';
 import { FIELD_TYPES } from './dot-edit-content-field.enum';
 
 export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
+
+export const CALENDAR_FIELD_TYPES_WITH_TIME = [FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
 
 export const FLATTENED_FIELD_TYPES = [
     FIELD_TYPES.CHECKBOX,
@@ -102,3 +105,30 @@ export const CATEGORY_FIELD_EMPTY_MESSAGES: Record<
  * This constant is used for navigation to the content listing page,
  */
 export const CONTENT_SEARCH_ROUTE = '/c/content';
+
+/**
+ * Default dialog/modal dimensions used across the application.
+ * These constants provide consistent sizing for different dialog types.
+ */
+export const DIALOG_DIMENSIONS = {
+    /** Modal width for custom fields displayed as dialogs */
+    MODAL_WIDTH: '500px',
+    /** Modal height for custom fields displayed as dialogs */
+    MODAL_HEIGHT: '500px'
+} as const;
+
+/**
+ * Default configuration for custom fields.
+ * Used both for fields without field variables and as fallback for configured fields.
+ */
+export const DEFAULT_CUSTOM_FIELD_CONFIG: CustomFieldConfig = {
+    showAsModal: false,
+    width: DIALOG_DIMENSIONS.MODAL_WIDTH,
+    height: DIALOG_DIMENSIONS.MODAL_HEIGHT
+};
+
+/**
+ * Key name for the custom field options in field variables.
+ * This is the key that should be used when storing JSON configuration in field variables.
+ */
+export const CUSTOM_FIELD_OPTIONS_KEY = 'customFieldOptions';

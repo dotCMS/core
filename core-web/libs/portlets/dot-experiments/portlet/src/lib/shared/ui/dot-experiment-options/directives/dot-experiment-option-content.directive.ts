@@ -1,11 +1,12 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, TemplateRef, inject } from '@angular/core';
 
 /**
  * Get the content TemplateRef of the Option
  */
 @Directive({
-    selector: '[dotOptionContent]'
+    selector: '[dotOptionContent]',
+    standalone: false
 })
 export class DotExperimentOptionContentDirective {
-    constructor(public templateRef: TemplateRef<unknown>) {}
+    templateRef = inject<TemplateRef<unknown>>(TemplateRef);
 }

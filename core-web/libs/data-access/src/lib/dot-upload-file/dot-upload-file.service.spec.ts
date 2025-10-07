@@ -1,9 +1,9 @@
-import { createHttpFactory, SpectatorHttp, SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import { createHttpFactory, mockProvider, SpectatorHttp, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-
 import { DotUploadFileService } from './dot-upload-file.service';
+
+import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 
 describe('DotUploadFileService', () => {
     let spectator: SpectatorHttp<DotUploadFileService>;
@@ -35,6 +35,20 @@ describe('DotUploadFileService', () => {
             });
 
             spectator.service.uploadDotAsset(file).subscribe();
+
+            expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalled();
+        });
+
+        it('should upload a file as a dotAsset with extra data', () => {
+            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
+
+            const file = new File([''], 'test.png', {
+                type: 'image/png'
+            });
+
+            spectator.service.uploadDotAsset(file, { title: 'test' }).subscribe();
 
             expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalled();
         });

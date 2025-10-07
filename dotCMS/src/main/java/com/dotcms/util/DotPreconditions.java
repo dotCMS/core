@@ -1,6 +1,6 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;

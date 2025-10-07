@@ -1,7 +1,9 @@
 package com.dotmarketing.util.json;
 
+import com.dotcms.util.jackson.JSONObjectNullSerializer;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
@@ -75,6 +77,9 @@ public class JSONObject implements Serializable, Map {
      * whilst Java's null is equivalent to the value that JavaScript calls
      * undefined.
      */
+
+     // Jackson does not know anything about this Null Marker So...
+     @JsonSerialize(using = JSONObjectNullSerializer.class)
      private static final class Null implements Serializable{
          private static final long serialVersionUID = 1L;
         /**
@@ -895,6 +900,9 @@ public class JSONObject implements Serializable, Map {
      * @param bean the incoming object
      */
     private void populateMap(Object bean) {
+        if (bean == null) {
+            return;
+        }
         final Class <?> clazz = bean.getClass();
         // If clazz is a System class then set includeSuperClass to false.
         final boolean includeSuperClass = clazz.getClassLoader() != null;
@@ -919,6 +927,9 @@ public class JSONObject implements Serializable, Map {
      */
     private void populateWithMethod(Object bean, Method method)
             throws IllegalAccessException, InvocationTargetException {
+        if (bean == null || method == null) {
+            return;
+        }
         if (Modifier.isPublic(method.getModifiers()) && !isIgnorable(method)) {
             String key = key(method.getName());
             if (!key.isEmpty() && Character.isUpperCase(key.charAt(0)) && method.getParameterTypes().length == 0) {

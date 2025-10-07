@@ -4,11 +4,12 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContainerEditResolver } from './dot-container-edit.resolver';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 
 describe('DotContainerService', () => {
     let service: DotContainerEditResolver;
@@ -22,7 +23,7 @@ describe('DotContainerService', () => {
                 {
                     provide: DotContainersService,
                     useValue: {
-                        getById: jasmine.createSpy().and.returnValue(
+                        getById: jest.fn().mockReturnValue(
                             of({
                                 this: {
                                     is: 'a page'
@@ -54,6 +55,7 @@ describe('DotContainerService', () => {
             )
             .subscribe((res) => {
                 expect(containersService.getById).toHaveBeenCalledWith('ID', 'working', true);
+                expect(containersService.getById).toHaveBeenCalledTimes(1);
                 expect<any>(res).toEqual({ this: { is: 'a page' } });
                 done();
             });

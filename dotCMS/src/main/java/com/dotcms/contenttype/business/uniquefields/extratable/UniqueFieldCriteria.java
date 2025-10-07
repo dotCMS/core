@@ -7,13 +7,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.liferay.util.StringPool;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This class represents the criteria used to determine if the value of a Unique Field is indeed
@@ -55,7 +55,7 @@ public class UniqueFieldCriteria {
     private final String variantName;
     private final boolean isLive;
 
-    public UniqueFieldCriteria(final Builder builder) {
+    private UniqueFieldCriteria(final Builder builder) {
         this.contentType = builder.contentType;
         this.field = builder.field;
         this.value = builder.value;
@@ -120,7 +120,7 @@ public class UniqueFieldCriteria {
      */
     public String criteria(){
         return contentType.id() + field.variable() + language.getId() + value +
-                ((isUniqueForSite(contentType.id(), field.variable())) ? site.getIdentifier() : StringPool.BLANK);
+                ((isUniqueForSite(contentType.id(), field.variable())) ? site.getIdentifier() : BLANK);
     }
 
     public Field field() {
@@ -149,6 +149,27 @@ public class UniqueFieldCriteria {
                 ", site=" + site.getIdentifier() +
                 ", variantName='" + variantName + '\'' +
                 '}';
+    }
+
+    /**
+     * Generates the official unique field criteria based on the information provided in the map.
+     * This method is particularly useful when reading the unique field criteria directly from the
+     * database, and having to update specific attributes.
+     *
+     * @param supportingValues The map with the supporting values for a given unique value.
+     *
+     * @return The official unique field criteria.
+     */
+    public static String criteria(final Map<String, Object> supportingValues) {
+        final String contentTypeId = supportingValues.getOrDefault(CONTENT_TYPE_ID_ATTR, BLANK).toString();
+        final String fieldVariableName = supportingValues.getOrDefault(FIELD_VARIABLE_NAME_ATTR, BLANK).toString();
+        final String languageId = supportingValues.getOrDefault(LANGUAGE_ID_ATTR, BLANK).toString();
+        final String fieldValue = supportingValues.getOrDefault(FIELD_VALUE_ATTR, BLANK).toString();
+        String siteId = BLANK;
+        if (isUniqueForSite(contentTypeId, fieldVariableName)) {
+            siteId = supportingValues.getOrDefault(SITE_ID_ATTR, BLANK).toString();
+        }
+        return contentTypeId + fieldVariableName + languageId + fieldValue + siteId;
     }
 
     public static class Builder {
@@ -202,6 +223,11 @@ public class UniqueFieldCriteria {
             return this;
         }
 
+        public Builder setLive(boolean live) {
+            this.isLive = live;
+            return this;
+        }
+
         public UniqueFieldCriteria build(){
             Objects.requireNonNull(contentType, "Content Type cannot be null");
             Objects.requireNonNull(field, "Field cannot be null");
@@ -213,11 +239,6 @@ public class UniqueFieldCriteria {
             }
 
             return new UniqueFieldCriteria(this);
-        }
-
-        public Builder setLive(boolean live) {
-            this.isLive = live;
-            return this;
         }
 
     }

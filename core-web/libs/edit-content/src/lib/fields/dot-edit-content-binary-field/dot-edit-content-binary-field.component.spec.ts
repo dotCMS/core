@@ -32,11 +32,11 @@ import {
     DotUploadService
 } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
+import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
@@ -556,6 +556,209 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
     });
 
+    describe('Disabled State Management', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+            store.setStatus(BinaryFieldStatus.INIT);
+        });
+
+        it('should set disabled state correctly through setDisabledState method', () => {
+            spectator.detectChanges();
+
+            // Initially not disabled
+            expect(spectator.component.$disabled()).toBe(false);
+
+            // Set disabled
+            spectator.component.setDisabledState(true);
+            expect(spectator.component.$disabled()).toBe(true);
+
+            // Set enabled
+            spectator.component.setDisabledState(false);
+            expect(spectator.component.$disabled()).toBe(false);
+        });
+
+        it('should disable file input when field is disabled', () => {
+            spectator.detectChanges();
+
+            const fileInput = spectator.query(
+                byTestId('binary-field__file-input')
+            ) as HTMLInputElement;
+
+            // Initially not disabled
+            expect(fileInput.disabled).toBe(false);
+
+            // Set disabled
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+            expect(fileInput.disabled).toBe(true);
+        });
+
+        it('should disable action buttons when field is disabled', () => {
+            spectator.detectChanges();
+
+            // Set disabled
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            const urlBtn = spectator.query(byTestId('action-url-btn'));
+            const editorBtn = spectator.query(byTestId('action-editor-btn'));
+
+            // Check for ng-reflect-disabled attribute instead of disabled property for PrimeNG buttons
+            expect(urlBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
+            expect(editorBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
+        });
+
+        it('should disable AI button when component is disabled', () => {
+            // Setup to show AI button
+            const systemOptions = {
+                allowURLImport: true,
+                allowCodeWrite: true,
+                allowGenerateImg: true
+            };
+
+            const JSONString = JSON.stringify(systemOptions);
+            const newField = {
+                ...BINARY_FIELD_MOCK,
+                fieldVariables: [
+                    ...BINARY_FIELD_MOCK.fieldVariables,
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+                        id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+                        key: 'systemOptions',
+                        value: JSONString
+                    }
+                ]
+            };
+
+            spectator = createComponent({
+                detectChanges: false,
+                props: {
+                    field: newField,
+                    contentlet: null
+                }
+            });
+            store = spectator.inject(DotBinaryFieldStore, true);
+
+            spectator.detectChanges();
+
+            const aiBtn = spectator.query(byTestId('action-ai-btn'));
+
+            // Verify button exists
+            expect(aiBtn).toBeTruthy();
+
+            // Set component disabled - should disable AI button
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            // Button should be disabled when component is disabled
+            expect(aiBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
+
+            // Re-enable component
+            spectator.component.setDisabledState(false);
+            spectator.detectChanges();
+
+            // Note: Button may still be disabled due to AI plugin check (initialValue: false)
+            // but the disabled state logic should be working correctly
+            expect(spectator.component.$disabled()).toBe(false);
+        });
+
+        it('should prevent file selection when disabled', () => {
+            const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            const inputElement = spectator.query(
+                byTestId('binary-field__file-input')
+            ) as HTMLInputElement;
+            const file = new File(['test'], 'test.png', { type: 'image/png' });
+            const event = new Event('change');
+            Object.defineProperty(event, 'target', { value: { files: [file] } });
+
+            inputElement.dispatchEvent(event);
+
+            expect(spyHandleUploadFile).not.toHaveBeenCalled();
+        });
+
+        it('should prevent file drop when disabled', () => {
+            const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            spectator.component.handleFileDrop(DROP_ZONE_FILE_EVENT);
+
+            expect(spyHandleUploadFile).not.toHaveBeenCalled();
+        });
+
+        it('should prevent opening dialogs when disabled', () => {
+            const spySetMode = jest.spyOn(store, 'setMode');
+
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            // Test each dialog mode
+            spectator.component.openDialog(BinaryFieldMode.URL);
+            spectator.component.openDialog(BinaryFieldMode.EDITOR);
+            spectator.component.openDialog(BinaryFieldMode.AI);
+
+            expect(spySetMode).not.toHaveBeenCalled();
+            expect(spectator.component.dialogOpen).toBe(false);
+        });
+
+        it('should prevent file picker opening when disabled', () => {
+            const spyInputClick = jest.spyOn(spectator.component.inputFile.nativeElement, 'click');
+
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            spectator.component.openFilePicker();
+
+            expect(spyInputClick).not.toHaveBeenCalled();
+        });
+
+        it('should prevent file removal when disabled', () => {
+            const spyRemoveFile = jest.spyOn(store, 'removeFile');
+
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            spectator.component.removeFile();
+
+            expect(spyRemoveFile).not.toHaveBeenCalled();
+        });
+
+        it('should add disabled CSS class to container when disabled', () => {
+            spectator.detectChanges();
+
+            const container = spectator.query('.binary-field__container');
+
+            // Initially not disabled
+            expect(container).not.toHaveClass('binary-field__container--disabled');
+
+            // Set disabled
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+            expect(container).toHaveClass('binary-field__container--disabled');
+        });
+
+        it('should pass disabled state to preview component when file is uploaded', () => {
+            // Set up preview state
+            store.setStatus(BinaryFieldStatus.PREVIEW);
+            store.setTempFile(TEMP_FILE_MOCK);
+            spectator.detectChanges();
+
+            // Set disabled
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            const previewComponent = spectator.query(DotBinaryFieldPreviewComponent);
+            expect(previewComponent).toBeTruthy();
+            expect(previewComponent.disabled).toBe(true);
+        });
+    });
+
     afterEach(() => {
         jest.resetAllMocks();
     });
@@ -566,6 +769,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
  * @class MockFormComponent
  */
 @Component({
+    standalone: false,
     selector: 'dot-custom-host',
     template: ''
 })

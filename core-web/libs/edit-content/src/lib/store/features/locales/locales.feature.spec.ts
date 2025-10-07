@@ -34,10 +34,25 @@ const SYSTEM_LANGUAGES = [
     { id: 2, isoCode: 'it-it', defaultLanguage: true }
 ] as DotLanguage[];
 
+const withTest = () =>
+    signalStoreFeature(
+        withState({
+            ...initialRootState,
+            formValues: {}
+        }),
+        withMethods((store) => ({
+            updateContent: (content) => {
+                patchState(store, { contentlet: content });
+            }
+        }))
+    );
+
+const Store = signalStore({ providedIn: 'root' }, withTest(), withLocales());
+
 describe('LocalesFeature', () => {
     let spectator: SpectatorService<any>;
 
-    let store: any;
+    let store: InstanceType<typeof Store>;
     let dotLanguagesService: SpyObject<DotLanguagesService>;
     let dotContentletService: SpyObject<DotContentletService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
@@ -45,21 +60,8 @@ describe('LocalesFeature', () => {
     let router: SpyObject<Router>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
 
-    const withTest = () =>
-        signalStoreFeature(
-            withState({
-                ...initialRootState,
-                formValues: {}
-            }),
-            withMethods((store) => ({
-                updateContent: (content) => {
-                    patchState(store, { contentlet: content });
-                }
-            }))
-        );
-
     const createStore = createServiceFactory({
-        service: signalStore(withTest(), withLocales()),
+        service: Store,
         mocks: [
             DotLanguagesService,
             DotContentletService,
@@ -94,7 +96,8 @@ describe('LocalesFeature', () => {
         expect(store.localesStatus().status).toEqual(ComponentStatus.INIT);
 
         store.updateContent({ identifier: '123' } as DotCMSContentlet);
-        tick();
+
+        spectator.flushEffects();
 
         expect(dotContentletService.getLanguages).toHaveBeenCalledWith('123');
         expect(dotLanguagesService.getDefault).toHaveBeenCalledTimes(1);
@@ -125,9 +128,9 @@ describe('LocalesFeature', () => {
         });
 
         it('should switch to a translated locale', fakeAsync(() => {
-            tick();
+            spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[1]);
-            tick();
+            spectator.flushEffects();
 
             expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
                 id: '123',
@@ -152,14 +155,16 @@ describe('LocalesFeature', () => {
 
             expect(dialogService.open).toHaveBeenCalledTimes(1);
 
-            expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
-            expect(store.initialContentletState()).toEqual('copy');
-            expect(store.contentlet()).toEqual({
+            const expectedContentlet = {
                 identifier: '123',
                 languageId: 1,
                 locked: false,
                 lockedBy: undefined
-            });
+            } as DotCMSContentlet;
+
+            expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
+            expect(store.initialContentletState()).toEqual('copy');
+            expect(store.contentlet()).toEqual(expectedContentlet);
             expect(store.formValues()).toEqual(null);
         }));
 

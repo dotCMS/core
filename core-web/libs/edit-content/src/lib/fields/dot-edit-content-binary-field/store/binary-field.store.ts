@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { from, Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { switchMap, tap, map, catchError, distinctUntilChanged } from 'rxjs/operators';
 
@@ -42,6 +42,10 @@ const initialState: BinaryFieldState = {
 
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
+    private readonly dotUploadService = inject(DotUploadService);
+    private readonly dotLicenseService = inject(DotLicenseService);
+    private readonly http = inject(HttpClient);
+
     private _maxFileSizeInMB = 0;
 
     get maxFile() {
@@ -59,11 +63,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         fileName: tempFile?.fileName
     })).pipe(distinctUntilChanged((previous, current) => previous.value === current.value));
 
-    constructor(
-        private readonly dotUploadService: DotUploadService,
-        private readonly dotLicenseService: DotLicenseService,
-        private readonly http: HttpClient
-    ) {
+    constructor() {
         super(initialState);
         this.dotLicenseService.isEnterprise().subscribe((isEnterprise) => {
             this.setIsEnterprise(isEnterprise);

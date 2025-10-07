@@ -52,7 +52,6 @@ interface dotPreviewResourceLink {
 
 @Component({
     selector: 'dot-binary-field-preview',
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,
@@ -75,6 +74,7 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     @Input() tempFile: DotCMSTempFile;
     @Input() editableImage: boolean;
     @Input() fieldVariable: string;
+    @Input() disabled = false;
 
     @Output() editImage: EventEmitter<void> = new EventEmitter();
     @Output() editFile: EventEmitter<void> = new EventEmitter();
@@ -122,6 +122,10 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
      * @memberof DotBinaryFieldPreviewComponent
      */
     onEdit(): void {
+        if (this.disabled) {
+            return;
+        }
+
         if (this.metadata.editableAsText) {
             this.editFile.emit();
 
@@ -184,11 +188,15 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Emits event to remove the file
+     * Downloads the file asset
      *
      * @memberof DotBinaryFieldPreviewComponent
      */
     downloadAsset(): void {
+        if (this.disabled) {
+            return;
+        }
+
         window.open(this.downloadLink, '_self');
     }
 

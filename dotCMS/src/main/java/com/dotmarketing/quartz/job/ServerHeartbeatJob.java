@@ -30,6 +30,13 @@ public class ServerHeartbeatJob implements Job {
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
 	    Logger.debug(this.getClass(), ()-> "Running ServerHeartbeatJob");
+	    
+	    // Skip execution if shutdown is in progress to prevent component reinitialization
+	    if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+	        Logger.info(this.getClass(), "Shutdown in progress - skipping ServerHeartbeatJob execution");
+	        return;
+	    }
+	    
 		try{
 
 			LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();

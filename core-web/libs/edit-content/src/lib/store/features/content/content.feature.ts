@@ -27,6 +27,16 @@ import { EditContentState } from '../../edit-content.store';
 
 const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
 
+/**
+ * Options for initializing the store in dialog mode
+ */
+export interface DialogInitializationOptions {
+    /** Content type ID for creating new content */
+    contentTypeId?: string;
+    /** Contentlet inode for editing existing content */
+    contentletInode?: string;
+}
+
 export function withContent() {
     return signalStoreFeature(
         { state: type<EditContentState>() },

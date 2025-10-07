@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,6 +49,7 @@ import java.util.function.Supplier;
  * @author jsanca
  */
 @Path("/v1/content/resourcelinks")
+@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
 public class ResourceLinkResource {
 
     private final WebResource    webResource;

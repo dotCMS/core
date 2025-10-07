@@ -22,6 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,6 +50,7 @@ import static com.dotcms.util.ConversionUtils.toLong;
  * - Remove notification
  */
 @Path("/v1/notification")
+@Tag(name = "Notifications")
 public class NotificationResource {
 
     public static final String ALLUSERS = "allusers";

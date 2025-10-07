@@ -7,7 +7,6 @@ import { ButtonModule } from 'primeng/button';
     templateUrl: './template-builder-section.component.html',
     styleUrls: ['./template-builder-section.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [ButtonModule]
 })
 export class TemplateBuilderSectionComponent {

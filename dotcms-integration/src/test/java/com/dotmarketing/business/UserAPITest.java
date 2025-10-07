@@ -1470,4 +1470,25 @@ public class UserAPITest extends IntegrationTestBase {
 			assertEquals("Length of Email Address provided exceeds the maximum limit 100", e.getMessage());
 		}
 	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A user is saved by the same user, this means that the user is updating its own information.
+	 * ExpectedResult: When loading the saved user, it should have the new values
+	 *
+	 */
+	@Test
+	public void test_saveUser_from_same_user() throws DotSecurityException, DotDataException {
+		String name ="test_updated";
+		final User user = new UserDataGen().firstName("test").nextPersisted();
+		final User loggedInUser = new UserDataGen().id(user.getUserId()).firstName(user.getFirstName()).next();
+		try {
+			user.setFirstName(name);
+			userAPI.save(user, user, false, false);
+			User updatedUser = userAPI.loadUserById(user.getUserId(), loggedInUser, false);
+			assertEquals(name, updatedUser.getFirstName());
+		} finally {
+			UserDataGen.remove(user);
+		}
+	}
 }

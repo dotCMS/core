@@ -6,7 +6,9 @@
       "@locators/*": ["./src/locators/*"],
       "@utils/*": ["./src/utils/*"],
       "@data/*": ["./src/data/*"],
-      "@models/*": ["./src/models/*"]
+      "@models/*": ["./src/models/*"],
+      "@requests/*": ["./src/requests/*"],
+      "@components/*": ["./src/components/*"]
     }
   }
 }

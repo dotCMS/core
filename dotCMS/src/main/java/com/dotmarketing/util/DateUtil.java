@@ -259,6 +259,19 @@ public class DateUtil {
 		return convertDate(date, companyTimeZone.get(), formats);
 	}
 
+    /**
+     * This method try to parse a string into a Date object using an array with
+     * @param date - the string to be parsed
+     * @param lenient - We instruct the Formater to be permissive or stricter
+     * @param formats - the valid format to parse the string
+     * @return return the Date object that represent the string
+     * @throws java.text.ParseException
+     */
+    public static Date convertDate(final String date, final boolean lenient,
+            final String[] formats) throws java.text.ParseException {
+        return convertDate(date, companyTimeZone.get(), lenient, formats);
+    }
+
 	/**
 	 * This method try to parse a string into a Date object using an array with
 	 * the valid formats
@@ -272,12 +285,29 @@ public class DateUtil {
 	 * @return return the Date object that represent the string
 	 * @throws java.text.ParseException
 	 */
+    public static Date convertDate(final String date,
+            final TimeZone timeZone,
+            final String... formats
+    ) throws java.text.ParseException {
+        return convertDate(date, timeZone, true, formats);
+    }
+
+    /**
+     * This method try to parse a string into a Date object using an array with
+     * @param date - the string to be parsed
+     * @param timeZone - time zone
+     * @param lenient - We instruct the Formater to be permissive or stricter
+     * @param formats - the valid format to parse the string
+     * @return return the Date object that represent the string
+     * @throws java.text.ParseException
+     */
 	public static Date convertDate(final String date,
 								   final TimeZone timeZone,
+                                   final boolean lenient,
 								   final String... formats
 								   ) throws java.text.ParseException {
 		Date ret = null;
-		for (final String pattern : formats) { // todo: usually the formaters are cached and thread-safe
+		for (final String pattern : formats) {
 
 			try {
 
@@ -285,12 +315,12 @@ public class DateUtil {
 				if (null != timeZone) {
 					format.setTimeZone(timeZone);
 				}
-
+                format.setLenient(lenient);
 				ret = format.parse(date);
+                Logger.debug(DateUtil.class, "Converted date: " + date + " using pattern: " + pattern + " ret: " + ret);
 				break;
 			} catch (java.text.ParseException e) {
 				// quiet
-				//e.printStackTrace();
 			}
 		}
 

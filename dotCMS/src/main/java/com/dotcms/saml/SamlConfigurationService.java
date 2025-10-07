@@ -49,6 +49,15 @@ public interface SamlConfigurationService {
      */
     Boolean getConfigAsBoolean(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName);
 
+    /**
+     * Returns the configuration value for the {@link SamlName} as Boolean
+     *  @param identityProviderConfiguration {@link IdentityProviderConfiguration}
+     *  @param samlName {@link SamlName}
+     *  @param defaultValueSupplier {@link Supplier}
+     * @return Boolean
+     */
+    Boolean getConfigAsBoolean(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName, Supplier<Boolean> defaultValueSupplier);
+
 
     /**
      * Returns the configuration value for the {@link SamlName} as Array String

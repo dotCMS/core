@@ -1,11 +1,16 @@
-import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, input, viewChild } from '@angular/core';
+import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotLanguageVariableSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { AvailableLanguageMonaco } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
  * JSON field editor component that uses Monaco Editor for JSON content editing.
@@ -14,22 +19,38 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
  */
 @Component({
     selector: 'dot-edit-content-json-field',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         DotEditContentMonacoEditorControlComponent,
-        DotLanguageVariableSelectorComponent
+        DotLanguageVariableSelectorComponent,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        DotMessagePipe
     ],
     templateUrl: './dot-edit-content-json-field.component.html',
     styleUrls: ['./dot-edit-content-json-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ]
 })
-export class DotEditContentJsonFieldComponent {
+export class DotEditContentJsonFieldComponent extends BaseWrapperField {
     /**
      * Input field DotCMSContentTypeField
      */
     $field = input<DotCMSContentTypeField | null>(null, {
         alias: 'field'
+    });
+    /**
+     * Input contentlet DotCMSContentlet
+     */
+    $contentlet = input.required<DotCMSContentlet>({
+        alias: 'contentlet'
     });
 
     /**

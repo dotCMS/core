@@ -31,12 +31,22 @@ public enum ImportLineValidationCodes {
     /**
      * Invalid site/folder reference
      */
-    INVALID_LOCATION,
+    INVALID_SITE_FOLDER_REF,
 
     /**
      * Invalid binary field URL
      */
     INVALID_BINARY_URL,
+
+    /**
+     * Invalid URL for file/image field in dotCMS
+     */
+    UNREACHABLE_URL_CONTENT,
+
+    /**
+     * Invalid file path for file/image field in dotCMS
+     */
+    INVALID_FILE_PATH,
 
     /**
      * Invalid image file type
@@ -79,6 +89,11 @@ public enum ImportLineValidationCodes {
     RELATIONSHIP_VALIDATION_ERROR,
 
     /**
+     * Relationship cardinality error
+     */
+    RELATIONSHIP_CARDINALITY_ERROR,
+
+    /**
      * User lacks required permissions
      */
     PERMISSION_ERROR,
@@ -99,8 +114,18 @@ public enum ImportLineValidationCodes {
     VALIDATION_FAILED_PATTERN,
 
     /**
+     * Invalid numeric field value
+     */
+    INVALID_NUMBER_FORMAT,
+
+    /**
      * Invalid field type
      */
-    INVALID_FIELD_TYPE
+    INVALID_FIELD_TYPE,
+
+    /**
+     * Invalid Json
+     */
+    INVALID_JSON
 
 }

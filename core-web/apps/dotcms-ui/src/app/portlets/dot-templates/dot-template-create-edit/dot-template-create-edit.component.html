@@ -1,24 +1,28 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <dot-portlet-base *ngIf="vm.working.identifier" [boxed]="false">
-        <dot-portlet-toolbar [title]="vm.working.title">
-            <ng-container *ngIf="vm.working.title" left>
-                <button
-                    (click)="editTemplateProps()"
-                    [label]="'templates.edit' | dm"
-                    class="p-button-text"
-                    data-testId="editTemplateButton"
-                    pButton
-                    icon="pi pi-pencil"></button>
-                <dot-api-link [href]="vm.apiLink"></dot-api-link>
-            </ng-container>
-        </dot-portlet-toolbar>
-        <dot-template-builder
-            (updateTemplate)="updateWorkingTemplate($event)"
-            (saveAndPublish)="saveAndPublishTemplate($event)"
-            (save)="saveTemplate($event)"
-            (cancel)="cancelTemplate()"
-            (custom)="onCustomEvent($event)"
-            [didTemplateChanged]="vm.didTemplateChanged"
-            [item]="vm.working"></dot-template-builder>
-    </dot-portlet-base>
-</ng-container>
+@if (vm$ | async; as vm) {
+    @if (vm.working.identifier) {
+        <dot-portlet-base [boxed]="false">
+            <dot-portlet-toolbar>
+                @if (vm.working.title) {
+                    <ng-container left>
+                        <button
+                            (click)="editTemplateProps()"
+                            [label]="'templates.edit' | dm"
+                            class="p-button-text"
+                            data-testId="editTemplateButton"
+                            pButton
+                            icon="pi pi-pencil"></button>
+                        <dot-api-link [href]="vm.apiLink" />
+                    </ng-container>
+                }
+            </dot-portlet-toolbar>
+            <dot-template-builder
+                (updateTemplate)="updateWorkingTemplate($event)"
+                (saveAndPublish)="saveAndPublishTemplate($event)"
+                (save)="saveTemplate($event)"
+                (cancel)="cancelTemplate()"
+                (custom)="onCustomEvent($event)"
+                [didTemplateChanged]="vm.didTemplateChanged"
+                [item]="vm.working" />
+        </dot-portlet-base>
+    }
+}

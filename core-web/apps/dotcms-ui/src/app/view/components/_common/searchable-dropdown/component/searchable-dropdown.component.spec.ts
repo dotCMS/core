@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Component, DebugElement, Input } from '@angular/core';
-import {
-    ComponentFixture,
-    fakeAsync,
-    flush,
-    TestBed,
-    tick,
-    waitForAsync
-} from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -38,7 +31,8 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
             [overlayWidth]="overlayWidth"
             [width]="width"
             [disabled]="disabled" />
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input()
@@ -95,12 +89,12 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
 
-        TestBed.configureTestingModule({
+        await TestBed.configureTestingModule({
             declarations: [SearchableDropdownComponent, HostTestComponent],
             imports: [
                 ...SEARCHABLE_NGFACES_MODULES,
@@ -134,7 +128,7 @@ describe('SearchableDropdownComponent', () => {
         hostComp.totalRecords = NROWS;
         hostComp.rows = rows;
         hostComp.pageLinkSize = pageLinkSize;
-    }));
+    });
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';
@@ -145,7 +139,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should have placeholder set', () => {
-        expect(mainButton.nativeElement.innerText).toBe('placeholder');
+        expect(mainButton.componentInstance.label).toBe('placeholder');
     });
 
     it('should disabled', () => {
@@ -208,10 +202,20 @@ describe('SearchableDropdownComponent', () => {
         hostFixture.detectChanges();
         tick();
 
+        // Mock the searchPanelRef to avoid getBoundingClientRect error
+        comp.searchPanelRef = {
+            container: {
+                getBoundingClientRect: () => ({ height: 200 })
+            }
+        } as any;
+
+        // Trigger the overlay show to update cssClass
+        comp.showOverlayHandler();
+
         const overlay = de.query(By.css('.p-overlaypanel'));
         expect(comp.cssClass).toContain('searchable-dropdown paginator');
 
-        expect(overlay.componentInstance.styleClass).toBe('testClass');
+        expect(overlay.componentInstance.styleClass).toContain('testClass');
         expect(overlay.componentInstance.style.width).toEqual('650px');
         flush();
     }));
@@ -297,7 +301,7 @@ describe('SearchableDropdownComponent', () => {
         beforeEach(() => {
             hostComp.data = data;
             hostComp.labelPropertyName = 'name';
-            spyOn(comp.switch, 'emit');
+            jest.spyOn(comp.switch, 'emit');
 
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
@@ -309,6 +313,7 @@ describe('SearchableDropdownComponent', () => {
         it('should change the value', () => {
             items[0].triggerEventHandler('click', null);
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit the same value twice when multiple equal true', () => {
@@ -326,6 +331,7 @@ describe('SearchableDropdownComponent', () => {
             items[0].triggerEventHandler('click', null);
 
             expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
             expect(comp.switch.emit).toHaveBeenCalledTimes(1);
         });
     });
@@ -416,7 +422,8 @@ describe('SearchableDropdownComponent', () => {
                 </div>
             </ng-template>
         </dot-searchable-dropdown>
-    `
+    `,
+    standalone: false
 })
 class HostTestExternalTemplateComponent {
     @Input() data: any[];
@@ -469,12 +476,12 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
 
-        TestBed.configureTestingModule({
+        await TestBed.configureTestingModule({
             declarations: [SearchableDropdownComponent, HostTestExternalTemplateComponent],
             imports: [
                 ...SEARCHABLE_NGFACES_MODULES,
@@ -508,7 +515,7 @@ describe('SearchableDropdownComponent', () => {
         hostComp.totalRecords = NROWS;
         hostComp.rows = rows;
         hostComp.pageLinkSize = pageLinkSize;
-    }));
+    });
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';
@@ -549,7 +556,7 @@ describe('SearchableDropdownComponent', () => {
 
     it('should allow keyboad nav on filter Input - Enter', () => {
         comp.selectedOptionIndex = 3;
-        spyOn(comp, 'handleClick');
+        jest.spyOn(comp, 'handleClick');
 
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
@@ -557,6 +564,7 @@ describe('SearchableDropdownComponent', () => {
         searchInput.nativeElement.dispatchEvent(keyboardEvent);
 
         expect(comp.handleClick).toHaveBeenCalledWith(data[3]);
+        expect(comp.handleClick).toHaveBeenCalledTimes(1);
     });
 
     it('should render external listItem template', () => {

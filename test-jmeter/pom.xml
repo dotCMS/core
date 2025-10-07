@@ -19,14 +19,23 @@
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jmeterScript>sessions.jmx</jmeterScript>
-        <jmeter.host>dotcms.local</jmeter.host>
-        <jmeter.port>443</jmeter.port>
-        <jmeter.rampup>0</jmeter.rampup>
+        <jmeterScript>core-sessions.jmx</jmeterScript>
+        <jmeter.host>localhost</jmeter.host>
+        <jmeter.port>8080</jmeter.port>
+        <jmeter.scheme>http</jmeter.scheme>
+        <jmeter.rampup>60</jmeter.rampup>
         <jmeter.startup.delay>5</jmeter.startup.delay>
-        <jmeter.test.duration>60</jmeter.test.duration>
-        <jmeter.thread.number>2</jmeter.thread.number>
+        <jmeter.test.duration>300</jmeter.test.duration>
+        <jmeter.thread.number>10</jmeter.thread.number>
         <jmeter.admin.password>admin</jmeter.admin.password>
+        <!-- Analytics specific properties -->
+        <jmeter.events.per.second>1</jmeter.events.per.second>
+        <jmeter.analytics.key>js.cluster1.customer1.loadtest</jmeter.analytics.key>
+        <jmeter.max.response.time>5000</jmeter.max.response.time>
+        <!-- JMeter memory settings for high load testing -->
+        <jmeter.jvm.xms>1024m</jmeter.jvm.xms>
+        <jmeter.jvm.xmx>8g</jmeter.jvm.xmx>
+        <jmeter.jvm.metaspace>512m</jmeter.jvm.metaspace>
     </properties>
 
     <dependencies>
@@ -105,26 +114,45 @@
 
                     </executions>
                     <configuration>
-                        <testFilesDirectory>${project.basedir}/src/test/jmeter</testFilesDirectory>
+                        <testFilesDirectory>${project.basedir}/jmx-tests</testFilesDirectory>
                         <testResultsTimestamp>true</testResultsTimestamp>
+                        
+                        <!-- JVM settings for high load testing -->
+                        <jMeterProcessJVMSettings>
+                            <arguments>
+                                <argument>-XX:MaxMetaspaceSize=${jmeter.jvm.metaspace}</argument>
+                                <argument>-Xmx${jmeter.jvm.xmx}</argument>
+                                <argument>-Xms${jmeter.jvm.xms}</argument>
+                                <argument>-server</argument>
+                                <argument>-XX:+UseG1GC</argument>
+                                <argument>-XX:MaxGCPauseMillis=100</argument>
+                                <argument>-XX:G1ReservePercent=20</argument>
+                            </arguments>
+                        </jMeterProcessJVMSettings>
 
                         <propertiesUser>
                             <jmeter.save.saveservice.output_format>csv</jmeter.save.saveservice.output_format>
                             <CookieManager.save.cookies>true</CookieManager.save.cookies>
-                            <sample_variables>JVM_HOSTNAME,SESSION_ID,X_DOT_SERVER</sample_variables>
+                            <sample_variables>JVM_HOSTNAME,SESSION_ID,X_DOT_SERVER,response_time,success,timestamp,thread_id</sample_variables>
                             <resultcollector.action_if_file_exists>DELETE</resultcollector.action_if_file_exists>
                             <host>${jmeter.host}</host>
                             <port>${jmeter.port}</port>
+                            <scheme>${jmeter.scheme}</scheme>
                             <rampup>${jmeter.rampup}</rampup>
                             <admin.password>${jmeter.admin.password}</admin.password>
                             <startup.delay>${jmeter.startup.delay}</startup.delay>
                             <test.duration>${jmeter.test.duration}</test.duration>
                             <thread.number>${jmeter.thread.number}</thread.number>
+                            <!-- Analytics specific properties -->
+                            <events.per.second>${jmeter.events.per.second}</events.per.second>
+                            <analytics.key>${jmeter.analytics.key}</analytics.key>
+                            <max.response.time>${jmeter.max.response.time}</max.response.time>
                         </propertiesUser>
                         <testFilesIncluded>
                             <jMeterTestFile>${jmeterScript}</jMeterTestFile>
                         </testFilesIncluded>
                         <generateReports>true</generateReports>
+                        <ignoreResultFailures>true</ignoreResultFailures>
 
 
                     </configuration>

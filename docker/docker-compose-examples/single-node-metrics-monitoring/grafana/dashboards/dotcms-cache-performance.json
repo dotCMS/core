@@ -1,0 +1,572 @@
+{
+  "id": 1,
+  "title": "dotCMS Cache Performance",
+  "tags": ["dotcms", "cache", "performance"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "fiscalYearStartMonth": 0,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Cache Performance Overview",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "Overall Cache Hit Rate",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 1},
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 50},
+              {"color": "green", "value": 80}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "targets": [
+        {
+          "expr": "dotcms_cache_hit_rate_overall",
+          "legendFormat": "Hit Rate %",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 3,
+      "title": "Total Cache Objects",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 1},
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 10000},
+              {"color": "red", "value": 50000}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "expr": "dotcms_cache_size",
+          "legendFormat": "Total Objects",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 4,
+      "title": "Cache Providers",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 1},
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "expr": "dotcms_cache_providers",
+          "legendFormat": "Active Providers",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 5,
+      "title": "Cache Regions",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 1},
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "expr": "dotcms_cache_regions",
+          "legendFormat": "Active Regions",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 6,
+      "title": "Cache Hit Rate Trends",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 7},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "insertNulls": false,
+            "showPoints": "auto",
+            "pointSize": 5,
+            "stacking": {"mode": "none", "group": "A"},
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "scaleDistribution": {"type": "linear"},
+            "axisCenteredZero": false,
+            "hideFrom": {"legend": false, "tooltip": false, "vis": false},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "color": {"mode": "palette-classic"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "red", "value": 80}
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "options": {
+        "tooltip": {"mode": "single", "sort": "none"},
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}
+      },
+      "targets": [
+        {
+          "expr": "dotcms_cache_hit_rate_overall",
+          "legendFormat": "Overall Hit Rate %",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 7,
+      "title": "Cache Objects by Provider",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 7},
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "pieType": "pie",
+        "tooltip": {"mode": "single", "sort": "none"},
+        "legend": {"displayMode": "list", "placement": "right", "showLegend": true, "values": []},
+        "displayLabels": ["name", "value"]
+      },
+      "targets": [
+        {
+          "expr": "dotcms_cache_size",
+          "legendFormat": "Total Cache Objects",
+          "refId": "A"
+        },
+        {
+          "expr": "dotcms_cache_hits",
+          "legendFormat": "Total Cache Hits",
+          "refId": "B"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 8,
+      "title": "Regional Cache Performance",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 15}
+    },
+    {
+      "id": 9,
+      "title": "Cache Hit Rates by Region (Top 10)",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {"type": "auto"},
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "red", "value": 80}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Region"},
+            "properties": [
+              {"id": "unit", "value": "string"},
+              {"id": "custom.width", "value": 200}
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {"show": false, "reducer": ["sum"], "countRows": false, "fields": ""}
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "region": "Region",
+              "Value": "Hit Rate %"
+            }
+          }
+        }
+      ],
+      "targets": [
+        {
+          "expr": "dotcms_cache_hit_rate_overall",
+          "format": "table",
+          "legendFormat": "Overall Hit Rate %",
+          "refId": "A"
+        },
+        {
+          "expr": "dotcms_cache_providers",
+          "format": "table", 
+          "legendFormat": "Active Providers",
+          "refId": "B"
+        },
+        {
+          "expr": "dotcms_cache_regions",
+          "format": "table",
+          "legendFormat": "Active Regions", 
+          "refId": "C"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 10,
+      "title": "Cache Sizes by Region (Top 10)",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {"type": "auto"},
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 1000},
+              {"color": "red", "value": 5000}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Region"},
+            "properties": [
+              {"id": "unit", "value": "string"},
+              {"id": "custom.width", "value": 200}
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {"show": false, "reducer": ["sum"], "countRows": false, "fields": ""}
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "region": "Region",
+              "Value": "Objects"
+            }
+          }
+        }
+      ],
+      "targets": [
+        {
+          "expr": "dotcms_cache_size",
+          "format": "table",
+          "legendFormat": "Total Objects",
+          "refId": "A"
+        },
+        {
+          "expr": "dotcms_cache_hits",
+          "format": "table",
+          "legendFormat": "Total Hits", 
+          "refId": "B"
+        },
+        {
+          "expr": "dotcms_cache_administrator_available",
+          "format": "table",
+          "legendFormat": "Admin Available",
+          "refId": "C"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 11,
+      "title": "Cache Load Times (Top 10 Slowest)",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {"type": "auto"},
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 100},
+              {"color": "red", "value": 500}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Region"},
+            "properties": [
+              {"id": "unit", "value": "string"},
+              {"id": "custom.width", "value": 200}
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {"show": false, "reducer": ["sum"], "countRows": false, "fields": ""}
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "region": "Region",
+              "Value": "Avg Load Time (ms)"
+            }
+          }
+        }
+      ],
+      "targets": [
+        {
+          "expr": "vector(0)",
+          "format": "table",
+          "legendFormat": "Load Time Data Unavailable (NaN values)",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 12,
+      "title": "Cache Evictions (Regions with Evictions)",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {"type": "auto"},
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 10},
+              {"color": "red", "value": 100}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Region"},
+            "properties": [
+              {"id": "unit", "value": "string"},
+              {"id": "custom.width", "value": 200}
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {"show": false, "reducer": ["sum"], "countRows": false, "fields": ""}
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "region": "Region",
+              "Value": "Evictions"
+            }
+          }
+        }
+      ],
+      "targets": [
+        {
+          "expr": "vector(0)",
+          "format": "table", 
+          "legendFormat": "Eviction Data Unavailable (NaN values)",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "style": "dark",
+  "weekStart": "",
+  "version": 1
+} 

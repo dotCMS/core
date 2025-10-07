@@ -8,25 +8,33 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
-import {
-    DotAddToMenuService,
-    DotCreateCustomTool
-} from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType, DotDialogActions, DotMenu } from '@dotcms/dotcms-models';
 
+import {
+    DotAddToMenuService,
+    DotCreateCustomTool
+} from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+
 @Component({
     selector: 'dot-add-to-menu',
-    templateUrl: 'dot-add-to-menu.component.html'
+    templateUrl: 'dot-add-to-menu.component.html',
+    standalone: false
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy {
+    fb = inject(UntypedFormBuilder);
+    private dotMessageService = inject(DotMessageService);
+    private dotMenuService = inject(DotMenuService);
+    private dotAddToMenuService = inject(DotAddToMenuService);
+
     form: UntypedFormGroup;
     menu$: Observable<DotMenu[]>;
     placeholder = '';
@@ -39,13 +47,6 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
     @ViewChild('titleName', { static: true }) titleName: ElementRef;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        public fb: UntypedFormBuilder,
-        private dotMessageService: DotMessageService,
-        private dotMenuService: DotMenuService,
-        private dotAddToMenuService: DotAddToMenuService
-    ) {}
 
     ngOnInit() {
         this.initForm();

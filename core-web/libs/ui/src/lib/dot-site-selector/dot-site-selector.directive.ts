@@ -1,14 +1,6 @@
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectorRef,
-    Directive,
-    Input,
-    OnDestroy,
-    OnInit,
-    Optional,
-    Self
-} from '@angular/core';
+import { ChangeDetectorRef, Directive, Input, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { Dropdown } from 'primeng/dropdown';
 
@@ -23,6 +15,11 @@ import { Site } from '@dotcms/dotcms-js';
     standalone: true
 })
 export class DotSiteSelectorDirective implements OnInit, OnDestroy {
+    private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });
+    private readonly dotEventsService = inject(DotEventsService);
+    private readonly dotSiteService = inject(DotSiteService);
+    private readonly cd = inject(ChangeDetectorRef);
+
     @Input() archive = false;
     @Input() live = true;
     @Input() system = true;
@@ -32,12 +29,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
     private readonly dotEvents = ['login-as', 'logout-as'];
     private readonly control: Dropdown;
 
-    constructor(
-        @Optional() @Self() private readonly primeDropdown: Dropdown,
-        private readonly dotEventsService: DotEventsService,
-        private readonly dotSiteService: DotSiteService,
-        private readonly cd: ChangeDetectorRef
-    ) {
+    constructor() {
         this.control = this.primeDropdown;
 
         if (this.control) {

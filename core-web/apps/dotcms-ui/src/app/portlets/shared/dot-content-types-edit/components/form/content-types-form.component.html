@@ -4,19 +4,20 @@
     class="content-type__form p-fluid"
     id="content-type-form"
     novalidate>
-    <div
-        *ngIf="newContentEditorEnabled"
-        class="content-type__new-content-banner"
-        data-test-id="content-type__new-content-banner">
-        <p-checkbox
-            class="p-checkbox-sm"
-            formControlName="newEditContent"
-            binary="true"
-            inputId="newEditContentLabel"></p-checkbox>
-        <label for="newEditContentLabel">
-            <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
-        </label>
-    </div>
+    @if (newContentEditorEnabled) {
+        <div
+            class="content-type__new-content-banner"
+            data-test-id="content-type__new-content-banner">
+            <p-checkbox
+                class="p-checkbox-sm"
+                formControlName="newEditContent"
+                binary="true"
+                inputId="newEditContentLabel"></p-checkbox>
+            <label for="newEditContentLabel">
+                <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
+            </label>
+        </div>
+    }
     <div class="field form__group--validation">
         <label dotFieldRequired for="content-type-form-name">{{ nameFieldLabel }}</label>
         <input
@@ -81,12 +82,11 @@
             [workflows]="workflowsSelected$ | async"
             formControlName="NEW"></dot-workflows-actions-selector-field>
     </div>
-    <span
-        *ngIf="form.get('workflows').disabled"
-        class="p-field-hint form-workflow-community-message"
-        id="field-workflow-hint">
-        {{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}
-    </span>
+    @if (form.get('workflows').disabled) {
+        <span class="p-field-hint form-workflow-community-message" id="field-workflow-hint">
+            {{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}
+        </span>
+    }
     <div class="content-type__form-dates">
         <div class="field">
             <label for="content-type-form-publish-date-field">
@@ -120,34 +120,37 @@
         </div>
     </div>
 
-    <small
-        *ngIf="!dateVarOptions.length"
-        class="p-field-hint field__date-hint"
-        id="field-dates-hint">
-        {{ 'contenttypes.form.message.no.date.fields.defined' | dm }}
-    </small>
+    @if (!dateVarOptions.length) {
+        <small class="p-field-hint field__date-hint" id="field-dates-hint">
+            {{ 'contenttypes.form.message.no.date.fields.defined' | dm }}
+        </small>
+    }
 
-    <div *ngIf="form.get('detailPage')" class="field">
-        <label for="content-type-form-detail-page">
-            {{ 'contenttypes.form.field.detail.page' | dm }}
-        </label>
-        <dot-page-selector
-            [tabindex]="9"
-            id="content-type-form-detail-page"
-            formControlName="detailPage"></dot-page-selector>
-    </div>
-    <div *ngIf="form.get('urlMapPattern')" class="field form__group--helper">
-        <dot-field-helper
-            [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
-        <label for="content-type-form-url-map-pattern">
-            {{ 'contenttypes.form.label.URL.pattern' | dm }}
-        </label>
-        <input
-            [tabindex]="10"
-            id="content-type-form-url-map-pattern"
-            pInputText
-            type="text"
-            name="urlMapPattern"
-            formControlName="urlMapPattern" />
-    </div>
+    @if (form.get('detailPage')) {
+        <div class="field">
+            <label for="content-type-form-detail-page">
+                {{ 'contenttypes.form.field.detail.page' | dm }}
+            </label>
+            <dot-page-selector
+                [tabindex]="9"
+                id="content-type-form-detail-page"
+                formControlName="detailPage"></dot-page-selector>
+        </div>
+    }
+    @if (form.get('urlMapPattern')) {
+        <div class="field form__group--helper">
+            <dot-field-helper
+                [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
+            <label for="content-type-form-url-map-pattern">
+                {{ 'contenttypes.form.label.URL.pattern' | dm }}
+            </label>
+            <input
+                [tabindex]="10"
+                id="content-type-form-url-map-pattern"
+                pInputText
+                type="text"
+                name="urlMapPattern"
+                formControlName="urlMapPattern" />
+        </div>
+    }
 </form>

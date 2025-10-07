@@ -1,7 +1,7 @@
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, filter, map, mergeMap, pluck, take } from 'rxjs/operators';
 
@@ -30,6 +30,9 @@ export interface DotEditorAction {
  */
 @Injectable()
 export class DotContentletEditorService {
+    private coreWebService = inject(CoreWebService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+
     close$: Subject<boolean> = new Subject<boolean>();
     draggedContentType$: Subject<DotCMSContentType | DotCMSContentlet> = new Subject<
         DotCMSContentType | DotCMSContentlet
@@ -39,11 +42,6 @@ export class DotContentletEditorService {
     private _header: Subject<string> = new Subject();
     private _load: ($event: unknown) => void;
     private _keyDown: ($event: KeyboardEvent) => void;
-
-    constructor(
-        private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
 
     get addUrl$(): Observable<string> {
         return this.data.pipe(

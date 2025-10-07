@@ -15,24 +15,19 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
-import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
-import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import {
     DotAlertConfirmService,
     DotEventsService,
-    DotMessageService,
-    PaginatorService,
-    DotSessionStorageService,
-    DotRouterService,
     DotHttpErrorManagerService,
-    DotMessageDisplayService
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotSystemConfigService,
+    PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -47,6 +42,13 @@ import {
 
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+import { DotAddPersonaDialogComponent } from '../dot-add-persona-dialog/dot-add-persona-dialog.component';
+import { DotAddPersonaDialogModule } from '../dot-add-persona-dialog/dot-add-persona-dialog.module';
+import { DotPersonaSelectedItemModule } from '../dot-persona-selected-item/dot-persona-selected-item.module';
+import { DotPersonaSelectorOptionModule } from '../dot-persona-selector-option/dot-persona-selector-option.module';
+
 @Component({
     selector: 'dot-host-component',
     template: `
@@ -54,7 +56,8 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
             (selected)="selectedPersonaHandler($event)"
             (delete)="deletePersonaHandler($event)"
             [disabled]="disabled"></dot-persona-selector>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input() disabled: boolean;
@@ -101,6 +104,44 @@ describe('DotPersonaSelectorComponent', () => {
 
     const siteServiceMock = new SiteServiceMock();
 
+    const mockSystemConfig: DotSystemConfig = {
+        logos: {
+            loginScreen: '',
+            navBar: ''
+        },
+        colors: {
+            primary: '#54428e',
+            secondary: '#3a3847',
+            background: '#BB30E1'
+        },
+        releaseInfo: {
+            buildDate: 'June 24, 2019',
+            version: '5.0.0'
+        },
+        systemTimezone: {
+            id: 'America/Costa_Rica',
+            label: 'Costa Rica',
+            offset: 360
+        },
+        languages: [],
+        license: {
+            level: 100,
+            displayServerId: '19fc0e44',
+            levelName: 'COMMUNITY EDITION',
+            isCommunity: true
+        },
+        cluster: {
+            clusterId: 'test-cluster',
+            companyKeyDigest: 'test-digest'
+        }
+    };
+
+    class MockDotSystemConfigService {
+        getSystemConfig() {
+            return of(mockSystemConfig);
+        }
+    }
+
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [DotPersonaSelectorComponent, HostTestComponent],
@@ -134,6 +175,7 @@ describe('DotPersonaSelectorComponent', () => {
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 DotHttpErrorManagerService,
                 ConfirmationService,
                 DotAlertConfirmService,
@@ -152,9 +194,10 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should emit the selected persona', () => {
-        spyOn(component.selected, 'emit');
+        jest.spyOn(component.selected, 'emit');
         dropdown.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should call filter change with keyword', () => {
@@ -163,13 +206,14 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call page change', () => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([{ ...mockDotPersona }]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([{ ...mockDotPersona }]));
         dropdown.triggerEventHandler('pageChange', {
             filter: '',
             first: 10,
             rows: 10
         });
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     });
 
     it('should set dot-searchable-dropdown with right attributes', () => {
@@ -188,7 +232,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call toggle when selected dot-persona-selected-item', async () => {
-        spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
+        jest.spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
         await hostFixture.whenStable();
 
         const selectedItem = hostFixture.debugElement.query(By.css('dot-persona-selected-item'));
@@ -217,17 +261,18 @@ describe('DotPersonaSelectorComponent', () => {
     it('should execute "change" event from dot-persona-selector-option', async () => {
         await hostFixture.whenStable();
 
-        spyOn(component.selected, 'emit');
+        jest.spyOn(component.selected, 'emit');
         openOverlay();
         const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
         personaOption.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     xit('should execute "delete" event from dot-persona-selector-option', async () => {
         await hostFixture.whenStable();
 
-        spyOn(component.delete, 'emit');
+        jest.spyOn(component.delete, 'emit');
         openOverlay();
         const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
         personaOption.triggerEventHandler('delete', defaultPersona);
@@ -248,7 +293,7 @@ describe('DotPersonaSelectorComponent', () => {
             openOverlay();
             const addPersonaIcon = dropdown.query(By.css('p-button'));
 
-            spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
+            jest.spyOn(dropdown.componentInstance, 'toggleOverlayPanel');
 
             dropdown.triggerEventHandler('filterChange', 'Bill');
             addPersonaIcon.nativeElement.click();
@@ -261,15 +306,17 @@ describe('DotPersonaSelectorComponent', () => {
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {
-            spyOn(component.selected, 'emit');
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([mockDotPersona]));
-            spyOn(dropdown.componentInstance, 'resetPanelMinHeight');
+            jest.spyOn(component.selected, 'emit');
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([mockDotPersona]));
+            jest.spyOn(dropdown.componentInstance, 'resetPanelMinHeight');
 
             personaDialog.createdPersona.emit(defaultPersona);
 
             expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+            expect(component.selected.emit).toHaveBeenCalledTimes(1);
             expect(paginatorService.filter).toEqual('');
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
             expect(dropdown.componentInstance.resetPanelMinHeight).toHaveBeenCalled();
         });
     });
@@ -282,14 +329,14 @@ describe('DotPersonaSelectorComponent', () => {
         });
 
         it('should call hide event on hide persona list', () => {
-            spyOn(iframeOverlayService, 'hide');
+            jest.spyOn(iframeOverlayService, 'hide');
             dropdown.triggerEventHandler('hide', {});
 
             expect(iframeOverlayService.hide).toHaveBeenCalled();
         });
 
         it('should call show event on show persona list', () => {
-            spyOn(iframeOverlayService, 'show');
+            jest.spyOn(iframeOverlayService, 'show');
             dropdown.triggerEventHandler('display', {});
 
             expect(iframeOverlayService.show).toHaveBeenCalled();

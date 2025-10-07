@@ -2,3 +2,6 @@
 package-lock.json -diff
 *.bat             text eol=crlf
 *.cmd             text eol=crlf
+
+# Generated OpenAPI file - always use "ours" and let pre-commit hook regenerate
+dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml merge=ours

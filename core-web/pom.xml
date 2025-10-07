@@ -21,15 +21,12 @@
         <cargo.server.port>8084</cargo.server.port>
         <yarn.install.cmd>--frozen-lockfile</yarn.install.cmd>
         <skip.npm.install>false</skip.npm.install>
-        <sonar.sources>apps,libs</sonar.sources>
-        <sonar.exclusions>**/node_modules/**,**/*.spec.ts</sonar.exclusions>
-        <sonar.tests>apps,libs</sonar.tests>
-        <sonar.test.inclusions>**/*.spec.ts</sonar.test.inclusions>
         <skip.core-web.updates>false</skip.core-web.updates>
         <skip.validate>true</skip.validate>
         <git.origin.branch>origin/main</git.origin.branch>
         <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
         <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
+        <skip.nx.reset.execution>true</skip.nx.reset.execution>
     </properties>
 
     <dependencies>
@@ -97,8 +94,6 @@
                         </configuration>
                     </execution>
 
-
-
                     <execution>
                         <id>lint-test</id>
                         <goals>
@@ -108,7 +103,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <skip>${skip.validate}</skip>
-                            <arguments>nx affected -t lint --exclude='tag:skip:lint'</arguments>
+                            <arguments>nx affected -t lint --base=origin/main --exclude='tag:skip:lint'</arguments>
                         </configuration>
                     </execution>
 
@@ -126,63 +121,32 @@
                     </execution>
 
                     <execution>
-                        <id>build dotcms-ui</id>
+                        <id>build-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
-
                         <configuration>
-                            <arguments>run nx --verbose build dotcms-ui  ${nx.build.options}</arguments>
+                            <arguments>nx run-many -t build --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
                     <execution>
-                        <id>build dotcms-block-editor</id>
+                        <id>build-analytics</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
-
                         <configuration>
-                            <arguments>run nx run dotcms-block-editor:build</arguments>
+                            <arguments>nx run sdk-analytics:build:standalone</arguments>
                         </configuration>
                     </execution>
 
-                    <execution>
-                        <id>build dotcms-binary-field-builder</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-
-                        <!-- optional: the default phase is "generate-resources" -->
-                        <phase>compile</phase>
-
-                        <configuration>
-                            <arguments>run nx run dotcms-binary-field-builder:build</arguments>
-                        </configuration>
-                    </execution>
 
                     <execution>
-                        <id>build edit-content-bridge</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-
-                        <!-- optional: the default phase is "generate-resources" -->
-                        <phase>compile</phase>
-
-                        <configuration>
-                            <arguments>run nx run edit-content-bridge:build</arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>test</id>
+                        <id>unit-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
@@ -192,7 +156,19 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>run nx run-many -t test --exclude='tag:skip:test'</arguments>
+                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test'</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>nx-reset</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <arguments>exec nx reset</arguments>
+                            <skip>${skip.nx.reset.execution}</skip>
                         </configuration>
                     </execution>
                 </executions>
@@ -229,6 +205,14 @@
                             <targetPath>dotcms-block-editor</targetPath>
                         </resource>
 
+                        <resource>
+                            <directory>${project.basedir}/dist/libs/sdk/analytics-standalone</directory>
+                            <filtering>false</filtering>
+                            <targetPath>ext/analytics</targetPath>
+                            <includes>
+                                <include>**/*.js</include>
+                            </includes>
+                        </resource>
                         <resource>
                             <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
                             <filtering>false</filtering>
@@ -303,6 +287,18 @@
                 <yarn.install.cmd>--frozen-lockfile --prefer-offline</yarn.install.cmd>
             </properties>
             <build/>
+        </profile>
+
+        <profile>
+            <id>do-nx-reset</id>
+            <activation>
+                <property>
+                    <name>nx.reset</name>
+                </property>
+            </activation>
+            <properties>
+                <skip.nx.reset.execution>false</skip.nx.reset.execution>
+            </properties>
         </profile>
 
         <profile>

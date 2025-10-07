@@ -1,4 +1,12 @@
-import { Component, Directive, Input, OnInit, TemplateRef, ViewContainerRef } from '@angular/core';
+import {
+    Component,
+    Directive,
+    Input,
+    OnInit,
+    TemplateRef,
+    ViewContainerRef,
+    inject
+} from '@angular/core';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -42,6 +50,10 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
     standalone: true
 })
 export class DotShowHideFeatureDirective implements OnInit {
+    private templateRef = inject<TemplateRef<Component>>(TemplateRef);
+    private viewContainer = inject(ViewContainerRef);
+    private dotPropertiesService = inject(DotPropertiesService);
+
     private _featureFlag: FeaturedFlags;
     @Input() set dotShowHideFeature(featureFlag: FeaturedFlags) {
         this._featureFlag = featureFlag;
@@ -57,12 +69,6 @@ export class DotShowHideFeatureDirective implements OnInit {
     get alternateTemplateRef(): TemplateRef<Component> {
         return this._alternateTemplateRef;
     }
-
-    constructor(
-        private templateRef: TemplateRef<Component>,
-        private viewContainer: ViewContainerRef,
-        private dotPropertiesService: DotPropertiesService
-    ) {}
 
     ngOnInit() {
         this.dotPropertiesService.getFeatureFlag(this._featureFlag).subscribe((isEnabled) => {

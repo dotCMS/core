@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { MenuItem, SelectItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -107,36 +107,83 @@ export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
 
 export const SESSION_STORAGE_FAVORITES_KEY = 'FavoritesSearchTerms';
 
+const initialState: DotPagesState = {
+    favoritePages: {
+        collapsed: false,
+        items: [],
+        showLoadMoreButton: false,
+        total: 0
+    },
+    environments: false,
+    isEnterprise: false,
+    languages: [],
+    loggedUser: {
+        canRead: { contentlets: false, htmlPages: false },
+        canWrite: { contentlets: false, htmlPages: false },
+        id: ''
+    },
+    pages: {
+        items: [],
+        keyword: '',
+        languageId: '',
+        archived: false,
+        status: ComponentStatus.INIT
+    },
+    pageTypes: [],
+    portletStatus: ComponentStatus.INIT
+};
+
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
-    readonly getStatus$ = this.select((state) => state.pages.status);
+    private dotCurrentUser = inject(DotCurrentUserService);
+    private dotRouterService = inject(DotRouterService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotESContentService = inject(DotESContentService);
+    private dotPageTypesService = inject(DotPageTypesService);
+    private dotMessageService = inject(DotMessageService);
+    private dialogService = inject(DialogService);
+    private dotLanguagesService = inject(DotLanguagesService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotPageWorkflowsActionsService = inject(DotPageWorkflowsActionsService);
+    private dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
+    private dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotEventsService = inject(DotEventsService);
+    private pushPublishService = inject(PushPublishService);
+    private siteService = inject(SiteService);
+    private dotFavoritePageService = inject(DotFavoritePageService);
+    private dotLocalstorageService = inject(DotLocalstorageService);
+    private dotPropertiesService = inject(DotPropertiesService);
+
+    readonly getStatus$ = this.select((state) => state?.pages?.status || ComponentStatus.INIT);
 
     readonly getFilterParams$: Observable<DotSessionStorageFilter> = this.select((state) => {
         return {
-            languageId: state.pages.languageId,
-            keyword: state.pages.keyword,
-            archived: state.pages.archived
+            languageId: state?.pages?.languageId || '',
+            keyword: state?.pages?.keyword || '',
+            archived: state?.pages?.archived || false
         };
     });
 
     readonly isFavoritePanelCollaped$: Observable<boolean> = this.select((state) => {
-        return state.favoritePages.collapsed;
+        return state?.favoritePages?.collapsed;
     });
 
     readonly isPagesLoading$: Observable<boolean> = this.select(
         (state) =>
-            state.pages.status === ComponentStatus.LOADING ||
-            state.pages.status === ComponentStatus.INIT
+            state?.pages?.status === ComponentStatus.LOADING ||
+            state?.pages?.status === ComponentStatus.INIT
     );
 
     readonly isPortletLoading$: Observable<boolean> = this.select(
         (state) =>
-            state.portletStatus === ComponentStatus.LOADING ||
-            state.portletStatus === ComponentStatus.INIT
+            state?.portletStatus === ComponentStatus.LOADING ||
+            state?.portletStatus === ComponentStatus.INIT
     );
 
     readonly actionMenuDomId$: Observable<string> = this.select(
-        ({ pages }) => pages.actionMenuDomId
+        ({ pages }) => pages?.actionMenuDomId
     ).pipe(filter((i) => i !== null));
 
     readonly languageOptions$: Observable<SelectItem[]> = this.select(
@@ -164,13 +211,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
     );
 
-    readonly keywordValue$: Observable<string> = this.select(({ pages }) => pages.keyword);
+    readonly keywordValue$: Observable<string> = this.select(({ pages }) => pages?.keyword || '');
 
     readonly languageIdValue$: Observable<number> = this.select(({ pages }) =>
-        parseInt(pages.languageId, 10)
+        parseInt(pages?.languageId || '1', 10)
     );
 
-    readonly showArchivedValue$: Observable<boolean> = this.select(({ pages }) => pages.archived);
+    readonly showArchivedValue$: Observable<boolean> = this.select(
+        ({ pages }) => pages?.archived || false
+    );
 
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
@@ -440,29 +489,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         })
     );
 
-    constructor(
-        private dotCurrentUser: DotCurrentUserService,
-        private dotRouterService: DotRouterService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotESContentService: DotESContentService,
-        private dotPageTypesService: DotPageTypesService,
-        private dotMessageService: DotMessageService,
-        private dialogService: DialogService,
-        private dotLanguagesService: DotLanguagesService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotPageWorkflowsActionsService: DotPageWorkflowsActionsService,
-        private dotWorkflowsActionsService: DotWorkflowsActionsService,
-        private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotLicenseService: DotLicenseService,
-        private dotEventsService: DotEventsService,
-        private pushPublishService: PushPublishService,
-        private siteService: SiteService,
-        private dotFavoritePageService: DotFavoritePageService,
-        private dotLocalstorageService: DotLocalstorageService,
-        private dotPropertiesService: DotPropertiesService
-    ) {
-        super(null);
+    constructor() {
+        super(initialState);
     }
 
     /**

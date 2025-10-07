@@ -1,7 +1,7 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { SelectItem, SelectItemGroup } from 'primeng/api';
 
@@ -12,12 +12,10 @@ import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotWorkflowsActionsSelectorFieldService {
-    private data$: BehaviorSubject<SelectItemGroup[]> = new BehaviorSubject([]);
+    private dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
-    constructor(
-        private dotWorkflowsActionsService: DotWorkflowsActionsService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+    private data$: BehaviorSubject<SelectItemGroup[]> = new BehaviorSubject([]);
 
     /**
      * Get actions grouped by workflows

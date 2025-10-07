@@ -1,4 +1,4 @@
-<ng-container *ngIf="featureFlagEditURLContentMapIsOn; else defaultTabs">
+@if (featureFlagEditURLContentMapIsOn) {
     <p-menu
         (onHide)="dotTabButtons.resetDropdownById(dotPageMode.EDIT)"
         [model]="menuItems"
@@ -12,8 +12,7 @@
         [options]="options"
         #dotTabButtons
         data-testId="dot-tabs-buttons"></dot-tab-buttons>
-</ng-container>
-<ng-template #defaultTabs>
+} @else {
     <p-selectButton
         (onChange)="stateSelectorHandler({ optionId: $event.value })"
         [(ngModel)]="mode"
@@ -21,8 +20,8 @@
         class="p-button-tabbed"
         optionValue="value.id"
         data-testId="selectButton"></p-selectButton>
-</ng-template>
-<ng-container *ngIf="!variant">
+}
+@if (!variant) {
     <p-inputSwitch
         (click)="onLockerClick()"
         (onChange)="lockPageHandler()"
@@ -37,9 +36,8 @@
         [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
         #locker
         appendTo="target"></p-inputSwitch>
-
     <dot-edit-page-lock-info
         [pageState]="pageState"
         #pageLockInfo
         data-testId="lockInfo"></dot-edit-page-lock-info>
-</ng-container>
+}

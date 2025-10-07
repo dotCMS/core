@@ -1,102 +1,120 @@
-import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
-import {
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    Signal,
-    ViewChild,
-    inject,
-    signal
-} from '@angular/core';
+import { DatePipe, LowerCasePipe } from '@angular/common';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-
-import {
-    Announcement,
-    TypesIcons,
-    AnnouncementsStore,
-    AnnouncementLink
-} from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
-import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { TypesIcons, AnnouncementsStore, AnnouncementLink } from './store/dot-announcements.store';
+
+import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 
 @Component({
     selector: 'dot-toolbar-announcements',
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
-    standalone: true,
-    imports: [NgClass, DotMessagePipe, LowerCasePipe, OverlayPanelModule, DatePipe],
+    imports: [DotMessagePipe, LowerCasePipe, DatePipe, DotToolbarBtnOverlayComponent],
     providers: [AnnouncementsStore]
 })
-export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
+export class DotToolbarAnnouncementsComponent implements OnInit {
+    /** Store for managing announcements state and data */
     announcementsStore = inject(AnnouncementsStore);
-    dotMessageService = inject(DotMessageService);
+
+    /** Service for site-related operations */
     siteService = inject(SiteService);
-    @ViewChild('toolbarAnnouncements', { static: true }) toolbarAnnouncements: OverlayPanel;
-    @Output() hideMenu = new EventEmitter();
 
-    @Input() showUnreadAnnouncement: boolean;
-    announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
-    contactLinks: Signal<AnnouncementLink[]> = this.announcementsStore.selectContactLinks;
-    knowledgeCenterLinks: Signal<AnnouncementLink[]> =
-        this.announcementsStore.selectKnowledgeCenterLinks;
-    linkToDotCms: Signal<string> = this.announcementsStore.selectLinkToDotCms;
-    showMask = signal<boolean>(false);
+    /** Signal indicating whether to show unread announcement indicator */
+    $showUnreadAnnouncement = this.announcementsStore.showUnreadAnnouncement;
 
-    aboutLinks: { title: string; items: Signal<AnnouncementLink[]> }[] = [];
+    /** Signal containing all announcements data */
+    $announcements = this.announcementsStore.announcementsSignal;
 
+    /** Signal containing contact links */
+    $contactLinks = this.announcementsStore.selectContactLinks;
+
+    /** Signal containing knowledge center links */
+    $knowledgeCenterLinks = this.announcementsStore.selectKnowledgeCenterLinks;
+
+    /** Signal containing DotCMS related links */
+    $linkToDotCms = this.announcementsStore.selectLinkToDotCms;
+
+    /** ViewChild reference to the overlay panel component */
+    $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
+
+    /** Signal containing organized about links with titles and items */
+    $aboutLinks = signal<{ title: string; items: AnnouncementLink[] }[]>([]);
+
+    /**
+     * Component constructor.
+     * Sets up site switching subscription to reload announcements when site changes.
+     */
     constructor() {
-        this.siteService.switchSite$.pipe(takeUntilDestroyed()).subscribe(() => {
-            this.announcementsStore.load();
-            this.aboutLinks = this.getAboutLinks();
+        this.siteService.currentSite$.pipe(takeUntilDestroyed()).subscribe(() => {
+            this.setAnnouncementsStore();
         });
     }
 
+    /**
+     * Angular lifecycle hook called after component initialization.
+     * Loads announcements and sets up about links.
+     */
     ngOnInit(): void {
         this.announcementsStore.load();
-        this.aboutLinks = this.getAboutLinks();
-    }
-
-    ngOnChanges(changes): void {
-        if (!changes.showUnreadAnnouncement.currentValue) {
-            this.announcementsStore.markAnnouncementsAsRead();
-        }
+        this.$aboutLinks.set(this.getAboutLinks());
     }
 
     /**
-     * Get the about links
-     * @returns About links
+     * Organizes and returns about links grouped by category.
+     * Creates structured data for knowledge center and contact us sections.
+     *
+     * @returns Array of objects containing title and items for each about section
+     * @example
+     * ```typescript
+     * const aboutLinks = this.getAboutLinks();
+     * // Returns:
+     * // [
+     * //   { title: 'announcements.knowledge.center', items: [...] },
+     * //   { title: 'announcements.knowledge.contact.us', items: [...] }
+     * // ]
+     * ```
      */
-    getAboutLinks(): { title: string; items: Signal<AnnouncementLink[]> }[] {
+    getAboutLinks() {
         return [
-            { title: 'announcements.knowledge.center', items: this.knowledgeCenterLinks },
-            { title: 'announcements.knowledge.contact.us', items: this.contactLinks }
+            { title: 'announcements.knowledge.center', items: this.$knowledgeCenterLinks() },
+            { title: 'announcements.knowledge.contact.us', items: this.$contactLinks() }
         ];
     }
 
     /**
-     * Toggle the dialog
-     * @param event
+     * Hides the overlay panel component.
+     * Used to close the announcements dropdown when user clicks outside or completes an action.
      */
-    toggleDialog(event): void {
-        this.showMask.update((value) => !value);
-        this.toolbarAnnouncements.toggle(event);
+    hideOverlayPanel(): void {
+        this.$overlayPanel().hide();
     }
 
     /**
-     * On hide dialog mark announcements as read
-     * @param event
+     * Marks all announcements as read.
+     * Updates the store state to remove unread indicators and persist read status.
      */
-    hideDialog(): void {
-        this.hideMenu.emit();
-        this.showMask.set(false);
+    markAnnouncementsAsRead(): void {
+        this.announcementsStore.markAnnouncementsAsRead();
     }
 
+    /**
+     * Sets the announcements store.
+     */
+    private setAnnouncementsStore(): void {
+        this.announcementsStore.load();
+        this.$aboutLinks.set(this.getAboutLinks());
+    }
+
+    /**
+     * Mapping of announcement types to their corresponding icons.
+     * Used in templates to display appropriate icons for different announcement types.
+     *
+     * @readonly
+     */
     typesIcons = {
         tip: TypesIcons.Tip,
         release: TypesIcons.Release,

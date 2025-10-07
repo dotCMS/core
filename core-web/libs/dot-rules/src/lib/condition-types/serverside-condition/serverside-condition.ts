@@ -1,4 +1,11 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    ChangeDetectionStrategy,
+    inject
+} from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -118,9 +125,12 @@ import { Verify } from '../../services/validation/Verify';
                 </ng-template>
             </div>
         </form>
-    `
+    `,
+    standalone: false
 })
 export class ServersideCondition {
+    private loggerService = inject(LoggerService);
+
     @Input() componentInstance: ServerSideFieldModel;
     @Output()
     parameterValueChange: EventEmitter<{ name: string; value: string }> = new EventEmitter(false);
@@ -137,11 +147,9 @@ export class ServersideCondition {
         required: 'Required'
     };
 
-    constructor(
-        _fb: UntypedFormBuilder,
-        resources: I18nService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const resources = inject(I18nService);
+
         this._resources = resources;
         this._inputs = [];
     }

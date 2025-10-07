@@ -17,6 +17,7 @@ import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -55,9 +56,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
 /**
  * Encapsulate helper method for the {@link com.dotcms.rest.ContentResource}
@@ -189,8 +193,36 @@ public class ContentHelper {
      */
     public String getUrl (final Contentlet contentlet) {
 
+        if(hasUrlField(contentlet)){
+            if(IsNeitherPageOrFileAsset(contentlet)){
+                return contentlet.getStringProperty(URL_FIELD);
+            }
+        }
         return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
     } // getUrl.
+
+    /**
+     * Determines if a contentlet is a regular content (neither a file asset nor an HTML page).
+     * This method is used to check the type of a contentlet when processing URLs.
+     *
+     * @param contentlet The contentlet to check
+     * @return boolean True if the contentlet is regular content (neither a file asset nor an HTML page), false otherwise
+     */
+    private static boolean IsNeitherPageOrFileAsset(Contentlet contentlet) {
+        return !contentlet.isFileAsset() && !contentlet.isHTMLPage();
+    }
+
+    /**
+     * Checks if a contentlet has a URL field in its content type and if that URL field has a non-null value.
+     * This method is used to determine if a contentlet has a valid URL property that can be accessed.
+     *
+     * @param contentlet The contentlet to check
+     * @return boolean True if the contentlet has a URL field with a non-null value, false otherwise
+     */
+    private static boolean hasUrlField(Contentlet contentlet) {
+        return contentlet.getContentType().fieldMap((key) -> URL_FIELD) != null &&
+                contentlet.getStringProperty(URL_FIELD) != null;
+    }
 
 
     /**
@@ -687,7 +719,18 @@ public class ContentHelper {
         final JSONArray jsonArray = new JSONArray();
 
         for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live)) {
+
+
+            Object originalValue = relatedContent.get(field.name());
+
             relatedContent.setProperty(field.name(), null);
+
+            if (relatedContent.getContentType() != null &&
+                relatedContent.getContentType().fields().stream().anyMatch(f ->
+                f.variable().equals(field.variable()) && !f.type().equals(RelationshipField.class) && !f.type().equals(StoryBlockField.class))) {
+                relatedContent.setProperty(field.name(), originalValue);
+            }
+
 
             switch (depth) {
                 //returns a list of identifiers

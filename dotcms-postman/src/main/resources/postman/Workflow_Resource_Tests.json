@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "5e5a9191-300f-43ce-96a2-9ceae5f98a6b",
+		"_postman_id": "b03d0b2a-c563-4204-aa21-808849f743f8",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -13461,7 +13461,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg\"\n}",
+							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://dotcms-storage.b-cdn.net/Bocas2.jpg\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -17708,6 +17708,8 @@
 									"        pm.expect(item).to.have.property(\"roleId\");",
 									"        pm.expect(item).to.have.property(\"taskId\");",
 									"        pm.expect(item).to.have.property(\"type\");",
+									"        pm.expect(item).to.have.property(\"action\");",
+									"        pm.expect(item).to.have.property(\"step\");",
 									"        ",
 									"        // Verificación de tipo de dato para cada propiedad",
 									"        pm.expect(item.commentDescription).to.be.a(\"string\");",
@@ -17999,193 +18001,6 @@
 									"});",
 									"",
 									"// Test para verificar que \"errors\" es un array vacío",
-									"pm.test(\"Errors array is empty\", function () {",
-									"    const errors = pm.response.json().errors;",
-									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions?renderMode=EDITING",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"contentlet",
-								"{{contentletInode}}",
-								"actions"
-							],
-							"query": [
-								{
-									"key": "renderMode",
-									"value": "EDITING"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Resetable",
-			"item": [
-				{
-					"name": "CreateContentPreconditions",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
-									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
-									"",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"packages": {},
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\",\n        \"contentHost\": \"default\"\n    }\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						},
-						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
-					},
-					"response": []
-				},
-				{
-					"name": "CheckResetable",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Response has expected properties\", function () {",
-									"    const jsonData = pm.response.json();",
-									"    pm.expect(jsonData).to.have.property(\"entity\");",
-									"    pm.expect(jsonData).to.have.property(\"errors\");",
-									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
-									"    pm.expect(jsonData).to.have.property(\"messages\");",
-									"    pm.expect(jsonData).to.have.property(\"pagination\");",
-									"    pm.expect(jsonData).to.have.property(\"permissions\");",
-									"});",
-									"",
-									"pm.test(\"Entity is an array and contains items\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
-									"});",
-									"",
-									"pm.test(\"Each entity item has expected properties\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    entity.forEach(item => {",
-									"        pm.expect(item).to.have.property(\"actionInputs\").that.is.an(\"array\");",
-									"        pm.expect(item).to.have.property(\"assignable\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"commentable\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"condition\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"hasArchiveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasDeleteActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasDestroyActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasMoveActionletActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasMoveActionletHasPathActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasOnlyBatchActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasPublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasPushPublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasSaveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasUnarchiveActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"hasUnpublishActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"icon\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"id\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"name\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextAssign\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextStep\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
-									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
-									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
-									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
-									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
-									"        ",
-									"        const allowedShowOnValues = [\"NEW\", \"LISTING\", \"PUBLISHED\", \"UNLOCKED\", \"ARCHIVED\", \"UNPUBLISHED\", \"EDITING\", \"LOCKED\"];",
-									"        item.showOn.forEach(status => {",
-									"            pm.expect(allowedShowOnValues).to.include(status);",
-									"        });",
-									"    });",
-									"});",
-									"",
 									"pm.test(\"Errors array is empty\", function () {",
 									"    const errors = pm.response.json().errors;",
 									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
@@ -19516,6 +19331,454 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "FireWithDefaultValue",
+			"item": [
+				{
+					"name": "CreateContentTypeWithDefaultValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"baseType\": \"CONTENT\",\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"fields-0\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"fields0\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"fields-1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"fields1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRadioField\",\n            \"dataType\": \"TEXT\",\n            \"defaultValue\": \"True\",\n            \"fieldType\": \"Radio\",\n            \"fieldTypeLabel\": \"Radio\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"TestRadio\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"values\": \"1|True\\r\\n0|False\",\n            \"variable\": \"testradio\"\n        }\n    ],\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"folderPath\": \"/\",\n    \"icon\": \"event_note\",\n    \"multilingualable\": false,\n    \"name\": \"TestContentType3\",\n    \"siteName\": \"demo.dotcms.com\",\n    \"system\": false,\n    \"systemActionMappings\": {},\n    \"variable\": \"TestContentType3\",\n    \"versionable\": true,\n    \"workflows\": [\n        {\n            \"archived\": false,\n            \"creationDate\": 1752786068588,\n            \"defaultScheme\": false,\n            \"description\": \"\",\n            \"entryActionId\": null,\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"mandatory\": false,\n            \"modDate\": 1752690077952,\n            \"name\": \"System Workflow\",\n            \"system\": true,\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FireTheTypeWithoutTheDefaultValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check testradio\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.testradio).to.be.eql(\"True\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost:8080",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"TestContentType3\",\n        \"title\": \"Test\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FireTheTypeWithTheDefaultValueOnBody",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check testradio\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.testradio).to.be.eql(\"False\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost:8080",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"TestContentType3\",\n        \"title\": \"Test\",\n        \"testradio\":\"False\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WorkflowSearch",
+			"item": [
+				{
+					"name": "PostNullBody",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/tasks",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"tasks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PostEmptyBody",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Validate response structure\", function () {",
+									"    const responseData = pm.response.json();",
+									"",
+									"    // Verify entity and its children are objects",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"    pm.expect(responseData.entity.workflowTasks).to.be.an('array');",
+									"",
+									"    // Verify totalCount is a number",
+									"    pm.expect(responseData.entity.totalCount).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/tasks",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"tasks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AssignTo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Validate response structure\", function () {",
+									"    const responseData = pm.response.json();",
+									"",
+									"    // Verify entity and its children are objects",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData.entity).to.be.an('object');",
+									"    pm.expect(responseData.entity.workflowTasks).to.be.an('array');",
+									"",
+									"    // Verify totalCount is a number",
+									"    pm.expect(responseData.entity.totalCount).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"show4all\":true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/tasks",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"tasks"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"if (!pm.environment.get('jwt')) {",
+							"    console.log(\"generating....\")",
+							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"",
+							"    if (!pm.environment.get('jwt')) {",
+							"        const username = pm.environment.get(\"user\");",
+							"        const password = pm.environment.get(\"password\");",
+							"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+							"",
+							"        const requestOptions = {",
+							"            url: apiUrl,",
+							"            method: \"POST\",",
+							"            header: {",
+							"                \"accept\": \"*/*\",",
+							"                \"content-type\": \"application/json\",",
+							"                \"Authorization\": `Basic ${basicAuth}`",
+							"            },",
+							"            body: {",
+							"                mode: \"raw\",",
+							"                raw: JSON.stringify({",
+							"                    \"expirationSeconds\": 7200,",
+							"                    \"userId\": \"dotcms.org.1\",",
+							"                    \"network\": \"0.0.0.0/0\",",
+							"                    \"claims\": {\"label\": \"postman-tests\"}",
+							"                })",
+							"            }",
+							"        };",
+							"",
+							"        pm.sendRequest(requestOptions, function (err, response) {",
+							"            if (err) {",
+							"                console.log(err);",
+							"            } else {",
+							"                const jwt = response.json().entity.jwt;",
+							"                pm.environment.set('jwt', jwt);",
+							"                console.log(jwt);",
+							"            }",
+							"        });",
+							"    }",
+							"}",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		}
 	],
 	"event": [
@@ -19576,6 +19839,12 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "identifier",
+			"value": ""
 		}
 	]
 }

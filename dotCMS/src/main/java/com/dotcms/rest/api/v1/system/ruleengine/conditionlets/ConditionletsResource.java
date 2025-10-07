@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -24,6 +25,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 @Path("/v1/system/ruleengine")
+@Tag(name = "Rules Engine")
 public class ConditionletsResource {
 
     private final RulesAPI rulesAPI;

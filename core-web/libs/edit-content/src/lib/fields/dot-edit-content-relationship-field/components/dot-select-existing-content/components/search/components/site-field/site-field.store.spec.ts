@@ -7,13 +7,14 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+
+import { PEER_PAGE_LIMIT, SiteFieldStore } from './site-field.store';
+
 import {
     TreeNodeItem,
     TreeNodeSelectItem
-} from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
-
-import { PEER_PAGE_LIMIT, SiteFieldStore } from './site-field.store';
+} from '../../../../../../../../models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '../../../../../../../../services/dot-edit-content.service';
 
 describe('SiteFieldStore', () => {
     let store: InstanceType<typeof SiteFieldStore>;
@@ -283,6 +284,44 @@ describe('SiteFieldStore', () => {
 
             store.chooseNode(mockEvent);
             expect(store.nodeSelected()).toBeNull();
+        });
+    });
+
+    describe('clearSelection', () => {
+        it('should clear the selected node', () => {
+            // First select a node
+            const mockEvent = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Selected Node',
+                    data: {
+                        id: '123',
+                        hostname: 'demo.dotcms.com',
+                        path: 'selected',
+                        type: 'folder' as const
+                    },
+                    icon: 'pi pi-folder',
+                    leaf: true,
+                    children: []
+                }
+            };
+
+            store.chooseNode(mockEvent);
+            expect(store.nodeSelected()).toEqual(mockEvent.node);
+            expect(store.valueToSave()).toBe('folder:123');
+
+            // Then clear the selection
+            store.clearSelection();
+            expect(store.nodeSelected()).toBeNull();
+            expect(store.valueToSave()).toBeNull();
+        });
+
+        it('should handle clearing when no node is selected', () => {
+            expect(store.nodeSelected()).toBeNull();
+
+            store.clearSelection();
+            expect(store.nodeSelected()).toBeNull();
+            expect(store.valueToSave()).toBeNull();
         });
     });
 });

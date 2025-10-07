@@ -9,12 +9,12 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@dotcms/client": "next",
-        "@dotcms/experiments": "next",
-        "@dotcms/react": "next",
-        "@dotcms/types": "next",
-        "@dotcms/uve": "next",
-        "@tinymce/tinymce-react": "^6.1.0",
+        "@dotcms/client": "latest",
+        "@dotcms/experiments": "latest",
+        "@dotcms/react": "latest",
+        "@dotcms/types": "latest",
+        "@dotcms/uve": "latest",
+        "@tinymce/tinymce-react": "6.2.1",
         "next": "15.3.2",
         "react": "19.1.0",
         "react-dom": "19.1.0"

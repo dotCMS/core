@@ -1,0 +1,103 @@
+@let metricIcon = $icon();
+@let metricSubtitle = $subtitle();
+@let isLoadingState = $isLoading();
+@let isErrorState = $isError();
+@let isEmptyState = $isEmpty();
+@let hasIcon = !!metricIcon;
+@let hasSubtitle = !!metricSubtitle;
+@let formattedValue = $formattedValue();
+@let iconClasses = $iconClasses();
+@let metricName = $name();
+
+<!-- Header template to avoid repetition -->
+<ng-template #metricHeader>
+    <div class="flex justify-content-between align-items-start">
+        <h3 class="metric-title" data-testid="metric-title">
+            {{ metricName | dm }}
+        </h3>
+        @if (hasIcon) {
+            <i [class]="iconClasses" class="metric-icon pi icon-md" data-testid="metric-icon"></i>
+        }
+    </div>
+</ng-template>
+
+<p-card
+    class="h-full metric-card"
+    [ngClass]="{
+        'metric-card--loading': isLoadingState,
+        'metric-card--empty': isEmptyState,
+        'metric-card--error': isErrorState
+    }"
+    data-testid="metric-card">
+    @if (isErrorState) {
+        <!-- Error state -->
+        <div class="flex flex-column justify-content-between h-full gap-3">
+            <!-- Header with title and icon -->
+            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+
+            <!-- Error message centered -->
+            <div
+                class="flex flex-column justify-content-center align-items-center flex-1"
+                [@fadeInContent]>
+                <dot-analytics-state-message
+                    message="analytics.metrics.error.reload"
+                    icon="pi-exclamation-triangle" />
+            </div>
+        </div>
+    } @else if (isEmptyState) {
+        <!-- Empty state -->
+        <div class="flex flex-column justify-content-between h-full gap-3">
+            <!-- Header with title and icon -->
+            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+
+            <!-- Empty message centered -->
+            <div
+                class="flex flex-column justify-content-center align-items-center flex-1"
+                [@fadeInContent]>
+                <dot-analytics-state-message
+                    message="analytics.metrics.empty.insufficient-data"
+                    icon="pi-info-circle" />
+            </div>
+        </div>
+    } @else if (isLoadingState) {
+        <!-- Loading state with skeleton -->
+        <div class="flex flex-column justify-content-between h-full gap-3">
+            <!-- Header with title and icon skeletons -->
+            <div class="flex justify-content-between align-items-start" [@fadeInContent]>
+                <p-skeleton width="10rem" height="1.4rem"></p-skeleton>
+                @if (hasIcon) {
+                    <p-skeleton width="1.5rem" height="1.5rem" shape="circle"></p-skeleton>
+                }
+            </div>
+
+            <!-- Skeleton content -->
+            <div class="flex flex-column gap-3" [@fadeInContent]>
+                <!-- Skeleton value -->
+                <p-skeleton width="1.5rem" height="1.4rem"></p-skeleton>
+            </div>
+
+            <!-- Skeleton subtitle -->
+            <p-skeleton width="10rem" height="1rem" [@fadeInContent]></p-skeleton>
+        </div>
+    } @else {
+        <!-- Normal content - only shown when LOADED -->
+        <div class="flex flex-column justify-content-between h-full gap-3">
+            <!-- Header with title and icon -->
+            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+
+            <!-- Contenido principal -->
+            <div class="flex flex-column gap-3" [@fadeInContent]>
+                <div class="metric-value" data-testid="metric-value">
+                    {{ formattedValue }}
+                </div>
+            </div>
+
+            <!-- Subtítulo -->
+            @if (hasSubtitle) {
+                <div class="metric-subtitle" data-testid="metric-subtitle" [@fadeInContent]>
+                    {{ metricSubtitle | dm }}
+                </div>
+            }
+        </div>
+    }
+</p-card>

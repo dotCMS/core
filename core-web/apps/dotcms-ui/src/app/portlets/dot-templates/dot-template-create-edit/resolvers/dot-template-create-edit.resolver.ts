@@ -1,20 +1,19 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
 
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
+
 @Injectable()
 export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
-    constructor(
-        private service: DotTemplatesService,
-        private dotRouterService: DotRouterService
-    ) {}
+    private service = inject(DotTemplatesService);
+    private dotRouterService = inject(DotRouterService);
 
     resolve(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<DotTemplate> {
         const inode = route.paramMap.get('inode');

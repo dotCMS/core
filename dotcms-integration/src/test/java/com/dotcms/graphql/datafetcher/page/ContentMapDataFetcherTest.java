@@ -2,23 +2,25 @@ package com.dotcms.graphql.datafetcher.page;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.datafetcher.ContentMapDataFetcher;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import graphql.schema.DataFetchingEnvironment;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 /**
@@ -59,14 +61,20 @@ public class ContentMapDataFetcherTest {
         contentlet.setStringProperty("blockEditor_raw", rawJson);
         contentlet.setStringProperty("blockEditor", "some string"); // base field pre-exists
 
-        var environment = Mockito.mock(DataFetchingEnvironment.class);
-        Mockito.when(environment.getContext()).thenReturn(
-                DotGraphQLContext.createServletContext().with(user).build()
-        );
-        Mockito.when(environment.getArgument("key")).thenReturn(null);
-        Mockito.when(environment.getArgument("depth")).thenReturn(0);
-        Mockito.when(environment.getArgument("render")).thenReturn(false);
-        Mockito.when(environment.getSource()).thenReturn(contentlet);
+        var environment = mock(DataFetchingEnvironment.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        DotGraphQLContext context = mock(DotGraphQLContext.class);
+        when(context.getHttpServletRequest()).thenReturn(request);
+        when(context.getHttpServletResponse()).thenReturn(response);
+        when(context.getUser()).thenReturn(user);
+
+        when(environment.getContext()).thenReturn(context);
+        when(environment.getArgument("key")).thenReturn(null);
+        when(environment.getArgument("depth")).thenReturn(0);
+        when(environment.getArgument("render")).thenReturn(false);
+        when(environment.getSource()).thenReturn(contentlet);
 
         var fetcher = new ContentMapDataFetcher();
         Object result = fetcher.get(environment);
@@ -100,14 +108,20 @@ public class ContentMapDataFetcherTest {
         String rawJson = "{\"foo\": \"bar\"}";
         contentlet.setStringProperty("customField_raw", rawJson); // base field not set
 
-        var environment = Mockito.mock(DataFetchingEnvironment.class);
-        Mockito.when(environment.getContext()).thenReturn(
-                DotGraphQLContext.createServletContext().with(user).build()
-        );
-        Mockito.when(environment.getArgument("key")).thenReturn(null);
-        Mockito.when(environment.getArgument("depth")).thenReturn(0);
-        Mockito.when(environment.getArgument("render")).thenReturn(false);
-        Mockito.when(environment.getSource()).thenReturn(contentlet);
+        var environment = mock(DataFetchingEnvironment.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        DotGraphQLContext context = mock(DotGraphQLContext.class);
+        when(context.getHttpServletRequest()).thenReturn(request);
+        when(context.getHttpServletResponse()).thenReturn(response);
+        when(context.getUser()).thenReturn(user);
+
+        when(environment.getContext()).thenReturn(context);
+        when(environment.getArgument("key")).thenReturn(null);
+        when(environment.getArgument("depth")).thenReturn(0);
+        when(environment.getArgument("render")).thenReturn(false);
+        when(environment.getSource()).thenReturn(contentlet);
 
         var fetcher = new ContentMapDataFetcher();
         Object result = fetcher.get(environment);
@@ -121,4 +135,130 @@ public class ContentMapDataFetcherTest {
         assertEquals(rawJson, map.get("customField_raw"));
         assertFalse("Parsed base field should not be added", map.containsKey("customField"));
     }
+
+    /**
+     * Verifies that when no variant is set in the request,
+     * the contentlet is hydrated using the default variant implicitly.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void returnsMapWhenVariantAttributeIsNull() throws Exception {
+        // Mock request with no variant attribute
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn(null);
+
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        // Mock GraphQL context
+        DotGraphQLContext context = mock(DotGraphQLContext.class);
+        when(context.getHttpServletRequest()).thenReturn(request);
+        when(context.getHttpServletResponse()).thenReturn(response);
+        when(context.getUser()).thenReturn(user);
+
+        // Mock GraphQL environment
+        DataFetchingEnvironment environment = mock(DataFetchingEnvironment.class);
+        when(environment.getContext()).thenReturn(context);
+        when(environment.getArgument("key")).thenReturn(null);
+        when(environment.getArgument("depth")).thenReturn(0);
+        when(environment.getArgument("render")).thenReturn(false);
+
+        // Valid contentlet with default variant data
+        Contentlet contentlet = TestDataUtils.getNewsContent(true, defaultLanguage.getId(), getNewsLikeContentType().id());
+        when(environment.getSource()).thenReturn(contentlet);
+
+        // Execute data fetcher
+        ContentMapDataFetcher fetcher = new ContentMapDataFetcher();
+        Object result = fetcher.get(environment);
+
+        // Validate response
+        assertNotNull(result);
+        assertTrue(result instanceof Map);
+
+        Map<String, Object> map = (Map<String, Object>) result;
+        assertFalse("Hydrated map should not be empty", map.isEmpty());
+    }
+
+    /**
+     * Verifies that when the DEFAULT variant is explicitly set in the request,
+     * the contentlet is hydrated successfully and no fallback occurs.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void returnsMapWhenVariantIsDefault() throws Exception {
+        // Mock request explicitly setting the DEFAULT variant
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn(VariantAPI.DEFAULT_VARIANT.name());
+
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        // Mock context and environment
+        DotGraphQLContext context = mock(DotGraphQLContext.class);
+        when(context.getHttpServletRequest()).thenReturn(request);
+        when(context.getHttpServletResponse()).thenReturn(response);
+        when(context.getUser()).thenReturn(user);
+
+        DataFetchingEnvironment environment = mock(DataFetchingEnvironment.class);
+        when(environment.getContext()).thenReturn(context);
+        when(environment.getArgument("key")).thenReturn(null);
+        when(environment.getArgument("depth")).thenReturn(0);
+        when(environment.getArgument("render")).thenReturn(false);
+
+        // Valid contentlet with data in DEFAULT variant
+        Contentlet contentlet = TestDataUtils.getNewsContent(true, defaultLanguage.getId(), getNewsLikeContentType().id());
+        when(environment.getSource()).thenReturn(contentlet);
+
+        // Execute data fetcher
+        ContentMapDataFetcher fetcher = new ContentMapDataFetcher();
+        Object result = fetcher.get(environment);
+
+        // Validate
+        assertNotNull(result);
+        assertTrue(result instanceof Map);
+
+        Map<String, Object> map = (Map<String, Object>) result;
+        assertFalse("Hydrated map should not be empty", map.isEmpty());
+    }
+
+    /**
+     * Verifies that when a non-existent variant is set in the request,
+     * the fetcher falls back to the DEFAULT variant and still returns content.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void fallsBackToDefaultWhenVariantFails() throws Exception {
+        // Mock request with a non-existent variant
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn("non-existent-variant");
+
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        // Mock context and environment
+        DotGraphQLContext context = mock(DotGraphQLContext.class);
+        when(context.getHttpServletRequest()).thenReturn(request);
+        when(context.getHttpServletResponse()).thenReturn(response);
+        when(context.getUser()).thenReturn(user);
+
+        DataFetchingEnvironment environment = mock(DataFetchingEnvironment.class);
+        when(environment.getContext()).thenReturn(context);
+        when(environment.getArgument("key")).thenReturn(null);
+        when(environment.getArgument("depth")).thenReturn(0);
+        when(environment.getArgument("render")).thenReturn(false);
+
+        // Valid contentlet that only exists under DEFAULT variant
+        Contentlet contentlet = TestDataUtils.getNewsContent(true, defaultLanguage.getId(), getNewsLikeContentType().id());
+        contentlet.setVariantId("non-existent-variant");
+        when(environment.getSource()).thenReturn(contentlet);
+
+        // Execute data fetcher
+        ContentMapDataFetcher fetcher = new ContentMapDataFetcher();
+        Object result = fetcher.get(environment);
+
+        // Validate
+        assertNotNull(result);
+        assertTrue(result instanceof Map);
+
+        Map<String, Object> map = (Map<String, Object>) result;
+        assertFalse("Hydrated map should not be empty even after fallback", map.isEmpty());
+    }
+
 }

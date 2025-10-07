@@ -127,7 +127,7 @@ public class BrowserQueryForm {
     public static final class Builder {
 
         @JsonProperty
-        private String hostFolderId   = FolderAPI.SYSTEM_FOLDER_ID;
+        private String hostFolderId   = FolderAPI.SYSTEM_FOLDER;
 
         @JsonProperty
         private String filter         = null;

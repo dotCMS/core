@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -35,13 +35,11 @@ enum ValidationError {
  */
 @Injectable()
 export class DotEditContentToolbarHtmlService {
-    isEnterpriseLicense: boolean;
+    private dotMessageService = inject(DotMessageService);
+    private dotDOMHtmlUtilService = inject(DotDOMHtmlUtilService);
+    private dotLicenseService = inject(DotLicenseService);
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
-        private dotLicenseService: DotLicenseService
-    ) {}
+    isEnterpriseLicense: boolean;
 
     /**
      * Add custom HTML buttons to the containers div
@@ -90,7 +88,7 @@ export class DotEditContentToolbarHtmlService {
     bindContentletEvents(doc: Document): void {
         doc.addEventListener('mouseover', (e) => {
             const contentlet: HTMLElement = (e.target as Element).closest(
-                '[data-dot-object="contentlet"]:not([data-dot-toolbar="true"]'
+                '[data-dot-object="contentlet"]:not([data-dot-toolbar="true"])'
             );
 
             if (contentlet) {

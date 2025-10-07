@@ -3,12 +3,13 @@
 import {
     DotCMSBasicContentlet,
     DotCMSGraphQLPageContainer,
-    DotCMSGraphQLPageResponse,
+    DotCMSGraphQLPage,
     DotCMSPageAssetContainers,
     DotCMSPageContainerContentlets,
     DotCMSPage,
     DotCMSPageAsset,
-    DotCMSContainer
+    DotCMSContainer,
+    DotCMSURLContentMap
 } from '@dotcms/types';
 
 /**
@@ -22,13 +23,9 @@ import {
  * const pageEntity = graphqlToPageEntity(graphQLPageResponse);
  * ```
  */
-export const graphqlToPageEntity = (
-    graphQLPageResponse: DotCMSGraphQLPageResponse
-): DotCMSPageAsset | null => {
-    const { page } = graphQLPageResponse;
-
+export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | null => {
     // If there is no page, return null
-    if (!page) {
+    if (!page || (typeof page === 'object' && Object.keys(page).length === 0)) {
         return null;
     }
 
@@ -48,11 +45,19 @@ export const graphqlToPageEntity = (
 
     const typedPageAsset = pageAsset as unknown as DotCMSPage;
 
-    // To prevent type errors, we cast the urlContentMap to an object
-    const urlContentMapObject = urlContentMap;
-
-    // Extract the _map data from the urlContentMap object
-    const urlContentMapData = urlContentMapObject?.['_map'];
+    // Merge all urlContentMap keys into _map, except _map itself
+    const mergedUrlContentMap = {
+        ...(urlContentMap?._map || {}),
+        ...Object.entries(urlContentMap || {}).reduce<Record<string, unknown>>(
+            (acc, [key, value]) => {
+                if (key !== '_map') {
+                    acc[key] = value;
+                }
+                return acc;
+            },
+            {}
+        )
+    } as DotCMSURLContentMap;
 
     return {
         layout,
@@ -61,7 +66,7 @@ export const graphqlToPageEntity = (
         vanityUrl,
         runningExperimentId,
         site: host,
-        urlContentMap: urlContentMapData,
+        urlContentMap: mergedUrlContentMap,
         containers: parseContainers(containers as []),
         page: {
             ...data,
@@ -84,7 +89,7 @@ const parseContainers = (
             const { path, identifier, containerStructures, containerContentlets, ...rest } =
                 container;
 
-            const key = (path || identifier) as string;
+            const key = path || identifier;
 
             acc[key] = {
                 containerStructures,

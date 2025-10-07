@@ -131,7 +131,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         //Host and Folder are no longer saved in the json they're injected in an upper layer.
         //That injection takes place in ContentletTransformer
         //Therefore they shouldn't be expected here.
-        //Also System fields are now outside of the json so we should never expect a tag nor category here either.
+        //Also, System fields are now outside the json, so we should never expect a tag nor category here either.
 
         assertEquals(in.get("textFieldNumeric"),out.get("textFieldNumeric"));
         assertEquals(in.get("textFieldFloat"),out.get("textFieldFloat"));
@@ -160,7 +160,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
     /**
      * Method to test {@link ContentletJsonAPI#toJson(Contentlet)} && {@link ContentletJsonAPI#mapContentletFieldsFromJson(String)} called within a checkin context
-     * Basically we're are testing that the contentlet created via columns and via json looks the same
+     * Basically we're testing that the contentlet created via columns and via json looks the same
      * @throws Exception
      */
     @Test
@@ -316,7 +316,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             assertEquals(0L, out.get("textFieldNumeric"));
             assertEquals(0F, out.get("textFieldFloat"));
             assertEquals(false, out.get("hiddenBool"));
-            assertNull(out.get("textField"));
+            assertTrue(out.get("textField").toString().contains("Default")); // this was previously checking null, however with the default set on the content type, it is not longer valid
 
             final ImmutableContentlet immutableContentlet = impl.toImmutable(filledWithZeros);
             final ImmutableMap<String, FieldValue<?>> fields = immutableContentlet.fields();
@@ -497,7 +497,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         }
     }
 
-    private final static String RESOURCE = "json/system-fields-v1.json";
+    private static final String RESOURCE = "json/system-fields-v1.json";
 
     /**
      * Test the conversion class that takes contentlet-json v1 that has all the system fields

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { CanActivate } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
@@ -8,7 +8,7 @@ import { DotRouterService } from '@dotcms/data-access';
  */
 @Injectable()
 export class DefaultGuardService implements CanActivate {
-    constructor(private router: DotRouterService) {}
+    private router = inject(DotRouterService);
 
     canActivate(): boolean {
         this.router.goToMain();

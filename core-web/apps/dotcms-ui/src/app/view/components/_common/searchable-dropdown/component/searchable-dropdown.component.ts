@@ -16,7 +16,8 @@ import {
     SimpleChange,
     SimpleChanges,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -24,7 +25,7 @@ import { PrimeTemplate } from 'primeng/api';
 import { DataView, DataViewLazyLoadEvent } from 'primeng/dataview';
 import { OverlayPanel } from 'primeng/overlaypanel';
 
-import { debounceTime, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 
 /**
  * Dropdown with pagination and global search
@@ -42,11 +43,14 @@ import { debounceTime, tap } from 'rxjs/operators';
     ],
     selector: 'dot-searchable-dropdown',
     styleUrls: ['./searchable-dropdown.component.scss'],
-    templateUrl: './searchable-dropdown.component.html'
+    templateUrl: './searchable-dropdown.component.html',
+    standalone: false
 })
 export class SearchableDropdownComponent
     implements ControlValueAccessor, OnChanges, AfterContentInit, AfterViewInit
 {
+    private cd = inject(ChangeDetectorRef);
+
     @Input()
     data: Record<string, unknown>[];
 
@@ -148,19 +152,6 @@ export class SearchableDropdownComponent
     selectedOptionIndex = 0;
     selectedOptionValue = '';
 
-    keyMap: string[] = [
-        'Shift',
-        'Alt',
-        'Control',
-        'Meta',
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'ArrowRight'
-    ];
-
-    constructor(private cd: ChangeDetectorRef) {}
-
     propagateChange = (_: unknown) => {
         /**/
     };
@@ -187,12 +178,12 @@ export class SearchableDropdownComponent
                             this.selectDropdownOption(keyboardEvent.key);
                         }
                     }),
+                    map((keyboardEvent: KeyboardEvent) => keyboardEvent.target['value']),
+                    distinctUntilChanged(),
                     debounceTime(500)
                 )
-                .subscribe((keyboardEvent: KeyboardEvent) => {
-                    if (!this.isModifierKey(keyboardEvent.key)) {
-                        this.filterChange.emit(keyboardEvent.target['value']);
-                    }
+                .subscribe((value: string) => {
+                    this.filterChange.emit(value);
                 });
         }
     }
@@ -412,10 +403,6 @@ export class SearchableDropdownComponent
         }
     }
 
-    private isModifierKey(key: string): boolean {
-        return this.keyMap.includes(key);
-    }
-
     private usePlaceholder(placeholderChange: SimpleChange): boolean {
         return placeholderChange && placeholderChange.currentValue && !this.value;
     }
@@ -432,7 +419,7 @@ export class SearchableDropdownComponent
             : this.labelPropertyName;
     }
 
-    private getValueToPropagate(): string {
+    private getValueToPropagate() {
         return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
     }
 }

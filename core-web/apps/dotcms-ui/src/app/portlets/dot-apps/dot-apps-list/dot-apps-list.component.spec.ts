@@ -1,13 +1,12 @@
 import { of } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotApp } from '@dotcms/dotcms-models';
@@ -20,6 +19,8 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotAppsListComponent } from './dot-apps-list.component';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 export class AppsServicesMock {
     get() {
@@ -48,7 +49,8 @@ export const appsResponse = [
 
 @Component({
     selector: 'dot-apps-card',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotAppsCardComponent {
     @Input() app: DotApp;
@@ -57,7 +59,8 @@ class MockDotAppsCardComponent {
 
 @Component({
     selector: 'dot-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -65,7 +68,8 @@ class MockDotIconComponent {
 
 @Component({
     selector: 'dot-apps-import-export-dialog',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotAppsImportExportDialogComponent {
     @Input() action: string;
@@ -111,6 +115,7 @@ describe('DotAppsListComponent', () => {
                 MockDotIconComponent
             ],
             imports: [ButtonModule, DotMessagePipe],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -138,9 +143,12 @@ describe('DotAppsListComponent', () => {
 
     describe('With access to portlet', () => {
         beforeEach(() => {
-            spyOnProperty(route, 'data').and.returnValue(
-                of({ dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true } })
-            );
+            Object.defineProperty(route, 'data', {
+                value: of({
+                    dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true }
+                }),
+                writable: true
+            });
             fixture.detectChanges();
         });
 
@@ -201,7 +209,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should reload apps data when resolve action from Import/Export dialog', () => {
-            spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+            jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
             const importExportDialog = fixture.debugElement.query(
                 By.css('dot-apps-import-export-dialog')
             );
@@ -223,6 +231,7 @@ describe('DotAppsListComponent', () => {
             )[0].componentInstance;
             card.actionFired.emit(component.apps[0].key);
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps[0].key);
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
         });
     });
 

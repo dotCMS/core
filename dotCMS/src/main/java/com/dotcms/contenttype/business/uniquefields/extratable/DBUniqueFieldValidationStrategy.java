@@ -1,5 +1,12 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
@@ -21,23 +28,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import org.postgresql.util.PGobject;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
-import static com.liferay.util.StringPool.BLANK;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.postgresql.util.PGobject;
 
 /**
  * This implementation of the {@link UniqueFieldValidationStrategy} checks the uniqueness of a given
@@ -166,11 +165,16 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
     /**
      * When the {@link Contentlet} is being updated, this method removes its existing entry from the
-     * Unique Field table so that it can be safely re-generated after the update.
+     * Unique Fields table so that it can be safely re-generated after the update.
      * <p>If its associated hash belongs to more than one Contentlet, instead of removing the
      * record, it will be updated in order to NOT include the ID of the updated Contentlet. Keep in
      * mind that the hash is <b>NOT</b> re-generated at all, as the Contentlet ID is not used to
      * create it.</p>
+     * <p>A unique value can be used by a LIVE or WORKING version of a Contentlet. If the value for
+     * the LIVE and WORKING versions are different, dotCMS will keep a record for each of them. But,
+     * if the value is the same, then it'll have just 1 record for both with the LIVE attribute set
+     * to {@code true}. When the table is cleaned up after the updating the unique value, we need to
+     * check if the records that already exists are LIVE or WORKING.</p>
      *
      * @param contentlet The {@link Contentlet} whose unique field value is being updated.
      *
@@ -185,7 +189,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
             if (!workingUniqueFields.isEmpty()) {
                 workingUniqueFields.forEach(uniqueField -> cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueField));
-            } else  {
+            } else {
                 uniqueFields.stream()
                         .filter(uniqueValue -> Boolean.TRUE.equals(getSupportingValues(uniqueValue).get("live")))
                         .limit(1)
@@ -199,6 +203,8 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                                     ? contentlet.getStringProperty(field.variable()).toLowerCase()
                                     : BLANK;
                             if (oldUniqueValue.equals(newUniqueValue)) {
+                                // The unique value is the same. It must be removed so that it can
+                                // be added again later
                                 cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue);
                             }
                         });
@@ -206,19 +212,38 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         }
     }
 
+    /**
+     * Transforms the JSONB value of the {@code supporting_values} column into a Java Map that can
+     * be easily traversed.
+     *
+     * @param uniqueField The raw record from the {@code unique_fields} table that belongs to a
+     *                    unique field value.
+     *
+     * @return The supporting values as a Java Map.
+     */
     private static Map<String, Object> getSupportingValues(Map<String, Object> uniqueField) {
         try {
             return JsonUtil.getJsonFromString(uniqueField.get("supporting_values").toString());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new DotRuntimeException(e);
         }
     }
 
+    /**
+     * Searches for all records that belong to the given Contentlet ID. For every record, if it
+     * matches only one Contentlet, this method deletes it from the table. Otherwise, it updates
+     * the record to remove the ID of the updated Contentlet, as such an attribute is an array of
+     * Contentlet IDs. This way, when the updated Contentlet is saved, it won't have a conflict with
+     * the hash.
+     *
+     * @param contentId The ID of the Contentlet whose unique field value must be temporarily removed.
+     * @param uniqueFields The records from the {@code unique_fields} table that belong to a unique
+     * field value.
+     */
     @SuppressWarnings("unchecked")
     private void cleanUniqueFieldUp(final String contentId,
                                     final Map<String, Object> uniqueFields)  {
         try {
-
             final String hash = uniqueFields.get("unique_key_val").toString();
             final PGobject supportingValues = (PGobject) uniqueFields.get("supporting_values");
             final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
@@ -230,7 +255,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 contentletIds.remove(contentId);
                 uniqueFieldDataBaseUtil.updateContentListWithHash(hash, contentletIds);
             }
-        } catch (IOException | DotDataException e){
+        } catch (final IOException | DotDataException e) {
             throw new DotRuntimeException(e);
         }
     }
@@ -324,7 +349,14 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 uniqueFieldCriteria.contentType().variable());
 
         Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
-        throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
+        
+        throw UniqueFieldValueDuplicatedException.builder(
+                duplicatedValueMessage,
+                uniqueFieldCriteria.field().variable(), 
+                uniqueFieldCriteria.value(), 
+                uniqueFieldCriteria.contentType().variable())
+                .fieldType(uniqueFieldCriteria.field().typeName())
+                .build();
     }
 
     @WrapInTransaction
@@ -344,7 +376,13 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                         "'%s': %s", field.variable(), field.contentTypeId(), ExceptionUtil.getErrorMessage(e));
                 Logger.error(this, errorMsg, e);
             }
-            throw new UniqueFieldValueDuplicatedException(errorMsg);
+            throw UniqueFieldValueDuplicatedException.builder(
+                    errorMsg,
+                    field.variable(), 
+                    "N/A",
+                    field.contentTypeId())
+                    .fieldType(field.typeName())
+                    .build();
         }
     }
 

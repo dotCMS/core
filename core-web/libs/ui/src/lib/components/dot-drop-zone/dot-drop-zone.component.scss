@@ -1,4 +1,11 @@
+@use "variables" as *;
+
 :host {
     height: 100%;
     width: 100%;
+
+    &.disabled {
+        opacity: 1; // Override the global disabled opacity
+        pointer-events: none;
+    }
 }

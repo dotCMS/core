@@ -5,7 +5,9 @@ import { ErrorMessage } from './components/ErrorMessage';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { Row } from '../Row/Row';
 
-interface DotCMSLayoutBodyProps<TContentlet extends DotCMSBasicContentlet = DotCMSBasicContentlet> {
+export interface DotCMSLayoutBodyProps<
+    TContentlet extends DotCMSBasicContentlet = DotCMSBasicContentlet
+> {
     page: DotCMSPageAsset;
     components: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

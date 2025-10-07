@@ -14,6 +14,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.wrapper.WorkflowWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
@@ -46,6 +47,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,7 +85,7 @@ public class WorkflowHandler implements IHandler {
             this.systemUser = this.userAPI.getSystemUser();
         } catch (DotDataException e) {
 
-            Logger.fatal(ContainerBundler.class, e.getMessage(), e);
+            Logger.fatal(ContainerBundler.class, ExceptionUtil.getErrorMessage(e), e);
         }
     }
 
@@ -131,7 +133,7 @@ public class WorkflowHandler implements IHandler {
 
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when processing Workflow in '%s': %s",
-                    workingOn, e.getMessage());
+                    workingOn, ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
         }

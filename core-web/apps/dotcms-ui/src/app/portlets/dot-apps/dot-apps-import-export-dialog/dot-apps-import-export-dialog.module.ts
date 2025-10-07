@@ -5,7 +5,6 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import {
     DotAutofocusDirective,
     DotDialogModule,
@@ -15,6 +14,8 @@ import {
 } from '@dotcms/ui';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 @NgModule({
     imports: [

@@ -355,9 +355,27 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 }
 
 	public String getURI() throws DotDataException {
-		return UtilMethods.isSet(getIdentifier()) ?
-		        APILocator.getIdentifierAPI().find(getIdentifier()).getURI()
-		       : StringPool.BLANK;
+		if( UtilMethods.isSet(getIdentifier()) && UtilMethods.isSet(APILocator.getIdentifierAPI().find(getIdentifier()).getId())) {
+			return APILocator.getIdentifierAPI().find(getIdentifier()).getURI();
+		}
+		Folder folder = Try.of(()->APILocator.getFolderAPI().find(getFolder(),APILocator.systemUser(),false)).getOrNull();
+
+
+		if(folder == null) {
+			return StringPool.BLANK;
+		}
+
+		String fileName = UtilMethods.isSet(this.getFileName())
+				? this.getFileName()
+				: UtilMethods.isSet(this.map.get("fileName"))
+						? (String)this.map.get("fileName")
+						: UtilMethods.isSet(this.getUnderlyingFileName())
+							? this.getUnderlyingFileName()
+							: StringPool.BLANK;
+		return folder.getPath() + fileName;
+
+
+
 
 	}
 

@@ -14,7 +14,7 @@ import {
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotEventsService,
@@ -47,9 +47,18 @@ export interface DotActionsMenuEventParams {
     providers: [DotPageStore],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
-    templateUrl: './dot-pages.component.html'
+    templateUrl: './dot-pages.component.html',
+    standalone: false
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
+    private dotRouterService = inject(DotRouterService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotEventsService = inject(DotEventsService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotPageRenderService = inject(DotPageRenderService);
+    private element = inject(ElementRef);
+    private dotSiteService = inject(SiteService);
+
     readonly #store = inject(DotPageStore);
 
     @ViewChild('menu') menu: Menu;
@@ -58,15 +67,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotRouterService: DotRouterService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotEventsService: DotEventsService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotPageRenderService: DotPageRenderService,
-        private element: ElementRef,
-        private dotSiteService: SiteService
-    ) {
+    constructor() {
         this.#store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 
@@ -187,7 +188,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                 });
             });
 
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.#store.getPages({ offset: 0 });
             this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
         });

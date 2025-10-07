@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.dotcms.samlbundle</groupId>
             <artifactId>com.dotcms.samlbundle</artifactId>
-            <version>25.04.28</version>
+            <version>25.06.3</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

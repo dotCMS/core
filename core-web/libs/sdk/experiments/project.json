@@ -5,7 +5,7 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nrwl/rollup:rollup",
+            "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/sdk/experiments",
@@ -13,7 +13,7 @@
                 "project": "libs/sdk/experiments/package.json",
                 "entryFile": "libs/sdk/experiments/src/index.ts",
                 "external": ["react/jsx-runtime"],
-                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "rollupConfig": "@nx/react/plugins/bundle-rollup",
                 "compiler": "babel",
                 "assets": [
                     {

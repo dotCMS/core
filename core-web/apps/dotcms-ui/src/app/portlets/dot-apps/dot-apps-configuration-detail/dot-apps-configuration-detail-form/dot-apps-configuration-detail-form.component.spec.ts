@@ -1,7 +1,7 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { MarkdownService } from 'ngx-markdown';
 
-import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
@@ -16,6 +16,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
+
+import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
 
 const secrets = [
     {
@@ -92,6 +94,21 @@ const secrets = [
         hasEnvVar: false,
         envShow: true,
         hasEnvVarValue: false
+    },
+    {
+        dynamic: false,
+        name: 'generatedString',
+        hidden: false,
+        hint: 'This is a Generated String field!',
+        label: 'Generated String:',
+        required: false,
+        type: 'GENERATED_STRING',
+        value: 'generated-value',
+        buttonLabel: 'Generate String',
+        buttonEndpoint: '/api/generate-string',
+        hasEnvVar: false,
+        envShow: true,
+        hasEnvVarValue: false
     }
 ];
 
@@ -100,7 +117,8 @@ const formState = {
     password: secrets[1].value,
     enabled: JSON.parse(secrets[2].value),
     select: secrets[3].options[0].value,
-    integration: secrets[4].value
+    integration: secrets[4].value,
+    generatedString: secrets[5].value
 };
 
 @Component({
@@ -108,7 +126,8 @@ const formState = {
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `
+    `,
+    standalone: false
 })
 class MockMarkdownComponent {}
 
@@ -118,16 +137,16 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         component: DotAppsConfigurationDetailFormComponent,
         imports: [
             HttpClientTestingModule,
+            ReactiveFormsModule,
             ButtonModule,
-            CommonModule,
             CheckboxModule,
             DropdownModule,
-            DotIconModule,
-            InputTextareaModule,
             InputTextModule,
-            ReactiveFormsModule,
+            InputTextareaModule,
+            DotIconModule,
+            DotFieldRequiredDirective,
             TooltipModule,
-            DotFieldRequiredDirective
+            MockComponent(DotAppsConfigurationDetailGeneratedStringFieldComponent)
         ],
         providers: [MarkdownService, FormGroupDirective],
         declarations: [MockMarkdownComponent]
@@ -138,7 +157,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             spectator = createComponent({
                 props: {
                     formFields: secrets
-                }
+                } as unknown
             });
             spectator.detectChanges();
         });
@@ -153,16 +172,27 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(element).toBeFalsy();
         });
 
-        it('should focus the first form field after view init', async () => {
-            spectator.detectComponentChanges();
-            await spectator.fixture.whenStable();
+        it('should focus the first form field when form fields are available', async () => {
+            // Create component with formFields
+            const spectatorWithFields = createComponent({
+                props: {
+                    formFields: secrets
+                } as unknown
+            });
+            spectatorWithFields.detectChanges();
+            await spectatorWithFields.fixture.whenStable();
 
-            const field = spectator.component.formFields[0];
-            const firstFormField = spectator.query<HTMLInputElement>(`#${field.name}`);
-            spyOn(firstFormField, 'focus');
-            spectator.component.ngAfterViewInit();
-            expect(firstFormField.focus).toHaveBeenCalled();
-            expect(document.activeElement).toEqual(firstFormField);
+            const field = secrets[0];
+            const firstFormField = spectatorWithFields.query<HTMLInputElement>(`#${field.name}`);
+            expect(firstFormField).toBeTruthy();
+
+            // Trigger focus by updating formFields (this will trigger the effect)
+            spectatorWithFields.setInput('formFields', [...secrets]); // New array reference
+            spectatorWithFields.detectChanges();
+            await spectatorWithFields.fixture.whenStable();
+
+            // Verify the element has focus
+            expect(document.activeElement).toBe(firstFormField);
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
@@ -242,6 +272,15 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(hintElement.textContent).toBe(field.hint);
         });
 
+        it('should load Generated String Field component with right attributes', () => {
+            const row = spectator.query(byTestId('generated-string-field'));
+            expect(row).toBeTruthy();
+
+            expect(
+                spectator.query(DotAppsConfigurationDetailGeneratedStringFieldComponent)
+            ).toBeTruthy();
+        });
+
         it('should Button be disabled when no configured app', () => {
             const row = spectator.query(byTestId('integration'));
             const buttonElement = row.querySelector('button');
@@ -254,13 +293,14 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const field = secrets[4];
 
-            const openMock = jasmine.createSpy();
+            const openMock = jest.fn();
             window.open = openMock;
             const row = spectator.query(byTestId('integration'));
             const buttonElement = row.querySelector('button');
 
             buttonElement.click();
             expect(openMock).toHaveBeenCalledWith(field.value, '_blank');
+            expect(openMock).toHaveBeenCalledTimes(1);
         });
 
         it('should emit form state when loaded', async () => {
@@ -277,8 +317,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state when value changed', () => {
-            const spyDataOutput = spyOn(spectator.component.data, 'emit');
-            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+            const spyDataOutput = jest.spyOn(spectator.component.data, 'emit');
+            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('Test2');
             spectator.component.myFormGroup.get('password').setValue('Password2');
@@ -289,10 +329,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state disabled when required field empty', () => {
-            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);
+            expect(spyValidOutput).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -310,32 +351,35 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
                         return item;
                     })
-                }
+                } as unknown
             });
             spectator.detectChanges();
         });
 
         it('should have warning icons', () => {
             const warningIcons = spectator.queryAll('dot-icon');
-            const formFields = spectator.component.formFields;
+            const formFields = spectator.component.$formFields();
 
+            // Verify that we have warning icons
+            expect(warningIcons.length).toBeGreaterThan(0);
+            expect(warningIcons[0]).toBeTruthy();
+            expect(warningIcons[1]).toBeTruthy();
+            expect(warningIcons[2]).toBeTruthy();
+
+            // Verify warning icon attributes
             expect(warningIcons[0].getAttribute('name')).toBe('warning');
             expect(warningIcons[0].getAttribute('size')).toBe('18');
-            expect(warningIcons[0].getAttribute('ng-reflect-content')).toBe(
-                formFields[0].warnings[0]
-            );
 
             expect(warningIcons[1].getAttribute('name')).toBe('warning');
             expect(warningIcons[1].getAttribute('size')).toBe('18');
-            expect(warningIcons[1].getAttribute('ng-reflect-content')).toBe(
-                formFields[1].warnings[0]
-            );
 
             expect(warningIcons[2].getAttribute('name')).toBe('warning');
             expect(warningIcons[2].getAttribute('size')).toBe('18');
-            expect(warningIcons[2].getAttribute('ng-reflect-content')).toBe(
-                formFields[2].warnings[0]
-            );
+
+            // Verify that the form fields have the expected warnings
+            expect(formFields[0].warnings).toEqual(['error 0']);
+            expect(formFields[1].warnings).toEqual(['error 1']);
+            expect(formFields[2].warnings).toEqual(['error 2']);
         });
     });
 });

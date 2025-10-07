@@ -7,9 +7,6 @@ import { ButtonModule } from 'primeng/button';
 import { FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotCreatePersonaFormComponent } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component';
 import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
@@ -17,6 +14,11 @@ import {
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
+
+import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
+
+import { DotAutocompleteTagsModule } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
+import { SiteSelectorFieldModule } from '../../_common/dot-site-selector-field/dot-site-selector-field.module';
 
 @NgModule({
     imports: [

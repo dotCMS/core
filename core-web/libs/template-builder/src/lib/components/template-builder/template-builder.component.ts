@@ -10,7 +10,6 @@ import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -25,14 +24,15 @@ import {
     QueryList,
     SimpleChanges,
     ViewChild,
-    ViewChildren
+    ViewChildren,
+    inject
 } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import {
     DotContainer,
     DotLayout,
@@ -75,9 +75,16 @@ import {
     templateUrl: './template-builder.component.html',
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DotTemplateBuilderStore]
+    providers: [DotTemplateBuilderStore],
+    standalone: false
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
+export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
+    private store = inject(DotTemplateBuilderStore);
+    private dialogService = inject(DialogService);
+    private dotMessage = inject(DotMessageService);
+    private dotContainersService = inject(DotContainersService);
+    private cd = inject(ChangeDetectorRef);
+
     @Input()
     layout!: DotLayout;
 
@@ -185,12 +192,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         return this.templateContainerRef.nativeElement;
     }
 
-    constructor(
-        private store: DotTemplateBuilderStore,
-        private dialogService: DialogService,
-        private dotMessage: DotMessageService,
-        private cd: ChangeDetectorRef
-    ) {
+    constructor() {
         this.rows$ = this.store.rows$.pipe(
             filter(({ shouldEmit }) => shouldEmit),
             map(({ rows }) => parseFromGridStackToDotObject(rows))
@@ -222,15 +224,22 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnInit(): void {
-        this.store.setState({
-            rows: parseFromDotObjectToGridStack(this.layout.body),
-            layoutProperties: this.layoutProperties,
-            resizingRowID: '',
-            containerMap: this.containerMap,
-            themeId: this.template.themeId,
-            templateIdentifier: this.template.identifier,
-            shouldEmit: true
-        });
+        this.dotContainersService.defaultContainer$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((defaultContainer) => {
+                this.store.setState({
+                    rows: parseFromDotObjectToGridStack(this.layout.body, defaultContainer),
+                    layoutProperties: this.layoutProperties,
+                    resizingRowID: '',
+                    containerMap: this.getContainerMap(defaultContainer),
+                    themeId: this.template.themeId,
+                    templateIdentifier: this.template.identifier,
+                    shouldEmit: true,
+                    defaultContainer
+                });
+
+                requestAnimationFrame(() => this.setUpGridStack());
+            });
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -245,7 +254,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         }
     }
 
-    ngAfterViewInit() {
+    /**
+     * @description This method sets up the gridstack
+     *
+     * @memberof TemplateBuilderComponent
+     */
+    setUpGridStack() {
         setTimeout(() => {
             this.customStyles = {
                 opacity: '1'
@@ -333,7 +347,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnDestroy(): void {
-        this.grid.destroy(true);
+        this.grid?.destroy(true);
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -533,5 +547,25 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.store.updateLayoutProperties({
             [section]: false
         } as Partial<DotTemplateLayoutProperties>);
+    }
+
+    /**
+     * @description This method returns the container map
+     *
+     * @param {DotContainer | null} defaultContainer
+     * @return {*}  {DotContainerMap}
+     * @memberof TemplateBuilderComponent
+     */
+    private getContainerMap(defaultContainer: DotContainer | null): DotContainerMap {
+        if (!defaultContainer) {
+            return this.containerMap;
+        }
+
+        const key = defaultContainer.path ?? defaultContainer.identifier;
+
+        return {
+            ...this.containerMap,
+            [key]: { ...defaultContainer }
+        };
     }
 }

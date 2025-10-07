@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, take, tap } from 'rxjs/operators';
 
@@ -36,9 +36,9 @@ export const LOGIN_LABELS = [
 
 @Injectable()
 export class DotLoginPageStateService {
-    private dotLoginInformation$: BehaviorSubject<DotLoginInformation> = new BehaviorSubject(null);
+    private loginService = inject(LoginService);
 
-    constructor(private loginService: LoginService) {}
+    private dotLoginInformation$: BehaviorSubject<DotLoginInformation> = new BehaviorSubject(null);
 
     get(): Observable<DotLoginInformation> {
         return this.dotLoginInformation$.asObservable();

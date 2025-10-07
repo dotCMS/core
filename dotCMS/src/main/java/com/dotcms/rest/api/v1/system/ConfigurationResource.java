@@ -36,6 +36,7 @@ import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.liferay.util.LocaleUtil;
@@ -56,6 +57,7 @@ import com.liferay.util.LocaleUtil;
  *
  */
 @Path("/v1/configuration")
+@Tag(name = "System Configuration", description = "System configuration and company settings")
 @SuppressWarnings("serial")
 public class ConfigurationResource implements Serializable {
 
@@ -63,7 +65,7 @@ public class ConfigurationResource implements Serializable {
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
-					new String[] {"EMAIL_SYSTEM_ADDRESS", "WYSIWYG_IMAGE_URL_PATTERN", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES",
+					new String[] {"EMAIL_SYSTEM_ADDRESS", "WYSIWYG_IMAGE_URL_PATTERN", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES", "DEFAULT_CONTAINER",
 							FeatureFlagName.FEATURE_FLAG_EXPERIMENTS, FeatureFlagName.DOTFAVORITEPAGE_FEATURE_ENABLE, FeatureFlagName.FEATURE_FLAG_TEMPLATE_BUILDER_2,
 					"SHOW_VIDEO_THUMBNAIL", "EXPERIMENTS_MIN_DURATION", "EXPERIMENTS_MAX_DURATION", "EXPERIMENTS_DEFAULT_DURATION", FeatureFlagName.FEATURE_FLAG_SEO_IMPROVEMENTS,
 							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE",

@@ -14,6 +14,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +46,7 @@ import java.util.stream.Collectors;
  * This class requires user authentication and certain operations require specific user roles.
  */
 @Path("/v1/ai/embeddings")
+@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class EmbeddingsResource {
 
     private final ContentletAPI contentletAPI;

@@ -2,7 +2,7 @@ import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs'
 import { Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map, tap } from 'rxjs/operators';
 
@@ -14,6 +14,9 @@ import { ConditionGroupModel, IConditionGroup } from './Rule';
 
 @Injectable()
 export class ConditionGroupService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     public get error(): Observable<string> {
         return this._error.asObservable();
     }
@@ -23,11 +26,9 @@ export class ConditionGroupService {
 
     private _error: Subject<string> = new Subject<string>();
 
-    constructor(
-        apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = inject(ApiRoot);
+
         this._baseUrl = '/api/v1/sites/' + apiRoot.siteId + '/ruleengine/rules';
     }
 

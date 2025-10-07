@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { DotHttpError } from '../client/public';
+
 /**
  * Represents a map of container identifiers to their container objects
  *
@@ -320,6 +322,7 @@ export interface DotCMSContainer {
  * @property {string} modUser - User who last modified
  * @property {string} modUserName - Display name of user who last modified
  * @property {string} owner - Owner of the contentlet
+ * @property {string} ownerUserName - Display name of owner of the contentlet
  * @property {number} sortOrder - Sort order position
  * @property {string} stInode - Structure inode
  * @property {string} title - Title of the contentlet
@@ -346,6 +349,7 @@ export interface DotCMSBasicContentlet {
     file?: string;
     folder: string;
     hasLiveVersion?: boolean;
+    ownerUserName?: string;
     hasTitleImage: boolean;
     host: string;
     hostName: string;
@@ -375,36 +379,6 @@ export interface DotCMSBasicContentlet {
     onNumberOfPages?: string;
     __icon__?: string;
     _map?: Record<string, unknown>;
-}
-
-/**
- * Represents a navigation item in the DotCMS navigation structure
- *
- * @interface DotCMSNavigationItem
- * @property {string} [code] - Optional unique code identifier for the navigation item
- * @property {string} folder - The folder path where this navigation item is located
- * @property {DotCMSNavigationItem[]} [children] - Optional array of child navigation items
- * @property {string} host - The host/site this navigation item belongs to
- * @property {number} languageId - The language ID for this navigation item
- * @property {string} href - The URL/link that this navigation item points to
- * @property {string} title - The display title of the navigation item
- * @property {string} type - The type of navigation item
- * @property {number} hash - Hash value for the navigation item
- * @property {string} target - The target attribute for the link (e.g. "_blank", "_self")
- * @property {number} order - The sort order position of this item in the navigation
- */
-export interface DotCMSNavigationItem {
-    code?: string;
-    folder: string;
-    children?: DotCMSNavigationItem[];
-    host: string;
-    languageId: number;
-    href: string;
-    title: string;
-    type: string;
-    hash: number;
-    target: string;
-    order: number;
 }
 
 /**
@@ -1177,6 +1151,17 @@ export interface DotCMSPageContainerContentlets {
 }
 
 /**
+ * dotCMS's GraphQL API response with a page and content query
+ */
+export interface DotGraphQLApiResponse {
+    data: {
+        page: DotCMSGraphQLPage;
+        content?: Record<string, unknown>;
+    };
+    errors?: DotCMSGraphQLError[];
+}
+
+/**
  * Represents a GraphQL error
  * @interface DotCMSGraphQLError
  */
@@ -1188,19 +1173,6 @@ export interface DotCMSGraphQLError {
     }[];
     extensions: {
         classification: string;
-    };
-}
-
-/**
- * Represents the complete response from a page query from the GraphQL API
- */
-export interface DotCMSGraphQLPageResponse {
-    page: DotCMSGraphQLPage;
-    content?: Record<string, unknown> | unknown;
-    errors?: DotCMSGraphQLError;
-    graphql: {
-        query: string;
-        variables: Record<string, unknown>;
     };
 }
 
@@ -1243,3 +1215,42 @@ export type DotCMSComposedPageResponse<T extends DotCMSExtendedPageResponse> = O
 export type DotCMSClientPageGetResponse<T extends DotCMSExtendedPageResponse> = Promise<
     DotCMSComposedPageResponse<T>
 >;
+
+/**
+ * Page API specific error class
+ * Wraps HTTP errors and adds page-specific context including GraphQL information
+ */
+export class DotErrorPage extends Error {
+    public readonly httpError?: DotHttpError;
+    public readonly graphql?: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+
+    constructor(
+        message: string,
+        httpError?: DotHttpError,
+        graphql?: { query: string; variables: Record<string, unknown> }
+    ) {
+        super(message);
+        this.name = 'DotCMSPageError';
+        this.httpError = httpError;
+        this.graphql = graphql;
+
+        // Ensure proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, DotErrorPage.prototype);
+    }
+
+    /**
+     * Serializes the error to a plain object for logging or transmission
+     */
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            httpError: this.httpError?.toJSON(),
+            graphql: this.graphql,
+            stack: this.stack
+        };
+    }
+}

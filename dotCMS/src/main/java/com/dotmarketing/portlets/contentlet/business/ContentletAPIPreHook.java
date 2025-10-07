@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -21,6 +22,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -1193,6 +1195,17 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param searchCriteria The {@link SearchCriteria} object that allows you to filter the data
+     *                       being pulled.
+     */
+    default boolean findAllVersions(final SearchCriteria searchCriteria) {
+        return true;
+    }
+
 	/**
 	 * Retrieves all versions for a contentlet identifier
 	 * @param identifiers
@@ -1312,7 +1325,17 @@ public interface ContentletAPIPreHook {
 	public default boolean setContentletProperty(Contentlet contentlet, Field field, Object value){
       return true;
     }
-	
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 */
+	public default boolean setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value){
+		return true;
+	}
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet

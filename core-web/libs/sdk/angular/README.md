@@ -11,7 +11,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Installation](#installation)
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
     -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
-    -   [Using dotCMS Images with Angular’s `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
+    -   [Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
 -   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
     -   [Example Project](#example-project-)
 -   [SDK Reference](#sdk-reference)
@@ -26,6 +26,8 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Still Having Issues?](#still-having-issues)
 -   [dotCMS Support](#dotcms-support)
 -   [How To Contribute](#how-to-contribute)
+-   [Changelog](#changelog)
+    -   [v1.1.1](#111)
 -   [Licensing Information](#licensing-information)
 
 ## Prerequisites & Setup
@@ -77,36 +79,94 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 ### Installation
 
 ```bash
-npm install @dotcms/angular@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-angular
+npm install @dotcms/angular@latest
 ```
 
-### dotCMS Client Configuration
+This will automatically install the required dependencies:
+- `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
+- `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
 
-```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
-import { InjectionToken } from '@angular/core';
+## Configuration
 
-export type DotCMSClient = ReturnType<typeof createDotCMSClient>;
+### Basic Configuration
 
-const dotCMSClient: DotCMSClient = createDotCMSClient({
-    dotcmsUrl: 'https://your-dotcms-instance.com',
-    authToken: 'your-auth-token', // Optional for public content
-    siteId: 'your-site-id' // Optional site identifier/name
-});
+The recommended way to configure the DotCMS client in your Angular application is to use the `provideDotCMSClient` function in your `app.config.ts`:
 
-export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCMSClient>('DOTCMS_CLIENT');
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { provideDotCMSClient } from '@dotcms/angular';
+import { environment } from './environments/environment'; // Assuming your environment variables are here
 
 export const appConfig: ApplicationConfig = {
-    providers: [
-        {
-            provide: DOTCMS_CLIENT_TOKEN,
-            useValue: dotCMSClient
-        }
-    ]
+  providers: [
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId,
+      // Optional: Custom HTTP client
+      httpClient: (http) => new AngularHttpClient(http)
+    })
+  ]
 };
 ```
 
-This configuration makes the dotCMS client service available throughout your Angular application, allowing you to inject it wherever needed. For more details on how Angular's InjectionToken works, you can refer to the [Angular InjectionToken documentation](https://angular.dev/api/core/InjectionToken).
+### Custom HTTP Client Configuration
+
+For advanced use cases, you can provide a custom HTTP client implementation that leverages Angular's `HttpClient`:
+
+```ts
+import { HttpClient } from '@angular/common/http';
+import { BaseHttpClient, DotRequestOptions } from '@dotcms/types';
+
+// Custom HTTP client using Angular's HttpClient
+class AngularHttpClient extends BaseHttpClient {
+  constructor(private http: HttpClient) {
+    super();
+  }
+
+  async request<T>(url: string, options?: DotRequestOptions): Promise<T> {
+    return this.http.get<T>(url).toPromise();
+  }
+}
+
+// Configure with custom HTTP client
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(), // Ensure Angular's HttpClient is available
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId,
+      httpClient: (http: HttpClient) => new AngularHttpClient(http)
+    })
+  ]
+};
+```
+
+### Using the Client
+
+Then, you can inject the `DotCMSClient` into your components or services:
+
+```ts
+import { Component, inject } from '@angular/core';
+import { DotCMSClient } from '@dotcms/angular';
+
+@Component({
+  selector: 'app-my-component',
+  template: `<!-- Your component template -->`
+})
+export class MyComponent {
+  dotcmsClient = inject(DotCMSClient);
+
+  ngOnInit() {
+    this.dotcmsClient.page
+        .get({ url: '/about-us' })
+        .then(({ pageAsset }) => {
+            console.log(pageAsset);
+        });
+  }
+}
+```
 
 ### Proxy Configuration for Static Assets
 
@@ -167,7 +227,7 @@ class MyDotCMSImageComponent {
 }
 ```
 
-### Using dotCMS Images with Angular’s `NgOptimizedImage` Directive (Recommended)
+### Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)
 
 To optimize images served from dotCMS in your Angular app, we recommend using the built-in `NgOptimizedImage` directive. This integration supports automatic image preloading, lazy loading, and improved performance.
 
@@ -179,11 +239,17 @@ Add the image loader to your `app.config.ts`:
 
 ```ts
 // src/app/app.config.ts
-import { provideDotCMSImageLoader } from '@dotcms/angular';
 import { ApplicationConfig } from '@angular/core';
+import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
+import { environment } from './environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId
+    }),
     provideDotCMSImageLoader(environment.dotcmsUrl)
   ]
 };
@@ -198,18 +264,73 @@ Once configured, you can use the `NgOptimizedImage` directive to render dotCMS i
 @Component({
   selector: 'my-dotcms-image',
   template: `
-    <img [ngSrc]="imagePath" alt="Asset from dotCMS" />
+    <img [ngSrc]="imagePath" alt="Asset from dotCMS" width="400" height="300" />
   `,
   standalone: true
 })
 export class MyDotCMSImageComponent {
   @Input() contentlet!: DotCMSBasicContentlet;
-  
+
   get imagePath() {
     return this.contentlet.image.versionPath;
   }
 }
 ```
+
+#### Custom Quality Control
+
+You can control the image quality using the `loaderParams` attribute. This is particularly useful for optimizing performance or achieving specific visual requirements:
+
+```ts
+// src/components/optimized-image.component.ts
+@Component({
+  selector: 'optimized-image',
+  template: `
+    <!-- High quality for hero images -->
+    <img 
+      [ngSrc]="heroImagePath" 
+      alt="Hero image" 
+      width="1200" 
+      height="600"
+      [loaderParams]="{ quality: 85 }" />
+    
+    <!-- Lower quality for thumbnails -->
+    <img 
+      [ngSrc]="thumbnailPath" 
+      alt="Thumbnail" 
+      width="200" 
+      height="150"
+      [loaderParams]="{ quality: 30 }" />
+    
+    <!-- Custom language and quality -->
+    <img 
+      [ngSrc]="imagePath" 
+      alt="Localized image" 
+      width="400" 
+      height="300"
+      [loaderParams]="{ quality: 60, languageId: '2' }" />
+  `,
+  standalone: true
+})
+export class OptimizedImageComponent {
+  @Input() heroImagePath!: string;
+  @Input() thumbnailPath!: string;
+  @Input() imagePath!: string;
+}
+```
+
+**Quality Parameter Details:**
+- **Range**: 1-100 (where 100 is highest quality)
+- **Default**: 50 (balanced performance and quality)
+- **Usage**: Pass via `loaderParams` object: `{ quality: 75 }`
+- **Performance**: Lower values = smaller file sizes = faster loading
+
+The image loader automatically handles:
+- **Automatic resizing** based on the `width` and `height` attributes
+- **Quality optimization** with a default quality of 50 for better performance
+- **Language-specific images** using the current language context
+- **Responsive images** that adapt to different screen sizes
+- **Custom quality control** via the `loaderParams` attribute
 
 > 📚 Learn more about [`NgOptimizedImage`](https://angular.dev/guide/image-optimization)
 
@@ -226,7 +347,7 @@ The following example demonstrates how to quickly set up a basic dotCMS page ren
 // /src/app/pages/dotcms-page.component.ts
 import { Component, signal } from '@angular/core';
 
-import { DotCMSLayoutBody, DotCMSEditablePageService} from '@dotcms/angular/next';
+import { DotCMSLayoutBody, DotCMSEditablePageService} from '@dotcms/angular';
 import { getUVEState } from '@dotcms/uve';
 import { DotCMSPageAsset } from '@dotcms/types';
 
@@ -297,7 +418,7 @@ Looking to get started quickly? We've got you covered! Our [Angular starter proj
 
 ## SDK Reference
 
-All components, directives, and services should be imported from `@dotcms/angular/next`.
+All components, directives, and services should be imported from `@dotcms/angular`.
 
 ### DotCMSLayoutBody
 
@@ -314,7 +435,7 @@ All components, directives, and services should be imported from `@dotcms/angula
 ```typescript
 import { Component, signal } from '@angular/core';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody } from '@dotcms/angular/next';
+import { DotCMSLayoutBody } from '@dotcms/angular';
 
 import { DOTCMS_CLIENT_TOKEN } from './app.config';
 
@@ -380,7 +501,7 @@ import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
-import { DotCMSEditableTextComponent } from '@dotcms/angular/next';
+import { DotCMSEditableTextComponent } from '@dotcms/angular';
 
 @Component({
     selector: 'app-your-component',
@@ -431,7 +552,7 @@ export class MyBannerComponent {
 
 ```typescript
 import { DotCMSBasicContentlet } from '@dotcms/types';
-import { DotCMSBlockEditorRenderer } from '@dotcms/angular/next';
+import { DotCMSBlockEditorRenderer } from '@dotcms/angular';
 
 const CUSTOM_RENDERERS = {
     customBlock: import('./custom-block.component').then((c) => c.CustomBlockComponent),
@@ -474,7 +595,7 @@ export class MyBannerComponent {
 
 ```typescript
 import { UVE_MODE } from '@dotcms/types';
-import { DotCMSShowWhen } from '@dotcms/angular/next';
+import { DotCMSShowWhen } from '@dotcms/angular';
 
 @Component({
     selector: 'app-your-component',
@@ -518,8 +639,7 @@ import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core';
 
 import { getUVEState } from '@dotcms/uve';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody, DotCMSEditablePageService } from '@dotcms/angular/next';
-import { DOTCMS_CLIENT_TOKEN } from './app.config';
+import { DotCMSLayoutBody, DotCMSEditablePageService, DotCMSClient } from '@dotcms/angular';
 
 @Component({
     imports: [DotCMSLayoutBody],
@@ -608,7 +728,7 @@ export class PageComponent implements OnInit, OnDestroy {
 
 2. **Runtime Errors**: Console errors about missing imports or components not rendering
     - **Solutions**:
-        - Check all imports are from `@dotcms/angular/next`
+        - Check all imports are from `@dotcms/angular`
         - Verify all peer dependencies are installed
         - Update to latest compatible versions
 
@@ -680,7 +800,49 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 
 Please ensure your code follows the existing style and includes appropriate tests.
 
-## Licensing Information
+## Changelog
+
+### [1.1.1]
+
+#### ✨ Added - Enhanced Client Architecture
+
+**New Features:**
+- Added `DotCMSAngularProviderConfig` for Angular-specific configuration
+- Custom HTTP client support with Angular's `HttpClient` integration
+- Enhanced image optimization with automatic quality control (default: 50%)
+- Improved provider system with better error handling and type safety
+
+**No Breaking Changes:**
+- `DotCMSClient` remains the same - no migration required
+- All existing code continues to work without changes
+- New features are additive and optional
+
+#### 🔄 Enhanced - Provider System
+
+**Improvements:**
+- Enhanced `provideDotCMSClient` with optional custom HTTP client factory
+- Added `DotCMSAngularProviderConfig` interface for better type safety
+- Improved error handling and HTTP client architecture
+
+**New Configuration Options:**
+```typescript
+provideDotCMSClient({
+  dotcmsUrl: environment.dotcmsUrl,
+  authToken: environment.authToken,
+  siteId: environment.siteId,
+  httpClient: (http: HttpClient) => new AngularHttpClient(http) // New!
+})
+```
+
+#### 🎨 Enhanced - Image Loading
+
+**Improvements:**
+- Automatic quality optimization for better performance
+- Enhanced responsive image support
+- Improved language-specific image handling
+- Better integration with Angular's `NgOptimizedImage` directive
+
+### Licensing Information
 
 dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
 

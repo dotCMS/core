@@ -11,7 +11,8 @@ import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.compo
 
 @Component({
     selector: 'dot-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -43,12 +44,13 @@ describe('DotPaletteInputFilterComponent', () => {
     });
 
     it('should go Back when Go Back button clicked', async () => {
-        spyOn(comp.filter, 'emit').and.callThrough();
+        jest.spyOn(comp.filter, 'emit');
         const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
         comp.value = 'hello';
         const event = new KeyboardEvent('keyup');
         input.dispatchEvent(event);
         await fixture.whenStable();
         expect(comp.filter.emit).toHaveBeenCalledWith('hello');
+        expect(comp.filter.emit).toHaveBeenCalledTimes(1);
     });
 });

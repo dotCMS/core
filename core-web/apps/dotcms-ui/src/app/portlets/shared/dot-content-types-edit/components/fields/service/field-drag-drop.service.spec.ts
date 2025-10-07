@@ -8,7 +8,8 @@ import { TestBed } from '@angular/core/testing';
 import { filter, map } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { FieldDragDropService } from './field-drag-drop.service';
 
@@ -64,7 +65,7 @@ describe('FieldDragDropService', () => {
                 {
                     provide: DotAlertConfirmService,
                     useValue: {
-                        alert: jasmine.createSpy('alert')
+                        alert: jest.fn()
                     }
                 },
                 {
@@ -86,11 +87,12 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldBagOptions', () => {
         it('should set name', () => {
-            const findSpy = spyOn(dragulaService, 'find').and.returnValue(null);
+            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldBagOptions();
 
             expect(findSpy).toHaveBeenCalledWith('fields-bag');
+            expect(findSpy).toHaveBeenCalledTimes(1);
             expect(dragulaService.name).toBe('fields-bag');
         });
 
@@ -221,7 +223,7 @@ describe('FieldDragDropService', () => {
 
                     expect(dotAlertConfirmService.alert).toHaveBeenCalledTimes(1);
                     expect(dotAlertConfirmService.alert).toHaveBeenCalledWith(
-                        jasmine.objectContaining({
+                        expect.objectContaining({
                             header: 'This row is full',
                             message: 'The maximum number of columns per row is limited to four.',
                             footerLabel: {
@@ -236,11 +238,12 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldRowBagOptions', () => {
         it('should set name', () => {
-            const findSpy = spyOn(dragulaService, 'find').and.returnValue(null);
+            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldRowBagOptions();
 
             expect(findSpy).toHaveBeenCalledWith('fields-row-bag');
+            expect(findSpy).toHaveBeenCalledTimes(1);
             expect('fields-row-bag').toBe(dragulaService.name);
         });
 
@@ -262,8 +265,8 @@ describe('FieldDragDropService', () => {
     });
 
     it('should set bag options for fields and rows', () => {
-        spyOn(fieldDragDropService, 'setFieldRowBagOptions');
-        spyOn(fieldDragDropService, 'setFieldBagOptions');
+        jest.spyOn(fieldDragDropService, 'setFieldRowBagOptions');
+        jest.spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         fieldDragDropService.setBagOptions();
 

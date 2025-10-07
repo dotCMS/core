@@ -10,8 +10,11 @@ import {
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
+import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
+    CALENDAR_FIELD_TYPES_WITH_TIME,
+    DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
     TAB_FIELD_CLAZZ,
     UNCASTED_FIELD_TYPES
@@ -58,23 +61,94 @@ export const castSingleSelectableValue = (
     }
 };
 
-// This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
+/**
+ * Parses field options for single selectable fields (Checkbox, Radio, Select).
+ *
+ * The function handles the following formats:
+ *
+ * 1. Multi-line pipe format (standard format):
+ *    ```
+ *    label1|value1
+ *    label2|value2
+ *    ```
+ *    Each line represents a separate option with label and value separated by pipe.
+ *
+ * 2. Special case for checkboxes:
+ *    ```
+ *    |true
+ *    ```
+ *    Creates a checkbox without label, using the value after the pipe.
+ *
+ * 3. Simple value format:
+ *    ```
+ *    value1,value2,value3
+ *    ```
+ *    When no pipes are present, each comma-separated value is used as both label and value.
+ *
+ * Note: If the input contains line breaks, it will be treated as a single option,
+ * preserving the line breaks as part of the option text.
+ *
+ * @param options - The string containing the options to parse
+ * @param dataType - The data type of the field
+ * @returns Array of parsed options with label and value
+ */
 export const getSingleSelectableFieldOptions = (
     options: string,
     dataType: string
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
-    const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
+    if (!options?.trim()) return [];
 
-    return lines
-        .map((line) => {
-            const [label, value = label] = line.split('|').map((value) => value.trim());
+    const LINE_BREAKS_REGEX = /\r\n|\n|\r/;
+    const PIPE_REGEX = /\|/;
+    const hasLineBreaks = LINE_BREAKS_REGEX.test(options);
+    const hasPipes = PIPE_REGEX.test(options);
 
-            const castedValue = castSingleSelectableValue(value, dataType);
-            if (castedValue === null) {
-                return null;
+    let items: string[] = [];
+    let isPipeFormat = false;
+
+    if (hasPipes && hasLineBreaks) {
+        // Multi-line pipe format (standard dotCMS format)
+        items = options.split(LINE_BREAKS_REGEX).filter((line) => line.trim());
+        isPipeFormat = true;
+    } else if (hasPipes && !hasLineBreaks && options.trim().startsWith('|')) {
+        // Special case: "|true" (checkbox without label)
+        items = [options.trim()];
+        isPipeFormat = true;
+    } else {
+        // Simple comma format or single-line with pipes treated as comma format
+        items = options
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
+    }
+
+    // Handle nested line breaks in single items
+    if (items.length === 1 && LINE_BREAKS_REGEX.test(items[0])) {
+        items = items[0].split(LINE_BREAKS_REGEX).filter((line) => line.trim());
+    }
+
+    return items
+        .map((item) => {
+            let label: string;
+            let value: string;
+
+            if (isPipeFormat) {
+                const parts = item.split('|');
+                // Si hay pipe, el label es la primera parte y el value es la segunda
+                // Si no hay segunda parte, el value es igual al label
+                label = (parts[0] || '').trim();
+                value = parts[1]?.trim() || label;
+            } else {
+                // Si no hay pipe, tanto label como value son el mismo valor
+                label = item;
+                value = item;
             }
 
-            return { label, value: castedValue };
+            if (!value) return null;
+
+            const castedValue = castSingleSelectableValue(value, dataType);
+
+            return castedValue !== null ? { label, value: castedValue } : null;
         })
         .filter(
             (
@@ -84,17 +158,19 @@ export const getSingleSelectableFieldOptions = (
         );
 };
 
-// This function is used to cast the value to a correct type for the Angular Form
+/**
+ * This function is used to cast the value to a correct type for the Angular Form
+ *
+ * @param value
+ * @param field
+ * @returns
+ */
 export const getFinalCastedValue = (
-    value: object | string | undefined,
+    value: object | string | number | undefined,
     field: DotCMSContentTypeField
 ) => {
-    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        const parseResult = new Date(value as string);
-
-        // When we create a field, we can set the default value to "now" so, it will cast to Invalid Date. But an undefined value can also be casted to Invalid Date.
-        // So if the getTime() method returns NaN that means the value is invalid and it's either undefined or "now". Otherwise just return the parsed date.
-        return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
+    if (CALENDAR_FIELD_TYPES_WITH_TIME.includes(field.fieldType as FIELD_TYPES)) {
+        return value;
     }
 
     if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
@@ -155,7 +231,7 @@ export const isValidJson = (value: string): boolean => {
         const json = JSON.parse(value);
 
         return json !== null && typeof json === 'object' && !Array.isArray(json);
-    } catch (e) {
+    } catch {
         console.warn(`${value} is not a valid JSON`);
 
         return false;
@@ -366,3 +442,196 @@ export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSCo
     locked: false,
     lockedBy: undefined
 });
+
+/**
+ * Extracts and parses custom field options from field variables.
+ * Looks for 'customFieldOptions' key and parses its JSON value.
+ *
+ * @param fieldVariables - Array of field variables
+ * @returns Parsed custom field options object
+ *
+ * @example
+ * ```ts
+ * const options = getCustomFieldOptions(field.fieldVariables);
+ * console.log(options.showAsModal); // true
+ * ```
+ */
+export const getCustomFieldOptions = (
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): Partial<CustomFieldConfig> => {
+    const parsedVars = getFieldVariablesParsed<Record<string, string | boolean>>(fieldVariables);
+    const { customFieldOptions } = parsedVars;
+
+    return stringToJson(customFieldOptions as string);
+};
+
+/**
+ * Creates a complete custom field configuration by merging custom options with defaults
+ * and applying individual field variable overrides.
+ *
+ * @param fieldVariables - Array of field variables
+ * @returns Complete custom field configuration with defaults applied
+ *
+ * @example
+ * ```ts
+ * const config = createCustomFieldConfig(field.fieldVariables);
+ * console.log(config.width); // "90vw" or default "500px"
+ * ```
+ */
+export const createCustomFieldConfig = (
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): CustomFieldConfig => {
+    const customOptions = getCustomFieldOptions(fieldVariables);
+
+    const individualVars =
+        getFieldVariablesParsed<Record<string, string | boolean>>(fieldVariables);
+
+    // Use the default configuration from constants
+    const defaults: CustomFieldConfig = { ...DEFAULT_CUSTOM_FIELD_CONFIG };
+
+    // Merge with custom options from JSON
+    const mergedConfig: CustomFieldConfig = {
+        ...defaults,
+        ...customOptions
+    };
+
+    // Override with individual field variables (highest priority)
+    if (individualVars.showAsModal !== undefined) {
+        mergedConfig.showAsModal = individualVars.showAsModal as boolean;
+    }
+
+    if (individualVars.width) {
+        mergedConfig.width = individualVars.width as string;
+    }
+
+    if (individualVars.height) {
+        mergedConfig.height = individualVars.height as string;
+    }
+
+    return mergedConfig;
+};
+
+/**
+ * Checks if a field should be flattened (array values joined with commas).
+ * Used for multi-select fields that need to be converted to comma-separated strings.
+ *
+ * @param fieldValue - The field value to check
+ * @param field - The field configuration
+ * @returns True if the field should be flattened
+ */
+export const isFlattenedField = (
+    fieldValue: string | string[] | Date | number | null | undefined,
+    field: DotCMSContentTypeField
+): fieldValue is string[] => {
+    return (
+        Array.isArray(fieldValue) && FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
+    );
+};
+
+/**
+ * Checks if a field is a calendar field (date, datetime, time).
+ * Used to determine if special timestamp processing is needed.
+ *
+ * @param field - The field configuration
+ * @returns True if the field is a calendar field
+ */
+export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
+    return CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES);
+};
+
+/**
+ * Processes calendar field values to ensure they are always numeric timestamps.
+ * Handles conversion from Date objects, strings, and validates numeric values.
+ *
+ * @param fieldValue - The calendar field value (Date, number, string, or null/undefined)
+ * @param fieldName - The field name (for logging purposes)
+ * @returns Numeric timestamp or null/undefined
+ */
+export const processCalendarFieldValue = (
+    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldName: string
+): number | null | undefined => {
+    // Handle null/undefined values
+    if (fieldValue === null || fieldValue === undefined) {
+        return fieldValue as null | undefined;
+    }
+
+    // Handle empty strings
+    if (fieldValue === '') {
+        return null;
+    }
+
+    // Convert Date objects to timestamps (normal case from calendar component)
+    if (fieldValue instanceof Date) {
+        return fieldValue.getTime();
+    }
+
+    // Keep numeric values as-is (already correct timestamps)
+    if (typeof fieldValue === 'number') {
+        return fieldValue;
+    }
+
+    // Convert string timestamps to numbers (edge case - from form state)
+    if (typeof fieldValue === 'string') {
+        const trimmedValue = fieldValue.trim();
+
+        // Handle empty string after trim
+        if (trimmedValue === '') {
+            return null;
+        }
+
+        const numericValue = Number(trimmedValue);
+
+        if (isNaN(numericValue)) {
+            console.warn(`Calendar field ${fieldName} has invalid timestamp string:`, fieldValue);
+            return null;
+        }
+
+        console.warn(
+            `Calendar field ${fieldName} received string timestamp, converted to number:`,
+            {
+                original: fieldValue,
+                converted: numericValue
+            }
+        );
+
+        return numericValue;
+    }
+
+    // Handle unexpected cases (arrays, objects, etc.)
+    console.error(`Calendar field ${fieldName} received unexpected value:`, {
+        value: fieldValue,
+        type: typeof fieldValue
+    });
+
+    return null;
+};
+
+/**
+ * Processes a single field value based on its field type.
+ * Applies appropriate transformations for different field types:
+ * - Flattened fields: Joins arrays with commas
+ * - Calendar fields: Converts to numeric timestamps
+ * - Other fields: Returns as-is
+ *
+ * @param fieldValue - The raw field value
+ * @param field - The field configuration
+ * @returns The processed field value
+ */
+export const processFieldValue = (
+    fieldValue: string | string[] | Date | number | null | undefined,
+    field: DotCMSContentTypeField
+): string | number | null | undefined => {
+    // Handle flattened fields (multi-select, etc.)
+    if (isFlattenedField(fieldValue, field)) {
+        return (fieldValue as string[]).join(',');
+    }
+
+    // Handle calendar fields (date, datetime, time)
+    if (isCalendarField(field)) {
+        return processCalendarFieldValue(fieldValue, field.variable);
+    }
+
+    // For all other fields, return as-is
+    return fieldValue as string | number | null | undefined;
+};

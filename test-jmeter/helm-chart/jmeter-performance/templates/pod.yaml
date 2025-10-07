@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.pod.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "jmeter-performance.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+spec:
+  containers:
+  - name: jmeter
+    image: "{{ .Values.pod.image.repository }}:{{ .Values.pod.image.tag }}"
+    imagePullPolicy: {{ .Values.pod.image.pullPolicy }}
+    resources:
+      {{- toYaml .Values.pod.resources | nindent 6 }}
+    env:
+    - name: HEAP
+      value: {{ .Values.pod.jvm.heap | quote }}
+    - name: JMETER_JVM_ARGS
+      value: {{ .Values.pod.jvm.args | quote }}
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do sleep 3600; done"]
+    volumeMounts:
+    - name: {{ .Values.configMaps.scripts.name }}
+      mountPath: {{ .Values.configMaps.scripts.mountPath }}
+    - name: {{ .Values.configMaps.jmx.name }}
+      mountPath: {{ .Values.configMaps.jmx.mountPath }}
+    - name: {{ .Values.configMaps.config.name }}
+      mountPath: {{ .Values.configMaps.config.mountPath }}
+    - name: {{ .Values.volumes.results.name }}
+      mountPath: {{ .Values.volumes.results.mountPath }}
+    {{- if .Values.auth.useSecret }}
+    - name: auth-secret
+      mountPath: /opt/secrets
+      readOnly: true
+    {{- end }}
+  volumes:
+  - name: {{ .Values.configMaps.scripts.name }}
+    configMap:
+      name: {{ .Values.configMaps.scripts.name }}
+      defaultMode: {{ .Values.configMaps.scripts.defaultMode }}
+  - name: {{ .Values.configMaps.jmx.name }}
+    configMap:
+      name: {{ .Values.configMaps.jmx.name }}
+  - name: {{ .Values.configMaps.config.name }}
+    configMap:
+      name: {{ .Values.configMaps.config.name }}
+  - name: {{ .Values.volumes.results.name }}
+    emptyDir: {}
+  {{- if .Values.auth.useSecret }}
+  - name: auth-secret
+    secret:
+      secretName: dotcms-auth-secret
+      defaultMode: 0400
+  {{- end }}
+  restartPolicy: {{ .Values.pod.restartPolicy }} 

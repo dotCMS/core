@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
 import {
@@ -32,9 +32,18 @@ interface DotCSMSavePageEvent {
 @Component({
     selector: 'dot-contentlet-wrapper',
     templateUrl: './dot-contentlet-wrapper.component.html',
-    styleUrls: ['./dot-contentlet-wrapper.component.scss']
+    styleUrls: ['./dot-contentlet-wrapper.component.scss'],
+    standalone: false
 })
 export class DotContentletWrapperComponent {
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotEventsService = inject(DotEventsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotRouterService = inject(DotRouterService);
+    private dotIframeService = inject(DotIframeService);
+    private titleService = inject(Title);
+
     @Input()
     header = '';
 
@@ -51,15 +60,7 @@ export class DotContentletWrapperComponent {
     private _appMainTitle = '';
     private readonly customEventsHandler;
 
-    constructor(
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotEventsService: DotEventsService,
-        private dotMessageService: DotMessageService,
-        private dotRouterService: DotRouterService,
-        private dotIframeService: DotIframeService,
-        private titleService: Title
-    ) {
+    constructor() {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
                 close: ({ detail: { data } }: CustomEvent) => {

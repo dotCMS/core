@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -18,9 +18,12 @@ import { FieldProperty } from '../field-properties.model';
     providers: [],
     selector: 'dot-relationships-property',
     templateUrl: './dot-relationships-property.component.html',
-    styleUrls: ['./dot-relationships-property.component.scss']
+    styleUrls: ['./dot-relationships-property.component.scss'],
+    standalone: false
 })
 export class DotRelationshipsPropertyComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+
     readonly STATUS_NEW = 'NEW';
     readonly STATUS_EXISTING = 'EXISTING';
 
@@ -32,8 +35,6 @@ export class DotRelationshipsPropertyComponent implements OnInit {
     editing: boolean;
 
     beforeValue: DotRelationshipsPropertyValue;
-
-    constructor(private dotMessageService: DotMessageService) {}
     ngOnInit() {
         this.beforeValue = structuredClone(this.group.get(this.property.name).value);
         this.editing = !!this.group.get(this.property.name).value.velocityVar;

@@ -3,11 +3,12 @@ import { of as observableOf } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service';
+
+import { DotMenuService } from '../../../../api/services/dot-menu.service';
 
 describe('DotWorkflowTaskDetailService', () => {
     let service: DotWorkflowTaskDetailService;
@@ -26,7 +27,7 @@ describe('DotWorkflowTaskDetailService', () => {
 
         service = injector.get(DotWorkflowTaskDetailService);
         dotMenuService = injector.get(DotMenuService);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('456'));
+        jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
     });
 
     it('should set data to view', (done) => {
@@ -50,6 +51,7 @@ describe('DotWorkflowTaskDetailService', () => {
             );
 
             expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('workflow');
+            expect(dotMenuService.getDotMenuId).toHaveBeenCalledTimes(1);
             done();
         });
 

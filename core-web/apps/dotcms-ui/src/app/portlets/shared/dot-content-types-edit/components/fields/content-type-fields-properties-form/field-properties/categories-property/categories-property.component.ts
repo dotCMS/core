@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
@@ -17,18 +17,17 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     providers: [PaginatorService],
     selector: 'dot-categories-property',
-    templateUrl: './categories-property.component.html'
+    templateUrl: './categories-property.component.html',
+    standalone: false
 })
 export class CategoriesPropertyComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+    paginationService = inject(PaginatorService);
+
     categoriesCurrentPage: DotCMSContentTypeFieldCategories[];
     property: FieldProperty;
     group: UntypedFormGroup;
     placeholder: string;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        public paginationService: PaginatorService
-    ) {}
 
     ngOnInit(): void {
         this.placeholder = !this.property.value

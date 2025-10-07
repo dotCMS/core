@@ -2,7 +2,7 @@ import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs'
 import { Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 
@@ -18,6 +18,9 @@ import { ServerSideTypeModel } from './ServerSideFieldModel';
 
 @Injectable()
 export class ConditionService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     public get error(): Observable<string> {
         return this._error.asObservable();
     }
@@ -25,11 +28,9 @@ export class ConditionService {
 
     private _error: Subject<string> = new Subject<string>();
 
-    constructor(
-        apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = inject(ApiRoot);
+
         this._baseUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`;
     }
 

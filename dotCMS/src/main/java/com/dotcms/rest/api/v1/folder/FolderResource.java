@@ -21,6 +21,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
@@ -47,6 +48,7 @@ import java.util.Map;
  * Created by jasontesser on 9/28/16.
  */
 @Path("/v1/folder")
+@Tag(name = "Folders", description = "Endpoints for managing folder structure and organization")
 public class FolderResource implements Serializable {
 
     private final WebResource webResource;

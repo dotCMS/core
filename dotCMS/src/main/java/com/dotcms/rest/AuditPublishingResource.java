@@ -10,8 +10,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import com.dotmarketing.util.Logger;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Path("/auditPublishing")
+@Tag(name = "Publishing")
 public class AuditPublishingResource {
     private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
 

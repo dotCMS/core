@@ -1110,6 +1110,7 @@
 											"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
 											"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
 											"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+											"    pm.expect(page[\"canSeeRules\"], 'FAILED:[canSeeRules]').equal(true);",
 											"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
 											"    pm.expect(page[\"extension\"]).equal(\"page\");",
 											"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
@@ -1232,6 +1233,7 @@
 											"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
 											"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
 											"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+											"    pm.expect(page[\"canSeeRules\"], 'FAILED:[canSeeRules]').equal(true);",
 											"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
 											"    pm.expect(page[\"extension\"]).equal(\"page\");",
 											"    pm.expect(page[\"folder\"].folderId).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
@@ -1304,7 +1306,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
+										"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    canSeeRules\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
 										"variables": ""
 									}
 								},
@@ -7831,6 +7833,280 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Page API - Testing 'page' field with inline fragments",
+			"item": [
+				{
+					"name": "Test Destination page with content-type-specific fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Destination page returns content-type-specific fields via inline fragments\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.page;",
+									"    ",
+									"    // Verify the page field exists and is the contentlet",
+									"    pm.expect(page.page, 'page field should exist').to.exist;",
+									"    pm.expect(page.page.contentType, 'should be Destination type').to.equal('Destination');",
+									"    ",
+									"    // Test DESTINATION-SPECIFIC fields (only available via inline fragment)",
+									"    pm.expect(page.page.activities, 'activities should exist').to.exist;",
+									"    pm.expect(page.page.activities.length, 'should have activity items').to.be.greaterThan(0);",
+									"    pm.expect(page.page.image, 'image should exist').to.exist;",
+									"    pm.expect(page.page.image.name, 'image name should exist').to.exist;",
+									"    ",
+									"    // Test page-level fields are accessible at root",
+									"    pm.expect(page.tags, 'page tags should exist').to.equal('diving');",
+									"    pm.expect(page.shortDescription, 'page shortDescription should exist').to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\") {\n    title\n    tags\n    shortDescription\n    page {\n      contentType\n      ... on Destination {\n        activities {\n          title\n          identifier\n        }\n        image {\n          name\n          idPath\n        }\n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test htmlpageasset page with SEO fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"htmlpageasset page returns SEO fields via inline fragments\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.page;",
+									"    ",
+									"    // Verify page field exists and correct content type",
+									"    pm.expect(page.page, 'page field should exist').to.exist;",
+									"    pm.expect(page.page.contentType, 'should be htmlpageasset type').to.equal('htmlpageasset');",
+									"    ",
+									"    // Test HTMLPAGEASSET-SPECIFIC fields",
+									"    pm.expect(page.page.seokeywords, 'seokeywords should exist').to.exist;",
+									"    pm.expect(page.page.seodescription, 'seodescription should exist').to.exist;",
+									"    pm.expect(page.page.seokeywords, 'seokeywords should have value').to.equal('Financial Blog');",
+									"    ",
+									"    // Test cachettl field (specific to htmlpageasset)",
+									"    pm.expect(page.page.cachettl, 'cachettl should exist').to.exist;",
+									"    ",
+									"    // pagemetadata can be null - that's valid",
+									"    pm.expect(page.page).to.have.property('pagemetadata');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/blog/index\") {\n    title\n    page {\n      contentType\n      ... on htmlpageasset {\n        seokeywords\n        seodescription\n        pagemetadata\n        cachettl\n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test different htmlpageasset page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Different htmlpageasset page works correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData.data.page;",
+									"    ",
+									"    // Verify page field and content type",
+									"    pm.expect(page.page, 'page field should exist').to.exist;",
+									"    pm.expect(page.page.contentType, 'should be htmlpageasset type').to.equal('htmlpageasset');",
+									"    ",
+									"    // Test htmlpageasset-specific fields",
+									"    pm.expect(page.page.cachettl, 'cachettl should exist').to.exist;",
+									"    ",
+									"    // SEO fields may be null on this page - that's valid",
+									"    pm.expect(page.page.seokeywords, 'seokeywords should be null').to.be.null;",
+									"    pm.expect(page.page.seodescription, 'seodescription should be null').to.be.null;",
+									"    ",
+									"    // Verify basic page properties",
+									"    pm.expect(page.title, 'page title should exist').to.equal('mexico');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/mexico\") {\n    title\n    page {\n      contentType\n      ... on htmlpageasset {\n        seokeywords\n        seodescription\n        pagemetadata\n        cachettl\n      }\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test content-type field isolation - negative test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Content-type-specific fields are NOT available at page level\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Should have GraphQL validation errors",
+									"    pm.expect(jsonData.errors, 'Should have GraphQL errors').to.exist;",
+									"    pm.expect(jsonData.errors.length, 'Should have errors').to.be.greaterThan(0);",
+									"    ",
+									"    // Check for specific field validation errors",
+									"    const errorMessages = jsonData.errors.map(err => err.message);",
+									"    const hasActivitiesError = errorMessages.some(msg => msg.includes('activities') && msg.includes('undefined'));",
+									"    ",
+									"    pm.expect(hasActivitiesError, 'Should have activities field undefined error').to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\") {\n    title\n    activities {\n      title\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for the new 'page' field that enables accessing content-type-specific fields through inline fragments"
 		},
 		{
 			"name": "PageAPI_TestMapSpecialField",

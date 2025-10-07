@@ -1,7 +1,7 @@
 <p-multiSelect
     (onChange)="handleChange($event.value)"
     [(ngModel)]="value"
-    [defaultLabel]="'dot.common.select.workflows' | dm"
+    [placeholder]="'dot.common.select.workflows' | dm"
     [disabled]="disabled"
     [maxSelectedLabels]="3"
     [options]="options$ | async"
@@ -12,8 +12,8 @@
         <span [class.workflow__archive-label]="workflow.archived" class="workflow__label">
             {{ workflow.name }}
         </span>
-        <span *ngIf="workflow.archived" class="workflow__archive-message">
-            ({{ 'dot.common.archived' | dm }})
-        </span>
+        @if (workflow.archived) {
+            <span class="workflow__archive-message">({{ 'dot.common.archived' | dm }})</span>
+        }
     </ng-template>
 </p-multiSelect>

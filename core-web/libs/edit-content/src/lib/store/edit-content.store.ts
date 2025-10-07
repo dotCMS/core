@@ -1,4 +1,4 @@
-import { signalStore, withHooks, withState } from '@ngrx/signals';
+import { signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -6,6 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import {
     ComponentStatus,
     DotCMSContentlet,
+    DotCMSContentletVersion,
     DotCMSContentType,
     DotCMSWorkflow,
     DotCMSWorkflowAction,
@@ -17,8 +18,9 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { withActivities } from './features/activities/activities.feature';
-import { withContent } from './features/content/content.feature';
+import { withContent, DialogInitializationOptions } from './features/content/content.feature';
 import { withForm } from './features/form/form.feature';
+import { withHistory } from './features/history/history.feature';
 import { withInformation } from './features/information/information.feature';
 import { withLocales } from './features/locales/locales.feature';
 import { withLock } from './features/lock/lock.feature';
@@ -35,6 +37,7 @@ export interface EditContentState {
     // Root state
     state: ComponentStatus;
     error: string | null;
+    isDialogMode: boolean;
 
     // Content state
     contentType: DotCMSContentType | null;
@@ -58,6 +61,7 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string | null;
     };
+    workflowActionSuccess: DotCMSContentlet | null;
 
     // User state
     currentUser: DotCurrentUser;
@@ -97,12 +101,30 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string | null;
     };
+
+    // Versions state
+    versions: DotCMSContentletVersion[]; // All accumulated versions for infinite scroll
+    versionsPagination: {
+        currentPage: number;
+        perPage: number;
+        totalEntries: number;
+    } | null;
+    versionsStatus: {
+        status: ComponentStatus;
+        error: string | null;
+    };
+
+    // Historical version viewing state
+    isViewingHistoricalVersion: boolean;
+    historicalVersionInode: string | null;
+    originalContentlet: DotCMSContentlet | null;
 }
 
 export const initialRootState: EditContentState = {
     // Root state
     state: ComponentStatus.INIT,
     error: null,
+    isDialogMode: false,
 
     // Content state
     contentType: null,
@@ -119,6 +141,7 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
+    workflowActionSuccess: null,
 
     // User state
     currentUser: null,
@@ -162,7 +185,20 @@ export const initialRootState: EditContentState = {
     activitiesStatus: {
         status: ComponentStatus.INIT,
         error: null
-    }
+    },
+
+    // Versions state
+    versions: [], // All accumulated versions for infinite scroll
+    versionsPagination: null,
+    versionsStatus: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
+
+    // Historical version viewing state
+    isViewingHistoricalVersion: false,
+    historicalVersionInode: null,
+    originalContentlet: null
 };
 
 /**
@@ -172,35 +208,84 @@ export const initialRootState: EditContentState = {
  */
 export const DotEditContentStore = signalStore(
     withState<EditContentState>(initialRootState),
-    withContent(),
-    withWorkflow(),
     withUser(),
     withUI(),
+    withContent(),
+    withWorkflow(),
     withSidebar(),
     withInformation(),
     withLock(),
     withForm(),
     withLocales(),
     withActivities(),
+    withHistory(),
     withHooks({
         onInit(store) {
-            const activatedRoute = inject(ActivatedRoute);
-            const params = activatedRoute.snapshot?.params;
-
-            // Load the current user
+            // Always load the current user
             store.loadCurrentUser();
+        }
+    }),
+    // Add methods after all features to have access to all store methods
+    // Now that withUI comes before withContent, this method can access both UI and content methods
+    withMethods((store) => {
+        // Inject ActivatedRoute in the proper injection context (within the factory function)
+        const activatedRoute = inject(ActivatedRoute);
 
-            if (params) {
-                const contentType = params['contentType'];
-                const inode = params['id'];
+        return {
+            /**
+             * Initializes the store for dialog mode with the provided parameters.
+             * This method handles all the logic for dialog initialization including:
+             * - Enabling dialog mode
+             * - Initializing content based on provided parameters
+             * - Handling both new content creation and existing content editing
+             *
+             * @param options - The dialog initialization options
+             * @param options.contentTypeId - Content type ID for creating new content
+             * @param options.contentletInode - Contentlet inode for editing existing content
+             */
+            initializeDialogMode(options: DialogInitializationOptions): void {
+                const { contentTypeId, contentletInode } = options;
 
-                // TODO: refactor this when we will use EditContent as sidebar
-                if (inode) {
-                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
-                } else if (contentType) {
-                    store.initializeNewContent(contentType);
+                // Enable dialog mode to prevent route-based initialization
+                store.enableDialogMode();
+
+                // Initialize based on provided parameters
+                if (contentTypeId) {
+                    store.initializeNewContent(contentTypeId);
+                } else if (contentletInode) {
+                    store.initializeExistingContent({
+                        inode: contentletInode,
+                        depth: DotContentletDepths.TWO
+                    });
+                }
+            },
+
+            /**
+             * Initializes the store for route-based mode using ActivatedRoute parameters.
+             * This method should be called by route-based components after the store is created.
+             * It will only initialize if dialog mode is not enabled.
+             */
+            initializeAsPortlet(): void {
+                // Skip route-based initialization if in dialog mode
+                if (store.isDialogMode()) {
+                    return;
+                }
+
+                // Use the ActivatedRoute that was injected in the closure
+                const params = activatedRoute.snapshot?.params;
+
+                if (params) {
+                    const contentType = params['contentType'];
+                    const inode = params['id'];
+
+                    // TODO: refactor this when we will use EditContent as sidebar
+                    if (inode) {
+                        store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+                    } else if (contentType) {
+                        store.initializeNewContent(contentType);
+                    }
                 }
             }
-        }
+        };
     })
 );

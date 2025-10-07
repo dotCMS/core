@@ -12,7 +12,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAnalyticsTrackerService,
     DotContentletLockerService,
@@ -32,7 +31,7 @@ import {
     SiteService
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -68,7 +67,7 @@ const DIALOG_ACTION_EVENT = (detail) => {
             status: FormStatus.SAVED,
             isTranslation: false
         },
-        clientAction: CLIENT_ACTIONS.NOOP
+        clientAction: DotCMSUVEAction.NOOP
     };
 };
 

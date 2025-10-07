@@ -1,6 +1,7 @@
 <dot-portlet-base>
-    <dot-not-license *ngIf="!canAccessPortlet; else licensed" />
-    <ng-template #licensed>
+    @if (!canAccessPortlet) {
+        <dot-not-license />
+    } @else {
         <div class="dot-apps__container">
             <div class="dot-apps__header">
                 <input
@@ -33,18 +34,17 @@
                 </div>
             </div>
             <div class="dot-apps__body">
-                <dot-apps-card
-                    *ngFor="let app of appsCopy"
-                    (actionFired)="goToApp($event)"
-                    [app]="app"></dot-apps-card>
+                @for (app of appsCopy; track app) {
+                    <dot-apps-card (actionFired)="goToApp($event)" [app]="app" />
+                }
             </div>
         </div>
-    </ng-template>
+    }
 
     <dot-apps-import-export-dialog
         (resolved)="reloadAppsData()"
         (shutdown)="onClosedDialog()"
         [action]="importExportDialogAction"
         [show]="showDialog"
-        #importExportDialog></dot-apps-import-export-dialog>
+        #importExportDialog />
 </dot-portlet-base>

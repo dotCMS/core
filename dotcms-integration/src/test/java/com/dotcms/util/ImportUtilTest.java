@@ -1,34 +1,31 @@
 package com.dotcms.util;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtil;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -87,14 +84,24 @@ import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.ResultData;
+import com.dotmarketing.util.importer.model.ValidationMessage;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.io.FileUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -103,6 +110,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -110,13 +118,31 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.io.FileUtils;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_JSON;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_NUMBER_FORMAT;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_SITE_FOLDER_REF;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.UNREACHABLE_URL_CONTENT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -175,6 +201,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on CSV but no permissions, ";
     private static final String TEST_WITH_WF_ACTION_ON_DROPDOWN_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on dropdown but not permission, ";
     private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS_AND_USING_DROPDOWN_ACTION = ", Test with WF Action ID set on CSV (but no permission) and using dropdown action, ";
+    private static final String UNIQUE_FIELDS_WARNING = "There are unique fields in this Content Type. Duplicate values are rejected during import.";
 
     public static class RelationshipTestCase {
 
@@ -683,12 +710,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
                         .unique(true)
                         .contentTypeId(type.id()).dataType(
-                        DataTypes.TEXT).build();
+                                DataTypes.TEXT).build();
         hostField =
                 FieldBuilder.builder(HostFolderField.class).name("testHost")
                         .variable("testHost")
                         .contentTypeId(type.id()).dataType(
-                        DataTypes.TEXT).build();
+                                DataTypes.TEXT).build();
         titleField = fieldAPI.save(titleField, user);
         fieldAPI.save(hostField, user);
 
@@ -716,8 +743,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Validations
         validate(results, true, false, true);
 
-        assertTrue(results.get("warnings").size() == 1);
-        assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+        assertEquals(1, results.get("warnings").size());
+        assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
     }
 
     /**
@@ -743,12 +770,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
                             .unique(true)
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
+                                    DataTypes.TEXT).build();
             hostField =
                     FieldBuilder.builder(HostFolderField.class).name("testHost")
                             .variable("testHost")
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
+                                    DataTypes.TEXT).build();
             titleField = fieldAPI.save(titleField, user);
             fieldAPI.save(hostField, user);
 
@@ -777,9 +804,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
-
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -809,17 +835,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     FieldBuilder.builder(TextField.class).name("testNumber").variable("testNumber")
                             .unique(true)
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.FLOAT).build();
+                                    DataTypes.FLOAT).build();
             hostField =
                     FieldBuilder.builder(HostFolderField.class).name("testHost")
                             .variable("testHost")
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
+                                    DataTypes.TEXT).build();
             titleField = fieldAPI.save(titleField, user);
             fieldAPI.save(hostField, user);
 
             workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                    Arrays.asList(schemeStepActionResult1.getScheme()));
+                    Collections.singletonList(schemeStepActionResult1.getScheme()));
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testNumber, testHost" + "\r\n" +
@@ -842,8 +868,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertEquals(2, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
             assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
@@ -875,17 +901,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
                             .unique(true)
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
+                                    DataTypes.TEXT).build();
             hostField =
                     FieldBuilder.builder(HostFolderField.class).name("testHost")
                             .variable("testHost")
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
+                                    DataTypes.TEXT).build();
             titleField = fieldAPI.save(titleField, user);
             fieldAPI.save(hostField, user);
 
             workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                    Arrays.asList(schemeStepActionResult1.getScheme()));
+                    Collections.singletonList(schemeStepActionResult1.getScheme()));
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
@@ -914,9 +940,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(1, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -946,17 +972,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     FieldBuilder.builder(TextField.class).name("testNumber").variable("testNumber")
                             .unique(true)
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.INTEGER).build();
+                                    DataTypes.INTEGER).build();
             hostField =
                     FieldBuilder.builder(HostFolderField.class).name("testHost")
                             .variable("testHost")
                             .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
+                                    DataTypes.TEXT).build();
             titleField = fieldAPI.save(titleField, user);
             fieldAPI.save(hostField, user);
 
             workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                    Arrays.asList(schemeStepActionResult1.getScheme()));
+                    Collections.singletonList(schemeStepActionResult1.getScheme()));
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testNumber, testHost" + "\r\n" +
@@ -979,9 +1005,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, false, true);
 
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
-            assertTrue(results.get("errors").size() == 0);
+            assertEquals(1, results.get("warnings").size());
+            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertEquals(0, results.get("errors").size());
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -2042,10 +2068,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // import content
             final Map<String, List<String>> results = ImportUtil.importFile(
                     0L, defaultSite.getIdentifier(), contentType.inode(),
-                            new String[]{contentType.fieldMap().get(TITLE_FIELD_NAME).inode()},
+                    new String[]{contentType.fieldMap().get(TITLE_FIELD_NAME).inode()},
                     false, false, user, defaultLanguage.getId(),
-                            csvHeaders, csvreader, -1, -1,
-                            reader, null, getHttpRequest());
+                    csvHeaders, csvreader, -1, -1,
+                    reader, null, getHttpRequest());
             // validations
             validate(results, false, false, false);
 
@@ -2126,8 +2152,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                             + "," + HTMLPageAssetAPI.CACHE_TTL_FIELD
                             + "\r\n" +
                             "Test Page 1," + testPageURL + ","
-                                + site.getIdentifier() + "," + templateId
-                                + ",Test Page 1,0,300\r\n");
+                            + site.getIdentifier() + "," + templateId
+                            + ",Test Page 1,0,300\r\n");
 
             final CsvReader csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
@@ -2545,8 +2571,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, false, false, false);
 
-            assertEquals(results.get("warnings").size(), 0);
-            assertEquals(results.get("errors").size(), 0);
+            assertEquals(0, results.get("warnings").size());
+            assertEquals(0, results.get("errors").size());
 
             final List<Contentlet> savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
@@ -3229,7 +3255,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(0, data.summary().updatedContent());
 
             final var error = result.error().get(0);
-            assertEquals(INVALID_LOCATION.name(), error.code().orElse(null));
+            assertEquals(INVALID_SITE_FOLDER_REF.name(), error.code().orElse(null));
             assertEquals(SITE_FIELD_NAME, error.field().orElse(null));
 
 
@@ -3293,9 +3319,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         String[] csvHeaders = csvreader.getHeaders();
         final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
                 .importId(0L)
-                .siteId(defaultSite.getInode())
+                .siteId(defaultSite.getIdentifier())
                 .contentTypeInode(contentType.inode())
-                .keyFields(new String[]{titleField.id()})
+                .keyFields(titleField.id())
                 .user(user)
                 .language(defaultLanguage.getId())
                 .csvHeaders(csvHeaders)
@@ -3322,91 +3348,82 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void testingImportWithUniqueFields() throws DotSecurityException, DotDataException, IOException {
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
 
-        try {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+        com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
+                .name("unique").type(TextField.class).unique(true).next();
 
-            final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
 
-            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
-                    .name("title").velocityVarName("title").type(TextField.class).next();
+        titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+        uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
 
-            com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
-                    .name("unique").type(TextField.class).unique(true).next();
+        String csvWContent = "A, A" + "\r\n" +
+                "B, B" + "\r\n";
 
-            ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
+        final Reader reader = createTempFile(csvWContent);
 
-            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
-            uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
+        final CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
 
-            String csvWContent = "A, A" + "\r\n" +
-                    "B, B" + "\r\n";
+        final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
+                contentType.inode(),
+                new String[]{titleField.id(), uniqueField.id()}, false, false,
+                user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                -1, reader,
+                schemeStepActionResult1.getAction().getId(), getHttpRequest());
 
-            final Reader reader = createTempFile(csvWContent);
+        //Checking import result
+        final List<String> results = imported.get("results");
+        assertEquals(2, results.size());
 
-            final CsvReader csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
+        final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
+        assertTrue(String.format("Expected Message %s, real messages (%s)", expectedMessage, results),
+                results.contains(expectedMessage));
 
-           final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
-                   contentType.inode(),
-                    new String[]{titleField.id(), uniqueField.id()}, false, false,
-                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                    -1, reader,
-                    schemeStepActionResult1.getAction().getId(), getHttpRequest());
+        final List<String> errors = imported.get("errors");
+        assertTrue( errors.isEmpty());
 
-           //Chekinf import result
-            final List<String> results = imported.get("results");
-            assertEquals(2, results.size());
+        final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
+                APILocator.systemUser(), false, -1, 0);
 
-            final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
-            assertTrue(String.format("Expected Message %s, real messages", expectedMessage, results),
-                    results.contains(expectedMessage));
+        assertEquals(2, contentlets.size());
 
-            final List<String> errors = imported.get("errors");
-            assertTrue( errors.isEmpty());
+        final List<String> titles = contentlets.stream()
+                .map(Contentlet::getTitle)
+                .collect(Collectors.toList());
 
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
-                    APILocator.systemUser(), false, -1, 0);
+        assertTrue(titles.contains("A"));
+        assertTrue(titles.contains("B"));
 
-            assertEquals(2, contentlets.size());
+        //Checking unique_fields table
+        List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                        "WHERE supporting_values->>'contentTypeId' = ?")
+                .addParam(contentType.id())
+                .loadObjectResults();
 
-            final List<String> titles = contentlets.stream()
-                    .map(Contentlet::getTitle)
-                    .collect(Collectors.toList());
+        assertEquals(2, maps.size());
 
-            assertTrue(titles.contains("A"));
-            assertTrue(titles.contains("B"));
+        final List<String> titlesUniqueFields = maps.stream()
+                .map(entry -> getSupportingValues(entry))
+                .flatMap(supportingValues -> ((List<String>) supportingValues.get("contentletIds")).stream())
+                .map(id -> {
+                    try {
+                        return APILocator.getContentletAPI().findContentletByIdentifier(id, false, 1, APILocator.systemUser(), false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .map(Contentlet::getTitle)
+                .collect(Collectors.toList());
 
-            //Cheking unique_fields table
-            List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
-                            "WHERE supporting_values->>'contentTypeId' = ?")
-                    .addParam(contentType.id())
-                    .loadObjectResults();
-
-            assertEquals(2, maps.size());
-
-            final List<String> titlesUniqueFields = maps.stream()
-                    .map(entry -> getSupportingValues(entry))
-                    .flatMap(supportingValues -> ((List<String>) supportingValues.get("contentletIds")).stream())
-                    .map(id -> {
-                        try {
-                            return APILocator.getContentletAPI().findContentletByIdentifier(id, false, 1, APILocator.systemUser(), false);
-                        } catch (DotDataException | DotSecurityException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .map(Contentlet::getTitle)
-                    .collect(Collectors.toList());
-
-            assertTrue(titlesUniqueFields.contains("A"));
-            assertTrue(titlesUniqueFields.contains("B"));
-        } finally {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
-        }
+        assertTrue(titlesUniqueFields.contains("A"));
+        assertTrue(titlesUniqueFields.contains("B"));
     }
 
     private static Map<String, Object> getSupportingValues(Map<String, Object> entry)  {
@@ -3420,8 +3437,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     /**
      * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
      * When:
-     * - Create a ContentType with a unique fields
-     * - Create a Contentlet with a value equals to 'A' in the unique fields value
+     * - Create a ContentType with a unique field
+     * - Create a Contentlet with a value equals to 'A' in the unique field value
      * - Run the import in preview with a file with 2 Contentlets with "A" and "B" as unique field values
      * - Should return a duplicate error and one Contentlet that is valid
      *
@@ -3431,91 +3448,96 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void testingImportPreviewWithUniqueFields() throws DotSecurityException, DotDataException, IOException {
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
-        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
 
-        try {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+        com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
+                .name("unique").type(TextField.class).unique(true).next();
 
-            final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+        ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
 
-            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
-                    .name("title").velocityVarName("title").type(TextField.class).next();
+        titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+        uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
 
-            com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
-                    .name("unique").type(TextField.class).unique(true).next();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "C")
+                .setProperty(uniqueField.variable(), "A")
+                .nextPersisted();
 
-            ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
+        String csvWContent = "A, A" + "\r\n" + //This has the dupe value that we expect will break the import
+                "B, B" + "\r\n";               //This is valid
 
-            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
-            uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
+        final Reader reader = createTempFile(csvWContent);
 
-            final Contentlet contentlet = new ContentletDataGen(contentType)
-                    .setProperty(titleField.variable(), "C")
-                    .setProperty(uniqueField.variable(), "A")
-                    .nextPersisted();
+        final CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
 
-            String csvWContent = "A, A" + "\r\n" +
-                    "B, B" + "\r\n";
+        final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
+                .importId(0L)
+                .siteId(defaultSite.getInode())
+                .contentTypeInode(contentType.inode())
+                .keyFields(titleField.id(), uniqueField.id())
+                .user(user)
+                .language(defaultLanguage.getId())
+                .csvHeaders(csvHeaders)
+                .csvReader(csvreader)
+                .languageCodeHeaderColumn(-1)
+                .countryCodeHeaderColumn(-1)
+                .stopOnError(true)
+                .workflowActionId(schemeStepActionResult1.getAction().getId())
+                .request(getHttpRequest())
+                .build();
+        final ImportResult result = ImportUtil.importFileResult(importFileParams);
+        final  HashMap<String, List<String>> imported = ImportResultConverter.toLegacyFormat(result, user);
 
-            final Reader reader = createTempFile(csvWContent);
+        //Check import result
+        final List<String> results = imported.get("results");
+        assertEquals(2, results.size());
 
-            final CsvReader csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
+        final String resultErrorMessage = String.format("0 \"%s\" content updated corresponding to 0 repeated content based on the key provided",
+                contentType.name());
 
-            final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
-                    contentType.inode(),
-                    new String[]{titleField.id(), uniqueField.id()}, true, false,
-                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                    -1, reader,
-                    schemeStepActionResult1.getAction().getId(), getHttpRequest());
+        final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
+        assertTrue(String.format("Expected message: %s /real message: %s", expectedMessage, results),
+                results.contains(expectedMessage));
+        assertTrue(String.format("Expected: %s / reals: %s", resultErrorMessage, results),
+                results.contains(resultErrorMessage));
 
-            //Chekinf import result
-            final List<String> results = imported.get("results");
-            assertEquals(2, results.size());
+        final List<String> errors = imported.get("errors");
+        assertEquals(2, errors.size());
 
-            final String resultErrorMessage = String.format("0 \"%s\" content updated corresponding to 0 repeated content based on the key provided", contentType.name());
+        final String errorMessage = String.format("Line #2: Contentlet with ID 'Unknown/New' ['A'] has invalid/missing field(s). " +
+                        "The unique value 'a' for the field '%s' in the Content Type '%s' already exists " +
+                        "- Fields: [UNIQUE]: %s (%s)",
+                uniqueField.variable(), contentType.variable(), uniqueField.name(), uniqueField.variable());
 
-            final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
-            assertTrue(String.format("Expected message: %s /real message: %s", expectedMessage, results),
-                    results.contains(expectedMessage));
-            assertTrue(String.format("Expected: %s / reals: %s", resultErrorMessage, results),
-                    results.contains(resultErrorMessage));
+        assertTrue("Expected error message is not present", errors.contains(errorMessage));
 
-            final List<String> errors = imported.get("errors");
-            assertEquals(2, errors.size());
+        final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
+                APILocator.systemUser(), false, -1, 0);
 
-            final String errorMessage = String.format("Line #2: Contentlet with ID 'Unknown/New' ['A'] has invalid/missing field(s). - Fields: [UNIQUE]: %s (%s)",
-                    uniqueField.name(), uniqueField.variable());
+        assertEquals(1, contentlets.size());
+        assertEquals("C", contentlets.get(0).getTitle());
 
-            assertTrue(errors.contains(errorMessage));
+        //Checking unique_fields table
+        List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                        "WHERE supporting_values->>'contentTypeId' = ?")
+                .addParam(contentType.id())
+                .loadObjectResults();
 
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
-                    APILocator.systemUser(), false, -1, 0);
+        assertEquals(1, maps.size());
 
-            assertEquals(1, contentlets.size());
-            assertEquals("C", contentlets.get(0).getTitle());
+        final Map<String, Object> supportingValues =
+                getSupportingValues(maps.get(0));
+        final List<String> contentletIds = ((List<String>) supportingValues.get("contentletIds")).stream()
+                .filter(id -> !contentlet.getIdentifier().equals(id))
+                .collect(Collectors.toList());
 
-            //Cheking unique_fields table
-            List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
-                            "WHERE supporting_values->>'contentTypeId' = ?")
-                    .addParam(contentType.id())
-                    .loadObjectResults();
-
-            assertEquals(1, maps.size());
-
-            final Map<String, Object> supportingValues =
-                    getSupportingValues(maps.get(0));
-            final List<String> contentletIds = ((List<String>) supportingValues.get("contentletIds")).stream()
-                    .filter(id -> !contentlet.getIdentifier().equals(id))
-                    .collect(Collectors.toList());
-
-            assertTrue(contentletIds.isEmpty());
-        } finally {
-            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
-        }
+        assertTrue(contentletIds.isEmpty());
     }
 
     /**
@@ -3662,10 +3684,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * @throws IOException
      */
     @Test
-    public void TestImportBinaryImageExpectNoError()
+    public void TestImportBinaryExpectErrors()
             throws DotSecurityException, DotDataException, IOException {
 
-        String contentTypeName = "TestImportBinaryImageErrorMessage_" + System.currentTimeMillis();
+        String contentTypeName = "TestImportBinaryErrorMessage_" + System.currentTimeMillis();
         String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
         com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
                 .name("title")
@@ -3675,7 +3697,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
                 .name("bin")
                 .velocityVarName("bin")
-                .required(true)
+                .required(false)
                 .type(BinaryField.class)
                 .next();
 
@@ -3687,12 +3709,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .nextPersisted();
 
         final ContentType saved = contentTypeApi.find(contentType.inode());
-        titleField = saved.fields().get(0);
+        titleField = saved.fields().stream().filter(f -> "title".equals(f.variable())).findFirst().orElseThrow();
 
         final Reader reader = createTempFile("title,bin \r\n" +
                 "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
-                "Non-Existing file path, /fake/path" + "\r\n" +
-                "Non-Existing url, https://demo.dotcms.com/lol.jpg" + "\r\n"
+                "Non-Existing-file path, /fake/path" + "\r\n" +
+                "Non-Existing-url, https://demo.dotcms.com/lol.jpg" + "\r\n" +
+                "Non-Valid-url, https://demo.dotcms.com/ lol.jpg" + "\r\n"
         );
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
@@ -3701,7 +3724,1318 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(result.error().get(0).code().isPresent());
         assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
         assertTrue(result.error().get(1).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
+        assertEquals(UNREACHABLE_URL_CONTENT.name(), result.error().get(1).code().get());
+        assertTrue(result.error().get(2).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(2).code().get());
+
+        final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
+                user, false, 0, 0);
+        assertEquals(1,byStructure.size());
+        assertNotNull(byStructure.get(0).get("bin"));
+    }
+
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a file with a valid image URL including query parameters and some invalid URLs
+     * Expected behavior: The import should fail for the invalid URLs but succeed for the valid one
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void TestImportImageExpectErrors()
+            throws DotSecurityException, DotDataException, IOException {
+
+        String contentTypeName = "TestImportImageErrorMessage_" + System.currentTimeMillis();
+        String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+        com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
+                .name("image")
+                .velocityVarName("image")
+                .required(false)
+                .type(ImageField.class)
+                .next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(List.of(titleField, reqField))
+                .nextPersisted();
+
+        final ContentType saved = contentTypeApi.find(contentType.inode());
+        titleField = saved.fields().stream().filter(f -> "title".equals(f.variable())).findFirst().orElseThrow();
+
+        final Reader reader = createTempFile("title,image \r\n" +
+                "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
+                "Non-Existing file path, /fake/path" + "\r\n" +
+                "Non-Existing-url, https://demo.dotcms.com/lol.jpg" + "\r\n" +
+                "Non-Valid-url, https://www.dotcms.com/ assets/logo.svg?w=3840" + "\r\n"
+        );
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+        assertTrue(result.error().get(0).code().isPresent());
+        assertEquals(INVALID_FILE_PATH.name(), result.error().get(0).code().get());
+        assertTrue(result.error().get(1).code().isPresent());
+        assertEquals(UNREACHABLE_URL_CONTENT.name(), result.error().get(1).code().get());
+        assertTrue(result.error().get(2).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(2).code().get());
+
+        //Make sure we got one row with the image as the other two should have failed
+        final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
+                user, false, 0, 0);
+        assertEquals(1,byStructure.size());
+        assertNotNull(byStructure.get(0).get("image"));
+
+    }
+
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a category that exists but is not a child of the configured root
+     * Expected behavior: The import should fail with INVALID_CATEGORY_KEY and no content should be saved
+     */
+    @Test
+    public void importLine_shouldFailIfCategoryIsNotUnderConfiguredRoot() throws DotDataException, DotSecurityException, IOException {
+        final Category configuredRoot = TestDataUtils.createCategories(); // Has valid children
+        final Category unrelatedCategory = new CategoryDataGen()
+                .setCategoryName("Unrelated-Category-" + System.currentTimeMillis())
+                .setKey("unrelated-key-" + System.currentTimeMillis())
+                .setCategoryVelocityVarName("unrelatedVar")
+                .setSortOrder(1)
+                .nextPersisted(); // Not a child of configuredRoot
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore(configuredRoot);
+        final com.dotcms.contenttype.model.field.Field titleField = fieldAPI.byContentTypeAndVar(contentType, "textField");
+        final com.dotcms.contenttype.model.field.Field categoryField = contentType.fields(CategoryField.class).stream()
+                .findFirst()
+                .orElseThrow();
+
+        final String csvContent = String.format("textField,%s\r\nSome Title,%s", categoryField.variable(), unrelatedCategory.getKey());
+        final Reader reader = createTempFile(csvContent);
+
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+
+
+        final ValidationMessage error = result.error().get(0);
+        Optional<String> errorCode = error.code();
+        String errorMessage = error.message();
+
+        assertTrue(errorCode.isPresent());
+        assertEquals(INVALID_CATEGORY_KEY.name(), errorCode.get());
+        assertTrue(errorMessage.contains("Invalid category key found: '" + unrelatedCategory.getKey()));
+        assertTrue(errorMessage.contains("be a child of '" + configuredRoot.getCategoryName() + "'"));
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(1, resultData.get().processed().failedRows());
+        assertEquals(0, resultData.get().summary().createdContent());
+
+        List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertEquals(0, saved.size());
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a category key that doesn't exist
+     * Expected behavior: The import should fail with INVALID_CATEGORY_KEY and no content should be saved
+     */
+    @Test
+    public void importLine_shouldFailIfCategoryKeyDoesNotExist() throws DotDataException, DotSecurityException, IOException {
+        final Category configuredRoot = TestDataUtils.createCategories(); // Has valid children
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore(configuredRoot);
+        final com.dotcms.contenttype.model.field.Field titleField = fieldAPI.byContentTypeAndVar(contentType, "textField");
+        final com.dotcms.contenttype.model.field.Field categoryField = contentType.fields(CategoryField.class).stream()
+                .findFirst()
+                .orElseThrow();
+
+        final String invalidKey = "non-existent-category-key";
+        final String csvContent = String.format("textField,%s\r\nSome Title,%s", categoryField.variable(), invalidKey);
+        final Reader reader = createTempFile(csvContent);
+
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+
+        final ValidationMessage error = result.error().get(0);
+        Optional<String> errorCode = error.code();
+        String errorMessage = error.message();
+
+        assertTrue(errorCode.isPresent());
+        assertEquals(INVALID_CATEGORY_KEY.name(), errorCode.get());
+        assertTrue(errorMessage.contains("Invalid category key found: '" + invalidKey));
+        assertTrue(errorMessage.contains("be a child of '" + configuredRoot.getCategoryName() + "'"));
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(1, resultData.get().processed().failedRows());
+        assertEquals(0, resultData.get().summary().createdContent());
+
+        List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertEquals(0, saved.size());
+    }
+
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We import a valid category key that is a child of the configured root
+     * Expected behavior: The import should succeed and the category should be assigned
+     */
+    @Test
+    public void importLine_shouldSucceedIfCategoryIsValidChild() throws DotDataException, DotSecurityException, IOException {
+        final Category configuredRoot = TestDataUtils.createCategories(); // Has children
+        final List<Category> children = APILocator.getCategoryAPI().getAllChildren(configuredRoot, user, false);
+        assertFalse(children.isEmpty());
+        final Category validChild = children.get(0);
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore(configuredRoot);
+        final com.dotcms.contenttype.model.field.Field titleField = fieldAPI.byContentTypeAndVar(contentType, "textField");
+        final com.dotcms.contenttype.model.field.Field categoryField = contentType.fields(CategoryField.class).stream()
+                .findFirst()
+                .orElseThrow();
+
+        final String csvContent = String.format("textField,%s\r\nTest Title,%s", categoryField.variable(), validChild.getKey());
+        final Reader reader = createTempFile(csvContent);
+
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertTrue(result.error().isEmpty());
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(0, resultData.get().processed().failedRows());
+        assertEquals(1, resultData.get().summary().createdContent());
+
+        List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertEquals(1, saved.size());
+
+        List<Category> assignedCategories = APILocator.getCategoryAPI().getParents(saved.get(0), user, false);
+        assertTrue(assignedCategories.stream().anyMatch(cat -> cat.getInode().equals(validChild.getInode())));
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a file with a valid text field and a JSON field where one entry contains invalid JSON
+     * Expected behavior: The import should fail for the invalid JSON but succeed for valid entries, returning specific error details
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void importFile_withInvalidJSONField_shouldReturnSpecificErrorDetails()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        long time = System.currentTimeMillis();
+
+        try {
+            final String contentTypeName = "JSONTestContentType_" + time;
+            final String contentTypeVarName = "jsonTestContentType_" + time;
+
+            // Create text field
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .required(true)
+                    .next();
+
+            // Create JSON field
+            com.dotcms.contenttype.model.field.Field jsonField = new FieldDataGen()
+                    .name("keyValue")
+                    .velocityVarName("keyValue")
+                    .type(KeyValueField.class)
+                    .required(false)
+                    .next();
+
+            // Create content type with both fields
+            contentType = new ContentTypeDataGen()
+                    .name(contentTypeName)
+                    .velocityVarName(contentTypeVarName)
+                    .host(APILocator.systemHost())
+                    .fields(List.of(titleField, jsonField))
+                    .nextPersisted();
+
+            // Refresh content type to get saved field references
+            final ContentType savedContentType = contentTypeApi.find(contentType.inode());
+            titleField = savedContentType.fields().stream()
+                    .filter(f -> "title".equals(f.variable()))
+                    .findFirst()
+                    .orElseThrow();
+            jsonField = savedContentType.fields().stream()
+                    .filter(f -> "keyValue".equals(f.variable()))
+                    .findFirst()
+                    .orElseThrow();
+
+            // Create CSV with valid and invalid JSON entries
+            final String csvContent = "title,keyValue\r\n" +
+                    "Valid Entry 1,\"{\"\"timeline\"\":\"\"18_months\"\",\"\"team_size\"\":\"\"12\"\"}\"\r\n" +
+                    "Invalid Entry,\"{'timeline':'18_months','team_size':'12'}\"\r\n" +
+                    "Valid Entry 2,\"{\"\"status\"\":\"\"active\"\",\"\"priority\"\":\"\"high\"\"}\"\r\n";
+
+            final Reader reader = createTempFile(csvContent);
+
+            // Perform import with stopOnError=false to process all rows
+            final ImportResult result = importAndValidate(
+                    savedContentType,
+                    titleField,
+                    reader,
+                    false, // stopOnError = false to continue processing
+                    1,     // commitGranularity = 1
+                    WORKFLOW_PUBLISH_ACTION_ID
+            );
+
+            // Validate that we have errors
+            assertNotNull(result);
+            assertFalse("Expected errors for invalid JSON", result.error().isEmpty());
+
+            // Find the JSON validation error
+            ValidationMessage jsonError = result.error().stream()
+                    .filter(error -> "INVALID_JSON".equals(error.code().orElse("")))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("Expected INVALID_JSON error not found"));
+
+            // Validate error type
+            assertEquals("Error type should be ERROR", "ERROR", jsonError.type().toString());
+
+            // Validate error code
+            assertTrue("Error code should be present", jsonError.code().isPresent());
+            assertEquals("Error code should be INVALID_JSON", "INVALID_JSON", jsonError.code().get());
+
+            // Validate error message
+            String errorMessage = jsonError.message();
+            assertEquals("Error message should match expected format",
+                    "Invalid JSON field provided. Key Value Field variable: keyValue", errorMessage);
+
+            // Validate field
+            assertTrue("Error field should be present", jsonError.field().isPresent());
+            assertEquals("Error field should be keyValue", "keyValue", jsonError.field().get());
+
+            // Validate line number (row number in CSV)
+            assertTrue("Line number should be present", jsonError.lineNumber().isPresent());
+            assertEquals("Line number should be 3 (header + 2 data rows)", Integer.valueOf(3), jsonError.lineNumber().get());
+
+
+            Map<String, Object> context = jsonError.context();
+
+            // Validate context size and keys
+            assertEquals("Context should have 3 entries", 3, context.size());
+            assertTrue("Context should contain 'line' key", context.containsKey("line"));
+            assertTrue("Context should contain 'column' key", context.containsKey("column"));
+            assertTrue("Context should contain 'errorHint' key", context.containsKey("errorHint"));
+
+            // Validate context values
+            assertEquals("Context line should be 1", 1, context.get("line"));
+            assertEquals("Context column should be 2", 2, context.get("column"));
+
+            // Validate parse error details
+            String errorHint = (String) context.get("errorHint");
+            assertNotNull("Parse error should not be null", errorHint);
+            assertTrue("Parse error should mention unexpected character",
+                    errorHint.contains("Unexpected character"));
+            assertTrue("Parse error should mention single quote character code",
+                    errorHint.contains("''' (code 39)"));
+            assertTrue("Parse error should mention expecting double-quote",
+                    errorHint.contains("was expecting double-quote to start field name"));
+
+
+            Logger.info(this, "JSON Validation Error Details:");
+            Logger.info(this, "  Type: " + jsonError.type());
+            Logger.info(this, "  Code: " + jsonError.code().orElse("N/A"));
+            Logger.info(this, "  Message: " + jsonError.message());
+            Logger.info(this, "  Field: " + jsonError.field().orElse("N/A"));
+            Logger.info(this, "  Context: " + context);
+
+            // Validate import results
+            final Optional<ResultData> resultData = result.data();
+            assertTrue("Result data should be present", resultData.isPresent());
+
+            // Should have processed 3 rows + header = 4 total
+            assertEquals("Should have parsed 4 rows including header",
+                    4, resultData.get().processed().parsedRows());
+            assertEquals("Should have 1 failed row",
+                    1, resultData.get().processed().failedRows());
+            assertEquals("Should have created 2 content items",
+                    2, resultData.get().summary().createdContent());
+            assertEquals("Should have 1 rollback for the failed row",
+                    1, resultData.get().summary().rollbacks());
+
+            // Verify that valid entries were saved
+            List<Contentlet> savedData = contentletAPI.findByStructure(
+                    contentType.inode(), user, false, 0, 0);
+            assertNotNull("Saved data should not be null", savedData);
+            assertEquals("Should have 2 saved contentlets", 2, savedData.size());
+
+            // Verify the valid JSON entries were saved correctly
+            boolean foundValidEntry1 = false;
+            boolean foundValidEntry2 = false;
+
+            for (Contentlet contentlet : savedData) {
+                String title = contentlet.getStringProperty("title");
+                Object jsonValue = contentlet.get("keyValue");
+
+                if ("Valid Entry 1".equals(title)) {
+                    foundValidEntry1 = true;
+                    assertNotNull("JSON field should not be null for valid entry 1", jsonValue);
+                    // Verify JSON was parsed correctly
+                    String jsonString = jsonValue.toString();
+                    assertTrue("JSON should contain timeline", jsonString.contains("timeline"));
+                    assertTrue("JSON should contain 18_months", jsonString.contains("18_months"));
+                } else if ("Valid Entry 2".equals(title)) {
+                    foundValidEntry2 = true;
+                    assertNotNull("JSON field should not be null for valid entry 2", jsonValue);
+                    // Verify JSON was parsed correctly
+                    String jsonString = jsonValue.toString();
+                    assertTrue("JSON should contain status", jsonString.contains("status"));
+                    assertTrue("JSON should contain active", jsonString.contains("active"));
+                }
+            }
+
+            assertTrue("Should have found Valid Entry 1", foundValidEntry1);
+            assertTrue("Should have found Valid Entry 2", foundValidEntry2);
+
+            // Verify the invalid entry was not saved
+            boolean foundInvalidEntry = savedData.stream()
+                    .anyMatch(c -> "Invalid Entry".equals(c.getStringProperty("title")));
+            assertFalse("Invalid entry should not have been saved", foundInvalidEntry);
+
+        } finally {
+            try {
+                if (contentType != null) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Functional interface for field-specific validation strategies
+     */
+    @FunctionalInterface
+    public interface AssertionsStrategy {
+        /**
+         * Validates the specific aspects of a field test result
+         *
+         * @param result The import result to validate
+         * @param testCase The test case being executed
+         * @param contentType The content type used in the test
+         * @throws DotDataException if there's a data access error
+         * @throws DotSecurityException if there's a security error
+         */
+        void asserts(ImportResult result, FieldTestCase testCase, ContentType contentType) throws DotDataException, DotSecurityException;
+    }
+
+    /**
+     * Test case definition for each field type
+     */
+    public static class FieldTestCase {
+        final String fieldTypeName;
+        final Class<? extends com.dotcms.contenttype.model.field.Field> fieldClass;
+        final String fieldVariable;
+        final DataTypes dataType;
+        final String validValue;
+        final String invalidValue;
+        final String expectedErrorCode;
+        final boolean requiresCategory;
+        final boolean requiresHost;
+        final String fieldSpecificConfig;
+        final AssertionsStrategy assertionsStrategy;
+
+        public FieldTestCase(String fieldTypeName,
+                Class<? extends com.dotcms.contenttype.model.field.Field> fieldClass,
+                String fieldVariable,
+                DataTypes dataType,
+                String validValue,
+                String invalidValue,
+                String expectedErrorCode,
+                boolean requiresCategory,
+                boolean requiresHost,
+                String fieldSpecificConfig,
+                AssertionsStrategy assertionsStrategy) {
+            this.fieldTypeName = fieldTypeName;
+            this.fieldClass = fieldClass;
+            this.fieldVariable = fieldVariable;
+            this.dataType = dataType;
+            this.validValue = validValue;
+            this.invalidValue = invalidValue;
+            this.expectedErrorCode = expectedErrorCode;
+            this.requiresCategory = requiresCategory;
+            this.requiresHost = requiresHost;
+            this.fieldSpecificConfig = fieldSpecificConfig;
+            this.assertionsStrategy = assertionsStrategy;
+        }
+
+        /**
+         * Needed when creating a relationship
+         * @param newValidValue
+         * @return
+         */
+        public FieldTestCase withValidValue(String newValidValue) {
+            return new FieldTestCase(
+                    this.fieldTypeName,
+                    this.fieldClass,
+                    this.fieldVariable,
+                    this.dataType,
+                    newValidValue,
+                    this.invalidValue,
+                    this.expectedErrorCode,
+                    this.requiresCategory,
+                    this.requiresHost,
+                    this.fieldSpecificConfig,
+                    this.assertionsStrategy
+            );
+        }
+
+
+        @Override
+        public String toString() {
+            return fieldTypeName;
+        }
+    }
+
+    @DataProvider
+    public static Object[][] fieldTestCases() {
+        return new Object[][]{
+
+                // Required TextField - Missing value
+                {new FieldTestCase(
+                        "RequiredTextField",
+                        TextField.class,
+                        "requiredTextField",
+                        DataTypes.TEXT,
+                        "Valid text value",
+                        "", // Empty required field
+                        REQUIRED_FIELD_MISSING.name(),
+                        false,
+                        false,
+                        "required",
+                        REQUIRED_TEXT_FIELD_ASSERTION
+                )},
+                // DateTimeField - Invalid date format
+                {new FieldTestCase(
+                        "DateTimeField",
+                        DateTimeField.class,
+                        "dateField",
+                        DataTypes.DATE,
+                        "2023-12-25",
+                        "invalid-date-format",
+                        INVALID_DATE_FORMAT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_DATE_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "DateField",
+                        DateField.class,
+                        "dateField",
+                        DataTypes.DATE,
+                        "2023-12-25",
+                        "invalid-date-format",
+                        INVALID_DATE_FORMAT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_DATE_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "TimeField",
+                        TimeField.class,
+                        "timeField",
+                        DataTypes.DATE,
+                        "14:30:00",
+                        "invalid-time",
+                        INVALID_DATE_FORMAT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_DATE_ASSERTION
+                )},
+                // Integer TextField - Invalid number
+                {new FieldTestCase(
+                        "IntegerField",
+                        TextField.class,
+                        "integerField",
+                        DataTypes.INTEGER,
+                        "123",
+                        "not-a-number",
+                        INVALID_NUMBER_FORMAT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_INT_NUMBER_ASSERTION
+                )},
+                // Float TextField - Invalid decimal
+                {new FieldTestCase(
+                        "FloatField",
+                        TextField.class,
+                        "floatField",
+                        DataTypes.FLOAT,
+                        "123.45",
+                        "not-a-decimal",
+                        INVALID_NUMBER_FORMAT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_INT_NUMBER_ASSERTION
+                )},
+                // BinaryField - Unreachable URL
+                {new FieldTestCase(
+                        "BinaryField",
+                        BinaryField.class,
+                        "binaryField",
+                        DataTypes.SYSTEM,
+                        "", // Empty is valid for optional binary
+                        "https://www.dotcms.com/invalid-url-does-not-exist-" + System.currentTimeMillis() + ".com/file.pdf",
+                        UNREACHABLE_URL_CONTENT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_BINARY_ASSERTION
+                )},
+                // ImageField - Invalid file path
+                {new FieldTestCase(
+                        "ImageField",
+                        ImageField.class,
+                        "imageField",
+                        DataTypes.TEXT,
+                        "", // Empty is valid for optional image
+                        "/invalid/path/to/image.jpg",
+                        INVALID_FILE_PATH.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_IMAGE_PATH_ASSERTION
+                )},
+                // ImageField - Invalid file path
+                {new FieldTestCase(
+                        "ImageField",
+                        ImageField.class,
+                        "imageField",
+                        DataTypes.TEXT,
+                        "", // Empty is valid for optional image
+                        "https://www.dotcms.com/invalid-url-does-not-exist-" + System.currentTimeMillis() + ".com/file.pdf",
+                        UNREACHABLE_URL_CONTENT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_IMAGE_URL_ASSERTION
+                )},
+                // HostFolderField - Invalid location
+                {new FieldTestCase(
+                        "HostFolderField",
+                        HostFolderField.class,
+                        "hostField",
+                        DataTypes.TEXT,
+                        "", // Will be set to valid host in test
+                        "invalid-host-identifier-" + System.currentTimeMillis(),
+                        INVALID_SITE_FOLDER_REF.name(),
+                        false,
+                        true,
+                        null,
+                        INVALID_HOST_FOLDER_ASSERTION
+                )},
+                // CategoryField - Invalid category key
+                {new FieldTestCase(
+                        "CategoryField",
+                        CategoryField.class,
+                        "categoryField",
+                        DataTypes.TEXT,
+                        "", // Will be set to valid category in test
+                        "invalid-category-key-" + System.currentTimeMillis(),
+                        INVALID_CATEGORY_KEY.name(),
+                        true,
+                        false,
+                        null,
+                        INVALID_CATEGORY_ASSERTION
+                )},
+                // KeyValueField (JSON) - Invalid JSON
+                {new FieldTestCase(
+                        "KeyValueField",
+                        KeyValueField.class,
+                        "keyValueField",
+                        DataTypes.LONG_TEXT,
+                        "{\"\"valid\"\":\"\"json\"\"}",
+                        "{'invalid':'json'}", // Single quotes make it invalid
+                        INVALID_JSON.name(),
+                        false,
+                        false,
+                        null,
+                        JSON_FIELD_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "JsonField",
+                        JSONField.class,
+                        "jsonField",
+                        DataTypes.LONG_TEXT,
+                        "{}",
+                        "{'invalid':'json'}", // Single quotes make it invalid
+                        INVALID_JSON.name(),
+                        false,
+                        false,
+                        null,
+                        JSON_FIELD_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "RequiredTextAreaField",
+                        TextAreaField.class,
+                        "textAreaField",
+                        DataTypes.LONG_TEXT,
+                        "Valid long text content for text area",
+                        "", // Empty required field
+                        REQUIRED_FIELD_MISSING.name(),
+                        false,
+                        false,
+                        "required",
+                        REQUIRED_TEXT_AREA_ASSERTION
+                )},
+                // WysiwygField - Required field missing
+                {new FieldTestCase(
+                        "RequiredWysiwygField",
+                        WysiwygField.class,
+                        "wysiwygField",
+                        DataTypes.LONG_TEXT,
+                        "<p>Valid HTML content</p>",
+                        "", // Empty required field
+                        REQUIRED_FIELD_MISSING.name(),
+                        false,
+                        false,
+                        "required",
+                        REQUIRED_WYSIWYG_ASSERTION
+                )},
+                // StoryBlockField - Required field missing
+                {new FieldTestCase(
+                        "RequiredStoryBlockField",
+                        StoryBlockField.class,
+                        "storyBlockField",
+                        DataTypes.LONG_TEXT,
+                        "{\"blocks\":[{\"type\":\"paragraph\",\"data\":{\"text\":\"Valid block\"}}]}",
+                        "", // Empty required field
+                        REQUIRED_FIELD_MISSING.name(),
+                        false,
+                        false,
+                        "required",
+                        REQUIRED_STORY_BLOCK_ASSERTION
+                )},
+
+                {new FieldTestCase(
+                        "SelectField",
+                        SelectField.class,
+                        "SelectField",
+                        DataTypes.FLOAT,
+                        "10", // Will be set to valid option in test
+                        "lol", // Invalid
+                        INVALID_NUMBER_FORMAT.name(),
+                        false,
+                        false,
+                        null, // Select options
+                        INVALID_SELECT_NUMBER_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "UniqueTextField",
+                        TextField.class,
+                        "uniqueTextField",
+                        DataTypes.TEXT,
+                        "dupe-value",
+                        "dupe-value", // Test should fail here
+                        DUPLICATE_UNIQUE_VALUE.name(),
+                        false,
+                        false,
+                        "unique",
+                        UNIQUE_TEXT_FIELD_ASSERTION
+                )},
+                // RelationshipField - Invalid content reference
+                {new FieldTestCase(
+                        "RelationshipField",
+                        RelationshipField.class,
+                        "relationshipField",
+                        DataTypes.SYSTEM,
+                        "", // Will be set to valid content reference by the test once the related content is created
+                        "invalid-content-id-12345",
+                        RELATIONSHIP_VALIDATION_ERROR.name(),
+                        false,
+                        false,
+                        null,
+                        RELATIONSHIP_FIELD_VALIDATION
+                )},
+        };
+    }
+
+    @UseDataProvider("fieldTestCases")
+    @Test
+    public void importFile_stopOnError_individualFieldTest(FieldTestCase testCase)
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        Category testCategory = null;
+        ContentType relatedContentType = null;
+        Contentlet relatedContentlet = null;
+
+        Host testSite = null;
+
+        try {
+            final long time = System.currentTimeMillis();
+            final String baseName = "TestFor_" + testCase.fieldTypeName;
+            final String contentTypeName = baseName + "_CT_" + time;
+            final String contentTypeVarName = baseName.toLowerCase() + "CT" + time;
+
+            // Setup test dependencies
+            if (testCase.requiresHost) {
+                testSite = new SiteDataGen().nextPersisted();
+            }
+
+            Category parent = null;
+            if (testCase.requiresCategory) {
+
+                parent = new CategoryDataGen()
+                        .setCategoryName("ParentTestCat_" + time)
+                        .setKey("parent-test-cat-" + time)
+                        .setCategoryVelocityVarName("parentTestCatVar")
+                        .setSortOrder(1)
+                        .nextPersisted();
+
+                testCategory = new CategoryDataGen()
+                        .setCategoryName("TestCat_" + time)
+                        .setKey("test-cat-" + time)
+                        .setCategoryVelocityVarName("testCatVar")
+                        .parent(parent)
+                        .setSortOrder(1)
+                        .nextPersisted();
+            }
+
+            if(testCase.fieldClass == RelationshipField.class){
+                // 1. Create the related content type first
+                relatedContentType = createRelatedContentType();
+
+                // 2. Create related contentlet
+                relatedContentlet = createRelatedContentlet(relatedContentType);
+                // Update test case valid value with the related contentlet identifier
+                testCase = testCase.withValidValue(relatedContentlet.getIdentifier());
+                Logger.info(ImportUtil.class,"Related contentlet is :: "+relatedContentlet.getIdentifier());
+            }
+
+            // Create fields for this test case
+            List<com.dotcms.contenttype.model.field.Field> fields = createFieldsForTestCase(testCase, parent, relatedContentType);
+
+            // Create content type (Parent for relationships)
+            contentType = new ContentTypeDataGen()
+                    .name(contentTypeName)
+                    .velocityVarName(contentTypeVarName)
+                    .host(APILocator.systemHost())
+                    .fields(fields)
+                    .nextPersisted();
+
+            // Refresh to get field IDs
+            final ContentType savedContentType = contentTypeApi.find(contentType.inode());
+            final com.dotcms.contenttype.model.field.Field trackingField = savedContentType.fields().stream()
+                    .filter(f -> "trackingInfo".equals(f.variable()))
+                    .findFirst()
+                    .orElseThrow();
+
+            // Create CSV content for this specific field test
+            final String csvContent = createCSVForFieldTest(testCase, testSite, testCategory);
+
+            Logger.info(this, "Testing field type: " + testCase.fieldTypeName);
+            Logger.info(this, "CSV Content:\n" + csvContent);
+
+            // Execute test with stopOnError = TRUE
+            final Reader reader = createTempFile(csvContent);
+            final ImportResult result = importAndValidate(
+                    savedContentType,
+                    trackingField,
+                    reader,
+                    true,  // stopOnError = true
+                    1,     // commitGranularity = 1
+                    WORKFLOW_PUBLISH_ACTION_ID
+            );
+
+            // Validate results for this specific field type
+            validateResults(result, testCase, savedContentType);
+
+        } finally {
+            cleanupTestData(contentType, testCategory, testSite, relatedContentlet, relatedContentType);
+        }
+    }
+
+    private String getCardinalityValue(FieldTestCase testCase) {
+        // Default to MANY_TO_MANY if not specified
+        if (testCase.fieldSpecificConfig != null && testCase.fieldSpecificConfig.contains("cardinality:")) {
+            return testCase.fieldSpecificConfig.split("cardinality:")[1].trim();
+        }
+
+        // Default cardinality (MANY_TO_MANY = 2)
+        return String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+    }
+
+    private ContentType createRelatedContentType() throws DotDataException {
+        final String timestamp = String.valueOf(System.currentTimeMillis());
+        final String relatedTypeName = "RelatedType_" + timestamp;
+        final String relatedTypeVar = "relatedType" + timestamp;
+
+        // Create basic fields for the related content type
+        List<com.dotcms.contenttype.model.field.Field> relatedFields = new ArrayList<>();
+
+        relatedFields.add(
+                ImmutableTextField.builder()
+                        .name("relatedTitle")
+                        .variable("relatedTitle")
+                        .required(true)
+                        .listed(true)
+                        .indexed(true)
+                        .sortOrder(1)
+                        .searchable(true)
+                        .build());
+
+        relatedFields.add(
+                ImmutableTextAreaField.builder()
+                        .name("relatedBody")
+                        .variable("relatedBody")
+                        .required(false)
+                        .listed(true)
+                        .indexed(true)
+                        .sortOrder(2)
+                        .searchable(true)
+                        .build());
+
+        // Create the content type
+        ContentType relatedType = new ContentTypeDataGen()
+                .name(relatedTypeName)
+                .velocityVarName(relatedTypeVar)
+                .host(APILocator.systemHost())
+                .fields(relatedFields)
+                .nextPersisted();
+
+        // Set up workflow for the related content type
+        workflowAPI.saveSchemesForStruct(new StructureTransformer(relatedType).asStructure(),
+                Collections.singletonList(schemeStepActionResult1.getScheme()));
+
+        return relatedType;
+    }
+
+    private Contentlet createRelatedContentlet(ContentType relatedContentType){
+        final String timestamp = String.valueOf(System.currentTimeMillis());
+
+        return new ContentletDataGen(relatedContentType.id())
+                .languageId(defaultLanguage.getId())
+                .host(defaultSite)
+                .setProperty("relatedTitle", "Related Content " + timestamp)
+                .setProperty("relatedBody", "This is related content for relationship testing")
+                .nextPersisted();
+    }
+
+    /**
+     * Creates the field list for a specific test case
+     */
+    private List<com.dotcms.contenttype.model.field.Field> createFieldsForTestCase(
+            FieldTestCase testCase, Category testCategory, ContentType relatedContentType) {
+
+        List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+        // Always add a tracking field
+        fields.add(
+                FieldBuilder.builder(TextField.class)
+                        .name("trackingInfo")
+                        .variable("trackingInfo")
+                        .required(false)
+                        .build()
+        );
+
+        // Create the specific field being tested
+        FieldBuilder fieldBuilder = FieldBuilder.builder(testCase.fieldClass)
+                .name(testCase.fieldVariable)
+                .variable(testCase.fieldVariable)
+                .dataType(testCase.dataType)
+                .required("required".equals(testCase.fieldSpecificConfig))
+                .unique("unique".equals(testCase.fieldSpecificConfig));
+
+        if(null != relatedContentType){
+            // Set-up pieces required for the relationship to work
+            fieldBuilder
+                    .values(getCardinalityValue(testCase)) // Set cardinality
+                    .relationType(relatedContentType.variable());
+        }
+
+        // Add field-specific configurations
+        if (testCase.requiresCategory && testCategory != null) {
+            fieldBuilder = fieldBuilder.values(testCategory.getInode());
+        }
+
+        fields.add(fieldBuilder.build());
+
+        return fields;
+    }
+
+    /**
+     * Creates CSV content specific to the field being tested
+     */
+    private String createCSVForFieldTest(FieldTestCase testCase, Host testSite, Category testCategory) {
+        String validValue = testCase.validValue;
+        String invalidValue = testCase.invalidValue;
+
+        // Adjust values based on field requirements
+        if (testCase.requiresHost && testSite != null) {
+            validValue = defaultSite.getIdentifier();
+        }
+        if (testCase.requiresCategory && testCategory != null) {
+            validValue = testCategory.getKey();
+        }
+
+        return String.format(
+                "trackingInfo,%s\r\n" +
+                        "Row1-Valid,\"%s\"\r\n" +
+                        "Row2-Error,\"%s\"\r\n" +
+                        "Row3-NeverProcessed,\"This should never be processed\"\r\n",
+                testCase.fieldVariable,
+                validValue,
+                invalidValue
+        );
+    }
+
+    public static final AssertionsStrategy REQUIRED_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "requiredTextField",error.field().get());
+
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy REQUIRED_TEXT_AREA_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "textAreaField",error.field().get());
+
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy REQUIRED_WYSIWYG_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "wysiwygField",error.field().get());
+
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy REQUIRED_STORY_BLOCK_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "storyBlockField",error.field().get());
+
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_SELECT_NUMBER_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+        assertEquals("Test expected required field label is present",
+                String.format("Unable to set string value '%s' as a Float for the field: %s",testCase.invalidValue,testCase.fieldVariable),
+                error.message());
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_NUMBER_FORMAT.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy UNIQUE_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertThat(error.message().trim(), allOf(
+            containsString(testCase.fieldVariable)
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", DUPLICATE_UNIQUE_VALUE.name(), error.code().get());
+    };
+
+    private static void assertRequiredField(FieldTestCase testCase, ValidationMessage error) {
+        assertThat(error.message().trim(), allOf(
+                startsWith("Contentlet with ID"),
+                containsString("has invalid/missing field(s)"),
+                containsString("Fields: [REQUIRED]"),
+                containsString(testCase.fieldVariable),
+                containsString("(" + testCase.fieldVariable  + ")")
+        ));
+    }
+
+    public static final AssertionsStrategy INVALID_DATE_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable, error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue, error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Unable to convert string "),
+                containsString(testCase.invalidValue),
+                containsString("to"),
+                containsString("field:"),
+                containsString(testCase.fieldVariable))
+        );
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_DATE_FORMAT.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_INT_NUMBER_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+        assertThat(error.message().trim(), allOf(
+                startsWith(String.format("Unable to set string value '%s' as a ",testCase.invalidValue)),
+                containsString("for the field:"),
+                endsWith(testCase.fieldVariable)
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_NUMBER_FORMAT.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_BINARY_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present", testCase.fieldVariable, error.field().get());
+        assertEquals("Test expected required field label is present", testCase.invalidValue, error.invalidValue().get());
+        assertEquals("Test expected error message is present","URL is syntactically valid but returned a non-success HTTP response", error.message());
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", UNREACHABLE_URL_CONTENT.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_IMAGE_PATH_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertEquals("","Unable to match the given path with a file stored in dotCMS",error.message());
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_FILE_PATH.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_IMAGE_URL_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertEquals("Test expected error is for the url","URL is syntactically valid but returned a non-success HTTP response", error.message());
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", UNREACHABLE_URL_CONTENT.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_HOST_FOLDER_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertEquals("Test expected error is for the url","The provided inode/path does not exist or is not associated with a valid Site or Folder.", error.message());
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_SITE_FOLDER_REF.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_CATEGORY_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Invalid category key found:"),
+                containsString("It must exist and be a child of")
+        ));
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_CATEGORY_KEY.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy JSON_FIELD_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Invalid JSON field provided."),
+                endsWith(testCase.fieldVariable)
+        ));
+
+        assertThat(error.context().get("errorHint").toString().trim(), allOf(
+                startsWith("Unexpected character (''' (code 39)): was expecting double-quote to start field name"),
+                not(containsString("[Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled);")),
+                containsString("line: 1, column: 2")
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy RELATIONSHIP_FIELD_VALIDATION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+        assertThat(error.message().trim(), allOf(
+             startsWith(String.format("The field has a value (%s) that is not an identifier nor a lucene query", testCase.invalidValue))
+        ));
+    };
+
+    /**
+     * Validates results specific to each field type
+     */
+    private void validateResults(ImportResult result, FieldTestCase testCase, ContentType contentType)
+            throws DotDataException, DotSecurityException {
+
+        assertTrue("Should have always stopped on the introduced error for:" + testCase, result.stoppedOnErrorAtLine().isPresent());
+
+        assertEquals("All Errors landed in row #3", Integer.valueOf(3), result.stoppedOnErrorAtLine().get());
+
+        assertNotNull("Result should not be null for " + testCase.fieldTypeName, result);
+
+        // Should have exactly 1 error (from row 2)
+        assertFalse("Should have errors for " + testCase.fieldTypeName, result.error().isEmpty());
+        assertEquals("Should have exactly 1 error for " + testCase.fieldTypeName,
+                1, result.error().size());
+
+        // Validate import behavior (stopOnError=true)
+        Optional<ResultData> resultData = result.data();
+        assertTrue("Result data should be present for " + testCase.fieldTypeName, resultData.isPresent());
+
+        // Should have processed 3 rows (header + 2 data rows) before stopping
+        assertEquals("Should have processed 3 rows for " + testCase.fieldTypeName,
+                3, resultData.get().processed().parsedRows());
+
+        // Should have 1 failed row (row 2)
+        assertEquals("Should have 1 failed row for " + testCase.fieldTypeName,
+                1, resultData.get().processed().failedRows());
+
+        // Should have created 1 content (row 1 only)
+        assertEquals("Should have created 1 content for " + testCase.fieldTypeName,
+                1, resultData.get().summary().createdContent());
+
+        // Should have 0 rollbacks (stopOnError=true doesn't roll back)
+        assertEquals("Should have 0 rollbacks for " + testCase.fieldTypeName,
+                0, resultData.get().summary().rollbacks());
+
+        // Verify exactly 1 contentlet was saved
+        List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertEquals("Should have saved 1 contentlet for " + testCase.fieldTypeName,
+                1, savedData.size());
+
+        // Verify it's the first (valid) row
+        assertEquals("Saved contentlet should be from Row1 for " + testCase.fieldTypeName,
+                "Row1-Valid", savedData.get(0).getStringProperty("trackingInfo"));
+
+        Logger.info(this, "✓ Field test passed for: " + testCase.fieldTypeName +
+                " | Error: " + testCase.expectedErrorCode +
+                " | Row processed: " + resultData.get().processed().parsedRows() +
+                " | Content created: " + resultData.get().summary().createdContent());
+
+        //Verify we have an error code and it matches the expected
+        ValidationMessage error = result.error().get(0);
+        assertTrue("Error code should be present for " + testCase.fieldTypeName,
+                error.code().isPresent());
+        assertEquals("Error code should match expected for " + testCase.fieldTypeName,
+                testCase.expectedErrorCode, error.code().get());
+
+        if(null != testCase.assertionsStrategy){
+            testCase.assertionsStrategy.asserts(result,testCase,contentType);
+        }
+    }
+
+    /**
+     * Enhanced cleanup method that handles relationship-related objects
+     */
+    private void cleanupTestData(ContentType contentType, Category testCategory, Host testSite, Contentlet relatedContentlet, ContentType relatedContentType) {
+        try {
+            // Clean up main content type
+            if (contentType != null) {
+                List<Contentlet> contentlets = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+                for (Contentlet contentlet : contentlets) {
+                    contentletAPI.archive(contentlet, user, false);
+                    contentletAPI.delete(contentlet, user, false);
+                }
+                contentTypeApi.delete(contentType);
+            }
+
+            // Clean up related contentlet and content type (for relationship tests)
+            if (relatedContentlet != null) {
+                try {
+                    contentletAPI.archive(relatedContentlet, user, false);
+                    contentletAPI.delete(relatedContentlet, user, false);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtil.class,"Error cleaning up related contentlet", e);
+                }
+            }
+
+            if (relatedContentType != null) {
+                try {
+                    // Clean up any remaining related contentlets
+                    List<Contentlet> relatedContentlets = contentletAPI.findByStructure(relatedContentType.inode(), user, false, 0, 0);
+                    for (Contentlet contentlet : relatedContentlets) {
+                        contentletAPI.archive(contentlet, user, false);
+                        contentletAPI.delete(contentlet, user, false);
+                    }
+                    contentTypeApi.delete(relatedContentType);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtil.class,"Error cleaning up related content type", e);
+                }
+            }
+
+            // Clean up other test objects
+            if (testCategory != null) {
+                CategoryDataGen.delete(testCategory);
+            }
+            if (testSite != null) {
+                APILocator.getHostAPI().archive(testSite, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(testSite, APILocator.systemUser(), false);
+            }
+        } catch (Exception e) {
+            Logger.error("Error cleaning up test data", e);
+        }
     }
 
 }

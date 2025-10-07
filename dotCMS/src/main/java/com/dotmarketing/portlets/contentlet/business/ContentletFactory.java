@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -390,7 +390,7 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException
 	 */
 	protected abstract List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
-			throws DotDataException, DotSecurityException;
+			throws DotDataException;
 
     /**
      * Retrieves all versions for a contentlet identifier.
@@ -400,9 +400,108 @@ public abstract class ContentletFactory {
      * @param maxResults
      * @return
      * @throws DotDataException
-     * @throws DotSecurityException
      */
-    public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException, DotSecurityException;
+    public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException;
+
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param identifier       The {@link Identifier} of the Contentlet whose versions will be
+     *                         returned.
+     * @param bringOldVersions If {@code true}, the old versions of the Contentlet will be included
+     *                         in the results, and not only its live/working version for each
+     *                         language.
+     * @param limit            The maximum number of versions to retrieve, for pagination purposes.
+     * @param offset           The result offset, for pagination purposes.
+     *
+     * @return A list of {@link Contentlet} objects representing its versions.
+     *
+     * @throws DotDataException An error occurred when retrieving the versions from the database.
+     */
+    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset) throws DotDataException;
+
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param identifier       The {@link Identifier} of the Contentlet whose versions will be
+     *                         returned.
+     * @param bringOldVersions If {@code true}, the old versions of the Contentlet will be included
+     *                         in the results, and not only its live/working version for each
+     *                         language.
+     * @param limit            The maximum number of versions to retrieve, for pagination purposes.
+     * @param offset           The result offset, for pagination purposes.
+     * @param orderDirection   The {@link OrderDirection} that will be used to sort the results by.
+     *
+     * @return A list of {@link Contentlet} objects representing its versions.
+     *
+     * @throws DotDataException An error occurred when retrieving the versions from the database.
+     */
+    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset, final OrderDirection orderDirection) throws DotDataException;
+
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param identifier       The {@link Identifier} of the Contentlet whose versions will be
+     *                         returned.
+     * @param languageId       The Language ID of the versions being returned. If all languages are
+     *                         included, just set this to -1.
+     * @param bringOldVersions If {@code true}, the old versions of the Contentlet will be included
+     *                         in the results, and not only its live/working version for each
+     *                         language.
+     * @param limit            The maximum number of versions to retrieve, for pagination purposes.
+     * @param offset           The result offset, for pagination purposes.
+     * @param orderDirection   The {@link OrderDirection} that will be used to sort the results by.
+     *
+     * @return A list of {@link Contentlet} objects representing its versions.
+     *
+     * @throws DotDataException An error occurred when retrieving the versions from the database.
+     */
+    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final long languageId, final boolean bringOldVersions, final int limit, final int offset, final OrderDirection orderDirection) throws DotDataException;
+
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param identifier       The {@link Identifier} of the Contentlet whose versions will be
+     *                         returned.
+     * @param bringOldVersions If {@code true}, the old versions of the Contentlet will be included
+     *                         in the results, and not only its live/working version for each
+     *                         language.
+     * @param limit            The maximum number of versions to retrieve, for pagination purposes.
+     * @param offset           The result offset, for pagination purposes.
+     * @param orderBy          The column that will be used to order the results.
+     * @param orderDirection   The {@link OrderDirection} that will be used to sort the results by.
+     *
+     * @return A list of {@link Contentlet} objects representing its versions.
+     *
+     * @throws DotDataException An error occurred when retrieving the versions from the database.
+     */
+    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset, final String orderBy, final OrderDirection orderDirection) throws DotDataException;
+
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param identifier       The {@link Identifier} of the Contentlet whose versions will be
+     *                         returned.
+     * @param languageId       The Language ID of the versions being returned. If all languages are
+     *                         included, just set this to -1.
+     * @param bringOldVersions If {@code true}, the old versions of the Contentlet will be included
+     *                         in the results, and not only its live/working version for each
+     *                         language.
+     * @param limit            The maximum number of versions to retrieve, for pagination purposes.
+     * @param offset           The result offset, for pagination purposes.
+     * @param orderBy          The column that will be used to order the results.
+     * @param orderDirection   The {@link OrderDirection} that will be used to sort the results by.
+     *
+     * @return A list of {@link Contentlet} objects representing its versions.
+     *
+     * @throws DotDataException An error occurred when retrieving the versions from the database.
+     */
+    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final long languageId, final boolean bringOldVersions, final int limit, final int offset, final String orderBy, final OrderDirection orderDirection) throws DotDataException;
 
 	/**
 	 * Retrieves all versions for a list of contentlet identifiers

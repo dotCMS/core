@@ -29,6 +29,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
  * @since Jul 7, 2016
  */
 @SuppressWarnings("serial")
+@Tag(name = "Administration")
 @Path("/ws/v1/system")
 public class EventsResource implements Serializable {
 

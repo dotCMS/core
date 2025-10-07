@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.user;
 
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -58,9 +58,6 @@ public final class UserForm extends Validated implements LanguageSupport  {
         this.userId = builder.userId;
 
         checkValid();
-        if (!UtilMethods.isSet(this.password)) {
-            throw new IllegalArgumentException("Password can not be null");
-        }
     }
 
     public String getUserId() {

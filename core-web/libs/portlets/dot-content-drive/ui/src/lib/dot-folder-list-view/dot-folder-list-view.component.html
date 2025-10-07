@@ -1,0 +1,121 @@
+<p-table
+    [value]="$items()"
+    [tableStyle]="{ width: '100%' }"
+    [paginator]="$showPagination()"
+    [rows]="MIN_ROWS_PER_PAGE"
+    [rowsPerPageOptions]="rowsPerPageOptions"
+    [totalRecords]="$totalItems()"
+    [lazy]="true"
+    [scrollable]="true"
+    [styleClass]="$styleClass()"
+    [(selection)]="selectedItems"
+    (selectionChange)="onSelectionChange()"
+    (onPage)="onPage($event)"
+    (onSort)="onSort($event)"
+    [first]="$currentPageFirstRowIndex()"
+    dataKey="identifier"
+    sortMode="single"
+    selectionMode="multiple"
+    sortField="modDate"
+    [sortOrder]="-1"
+    data-testId="table"
+    scrollHeight="flex">
+    <ng-template pTemplate="header">
+        <tr data-testId="header-row">
+            <th style="width: 2.5rem"><p-tableHeaderCheckbox data-testId="header-checkbox" /></th>
+            @for (column of HEADER_COLUMNS; track column.field) {
+                @if (column.sortable) {
+                    <th
+                        [pSortableColumn]="column.field"
+                        [width]="column.width"
+                        data-testId="header-column-sortable">
+                        {{ column.header | dm }}
+                        <p-sortIcon [field]="column.field" data-testId="sort-icon" />
+                    </th>
+                } @else {
+                    <th [width]="column.width" data-testId="header-column-not-sortable">
+                        {{ column.header | dm }}
+                    </th>
+                }
+            }
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+        @let status = item | dotContentletStatus;
+
+        @if ($loading()) {
+            <tr data-testId="loading-row">
+                <td [colSpan]="SKELETON_SPAN">
+                    <p-skeleton height="3rem" width="100%" />
+                </td>
+            </tr>
+        } @else {
+            <tr
+                class="content-drive-table__row"
+                data-testId="item-row"
+                (contextmenu)="onContextMenu($event, item)"
+                (dblclick)="onDoubleClick(item)">
+                <td data-testId="item-checkbox">
+                    <p-tableCheckbox [value]="item" />
+                </td>
+                <td class="list-view-title" data-testId="item-title">
+                    <div class="container-thumbnail">
+                        <dot-contentlet-thumbnail
+                            [fieldVariable]="item?.contentType"
+                            [iconSize]="'48px'"
+                            [contentlet]="item"
+                            data-testId="contentlet-thumbnail" />
+                    </div>
+                    <span data-testId="item-title-text" class="truncate-text">
+                        {{ item.title }}
+                    </span>
+                </td>
+                <td data-testId="item-status">
+                    @if (status === 'Published') {
+                        <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
+                    } @else if (status === 'Archived') {
+                        <p-chip styleClass="p-chip-sm p-chip-danger" [label]="status" />
+                    } @else {
+                        <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
+                    }
+                </td>
+                <td data-testId="item-base-type">{{ item.contentType | dm }}</td>
+                <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
+                <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
+                <td data-testId="item-actions" class="text-center">
+                    <p-button
+                        class="content-drive-table__actions-button"
+                        icon="pi pi-ellipsis-v"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        (onClick)="onContextMenu($event, item)"
+                        data-testId="kebab-menu-button"
+                        aria-label="More actions" />
+                </td>
+            </tr>
+        }
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr class="no-highlight">
+            <td colspan="7" class="empty-state">
+                <div class="empty-state-content">
+                    <div class="empty-state-icon">
+                        <i class="pi pi-folder-open"></i>
+                    </div>
+                    <div class="empty-state-message">
+                        <h3 class="empty-state-title">
+                            {{ 'content.drive.empty.state.title' | dm }}
+                        </h3>
+                        <p class="empty-state-description">
+                            {{ 'content.drive.empty.state.description' | dm }}
+                        </p>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<!-- <p-contextMenu #contextMenu [model]="items" /> -->

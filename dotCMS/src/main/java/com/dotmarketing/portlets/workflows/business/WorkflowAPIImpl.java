@@ -1,9 +1,13 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
+
 import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionlet;
 import com.dotcms.ai.workflow.OpenAIGenerateImageActionlet;
+import com.dotcms.ai.workflow.OpenAITranslationActionlet;
+import com.dotcms.ai.workflow.OpenAIVisionAutoTagActionlet;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -94,18 +98,17 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ReindexContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetApproversActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetPermissionsActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SendFormEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -140,13 +143,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.apache.felix.framework.OSGIUtil;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
-import org.osgi.framework.BundleContext;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -175,8 +171,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
+import javax.annotation.Nullable;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.felix.framework.OSGIUtil;
+import org.elasticsearch.search.query.QueryPhaseExecutionException;
+import org.osgi.framework.BundleContext;
 
 /**
  * Implementation class for {@link WorkflowAPI}.
@@ -252,49 +252,50 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		actionletClasses = new ArrayList<>();
 
-		// Add default actionlet classes
-		actionletClasses.addAll(Arrays.asList(
-				CommentOnWorkflowActionlet.class,
-				NotifyUsersActionlet.class,
-				ArchiveContentActionlet.class,
-				DeleteContentActionlet.class,
-				DestroyContentActionlet.class,
-				CheckinContentActionlet.class,
-				CheckoutContentActionlet.class,
-				UnpublishContentActionlet.class,
-				PublishContentActionlet.class,
-				NotifyAssigneeActionlet.class,
-				UnarchiveContentActionlet.class,
-				ResetTaskActionlet.class,
-				ResetPermissionsActionlet.class,
-				MultipleApproverActionlet.class,
-				FourEyeApproverActionlet.class,
-				TwitterActionlet.class,
-				PushPublishActionlet.class,
-				CheckURLAccessibilityActionlet.class,
-                EmailActionlet.class,
-				AsyncEmailActionlet.class,
-                SetValueActionlet.class,
-                ReindexContentActionlet.class,
-                PushNowActionlet.class,
-				TranslationActionlet.class,
-				SaveContentActionlet.class,
-				SaveContentAsDraftActionlet.class,
-				CopyActionlet.class,
-				MessageActionlet.class,
-				VelocityScriptActionlet.class,
-				JsScriptActionlet.class,
-				LargeMessageActionlet.class,
-				SendFormEmailActionlet.class,
-				ResetApproversActionlet.class,
-				RekognitionActionlet.class,
-				MoveContentActionlet.class,
-				DotEmbeddingsActionlet.class,
-				OpenAIContentPromptActionlet.class,
-				OpenAIGenerateImageActionlet.class,
-				OpenAIAutoTagActionlet.class,
-				AnalyticsFireUserEventActionlet.class
-		));
+      // Add default actionlet classes
+      actionletClasses.addAll(Arrays.asList(
+              CommentOnWorkflowActionlet.class,
+              NotifyUsersActionlet.class,
+              ArchiveContentActionlet.class,
+              DeleteContentActionlet.class,
+              DestroyContentActionlet.class,
+              CheckinContentActionlet.class,
+              CheckoutContentActionlet.class,
+              UnpublishContentActionlet.class,
+              PublishContentActionlet.class,
+              NotifyAssigneeActionlet.class,
+              UnarchiveContentActionlet.class,
+              ResetTaskActionlet.class,
+              ResetPermissionsActionlet.class,
+              MultipleApproverActionlet.class,
+              FourEyeApproverActionlet.class,
+              PushPublishActionlet.class,
+              CheckURLAccessibilityActionlet.class,
+              EmailActionlet.class,
+              AsyncEmailActionlet.class,
+              SetValueActionlet.class,
+              ReindexContentActionlet.class,
+              PushNowActionlet.class,
+              TranslationActionlet.class,
+              SaveContentActionlet.class,
+              SaveContentAsDraftActionlet.class,
+              CopyActionlet.class,
+              MessageActionlet.class,
+              VelocityScriptActionlet.class,
+              JsScriptActionlet.class,
+              LargeMessageActionlet.class,
+              SendFormEmailActionlet.class,
+              ResetApproversActionlet.class,
+              RekognitionActionlet.class,
+              MoveContentActionlet.class,
+              DotEmbeddingsActionlet.class,
+              OpenAIContentPromptActionlet.class,
+              OpenAIGenerateImageActionlet.class,
+              OpenAIAutoTagActionlet.class,
+              AnalyticsFireUserEventActionlet.class,
+              OpenAIVisionAutoTagActionlet.class,
+              OpenAITranslationActionlet.class
+      ));
 
 		refreshWorkFlowActionletMap();
 		registerBundleService();
@@ -1487,9 +1488,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					comment}, false);
 
 			if ( processor.getContextMap().containsKey("type") && WorkflowHistoryType.APPROVAL == processor.getContextMap().get("type")) {
-				description = "{\"description\":'"+ description +
-						"', \"type\":'" + WorkflowHistoryType.APPROVAL.name() +
-						"', \"state\":'"+  WorkflowHistoryState.NONE.name() +"\" }";
+				description = "{\"description\":\""+ description +
+						"\", \"type\":\"" + WorkflowHistoryType.APPROVAL.name() +
+						"\", \"state\":\""+  WorkflowHistoryState.NONE.name() +"\" }";
 			}
 
 			history.setChangeDescription(description);
@@ -2787,7 +2788,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						String.join(" wfstep:", workflowAssociatedStepsIds));
 		final long withinStepsCount = APILocator.getContentletAPI()
 				.indexCount(contentletsWithinStepsQuery, user, RESPECT_FRONTEND_ROLES);
-		
+
 		return (totalCount - withinStepsCount);
 	}
 
@@ -3926,14 +3927,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	/**
 	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
-	 * with the replacement user id 
+    * with the replacement user id
 	 * @param userId User Identifier
 	 * @param userRoleId The role id of the user
 	 * @param replacementUserId The user id of the replacement user
 	 * @param replacementUserRoleId The role Id of the replacemente user
 	 * @throws DotDataException There is a data inconsistency
 	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+    * @throws DotSecurityException
 	 */
 	@WrapInTransaction
 	@Override
@@ -3945,12 +3946,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	/**
 	 * Method will replace step references of the given stepId in workflow, workflow_action task and contentlets
-	 * with the replacement step id 
+    * with the replacement step id
 	 * @param stepId Step Identifier
 	 * @param replacementStepId The step id of the replacement step
 	 * @throws DotDataException There is a data inconsistency
 	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+    * @throws DotSecurityException
 	 */
 	@WrapInTransaction
 	@Override
@@ -4493,8 +4494,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final WorkflowTask task = new WorkflowTask();
 		final Date now          = new Date();
-		
-		task.setTitle(title);
+
+      task.setTitle(title);
 		task.setDescription(description);
 		task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
 		task.setModDate(now);

@@ -5,7 +5,8 @@ import { DotPersona } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-persona-selector-option',
     templateUrl: './dot-persona-selector-option.component.html',
-    styleUrls: ['./dot-persona-selector-option.component.scss']
+    styleUrls: ['./dot-persona-selector-option.component.scss'],
+    standalone: false
 })
 export class DotPersonaSelectorOptionComponent {
     @Input() canDespersonalize = true;

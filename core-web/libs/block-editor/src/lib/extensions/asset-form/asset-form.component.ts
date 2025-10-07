@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LANG_ID } from '../bubble-menu/models/index';
+import { DEFAULT_LANG_ID } from '../../shared/utils';
 
 @Component({
     selector: 'dot-asset-form',
     templateUrl: './asset-form.component.html',
     styleUrls: ['./asset-form.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class AssetFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;

@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 
 import { ConfirmDialog } from 'primeng/confirmdialog';
 
@@ -10,16 +10,17 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-alert-confirm',
-    templateUrl: './dot-alert-confirm.html'
+    templateUrl: './dot-alert-confirm.html',
+    standalone: false
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
+    dotAlertConfirmService = inject(DotAlertConfirmService);
+
     @ViewChild('cd') cd: ConfirmDialog;
     @ViewChild('confirmBtn') confirmBtn: ElementRef;
     @ViewChild('acceptBtn') acceptBtn: ElementRef;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(public dotAlertConfirmService: DotAlertConfirmService) {}
 
     ngOnInit(): void {
         this.dotAlertConfirmService.confirmDialogOpened$

@@ -1,10 +1,10 @@
-@if (items.length) {
+@if (sortedItems.length) {
     <div>
         @if (!!title) {
             <h3>{{ title }}</h3>
         }
         <dot-suggestion-list #list>
-            @for (item of items; track item) {
+            @for (item of sortedItems; track item) {
                 @if (item.id !== 'divider') {
                     <dot-suggestions-list-item
                         [command]="item.command"

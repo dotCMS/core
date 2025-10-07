@@ -8,7 +8,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -27,9 +28,13 @@ import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
-    templateUrl: './content-type-fields-add-row.component.html'
+    templateUrl: './content-type-fields-add-row.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
+    private dotEventsService = inject(DotEventsService);
+    private dotMessageService = inject(DotMessageService);
+
     rowState = 'add';
     selectedColumnIndex = 0;
     actions: MenuItem[];
@@ -45,11 +50,6 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     @Output() selectColums: EventEmitter<number> = new EventEmitter<number>();
     @ViewChild('colContainer') colContainerElem: ElementRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotEventsService: DotEventsService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit(): void {
         this.loadActions();

@@ -4,41 +4,39 @@
     [goBackBtn]="true"
     #inputFilter></dot-palette-input-filter>
 
-<div *ngIf="items?.length; else Loading" class="dot-content-palette__items">
-    <div
-        *ngFor="let item of items"
-        (dragstart)="dragStart(item)"
-        draggable="true"
-        data-testId="paletteItem">
-        <img
-            *ngIf="item?.hasTitleImage === true; else showIcon"
-            src="/dA/{{ item.inode }}/titleImage/500w/50q" />
-        <ng-template #showIcon>
-            <dot-contentlet-icon
-                [icon]="
-                    item?.baseType !== 'FILEASSET'
-                        ? item?.contentTypeIcon || item?.icon
-                        : item?.__icon__
-                "
-                size="45px"></dot-contentlet-icon>
-        </ng-template>
-        <p>{{ item.title || item.name }}</p>
+@if (items?.length) {
+    <div class="dot-content-palette__items">
+        @for (item of items; track item) {
+            <div (dragstart)="dragStart(item)" draggable="true" data-testId="paletteItem">
+                @if (item?.hasTitleImage === true) {
+                    <img src="/dA/{{ item.inode }}/titleImage/500w/50q" />
+                } @else {
+                    <dot-contentlet-icon
+                        [icon]="
+                            item?.baseType !== 'FILEASSET'
+                                ? item?.contentTypeIcon || item?.icon
+                                : item?.__icon__
+                        "
+                        size="45px"></dot-contentlet-icon>
+                }
+                <p>{{ item.title || item.name }}</p>
+            </div>
+        }
+        <p-paginator
+            (onPageChange)="onPaginate($event)"
+            [rows]="itemsPerPage"
+            [showFirstLastIcon]="false"
+            [totalRecords]="totalRecords"
+            pageLinkSize="2"></p-paginator>
     </div>
-    <p-paginator
-        (onPageChange)="onPaginate($event)"
-        [rows]="itemsPerPage"
-        [showFirstLastIcon]="false"
-        [totalRecords]="totalRecords"
-        pageLinkSize="2"></p-paginator>
-</div>
+} @else {
+    @if (loading) {
+        <dot-spinner [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+    }
+}
 
-<ng-template #Loading>
-    <dot-spinner *ngIf="loading" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
-</ng-template>
-
-<span
-    *ngIf="totalRecords < 1 && !loading"
-    class="dot-content-palette__empty"
-    data-testId="emptyState">
-    {{ 'No-Results' | dm }}
-</span>
+@if (totalRecords < 1 && !loading) {
+    <span class="dot-content-palette__empty" data-testId="emptyState">
+        {{ 'No-Results' | dm }}
+    </span>
+}

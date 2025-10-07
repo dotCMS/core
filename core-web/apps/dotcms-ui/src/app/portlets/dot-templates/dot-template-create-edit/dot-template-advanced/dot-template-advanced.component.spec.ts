@@ -17,13 +17,15 @@ import { DotTemplateAdvancedComponent } from './dot-template-advanced.component'
 
 @Component({
     selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletBaseMockComponent {}
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletToolbarMockComponent {
     @Input() actions;
@@ -31,13 +33,15 @@ export class DotPortletToolbarMockComponent {
 
 @Component({
     selector: 'dot-global-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-container-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotContainerSelectorMockComponent {
     @Output() swap = new EventEmitter<any>();
@@ -52,7 +56,8 @@ export class DotContainerSelectorMockComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
@@ -126,7 +131,7 @@ describe('DotTemplateAdvancedComponent', () => {
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
             name: 'testEditor',
-            editor: { executeEdits: jasmine.createSpy(), getSelection: () => 100 }
+            editor: { executeEdits: jest.fn(), getSelection: () => 100 }
         });
     });
 
@@ -144,10 +149,10 @@ describe('DotTemplateAdvancedComponent', () => {
                     {
                         label: 'Save',
                         disabled: true,
-                        command: jasmine.any(Function)
+                        command: expect.any(Function)
                     }
                 ],
-                cancel: jasmine.any(Function)
+                cancel: expect.any(Function)
             });
         });
 
@@ -171,14 +176,14 @@ describe('DotTemplateAdvancedComponent', () => {
 
     describe('events', () => {
         it('should emit updateTemplate event when the form changes', () => {
-            const updateTemplate = spyOn(component.updateTemplate, 'emit');
+            const updateTemplate = jest.spyOn(component.updateTemplate, 'emit');
             component.form.get('body').setValue('<body></body>');
 
             expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
         });
 
         it('should have form and fields', () => {
-            spyOn(Date, 'now').and.returnValue(1111111);
+            jest.spyOn(Date, 'now').mockReturnValue(1111111);
             const container = de.query(By.css('dot-container-selector'));
 
             container.triggerEventHandler('swap', {

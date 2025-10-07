@@ -30,7 +30,7 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
     />
 
     <!-- HTTP Connector from upstream proxy
@@ -52,7 +52,7 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
     />
 
     <!-- HTTPS (SSL) Connector from upstream proxy
@@ -75,7 +75,7 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
     />
 
 
@@ -101,11 +101,33 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
         SSLEnabled="${CMS_SSL_ENABLED:-true}"
         SSLCertificateFile="${CMS_SSL_CERTIFICATE_FILE:-/data/shared/assets/certs/local.dotcms.site.pem}"
         SSLCertificateKeyFile="${CMS_SSL_CERTIFICATE_KEY_FILE:-/data/shared/assets/certs/local.dotcms.site-key.pem}"
         keystorePass="${CMS_KEYSTORE_PASS:-dotcms}"
+    />
+
+    <!-- Management Connector for metrics, monitoring, and infrastructure health checks
+         Provides isolated access to /livez, /readyz, /metrics endpoints
+         Can be disabled by setting CMS_MANAGEMENT_PORT_ENABLED=false
+         Supports proxy port forwarding for Docker scenarios via proxyPort
+    -->
+    <Connector
+        port="${CMS_MANAGEMENT_PORT:-8090}"
+        proxyPort="${CMS_MANAGEMENT_PROXY_PORT:-8090}"
+        address="${CMS_MANAGEMENT_BIND_ADDRESS:-0.0.0.0}"
+        scheme="http"
+        protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+        connectionTimeout="${CMS_MANAGEMENT_CONNECTION_TIMEOUT:-3000}"
+        enableLookups="false"
+        URIEncoding="UTF-8"
+        bindOnInit="true"
+        maxThreads="${CMS_MANAGEMENT_CONNECTOR_THREADS:-25}"
+        minSpareThreads="5"
+        useSendfile="false"
+        maxHttpHeaderSize="16384"
+        compression="off"
     />
 
 
@@ -114,10 +136,12 @@
       <Host name="${CMS_HOST_NAME:-localhost}"  appBase="${CMS_APP_BASE:-webapps}">
       <!-- The remote IP valve picks up the X-FORWARDED-FOR header (by default) and uses it as the source ip
            remoteIpHeader and internalProxies may need to change when behind some WAF or proxy servers
+           Also handles port forwarding for Docker scenarios via X-Forwarded-Port
       -->
         <Valve
             className="org.apache.catalina.valves.RemoteIpValve"
             remoteIpHeader="${CMS_REMOTEIP_REMOTEIPHEADER:-x-forwarded-for}"
+            remoteIpPortHeader="${CMS_REMOTEIP_PORTHEADER:-x-forwarded-port}"
             internalProxies="${CMS_REMOTEIP_INTERNALPROXIES:-10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.1[6-9]{1}\.\d{1,3}\.\d{1,3}|172\.2[0-9]{1}\.\d{1,3}\.\d{1,3}|172\.3[0-1]{1}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1}"
         />
 

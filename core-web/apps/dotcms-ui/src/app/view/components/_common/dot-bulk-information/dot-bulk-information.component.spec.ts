@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -10,7 +10,7 @@ import {
     DynamicDialogRef
 } from 'primeng/dynamicdialog';
 
-import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotActionBulkResult } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -44,10 +44,11 @@ const mockBulkResponseFail: DotActionBulkResult = {
 @Component({
     template: `
         <div class="TestDynamicDialog"></div>
-    `
+    `,
+    standalone: false
 })
 export class TestDynamicDialogComponent {
-    constructor(public dialogService: DialogService) {}
+    dialogService = inject(DialogService);
 
     show() {
         this.dialogService.open(DotBulkInformationComponent, {
@@ -94,8 +95,8 @@ describe('DotBulkInformationComponent', () => {
         const success: HTMLElement = document.querySelector('[data-testId="successful"]');
         const fail: HTMLElement = document.querySelector('[data-testId="fails"]');
 
-        expect(success.innerText).toEqual('Template archived: 1');
-        expect(fail.innerText).toEqual('2 failed');
+        expect(success.textContent?.trim()).toEqual('Template archived: 1');
+        expect(fail.textContent?.trim()).toEqual('2 failed');
     });
 
     it('should list error messages', () => {
@@ -103,10 +104,10 @@ describe('DotBulkInformationComponent', () => {
             'bulk-information__fail-item'
         );
         expect(items.length).toEqual(2);
-        expect((items[0].firstChild as HTMLElement).innerText).toEqual('Template 1');
-        expect((items[0].lastChild as HTMLElement).innerText).toEqual('error 1');
-        expect((items[1].firstChild as HTMLElement).innerText).toEqual('Template 2');
-        expect((items[1].lastChild as HTMLElement).innerText).toEqual('error 2');
+        expect((items[0].firstChild as HTMLElement).textContent).toEqual('Template 1');
+        expect((items[0].lastChild as HTMLElement).textContent).toEqual('error 1');
+        expect((items[1].firstChild as HTMLElement).textContent).toEqual('Template 2');
+        expect((items[1].lastChild as HTMLElement).textContent).toEqual('error 2');
     });
 
     afterEach(() => {

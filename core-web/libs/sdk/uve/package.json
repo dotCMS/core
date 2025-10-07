@@ -1,13 +1,13 @@
 {
   "name": "@dotcms/uve",
-  "version": "0.0.1-beta.2",
+  "version": "1.1.1",
   "description": "Official JavaScript library for interacting with Universal Visual Editor (UVE)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
   "devDependencies": {
-    "@dotcms/types": "next"
+    "@dotcms/types": "latest"
   },
   "keywords": [
     "dotCMS",

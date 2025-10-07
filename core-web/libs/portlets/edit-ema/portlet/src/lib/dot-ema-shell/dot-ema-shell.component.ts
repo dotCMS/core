@@ -1,5 +1,6 @@
 import { CommonModule, Location } from '@angular/common';
-import { Component, effect, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -7,9 +8,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip } from 'rxjs/operators';
-
 import {
+    DotAnalyticsTrackerService,
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
@@ -18,8 +18,7 @@ import {
     DotPageRenderService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
-    DotWorkflowsActionsService,
-    DotAnalyticsTrackerService
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -32,13 +31,13 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { PERSONA_KEY } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
-    getAllowedPageParams,
     getTargetUrl,
     normalizeQueryParams,
     sanitizeURL,
@@ -46,7 +45,6 @@ import {
 } from '../utils';
 @Component({
     selector: 'dot-ema-shell',
-    standalone: true,
     providers: [
         UVEStore,
         DotPageApiService,
@@ -88,7 +86,7 @@ export class DotEmaShellComponent implements OnInit {
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
     readonly uveStore = inject(UVEStore);
-
+    readonly destroyRef = inject(DestroyRef);
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #siteService = inject(SiteService);
@@ -119,12 +117,10 @@ export class DotEmaShellComponent implements OnInit {
         const viewParams = this.#getViewParams(params.mode);
 
         this.uveStore.patchViewParams(viewParams);
-
         this.uveStore.loadPageAsset(params);
 
-        // We need to skip one because it's the initial value
         this.#siteService.switchSite$
-            .pipe(skip(1))
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => this.#router.navigate(['/pages']));
     }
 
@@ -205,7 +201,7 @@ export class DotEmaShellComponent implements OnInit {
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
-        const params = getAllowedPageParams(queryParams);
+        const params = { ...queryParams };
         const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
 
         //Sanitize the url
@@ -231,10 +227,11 @@ export class DotEmaShellComponent implements OnInit {
         }
 
         if (queryParams['personaId']) {
-            params['com.dotmarketing.persona.id'] = queryParams['personaId'];
+            params[PERSONA_KEY] = queryParams['personaId'];
+            delete params['personaId'];
         }
 
-        return params;
+        return params as DotPageAssetParams;
     }
 
     #getViewParams(uveMode: UVE_MODE): DotUveViewParams {

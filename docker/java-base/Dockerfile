@@ -1,12 +1,12 @@
 # ----------------------------------------------
 # Stage 1:  Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
-FROM ubuntu:20.04 AS base-builder
+FROM ubuntu:24.04 AS base-builder
 
 WORKDIR /srv
 
 # Defining default Java version, can be any java version provided by sdkman
-ARG SDKMAN_JAVA_VERSION="11.0.22-ms"
+ARG SDKMAN_JAVA_VERSION="21.0.8-ms"
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,11 +29,15 @@ RUN apt update && \
     /usr/bin/pg_dump --version || exit 1 && \
     rm -rf /var/lib/apt/lists/*
 
-# Create a custom JRE using jlink
+# Create a custom JRE using jlink with diagnostic tools
+# Added JDK diagnostic modules for native memory tracking and profiling:
+# - jdk.jcmd: jcmd command for VM.native_memory and other diagnostics
+# - jdk.attach: Required for diagnostic tool attachment to running JVMs
+# Note: jstack and jmap are included in jdk.jcmd in modern Java versions
 RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && jlink \
     --verbose \
     --add-modules \
-        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom \
+        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,jdk.management.agent,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom,jdk.jfr,jdk.management.jfr,jdk.jcmd,jdk.attach \
     --compress 2 \
     --no-header-files \
     --no-man-pages \

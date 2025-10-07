@@ -25,6 +25,8 @@ import {
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotSystemConfigService,
+    DotVersionableService,
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
@@ -37,6 +39,7 @@ import {
     DotContentletCanLock,
     DotContentletDepths
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
@@ -50,13 +53,13 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
+    MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG,
     MOCK_CONTENTTYPE_1_TAB,
     MOCK_CONTENTTYPE_2_TABS,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
 import { generatePreviewUrl } from '../../utils/functions.util';
-import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
@@ -88,8 +91,16 @@ describe('DotFormComponent', () => {
             mockProvider(MessageService),
             mockProvider(DialogService),
             mockProvider(DotWorkflowEventHandlerService),
-            mockProvider(DotWizardService),
+            mockProvider(DotWizardService, {
+                open: jest.fn().mockReturnValue(of({}))
+            }),
             mockProvider(DotMessageService),
+            mockProvider(DotVersionableService),
+            mockProvider(GlobalStore, {
+                loadCurrentSite: jest.fn(),
+                setCurrentSite: jest.fn(),
+                siteDetails: jest.fn().mockReturnValue(null)
+            }),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -109,13 +120,42 @@ describe('DotFormComponent', () => {
                             userName: 'John Doe'
                         })
                 }
-            }
+            },
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(
+                    of({
+                        logos: { loginScreen: '/assets/logo.png', navBar: 'NA' },
+                        colors: { primary: '#000000', secondary: '#FFFFFF', background: '#F5F5F5' },
+                        releaseInfo: { buildDate: 'Jan 01, 2025', version: 'test' },
+                        systemTimezone: {
+                            id: 'UTC',
+                            label: 'Coordinated Universal Time',
+                            offset: 0
+                        },
+                        languages: [
+                            {
+                                country: 'United States',
+                                countryCode: 'US',
+                                id: 1,
+                                isoCode: 'en-us',
+                                language: 'English',
+                                languageCode: 'en'
+                            }
+                        ],
+                        license: {
+                            displayServerId: 'serverId',
+                            isCommunity: true,
+                            level: 100,
+                            levelName: 'COMMUNITY'
+                        },
+                        cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
+                    })
+                )
+            })
         ]
     });
 
     beforeEach(() => {
-        window.ResizeObserver = MockResizeObserver;
-
         spectator = createComponent({ detectChanges: false });
         component = spectator.component;
         store = spectator.inject(DotEditContentStore);
@@ -175,6 +215,12 @@ describe('DotFormComponent', () => {
             expect(component.form.get('modUserName')).toBeFalsy();
             expect(component.form.get('publishDate')).toBeFalsy();
         });
+
+        it('should create disabledWYSIWYG form control with existing contentlet values', () => {
+            const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+            expect(disabledWYSIWYGControl).toBeTruthy();
+            expect(disabledWYSIWYGControl?.value).toEqual(['wysiwygField1', 'wysiwygField2']);
+        });
     });
 
     describe('New Content', () => {
@@ -210,6 +256,12 @@ describe('DotFormComponent', () => {
             expect(component.form.get('text1').hasValidator(Validators.required)).toBe(true);
             expect(component.form.get('text2').hasValidator(Validators.required)).toBe(false);
             expect(component.form.get('text3').hasValidator(Validators.required)).toBe(false);
+        });
+
+        it('should create disabledWYSIWYG form control with empty array for new content', () => {
+            const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+            expect(disabledWYSIWYGControl).toBeTruthy();
+            expect(disabledWYSIWYGControl?.value).toEqual([]);
         });
 
         it('should render the correct number of rows, columns and fields', fakeAsync(() => {
@@ -396,7 +448,8 @@ describe('DotFormComponent', () => {
                             text3: 'default value modified',
                             multiselect: 'A,B,C',
                             languageId: '',
-                            identifier: null
+                            identifier: null,
+                            disabledWYSIWYG: ['wysiwygField1', 'wysiwygField2']
                         }
                     }
                 });
@@ -589,6 +642,377 @@ describe('DotFormComponent', () => {
             it('should hide the lock switch when user can not lock', () => {
                 const lockSwitch = spectator.query(InputSwitch);
                 expect(lockSwitch).toBe(null);
+            });
+        });
+    });
+
+    describe('disabledWYSIWYG functionality', () => {
+        describe('onDisabledWYSIWYGChange', () => {
+            beforeEach(() => {
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(MOCK_CONTENTLET_1_OR_2_TABS)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+            });
+
+            it('should update disabledWYSIWYG form control when onDisabledWYSIWYGChange is called', () => {
+                const newDisabledWYSIWYG = ['newField1', 'newField2'];
+                const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+
+                // Verify initial value
+                expect(disabledWYSIWYGControl?.value).toEqual(['wysiwygField1', 'wysiwygField2']);
+
+                // Call the method
+                component.onDisabledWYSIWYGChange(newDisabledWYSIWYG);
+
+                // Verify the control was updated
+                expect(disabledWYSIWYGControl?.value).toEqual(newDisabledWYSIWYG);
+            });
+
+            it('should not throw error when onDisabledWYSIWYGChange is called and form does not exist', () => {
+                // Set form to null to simulate case where form doesn't exist
+                component.form = null;
+
+                expect(() => {
+                    component.onDisabledWYSIWYGChange(['test']);
+                }).not.toThrow();
+            });
+
+            it('should not throw error when onDisabledWYSIWYGChange is called and disabledWYSIWYG control does not exist', () => {
+                // Remove the disabledWYSIWYG control
+                component.form.removeControl('disabledWYSIWYG');
+
+                expect(() => {
+                    component.onDisabledWYSIWYGChange(['test']);
+                }).not.toThrow();
+            });
+
+            it('should emit event when disabledWYSIWYG form control value changes', () => {
+                const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+                const spy = jest.spyOn(disabledWYSIWYGControl, 'setValue');
+
+                component.onDisabledWYSIWYGChange(['newField']);
+
+                expect(spy).toHaveBeenCalledWith(['newField'], { emitEvent: true });
+            });
+        });
+
+        describe('with different contentlet scenarios', () => {
+            it('should handle contentlet without disabledWYSIWYG property', () => {
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_WITHOUT_DISABLED_WYSIWYG.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
+                expect(disabledWYSIWYGControl).toBeTruthy();
+                expect(disabledWYSIWYGControl?.value).toEqual([]);
+            });
+
+            it('should include disabledWYSIWYG in form values when form is processed', () => {
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(MOCK_CONTENTLET_1_OR_2_TABS)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                const formValues = component.form.value;
+                expect(formValues.disabledWYSIWYG).toEqual(['wysiwygField1', 'wysiwygField2']);
+            });
+        });
+    });
+
+    describe('Form value processing', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeNewContent('TestMock');
+            spectator.detectChanges();
+        });
+
+        it('should emit changeValue when form values change', () => {
+            const testValues = {
+                text1: 'test string',
+                text2: 'another string'
+            };
+
+            // Spy on the changeValue output
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            // Call onFormChange
+            component.onFormChange(testValues);
+
+            // Check that the event was emitted
+            expect(changeValueSpy).toHaveBeenCalledWith(expect.objectContaining(testValues));
+        });
+    });
+
+    describe('Historical Version Functionality', () => {
+        let historicalContentlet: DotCMSContentlet;
+
+        beforeEach(() => {
+            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            // Setup mock for historical content - used across multiple tests
+            historicalContentlet = { ...MOCK_CONTENTLET_1_OR_2_TABS, text1: 'historical content' };
+            dotContentletService.getContentletByInode.mockReturnValue(of(historicalContentlet));
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+        });
+
+        describe('Form State Management', () => {
+            xit('should disable / enable form when exiting historical version view', () => {
+                // Start by simulating historical version state
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+                expect(component.form.disabled).toBe(true);
+
+                // Exit historical version using the store's public method
+                store.exitHistoricalView();
+                spectator.detectChanges();
+
+                // Form should be enabled again
+                expect(component.form.enabled).toBe(true);
+            });
+
+            it('should reinitialize form when contentlet changes', () => {
+                const initFormSpy = jest.spyOn(
+                    component as DotEditContentFormComponent & { initializeForm(): void },
+                    'initializeForm'
+                );
+                const initListenerSpy = jest.spyOn(
+                    component as DotEditContentFormComponent & { initializeFormListener(): void },
+                    'initializeFormListener'
+                );
+
+                // Simulate contentlet change by loading a historical version (triggers the effect)
+                store.loadVersionContent('new-inode');
+                spectator.detectChanges();
+
+                expect(initFormSpy).toHaveBeenCalled();
+                expect(initListenerSpy).toHaveBeenCalled();
+            });
+        });
+
+        describe('Historical Version UI Elements', () => {
+            it('should hide lock controls when viewing historical version', () => {
+                // Initially lock controls should be visible
+                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                expect(lockControls).toBeTruthy();
+
+                // Simulate loading a historical version using the store's public method
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+
+                // Lock controls should be hidden
+                const lockControlsAfter = spectator.query('.dot-edit-content-actions__lock');
+                expect(lockControlsAfter).toBeFalsy();
+            });
+
+            it('should show restore button when viewing historical version', () => {
+                // Initially restore button should not be visible
+                const restoreButton = spectator.query(
+                    byTestId('restore-historical-version-button')
+                );
+                expect(restoreButton).toBeFalsy();
+
+                // Simulate loading a historical version using the store's public method
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+
+                // Restore button should be visible
+                const restoreButtonAfter = spectator.query(
+                    byTestId('restore-historical-version-button')
+                );
+                expect(restoreButtonAfter).toBeTruthy();
+            });
+
+            it('should hide workflow actions when viewing historical version', () => {
+                // Initially workflow actions should be visible
+                const workflowActions = spectator.query(byTestId('workflow-actions'));
+                expect(workflowActions).toBeTruthy();
+
+                // Simulate loading a historical version using the store's public method
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+
+                // Workflow actions should be hidden
+                const workflowActionsAfter = spectator.query(byTestId('workflow-actions'));
+                expect(workflowActionsAfter).toBeFalsy();
+            });
+        });
+
+        describe('Restore Functionality', () => {
+            it('should call restoreCurrentHistoricalVersion when restore button is clicked', () => {
+                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
+
+                // Simulate loading a historical version using the store's public method
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+
+                const restoreButton = spectator.query(
+                    byTestId('restore-historical-version-button')
+                );
+                expect(restoreButton).toBeTruthy();
+
+                // Click restore button
+                spectator.click(restoreButton);
+
+                expect(restoreSpy).toHaveBeenCalled();
+            });
+
+            it('should display correct text on restore button', () => {
+                // Mock the DotMessageService to return a translation
+                const dotMessageService = spectator.inject(DotMessageService);
+                jest.spyOn(dotMessageService, 'get').mockReturnValue('Restore');
+
+                // Simulate loading a historical version using the store's public method
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+
+                const restoreButton = spectator.query(
+                    byTestId('restore-historical-version-button')
+                );
+                expect(restoreButton).toBeTruthy();
+
+                // Check that the button contains some text (translation may not work in tests)
+                expect(restoreButton.textContent?.trim().length).toBeGreaterThan(0);
+            });
+        });
+
+        describe('State Transitions', () => {
+            it('should properly transition from normal to historical view', () => {
+                // Initial state - normal view
+                expect(store.isViewingHistoricalVersion()).toBe(false);
+                //TODO: enable this when all fields have disable state expect(component.form.enabled).toBe(true);
+
+                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const workflowActions = spectator.query(byTestId('workflow-actions'));
+                const restoreButton = spectator.query(
+                    byTestId('restore-historical-version-button')
+                );
+
+                expect(lockControls).toBeTruthy();
+                expect(workflowActions).toBeTruthy();
+                expect(restoreButton).toBeFalsy();
+
+                // Simulate loading a historical version using the store's public method
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+
+                // Check historical view state
+                //TODO: enable this when all fields have disable state expect(component.form.disabled).toBe(true);
+
+                const lockControlsAfter = spectator.query('.dot-edit-content-actions__lock');
+                const workflowActionsAfter = spectator.query(byTestId('workflow-actions'));
+                const restoreButtonAfter = spectator.query(
+                    byTestId('restore-historical-version-button')
+                );
+
+                expect(lockControlsAfter).toBeFalsy();
+                expect(workflowActionsAfter).toBeFalsy();
+                expect(restoreButtonAfter).toBeTruthy();
+            });
+
+            it('should properly transition from historical to normal view', () => {
+                // Start in historical view using the store's public method
+                store.loadVersionContent('historical-inode');
+                spectator.detectChanges();
+
+                //TODO: enable this when all fields have disable state expect(component.form.disabled).toBe(true);
+                expect(spectator.query(byTestId('restore-historical-version-button'))).toBeTruthy();
+
+                // Transition back to normal view using the store's public method
+                store.exitHistoricalView();
+                spectator.detectChanges();
+
+                // Check normal view state
+                expect(component.form.enabled).toBe(true);
+
+                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const workflowActions = spectator.query(byTestId('workflow-actions'));
+                const restoreButton = spectator.query(
+                    byTestId('restore-historical-version-button')
+                );
+
+                expect(lockControls).toBeTruthy();
+                expect(workflowActions).toBeTruthy();
+                expect(restoreButton).toBeFalsy();
             });
         });
     });

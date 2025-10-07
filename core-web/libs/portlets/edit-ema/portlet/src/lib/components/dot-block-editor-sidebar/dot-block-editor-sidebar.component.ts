@@ -14,7 +14,6 @@ import { map, take } from 'rxjs/operators';
 import { JSONContent } from '@tiptap/core';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
-import { InlineEditorData } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -22,6 +21,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSInlineEditingPayload } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
 export interface BlockEditorData {
@@ -36,7 +36,6 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
 
 @Component({
     selector: 'dot-block-editor-sidebar',
-    standalone: true,
     templateUrl: './dot-block-editor-sidebar.component.html',
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
     imports: [
@@ -79,7 +78,7 @@ export class DotBlockEditorSidebarComponent {
      * @param {InlineEditorData} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({ inode, content, language, fieldName, contentType }: InlineEditorData): void {
+    open({ inode, content, language, fieldName, contentType }: DotCMSInlineEditingPayload): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({

@@ -1,7 +1,7 @@
 import { of as observableOf, Observable, Subject } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
@@ -27,6 +27,9 @@ export interface IPublishEnvironment {
 
 @Injectable()
 export class BundleService {
+    _apiRoot = inject(ApiRoot);
+    private coreWebService = inject(CoreWebService);
+
     bundles$: Subject<IBundle[]> = new Subject();
 
     private _bundleStoreUrl: string;
@@ -47,10 +50,7 @@ export class BundleService {
         return data;
     }
 
-    constructor(
-        public _apiRoot: ApiRoot,
-        private coreWebService: CoreWebService
-    ) {
+    constructor() {
         this._bundleStoreUrl = `/api/bundle/getunsendbundles/userid`;
         this._loggedUserUrl = `/api/v1/users/current/`;
         this._addToBundleUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
